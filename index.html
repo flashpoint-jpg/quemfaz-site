@@ -4697,8 +4697,12 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if ([STATUS.AGUARDANDO_ACEITE, STATUS.SEM_PROFISSIONAL].indexOf(req.status) !== -1) effectiveStatus = STATUS.BUSCANDO;
     if (req.status === STATUS.ORCAMENTO_RECUSADO) effectiveStatus = STATUS.AGUARDANDO_ORCAMENTO;
     const idx = order.indexOf(effectiveStatus);
+    const fluxoFinalizado = effectiveStatus === STATUS.FINALIZADO;
     return order.map(function (st, i) {
-      return { title: titles[st], state: i < idx ? 'done' : i === idx ? 'current' : 'pending' };
+      return {
+        title: titles[st],
+        state: fluxoFinalizado ? 'done' : (i < idx ? 'done' : i === idx ? 'current' : 'pending')
+      };
     });
   }
 
