@@ -6,7 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
-<!-- V10.8: pedido grátis para cliente + alerta online obrigatório para profissional -->
+<!-- V10.9: pedido grátis também visível na tela inicial -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3775,6 +3775,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       '<div class="qf-intro-card"><div class="qf-intro-card__title">Você pede. O QuemFaz conecta.</div><div class="qf-intro-card__sub">Profissionais da categoria em todo o Brasil podem receber sua solicitação e enviar o orçamento para você escolher.</div></div>' +
       '<div class="view stack">' +
         '<div class="eyebrow">Como você quer usar o QuemFaz?</div>' +
+        '<div class="card card--tight" style="background:var(--success-100);border:1px solid #bfe8d6;">' +
+          '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div>' +
+          '<div><div class="text--strong" style="color:var(--success-600);">Pedir um profissional é grátis</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:3px;">Publique seu pedido sem pagar e receba orçamentos de profissionais.</div></div></div>' +
+        '</div>' +
         roleCard('cliente') +
         roleCard('profissional') +
         '<div data-install-slot style="display:none;"></div>' +
@@ -6215,7 +6220,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.8.0';
+  const APP_VERSION = '10.9.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
