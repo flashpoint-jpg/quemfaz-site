@@ -1049,6 +1049,20 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     grid-template-columns: repeat(3, minmax(0,1fr));
   }
 }
+
+/* Central administrativa de suporte */
+.qf-admin-support-list{display:flex;flex-direction:column;gap:10px}
+.qf-admin-support-card{width:100%;text-align:left}
+.qf-admin-support-thread{display:flex;flex-direction:column;gap:9px;max-height:min(52vh,520px);overflow:auto;padding:4px 2px 10px}
+.qf-admin-support-msg{max-width:86%;padding:9px 11px;border-radius:14px;background:var(--bg-sunken);align-self:flex-start}
+.qf-admin-support-msg--admin{align-self:flex-end;background:var(--navy-900);color:#fff}
+.qf-admin-support-msg__who{font-size:10px;font-weight:800;opacity:.72;margin-bottom:3px}
+.qf-admin-support-msg__text{font-size:13px;line-height:1.42;white-space:pre-wrap;overflow-wrap:anywhere}
+.qf-admin-support-msg__time{font-size:10px;opacity:.62;margin-top:4px;text-align:right}
+.qf-admin-support-reply{display:flex;gap:8px;align-items:flex-end}
+.qf-admin-support-reply .textarea{min-height:54px;max-height:140px}
+.qf-admin-support-reply .btn{width:auto;min-width:54px}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2528,8 +2542,64 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     });
   }
 
+
+  let supportTicketsCache = [];
+
+  async function syncSupport() {
+    if (!client) return [];
+    const res = await client.from('qf_suporte_atendimentos')
+      .select('id,usuario_id,usuario_tipo,assunto,status,atendido_por,criado_em,atualizado_em,ultima_mensagem_em,resolvido_em')
+      .order('ultima_mensagem_em', { ascending:false });
+    if (res.error) throw res.error;
+    supportTicketsCache = res.data || [];
+    return supportTicketsCache;
+  }
+
+  async function getSupportMessages(atendimentoId) {
+    const res = await client.from('qf_suporte_mensagens')
+      .select('id,atendimento_id,autor_id,autor_tipo,mensagem,criado_em')
+      .eq('atendimento_id', atendimentoId)
+      .order('criado_em', { ascending:true });
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function supportReply(atendimentoId, mensagem) {
+    mensagem = String(mensagem || '').trim().slice(0,4000);
+    if (!mensagem) throw new Error('Digite uma resposta.');
+    const uRes = await client.auth.getUser();
+    if (uRes.error || !uRes.data || !uRes.data.user) throw new Error('Sessão administrativa expirada.');
+    const res = await client.from('qf_suporte_mensagens').insert({
+      atendimento_id:atendimentoId,
+      autor_id:uRes.data.user.id,
+      autor_tipo:'admin',
+      mensagem:mensagem
+    });
+    if (res.error) throw res.error;
+    await syncSupport();
+    return true;
+  }
+
+  async function supportSetStatus(atendimentoId, status) {
+    if (['aberto','em_atendimento','resolvido'].indexOf(status) === -1) throw new Error('Status inválido.');
+    const uRes = await client.auth.getUser();
+    if (uRes.error || !uRes.data || !uRes.data.user) throw new Error('Sessão administrativa expirada.');
+    const patch = {
+      status:status,
+      atualizado_em:new Date().toISOString(),
+      resolvido_em:status === 'resolvido' ? new Date().toISOString() : null
+    };
+    if (status === 'em_atendimento') patch.atendido_por = uRes.data.user.id;
+    const res = await client.from('qf_suporte_atendimentos').update(patch).eq('id',atendimentoId);
+    if (res.error) throw res.error;
+    await syncSupport();
+    return true;
+  }
+
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
     syncSnapshot, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
+    syncSupport, getSupportMessages, supportReply, supportSetStatus,
+    get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
 })(window);
 
@@ -4197,6 +4267,15 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
           '</button>' +
         '</div>' +
 
+
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Atendimento</h2></div>' +
+          '<button class="card row-between" style="width:100%;text-align:left;" data-nav="/admin/suporte">' +
+            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div><div class="text--strong">Central de suporte</div><div class="text--sm text--secondary">' + (((global.QFAdminCloud && global.QFAdminCloud.supportTickets) || []).filter(function(t){return t.status !== 'resolvido';}).length) + ' atendimento(s) aguardando</div></div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</button>' +
+        '</div>' +
+
         (s.profissionaisPendentes ? (
           '<div class="section">' +
             '<div class="card card--tight" style="background:var(--warning-100);border:none;">' +
@@ -4617,6 +4696,87 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     });
   }
 
+
+  // ---------------- Suporte ----------------
+
+  function supportStatusBadge(status) {
+    if (status === 'resolvido') return '<span class="badge badge--success">Resolvido</span>';
+    if (status === 'em_atendimento') return '<span class="badge badge--warning">Em atendimento</span>';
+    return '<span class="badge badge--navy">Aberto</span>';
+  }
+
+  function supportUserName(ticket) {
+    const p = DB.profissionalById(ticket.usuario_id);
+    if (p) return p.nome || 'Profissional';
+    const cl = DB.clienteById(ticket.usuario_id);
+    if (cl) return cl.nome || 'Cliente';
+    return ticket.usuario_tipo === 'profissional' ? 'Profissional' : 'Cliente';
+  }
+
+  Screens.adminSuporteRender = function () {
+    const tickets = (global.QFAdminCloud && global.QFAdminCloud.supportTickets) || [];
+    const ativos = tickets.filter(function(t){return t.status !== 'resolvido';});
+    const resolvidos = tickets.filter(function(t){return t.status === 'resolvido';});
+    function card(t) {
+      return '<button class="card qf-admin-support-card" data-nav="/admin/suporte/'+t.id+'">' +
+        '<div class="row-between"><div><div class="text--strong">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
+        '<div class="row-between" style="margin-top:10px;"><span class="badge badge--muted">'+(t.usuario_tipo==='profissional'?'Profissional':'Cliente')+'</span><span class="text--sm text--muted">'+PU.escapeHtml(PU.formatDateTime(t.ultima_mensagem_em||t.atualizado_em))+'</span></div>' +
+      '</button>';
+    }
+    return '<div class="view">' +
+      '<div class="row-between" style="margin-bottom:12px;"><div><div class="h3">Central de suporte</div><div class="text--sm text--secondary">'+ativos.length+' atendimento(s) aguardando</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-action="support-refresh">'+icon('refresh')+' Atualizar</button></div>' +
+      (ativos.length?'<div class="qf-admin-support-list">'+ativos.map(card).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('checkCircle')+'</div><div class="h3">Tudo resolvido</div><p class="text text--secondary">Nenhum atendimento aberto no momento.</p></div>') +
+      (resolvidos.length?'<div class="section"><div class="section-head"><h2 class="h3">Resolvidos</h2></div><div class="qf-admin-support-list">'+resolvidos.slice(0,20).map(card).join('')+'</div></div>':'') +
+    '</div>';
+  };
+
+  Screens.adminSuporteDetalheRender = function (params) {
+    const tickets = (global.QFAdminCloud && global.QFAdminCloud.supportTickets) || [];
+    const t = tickets.find(function(x){return x.id===params.id;});
+    if (!t) return '<div class="view"><div class="empty-state"><p class="text text--secondary">Atendimento não encontrado.</p></div></div>';
+    return '<div class="view stack">' +
+      '<div class="card"><div class="row-between"><div><div class="h3">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
+      '<div class="row" style="margin-top:10px;gap:7px;flex-wrap:wrap;"><span class="badge badge--muted">'+(t.usuario_tipo==='profissional'?'Profissional':'Cliente')+'</span><span class="text--sm text--muted">Aberto '+PU.escapeHtml(PU.formatDateTime(t.criado_em))+'</span></div></div>' +
+      '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
+      '<div class="card stack--sm"><label class="field"><span class="field__label">Status do atendimento</span><select class="select" id="qf-admin-support-status"><option value="aberto"'+(t.status==='aberto'?' selected':'')+'>Aberto</option><option value="em_atendimento"'+(t.status==='em_atendimento'?' selected':'')+'>Em atendimento</option><option value="resolvido"'+(t.status==='resolvido'?' selected':'')+'>Resolvido</option></select></label><button class="btn btn--outline" data-action="support-save-status">Salvar status</button></div>' +
+    '</div>';
+  };
+
+  async function bindSuporteLista(content) {
+    const b=content.querySelector('[data-action="support-refresh"]');
+    if(b) b.addEventListener('click',async function(){b.disabled=true;try{await global.QFAdminCloud.syncSupport();global.navigate('/admin/suporte',true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');b.disabled=false;}});
+  }
+
+  function bindSuporteDetalhe(content, params) {
+    let timer=null;
+    async function load(first) {
+      const wrap=content.querySelector('#qf-admin-support-thread');
+      if(!wrap) return;
+      try {
+        const tickets=global.QFAdminCloud.supportTickets||[];
+        const ticket=tickets.find(function(x){return x.id===params.id;});
+        const messages=await global.QFAdminCloud.getSupportMessages(params.id);
+        const old=content.querySelector('#qf-admin-support-reply');
+        const draft=old?old.value:'';
+        const bubbles=messages.map(function(m){
+          const admin=m.autor_tipo==='admin';
+          return '<div class="qf-admin-support-msg'+(admin?' qf-admin-support-msg--admin':'')+'"><div class="qf-admin-support-msg__who">'+(admin?'Você / Suporte':'Usuário')+'</div><div class="qf-admin-support-msg__text">'+PU.escapeHtml(m.mensagem)+'</div><div class="qf-admin-support-msg__time">'+PU.escapeHtml(PU.formatDateTime(m.criado_em))+'</div></div>';
+        }).join('');
+        wrap.innerHTML='<div class="qf-admin-support-thread" id="qf-admin-support-message-list">'+(bubbles||'<div class="text--sm text--secondary">Nenhuma mensagem.</div>')+'</div>'+
+          (ticket && ticket.status==='resolvido'
+            ? '<div class="card card--tight" style="background:var(--success-100);border:none;"><div class="text--sm" style="color:var(--success-600);">Atendimento resolvido. Reabra pelo status se precisar responder novamente.</div></div>'
+            : '<div class="qf-admin-support-reply"><textarea class="textarea" id="qf-admin-support-reply" maxlength="4000" placeholder="Responder ao usuário...">'+PU.escapeHtml(draft)+'</textarea><button class="btn btn--primary" id="qf-admin-support-send">'+icon('arrowRight')+' Enviar</button></div>');
+        const list=content.querySelector('#qf-admin-support-message-list'); if(list&&(first||!draft))list.scrollTop=list.scrollHeight;
+        const send=content.querySelector('#qf-admin-support-send');
+        if(send) send.onclick=async function(){const inp=content.querySelector('#qf-admin-support-reply');const msg=inp.value.trim();if(!msg)return;send.disabled=true;try{await global.QFAdminCloud.supportReply(params.id,msg);inp.value='';await load(true);}catch(err){PU.toast((err&&err.message)||'Não foi possível enviar.','danger');send.disabled=false;}};
+      } catch(err){wrap.innerHTML='<div class="text--sm" style="color:var(--danger-600);">'+PU.escapeHtml((err&&err.message)||'Não foi possível carregar a conversa.')+'</div>';}
+    }
+    load(true);
+    timer=setInterval(function(){if(location.hash!=='#/admin/suporte/'+params.id){clearInterval(timer);return;}load(false);},4000);
+    const save=content.querySelector('[data-action="support-save-status"]');
+    if(save) save.addEventListener('click',async function(){save.disabled=true;try{const status=content.querySelector('#qf-admin-support-status').value;await global.QFAdminCloud.supportSetStatus(params.id,status);PU.toast(status==='resolvido'?'Atendimento resolvido.':'Status atualizado.','success');global.navigate('/admin/suporte/'+params.id,true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');save.disabled=false;}});
+  }
+
   // ---------------- Mais opções ----------------
 
   Screens.adminMaisRender = function () {
@@ -4629,6 +4789,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
         maisItem('image', 'Anúncios do carrossel', '/admin/anuncios') +
         maisItem('money', 'Receitas do app', '/admin/pagamentos') +
         maisItem('alertTriangle', 'Cancelamentos', '/admin/cancelamentos') +
+        maisItem('info', 'Central de suporte', '/admin/suporte') +
         maisItem('smartphone', 'Versão do app e atualização obrigatória', '/admin/versao') +
         (cloudOn() ? '' : '<div class="section">' +
           '<button class="btn btn--outline" data-action="restaurar-demo">' + icon('refresh') + ' Restaurar dados de demonstração</button>' +
@@ -4662,6 +4823,8 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     if (pattern === '/admin/anuncios') bindAnuncios(content);
     if (pattern === '/admin/mais') bindMais(content);
     if (pattern === '/admin/versao') bindVersao(content);
+    if (pattern === '/admin/suporte') bindSuporteLista(content);
+    if (pattern === '/admin/suporte/:id') bindSuporteDetalhe(content, params);
     if (pattern === '/admin/dashboard') {
       const rb = content.querySelector('[data-action="admin-refresh"]');
       if (rb) rb.addEventListener('click', async function () {
@@ -4956,6 +5119,8 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios patrocinados', back: '/admin/mais', render: Screens.adminAnunciosRender },
     { pattern: '/admin/pagamentos', role: 'admin', title: 'Receitas do app', back: '/admin/mais', render: Screens.adminPagamentosRender },
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/mais', render: Screens.adminCancelamentosRender },
+    { pattern: '/admin/suporte', role: 'admin', title: 'Central de suporte', back: '/admin/mais', render: Screens.adminSuporteRender },
+    { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
     { pattern: '/admin/versao', role: 'admin', title: 'Versão do app', back: '/admin/mais', render: Screens.adminVersaoRender },
   ];
@@ -4995,7 +5160,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     if (session && session.role === 'admin' && global.QFAdminCloud && global.QFAdminCloud.enabled) {
       try {
         if (!(await global.QFAdminCloud.hasSession())) { DB.logout(); session = null; }
-        else await Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot()]);
+        else await Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]);
       } catch (err) {
         console.warn('QuemFaz admin sync', err);
         PU.toast('Não foi possível sincronizar o painel com o Supabase.', 'danger');
