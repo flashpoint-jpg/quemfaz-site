@@ -6,7 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
-<!-- V10.7: login/cadastro no fluxo de anúncio + recuperação automática do rascunho -->
+<!-- V10.8: pedido grátis para cliente + alerta online obrigatório para profissional -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -4122,6 +4122,16 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<div data-install-slot style="display:none;margin-top:12px;"></div>' +
         (global.QFPush ? '<div class="section">' + global.QFPush.card('cliente') + '</div>' : '') +
 
+        '<div class="section">' +
+          '<div class="card" style="background:var(--success-100);border:1px solid #bfe8d6;">' +
+            '<div class="row" style="align-items:flex-start;">' +
+              '<div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div>' +
+              '<div class="spacer"><div class="text--strong" style="color:var(--success-600);">Pedir um profissional é grátis</div>' +
+              '<div class="text--sm text--secondary" style="margin-top:3px;">Você não paga para publicar seu pedido nem para buscar profissionais. Só decide contratar depois de receber e analisar os orçamentos.</div></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
         anunciosCarousel(user) +
 
         (ativos.length ? (
@@ -5028,7 +5038,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<div data-install-slot style="display:none;margin-top:12px;"></div>' +
         (!user.fotoUrl ? '<div class="card notify-required" style="margin-top:12px;"><div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong">Cadastre sua selfie</div><div class="text--sm text--secondary">Por segurança do cliente, a selfie é obrigatória antes de ficar online.</div></div></div><button class="btn btn--outline" data-nav="/profissional/perfil" style="margin-top:12px;">Abrir perfil</button></div>' : '') +
 
-        '<div class="card row">' +
+        (!user.online ? '<div class="card" style="margin-top:12px;background:var(--warning-100);border:1px solid #f0cf91;">' +
+          '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--warning-600);">' + icon('bell') + '</div>' +
+          '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Você está OFFLINE — não recebe chamados</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois de cadastrar e adicionar créditos, lembre-se de ficar online. Os chamados da sua categoria e região só chegam para profissionais disponíveis.</div></div></div>' +
+          '<button class="btn btn--primary" type="button" data-action="ficar-online-agora" style="margin-top:12px;">' + icon('power') + ' Ficar online agora</button>' +
+        '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados compatíveis com sua categoria e área podem chegar para você.</div></div></div></div>') +
+
+        '<div class="card row" style="margin-top:12px;">' +
           '<div class="spacer">' +
             '<div class="text--strong">Status de disponibilidade</div>' +
             '<div class="text--sm text--secondary">' + (user.online ? 'Você está online e recebe primeiro os chamados mais próximos dentro do seu raio.' : (user.fotoUrl ? 'Você está offline. Ative para receber chamados.' : 'Cadastre sua selfie para poder ficar online.')) + '</div>' +
@@ -5719,6 +5736,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     bindNotificationActivation(content);
     const toggle = content.querySelector('#toggle-online');
     if (toggle) {
+      const onlineNow = content.querySelector('[data-action="ficar-online-agora"]');
+      if (onlineNow) {
+        onlineNow.addEventListener('click', function () {
+          if (toggle.disabled) return;
+          toggle.checked = true;
+          toggle.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      }
       toggle.addEventListener('change', async function () {
         const querOnline = toggle.checked;
         toggle.checked = !querOnline; // só muda depois de confirmar no servidor
@@ -6190,7 +6215,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.7.0';
+  const APP_VERSION = '10.8.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
