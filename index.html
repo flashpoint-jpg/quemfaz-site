@@ -6,7 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
-<!-- V10.6: layout responsivo para computador/tablet + correção de erro de sintaxe que travava o app em "Carregando..." -->
+<!-- V10.7: login/cadastro no fluxo de anúncio + recuperação automática do rascunho -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3904,6 +3904,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
             : DB.login(params.role, fd.get('email').trim(), fd.get('senha'));
           if (!res.ok) { PU.toast(res.error || 'Não foi possível entrar.', 'danger'); return; }
           PU.toast('Bem-vindo(a), ' + res.user.nome.split(' ')[0] + '!', 'success');
+          if (sessionStorage.getItem('qf_pending_ad_draft')) {
+            global.navigate('/' + params.role + '/anuncie', true);
+            return;
+          }
           global.navigate('/' + params.role + '/home', true);
         } finally {
           if (btn) btn.disabled = false;
@@ -3933,12 +3937,20 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               return;
             }
             PU.toast('Conta criada com sucesso!', 'success');
+            if (sessionStorage.getItem('qf_pending_ad_draft')) {
+              global.navigate('/cliente/anuncie', true);
+              return;
+            }
             global.navigate('/cliente/home', true);
             return;
           }
           const user = DB.cadastrarCliente(dados);
           DB.setSession({ role: 'cliente', userId: user.id });
           PU.toast('Conta criada com sucesso!', 'success');
+          if (sessionStorage.getItem('qf_pending_ad_draft')) {
+            global.navigate('/cliente/anuncie', true);
+            return;
+          }
           global.navigate('/cliente/home', true);
         } finally {
           if (btn) btn.disabled = false;
@@ -3990,6 +4002,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               return;
             }
             PU.toast('Cadastro criado! Adicione créditos para desbloquear oportunidades.', 'success');
+            if (sessionStorage.getItem('qf_pending_ad_draft')) {
+              global.navigate('/profissional/anuncie', true);
+              return;
+            }
             global.navigate('/profissional/home', true);
             return;
           }
@@ -3998,6 +4014,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           const user = DB.cadastrarProfissional(dados);
           DB.setSession({ role: 'profissional', userId: user.id });
           PU.toast('Cadastro criado! Adicione créditos para desbloquear oportunidades.', 'success');
+          if (sessionStorage.getItem('qf_pending_ad_draft')) {
+            global.navigate('/profissional/anuncie', true);
+            return;
+          }
           global.navigate('/profissional/home', true);
         } finally {
           if (btn) btn.disabled = false;
@@ -5477,6 +5497,31 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     let imageData = '';
     const input = content.querySelector('#ad-image');
     const preview = content.querySelector('#ad-preview');
+
+    // V10.7: mantém o anúncio preenchido quando o visitante precisa entrar/criar conta.
+    try {
+      const saved = JSON.parse(sessionStorage.getItem('qf_pending_ad_draft') || 'null');
+      if (saved && saved.fields) {
+        Array.prototype.forEach.call(form.querySelectorAll('[name]'), function (ctrl) {
+          const name = ctrl.name;
+          if (!name || !(name in saved.fields) || ctrl.type === 'file') return;
+          if (ctrl.type === 'radio') ctrl.checked = String(ctrl.value) === String(saved.fields[name]);
+          else if (ctrl.type === 'checkbox') ctrl.checked = !!saved.fields[name];
+          else ctrl.value = saved.fields[name] == null ? '' : saved.fields[name];
+        });
+        imageData = String(saved.imageData || '');
+        if (imageData) preview.innerHTML = '<img src="' + imageData + '" alt="Prévia do anúncio">';
+        Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) {
+          const item = r.closest('.segmented__item');
+          if (item) item.classList.toggle('is-active', r.checked);
+        });
+        const savedPay = String(saved.fields.formaPagamento || '');
+        Array.prototype.forEach.call(content.querySelectorAll('#ad-payment [data-pay]'), function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-pay') === savedPay);
+        });
+        PU.toast('Seu anúncio foi recuperado. Continue de onde parou.', 'success');
+      }
+    } catch (_) {}
     input.addEventListener('change', function () {
       const f = input.files && input.files[0];
       if (!f) return;
@@ -5503,6 +5548,37 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       const fd = new FormData(form);
       if (!String(fd.get('empresa') || '').trim() || !String(fd.get('chamada') || '').trim() || !String(fd.get('whatsapp') || '').trim()) { PU.toast('Preencha empresa, chamada e WhatsApp.', 'danger'); return; }
       if (!imageData) { PU.toast('Adicione a imagem do anúncio.', 'danger'); return; }
+
+      if (!DB.getSession()) {
+        const draftFields = {};
+        fd.forEach(function (value, key) {
+          if (typeof value === 'string') draftFields[key] = value;
+        });
+        try {
+          sessionStorage.setItem('qf_pending_ad_draft', JSON.stringify({ fields: draftFields, imageData: imageData, savedAt: Date.now() }));
+        } catch (_) {}
+
+        PU.openSheet(
+          '<div class="stack">' +
+            '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('user') + '</div>' +
+            '<h3 class="sheet__title" style="text-align:center;">Entre para continuar</h3>' +
+            '<p class="text text--secondary" style="text-align:center;">Seu anúncio já está salvo neste aparelho. Entre ou crie sua conta e você volta para finalizar sem preencher tudo de novo.</p>' +
+            '<button class="btn btn--primary" id="qf-ad-login-cliente">Entrar como cliente</button>' +
+            '<button class="btn btn--outline" id="qf-ad-login-prof">Entrar como profissional</button>' +
+            '<div class="divider-label">primeiro acesso?</div>' +
+            '<div class="btn-row"><button class="btn btn--outline" id="qf-ad-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-ad-cad-prof">Criar conta profissional</button></div>' +
+            '<button class="btn btn--ghost" id="qf-ad-voltar">Continuar editando</button>' +
+          '</div>',
+          { persistent: true }
+        );
+        document.getElementById('qf-ad-login-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
+        document.getElementById('qf-ad-login-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
+        document.getElementById('qf-ad-cad-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/cadastro', true); };
+        document.getElementById('qf-ad-cad-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/cadastro', true); };
+        document.getElementById('qf-ad-voltar').onclick = function () { PU.closeSheet(); };
+        return;
+      }
+
       const btn = form.querySelector('button[type="submit"]');
       if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
       try {
@@ -5522,6 +5598,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         }
         const p = DB.adPlan((ad && ad.plano) || dados.plano);
         const valor = Number(pagamento.valor_centavos != null ? pagamento.valor_centavos : p.valor || 0);
+        try { sessionStorage.removeItem('qf_pending_ad_draft'); } catch (_) {}
         PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('checkCircle') + '</div><h3 class="sheet__title" style="text-align:center;">Anúncio recebido</h3><p class="text text--secondary" style="text-align:center;">Pagamento de teste confirmado: <strong>' + PU.formatCurrency(valor) + '</strong>. O anúncio foi salvo no Supabase e está <strong>aguardando aprovação do administrador</strong>. Depois de aprovado, ficará no ar por 30 dias.</p><button class="btn btn--primary" id="fechar-anuncio">Entendi</button></div>');
         document.getElementById('fechar-anuncio').onclick = function () {
           PU.closeSheet();
@@ -5530,7 +5607,23 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         };
       } catch (err) {
         const msg = (err && err.message) ? err.message : String(err);
-        PU.toast(msg.indexOf('authentication') !== -1 || msg.indexOf('Entre na sua conta') !== -1 ? 'Entre na sua conta como cliente ou profissional para enviar o anúncio.' : 'Não foi possível enviar o anúncio: ' + msg, 'danger');
+        if (msg.indexOf('authentication') !== -1 || msg.indexOf('Entre na sua conta') !== -1) {
+          try {
+            const retryFields = {};
+            new FormData(form).forEach(function (value, key) { if (typeof value === 'string') retryFields[key] = value; });
+            sessionStorage.setItem('qf_pending_ad_draft', JSON.stringify({ fields: retryFields, imageData: imageData, savedAt: Date.now() }));
+          } catch (_) {}
+          PU.openSheet(
+            '<div class="stack"><h3 class="sheet__title" style="text-align:center;">Sua sessão expirou</h3>' +
+            '<p class="text text--secondary" style="text-align:center;">Seu anúncio está salvo. Entre novamente para continuar.</p>' +
+            '<button class="btn btn--primary" id="qf-ad-relogin-cliente">Entrar como cliente</button>' +
+            '<button class="btn btn--outline" id="qf-ad-relogin-prof">Entrar como profissional</button></div>'
+          );
+          document.getElementById('qf-ad-relogin-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
+          document.getElementById('qf-ad-relogin-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
+        } else {
+          PU.toast('Não foi possível enviar o anúncio: ' + msg, 'danger');
+        }
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Pagar e enviar anúncio'; }
       }
@@ -6097,7 +6190,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.6.0';
+  const APP_VERSION = '10.7.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
