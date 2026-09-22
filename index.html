@@ -2751,6 +2751,12 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     rebuildCloudReviews(reqs, userId);
 
     const txRes = await client.from('qf_movimentacoes_carteira').select('*').eq('profissional_id', userId).order('criado_em', { ascending: false }).limit(100);
+    const recRes = await client.from('qf_recargas')
+      .select('id,profissional_id,valor_centavos,metodo,status,checkout_url,criado_em,aprovado_em')
+      .eq('profissional_id', userId)
+      .neq('status', 'aprovado')
+      .order('criado_em', { ascending: false })
+      .limit(50);
     if (!txRes.error) {
       DB.state.transactions = (txRes.data || []).map(function (t) {
         return {
@@ -2764,6 +2770,24 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           descricao: t.descricao || 'Movimentação da carteira'
         };
       });
+      if (!recRes.error) {
+        (recRes.data || []).forEach(function (r) {
+          const label = r.metodo === 'cartao' ? 'Cartão' : (r.metodo === 'boleto' ? 'Boleto' : 'Pix');
+          DB.state.transactions.push({
+            id: r.id,
+            profissionalId: userId,
+            requestId: null,
+            tipo: 'recarga_pendente',
+            status: r.status,
+            valor: Number(r.valor_centavos || 0),
+            metodo: label,
+            criadoEm: r.criado_em,
+            checkoutUrl: r.checkout_url || null,
+            descricao: 'Recarga via ' + label
+          });
+        });
+        DB.state.transactions.sort(function (a, b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
+      }
     }
     DB.persist();
   }
@@ -2971,8 +2995,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       await ensureProfile(res.data.user, role, data);
       await applyPendingIdentity(data.email);
       const local = await syncLocalUser(res.data.user, role);
-      DB.setSession({ role: role, userId: res.data.user.id });
-      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
+      DB.setSession({ role: role, userId: res.data.user.id });      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       return { ok: true, user: local, session: DB.getSession() };
     } catch (e) {
       return { ok: false, error: e.message || String(e) };
@@ -2995,7 +3018,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       DB.setSession({ role: p.tipo, userId: res.data.user.id });
       if (p.tipo === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       lastSyncAt = Date.now();
-      return { ok: true, user: local, session: DB.getSession() };    } catch (e) {
+      return { ok: true, user: local, session: DB.getSession() };
+    } catch (e) {
       return { ok: false, error: e.message || String(e) };
     }
   }
@@ -3004,6 +3028,40 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (client) await client.auth.signOut();
     DB.setSession(null);
     clearRuntimeData();
+  }
+
+  async function startPagBankCheckout(tipo, pagamentoId) {
+    const route = tipo === 'prioridade' ? '#/cliente/pedidos' : '#/profissional/carteira';
+    const returnUrl = location.origin + location.pathname + route;
+    const fn = await client.functions.invoke('quemfaz-pagbank-checkout', {
+      body: { tipo: tipo, pagamento_id: pagamentoId, return_url: returnUrl }
+    });
+    if (fn.error) throw new Error(fn.error.message || 'Não foi possível iniciar o pagamento.');
+    const out = fn.data || {};
+    if (!out.ok) {
+      if (out.error === 'pagbank_not_configured') throw new Error('PagBank ainda não está configurado no servidor.');
+      throw new Error(out.error || 'Não foi possível gerar o checkout.');
+    }
+    return out;
+  }
+
+  async function createRecharge(valorCentavos, metodo) {
+    const pay = await client.rpc('qf_solicitar_recarga', {
+      p_valor_centavos: Number(valorCentavos),
+      p_metodo: metodo || 'pix'
+    });
+    if (pay.error) throw pay.error;
+    const row = pay.data || {};
+    if (!row.recarga_id) throw new Error('A recarga não foi criada.');
+    const checkout = await startPagBankCheckout('recarga', row.recarga_id);
+    return {
+      id: row.recarga_id,
+      status: row.status || 'pendente',
+      valor: Number(row.valor_centavos || valorCentavos || 0),
+      metodo: row.metodo || metodo || 'pix',
+      checkoutUrl: checkout.checkout_url || null,
+      checkoutId: checkout.checkout_id || null
+    };
   }
 
   async function createCall(data) {
@@ -3052,6 +3110,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           criadoEm: new Date().toISOString()
         };
         req.prioridade = !!out.prioridade_ativa;
+        if (!req.prioridade && req.pagamentoPrioridade.id && !req.pagamentoPrioridade.checkoutUrl) {
+          try {
+            const checkout = await startPagBankCheckout('prioridade', req.pagamentoPrioridade.id);
+            req.pagamentoPrioridade.checkoutUrl = checkout.checkout_url || null;
+          } catch (checkoutErr) {
+            req.pagamentoPrioridade.erro = checkoutErr && checkoutErr.message ? checkoutErr.message : String(checkoutErr || '');
+          }
+        }
       }
     }
 
@@ -3255,6 +3321,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     signUp: signUp,
     signIn: signIn,
     signOut: signOut,
+    startPagBankCheckout: startPagBankCheckout,
+    createRecharge: createRecharge,
     createCall: createCall,
     unlockCall: unlockCall,
     sendQuote: sendQuote,
@@ -3926,7 +3994,6 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     for (let i = 1; i <= 5; i++) s += icon(i <= nota ? 'starFilled' : 'star');
     return s + '</span>';
   }
-
   // ---------------- Novo pedido ----------------
 
   Screens.clienteNovoPedidoRender = function (params, user) {
@@ -3977,7 +4044,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
             '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><div class="text--strong">Pacote Prioridade</div><div class="text--sm text--secondary">Opcional · pagamento obrigatório · ' + PU.formatCurrency(DB.state.settings.prioridadeCliente || 690) + '</div><div class="text--sm" style="color:var(--orange-700);margin-top:3px;">A prioridade só fica ativa depois da confirmação do pagamento.</div></div></div>' +
             '<input type="checkbox" name="prioridade" value="1" style="width:22px;height:22px;accent-color:var(--orange-600);margin-top:4px;">' +
           '</label>' +
-          '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão</option><option value="boleto">Boleto</option></select></label>' +
+          '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão de crédito</option><option value="boleto">Boleto</option></select></label>' +
           '<button class="btn btn--primary" type="submit" style="margin-top:4px;">' + icon('search') + ' Publicar chamado</button>' +
         '</form>' +
       '</div>'
@@ -3994,7 +4061,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       return '<div class="view">' + emptyPedidos() + '</div>';
     }
     return (
-      '<div class="view">' +        (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(pedidoCard).join('') + '</div></div>' : '') +
+      '<div class="view">' +
+        (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(pedidoCard).join('') + '</div></div>' : '') +
         (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(pedidoCard).join('') + '</div></div>' : '') +
       '</div>'
     );
@@ -4071,8 +4139,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || DB.state.settings.prioridadeCliente || 690) + '</div>'
               : '<div class="badge badge--success" style="margin-top:12px;"><span class="badge__dot"></span>Chamado normal gratuito</div>')) +
           (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.checkoutUrl
-            ? '<a class="btn btn--primary btn--block-auto" href="' + PU.escapeHtml(req.pagamentoPrioridade.checkoutUrl) + '" target="_blank" rel="noopener" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade</a>'
-            : '') +
+            ? '<a class="btn btn--primary btn--block-auto" href="' + PU.escapeHtml(req.pagamentoPrioridade.checkoutUrl) + '" rel="noopener" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade</a>'
+            : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.id
+              ? '<button class="btn btn--primary btn--block-auto" data-action="gerar-pagamento-prioridade" data-payment-id="' + PU.escapeHtml(req.pagamentoPrioridade.id) + '" style="margin-top:12px;">' + icon('bolt') + ' Gerar pagamento</button>'
+              : '')) +
         '</div>' +
       '</div>'
     );
@@ -4490,6 +4560,26 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           global.navigate('/cliente/pedido/' + req.id, true);
         }
       }
+      if (act === 'gerar-pagamento-prioridade') {
+        if (!(global.QFCloud && global.QFCloud.enabled)) return;
+        const paymentId = action.getAttribute('data-payment-id');
+        action.disabled = true;
+        const oldHtml = action.innerHTML;
+        action.textContent = 'Gerando pagamento...';
+        (async function () {
+          try {
+            const out = await global.QFCloud.startPagBankCheckout('prioridade', paymentId);
+            if (!out.checkout_url) throw new Error('O link de pagamento não foi gerado.');
+            if (req.pagamentoPrioridade) req.pagamentoPrioridade.checkoutUrl = out.checkout_url;
+            DB.persist();
+            location.href = out.checkout_url;
+          } catch (err) {
+            PU.toast((err && err.message) || 'Não foi possível gerar o pagamento.', 'danger');
+            action.disabled = false;
+            action.innerHTML = oldHtml;
+          }
+        })();
+      }
       if (act === 'cancelar-pedido') {
         PU.confirmDialog({ title: 'Cancelar pedido', message: 'Tem certeza que deseja cancelar este pedido?', okLabel: 'Cancelar pedido', danger: true }).then(function (ok) {
           if (!ok) return;
@@ -4903,8 +4993,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<label class="field"><span class="field__label">Taxa de visita</span><input class="input" name="taxaVisita" inputmode="decimal" value="' + (req.taxaVisita ? (req.taxaVisita / 100).toFixed(2).replace('.', ',') : '') + '" placeholder="R$ 0,00"></label>' +
           '<label class="field"><span class="field__label">Mão de obra</span><input class="input" name="maoDeObra" inputmode="decimal" required placeholder="R$ 0,00" value="' + (req.orcamento ? (req.orcamento.maoDeObra / 100).toFixed(2).replace('.', ',') : '') + '"></label>' +
           '<label class="field"><span class="field__label">Material</span><input class="input" name="material" inputmode="decimal" placeholder="R$ 0,00" value="' + (req.orcamento ? (req.orcamento.material / 100).toFixed(2).replace('.', ',') : '') + '"></label>' +
-          '<div class="card row-between" style="background:var(--navy-100);border:none;">' +
-            '<span class="text--strong" style="color:var(--navy-900);">Total</span>' +
+          '<div class="card row-between" style="background:var(--navy-100);border:none;">' +            '<span class="text--strong" style="color:var(--navy-900);">Total</span>' +
             '<span class="h2" id="orcamento-total" style="color:var(--navy-900);">R$ 0,00</span>' +
           '</div>' +
           '<button class="btn btn--primary" type="submit">' + icon('arrowRight') + ' Enviar orçamento ao cliente</button>' +
@@ -4946,7 +5035,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               '</div>' +
             '</div>' +
             '<button class="btn btn--primary" data-action="iniciar-recarga" data-wallet-selected-value="5000" data-wallet-selected-method="pix">' + icon('plus') + ' Adicionar R$ 50,00</button>' +
-            '<p class="text--sm text--secondary" style="text-align:center;">Carteira conectada ao Supabase. A recarga real por Pix, cartão e boleto entra na próxima etapa.</p>' +
+            '<p class="text--sm text--secondary" style="text-align:center;">Pix, cartão de crédito e boleto. O saldo entra somente depois da confirmação do PagBank.</p>' +
           '</div>' +
         '</div>' +
 
@@ -4966,11 +5055,13 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
                 const debit = t.tipo === 'debito';
                 const bonusTx = t.tipo === 'bonus';
                 const pending = t.tipo === 'recarga_pendente' || t.status === 'pendente';
-                const positive = t.tipo === 'recarga';
+                const failed = t.status === 'cancelado' || t.status === 'expirado' || t.status === 'estornado';
+                const positive = t.tipo === 'recarga' || t.tipo === 'credito';
                 const valueText = bonusTx ? 'GRÁTIS' : (debit ? '−' : (positive ? '+' : '')) + PU.formatCurrency(t.valor || 0);
-                const valueColor = debit ? 'var(--danger-600)' : (pending ? 'var(--warning-600)' : 'var(--success-600)');
+                const valueColor = debit || failed ? 'var(--danger-600)' : (pending ? 'var(--warning-600)' : 'var(--success-600)');
+                const statusText = pending ? ' · aguardando pagamento' : (failed ? ' · ' + t.status : '');
                 return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon(debit || bonusTx ? 'unlock' : (t.metodo === 'Cartão' ? 'creditCard' : t.metodo === 'Boleto' ? 'document' : 'money')) + '</div>' +
-                  '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(t.descricao) + '</div><div class="list-item__sub">' + PU.formatDateTime(t.criadoEm) + (pending ? ' · aguardando compensação' : '') + '</div></div>' +
+                  '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(t.descricao) + '</div><div class="list-item__sub">' + PU.formatDateTime(t.criadoEm) + statusText + '</div></div>' +
                   '<div class="text--strong" style="color:' + valueColor + ';">' + valueText + '</div></div>';
               }).join('') + '</div>'
             : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('wallet') + '</div><p class="text text--secondary">Nenhuma movimentação ainda.</p></div>') +
@@ -4993,7 +5084,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   // ---------------- Perfil profissional ----------------
 
-  Screens.profPerfilRender = function (params, user) {    const cidade = DB.cityById(user.cidadeId);
+  Screens.profPerfilRender = function (params, user) {
+    const cidade = DB.cityById(user.cidadeId);
     const cats = DB.categories();
     const docs = user.documentos || {};
     return (
@@ -5536,13 +5628,48 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   function openRechargeSheet(user, valor, method) {
     const displayValue = PU.formatCurrency(valor);
     if (global.QFCloud && global.QFCloud.enabled) {
+      const methodLabel = method === 'cartao' ? 'cartão de crédito' : (method === 'boleto' ? 'boleto' : 'Pix');
       PU.openSheet(
         '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('wallet') + '</div>' +
-        '<h3 class="sheet__title" style="text-align:center;">Carteira real conectada</h3>' +
-        '<p class="text text--secondary" style="text-align:center;">Seu saldo é controlado pelo Supabase. A cobrança real de ' + displayValue + ' por Pix, cartão ou boleto será ligada ao provedor de pagamento na próxima etapa.</p>' +
-        '<button class="btn btn--primary" id="wallet-next-ok">Entendi</button></div>'
+        '<h3 class="sheet__title" style="text-align:center;">Gerando pagamento</h3>' +
+        '<p class="text text--secondary" style="text-align:center;">Preparando ' + methodLabel + ' de <strong>' + displayValue + '</strong> no PagBank...</p>' +
+        '<div class="text--sm text--secondary" style="text-align:center;">O saldo só entra após a confirmação do pagamento.</div></div>'
       );
-      document.getElementById('wallet-next-ok').onclick = function () { PU.closeSheet(); };
+      (async function () {
+        try {
+          const rec = await global.QFCloud.createRecharge(valor, method);
+          if (!rec.checkoutUrl) throw new Error('O link de pagamento não foi gerado.');
+          PU.openSheet(
+            '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon(method === 'cartao' ? 'creditCard' : (method === 'boleto' ? 'document' : 'bolt')) + '</div>' +
+            '<h3 class="sheet__title" style="text-align:center;">Pagamento seguro</h3>' +
+            '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' via ' + methodLabel + '. Você será direcionado ao PagBank para concluir.</p>' +
+            '<a class="btn btn--primary" href="' + PU.escapeHtml(rec.checkoutUrl) + '" rel="noopener">Ir para o PagBank</a>' +
+            '<button class="btn btn--outline" id="wallet-refresh-after-pay">Já paguei · atualizar saldo</button>' +
+            '<p class="text--sm text--secondary" style="text-align:center;">O QuemFaz não recebe nem armazena número do cartão ou CVV.</p></div>'
+          );
+          const refresh = document.getElementById('wallet-refresh-after-pay');
+          if (refresh) refresh.onclick = async function () {
+            refresh.disabled = true;
+            try {
+              await global.QFCloud.syncForCurrentSession(true);
+              PU.closeSheet();
+              global.navigate('/profissional/carteira', true);
+            } catch (err) {
+              PU.toast('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.', 'danger');
+              refresh.disabled = false;
+            }
+          };
+        } catch (err) {
+          PU.openSheet(
+            '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('alertTriangle') + '</div>' +
+            '<h3 class="sheet__title" style="text-align:center;">Pagamento não iniciado</h3>' +
+            '<p class="text text--secondary" style="text-align:center;">' + PU.escapeHtml((err && err.message) || 'Não foi possível gerar o pagamento.') + '</p>' +
+            '<button class="btn btn--outline" id="wallet-payment-close">Fechar</button></div>'
+          );
+          const close = document.getElementById('wallet-payment-close');
+          if (close) close.onclick = function () { PU.closeSheet(); };
+        }
+      })();
       return;
     }
     if (method === 'pix') {
@@ -5724,7 +5851,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.4.0';
+  const APP_VERSION = '10.5.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -5865,8 +5992,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       const resp = await fetch(fresh.toString(), { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
       if (!resp.ok) throw new Error('http ' + resp.status);
     } catch (_) {
-      // Em content:// / file:// o fetch pode falhar; ainda fazemos a recarga abaixo.
-    }
+      // Em content:// / file:// o fetch pode falhar; ainda fazemos a recarga abaixo.    }
 
     try {
       const u = new URL(location.href);
@@ -5992,7 +6118,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   if (isStandalone()) rememberInstalled(true);
   global.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
-    rememberInstalled(false);    deferredPrompt = e;
+    rememberInstalled(false);
+    deferredPrompt = e;
     fillInstallSlots();
   });
   global.addEventListener('appinstalled', function () {
