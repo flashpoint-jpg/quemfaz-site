@@ -5680,7 +5680,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
             '<h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3>' +
             '<p class="text text--secondary" style="text-align:center;">Valor: <strong>' + PU.formatCurrency(valor) + '</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>' +
             (qrImage ? '<img src="' + PU.escapeHtml(qrImage) + '" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">' : '') +
-            (pixCode ? '<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">' + PU.escapeHtml(pixCode) + '</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">' + icon('copy') + ' Copiar Pix</button>' : '') +
+            (pixCode ? '<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">' + PU.escapeHtml(pixCode) + '</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">' + icon('clipboard') + ' Copiar Pix</button>' : '') +
             (checkoutUrl ? '<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>' : '') +
             '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div>' +
             '<button class="btn btn--outline" id="fechar-anuncio">Fechar</button>' +
