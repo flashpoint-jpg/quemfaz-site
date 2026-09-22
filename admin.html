@@ -954,6 +954,90 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
   #app-shell #app-content { padding-bottom: 16px; }
 }
 @media (max-width: 360px) { .segmented__item { padding: 9px 8px; } .view { padding-left: 14px; padding-right: 14px; } }
+
+/* Desktop real: painel administrativo ocupa a tela inteira. */
+@media (min-width: 900px) {
+  :root {
+    --app-max-width: 100vw;
+    --tabbar-height: 64px;
+  }
+  html, body {
+    width: 100%;
+    min-width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    display: block;
+    padding: 0;
+    background: var(--bg-page);
+  }
+  #app-shell {
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  #app-shell #app-content {
+    width: 100%;
+    min-height: calc(100vh - 64px);
+    padding-bottom: 88px;
+  }
+  .view {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 30px 36px 40px;
+  }
+  .topbar {
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    padding-left: 36px;
+    padding-right: 36px;
+  }
+  .tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding-left: max(24px, calc((100vw - 1440px) / 2 + 24px));
+    padding-right: max(24px, calc((100vw - 1440px) / 2 + 24px));
+    border-radius: 0;
+  }
+  .tabbar__item {
+    flex: 0 1 210px;
+    min-width: 140px;
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  #app-shell[data-route="admin-profissionais"] .view > .stack--sm,
+  #app-shell[data-route="admin-clientes"] .view > .stack--sm,
+  #app-shell[data-route="admin-servicos"] .view > .stack--sm {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 16px;
+  }
+  #app-shell[data-route="admin-profissionais"] .view > .stack--sm > *,
+  #app-shell[data-route="admin-clientes"] .view > .stack--sm > *,
+  #app-shell[data-route="admin-servicos"] .view > .stack--sm > * {
+    margin-top: 0 !important;
+  }
+}
+@media (min-width: 1400px) {
+  #app-shell[data-route="admin-profissionais"] .view > .stack--sm,
+  #app-shell[data-route="admin-clientes"] .view > .stack--sm {
+    grid-template-columns: repeat(3, minmax(0,1fr));
+  }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -4063,7 +4147,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
   function cloudOn() { return !!(global.QFAdminCloud && global.QFAdminCloud.enabled); }
   function migrationBanner() {
     if (!cloudOn() || global.QFAdminCloud.snapshotOk !== false) return '';
-    return '<div class="card card--tight" style="background:var(--warning-100);border:none;margin-bottom:12px;"><div class="text--strong" style="color:var(--warning-600);">Aplique a migration V10.2 no Supabase</div><div class="text--sm" style="color:var(--warning-600);">Sem ela o painel não consegue listar profissionais, clientes, chamados e receitas reais. Nenhum dado de demonstração é exibido.</div></div>';
+    return '<div class="card card--tight" style="background:var(--warning-100);border:none;margin-bottom:12px;"><div class="text--strong" style="color:var(--warning-600);">Não foi possível carregar os dados do painel</div><div class="text--sm" style="color:var(--warning-600);">Atualize a página. Se continuar, verifique a conexão com o banco de dados.</div></div>';
   }
   Screens.adminDashboardRender = function () {
     const s = DB.dashboardStats();
