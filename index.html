@@ -6,6 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
+<!-- V10.6: layout responsivo para computador/tablet + correção de erro de sintaxe que travava o app em "Carregando..." -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -996,8 +997,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 .hairline { height: 1px; background: var(--border-subtle); border: none; margin: 4px 0; }
 .divider-label { display: flex; align-items: center; gap: 10px; color: var(--text-muted); font-size: 12px; font-weight: 700; margin: 4px 0; }
-.divider-label::before, .divider-label::after { content: ""; height: 1px; background: var(--border-subtle); flex: 1; }
-.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.text-right { text-align: right; }
+.divider-label::before, .divider-label::after { content: ""; height: 1px; background: var(--border-subtle); flex: 1; }.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.text-right { text-align: right; }
 .mt-0 { margin-top: 0 !important; }
 
 .skip-link {
@@ -1063,380 +1063,256 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .qf-install .btn { width:auto; flex:none; --btn-h:42px; padding:0 14px; }
 .qf-conn-error { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; text-align:center; padding:24px; }
 
-/* ---------- V10.6 DESKTOP RESPONSIVO ---------- */
-/* Mobile permanece com aparência de app. A partir de 768px deixa de usar moldura de celular. */
+/* =====================================================================
+   V10.6 — Layout responsivo de computador/tablet
+   Celular (< 768px): mantém exatamente a aparência de app (menu inferior).
+   Tablet (768–1023px): menu no topo, conteúdo em coluna central confortável.
+   Computador (>= 1024px): menu no topo + grades de 2/3 colunas por tela.
+   ===================================================================== */
+
+/* Logotipo (marca laranja + palavra) usado no menu e no título da home */
+.qf-brandmark {
+  width: 34px; height: 34px; border-radius: 11px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--orange-500); color: #fff;
+  box-shadow: 0 8px 18px -10px rgba(224,99,15,.7);
+}
+.qf-brandmark svg { width: 22px; height: 22px; display: block; }
+.topbar__title--brand { display: flex; align-items: center; gap: 9px; font-weight: 900; letter-spacing: -.03em; font-size: 20px; }
+.topbar__title--brand > span:last-child span { color: var(--orange-600); }
+.tabbar__brand { display: none; }
+
+/* Celular: nomes de categoria não quebram no meio da palavra */
+.category-tile__label { overflow-wrap: break-word; word-break: normal; hyphens: manual; }
+@media (max-width: 400px) {
+  .category-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (min-width: 768px) {
-  :root {
-    --app-max-width: 1440px;
-  }
+  :root { --desk-max: 1200px; --desk-pad: 32px; }
 
-  html, body {
-    width: 100%;
-    min-height: 100%;
-  }
-
-  body {
-    display: block;
-    padding: 0;
-    background: #e9edf4;
-    overflow-x: hidden;
-  }
-
+  body { display: block; padding: 0; background: var(--bg-page); min-height: 100vh; }
   #app-shell {
-    width: min(100%, 1440px);
-    max-width: 1440px;
-    min-height: 100vh;
-    margin: 0 auto;
-    border-radius: 0;
-    box-shadow: none;
-    overflow: visible;
-    background: var(--bg-page);
+    max-width: none; width: 100%; margin: 0;
+    min-height: 100vh; border-radius: 0; box-shadow: none;
+    overflow: visible; background: var(--bg-page);
   }
+  #app-shell #app-content { padding-bottom: 56px; flex: 1 0 auto; }
 
-  #app-shell #app-content {
-    width: 100%;
-    min-width: 0;
-    padding-bottom: 28px;
+  /* Menu de celular vira barra de navegação superior */
+  .tabbar {
+    order: -1; position: sticky; top: 0; bottom: auto; left: auto; transform: none;
+    width: 100%; max-width: none; height: 68px; margin: 0; padding: 0 max(var(--desk-pad), calc((100% - var(--desk-max)) / 2 + var(--desk-pad)));
+    gap: 4px; align-items: center; justify-content: flex-end;
+    box-shadow: 0 6px 24px -12px rgba(8,20,40,.45);
   }
-
-  .view {
-    width: 100%;
-    max-width: 1320px;
-    margin: 0 auto;
-    padding: 24px clamp(24px, 4vw, 56px) 32px;
+  .tabbar__brand {
+    display: inline-flex; align-items: center; gap: 10px; margin-right: auto;
+    background: none; border: 0; padding: 0; cursor: pointer; color: #fff;
   }
-
-  .view--flush {
-    max-width: none;
-    padding: 0;
+  .tabbar__brand .qf-brandmark { width: 38px; height: 38px; border-radius: 12px; }
+  .tabbar__brand .qf-brandmark svg { width: 24px; height: 24px; }
+  .tabbar__brand-word { font-size: 22px; font-weight: 900; letter-spacing: -.035em; line-height: 1; }
+  .tabbar__brand-word span { color: var(--orange-400); }
+  .tabbar__item {
+    flex: none; flex-direction: row; gap: 8px; height: 44px; padding: 0 16px;
+    border-radius: 12px; font-size: 14px; font-weight: 700; color: #d4dcea;
+    transition: background .15s ease, color .15s ease;
   }
+  .tabbar__item svg { width: 19px; height: 19px; }
+  .tabbar__item:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .tabbar__item.is-active { background: rgba(255,149,72,.14); color: var(--orange-400); }
+  .tabbar__item.is-active::before { top: auto; bottom: -12px; width: 32px; left: 50%; transform: translateX(-50%); }
+  .tabbar__notice-badge { top: 4px; left: 26px; }
 
+  /* Cabeçalho de página e conteúdo centralizados */
   .topbar {
-    padding: 16px clamp(24px, 4vw, 56px) 12px;
-    min-height: 64px;
-    border-bottom: 1px solid var(--border-subtle);
+    position: static; background: transparent;
+    width: 100%; max-width: var(--desk-max); margin: 0 auto;
+    padding: 28px var(--desk-pad) 6px;
+  }
+  .topbar__title { font-size: 26px; letter-spacing: -.02em; }
+  .topbar:has(.topbar__title--brand) { display: none; }
+  .topbar__back { width: 40px; height: 40px; box-shadow: var(--shadow-card); }
+  .view { width: 100%; max-width: 760px; margin: 0 auto; padding: 18px var(--desk-pad) 24px; }
+
+  /* Janelas: diálogo centralizado em vez de folha de celular */
+  .overlay { align-items: center; padding: 24px; }
+  .sheet { max-width: 520px; border-radius: 24px; padding: 18px 28px 26px; max-height: 88vh; box-shadow: var(--shadow-float); }
+  .sheet__handle { display: none; }
+  .toast-stack { max-width: 460px; top: 84px; }
+
+  /* Tipografia e controles proporcionais */
+  .h1 { font-size: 30px; }
+  .h2 { font-size: 22px; }
+  .section-head .h3, .section-head h2.h3 { font-size: 17px; }
+  .btn:hover { filter: brightness(1.03); }
+  .card--pressable:hover, .category-tile:hover, .role-card:hover { box-shadow: 0 10px 28px -16px rgba(11,29,58,.45); border-color: var(--border-strong); }
+  .category-tile, .role-card { transition: box-shadow .15s ease, border-color .15s ease, transform .1s ease; }
+  .card + .card { margin-top: 12px; }
+
+  /* Formulários: largura confortável */
+  form.stack, form.stack--lg { max-width: 680px; }
+  .ad-carousel { gap: 14px; }
+  .ad-card { flex-basis: calc((100% - 14px) / 2); }
+  .ad-plan-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .category-tiles { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
+  .category-tile { padding: 16px 8px 14px; }
+  .category-tile__label { font-size: 12.5px; }
+
+  /* Tela inicial (visitante) e login/cadastro */
+  #app-shell[data-role="anon"] #app-content { padding-bottom: 0; }
+  #app-shell[data-route="inicio"] #app-content {
+    width: 100%; max-width: 1180px; margin: 0 auto; min-height: 100vh;
+    padding: 40px var(--desk-pad) !important;
+    display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-content: center;
+  }
+  #app-shell[data-route="inicio"] .qf-approved-hero { max-width: 560px; margin: 0 auto; border-radius: 28px; box-shadow: var(--shadow-float); }
+  #app-shell[data-route="inicio"] .qf-approved-hero img { margin-bottom: -14px; }
+  #app-shell[data-route="inicio"] .qf-intro-card { margin: 0 auto; width: 100%; max-width: 560px; }
+  #app-shell[data-route="inicio"] .view { padding: 0; max-width: 560px; }
+  #app-shell[data-route^="auth"] #app-content { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 24px !important; }
+  #app-shell[data-route^="auth"] .view {
+    max-width: 480px; background: var(--bg-surface); border: 1px solid var(--border-subtle);
+    border-radius: 28px; box-shadow: var(--shadow-card); padding: 28px 32px 32px;
+  }
+  #app-shell[data-route="anuncie"] #app-content { padding-top: 32px; }
+}
+
+@media (min-width: 1024px) {
+  .view { max-width: var(--desk-max); padding: 20px var(--desk-pad) 32px; }
+  .ad-card { flex-basis: calc((100% - 28px) / 3); }
+
+  /* Grade genérica de 2 colunas por tela */
+  .qf-grid-2, .qf-desk-grid > .view {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px; align-items: start;
+  }
+  .qf-desk-grid > .view > * { grid-column: 1 / -1; margin-top: 0; }
+  .qf-desk-grid > .view > .section { margin-top: 0; }
+  .qf-desk-grid > .view > .qf-half { grid-column: auto; }
+  .qf-desk-grid > .view > .card + .card { margin-top: 0; }
+
+  /* Listas de pedidos/serviços/avisos em 2 colunas */
+  #app-shell[data-route$="pedidos"] .section > .stack--sm,
+  #app-shell[data-route$="servicos"] .section > .stack--sm,
+  #app-shell[data-route$="avisos"] .view > .stack--sm,
+  #app-shell[data-route$="home"] .section > .stack--sm,
+  #app-shell[data-route="profissional-home"] #chamados-disponiveis > .stack--sm {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+  }
+  #app-shell .section > .stack--sm > .card + .card { margin-top: 0; }
+  #app-shell .view > .stack--sm > .notice-card { height: 100%; }
+
+  /* Cliente — início */
+  #app-shell[data-route="cliente-home"] .view { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 24px; align-items: stretch; }
+  #app-shell[data-route="cliente-home"] .view > * { grid-column: 1 / -1; margin-top: 0 !important; }
+  #app-shell[data-route="cliente-home"] .view > .row { padding-top: 4px; }
+  #app-shell[data-route="cliente-home"] .view > .row .avatar { width: 56px; height: 56px; font-size: 18px; }
+  #app-shell[data-route="cliente-home"] .view > div:has(> .qf-install),
+  #app-shell[data-route="cliente-home"] .view > .section:has(> .notify-required, > .notify-ok, > .notify-local) { grid-column: auto; }
+  #app-shell[data-route="cliente-home"] .view > div:has(> .qf-install) > .qf-install,
+  #app-shell[data-route="cliente-home"] .view > .section > .card.notify-required,
+  #app-shell[data-route="cliente-home"] .view > .section > .card.notify-ok,
+  #app-shell[data-route="cliente-home"] .view > .section > .card.notify-local { height: 100%; }
+  #app-shell[data-route="cliente-home"] .view > .section:only-of-type { grid-column: 1 / -1; }
+
+  /* Acompanhar pedido / detalhe do serviço: conteúdo à esquerda, linha do tempo fixa à direita */
+  #app-shell[data-route="cliente-pedido"] .view,
+  #app-shell[data-route="profissional-pedido"] .view {
+    display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 22px 28px; align-items: start;
+  }
+  #app-shell[data-route="cliente-pedido"] .view > *,
+  #app-shell[data-route="profissional-pedido"] .view > * { grid-column: 1; margin-top: 0; }
+  #app-shell[data-route="cliente-pedido"] .view > :first-child,
+  #app-shell[data-route="profissional-pedido"] .view > :first-child { grid-column: 1 / -1; }
+  #app-shell[data-route="cliente-pedido"] .view > .section:has(.status-track),
+  #app-shell[data-route="profissional-pedido"] .view > .section:has(.status-track) {
+    grid-column: 2; grid-row: 2 / span 4; position: sticky; top: 92px;
   }
 
-  .topbar__title {
-    font-size: 20px;
-  }
+  /* Formulários de pedido/orçamento/anúncio: coluna central larga, sem esticar os campos */
+  #app-shell[data-route="cliente-novo-pedido"] .view,
+  #app-shell[data-route="profissional-orcamento"] .view,
+  #app-shell[data-route$="anuncie"] .view,
+  #app-shell[data-route="cliente-endereco"] .view { max-width: 820px; }
+  #app-shell[data-route="cliente-novo-pedido"] .topbar,
+  #app-shell[data-route="profissional-orcamento"] .topbar,
+  #app-shell[data-route$="anuncie"] .topbar,
+  #app-shell[data-route="cliente-endereco"] .topbar { max-width: 820px; }
+  #app-shell[data-route="cliente-novo-pedido"] form.stack,
+  #app-shell[data-route$="anuncie"] form.stack { max-width: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 24px 28px; box-shadow: var(--shadow-card); }
+  #app-shell[data-route$="anuncie"] form .ad-plan-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 
-  .qf-approved-hero {
-    border-radius: 0 0 28px 28px;
-    max-height: 440px;
-  }
+  /* Profissional — chamadas */
+  #app-shell[data-route="profissional-home"] .view { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 24px; align-items: stretch; }
+  #app-shell[data-route="profissional-home"] .view > * { grid-column: auto; margin-top: 0 !important; }
+  #app-shell[data-route="profissional-home"] .view > #chamados-disponiveis { grid-column: 1 / -1; order: 5; }
+  #app-shell[data-route="profissional-home"] .view > .section:has(.ad-plan-grid) { grid-column: 1 / -1; order: 7; }
+  #app-shell[data-route="profissional-home"] .view > .section:has(> .card.row-between) { order: 6; grid-column: 1 / -1; }
+  #app-shell[data-route="profissional-home"] .view > div:has(> .qf-install) > .qf-install { height: 100%; }
+  #app-shell[data-route="profissional-home"] .view > .card { height: 100%; }
+  #app-shell[data-route="profissional-home"] .ad-plan-grid + .btn { max-width: 360px; }
 
-  .qf-approved-hero img {
-    width: 100%;
-    height: clamp(300px, 34vw, 440px);
-    object-fit: cover;
-    object-position: center;
+  /* Profissional — carteira: saldo no topo, recarga à esquerda, ajuda e histórico à direita */
+  #app-shell[data-route="profissional-carteira"] .view {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px 28px; align-items: start;
   }
+  #app-shell[data-route="profissional-carteira"] .view > * { grid-column: 2; margin-top: 0 !important; }
+  #app-shell[data-route="profissional-carteira"] .view > :first-child { grid-column: 1 / -1; }
+  #app-shell[data-route="profissional-carteira"] .view > .section:has([data-action="iniciar-recarga"]) { grid-column: 1; grid-row: 2 / span 2; }
 
-  .qf-premium-hero {
-    min-height: 520px;
-    border-radius: 0 0 30px 30px;
+  /* Perfis */
+  #app-shell[data-route$="perfil"] .view,
+  #app-shell[data-route="cliente-perfil"] .view {
+    display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 24px; align-items: start;
   }
+  #app-shell[data-route$="perfil"] .view > * { margin-top: 0 !important; }
+  #app-shell[data-route$="perfil"] .view > .card.row:first-child,
+  #app-shell[data-route$="perfil"] .view > p,
+  #app-shell[data-route$="perfil"] .view > .section:has(> [data-logout]) { grid-column: 1 / -1; }
+  #app-shell[data-route$="perfil"] .view > .section:has(> [data-logout]) > .btn { max-width: 320px; margin: 0 auto; display: flex; }
+  #app-shell[data-route="profissional-perfil"] .view > .section:has(#perfil-cats),
+  #app-shell[data-route="profissional-perfil"] .view > .section:has(.status-track) { grid-column: 1 / -1; }
 
-  .qf-premium-hero__photo {
-    height: 100%;
-    background-position: center 22%;
-  }
+  /* Estados vazios e botões isolados não ficam gigantes */
+  .empty-state { padding: 56px 20px; }
+  .empty-state .btn { max-width: 360px; }
+  .qf-update-banner { max-width: calc(var(--desk-max) - 2 * var(--desk-pad)); margin: 16px auto 0; }
+}
 
-  .qf-premium-hero__content {
-    min-height: 520px;
-    padding: 32px clamp(40px, 7vw, 92px) 42px;
-  }
-
-  .qf-premium-hero__top {
-    left: clamp(40px, 7vw, 92px);
-    right: clamp(40px, 7vw, 92px);
-    top: 24px;
-  }
-
-  .qf-premium-hero__title {
-    max-width: 720px;
-    font-size: clamp(38px, 4vw, 58px);
-  }
-
-  .qf-premium-hero__text {
-    max-width: 680px;
-    font-size: 16px;
-  }
-
-  .qf-premium-hero__proof {
-    max-width: 720px;
-    gap: 12px;
-  }
-
-  .qf-intro-card {
-    max-width: 980px;
-    margin: -18px auto 0;
-    padding: 20px 24px;
-  }
-
-  .category-tiles {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .category-tile {
-    min-height: 128px;
-    padding: 16px 10px 14px;
-  }
-
-  .category-tile__icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .category-tile__label {
-    font-size: 13px;
-  }
-
-  .kpi-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .ad-plan-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .ad-card {
-    flex-basis: min(48%, 520px);
-  }
-
-  .card {
-    padding: 20px;
-  }
-
-  .card + .card {
-    margin-top: 14px;
-  }
-
-  .sheet {
-    max-width: 720px;
-    border-radius: 24px;
-    margin-bottom: 24px;
-  }
-
-  .toast-stack {
-    max-width: 560px;
-  }
-
-  .qf-update-banner {
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .qf-install {
-    max-width: 900px;
-  }
-
-  .btn-row {
+@media (min-width: 1024px) and (min-height: 640px) {
+  /* Visitante: foto à esquerda, escolha de perfil à direita */
+  #app-shell[data-route="inicio"] #app-content {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); column-gap: 48px; row-gap: 20px;
     align-items: center;
   }
-
-  .btn-row .btn {
-    min-width: 150px;
-  }
-
-  .role-card {
-    padding: 20px;
-  }
+  #app-shell[data-route="inicio"] .qf-approved-hero { grid-row: 1 / span 2; max-width: 600px; margin: 0; width: 100%; }
+  #app-shell[data-route="inicio"] .qf-intro-card,
+  #app-shell[data-route="inicio"] .view { max-width: 520px; margin: 0; align-self: end; }
+  #app-shell[data-route="inicio"] .view { align-self: start; }
 }
 
-/* Notebook/tablet grande: navegação horizontal superior em vez de barra móvel espremida. */
-@media (min-width: 768px) and (max-width: 1099px) {
-  #app-shell {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .tabbar {
-    order: -1;
-    position: sticky;
-    left: auto;
-    top: 0;
-    bottom: auto;
-    transform: none;
-    width: 100%;
-    max-width: none;
-    height: 64px;
-    padding: 0 18px;
-    justify-content: center;
-    gap: 8px;
-    z-index: 50;
-  }
-
-  .tabbar__item {
-    flex: 0 1 160px;
-    min-width: 110px;
-    flex-direction: row;
-    gap: 8px;
-    font-size: 13px;
-    padding: 0 12px;
-    border-radius: 12px;
-  }
-
-  .tabbar__item.is-active {
-    background: rgba(255,255,255,.08);
-  }
-
-  .tabbar__item.is-active::before {
-    top: auto;
-    bottom: 0;
-    width: 46px;
-  }
-
-  .tabbar__notice-badge {
-    top: 9px;
-    left: auto;
-    right: 8px;
-  }
+@media (min-width: 1440px) {
+  :root { --desk-max: 1280px; }
+  #app-shell[data-route="inicio"] #app-content { max-width: 1320px; }
+  #app-shell[data-route="inicio"] .qf-approved-hero { max-width: 660px; }
+  #app-shell[data-route="inicio"] .qf-intro-card,
+  #app-shell[data-route="inicio"] .view { max-width: 560px; }
+  .ad-card { min-height: 190px; }
 }
 
-/* Desktop: navegação lateral fixa, conteúdo amplo e aproveitamento real da tela. */
-@media (min-width: 1100px) {
-  #app-shell {
-    display: block;
-    position: relative;
-  }
-
-  #app-shell #app-content {
-    margin-left: 96px;
-    width: calc(100% - 96px);
-    padding-bottom: 28px;
-  }
-
-  .tabbar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: max(0px, calc(50vw - 720px));
-    transform: none;
-    width: 96px;
-    max-width: 96px;
-    height: 100vh;
-    padding: 28px 10px;
-    flex-direction: column;
-    justify-content: center;
-    gap: 10px;
-    box-shadow: 8px 0 24px rgba(8,20,40,.16);
-  }
-
-  .tabbar__item {
-    flex: 0 0 auto;
-    width: 76px;
-    min-height: 68px;
-    border-radius: 16px;
-    padding: 9px 6px;
-    font-size: 11px;
-  }
-
-  .tabbar__item:hover {
-    background: rgba(255,255,255,.08);
-    color: #fff;
-  }
-
-  .tabbar__item.is-active {
-    background: rgba(255,255,255,.10);
-  }
-
-  .tabbar__item.is-active::before {
-    width: 4px;
-    height: 34px;
-    left: -10px;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .tabbar__notice-badge {
-    top: 8px;
-    left: auto;
-    right: 8px;
-  }
-
-  .view {
-    max-width: 1240px;
-  }
-
-  .view > .stack {
-    max-width: 1160px;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .category-tiles {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-
-  .ad-card {
-    flex-basis: min(38%, 460px);
-  }
-
-  .field {
-    max-width: 100%;
-  }
-
-  form {
-    max-width: 920px;
-  }
+@media (min-width: 1920px) {
+  :root { --desk-max: 1360px; }
+  body { font-size: 16px; }
 }
 
-@media (min-width: 1500px) {
-  .category-tiles {
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-  }
+/* Celular deitado (baixa altura): menu superior compacto já cobre; nada vaza da tela */
+@media (min-width: 768px) and (max-height: 520px) {
+  .tabbar { height: 56px; }
+  .topbar { padding-top: 16px; }
+  #app-shell[data-route="inicio"] #app-content { min-height: 0; }
 }
-
-/* Proteções contra estouro horizontal em todas as telas. */
-#app-shell,
-#app-content,
-.view,
-.card,
-.row,
-.row-between,
-.field,
-.stack,
-.section,
-.segmented,
-.category-tile,
-.role-card {
-  min-width: 0;
-}
-
-input,
-select,
-textarea,
-button,
-img,
-video,
-canvas,
-svg {
-  max-width: 100%;
-}
-
-@media (min-width: 768px) {
-  .row,
-  .row-between {
-    flex-wrap: wrap;
-  }
-
-  .segmented {
-    flex-wrap: wrap;
-    overflow-x: visible;
-  }
-
-  .segmented__item {
-    min-width: 120px;
-  }
-}
-
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2120,8 +1996,7 @@ svg {
     else writeRaw(SESSION_KEY, JSON.stringify(sess));
   }
 
-  // ---------------------------------------------------------------
-  // Consultas
+  // ---------------------------------------------------------------  // Consultas
   // ---------------------------------------------------------------
 
   function categories() { return state.categories; }
@@ -3120,8 +2995,7 @@ svg {
         if (existing) Object.assign(existing, clientLocal); else DB.state.users.clientes.push(clientLocal);
       }
     });
-    await attachLatestQuotes(reqs);
-    await attachEvaluations(reqs);
+    await attachLatestQuotes(reqs);    await attachEvaluations(reqs);
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
 
@@ -4120,8 +3994,7 @@ svg {
             return;
           }
           const foundCity = DB.cities().find(function (c) { return String(c.nome).toLowerCase() === String(dados.cidade).toLowerCase() && c.uf === dados.uf; });
-          const localCity = foundCity || DB.criarCidade(dados.cidade, dados.uf);
-          dados.cidadeId = localCity.id;
+          const localCity = foundCity || DB.criarCidade(dados.cidade, dados.uf);          dados.cidadeId = localCity.id;
           const user = DB.cadastrarProfissional(dados);
           DB.setSession({ role: 'profissional', userId: user.id });
           PU.toast('Cadastro criado! Adicione créditos para desbloquear oportunidades.', 'success');
@@ -5120,8 +4993,7 @@ svg {
   Screens.profHomeRender = function (params, user) {
     const chamadas = DB.chamadasPendentes(user.id);
     const podeFicarOnline = user.statusAprovacao === 'aprovado' && !!user.fotoUrl;
-    const adPlans = (DB.state.settings && DB.state.settings.adPlans) || {};
-    const meusAnuncios = (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).sort(function (a,b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
+    const adPlans = (DB.state.settings && DB.state.settings.adPlans) || {};    const meusAnuncios = (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).sort(function (a,b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
     function adStatusLabel(a) {
       if (!a) return '';
       if (a.status === 'ativo') return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';
@@ -5405,7 +5277,7 @@ svg {
             '<div><div class="field__label">Como quer pagar?</div>' +
               '<div class="stack--sm" id="wallet-methods" style="margin-top:8px;">' +
                 walletMethodButton('pix', 'bolt', 'Pix', 'Saldo após a confirmação', true) +
-                walletMethodButton('cartao', 'creditCard', 'Cartão', 'Crédito ou débito · após aprovação', false) +
+                walletMethodButton('cartao', 'creditCard', 'Cartão de crédito', 'Página segura Efí · saldo após aprovação', false) +
                 walletMethodButton('boleto', 'document', 'Boleto', 'Saldo somente após compensação', false) +
               '</div>' +
             '</div>' +
@@ -6120,8 +5992,7 @@ svg {
       selfieInput.disabled = true;
       try {
         const photo = await PU.fileToCompressedDataUrl(file, 480);
-        if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.saveProfessionalSelfie(photo);
-        else DB.atualizarPerfilProfissional(user.id, { fotoUrl: photo });
+        if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.saveProfessionalSelfie(photo);        else DB.atualizarPerfilProfissional(user.id, { fotoUrl: photo });
         PU.toast('Selfie atualizada. Ela será mostrada aos clientes.', 'success');
         global.navigate('/profissional/perfil', true);
       } catch (err) {
@@ -6226,7 +6097,7 @@ svg {
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.5.0';
+  const APP_VERSION = '10.6.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -6367,7 +6238,8 @@ svg {
       const resp = await fetch(fresh.toString(), { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
       if (!resp.ok) throw new Error('http ' + resp.status);
     } catch (_) {
-      // Em content:// / file:// o fetch pode falhar; ainda fazemos a recarga abaixo.    }
+      // Em content:// / file:// o fetch pode falhar; ainda fazemos a recarga abaixo.
+    }
 
     try {
       const u = new URL(location.href);
@@ -6571,6 +6443,8 @@ svg {
 (function (global) {
   const DB = global.DB, PU = global.PU, icon = global.icon;
   const Screens = (global.Screens = global.Screens || {});
+
+  const QF_BRAND_MARK = '<span class="qf-brandmark" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M24 43s12-10.6 12-21A12 12 0 0 0 12 22c0 10.4 12 21 12 21Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M29.8 17.2a7 7 0 0 0-8.9 8.5l-7.2 7.2 4.4 4.4 7.2-7.2a7 7 0 0 0 8.5-8.9l-4.7 4.7-3.5-3.5 4.2-5.2Z" fill="currentColor"/></svg></span>';
 
   const TABS = {
     cliente: [
@@ -6831,8 +6705,15 @@ svg {
     renderApp(found, user, session);
   }
 
+  // V10.6: identifica a tela no #app-shell para o layout de computador/tablet.
+  function routeKey(pattern) {
+    return String(pattern || '/').replace(/:[^/]+/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '') || 'inicio';
+  }
+
   function renderAnon(found) {
     const shell = document.getElementById('app-shell');
+    shell.setAttribute('data-route', routeKey(found.route.pattern));
+    shell.setAttribute('data-role', 'anon');
     shell.innerHTML = '<div id="app-content"></div>';
     const content = document.getElementById('app-content');
     content.style.paddingBottom = '0';
@@ -6858,12 +6739,17 @@ svg {
         '<h1 class="topbar__title">' + PU.escapeHtml(typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title) + '</h1>' +
         '</div>';
     } else if (isTabRoute) {
+      const tabTitle = typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title;
       topbarHtml =
         '<div class="topbar">' +
-        '<h1 class="topbar__title">' + PU.escapeHtml(typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title) + '</h1>' +
+        (tabTitle === 'QuemFaz'
+          ? '<h1 class="topbar__title topbar__title--brand">' + QF_BRAND_MARK + '<span>Quem<span>Faz</span></span></h1>'
+          : '<h1 class="topbar__title">' + PU.escapeHtml(tabTitle) + '</h1>') +
         '</div>';
     }
 
+    shell.setAttribute('data-route', routeKey(found.route.pattern));
+    shell.setAttribute('data-role', session.role);
     shell.innerHTML =
       '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
       topbarHtml +
@@ -6881,6 +6767,7 @@ svg {
   function renderTabbar(tabs, activeId) {
     if (!tabs.length) return '';
     return '<nav class="tabbar" aria-label="Navegação principal">' +
+      '<button class="tabbar__brand" data-nav="' + tabs[0].route + '" aria-label="QuemFaz — início">' + QF_BRAND_MARK + '<span class="tabbar__brand-word">Quem<span>Faz</span></span></button>' +
       tabs.map(function (t) {
         const count = t.id === 'avisos' ? unreadNotices(currentSession()) : 0;
         return '<button class="tabbar__item' + (t.id === activeId ? ' is-active' : '') + '" data-nav="' + t.route + '" aria-current="' + (t.id === activeId ? 'page' : 'false') + '">' +
