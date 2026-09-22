@@ -6,7 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
-<!-- V10.9.1: aviso grátis integrado ao card do cliente -->
+<!-- V10.9.2: botão Atualizar refinado e nítido -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1055,9 +1055,48 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .qf-gate__notes { background:rgba(255,255,255,.08); border-radius:14px; padding:12px 14px; font-size:13px; line-height:1.5; text-align:left; width:100%; white-space:pre-line; color:#e6ebf5; }
 .qf-gate__meta { font-size:12px; color:var(--text-on-navy-muted); }
 .qf-gate__err { font-size:13px; color:#ffb4a0; min-height:18px; }
-.qf-update-banner { display:flex; align-items:center; gap:10px; background:var(--navy-900); color:#fff; border-radius:16px; padding:12px 14px; margin:12px 18px 0; }
+.qf-update-banner {
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--navy-900);
+  color:#fff;
+  border-radius:18px;
+  padding:13px 14px;
+  margin:14px 16px 0;
+  box-shadow:0 8px 24px -18px rgba(8,20,40,.55);
+}
 .qf-update-banner .spacer { flex:1; min-width:0; }
-.qf-update-banner button { flex:none; }
+.qf-update-banner .text--strong { line-height:1.2; }
+.qf-update-banner .text--sm { line-height:1.35; }
+#qf-soft-update {
+  flex:none;
+  width:auto;
+  min-width:108px;
+  height:42px;
+  padding:0 17px;
+  border-radius:12px;
+  background:var(--orange-600);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:none;
+  filter:none;
+  transform:none;
+  font-size:14px;
+  font-weight:850;
+  letter-spacing:.01em;
+  white-space:nowrap;
+  text-rendering:optimizeLegibility;
+  -webkit-font-smoothing:antialiased;
+}
+#qf-soft-update:hover { background:var(--orange-700); filter:none; }
+#qf-soft-update:active { transform:scale(.98); }
+#qf-soft-update:disabled { opacity:.72; box-shadow:none; }
+@media (max-width:420px) {
+  .qf-update-banner { align-items:flex-start; flex-wrap:wrap; }
+  .qf-update-banner .icon-tile { margin-top:2px; }
+  #qf-soft-update { width:100%; min-width:0; margin-top:2px; }
+}
 .qf-install { display:flex; align-items:center; gap:12px; border:1px solid var(--border-subtle); background:#fff; border-radius:18px; padding:12px 14px; box-shadow:var(--shadow-card); }
 .qf-install .spacer { flex:1; min-width:0; }
 .qf-install .btn { width:auto; flex:none; --btn-h:42px; padding:0 14px; }
@@ -6218,7 +6257,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.9.1';
+  const APP_VERSION = '10.9.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -6445,7 +6484,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const div = document.createElement('div');
     div.className = 'qf-update-banner';
     div.id = 'qf-update-banner';
-    div.innerHTML = '<div class="icon-tile icon-tile--orange" style="width:38px;height:38px;">' + icon('download') + '</div><div class="spacer"><div class="text--strong" style="color:#fff;">Atualização disponível</div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (swReady ? 'Toque para carregar a nova versão.' : 'Uma nova versão do QuemFaz está pronta.') + '</div></div><button class="btn btn--primary btn--sm" type="button" id="qf-soft-update">Atualizar</button>';
+    div.innerHTML = '<div class="icon-tile icon-tile--orange" style="width:38px;height:38px;">' + icon('download') + '</div><div class="spacer"><div class="text--strong" style="color:#fff;">Atualização disponível</div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (swReady ? 'Toque para carregar a nova versão.' : 'Uma nova versão do QuemFaz está pronta.') + '</div></div><button class="btn" type="button" id="qf-soft-update">Atualizar</button>';
     content.insertBefore(div, content.firstChild);
     div.querySelector('#qf-soft-update').addEventListener('click', async function () {
       const btn = this;
