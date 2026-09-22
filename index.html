@@ -2285,7 +2285,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       telefone: data.telefone || '', categorias: data.categorias || [], cidadeId: data.cidadeId,
       fotoUrl: data.selfieData || data.fotoUrl || '',
       raioKm: data.raioKm || 10, documentos: { rg: false, cpf: false, comprovanteEndereco: false },
-      statusAprovacao: 'pendente', online: false, saldo: 0, creditos: 0, bonusDesbloqueios: 0, avaliacaoMedia: 0, totalAvaliacoes: 0,
+      statusAprovacao: 'pendente', online: false, saldo: 0, creditos: 2500, bonusDesbloqueios: 0, avaliacaoMedia: 0, totalAvaliacoes: 0,
       taxaVisitaPadrao: data.taxaVisitaPadrao || 0, bloqueado: false, criadoEm: nowIso(),
     };
     state.users.profissionais.push(u);
@@ -2361,7 +2361,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     }
     const valor = leadFeeForRequest(req);
     const saldo = Number(prof.creditos || 0);
-    const primeiraGratis = Number(prof.bonusDesbloqueios || 0) > 0;
+    const primeiraGratis = false;
     if (!primeiraGratis && saldo < valor) return { ok: false, reason: 'saldo', valor: valor, saldo: saldo };
 
     if (!primeiraGratis) prof.creditos = saldo - valor;
@@ -3023,7 +3023,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       online: !!pr.online,
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
-      bonusDesbloqueios: (!w || w.bonus_inicial_usado === false) ? 1 : 0,
+      bonusDesbloqueios: 0,
       avaliacaoMedia: Number(pr.avaliacao_media || 0),
       totalAvaliacoes: Number(pr.total_avaliacoes || 0),
       taxaVisitaPadrao: 0,
@@ -4268,7 +4268,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
             '<div class="text--sm text--secondary">Sem esta foto você não consegue criar a conta, ficar online nem desbloquear chamados.</div>' +
           '</div>' +
           '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--navy-800);">A selfie fica vinculada ao cadastro e é usada para segurança. Ela também pode aparecer ao cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">O primeiro desbloqueio é grátis. Depois, mantenha saldo na Carteira QuemFaz para abrir novas oportunidades.</div></div></div>' +
+            '<p class="text text--sm" style="color:var(--navy-800);">A selfie fica vinculada ao cadastro e é usada para segurança. Ela também pode aparecer ao cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">Você começa com R$ 25,00 em créditos de lançamento. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.</div></div></div>' +
           '</div>' +
           '<button class="btn btn--primary" type="submit" style="margin-top:2px;">Criar conta de profissional</button>' +
         '</form>' +
@@ -5548,7 +5548,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         (!user.online ? '<div class="card" style="margin-top:12px;background:var(--warning-100);border:1px solid #f0cf91;">' +
           '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--warning-600);">' + icon('bell') + '</div>' +
           '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Você está OFFLINE — não recebe chamados</div>' +
-          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois do cadastro, lembre-se de ficar online. Seu primeiro desbloqueio é grátis; a partir do segundo, mantenha saldo na carteira para abrir novos chamados.</div></div></div>' +
+          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois do cadastro, lembre-se de ficar online. Você recebe R$ 25,00 em créditos de lançamento para começar; depois, mantenha saldo na carteira para abrir novos chamados.</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-action="ficar-online-agora" style="margin-top:12px;">' + icon('power') + ' Ficar online agora</button>' +
         '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados da sua categoria chegam primeiro para quem estiver mais perto, dentro do raio de atendimento.</div></div></div></div>') +
 
@@ -5597,7 +5597,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
-    const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
+    const primeiraGratis = false;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     return (
@@ -5628,7 +5628,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
-    const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
+    const primeiraGratis = false;
     return (
       '<div class="view">' +
         '<div class="row-between">' +
@@ -5857,7 +5857,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
-            walletInfoRow('unlock', 'Primeiro desbloqueio grátis', 'Seu primeiro chamado é liberado sem usar saldo. Nos próximos, o valor do desbloqueio é descontado da carteira.') +
+            walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
           '</div>' +
@@ -6357,7 +6357,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       if (act === 'desbloquear-chamada') {
         const req = DB.requestById(params.id);
         const valor = req ? DB.leadFeeForRequest(req) : 0;
-        const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
+        const primeiraGratis = false;
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: primeiraGratis
