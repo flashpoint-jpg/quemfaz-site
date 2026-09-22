@@ -2257,6 +2257,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const u = {
       id: PU.uid('pro'), nome: data.nome, email: data.email, senha: data.senha,
       telefone: data.telefone || '', categorias: data.categorias || [], cidadeId: data.cidadeId,
+      fotoUrl: data.selfieData || data.fotoUrl || '',
       raioKm: data.raioKm || 10, documentos: { rg: false, cpf: false, comprovanteEndereco: false },
       statusAprovacao: 'pendente', online: false, saldo: 0, creditos: 0, bonusDesbloqueios: 0, avaliacaoMedia: 0, totalAvaliacoes: 0,
       taxaVisitaPadrao: data.taxaVisitaPadrao || 0, bloqueado: false, criadoEm: nowIso(),
@@ -3346,6 +3347,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   function pendingCpfKey(email) { return 'qf_pending_cpf_' + String(email || '').trim().toLowerCase(); }
   function pendingAddressKey(email) { return 'qf_pending_address_' + String(email || '').trim().toLowerCase(); }
+  function pendingSelfieKey(email) { return 'qf_pending_selfie_' + String(email || '').trim().toLowerCase(); }
   async function saveCpf(cpf) {
     if (!client || !cpf) return null;
     const res = await client.rpc('qf_salvar_cpf', { p_cpf: String(cpf) });
@@ -3388,6 +3390,17 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       const k2 = pendingAddressKey(email); const raw = localStorage.getItem(k2);
       if (raw) { await saveClientAddress(JSON.parse(raw)); localStorage.removeItem(k2); }
     } catch (e) { console.warn('QuemFaz endereço pendente', e); }
+    try {
+      const k3 = pendingSelfieKey(email); const selfie = localStorage.getItem(k3);
+      if (selfie) {
+        const uRes = await client.auth.getUser();
+        if (uRes && uRes.data && uRes.data.user) {
+          const up = await client.from('qf_profiles').update({ foto_url: selfie, atualizado_em: new Date().toISOString() }).eq('id', uRes.data.user.id);
+          if (up.error) throw up.error;
+          localStorage.removeItem(k3);
+        }
+      }
+    } catch (e) { console.warn('QuemFaz selfie pendente', e); }
   }
 
   async function syncForCurrentSession(force) {
@@ -3408,6 +3421,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         }
         const user = sbSession.user;
         const profile = await ensureProfile(user, null, null);
+        await applyPendingIdentity(user.email || '');
         const role = profile.tipo;
         const localUser = await syncLocalUser(user, role);
         DB.setSession({ role: role, userId: user.id });
@@ -3435,6 +3449,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (String(data.senha || '').length < 6) return { ok: false, error: 'A senha precisa ter pelo menos 6 caracteres.' };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email || ''))) return { ok: false, error: 'Digite um e-mail válido.' };
     if (!String(data.nome || '').trim()) return { ok: false, error: 'Informe seu nome.' };
+    if (role === 'profissional' && !/^data:image\//i.test(String(data.selfieData || ''))) {
+      return { ok: false, error: 'A selfie é obrigatória para concluir o cadastro profissional.' };
+    }
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
@@ -3449,6 +3466,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     };
     if (data.cpf) { try { localStorage.setItem(pendingCpfKey(data.email), data.cpf); } catch (_) {} }
     if (data.endereco) { try { localStorage.setItem(pendingAddressKey(data.email), JSON.stringify(data.endereco)); } catch (_) {} }
+    if (role === 'profissional' && data.selfieData) {
+      try { localStorage.setItem(pendingSelfieKey(data.email), data.selfieData); } catch (_) {}
+    }
     const res = await client.auth.signUp({
       email: data.email,
       password: data.senha,
@@ -3701,6 +3721,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const uRes = await client.auth.getUser();
     if (uRes.error || !uRes.data.user) throw new Error('Sessão expirada.');
     if (online) {
+      const pf = await client.from('qf_profiles').select('foto_url').eq('id', uRes.data.user.id).single();
+      if (pf.error) throw pf.error;
+      if (!pf.data || !String(pf.data.foto_url || '').trim()) {
+        throw new Error('Selfie obrigatória: cadastre sua foto antes de ficar online.');
+      }
       let loc = null;
       try { loc = await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
       if (!loc) {
@@ -4112,8 +4137,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           field('Raio de atendimento: <span id="raio-valor">10</span> km', '<input class="input" type="range" name="raioKm" min="1" max="200" step="1" value="10" id="raio-range">') +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">Depois do cadastro você pode adicionar várias cidades e definir um raio diferente para cada uma no Perfil.</div></div>' +
           field('Taxa de visita padrão (opcional)', '<input class="input" name="taxaVisita" inputmode="decimal" placeholder="R$ 0,00">') +
+          '<div class="card stack--sm" style="background:var(--warning-100);border:2px solid #efc46e;">' +
+            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">SELFIE OBRIGATÓRIA</div><div class="text--sm text--secondary">O cadastro profissional não é concluído sem uma selfie atual, de frente e com boa iluminação.</div></div></div>' +
+            '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da selfie" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
+            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie agora<input type="file" id="cadastro-prof-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
+            '<div class="text--sm text--secondary">Sem esta foto você não consegue criar a conta, ficar online nem desbloquear chamados.</div>' +
+          '</div>' +
           '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--navy-800);">Depois do cadastro, abra o <strong>Perfil</strong> e tire sua <strong>selfie</strong> (obrigatória para ficar online). Ela é mostrada ao cliente, junto com sua avaliação, quando você assume um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">Depois da aprovação, adicione créditos à Carteira QuemFaz. O valor de cada oportunidade aparece antes do desbloqueio.</div></div></div>' +
+            '<p class="text text--sm" style="color:var(--navy-800);">A selfie fica vinculada ao cadastro e é usada para segurança. Ela também pode aparecer ao cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">O primeiro desbloqueio é grátis. Depois, mantenha saldo na Carteira QuemFaz para abrir novas oportunidades.</div></div></div>' +
           '</div>' +
           '<button class="btn btn--primary" type="submit" style="margin-top:2px;">Criar conta de profissional</button>' +
         '</form>' +
@@ -4207,7 +4238,27 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       global.QFGeo.bindAddressForm(form);
       const chipsWrap = content.querySelector('#cadastro-prof-cats');
       const hiddenInput = content.querySelector('#cadastro-prof-cats-input');
+      const selfieInput = content.querySelector('#cadastro-prof-selfie');
+      const selfiePreview = content.querySelector('#cadastro-selfie-preview');
+      const selfieImg = content.querySelector('#cadastro-selfie-img');
+      let selfieData = '';
       let selected = [];
+      if (selfieInput) selfieInput.addEventListener('change', async function () {
+        const file = selfieInput.files && selfieInput.files[0];
+        if (!file) { selfieData = ''; return; }
+        try {
+          selfieData = await PU.fileToCompressedDataUrl(file, 480);
+          if (!/^data:image\//i.test(selfieData)) throw new Error('Foto inválida.');
+          if (selfieImg) selfieImg.src = selfieData;
+          if (selfiePreview) selfiePreview.style.display = 'block';
+          PU.toast('Selfie registrada para o cadastro.', 'success');
+        } catch (err) {
+          selfieData = '';
+          selfieInput.value = '';
+          if (selfiePreview) selfiePreview.style.display = 'none';
+          PU.toast((err && err.message) || 'Não foi possível processar a selfie.', 'danger');
+        }
+      });
       chipsWrap.addEventListener('click', function (e) {
         const chip = e.target.closest('[data-chip-cat]');
         if (!chip) return;
@@ -4223,6 +4274,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
+        if (!selfieData) {
+          PU.toast('A selfie é obrigatória. Tire a foto antes de criar a conta.', 'danger');
+          if (selfieInput) selfieInput.click();
+          return;
+        }
         if (!selected.length) { PU.toast('Selecione ao menos uma categoria de serviço.', 'danger'); return; }
         const cpf = fd.get('cpf').trim();
         if (!global.QFGeo.validCpf(cpf)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
@@ -4232,7 +4288,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           nome: fd.get('nome').trim(), email: fd.get('email').trim(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf,
           categorias: selected, cidade: fd.get('cidade').trim(), uf: fd.get('uf'), cep: fd.get('cep').trim(),
           latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null, raioKm: Number(fd.get('raioKm')),
-          taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita'))
+          taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
+          selfieData: selfieData
         };
         const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
@@ -4241,11 +4298,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
             const res = await global.QFCloud.signUp('profissional', dados);
             if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return; }
             if (res.needsConfirmation) {
-              PU.toast('Cadastro criado. Confirme o e-mail e depois entre para configurar sua conta.', 'success');
+              PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
               global.navigate('/auth/profissional/login', true);
               return;
             }
-            PU.toast('Cadastro criado! Adicione créditos para desbloquear oportunidades.', 'success');
+            PU.toast('Cadastro criado com selfie de segurança!', 'success');
             if (sessionStorage.getItem('qf_pending_ad_draft')) {
               global.navigate('/profissional/anuncie', true);
               return;
