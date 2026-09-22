@@ -3030,16 +3030,16 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     clearRuntimeData();
   }
 
-  async function startPagBankCheckout(tipo, pagamentoId) {
+  async function startEfiCheckout(tipo, pagamentoId) {
     const route = tipo === 'prioridade' ? '#/cliente/pedidos' : '#/profissional/carteira';
     const returnUrl = location.origin + location.pathname + route;
-    const fn = await client.functions.invoke('quemfaz-pagbank-checkout', {
+    const fn = await client.functions.invoke('quemfaz-efi-checkout', {
       body: { tipo: tipo, pagamento_id: pagamentoId, return_url: returnUrl }
     });
     if (fn.error) throw new Error(fn.error.message || 'Não foi possível iniciar o pagamento.');
     const out = fn.data || {};
     if (!out.ok) {
-      if (out.error === 'pagbank_not_configured') throw new Error('PagBank ainda não está configurado no servidor.');
+      if (out.error === 'efi_not_configured') throw new Error('Efí Bank ainda não está configurado no servidor.');
       throw new Error(out.error || 'Não foi possível gerar o checkout.');
     }
     return out;
@@ -3053,7 +3053,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (pay.error) throw pay.error;
     const row = pay.data || {};
     if (!row.recarga_id) throw new Error('A recarga não foi criada.');
-    const checkout = await startPagBankCheckout('recarga', row.recarga_id);
+    const checkout = await startEfiCheckout('recarga', row.recarga_id);
     return {
       id: row.recarga_id,
       status: row.status || 'pendente',
@@ -3112,7 +3112,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         req.prioridade = !!out.prioridade_ativa;
         if (!req.prioridade && req.pagamentoPrioridade.id && !req.pagamentoPrioridade.checkoutUrl) {
           try {
-            const checkout = await startPagBankCheckout('prioridade', req.pagamentoPrioridade.id);
+            const checkout = await startEfiCheckout('prioridade', req.pagamentoPrioridade.id);
             req.pagamentoPrioridade.checkoutUrl = checkout.checkout_url || null;
           } catch (checkoutErr) {
             req.pagamentoPrioridade.erro = checkoutErr && checkoutErr.message ? checkoutErr.message : String(checkoutErr || '');
@@ -3321,7 +3321,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     signUp: signUp,
     signIn: signIn,
     signOut: signOut,
-    startPagBankCheckout: startPagBankCheckout,
+    startEfiCheckout: startEfiCheckout,
     createRecharge: createRecharge,
     createCall: createCall,
     unlockCall: unlockCall,
@@ -3937,7 +3937,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<label class="field"><span class="field__label">WhatsApp</span><input class="input" name="whatsapp" inputmode="tel" required placeholder="(35) 99999-9999" value="' + PU.escapeHtml(defaultWhatsapp) + '"></label>' +
         '<label class="field"><span class="field__label">Site ou link (opcional)</span><input class="input" name="link" type="url" placeholder="https://..."></label>' +
         '<div class="field"><span class="field__label">Forma de pagamento</span><div class="segmented" id="ad-payment"><button class="segmented__item is-active" type="button" data-pay="pix">Pix</button><button class="segmented__item" type="button" data-pay="cartao">Cartão</button><button class="segmented__item" type="button" data-pay="boleto">Boleto</button></div><input type="hidden" name="formaPagamento" value="pix"></div>' +
-        '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Modo de teste: ao tocar em pagar, o pagamento é confirmado no Supabase e o anúncio fica aguardando aprovação do administrador. Na etapa de produção, essa confirmação será feita pelo PagBank.</div></div>' +
+        '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Modo de teste: ao tocar em pagar, o pagamento é confirmado no Supabase e o anúncio fica aguardando aprovação do administrador. Na etapa de produção, essa confirmação será feita pelo Efí Bank.</div></div>' +
         '<button class="btn btn--primary" type="submit">Pagar e enviar anúncio</button>' +
         '<button class="btn btn--outline" type="button" data-nav="' + backPath + '">Voltar</button>' +
       '</form></div>';
@@ -4568,7 +4568,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         action.textContent = 'Gerando pagamento...';
         (async function () {
           try {
-            const out = await global.QFCloud.startPagBankCheckout('prioridade', paymentId);
+            const out = await global.QFCloud.startEfiCheckout('prioridade', paymentId);
             if (!out.checkout_url) throw new Error('O link de pagamento não foi gerado.');
             if (req.pagamentoPrioridade) req.pagamentoPrioridade.checkoutUrl = out.checkout_url;
             DB.persist();
@@ -5035,7 +5035,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               '</div>' +
             '</div>' +
             '<button class="btn btn--primary" data-action="iniciar-recarga" data-wallet-selected-value="5000" data-wallet-selected-method="pix">' + icon('plus') + ' Adicionar R$ 50,00</button>' +
-            '<p class="text--sm text--secondary" style="text-align:center;">Pix, cartão de crédito e boleto. O saldo entra somente depois da confirmação do PagBank.</p>' +
+            '<p class="text--sm text--secondary" style="text-align:center;">Pix, cartão de crédito e boleto. O saldo entra somente depois da confirmação do Efí Bank.</p>' +
           '</div>' +
         '</div>' +
 
@@ -5632,7 +5632,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       PU.openSheet(
         '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('wallet') + '</div>' +
         '<h3 class="sheet__title" style="text-align:center;">Gerando pagamento</h3>' +
-        '<p class="text text--secondary" style="text-align:center;">Preparando ' + methodLabel + ' de <strong>' + displayValue + '</strong> no PagBank...</p>' +
+        '<p class="text text--secondary" style="text-align:center;">Preparando ' + methodLabel + ' de <strong>' + displayValue + '</strong> no Efí Bank...</p>' +
         '<div class="text--sm text--secondary" style="text-align:center;">O saldo só entra após a confirmação do pagamento.</div></div>'
       );
       (async function () {
@@ -5642,8 +5642,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           PU.openSheet(
             '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon(method === 'cartao' ? 'creditCard' : (method === 'boleto' ? 'document' : 'bolt')) + '</div>' +
             '<h3 class="sheet__title" style="text-align:center;">Pagamento seguro</h3>' +
-            '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' via ' + methodLabel + '. Você será direcionado ao PagBank para concluir.</p>' +
-            '<a class="btn btn--primary" href="' + PU.escapeHtml(rec.checkoutUrl) + '" rel="noopener">Ir para o PagBank</a>' +
+            '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' via ' + methodLabel + '. Você será direcionado ao Efí Bank para concluir.</p>' +
+            '<a class="btn btn--primary" href="' + PU.escapeHtml(rec.checkoutUrl) + '" rel="noopener">Ir para o Efí Bank</a>' +
             '<button class="btn btn--outline" id="wallet-refresh-after-pay">Já paguei · atualizar saldo</button>' +
             '<p class="text--sm text--secondary" style="text-align:center;">O QuemFaz não recebe nem armazena número do cartão ou CVV.</p></div>'
           );
