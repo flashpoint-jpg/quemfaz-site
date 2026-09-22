@@ -403,6 +403,17 @@ input, select, textarea { font-size: 16px; }
 .avatar--sm { width: 36px; height: 36px; font-size: 13px; }
 .avatar--lg { width: 76px; height: 76px; font-size: 24px; }
 .avatar--orange { background: var(--orange-500); color: var(--text-on-orange); }
+.avatar img { width:100%; height:100%; object-fit:cover; border-radius:inherit; display:block; }
+.admin-selfie {
+  width: 160px; height: 160px; border-radius: 22px; overflow:hidden;
+  background: var(--bg-sunken); border: 2px solid var(--border-subtle);
+  box-shadow: var(--shadow-card); flex:none;
+}
+.admin-selfie img { width:100%; height:100%; object-fit:cover; display:block; }
+.admin-selfie-empty {
+  width:100%; height:100%; display:flex; align-items:center; justify-content:center;
+  color:var(--text-muted); font-size:12px; font-weight:700; text-align:center; padding:16px;
+}
 
 /* ---------- Badges / status ---------- */
 
@@ -2430,7 +2441,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     const pushUsers = {}; (d.push_usuarios || []).forEach(function (id) { pushUsers[id] = true; });
     const clientes = [], profissionais = [];
     (d.profiles || []).forEach(function (p) {
-      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id] };
+      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', fotoUrl: p.foto_url || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id] };
       if (p.tipo === 'profissional') {
         const pr = pros[p.id] || {};
         const a = (areas[p.id] || [])[0];
@@ -4220,7 +4231,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
           const cidade = DB.cityById(p.cidadeId);
           return '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '">' +
             '<div class="row-between">' +
-              '<div class="row"><div class="avatar avatar--sm">' + PU.initials(p.nome) + '</div>' +
+              '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
               '<div><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cidade || {}).nome || '') + (p.bloqueado ? ' · Bloqueado' : '') + '</div></div></div>' +
               icon('chevronRight', 'list-item__chevron') +
             '</div>' +
@@ -4284,7 +4295,13 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     const cats = (p.categorias || []).map(function (id) { const c = DB.categoryById(id); return c ? c.nome : id; }).join(', ');
     const txs = (DB.state.transactions || []).filter(function (t) { return t.profissionalId === p.id; }).slice(0, 8);
     return '<div class="view">' +
-      '<div class="card row"><div class="avatar avatar--lg">' + PU.initials(p.nome) + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + profBadges(p) + '</div></div></div>' +
+      '<div class="card row"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + profBadges(p) + '</div></div></div>' +
+      '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
+        '<div class="card row" style="align-items:center;">' +
+          '<div class="admin-selfie">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie de segurança do profissional">' : '<div class="admin-selfie-empty">Selfie não cadastrada</div>') + '</div>' +
+          '<div class="spacer"><div class="text--strong">' + (p.fotoUrl ? 'Selfie cadastrada' : 'Selfie pendente') + '</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:5px;">Imagem visível no painel administrativo para conferência de segurança.</div></div>' +
+        '</div></div>' +
       '<div class="section card stack--sm">' +
         rowInfo('WhatsApp', p.telefone || '—') + rowInfo('Categorias', cats || '—') +
         rowInfo('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
