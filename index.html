@@ -3607,7 +3607,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const uRes = await client.auth.getUser();
     if (uRes.error || !uRes.data.user) throw new Error('Sessão expirada.');
     if (online) {
-      try { await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
+      let loc = null;
+      try { loc = await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
+      if (!loc) {
+        throw new Error('Ative a localização do aparelho para ficar online e receber apenas chamados próximos de você.');
+      }
     }
     const res = await client.from('qf_profissionais').update({ online: !!online, atualizado_em: new Date().toISOString() }).eq('user_id', uRes.data.user.id);
     if (res.error) throw res.error;
@@ -5200,7 +5204,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Você está OFFLINE — não recebe chamados</div>' +
           '<div class="text--sm text--secondary" style="margin-top:3px;">Depois do cadastro, lembre-se de ficar online. Seu primeiro desbloqueio é grátis; a partir do segundo, mantenha saldo na carteira para abrir novos chamados.</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-action="ficar-online-agora" style="margin-top:12px;">' + icon('power') + ' Ficar online agora</button>' +
-        '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados compatíveis com sua categoria e área podem chegar para você.</div></div></div></div>') +
+        '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados da sua categoria chegam primeiro para quem estiver mais perto, dentro do raio de atendimento.</div></div></div></div>') +
 
         '<div class="card row" style="margin-top:12px;">' +
           '<div class="spacer">' +
