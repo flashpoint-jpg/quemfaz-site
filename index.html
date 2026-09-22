@@ -6,7 +6,7 @@
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>QuemFaz — O profissional que você precisa, perto de você</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
-<!-- V10.9.2: botão Atualizar refinado e nítido -->
+<!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
 <meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, montadores, chaveiros, pintores, motoristas, entregadores, soldadores, técnicos em informática e muito mais.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3160,6 +3160,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (res.error) throw res.error;
     const out = res.data || {};
     if (!out.ok) throw new Error(out.reason || 'Não foi possível enviar o anúncio.');
+    if (!out.pagamento_id) throw new Error('Pagamento do anúncio não foi criado.');
+    const checkout = await startEfiCheckout('anuncio', out.pagamento_id);
+    out.checkout_url = checkout.checkout_url || null;
+    out.pix_copy_paste = checkout.pix_copy_paste || null;
+    out.qr_image = checkout.qr_image || null;
+    out.charge_id = checkout.charge_id || null;
+    out.provider = checkout.provider || 'efi';
+    out.pagamento_status = checkout.status || out.pagamento_status || 'pendente';
     await syncPublicAds();
     const ad = DB.anuncioById(out.anuncio_id);
     return { ad: ad, pagamento: out };
@@ -3319,7 +3327,12 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   }
 
   async function startEfiCheckout(tipo, pagamentoId) {
-    const route = tipo === 'prioridade' ? '#/cliente/pedidos' : '#/profissional/carteira';
+    const sess = DB.getSession();
+    const route = tipo === 'prioridade'
+      ? '#/cliente/pedidos'
+      : (tipo === 'recarga'
+        ? '#/profissional/carteira'
+        : (sess && sess.role === 'profissional' ? '#/profissional/home' : '#/cliente/home'));
     const returnUrl = location.origin + location.pathname + route;
     const fn = await client.functions.invoke('quemfaz-efi-checkout', {
       body: { tipo: tipo, pagamento_id: pagamentoId, return_url: returnUrl }
@@ -4256,9 +4269,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<div class="field"><span class="field__label">Imagem do anúncio</span><div class="ad-preview" id="ad-preview"><div class="stack--sm" style="text-align:center;align-items:center;">' + icon('image') + '<span class="text--sm">Formato horizontal recomendado</span></div></div><input class="input" type="file" id="ad-image" accept="image/*" required style="margin-top:8px;"><span class="field__hint">Até 900 KB. A imagem será enviada junto com o anúncio.</span></div>' +
         '<label class="field"><span class="field__label">WhatsApp</span><input class="input" name="whatsapp" inputmode="tel" required placeholder="(35) 99999-9999" value="' + PU.escapeHtml(defaultWhatsapp) + '"></label>' +
         '<label class="field"><span class="field__label">Site ou link (opcional)</span><input class="input" name="link" type="url" placeholder="https://..."></label>' +
-        '<div class="field"><span class="field__label">Forma de pagamento</span><div class="segmented" id="ad-payment"><button class="segmented__item is-active" type="button" data-pay="pix">Pix</button><button class="segmented__item" type="button" data-pay="cartao">Cartão</button><button class="segmented__item" type="button" data-pay="boleto">Boleto</button></div><input type="hidden" name="formaPagamento" value="pix"></div>' +
-        '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Modo de teste: ao tocar em pagar, o pagamento é confirmado no Supabase e o anúncio fica aguardando aprovação do administrador. Na etapa de produção, essa confirmação será feita pelo Efí Bank.</div></div>' +
-        '<button class="btn btn--primary" type="submit">Pagar e enviar anúncio</button>' +
+        '<div class="field"><span class="field__label">Pagamento</span><div class="segmented" id="ad-payment"><button class="segmented__item is-active" type="button" data-pay="pix">Pix Efí Bank</button></div><input type="hidden" name="formaPagamento" value="pix"></div>' +
+        '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('shieldCheck') + '</div><div><div class="text--strong">Pagamento real e seguro</div><div class="text--sm text--secondary">O anúncio só é marcado como pago depois da confirmação do Pix pela Efí Bank.</div></div></div></div>' +
+        '<button class="btn btn--primary" type="submit">Gerar Pix e enviar anúncio</button>' +
         '<button class="btn btn--outline" type="button" data-nav="' + backPath + '">Voltar</button>' +
       '</form></div>';
   };
@@ -5652,13 +5665,40 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           const out = await global.QFCloud.submitAd(dados);
           ad = out.ad; pagamento = out.pagamento || {};
         } else {
-          ad = DB.criarAnuncio(dados);
-          pagamento = { valor_centavos: DB.adPlan(ad.plano).valor, modo_teste: true };
+          throw new Error('Pagamento real exige conexão com o servidor. Verifique a internet e tente novamente.');
         }
         const p = DB.adPlan((ad && ad.plano) || dados.plano);
         const valor = Number(pagamento.valor_centavos != null ? pagamento.valor_centavos : p.valor || 0);
         try { sessionStorage.removeItem('qf_pending_ad_draft'); } catch (_) {}
-        PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('checkCircle') + '</div><h3 class="sheet__title" style="text-align:center;">Anúncio recebido</h3><p class="text text--secondary" style="text-align:center;">Pagamento de teste confirmado: <strong>' + PU.formatCurrency(valor) + '</strong>. O anúncio foi salvo no Supabase e está <strong>aguardando aprovação do administrador</strong>. Depois de aprovado, ficará no ar por 30 dias.</p><button class="btn btn--primary" id="fechar-anuncio">Entendi</button></div>');
+
+        const pixCode = String(pagamento.pix_copy_paste || '');
+        const checkoutUrl = String(pagamento.checkout_url || '');
+        const qrImage = String(pagamento.qr_image || '');
+        PU.openSheet(
+          '<div class="stack">' +
+            '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('wallet') + '</div>' +
+            '<h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3>' +
+            '<p class="text text--secondary" style="text-align:center;">Valor: <strong>' + PU.formatCurrency(valor) + '</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>' +
+            (qrImage ? '<img src="' + PU.escapeHtml(qrImage) + '" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">' : '') +
+            (pixCode ? '<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">' + PU.escapeHtml(pixCode) + '</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">' + icon('copy') + ' Copiar Pix</button>' : '') +
+            (checkoutUrl ? '<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>' : '') +
+            '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div>' +
+            '<button class="btn btn--outline" id="fechar-anuncio">Fechar</button>' +
+          '</div>',
+          { persistent: true }
+        );
+        const copyPix = document.getElementById('qf-ad-copy-pix');
+        if (copyPix) copyPix.onclick = async function () {
+          try {
+            await navigator.clipboard.writeText(pixCode);
+            PU.toast('Pix copiado.', 'success');
+          } catch (_) {
+            const area = document.getElementById('qf-ad-pix-code');
+            if (area) { area.focus(); area.select(); document.execCommand('copy'); PU.toast('Pix copiado.', 'success'); }
+          }
+        };
+        const openPix = document.getElementById('qf-ad-open-pix');
+        if (openPix) openPix.onclick = function () { location.href = checkoutUrl; };
         document.getElementById('fechar-anuncio').onclick = function () {
           PU.closeSheet();
           const sess = DB.getSession();
@@ -5684,7 +5724,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           PU.toast('Não foi possível enviar o anúncio: ' + msg, 'danger');
         }
       } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Pagar e enviar anúncio'; }
+        if (btn) { btn.disabled = false; btn.textContent = 'Gerar Pix e enviar anúncio'; }
       }
     });
   }
@@ -6257,7 +6297,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '10.9.2';
+  const APP_VERSION = '11.0.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
