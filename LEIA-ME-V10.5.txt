@@ -1,15 +1,17 @@
 QuemFaz V10.5
 
-Pagamentos:
-- Prioridade do cliente: Pix, cartão de crédito ou boleto via Checkout PagBank.
-- A prioridade só fica ativa depois da confirmação PAID.
+Pagamentos com Efí Bank:
+- Prioridade do cliente: Pix, cartão de crédito ou boleto via Link de Pagamento Efí.
+- A prioridade só fica ativa depois da confirmação do pagamento.
 - Carteira do profissional: recarga real por Pix, cartão de crédito ou boleto.
-- Saldo só entra depois da confirmação do PagBank e entra uma única vez.
-- Dados de cartão não são armazenados no QuemFaz; o checkout é do PagBank.
+- O saldo só entra depois da confirmação da Efí e entra uma única vez.
+- Dados de cartão não são armazenados pelo QuemFaz; o pagamento ocorre na página segura da Efí.
 - Pagamentos pendentes aparecem na carteira.
 - Botão para atualizar o saldo após o pagamento.
 - PWA/Service Worker atualizados para 10.5.0.
 
-Configuração obrigatória no Supabase:
-- Secret PAGBANK_TOKEN com o token de produção do PagBank.
-- Opcional: PAGBANK_API_BASE (padrão https://api.pagseguro.com).
+Configuração necessária no Supabase:
+- EFI_CLIENT_ID = Client_Id de produção da aplicação Efí.
+- EFI_CLIENT_SECRET = Client_Secret de produção da aplicação Efí.
+- EFI_SANDBOX = false em produção; true apenas para homologação.
+- A aplicação Efí precisa ter a API de Emissão de Cobranças habilitada.
