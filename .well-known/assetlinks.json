@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.app.quemfaz",
+      "sha256_cert_fingerprints": ["COLE:AQUI:A:IMPRESSAO:SHA256:DA:CHAVE:QUE:ASSINOU:O:APK"]
+    }
+  }
+]
