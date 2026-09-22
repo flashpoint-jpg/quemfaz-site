@@ -2894,7 +2894,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       online: !!pr.online,
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
-      bonusDesbloqueios: (w && w.bonus_inicial_usado === false) ? 1 : 0,
+      bonusDesbloqueios: (!w || w.bonus_inicial_usado === false) ? 1 : 0,
       avaliacaoMedia: Number(pr.avaliacao_media || 0),
       totalAvaliacoes: Number(pr.total_avaliacoes || 0),
       taxaVisitaPadrao: 0,
@@ -5198,7 +5198,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         (!user.online ? '<div class="card" style="margin-top:12px;background:var(--warning-100);border:1px solid #f0cf91;">' +
           '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--warning-600);">' + icon('bell') + '</div>' +
           '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Você está OFFLINE — não recebe chamados</div>' +
-          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois de cadastrar e adicionar créditos, lembre-se de ficar online. Os chamados da sua categoria e região só chegam para profissionais disponíveis.</div></div></div>' +
+          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois do cadastro, lembre-se de ficar online. Seu primeiro desbloqueio é grátis; a partir do segundo, mantenha saldo na carteira para abrir novos chamados.</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-action="ficar-online-agora" style="margin-top:12px;">' + icon('power') + ' Ficar online agora</button>' +
         '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados compatíveis com sua categoria e área podem chegar para você.</div></div></div></div>') +
 
@@ -5494,8 +5494,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
-            walletInfoRow('unlock', 'Desbloqueie o chamado', 'O valor sai da carteira somente quando você decidir assumir a oportunidade.') +
-            walletInfoRow('phoneCall', 'Contato liberado', 'Nome, telefone/WhatsApp e endereço exato aparecem depois do desbloqueio.') +
+            walletInfoRow('unlock', 'Primeiro desbloqueio grátis', 'Seu primeiro chamado é liberado sem usar saldo. Nos próximos, o valor do desbloqueio é descontado da carteira.') +
+            walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
           '</div>' +
         '</div>' +
