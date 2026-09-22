@@ -3677,8 +3677,20 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     let sub = await reg.pushManager.getSubscription();
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) });
     if (!global.QFCloud || !global.QFCloud.client) throw new Error('Entre na conta antes de ativar as notificações.');
-    const out = await global.QFCloud.client.functions.invoke('quemfaz-push', { body: { action: 'subscribe', subscription: sub.toJSON(), platform: global.QFApp ? global.QFApp.platform() : 'web' } });
-    if (out.error) throw out.error;
+    const sess = await global.QFCloud.client.auth.getSession();
+    const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : '';
+    if (!token) throw new Error('Sua sessão expirou. Entre novamente na conta e tente ativar as notificações.');
+    const resp = await fetch(global.QFCloud.projectUrl + '/functions/v1/quemfaz-push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ action: 'subscribe', subscription: sub.toJSON(), platform: global.QFApp ? global.QFApp.platform() : 'web' })
+    });
+    const out = await resp.json().catch(function () { return {}; });
+    if (!resp.ok || !out || !out.ok) throw new Error((out && out.error) || 'Não foi possível registrar as notificações.');
     localStorage.setItem('qf_push_enabled', '1');
     return true;
   }
