@@ -290,6 +290,32 @@ input, select, textarea { font-size: 16px; }
 .notice-card__title { display:block; color:var(--navy-900); font-weight:850; line-height:1.25; }
 .notice-card__body { display:block; color:var(--text-secondary); font-size:12px; line-height:1.45; margin-top:3px; }
 .notice-card__time { display:block; color:var(--text-muted); font-size:10px; margin-top:5px; }
+.notice-card__open {
+  flex:1; min-width:0; display:flex; gap:12px; align-items:flex-start;
+  border:0; background:transparent; padding:0; text-align:left; color:inherit; cursor:pointer;
+}
+.notice-card__delete,
+.history-delete {
+  width:36px; height:36px; border-radius:12px; flex:none;
+  border:1px solid #fecaca; background:#fff; color:#b91c1c;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.notice-card__delete svg,
+.history-delete svg { width:17px; height:17px; }
+.notice-card__delete:active,
+.history-delete:active { transform:scale(.96); }
+.notice-toolbar { display:flex; justify-content:flex-end; margin-bottom:10px; }
+.notice-clear {
+  min-height:36px; padding:0 12px; border-radius:12px;
+  border:1px solid #fecaca; background:#fff; color:#b91c1c;
+  font-size:12px; font-weight:800; cursor:pointer;
+}
+.history-entry { position:relative; }
+.history-entry > .card { padding-right:58px; }
+.history-delete {
+  position:absolute; right:12px; top:50%; transform:translateY(-50%); z-index:2;
+}
+.history-delete:active { transform:translateY(-50%) scale(.96); }
 
 .tabbar__item.is-active::before {
   content: "";
@@ -4256,6 +4282,15 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE, STATUS.AGUARDANDO_ORCAMENTO,
     STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.PAGO,
   ];
+  function hiddenHistoryKey(role, userId) { return 'quemfaz_hidden_history_v1_' + role + '_' + userId; }
+  function loadHiddenHistory(role, userId) {
+    try { return JSON.parse(localStorage.getItem(hiddenHistoryKey(role, userId)) || '[]') || []; } catch (_) { return []; }
+  }
+  function hideHistoryItem(role, userId, requestId) {
+    const ids = loadHiddenHistory(role, userId);
+    if (ids.indexOf(requestId) === -1) ids.push(requestId);
+    try { localStorage.setItem(hiddenHistoryKey(role, userId), JSON.stringify(ids.slice(-250))); } catch (_) {}
+  }
 
   function statusBadge(status) {
     const label = DB.STATUS_LABEL[status] || status;
@@ -4550,16 +4585,20 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   // ---------------- Lista de pedidos ----------------
 
   Screens.clientePedidosRender = function (params, user) {
+    const hidden = loadHiddenHistory('cliente', user.id);
     const all = DB.requestsByCliente(user.id);
     const ativos = all.filter(function (r) { return ACTIVE_STATUSES.indexOf(r.status) !== -1; });
-    const historico = all.filter(function (r) { return ACTIVE_STATUSES.indexOf(r.status) === -1; });
-    if (!all.length) {
+    const historico = all.filter(function (r) { return ACTIVE_STATUSES.indexOf(r.status) === -1 && hidden.indexOf(r.id) === -1; });
+    if (!ativos.length && !historico.length) {
       return '<div class="view">' + emptyPedidos() + '</div>';
     }
     return (
       '<div class="view">' +
         (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(pedidoCard).join('') + '</div></div>' : '') +
-        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(pedidoCard).join('') + '</div></div>' : '') +
+        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(function (r) {
+          return '<div class="history-entry">' + pedidoCard(r) +
+            '<button class="history-delete" type="button" data-hide-pedido="' + PU.escapeHtml(r.id) + '" aria-label="Excluir pedido do histórico" title="Excluir do histórico">' + icon('xCircle') + '</button></div>';
+        }).join('') + '</div></div>' : '') +
       '</div>'
     );
   };
@@ -4939,9 +4978,32 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
     if (pattern === '/cliente/home') bindCategoryBrowser(content);
     if (pattern === '/cliente/novo-pedido/:catId') bindNovoPedido(content, params, user);
+    if (pattern === '/cliente/pedidos') bindClientePedidos(content, user);
     if (pattern === '/cliente/pedido/:id') bindPedidoDetalhe(content, params, user);
     if (pattern === '/cliente/endereco') bindEndereco(content, user);
   };
+
+  function bindClientePedidos(content, user) {
+    content.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-hide-pedido]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute('data-hide-pedido');
+      PU.confirmDialog({
+        title: 'Excluir do histórico',
+        message: 'Este pedido será removido da sua lista. O registro do serviço continua preservado no sistema.',
+        okLabel: 'Excluir',
+        danger: true
+      }).then(function (ok) {
+        if (!ok) return;
+        hideHistoryItem('cliente', user.id, id);
+        PU.toast('Pedido removido do histórico.', 'success');
+        global.navigate('/cliente/pedidos', true);
+      });
+    });
+  }
+
 
   function bindCategoryBrowser(content) {
     const input = content.querySelector('[data-category-search]');
@@ -5401,18 +5463,30 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   // ---------------- Meus serviços ----------------
 
   const ATIVOS_PROF = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.PAGO];
+  function profHiddenHistory(userId) {
+    try { return JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]') || []; } catch (_) { return []; }
+  }
+  function hideProfHistory(userId, requestId) {
+    const ids = profHiddenHistory(userId);
+    if (ids.indexOf(requestId) === -1) ids.push(requestId);
+    try { localStorage.setItem('quemfaz_hidden_history_v1_profissional_' + userId, JSON.stringify(ids.slice(-250))); } catch (_) {}
+  }
 
   Screens.profServicosRender = function (params, user) {
+    const hidden = profHiddenHistory(user.id);
     const all = DB.requestsByProfissional(user.id);
     const ativos = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) !== -1; });
-    const historico = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) === -1; });
-    if (!all.length) {
+    const historico = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) === -1 && hidden.indexOf(r.id) === -1; });
+    if (!ativos.length && !historico.length) {
       return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div><h2 class="h3">Nenhum serviço ainda</h2><p class="text text--secondary">Fique online para começar a receber chamados de clientes.</p></div></div>';
     }
     return (
       '<div class="view">' +
         (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(servicoCard).join('') + '</div></div>' : '') +
-        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(servicoCard).join('') + '</div></div>' : '') +
+        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(function (r) {
+          return '<div class="history-entry">' + servicoCard(r) +
+            '<button class="history-delete" type="button" data-hide-servico="' + PU.escapeHtml(r.id) + '" aria-label="Excluir serviço do histórico" title="Excluir do histórico">' + icon('xCircle') + '</button></div>';
+        }).join('') + '</div></div>' : '') +
       '</div>'
     );
   };
@@ -5741,6 +5815,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
     if (pattern === '/profissional/home') bindHome(content, user);
     if (pattern === '/profissional/chamada/:id') bindChamada(content, params, user);
+    if (pattern === '/profissional/servicos') bindProfServicos(content, user);
     if (pattern === '/profissional/pedido/:id') bindPedidoDetalhe(content, params, user);
     if (pattern === '/profissional/orcamento/:id') bindOrcamentoForm(content, params, user);
     if (pattern === '/profissional/perfil') bindPerfil(content, user);
@@ -6010,6 +6085,27 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           ativar.disabled = false;
         }
       };
+    });
+  }
+
+  function bindProfServicos(content, user) {
+    content.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-hide-servico]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute('data-hide-servico');
+      PU.confirmDialog({
+        title: 'Excluir do histórico',
+        message: 'Este serviço será removido da sua lista. O registro continua preservado no sistema.',
+        okLabel: 'Excluir',
+        danger: true
+      }).then(function (ok) {
+        if (!ok) return;
+        hideProfHistory(user.id, id);
+        PU.toast('Serviço removido do histórico.', 'success');
+        global.navigate('/profissional/servicos', true);
+      });
     });
   }
 
@@ -6971,14 +7067,19 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const items = loadNotices(session);
     return '<div class="view">' +
       '<div class="section-head"><div><h2 class="h2">Avisos</h2><p class="text text--sm text--secondary">Chamados, profissionais e atualizações importantes.</p></div></div>' +
-      (items.length ? '<div class="stack--sm">' + items.map(function (n) {
-        return '<button class="notice-card' + (n.read ? '' : ' is-unread') + '"' + (n.route ? ' data-nav="' + PU.escapeHtml(n.route) + '"' : '') + '>' +
-          '<span class="notice-card__icon">' + icon('bell') + '</span>' +
-          '<span class="spacer"><span class="notice-card__title">' + PU.escapeHtml(n.title) + '</span>' +
-          (n.body ? '<span class="notice-card__body">' + PU.escapeHtml(n.body) + '</span>' : '') +
-          '<span class="notice-card__time">' + PU.timeAgo(n.createdAt) + '</span></span>' +
-        '</button>';
-      }).join('') + '</div>' : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('bell') + '</div><p class="text text--secondary">Nenhum aviso novo.</p></div>') +
+      (items.length ? '<div class="notice-toolbar"><button type="button" class="notice-clear" data-clear-notices>Excluir todos</button></div>' +
+        '<div class="stack--sm">' + items.map(function (n) {
+          return '<div class="notice-card' + (n.read ? '' : ' is-unread') + '">' +
+            '<button type="button" class="notice-card__open"' + (n.route ? ' data-nav="' + PU.escapeHtml(n.route) + '"' : '') + '>' +
+              '<span class="notice-card__icon">' + icon('bell') + '</span>' +
+              '<span class="spacer"><span class="notice-card__title">' + PU.escapeHtml(n.title) + '</span>' +
+              (n.body ? '<span class="notice-card__body">' + PU.escapeHtml(n.body) + '</span>' : '') +
+              '<span class="notice-card__time">' + PU.timeAgo(n.createdAt) + '</span></span>' +
+            '</button>' +
+            '<button type="button" class="notice-card__delete" data-delete-notice="' + PU.escapeHtml(n.id) + '" aria-label="Excluir aviso" title="Excluir aviso">' + icon('xCircle') + '</button>' +
+          '</div>';
+        }).join('') + '</div>'
+        : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('bell') + '</div><p class="text text--secondary">Nenhum aviso novo.</p></div>') +
     '</div>';
   };
 
@@ -7188,6 +7289,30 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   }
 
   document.addEventListener('click', function (e) {
+    const deleteNotice = e.target.closest('[data-delete-notice]');
+    if (deleteNotice) {
+      e.preventDefault();
+      e.stopPropagation();
+      const session = currentSession();
+      const id = deleteNotice.getAttribute('data-delete-notice');
+      const items = loadNotices(session).filter(function (n) { return n.id !== id; });
+      saveNotices(session, items);
+      PU.toast('Aviso excluído.', 'success');
+      navigate('/' + session.role + '/avisos', true);
+      return;
+    }
+    const clearNotices = e.target.closest('[data-clear-notices]');
+    if (clearNotices) {
+      e.preventDefault();
+      const session = currentSession();
+      PU.confirmDialog({ title: 'Excluir todos os avisos', message: 'Deseja limpar todos os avisos desta conta?', okLabel: 'Excluir todos', danger: true }).then(function (ok) {
+        if (!ok) return;
+        saveNotices(session, []);
+        PU.toast('Avisos excluídos.', 'success');
+        navigate('/' + session.role + '/avisos', true);
+      });
+      return;
+    }
     const navEl = e.target.closest('[data-nav]');
     if (navEl && navEl.closest('.tabbar, .topbar')) { e.preventDefault(); navigate(navEl.getAttribute('data-nav')); }
     const logoutEl = e.target.closest('[data-logout]');
