@@ -696,7 +696,51 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .status-step__body { padding-bottom: 24px; min-width: 0; }
 .status-step__title { font-size: 14.5px; font-weight: 700; transition: color .2s ease, transform .2s ease; }
 .status-step.is-current .status-step__body { animation: qfTimelineFade .45s ease both; }
-.status-step__sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; }
+.status-step__sub { font-size: 12.5px; color: var(--text-secondary); margin-top: 3px; }
+.status-step__activity {
+  width: min(320px, 100%);
+  height: 6px;
+  margin-top: 9px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+  position: relative;
+}
+.status-step__activity::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 42%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--orange-400), var(--orange-500), var(--orange-300));
+  animation: qfTimelineMove 1.35s ease-in-out infinite;
+}
+.status-step__waiting-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.status-step__waiting-dots i {
+  display: block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .35;
+  animation: qfTimelineDot 1.15s ease-in-out infinite;
+}
+.status-step__waiting-dots i:nth-child(2) { animation-delay: .16s; }
+.status-step__waiting-dots i:nth-child(3) { animation-delay: .32s; }
+@keyframes qfTimelineMove {
+  0% { left: -45%; opacity: .65; }
+  50% { opacity: 1; }
+  100% { left: 105%; opacity: .65; }
+}
+@keyframes qfTimelineDot {
+  0%,100% { transform: translateY(0); opacity: .30; }
+  50% { transform: translateY(-2px); opacity: 1; }
+}
 @keyframes qfTimelinePulse {
   0%,100% { transform: scale(1); box-shadow: 0 0 0 5px rgba(244,109,18,.10), 0 6px 14px rgba(244,109,18,.18); }
   50% { transform: scale(1.10); box-shadow: 0 0 0 10px rgba(244,109,18,.05), 0 10px 22px rgba(244,109,18,.30); }
@@ -707,7 +751,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 }
 @media (prefers-reduced-motion: reduce) {
   .status-step.is-current .status-step__dot,
-  .status-step.is-current .status-step__body { animation: none; }
+  .status-step.is-current .status-step__body,
+  .status-step__activity::before,
+  .status-step__waiting-dots i { animation: none; }
+  .status-step__activity::before { left: 28%; width: 44%; }
 }
 
 /* ---------- Modal / sheet ---------- */
@@ -4775,7 +4822,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               '</div>' +
               '<div class="status-step__body">' +
                 '<div class="status-step__title">' + s.title + '</div>' +
-                (s.sub ? '<div class="status-step__sub">' + s.sub + '</div>' : '') +
+                (s.sub ? '<div class="status-step__sub">' + s.sub + (s.state === 'current' && s.working ? '<span class="status-step__waiting-dots" aria-hidden="true"><i></i><i></i><i></i></span>' : '') + '</div>' : '') +
+                (s.state === 'current' && s.working ? '<div class="status-step__activity" aria-hidden="true"></div>' : '') +
               '</div>' +
             '</div>';
           }).join('') +
@@ -4797,15 +4845,27 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       aprovado: 'Orçamento aprovado', em_andamento: 'Serviço em andamento', servico_concluido: 'Serviço concluído',
       finalizado: 'Avaliação concluída',
     };
+    const activity = {
+      buscando: 'Buscando profissionais próximos',
+      aguardando_orcamento: 'Profissional analisando sua solicitação',
+      orcamento_enviado: 'Aguardando sua aprovação do orçamento',
+      aprovado: 'Aprovado — aguardando início do serviço',
+      em_andamento: 'Serviço em execução',
+      servico_concluido: 'Aguardando sua avaliação',
+      finalizado: 'Processo finalizado'
+    };
     let effectiveStatus = req.status;
     if ([STATUS.AGUARDANDO_ACEITE, STATUS.SEM_PROFISSIONAL].indexOf(req.status) !== -1) effectiveStatus = STATUS.BUSCANDO;
     if (req.status === STATUS.ORCAMENTO_RECUSADO) effectiveStatus = STATUS.AGUARDANDO_ORCAMENTO;
     const idx = order.indexOf(effectiveStatus);
     const fluxoFinalizado = effectiveStatus === STATUS.FINALIZADO;
     return order.map(function (st, i) {
+      const state = fluxoFinalizado ? 'done' : (i < idx ? 'done' : i === idx ? 'current' : 'pending');
       return {
         title: titles[st],
-        state: fluxoFinalizado ? 'done' : (i < idx ? 'done' : i === idx ? 'current' : 'pending')
+        sub: state === 'current' ? activity[st] : '',
+        working: state === 'current' && !fluxoFinalizado,
+        state: state
       };
     });
   }
