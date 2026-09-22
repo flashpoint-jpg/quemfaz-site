@@ -2914,7 +2914,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       clienteId: row.cliente_id || null,
       categoriaId: row.categoria,
       descricao: row.descricao || '',
-      fotos: [],
+      fotos: Array.isArray(row.fotos) ? row.fotos : [],
       endereco: {
         id: 'cloud_' + row.id,
         rua: row.endereco_completo || '',
@@ -2982,6 +2982,22 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return req;
   }
 
+  async function attachCallPhotos(reqs) {
+    reqs = reqs || [];
+    const ids = reqs.map(function (r) { return r.id; }).filter(Boolean);
+    if (!ids.length) return reqs;
+    const pRes = await client.rpc('qf_chamado_fotos', { p_ids: ids });
+    if (pRes.error) throw pRes.error;
+    const map = Object.create(null);
+    (pRes.data || []).forEach(function (r) {
+      map[r.chamado_id] = Array.isArray(r.fotos) ? r.fotos : [];
+    });
+    reqs.forEach(function (req) {
+      if (Object.prototype.hasOwnProperty.call(map, req.id)) req.fotos = map[req.id];
+    });
+    return reqs;
+  }
+
   async function attachLatestQuotes(reqs) {
     reqs = reqs || [];
     const ids = reqs.map(function (r) { return r.id; }).filter(Boolean);
@@ -3045,6 +3061,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     DB.state.requests = (res.data || []).map(function (r) {
       return requestFromCloud(r, r.profissional_id || null);
     });
+    await attachCallPhotos(DB.state.requests);
     await attachLatestQuotes(DB.state.requests);
     await attachEvaluations(DB.state.requests);
     DB.state.users.profissionais = [];
@@ -3113,7 +3130,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         if (existing) Object.assign(existing, clientLocal); else DB.state.users.clientes.push(clientLocal);
       }
     });
-    await attachLatestQuotes(reqs);    await attachEvaluations(reqs);
+    await attachCallPhotos(reqs);
+    await attachLatestQuotes(reqs);
+    await attachEvaluations(reqs);
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
 
@@ -3464,6 +3483,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       endereco_completo: enderecoCompleto || null,
       latitude: loc ? loc.latitude : null,
       longitude: loc ? loc.longitude : null,
+      fotos: Array.isArray(data.fotos) ? data.fotos.slice(0, 4) : [],
       status: 'aberto',
       prioridade: false
     };
@@ -3472,6 +3492,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     await client.from('qf_profiles').update({ cidade: row.cidade, uf: row.uf, atualizado_em: new Date().toISOString() }).eq('id', data.clienteId);
     try { await saveClientAddress(Object.assign({}, data.endereco, { latitude: row.latitude, longitude: row.longitude })); } catch (_) {}
     const req = requestFromCloud(res.data, null);
+    req.fotos = Array.isArray(data.fotos) ? data.fotos.slice(0, 4) : [];
 
     if (data.prioridade) {
       const pay = await client.rpc('qf_solicitar_prioridade', {
@@ -5369,6 +5390,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           ((cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + whatsappHref(cliente.telefone, 'Olá ' + (cliente.nome || '') + ', sou ' + user.nome + ' do QuemFaz. Desbloqueei seu chamado e estou entrando em contato sobre o serviço.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
+          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(function (f) { return '<img class="upload-thumb" src="' + f + '" alt="Foto enviada pelo cliente">'; }).join('') + '</div>' : '') +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.rua) + ', ' + PU.escapeHtml(req.endereco.bairro) + (req.endereco.complemento ? ' · ' + PU.escapeHtml(req.endereco.complemento) : '') + '</span></div>' +
         '</div>' +
 
