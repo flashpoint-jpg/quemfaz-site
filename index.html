@@ -367,6 +367,74 @@ input, select, textarea { font-size: 16px; }
 .card--pressable { cursor: pointer; transition: transform 100ms ease; }
 .card--pressable:active { transform: scale(0.985); }
 
+/* Chamado novo: pulso visual temporário para chamar atenção do profissional. */
+.qf-new-call-alert {
+  position: relative;
+  border: 2px solid var(--orange-500) !important;
+  background: linear-gradient(135deg, #fff 0%, #fff9f4 100%) !important;
+  box-shadow: 0 0 0 0 rgba(234,102,12,.28), 0 12px 30px -14px rgba(196,83,10,.42) !important;
+  animation: qfNewCallPulse 1.15s ease-in-out infinite;
+  overflow: hidden;
+}
+.qf-new-call-alert::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 32%, rgba(255,145,61,.18) 50%, transparent 68%);
+  transform: translateX(-120%);
+  animation: qfNewCallShine 1.7s ease-in-out infinite;
+}
+.qf-new-call-alert .icon-tile--orange {
+  animation: qfNewCallIcon 1.15s ease-in-out infinite;
+}
+.qf-new-call-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--orange-100);
+  color: var(--orange-700);
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+.qf-new-call-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--orange-500);
+  box-shadow: 0 0 0 0 rgba(234,102,12,.45);
+  animation: qfNewCallDot 1.1s ease-out infinite;
+}
+@keyframes qfNewCallPulse {
+  0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234,102,12,.22), 0 12px 30px -14px rgba(196,83,10,.38); }
+  50% { transform: scale(1.012); box-shadow: 0 0 0 7px rgba(234,102,12,.10), 0 16px 36px -12px rgba(196,83,10,.48); }
+}
+@keyframes qfNewCallShine {
+  0%,35% { transform: translateX(-120%); }
+  75%,100% { transform: translateX(120%); }
+}
+@keyframes qfNewCallIcon {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.09); }
+}
+@keyframes qfNewCallDot {
+  0% { box-shadow: 0 0 0 0 rgba(234,102,12,.45); }
+  75%,100% { box-shadow: 0 0 0 8px rgba(234,102,12,0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qf-new-call-alert,
+  .qf-new-call-alert::after,
+  .qf-new-call-alert .icon-tile--orange,
+  .qf-new-call-badge::before { animation: none !important; }
+}
+
 .stack { display: flex; flex-direction: column; gap: 12px; }
 .stack--sm { gap: 8px; }
 .stack--lg { gap: 18px; }
@@ -5161,14 +5229,17 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
+    const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
+    const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     return (
-      '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/profissional/chamada/' + req.id + '">' +
+      '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + '" style="width:100%;text-align:left;" data-nav="/profissional/chamada/' + req.id + '">' +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || '') + (Number.isFinite(Number(req.distanciaKm)) ? ' · ' + Number(req.distanciaKm).toFixed(1).replace('.', ',') + ' km de você' : '') + '</div>' +
             '<div class="text--sm text--strong" style="margin-top:4px;color:var(--orange-700);">Desbloquear por ' + PU.formatCurrency(valor) + '</div>' +
+            (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
         '</div>' +
