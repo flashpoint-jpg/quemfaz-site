@@ -1,0 +1,10 @@
+QuemFaz V10.4
+
+Correções desta versão:
+- Botão Instalar App aparece na tela inicial do cliente e nas áreas já existentes.
+- Instalar App não depende mais do beforeinstallprompt para ficar visível.
+- Ao instalar, o botão some automaticamente.
+- Em Android sem prompt nativo, o botão mostra o caminho correto pelo Chrome.
+- Em arquivo local/content://, explica que a instalação PWA exige HTTPS.
+- Botão Atualizar mostra progresso, limpa caches antigos, força busca sem cache e recarrega com cache-buster.
+- Service Worker, PWA e Android atualizados para 10.4.0.
