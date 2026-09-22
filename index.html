@@ -2261,30 +2261,41 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     }
     const valor = leadFeeForRequest(req);
     const saldo = Number(prof.creditos || 0);
-    if (saldo < valor) return { ok: false, reason: 'saldo', valor: valor, saldo: saldo };
+    const primeiraGratis = Number(prof.bonusDesbloqueios || 0) > 0;
+    if (!primeiraGratis && saldo < valor) return { ok: false, reason: 'saldo', valor: valor, saldo: saldo };
 
-    prof.creditos = saldo - valor;
+    if (!primeiraGratis) prof.creditos = saldo - valor;
     prof.bonusDesbloqueios = 0;
 
     req.profissionalId = profissionalId;
     req.leadUnlock = {
       profissionalId: profissionalId,
-      valor: valor,
+      valor: primeiraGratis ? 0 : valor,
       valorTabela: valor,
-      forma: 'creditos',
+      forma: primeiraGratis ? 'bonus' : 'creditos',
       status: 'pago',
       criadoEm: nowIso()
     };
     req.status = STATUS.AGUARDANDO_ORCAMENTO;
     req.atualizadoEm = nowIso();
-    req.historico.push(historicoItem(prof.nome + ' desbloqueou o chamado por ' + PU.formatCurrency(valor)));
+    req.historico.push(historicoItem(
+      primeiraGratis
+        ? prof.nome + ' usou o primeiro desbloqueio grátis'
+        : prof.nome + ' desbloqueou o chamado por ' + PU.formatCurrency(valor)
+    ));
     state.transactions.push({
-      id: PU.uid('tx'), profissionalId: profissionalId, requestId: requestId, tipo: 'debito',
+      id: PU.uid('tx'), profissionalId: profissionalId, requestId: requestId,
+      tipo: primeiraGratis ? 'bonus' : 'debito',
       valor: valor, valorTabela: valor, status: 'pago', criadoEm: nowIso(),
-      descricao: 'Desbloqueio de chamado de ' + ((categoryById(req.categoriaId) || {}).nome || 'serviço'),
+      descricao: primeiraGratis
+        ? 'Primeiro desbloqueio grátis'
+        : 'Desbloqueio de chamado de ' + ((categoryById(req.categoriaId) || {}).nome || 'serviço'),
     });
     persist();
-    return { ok: true, request: req, valor: valor, valorTabela: valor, usouBonus: false, saldo: prof.creditos, bonusDesbloqueios: 0 };
+    return {
+      ok: true, request: req, valor: primeiraGratis ? 0 : valor, valorTabela: valor,
+      usouBonus: primeiraGratis, saldo: prof.creditos, bonusDesbloqueios: 0
+    };
   }
 
   function recarregarCreditos(profissionalId, valor, metodo) {
@@ -2883,7 +2894,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       online: !!pr.online,
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
-      bonusDesbloqueios: 0,
+      bonusDesbloqueios: (w && w.bonus_inicial_usado === false) ? 1 : 0,
       avaliacaoMedia: Number(pr.avaliacao_media || 0),
       totalAvaliacoes: Number(pr.total_avaliacoes || 0),
       taxaVisitaPadrao: 0,
@@ -3522,8 +3533,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       ok: true,
       request: req,
       valor: Number(out.preco_centavos || 0),
-      valorTabela: Number(out.preco_centavos || 0),
-      usouBonus: false,
+      valorTabela: Number(out.preco_tabela_centavos || out.preco_centavos || 0),
+      usouBonus: out.usou_bonus === true || out.origem === 'bonus',
       saldo: prof ? Number(prof.creditos || 0) : Number(out.saldo_centavos || 0),
       bonusDesbloqueios: 0
     };
@@ -5174,6 +5185,13 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       '<div class="view">' +
         pendingGate(user) +
         (global.QFPush ? global.QFPush.card('profissional') : '') +
+        (Number(user.bonusDesbloqueios || 0) > 0
+          ? '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;">' +
+              '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">' + icon('unlock') + '</div>' +
+              '<div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div>' +
+              '<div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, para desbloquear novos chamados, visualizar os dados do cliente e enviar orçamento, é necessário ter saldo na Carteira QuemFaz.</div></div></div>' +
+            '</div>'
+          : '') +
         '<div data-install-slot style="display:none;margin-top:12px;"></div>' +
         (!user.fotoUrl ? '<div class="card notify-required" style="margin-top:12px;"><div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong">Cadastre sua selfie</div><div class="text--sm text--secondary">Por segurança do cliente, a selfie é obrigatória antes de ficar online.</div></div></div><button class="btn btn--outline" data-nav="/profissional/perfil" style="margin-top:12px;">Abrir perfil</button></div>' : '') +
 
@@ -5229,6 +5247,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
+    const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     return (
@@ -5238,7 +5257,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || '') + (Number.isFinite(Number(req.distanciaKm)) ? ' · ' + Number(req.distanciaKm).toFixed(1).replace('.', ',') + ' km de você' : '') + '</div>' +
-            '<div class="text--sm text--strong" style="margin-top:4px;color:var(--orange-700);">Desbloquear por ' + PU.formatCurrency(valor) + '</div>' +
+            '<div class="text--sm text--strong" style="margin-top:4px;color:' + (primeiraGratis ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
+              (primeiraGratis ? '1º desbloqueio GRÁTIS' : 'Desbloquear por ' + PU.formatCurrency(valor)) +
+            '</div>' +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
@@ -5257,6 +5278,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
+    const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
     return (
       '<div class="view">' +
         '<div class="row-between">' +
@@ -5274,14 +5296,18 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '</div>' +
 
         '<div class="section card stack--sm" style="background:var(--navy-900);border:none;">' +
-          '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">Taxa para desbloquear</div><div class="h1" style="color:#fff;">' + PU.formatCurrency(valor) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
-          '<p class="text--sm" style="color:var(--text-on-navy-muted);">Ao desbloquear, usamos os créditos da carteira e liberamos nome, telefone/WhatsApp e endereço exato. O chamado fica reservado para você.</p>' +
+          '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
+          '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
+            (primeiraGratis
+              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Depois dele, para abrir novos chamados, visualizar os dados do cliente e enviar orçamento, você precisará ter saldo na carteira.'
+              : 'Ao desbloquear, usamos os créditos da carteira e liberamos nome, telefone/WhatsApp e endereço exato. O chamado fica reservado para você.') +
+          '</p>' +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
         '<div class="section btn-row">' +
           '<button class="btn btn--outline" data-action="recusar-chamada">Agora não</button>' +
-          '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' Desbloquear ' + PU.formatCurrency(valor) + '</button>' +
+          '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + (primeiraGratis ? 'Desbloquear grátis' : 'Desbloquear ' + PU.formatCurrency(valor)) + '</button>' +
         '</div>' +
       '</div>'
     );
@@ -5946,17 +5972,20 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       if (act === 'desbloquear-chamada') {
         const req = DB.requestById(params.id);
         const valor = req ? DB.leadFeeForRequest(req) : 0;
+        const primeiraGratis = Number(user.bonusDesbloqueios || 0) > 0;
         PU.confirmDialog({
-          title: 'Desbloquear chamado',
-          message: 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Depois disso, o contato e o endereço completo do cliente serão liberados para você.',
-          okLabel: 'Pagar e desbloquear'
+          title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
+          message: primeiraGratis
+            ? 'Nenhum crédito será usado neste primeiro chamado. O contato e o endereço completo do cliente serão liberados. Nos próximos chamados, será necessário ter saldo na Carteira QuemFaz.'
+            : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Depois disso, o contato e o endereço completo do cliente serão liberados para você.',
+          okLabel: primeiraGratis ? 'Desbloquear grátis' : 'Pagar e desbloquear'
         }).then(async function (ok) {
           if (!ok) return;
           const result = (global.QFCloud && global.QFCloud.enabled)
             ? await global.QFCloud.unlockCall(params.id, user.id)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
-            PU.toast('Chamado desbloqueado! Contato do cliente liberado.', 'success');
+            PU.toast(result.usouBonus ? 'Primeiro chamado desbloqueado GRÁTIS! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.', 'success');
             global.navigate('/profissional/pedido/' + params.id, true);
             return;
           }
