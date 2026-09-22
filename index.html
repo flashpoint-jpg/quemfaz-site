@@ -2438,13 +2438,42 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   function recusarOrcamento(requestId, motivo) {
     const req = requestById(requestId);
-    if (!req || !req.orcamento) return null;    req.orcamento.status = 'recusado';
+    if (!req || !req.orcamento) return null;
+    req.orcamento.status = 'recusado';
     req.orcamento.motivoRecusa = motivo || '';
     req.status = STATUS.ORCAMENTO_RECUSADO;
     req.atualizadoEm = nowIso();
-    req.historico.push(historicoItem('Cliente recusou o orçamento' + (motivo ? ': ' + motivo : '')));
+    req.historico.push(historicoItem('Cliente recusou o orçamento e pediu novo valor' + (motivo ? ': ' + motivo : '')));
     persist();
     return req;
+  }
+
+  function buscarOutroProfissional(requestId, motivo) {
+    const req = requestById(requestId);
+    if (!req || !req.orcamento) return null;
+
+    const profissionalAnterior = req.profissionalId;
+    req.orcamento.status = 'recusado';
+    req.orcamento.motivoRecusa = motivo || '';
+
+    req.recusadoPor = req.recusadoPor || [];
+    if (profissionalAnterior && req.recusadoPor.indexOf(profissionalAnterior) === -1) {
+      req.recusadoPor.push(profissionalAnterior);
+    }
+
+    if (req.leadUnlock) {
+      req.desbloqueiosAnteriores = req.desbloqueiosAnteriores || [];
+      req.desbloqueiosAnteriores.push(Object.assign({}, req.leadUnlock, { encerradoEm: nowIso() }));
+    }
+
+    req.profissionalId = null;
+    req.leadUnlock = null;
+    req.orcamento = null;
+    req.status = STATUS.BUSCANDO;
+    req.atualizadoEm = nowIso();
+    req.historico.push(historicoItem('Cliente recusou o orçamento e voltou o chamado para buscar outro profissional' + (motivo ? ': ' + motivo : '')));
+    persist();
+    return buscarProfissional(requestId) || req;
   }
 
   function pagarPedido(requestId) {
@@ -2740,7 +2769,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     reviewsForProfissional, transactionsForProfissional,
     cadastrarCliente, cadastrarProfissional, login, logout,
     criarPedido, buscarProfissional, cancelarPedido,
-    aprovarOrcamento, recusarOrcamento, pagarPedido, avaliarComoCliente, avaliarComoProfissional,
+    aprovarOrcamento, recusarOrcamento, buscarOutroProfissional, pagarPedido, avaliarComoCliente, avaliarComoProfissional,
     aceitarChamada, recusarChamada, desbloquearChamado, recarregarCreditos, criarRecargaPendente, confirmarRecargaPendente, enviarOrcamento, iniciarServico, finalizarServico,
     setOnlineStatus, atualizarPerfilProfissional, enviarDocumento,
     aprovarProfissional, reprovarProfissional, bloquearUsuario,
@@ -5243,22 +5272,44 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       }
       if (act === 'recusar-orcamento') {
         PU.openSheet(
-          '<h3 class="sheet__title">Recusar orçamento</h3>' +
-          '<p class="text text--secondary text--sm">Diga rapidamente o motivo (opcional).</p>' +
-          '<textarea class="textarea" id="motivo-recusa" placeholder="Ex: valor acima do esperado"></textarea>' +
-          '<button class="btn btn--danger-ghost" id="confirmar-recusa" style="margin-top:12px;">Recusar orçamento</button>'
+          '<h3 class="sheet__title">Orçamento acima do esperado?</h3>' +
+          '<p class="text text--secondary text--sm">Você pode pedir um novo valor ao mesmo profissional ou voltar o chamado para buscar outro profissional.</p>' +
+          '<textarea class="textarea" id="motivo-recusa" placeholder="Motivo opcional. Ex: valor acima do esperado"></textarea>' +
+          '<div class="stack--sm" style="margin-top:14px;">' +
+            '<button class="btn btn--outline" id="pedir-novo-valor">' + icon('refresh') + ' Pedir novo valor</button>' +
+            '<button class="btn btn--primary" id="buscar-outro-profissional">' + icon('search') + ' Buscar outro profissional</button>' +
+          '</div>'
         );
-        document.getElementById('confirmar-recusa').addEventListener('click', async function () {
-          const motivo = document.getElementById('motivo-recusa').value.trim();
+
+        async function processarRecusa(acao) {
+          const campo = document.getElementById('motivo-recusa');
+          const motivo = campo ? campo.value.trim() : '';
           PU.closeSheet();
           try {
-            if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.respondQuote(req.id, 'recusar', motivo);
-            else DB.recusarOrcamento(req.id, motivo);
-            PU.toast('Orçamento recusado.', 'danger');
+            if (global.QFCloud && global.QFCloud.enabled) {
+              await global.QFCloud.respondQuote(req.id, acao, motivo);
+            } else if (acao === 'buscar_outro') {
+              DB.buscarOutroProfissional(req.id, motivo);
+            } else {
+              DB.recusarOrcamento(req.id, motivo);
+            }
+
+            if (acao === 'buscar_outro') {
+              PU.toast('Chamado voltou para a busca de outro profissional.', 'success');
+            } else {
+              PU.toast('Pedido de novo valor enviado ao profissional.', 'success');
+            }
             global.navigate('/cliente/pedido/' + req.id, true);
           } catch (err) {
-            PU.toast('Não foi possível recusar o orçamento. ' + (err && err.message ? err.message : ''), 'danger');
+            PU.toast('Não foi possível atualizar o orçamento. ' + (err && err.message ? err.message : ''), 'danger');
           }
+        }
+
+        document.getElementById('pedir-novo-valor').addEventListener('click', function () {
+          processarRecusa('recusar');
+        });
+        document.getElementById('buscar-outro-profissional').addEventListener('click', function () {
+          processarRecusa('buscar_outro');
         });
       }
       if (act === 'enviar-avaliacao') {
