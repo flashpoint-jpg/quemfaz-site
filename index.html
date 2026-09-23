@@ -17,6 +17,30 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon.svg">
+<script>
+/* QF_MARKETING_ATTRIBUTION_V1
+   Guarda a origem do clique até o cadastro ser concluído.
+   Não envia CPF, telefone, e-mail ou selfie. */
+(function () {
+  try {
+    var p = new URLSearchParams(window.location.search || '');
+    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || p.get('fbclid');
+    if (!hasCampaign) return;
+    var payload = {
+      source: p.get('utm_source') || (p.get('fbclid') ? 'meta' : ''),
+      medium: p.get('utm_medium') || (p.get('fbclid') ? 'paid' : ''),
+      campaign: p.get('utm_campaign') || '',
+      content: p.get('utm_content') || '',
+      term: p.get('utm_term') || '',
+      click_id: p.get('fbclid') || '',
+      landing_url: window.location.href,
+      referrer: document.referrer || '',
+      first_seen_at: new Date().toISOString()
+    };
+    localStorage.setItem('qf_marketing_attribution', JSON.stringify(payload));
+  } catch (_) {}
+})();
+</script>
 <style>
 /* QuemFaz — Design tokens
    Azul-marinho como base de marca, laranja como acento de ação.
@@ -3447,7 +3471,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (res.error) throw res.error;
     return res.data || null;
   }
-  async function applyPendingIdentity(email) {
+  async function applyPendingIdentity(email, role) {
     try {
       const k = pendingCpfKey(email); const cpf = localStorage.getItem(k);
       if (cpf) { await saveCpf(cpf); localStorage.removeItem(k); }
@@ -3467,6 +3491,37 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         }
       }
     } catch (e) { console.warn('QuemFaz selfie pendente', e); }
+    try {
+      const rawMarketing = localStorage.getItem('qf_marketing_attribution');
+      if (rawMarketing && (role === 'cliente' || role === 'profissional')) {
+        const marketing = JSON.parse(rawMarketing);
+        const uRes = await client.auth.getUser();
+        if (uRes && uRes.data && uRes.data.user) {
+          const row = {
+            user_id: uRes.data.user.id,
+            role: role,
+            source: String(marketing.source || '').slice(0, 120) || null,
+            medium: String(marketing.medium || '').slice(0, 120) || null,
+            campaign: String(marketing.campaign || '').slice(0, 240) || null,
+            content: String(marketing.content || '').slice(0, 240) || null,
+            term: String(marketing.term || '').slice(0, 240) || null,
+            click_id: String(marketing.click_id || '').slice(0, 512) || null,
+            landing_url: String(marketing.landing_url || '').slice(0, 2000) || null,
+            referrer: String(marketing.referrer || '').slice(0, 2000) || null,
+            first_seen_at: marketing.first_seen_at || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          const mr = await client.from('qf_marketing_attribution').upsert(row, { onConflict: 'user_id' });
+          if (mr.error) throw mr.error;
+          localStorage.removeItem('qf_marketing_attribution');
+          try {
+            if (role === 'profissional' && typeof global.fbq === 'function') {
+              global.fbq('track', 'CompleteRegistration', { content_name: 'QuemFaz Profissional' });
+            }
+          } catch (_) {}
+        }
+      }
+    } catch (e) { console.warn('QuemFaz origem de marketing pendente', e); }
   }
 
   async function syncForCurrentSession(force) {
@@ -3487,8 +3542,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         }
         const user = sbSession.user;
         const profile = await ensureProfile(user, null, null);
-        await applyPendingIdentity(user.email || '');
         const role = profile.tipo;
+        await applyPendingIdentity(user.email || '', role);
         const localUser = await syncLocalUser(user, role);
         DB.setSession({ role: role, userId: user.id });
         if (role === 'cliente') await syncClientCalls(user.id);
@@ -3546,7 +3601,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     }
     try {
       await ensureProfile(res.data.user, role, data);
-      await applyPendingIdentity(data.email);
+      await applyPendingIdentity(data.email, role);
       const local = await syncLocalUser(res.data.user, role);
       DB.setSession({ role: role, userId: res.data.user.id });      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       return { ok: true, user: local, session: DB.getSession() };
@@ -3561,7 +3616,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (res.error) return { ok: false, error: 'E-mail ou senha inválidos.' };
     try {
       const p = await ensureProfile(res.data.user, expectedRole, null);
-      await applyPendingIdentity(email);
+      await applyPendingIdentity(email, p.tipo);
       if (p.tipo !== expectedRole) {
         await client.auth.signOut();
         DB.setSession(null);
