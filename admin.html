@@ -2531,6 +2531,12 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     if (out.ok === false) throw new Error(out.reason || 'Operação não permitida.');
     return out;
   }
+  async function alertMetrics(days) {
+    if (!client) throw new Error('Supabase indisponível.');
+    const res = await client.rpc('qf_admin_metricas_alerta', { p_dias: Number(days || 7) });
+    if (res.error) throw res.error;
+    return res.data || {};
+  }
   async function setBlocked(userId, bloquear) { const o = await rpcOk('qf_admin_definir_bloqueio', { p_user_id: userId, p_bloquear: !!bloquear }); await syncSnapshot(true); return o; }
   async function setVerified(userId, v) { const o = await rpcOk('qf_admin_definir_verificado', { p_user_id: userId, p_verificado: !!v }); await syncSnapshot(true); return o; }
   async function addCredits(userId, cents, desc) { const o = await rpcOk('qf_admin_adicionar_creditos', { p_user_id: userId, p_valor_centavos: Number(cents), p_descricao: desc || null }); await syncSnapshot(true); return o; }
@@ -2597,7 +2603,7 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
   }
 
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
-    syncSnapshot, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
+    syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus,
     get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
@@ -4255,6 +4261,11 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
           '</div>' +
         '</div>' +
 
+        '<div class="section" id="admin-alertas-chamado">' +
+          '<div class="section-head"><div><h2 class="h3">Alertas de chamado</h2><div class="text--sm text--secondary">Entrega dos alertas e tempo até aceite.</div></div><select class="select" id="admin-alert-days" style="width:auto;min-width:104px;"><option value="7">7 dias</option><option value="30">30 dias</option></select></div>' +
+          '<div id="admin-alert-metrics"><div class="card card--tight"><div class="text--sm text--secondary">Carregando métricas de alerta…</div></div></div>' +
+        '</div>' +
+
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Pessoas</h2></div>' +
           '<button class="card row-between" style="width:100%;text-align:left;" data-nav="/admin/profissionais">' +
@@ -4808,6 +4819,40 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     '</button>';
   }
 
+  function alertKpi(value,label,warning){
+    return '<div class="kpi-card"'+(warning?' style="border:2px solid var(--orange-500);background:var(--orange-100);"':'')+'><div class="kpi-card__value">'+PU.escapeHtml(String(value==null?'—':value))+'</div><div class="kpi-card__label">'+PU.escapeHtml(label)+'</div></div>';
+  }
+  function renderAlertMetrics(box,d){
+    if(!box)return;
+    d=d||{};
+    const chamados=Number(d.chamados||0),aceitos=Number(d.aceitos||0);
+    const pct=chamados?Math.round(aceitos/chamados*100):0;
+    const regions=Array.isArray(d.regioes_sem_cobertura)?d.regioes_sem_cobertura:[];
+    box.innerHTML=
+      '<div class="kpi-grid">'+
+        alertKpi(chamados,'Chamados')+
+        alertKpi(aceitos+' · '+pct+'%','Aceitos')+
+        alertKpi(Number(d.minutos_ate_aceite_media||0).toFixed(1)+' min','Média até aceitar')+
+        alertKpi(Number(d.minutos_ate_aceite_mediana||0).toFixed(1)+' min','Mediana até aceitar')+
+        alertKpi(Number(d.perdidos||0),'Perdidos')+
+        alertKpi(Number(d.abertos_agora||0),'Abertos agora')+
+        alertKpi(Number(d.sem_ninguem_avisado||0),'Sem ninguém avisado')+
+        alertKpi(Number(d.profissionais_online||0),'Profissionais online')+
+        alertKpi(Number(d.online_sem_notificacao||0),'Online sem notificação',Number(d.online_sem_notificacao||0)>0)+
+        alertKpi(Number(d.online_localizacao_antiga||0),'Localização antiga')+
+      '</div>'+
+      '<div class="card" style="margin-top:12px;"><div class="text--strong">Regiões sem cobertura</div>'+
+        (regions.length?'<div class="stack--sm" style="margin-top:10px;">'+regions.map(function(r){return '<div class="row-between"><span class="text--sm">'+PU.escapeHtml(r.regiao||'Região')+'</span><span class="badge badge--warning">'+Number(r.chamados||0)+' chamados</span></div>';}).join('')+'</div>':'<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma região sem cobertura neste período.</div>')+
+      '</div>';
+  }
+  async function loadAlertMetrics(content,days){
+    const box=content.querySelector('#admin-alert-metrics');
+    if(!box||!(global.QFAdminCloud&&global.QFAdminCloud.alertMetrics))return;
+    box.innerHTML='<div class="card card--tight"><div class="text--sm text--secondary">Carregando métricas de alerta…</div></div>';
+    try{const d=await global.QFAdminCloud.alertMetrics(days);renderAlertMetrics(box,d);}
+    catch(err){box.innerHTML='<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Não foi possível carregar as métricas de alerta.</div></div>';console.warn('QuemFaz métricas de alerta',err);}
+  }
+
   // ---------------- Interações pós-render ----------------
 
   const prevAfterRender = Screens.afterRender;
@@ -4826,6 +4871,9 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
     if (pattern === '/admin/suporte') bindSuporteLista(content);
     if (pattern === '/admin/suporte/:id') bindSuporteDetalhe(content, params);
     if (pattern === '/admin/dashboard') {
+      const days=content.querySelector('#admin-alert-days');
+      loadAlertMetrics(content, days ? Number(days.value) : 7);
+      if(days)days.addEventListener('change',function(){loadAlertMetrics(content,Number(days.value)||7);});
       const rb = content.querySelector('[data-action="admin-refresh"]');
       if (rb) rb.addEventListener('click', async function () {
         rb.disabled = true;
