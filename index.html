@@ -7417,8 +7417,12 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
   function onPush(payload) {
     payload = payload || {};
     const strong = !!payload.strong;
+    const rawUrl=String(payload.url||(payload.data&&payload.data.url)||'');
+    const callMatch=rawUrl.match(/\/profissional\/chamada\/([^?#/]+)/);
+    let overlayHandled=false;
+    if(strong&&callMatch&&global.QFCallAlert)overlayHandled=global.QFCallAlert.offer(decodeURIComponent(callMatch[1]));
     PU.notePushSound();
-    PU.playNotificationSound(strong);
+    if(!overlayHandled) PU.playNotificationSound(strong);
     const visualTitle = payload.title || (strong ? 'Novo chamado recebido' : 'Nova notificação');
     const visualBody = payload.body || 'Abra o QuemFaz para ver os detalhes.';
     PU.toast(visualTitle + ' — ' + visualBody, strong ? 'success' : '', strong ? 9000 : 5000);
@@ -7891,6 +7895,74 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
 })(window);
 
 
+
+/* QuemFaz V11.2 — tela cheia de novo chamado com o app aberto */
+(function (global) {
+  const DB=global.DB,PU=global.PU,icon=global.icon;
+  let queue=[],activeId='',countdown=null,seconds=30,audio=null,retryCount=0;
+
+  function editing(){try{return !!(global.PROAKI_APP&&global.PROAKI_APP.userIsEditing&&global.PROAKI_APP.userIsEditing());}catch(_){return false;}}
+  function requestById(id){try{return DB.requestById(id);}catch(_){return null;}}
+  function sortReqs(a,b){
+    if(!!a.prioridade!==!!b.prioridade)return a.prioridade?-1:1;
+    const da=Number.isFinite(Number(a.distanciaKm))?Number(a.distanciaKm):999999;
+    const db=Number.isFinite(Number(b.distanciaKm))?Number(b.distanciaKm):999999;
+    if(da!==db)return da-db;
+    return new Date(a.criadoEm||0)-new Date(b.criadoEm||0);
+  }
+  function stopAudio(){if(!audio)return;try{audio.pause();audio.currentTime=0;}catch(_){}audio=null;}
+  function startAudio(){stopAudio();try{audio=new Audio('./quemfaz_chamado.mp3');audio.loop=true;audio.volume=1;const p=audio.play();if(p&&p.catch)p.catch(function(){});}catch(_){}}
+  function stopTimer(){if(countdown){clearInterval(countdown);countdown=null;}}
+  function close(clearAll){stopTimer();stopAudio();const el=document.getElementById('qf-call-overlay');if(el)el.remove();if(clearAll)queue=[];activeId='';seconds=30;}
+  function updateTimer(){
+    const txt=document.querySelector('#qf-call-overlay [data-call-seconds]');
+    const fill=document.querySelector('#qf-call-overlay [data-call-fill]');
+    if(txt)txt.textContent=seconds+' s';
+    if(fill)fill.style.width=Math.max(0,seconds/30*100)+'%';
+    if(seconds<=0)close(true);
+  }
+  function render(){
+    if(editing())return false;
+    const reqs=queue.map(requestById).filter(function(r){return r&&!r.profissionalId&&(r.status===DB.STATUS.BUSCANDO||r.status===DB.STATUS.AGUARDANDO_ACEITE);}).sort(sortReqs);
+    if(!reqs.length){
+      if(queue.length&&retryCount<4){retryCount++;setTimeout(render,850);return false;}
+      queue=[];retryCount=0;return false;
+    }
+    retryCount=0;
+    const req=reqs[0],cat=DB.categoryById(req.categoriaId),city=DB.cityById(req.cidadeId);
+    activeId=req.id;
+    const bairro=(req.endereco&&req.endereco.bairro)||'';
+    const cidade=(req.endereco&&req.endereco.cidade)||(city&&city.nome)||'';
+    const dist=Number.isFinite(Number(req.distanciaKm))?Number(req.distanciaKm).toFixed(1).replace('.',',')+' km':'—';
+    const price=DB.leadFeeForRequest(req);
+    let el=document.getElementById('qf-call-overlay');
+    if(!el){el=document.createElement('div');el.id='qf-call-overlay';el.className='qf-call-overlay';document.body.appendChild(el);}
+    el.innerHTML='<div class="qf-call-overlay__inner" role="alertdialog" aria-modal="true" aria-labelledby="qf-new-call-title">'+
+      '<div class="qf-call-overlay__icon">'+icon(cat?cat.icon:'phoneCall')+'</div><div class="qf-call-overlay__eyebrow">Novo chamado</div>'+
+      '<h2 class="qf-call-overlay__title" id="qf-new-call-title">'+PU.escapeHtml(cat?cat.nome:'Serviço')+'</h2>'+
+      '<div class="qf-call-overlay__place">'+PU.escapeHtml([bairro,cidade].filter(Boolean).join(' · '))+'</div>'+
+      (req.prioridade?'<div class="qf-call-overlay__priority">PRIORITÁRIO</div>':'')+
+      '<div class="qf-call-overlay__facts"><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(dist)+'</strong><span>de você</span></div><div class="qf-call-overlay__fact"><strong>'+PU.formatCurrency(price)+'</strong><span>para desbloquear</span></div></div>'+
+      (reqs.length>1?'<div class="qf-call-overlay__others">+'+(reqs.length-1)+' outro'+(reqs.length-1===1?'':'s')+' chamado'+(reqs.length-1===1?'':'s')+'</div>':'')+
+      '<button class="btn btn--primary qf-call-overlay__accept" type="button" data-call-accept>VER E ACEITAR</button><button class="qf-call-overlay__later" type="button" data-call-later>Agora não</button>'+
+      '<div class="qf-call-timer"><div class="qf-call-timer__bar"><div class="qf-call-timer__fill" data-call-fill></div></div><div class="qf-call-timer__txt">Fecha em <span data-call-seconds>30 s</span></div></div></div>';
+    const accept=el.querySelector('[data-call-accept]'),later=el.querySelector('[data-call-later]');
+    if(accept)accept.onclick=function(){const id=activeId;close(true);if(global.navigate)global.navigate('/profissional/chamada/'+id);};
+    if(later)later.onclick=function(){close(true);};
+    if(!countdown){seconds=30;updateTimer();startAudio();countdown=setInterval(function(){seconds--;updateTimer();},1000);}
+    return true;
+  }
+  function offer(id){
+    if(!id)return false;
+    const sess=DB.getSession&&DB.getSession();
+    if(!sess||sess.role!=='profissional'||editing())return false;
+    if(queue.indexOf(id)===-1)queue.push(id);
+    if(!requestById(id)&&global.PROAKI_APP&&global.PROAKI_APP.refreshNow)global.PROAKI_APP.refreshNow();
+    return render();
+  }
+  global.QFCallAlert={offer:offer,close:function(){close(true);},isOpen:function(){return !!document.getElementById('qf-call-overlay');}};
+})(window);
+
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
 (function (global) {
@@ -8022,7 +8094,8 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
         const body = batch.length === 1 ? (batch[0].body || '') : 'Abra Avisos para ver todos.';
         // V11.1: se um push acabou de tocar, não toca de novo (o aviso continua na tela e em Avisos).
         const pushJustRang = PU.pushSoundRecent();
-        if (!pushJustRang) PU.playNotificationSound(strong);
+        const fullCallAlert = !!(global.QFCallAlert && global.QFCallAlert.isOpen && global.QFCallAlert.isOpen());
+        if (!pushJustRang && !fullCallAlert) PU.playNotificationSound(strong);
         PU.toast(title + (body ? ' — ' + body : ''), 'success');
         if (!pushJustRang) PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
       }
@@ -8035,6 +8108,7 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
       if (session.role === 'profissional') {
         if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO) {
           pushNotice(session, 'novo_chamado:' + id, 'Novo chamado perto de você', detail, '/profissional/chamada/' + id, true);
+          if (global.QFCallAlert) global.QFCallAlert.offer(id);
         }
         if (b && b.status !== a.status && a.profissionalId === session.userId) {
           if (a.status === DB.STATUS.CANCELADO) pushNotice(session, 'cancelado:' + id, 'Chamado cancelado pelo cliente', detail, '/profissional/pedido/' + id, true);
@@ -8487,7 +8561,7 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
   }
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshNow(); });
 
-  global.PROAKI_APP = { navigate, currentSession, currentUser, route, TABS, refreshNow };
+  global.PROAKI_APP = { navigate, currentSession, currentUser, route, TABS, refreshNow, userIsEditing };
 })(window);
 
 </script>
