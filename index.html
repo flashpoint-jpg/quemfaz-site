@@ -4968,6 +4968,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         (canCancel(req.status)
           ? '<div class="section"><button class="btn btn--danger-ghost" data-action="cancelar-pedido">' + icon('xCircle') + ' Cancelar pedido</button></div>'
           : '') +
+        (req.status === STATUS.CANCELADO
+          ? '<div class="section"><button class="btn btn--primary" data-action="refazer-pedido">' + icon('refresh') + ' Refazer o mesmo pedido</button><div class="text--sm text--secondary" style="margin-top:7px;">Descrição, endereço e mídias serão reaproveitados. Você pode revisar antes de publicar.</div></div>'
+          : '') +
       '</div>'
     );
   };
@@ -5450,6 +5453,37 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         uploadRow.appendChild(wrap);
       }
 
+      (function applyRepeatOrderDraft() {
+        let draft = null;
+        try {
+          const raw = sessionStorage.getItem('qf_repeat_order_draft');
+          if (raw) draft = JSON.parse(raw);
+        } catch (_) { draft = null; }
+        if (!draft || String(draft.categoriaId || '') !== String(params.catId || '')) return;
+
+        const setField = function (name, value) {
+          const el = form.querySelector('[name="' + name + '"]');
+          if (el && value != null) el.value = String(value);
+        };
+        setField('descricao', draft.descricao || '');
+
+        const end = draft.endereco || {};
+        setField('cep', end.cep || '');
+        setField('rua', end.rua || '');
+        setField('bairro', end.bairro || '');
+        setField('cidade', end.cidade || '');
+        setField('uf', end.uf || '');
+        setField('complemento', end.complemento || '');
+        setField('latitude', end.latitude != null ? end.latitude : '');
+        setField('longitude', end.longitude != null ? end.longitude : '');
+
+        fotos = Array.isArray(draft.fotos) ? draft.fotos.slice(0, 4) : [];
+        fotos.forEach(function (media) { renderThumb(media); });
+
+        try { sessionStorage.removeItem('qf_repeat_order_draft'); } catch (_) {}
+        PU.toast('Pedido anterior carregado. Revise e publique quando quiser.', 'success');
+      })();
+
       form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(form);
@@ -5515,6 +5549,18 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           DB.buscarProfissional(req.id);
           global.navigate('/cliente/pedido/' + req.id, true);
         }
+      }
+      if (act === 'refazer-pedido') {
+        try {
+          sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({
+            sourceId: req.id,
+            categoriaId: req.categoriaId,
+            descricao: req.descricao || '',
+            fotos: Array.isArray(req.fotos) ? req.fotos.slice(0, 4) : [],
+            endereco: req.endereco || null
+          }));
+        } catch (_) {}
+        global.navigate('/cliente/novo-pedido/' + encodeURIComponent(req.categoriaId));
       }
       if (act === 'gerar-pagamento-prioridade') {
         if (!(global.QFCloud && global.QFCloud.enabled)) return;
@@ -6998,7 +7044,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.2';
+  const APP_VERSION = '11.0.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
