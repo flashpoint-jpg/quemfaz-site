@@ -5,7 +5,7 @@
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
 const SW_VERSION = '11.2.0';
 const CACHE = 'quemfaz-' + SW_VERSION;
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon.svg', './icon.svg', './icon.svg', './quemfaz_chamado.mp3'];
+const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon.svg', './icon.svg', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).catch(() => null));
