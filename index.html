@@ -3981,6 +3981,32 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return true;
   }
 
+  async function professionalNotices() {
+    if (!client) return [];
+    const res = await client.from('qf_profissional_avisos')
+      .select('id,user_id,chamado_id,tipo,titulo,corpo,rota,criado_em')
+      .order('criado_em', { ascending: false })
+      .limit(50);
+    if (res.error) throw res.error;
+    return res.data || [];
+  }
+
+  async function deleteProfessionalNotice(id) {
+    if (!client || !id) return false;
+    const res = await client.from('qf_profissional_avisos').delete().eq('id', id);
+    if (res.error) throw res.error;
+    return true;
+  }
+
+  async function clearProfessionalNotices() {
+    if (!client) return false;
+    const uRes = await client.auth.getUser();
+    if (uRes.error || !uRes.data.user) return false;
+    const res = await client.from('qf_profissional_avisos').delete().eq('user_id', uRes.data.user.id);
+    if (res.error) throw res.error;
+    return true;
+  }
+
   global.QFCloud = {
     enabled: enabled,
     client: client,
@@ -4013,7 +4039,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     supportMyTickets: supportMyTickets,
     supportMessages: supportMessages,
     supportCreate: supportCreate,
-    supportSend: supportSend
+    supportSend: supportSend,
+    professionalNotices: professionalNotices,
+    deleteProfessionalNotice: deleteProfessionalNotice,
+    clearProfessionalNotices: clearProfessionalNotices
   };
 })(window);
 
@@ -7068,7 +7097,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.5';
+  const APP_VERSION = '11.0.6';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -7647,6 +7676,40 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     PU.toast(title + (body ? ' — ' + body : ''), 'success');
     PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
   }
+  async function syncPersistentProfessionalNotices(session, alertNew) {
+    if (!session || session.role !== 'profissional') return false;
+    if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.professionalNotices)) return false;
+    const rows = await global.QFCloud.professionalNotices();
+    const current = loadNotices(session);
+    const existing = Object.create(null);
+    current.forEach(function (n) { existing[n.eventKey] = true; });
+    const fresh = [];
+    (rows || []).forEach(function (r) {
+      const eventKey = 'server_notice:' + r.id;
+      if (existing[eventKey]) return;
+      fresh.push({
+        id: PU.uid('notice'),
+        serverId: r.id,
+        eventKey: eventKey,
+        title: r.titulo || 'Aviso',
+        body: r.corpo || '',
+        route: r.rota || '',
+        createdAt: r.criado_em || new Date().toISOString(),
+        read: false
+      });
+    });
+    if (!fresh.length) return false;
+    saveNotices(session, fresh.concat(current));
+    if (alertNew) {
+      const title = fresh.length === 1 ? fresh[0].title : fresh.length + ' chamados perdidos';
+      const body = fresh.length === 1 ? fresh[0].body : 'Abra Avisos para conferir.';
+      PU.playNotificationSound(true);
+      PU.toast(title + (body ? ' — ' + body : ''), 'warning');
+      PU.browserNotification(title, body || 'Abra o QuemFaz para conferir.');
+    }
+    return true;
+  }
+
   function requestStateMap() {
     const out = Object.create(null);
     (DB.state.requests || []).forEach(function (r) {
@@ -7720,7 +7783,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
               (n.body ? '<span class="notice-card__body">' + PU.escapeHtml(n.body) + '</span>' : '') +
               '<span class="notice-card__time">' + PU.timeAgo(n.createdAt) + '</span></span>' +
             '</button>' +
-            '<button type="button" class="notice-card__delete" data-delete-notice="' + PU.escapeHtml(n.id) + '" aria-label="Excluir aviso" title="Excluir aviso">' + icon('xCircle') + '</button>' +
+            '<button type="button" class="notice-card__delete" data-delete-notice="' + PU.escapeHtml(n.id) + '"' + (n.serverId ? ' data-server-notice-id="' + PU.escapeHtml(n.serverId) + '"' : '') + ' aria-label="Excluir aviso" title="Excluir aviso">' + icon('xCircle') + '</button>' +
           '</div>';
         }).join('') + '</div>'
         : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('bell') + '</div><p class="text text--secondary">Nenhum aviso novo.</p></div>') +
@@ -7820,6 +7883,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       }
     }
     const session = currentSession();
+    if (session && session.role === 'profissional') {
+      try { await syncPersistentProfessionalNotices(session, false); }
+      catch (err) { console.warn('QuemFaz avisos persistentes', err); }
+    }
 
     if (!found) { navigate('/', true); return; }
 
@@ -7933,13 +8000,18 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     });
   }
 
-  document.addEventListener('click', function (e) {
+  document.addEventListener('click', async function (e) {
     const deleteNotice = e.target.closest('[data-delete-notice]');
     if (deleteNotice) {
       e.preventDefault();
       e.stopPropagation();
       const session = currentSession();
       const id = deleteNotice.getAttribute('data-delete-notice');
+      const serverId = deleteNotice.getAttribute('data-server-notice-id');
+      if (serverId && global.QFCloud && global.QFCloud.deleteProfessionalNotice) {
+        try { await global.QFCloud.deleteProfessionalNotice(serverId); }
+        catch (err) { PU.toast('Não foi possível excluir este aviso do servidor.', 'danger'); return; }
+      }
       const items = loadNotices(session).filter(function (n) { return n.id !== id; });
       saveNotices(session, items);
       PU.toast('Aviso excluído.', 'success');
@@ -7950,8 +8022,12 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (clearNotices) {
       e.preventDefault();
       const session = currentSession();
-      PU.confirmDialog({ title: 'Excluir todos os avisos', message: 'Deseja limpar todos os avisos desta conta?', okLabel: 'Excluir todos', danger: true }).then(function (ok) {
+      PU.confirmDialog({ title: 'Excluir todos os avisos', message: 'Deseja limpar todos os avisos desta conta?', okLabel: 'Excluir todos', danger: true }).then(async function (ok) {
         if (!ok) return;
+        if (session.role === 'profissional' && global.QFCloud && global.QFCloud.clearProfessionalNotices) {
+          try { await global.QFCloud.clearProfessionalNotices(); }
+          catch (err) { PU.toast('Não foi possível excluir todos os avisos do servidor.', 'danger'); return; }
+        }
         saveNotices(session, []);
         PU.toast('Avisos excluídos.', 'success');
         navigate('/' + session.role + '/avisos', true);
@@ -8013,11 +8089,16 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const y = window.scrollY;
     try {
       await global.QFCloud.syncForCurrentSession(true);
+      let serverNoticesChanged = false;
+      if (session.role === 'profissional') {
+        try { serverNoticesChanged = await syncPersistentProfessionalNotices(session, true); }
+        catch (err) { console.warn('QuemFaz avisos persistentes', err); }
+      }
       const afterMap = requestStateMap();
       const after = requestStateSignature();
       if (before !== after) detectNotices(session, beforeMap, afterMap);
       if (currentPath() !== path) { pendingRefresh = false; return; }
-      if (before === after && !pendingRefresh) return;
+      if (before === after && !pendingRefresh && !serverNoticesChanged) return;
       if (userIsEditing()) { pendingRefresh = true; return; }
       pendingRefresh = false;
       const found = matchRoute(path);
