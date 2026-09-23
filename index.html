@@ -1570,6 +1570,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     clock: svg('<circle cx="12" cy="12" r="8.4"/><path d="M12 7.5V12l3 2"/>'),
     mapPin: svg('<path d="M12 21s6.5-5.9 6.5-11A6.5 6.5 0 0 0 5.5 10c0 5.1 6.5 11 6.5 11Z"/><circle cx="12" cy="10" r="2.3"/>'),
     camera: svg('<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1-2h7l1 2h2A1.5 1.5 0 0 1 20 8.5v9A1.5 1.5 0 0 1 18.5 19h-13A1.5 1.5 0 0 1 4 17.5Z"/><circle cx="12" cy="12.5" r="3.4"/>'),
+    video: svg('<rect x="3.5" y="6.5" width="12.5" height="11" rx="2"/><path d="m16 10 4.5-2.5v9L16 14Z"/>'),
     image: svg('<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 17 4.5-4.5L13 16l2.5-2.5L20 17.5"/>'),
     trash: svg('<path d="M5 7h14M9.5 7V5.5A1.5 1.5 0 0 1 11 4h2a1.5 1.5 0 0 1 1.5 1.5V7M18 7l-.8 12a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7"/><path d="M10 11v6M14 11v6"/>'),
     edit: svg('<path d="M4 20h4.2L18.8 9.4a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="m13.2 6.4 4.4 4.4"/>'),
@@ -4849,11 +4850,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '</label>' +
 
           '<div class="field">' +
-            '<span class="field__label">Fotos (opcional)</span>' +
-            '<div class="upload-row" id="upload-row">' +
-              '<label class="upload-add">' + icon('camera') + '<input type="file" accept="image/*" multiple id="foto-input" style="display:none;"></label>' +
+            '<span class="field__label">Fotos ou vídeo (opcional)</span>' +
+            '<div class="row" style="gap:8px;flex-wrap:wrap;">' +
+              '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Galeria<input type="file" accept="image/*,video/*" multiple id="media-gallery-input" style="display:none;"></label>' +
+              '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar foto<input type="file" accept="image/*" capture="environment" id="media-camera-input" style="display:none;"></label>' +
+              '<label class="btn btn--outline" style="cursor:pointer;">' + icon('video') + ' Gravar vídeo<input type="file" accept="video/*" capture="environment" id="media-video-input" style="display:none;"></label>' +
             '</div>' +
-            '<span class="field__hint">Fotos ajudam o profissional a preparar o orçamento.</span>' +
+            '<div class="upload-row" id="upload-row" style="margin-top:10px;"></div>' +
+            '<span class="field__hint">Escolha da galeria, tire uma foto ou grave um vídeo curto. Até 4 mídias no total; no máximo 1 vídeo de 3 MB.</span>' +
           '</div>' +
 
           '<div class="field">' +
@@ -4945,7 +4949,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="section-head"><h2 class="h3">Detalhes</h2></div>' +
           '<div class="card stack--sm">' +
             '<div class="text text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-            (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(function (f) { return '<img class="upload-thumb" src="' + f + '" alt="Foto enviada pelo cliente">'; }).join('') + '</div>' : '') +
+            (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
             '<hr class="hairline">' +
             '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.rua) + ', ' + PU.escapeHtml(req.endereco.bairro) + '</span></div>' +
           '</div>' +
@@ -5347,33 +5351,98 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     apply();
   }
 
-  function bindNovoPedido(content, params, user) {
-    const form = content.querySelector('#novo-pedido-form');
-    const fotoInput = content.querySelector('#foto-input');
-    const uploadRow = content.querySelector('#upload-row');
-    let fotos = [];
-    global.QFGeo.bindAddressForm(form);
-
-    fotoInput.addEventListener('change', function () {
-      const files = Array.prototype.slice.call(fotoInput.files).slice(0, 4 - fotos.length);
-      Promise.all(files.map(function (f) { return PU.fileToCompressedDataUrl(f, 640); })).then(function (dataUrls) {
-        dataUrls.forEach(function (durl) { fotos.push(durl); renderThumb(durl); });
-        fotoInput.value = '';
-      }).catch(function () { PU.toast('Não foi possível carregar a imagem.', 'danger'); });
-    });
-
-    function renderThumb(durl) {
-      const wrap = document.createElement('div');
-      wrap.className = 'upload-thumb-wrap';
-      wrap.innerHTML = '<img class="upload-thumb" src="' + durl + '" alt="Foto do serviço"><span class="upload-thumb-remove" role="button" tabindex="0" aria-label="Remover foto">' + icon('x') + '</span>';
-      wrap.querySelector('.upload-thumb-remove').addEventListener('click', function () {
-        fotos = fotos.filter(function (f) { return f !== durl; });
-        wrap.remove();
-      });
-      uploadRow.insertBefore(wrap, uploadRow.querySelector('.upload-add'));
+  function renderCallMedia(src) {
+      src = String(src || '');
+      const safe = PU.escapeHtml(src);
+      if (/^data:video\//i.test(src)) {
+        return '<video class="upload-thumb" src="' + safe + '" controls playsinline preload="metadata" aria-label="Vídeo enviado pelo cliente"></video>';
+      }
+      return '<img class="upload-thumb" src="' + safe + '" alt="Foto enviada pelo cliente">';
     }
 
-    form.addEventListener('submit', async function (e) {
+    function bindNovoPedido(content, params, user) {
+    const form = content.querySelector('#novo-pedido-form');
+    const galleryInput = content.querySelector('#media-gallery-input');
+      const cameraInput = content.querySelector('#media-camera-input');
+      const videoInput = content.querySelector('#media-video-input');
+      const uploadRow = content.querySelector('#upload-row');
+      let fotos = [];
+      global.QFGeo.bindAddressForm(form);
+
+      function rawFileToDataUrl(file) {
+        return new Promise(function (resolve, reject) {
+          const reader = new FileReader();
+          reader.onerror = function () { reject(reader.error || new Error('Falha ao ler o arquivo.')); };
+          reader.onload = function () { resolve(String(reader.result || '')); };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function videoCount() {
+        return fotos.filter(function (m) { return /^data:video\//i.test(String(m || '')); }).length;
+      }
+
+      async function addMediaFromInput(input) {
+        if (!input) return;
+        const selected = Array.prototype.slice.call(input.files || []);
+        const room = 4 - fotos.length;
+        if (room <= 0) {
+          PU.toast('Você pode enviar até 4 mídias por chamado.', 'danger');
+          input.value = '';
+          return;
+        }
+        if (selected.length > room) PU.toast('Limite de 4 mídias por chamado.', 'danger');
+        const files = selected.slice(0, room);
+
+        for (const file of files) {
+          try {
+            let durl = '';
+            if (/^image\//i.test(file.type || '')) {
+              durl = await PU.fileToCompressedDataUrl(file, 640);
+            } else if (/^video\//i.test(file.type || '')) {
+              if (videoCount() >= 1) {
+                PU.toast('Envie no máximo 1 vídeo por chamado.', 'danger');
+                continue;
+              }
+              if (Number(file.size || 0) > 3 * 1024 * 1024) {
+                PU.toast('O vídeo precisa ter no máximo 3 MB. Grave um vídeo mais curto.', 'danger');
+                continue;
+              }
+              durl = await rawFileToDataUrl(file);
+            } else {
+              PU.toast('Use apenas foto ou vídeo.', 'danger');
+              continue;
+            }
+            fotos.push(durl);
+            renderThumb(durl);
+          } catch (_) {
+            PU.toast('Não foi possível carregar esta mídia.', 'danger');
+          }
+        }
+        input.value = '';
+      }
+
+      [galleryInput, cameraInput, videoInput].forEach(function (input) {
+        if (!input) return;
+        input.addEventListener('change', function () { addMediaFromInput(input); });
+      });
+
+      function renderThumb(durl) {
+        const wrap = document.createElement('div');
+        wrap.className = 'upload-thumb-wrap';
+        const safe = PU.escapeHtml(String(durl || ''));
+        const media = /^data:video\//i.test(String(durl || ''))
+          ? '<video class="upload-thumb" src="' + safe + '" controls playsinline muted preload="metadata" aria-label="Vídeo do serviço"></video>'
+          : '<img class="upload-thumb" src="' + safe + '" alt="Foto do serviço">';
+        wrap.innerHTML = media + '<span class="upload-thumb-remove" role="button" tabindex="0" aria-label="Remover mídia">' + icon('x') + '</span>';
+        wrap.querySelector('.upload-thumb-remove').addEventListener('click', function () {
+          fotos = fotos.filter(function (f) { return f !== durl; });
+          wrap.remove();
+        });
+        uploadRow.appendChild(wrap);
+      }
+
+      form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(form);
       const cep = fd.get('cep').trim();
@@ -5763,7 +5832,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="row"><div class="avatar avatar--sm">?</div><div><div class="text--strong">Cliente verificado</div><div class="text--sm text--muted">Identidade protegida até o desbloqueio</div></div></div>' +
           '<hr class="hairline">' +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(function (f) { return '<img class="upload-thumb" src="' + f + '" alt="Foto enviada pelo cliente">'; }).join('') + '</div>' : '') +
+          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           '<hr class="hairline">' +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || '') + (Number.isFinite(Number(req.distanciaKm)) ? ' · ' + Number(req.distanciaKm).toFixed(1).replace('.', ',') + ' km de você' : '') + '</span></div>' +
         '</div>' +
@@ -5850,7 +5919,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           ((cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + whatsappHref(cliente.telefone, 'Olá ' + (cliente.nome || '') + ', sou ' + user.nome + ' do QuemFaz. Desbloqueei seu chamado e estou entrando em contato sobre o serviço.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(function (f) { return '<img class="upload-thumb" src="' + f + '" alt="Foto enviada pelo cliente">'; }).join('') + '</div>' : '') +
+          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.rua) + ', ' + PU.escapeHtml(req.endereco.bairro) + (req.endereco.complemento ? ' · ' + PU.escapeHtml(req.endereco.complemento) : '') + '</span></div>' +
         '</div>' +
 
@@ -6921,7 +6990,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.0';
+  const APP_VERSION = '11.0.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
