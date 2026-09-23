@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.2.3';
+const SW_VERSION = '11.4.0';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon.svg', './icon.svg', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -32,6 +32,7 @@ self.addEventListener('fetch', event => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.indexOf("/download/") === 0) return; // APK e versao.json: sempre direto da rede, sem cache
   const isPage = req.mode === 'navigate' || /\.html$/.test(url.pathname) || url.pathname.endsWith('/');
   const netReq = isPage ? new Request(req, { cache: 'no-store' }) : req;
   event.respondWith(
