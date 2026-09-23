@@ -2955,6 +2955,7 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
     }).eq('user_id', uRes.data.user.id);
     if (upd.error) throw upd.error;
     lastLocationRefreshAt = Date.now();
+    try { localStorage.setItem('qf_location_ready','1'); } catch (_) {}
     return loc;
   }
 
@@ -4290,8 +4291,8 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
     return true;
   }
   // Pede uma vez para o QuemFaz ignorar a economia de bateria (sem isso o Android pode atrasar o toque).
-  function pedirLiberarBateria() {
-    try { if (localStorage.getItem('qf_battery_asked') === '1') return; localStorage.setItem('qf_battery_asked', '1'); } catch (_) { return; }
+  function pedirLiberarBateria(force) {
+    try { if (!force && localStorage.getItem('qf_battery_asked') === '1') return; localStorage.setItem('qf_battery_asked', '1'); } catch (_) { return; }
     const C = global.Capacitor;
     const plugin = C && C.Plugins && C.Plugins.QFBattery;
     const PU = global.PU;
@@ -4399,7 +4400,12 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
     return '<div class="card notify-required"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Ative as notificações</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Obrigatório para ficar online e não perder chamados.' : 'Ative para perceber imediatamente quando houver atualização do seu pedido.') + '</div></div></div>' +
       (denied ? '<div class="text--sm" style="color:var(--danger-600);margin-top:10px;">A permissão foi bloqueada. Libere Notificações nas configurações do navegador/app.</div>' : '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes" style="margin-top:12px;">' + global.icon('bell') + ' Ativar notificações</button>') + '</div>';
   }
-  global.QFPush = { supported, permission, isLocalViewer, activate, restore, notify, card, isActive, isNative: function () { return !!nativePush(); } };
+  function batteryReady(){if(!nativePush())return true;try{return localStorage.getItem('qf_battery_asked')==='1';}catch(_){return false;}}
+  global.QFPush = { supported, permission, isLocalViewer, activate, restore, notify, card, isActive,
+    isNative:function(){return !!nativePush();},
+    batteryReady:batteryReady,
+    requestBattery:function(){pedirLiberarBateria(true);}
+  };
   // APK: carrega a permissão atual cedo, para a tela já mostrar o estado certo.
   setTimeout(function () { refreshNativePerm().catch(function () {}); }, 0);
 })(window);
@@ -6099,77 +6105,45 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
 
   // ---------------- Início / chamadas ----------------
 
+  function qfLocalFlag(key){try{return localStorage.getItem(key)==='1';}catch(_){return false;}}
+  function profileProgressHtml(user){
+    const catsOk=!!(user.categorias&&user.categorias.length);
+    const regionOk=!!((user.areasAtendimento&&user.areasAtendimento.some(function(a){return a&&a.cidade&&a.uf;}))||user.cidadeId);
+    const pushOk=!!(global.QFPush&&global.QFPush.permission()==='granted'&&global.QFPush.isActive());
+    const locationOk=!!user.online||qfLocalFlag('qf_location_ready');
+    const batteryOk=!global.QFPush||!global.QFPush.isNative||!global.QFPush.isNative()||(global.QFPush.batteryReady&&global.QFPush.batteryReady());
+    const items=[
+      {done:!!user.fotoUrl,label:'Selfie cadastrada',action:'<button class="btn btn--outline" data-nav="/profissional/perfil">Abrir perfil</button>'},
+      {done:pushOk,label:'Notificações ativas',action:'<button class="btn btn--outline" type="button" data-action="ativar-notificacoes">Ativar</button>'},
+      {done:catsOk,label:'Categorias escolhidas',action:'<button class="btn btn--outline" data-nav="/profissional/perfil">Escolher</button>'},
+      {done:regionOk,label:'Região de atendimento',action:'<button class="btn btn--outline" data-nav="/profissional/perfil">Configurar</button>'},
+      {done:locationOk,label:'Localização do aparelho permitida',action:'<button class="btn btn--outline" type="button" data-action="qf-progress-location">Permitir</button>'},
+      {done:batteryOk,label:'Economia de bateria liberada',action:'<button class="btn btn--outline" type="button" data-action="qf-progress-battery">Liberar</button>'}
+    ];
+    const ready=items.filter(function(i){return i.done;}).length;
+    if(ready===6)return '';
+    return '<div class="card qf-profile-progress"><div class="qf-profile-progress__head"><div><div class="text--strong">Seu perfil está '+ready+' de 6 pronto</div><div class="text--sm text--secondary">Complete estes itens para receber chamados sem interrupção.</div></div><span class="badge badge--orange">'+ready+'/6</span></div><div class="qf-progress-track" aria-label="'+ready+' de 6 itens concluídos"><div class="qf-progress-fill" style="width:'+Math.round(ready/6*100)+'%"></div></div><div class="qf-progress-list">'+items.map(function(i){return '<div class="qf-progress-item"><span class="qf-progress-item__mark'+(i.done?' is-done':'')+'">'+icon(i.done?'check':'info')+'</span><span class="text--sm spacer">'+PU.escapeHtml(i.label)+'</span>'+(i.done?'':i.action)+'</div>';}).join('')+'</div></div>';
+  }
+
   Screens.profHomeRender = function (params, user) {
-    const chamadas = DB.chamadasPendentes(user.id);
-    const podeFicarOnline = user.statusAprovacao === 'aprovado' && !!user.fotoUrl;
-    const adPlans = (DB.state.settings && DB.state.settings.adPlans) || {};    const meusAnuncios = (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).sort(function (a,b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
-    function adStatusLabel(a) {
-      if (!a) return '';
-      if (a.status === 'ativo') return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';
-      if (a.status === 'reprovado') return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';
-      if (a.status === 'pausado') return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';
-      return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';
-    }
-    return (
-      '<div class="view">' +
-        pendingGate(user) +
-        (global.QFPush ? global.QFPush.card('profissional') : '') +
-        (Number(user.bonusDesbloqueios || 0) > 0
-          ? '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;">' +
-              '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">' + icon('unlock') + '</div>' +
-              '<div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div>' +
-              '<div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, para desbloquear novos chamados, visualizar os dados do cliente e enviar orçamento, é necessário ter saldo na Carteira QuemFaz.</div></div></div>' +
-            '</div>'
-          : '') +
-        '<div data-install-slot style="display:none;margin-top:12px;"></div>' +
-        (!user.fotoUrl ? '<div class="card notify-required" style="margin-top:12px;"><div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong">Cadastre sua selfie</div><div class="text--sm text--secondary">Por segurança do cliente, a selfie é obrigatória antes de ficar online.</div></div></div><button class="btn btn--outline" data-nav="/profissional/perfil" style="margin-top:12px;">Abrir perfil</button></div>' : '') +
-
-        (!user.online ? '<div class="card" style="margin-top:12px;background:var(--warning-100);border:1px solid #f0cf91;">' +
-          '<div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--warning-600);">' + icon('bell') + '</div>' +
-          '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Você está OFFLINE — não recebe chamados</div>' +
-          '<div class="text--sm text--secondary" style="margin-top:3px;">Depois do cadastro, lembre-se de ficar online. Você recebe R$ 25,00 em créditos de lançamento para começar; depois, mantenha saldo na carteira para abrir novos chamados.</div></div></div>' +
-          '<button class="btn btn--primary" type="button" data-action="ficar-online-agora" style="margin-top:12px;">' + icon('power') + ' Ficar online agora</button>' +
-        '</div>' : '<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong" style="color:var(--success-600);">Você está online</div><div class="text--sm text--secondary">Chamados da sua categoria chegam primeiro para quem estiver mais perto, dentro do raio de atendimento.</div></div></div></div>') +
-
-        '<div class="card row" style="margin-top:12px;">' +
-          '<div class="spacer">' +
-            '<div class="text--strong">Status de disponibilidade</div>' +
-            '<div class="text--sm text--secondary">' + (user.online ? 'Você está online e recebe primeiro os chamados mais próximos dentro do seu raio.' : (user.fotoUrl ? 'Você está offline. Ative para receber chamados.' : 'Cadastre sua selfie para poder ficar online.')) + '</div>' +
-          '</div>' +
-          '<label class="switch">' +
-            '<input type="checkbox" id="toggle-online" aria-label="Ficar online" ' + (user.online ? 'checked' : '') + (podeFicarOnline || user.online ? '' : ' data-blocked="1"') + '>' +
-            '<span class="switch__track"></span>' +
-          '</label>' +
-        '</div>' +
-
-        '<div class="section" id="chamados-disponiveis">' +
-          '<div class="section-head"><h2 class="h3">Chamados disponíveis' + (chamadas.length ? ' <span class="badge badge--orange">' + chamadas.length + '</span>' : '') + '</h2></div>' +
-          (chamadas.length
-            ? '<div class="stack--sm">' + chamadas.map(function (req) { return chamadaCard(req, user); }).join('') + '</div>'
-            : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('phoneCall') + '</div><p class="text text--secondary">Nenhuma oportunidade no momento.' + (user.online ? ' Você será avisado quando surgir um chamado da sua categoria dentro da sua área de atendimento.' : ' Fique online para visualizar oportunidades.') + '</p></div>') +
-        '</div>' +
-        '<div class="section">' +
-          '<div class="card row-between" style="background:var(--navy-100);border:none;">' +
-            '<div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">' + PU.formatCurrency(user.creditos || 0) + '</div>' +
-            '</div>' +
-            '<button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button>' +
-          '</div>' +
-        '</div>' +
-
-        '<div class="section">' +
-          '<div class="section-head"><div><h2 class="h3">Divulgue seus serviços</h2><div class="text--sm text--secondary">Profissionais também podem anunciar no carrossel do QuemFaz.</div></div></div>' +
-          '<div class="ad-plan-grid">' +
-            ['local','destaque','premium'].map(function (key) {
-              const p = adPlans[key] || { nome:key, valor:0 };
-              return '<div class="ad-plan" style="cursor:default;"><div class="row-between"><span class="ad-plan__name">' + PU.escapeHtml(p.nome || key) + '</span><span class="ad-plan__price">' + PU.formatCurrency(p.valor || 0) + '</span></div><div class="text--sm text--secondary" style="margin-top:4px;">30 dias</div></div>';
-            }).join('') +
-          '</div>' +
-          '<button class="btn btn--primary" data-nav="/profissional/anuncie" style="margin-top:12px;">' + icon('briefcase') + ' Criar anúncio</button>' +
-          (meusAnuncios.length ? '<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">' + PU.escapeHtml(meusAnuncios[0].empresa || 'Anúncio') + '</div></div>' + adStatusLabel(meusAnuncios[0]) + '</div></div>' : '') +
-        '</div>' +
-
-      '</div>'
-    );
+    const chamadas=DB.chamadasPendentes(user.id);
+    const podeFicarOnline=user.statusAprovacao==='aprovado'&&!!user.fotoUrl;
+    const adPlans=(DB.state.settings&&DB.state.settings.adPlans)||{};
+    const meusAnuncios=(DB.state.ads||[]).filter(function(a){return a.anuncianteId===user.id;}).sort(function(a,b){return new Date(b.criadoEm||0)-new Date(a.criadoEm||0);});
+    const firstCat=user.categorias&&user.categorias.length?DB.categoryById(user.categorias[0]):null;
+    const area=user.areasAtendimento&&user.areasAtendimento.length?user.areasAtendimento[0]:null;
+    const raio=Number((area&&area.raioKm)||user.raioKm||10);
+    const extraCats=user.categorias&&user.categorias.length>1?' e mais '+(user.categorias.length-1):'';
+    function adStatusLabel(a){if(!a)return '';if(a.status==='ativo')return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';if(a.status==='reprovado')return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';if(a.status==='pausado')return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';}
+    return '<div class="view">'+
+      pendingGate(user)+
+      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'"><div class="qf-prof-status__title">'+(user.online?'Você está online':'Você está offline')+'</div><div class="qf-prof-status__sub">'+(user.online?'Recebendo chamados de '+PU.escapeHtml(firstCat?firstCat.nome:'suas categorias')+extraCats+' até '+raio+' km':'Fique online para receber chamados perto de você')+'</div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
+      profileProgressHtml(user)+
+      (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhuma oportunidade no momento.'+(user.online?' Você será avisado quando surgir um chamado da sua categoria dentro da sua área de atendimento.':' Fique online para visualizar oportunidades.')+'</p></div>')+'</div>'+
+      '<div class="section"><div class="card row-between" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button></div></div>'+
+      '<div class="section"><div class="section-head"><div><h2 class="h3">Divulgue seus serviços</h2><div class="text--sm text--secondary">Profissionais também podem anunciar no carrossel do QuemFaz.</div></div></div><div class="ad-plan-grid">'+['local','destaque','premium'].map(function(key){const p=adPlans[key]||{nome:key,valor:0};return '<div class="ad-plan" style="cursor:default;"><div class="row-between"><span class="ad-plan__name">'+PU.escapeHtml(p.nome||key)+'</span><span class="ad-plan__price">'+PU.formatCurrency(p.valor||0)+'</span></div><div class="text--sm text--secondary" style="margin-top:4px;">30 dias</div></div>';}).join('')+'</div><button class="btn btn--primary" data-nav="/profissional/anuncie" style="margin-top:12px;">'+icon('briefcase')+' Criar anúncio</button>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div></div>':'')+'</div>'+
+      '</div>';
   };
 
   function distanceHighlight(req) {
@@ -6909,14 +6883,18 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
     bindNotificationActivation(content);
     const toggle = content.querySelector('#toggle-online');
     if (toggle) {
-      const onlineNow = content.querySelector('[data-action="ficar-online-agora"]');
-      if (onlineNow) {
-        onlineNow.addEventListener('click', function () {
-          if (toggle.disabled) return;
-          toggle.checked = true;
-          toggle.dispatchEvent(new Event('change', { bubbles: true }));
-        });
-      }
+      const onlineNow=content.querySelector('[data-action="ficar-online-agora"]');
+      const offlineNow=content.querySelector('[data-action="ficar-offline-agora"]');
+      if(onlineNow)onlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
+      if(offlineNow)offlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
+      const locationBtn=content.querySelector('[data-action="qf-progress-location"]');
+      if(locationBtn)locationBtn.addEventListener('click',function(){
+        locationBtn.disabled=true;
+        if(!navigator.geolocation){PU.toast('Localização não disponível neste aparelho.','danger');locationBtn.disabled=false;return;}
+        navigator.geolocation.getCurrentPosition(function(){try{localStorage.setItem('qf_location_ready','1');}catch(_){}PU.toast('Localização permitida.','success');global.navigate('/profissional/home',true);},function(){PU.toast('Permita a localização nas configurações do aparelho/navegador.','danger');locationBtn.disabled=false;},{enableHighAccuracy:true,timeout:9000,maximumAge:0});
+      });
+      const batteryBtn=content.querySelector('[data-action="qf-progress-battery"]');
+      if(batteryBtn)batteryBtn.addEventListener('click',function(){if(global.QFPush&&global.QFPush.requestBattery)global.QFPush.requestBattery();});
       toggle.addEventListener('change', async function () {
         const querOnline = toggle.checked;
         toggle.checked = !querOnline; // só muda depois de confirmar no servidor
