@@ -2825,6 +2825,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   let lastSyncAt = 0;
   let lastLocationRefreshAt = 0;
 
+  if (client) {
+    client.auth.onAuthStateChange(function (event) {
+      if (event !== 'PASSWORD_RECOVERY') return;
+      try { sessionStorage.setItem('qf_password_recovery', '1'); } catch (_) {}
+      try { global.dispatchEvent(new CustomEvent('qf-password-recovery')); } catch (_) {}
+    });
+  }
+
   function getCurrentPositionSafe(options) {
     options = options || {};
     return new Promise(function (resolve) {
@@ -3566,6 +3574,30 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     }
   }
 
+  async function requestPasswordReset(email) {
+    if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
+    email = String(email || '').trim();
+    if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 3) return { ok: false, error: 'Digite um e-mail válido.' };
+    const redirectTo = location.origin + location.pathname;
+    const res = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
+    if (res.error) {
+      const msg = String(res.error.message || '');
+      if (/rate limit|too many/i.test(msg)) return { ok: false, error: 'Muitas tentativas. Aguarde um minuto e tente novamente.' };
+      return { ok: false, error: 'Não foi possível enviar o link agora. Tente novamente.' };
+    }
+    return { ok: true };
+  }
+
+  async function updatePassword(newPassword) {
+    if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
+    newPassword = String(newPassword || '');
+    if (newPassword.length < 6) return { ok: false, error: 'A nova senha precisa ter pelo menos 6 caracteres.' };
+    const res = await client.auth.updateUser({ password: newPassword });
+    if (res.error) return { ok: false, error: String(res.error.message || 'Não foi possível atualizar a senha.') };
+    try { sessionStorage.removeItem('qf_password_recovery'); } catch (_) {}
+    return { ok: true };
+  }
+
   async function signOut() {
     if (client) await client.auth.signOut();
     DB.setSession(null);
@@ -3943,6 +3975,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     syncForCurrentSession: syncForCurrentSession,
     signUp: signUp,
     signIn: signIn,
+    requestPasswordReset: requestPasswordReset,
+    updatePassword: updatePassword,
     signOut: signOut,
     startEfiCheckout: startEfiCheckout,
     createRecharge: createRecharge,
@@ -4206,6 +4240,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '<form id="login-form" class="stack" novalidate>' +
           field('E-mail', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('Senha', '<input class="input" type="password" name="senha" autocomplete="current-password" required placeholder="Sua senha">') +
+          (role !== 'admin' ? '<button class="btn btn--ghost btn--block-auto" type="button" id="qf-forgot-password" style="align-self:flex-end;padding:6px 0;">Esqueci minha senha</button>' : '') +
           '<button class="btn btn--primary" type="submit">Entrar</button>' +
         '</form>' +
         (role !== 'admin'
@@ -4287,11 +4322,99 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       '</div>';
   }
 
+  // ---------------- Recuperação de senha ----------------
+
+  function openPasswordRecovery(prefillEmail) {
+    const prefill = PU.escapeHtml(String(prefillEmail || '').trim());
+    PU.openSheet(
+      '<div class="stack"><h3 class="sheet__title">Recuperar senha</h3>' +
+      '<p class="text text--secondary">Digite o e-mail cadastrado. Vamos enviar um link para você criar uma nova senha.</p>' +
+      '<form id="qf-password-recovery-form" class="stack">' +
+      '<label class="field"><span class="field__label">E-mail</span><input class="input" type="email" name="email" autocomplete="email" required placeholder="voce@exemplo.com" value="' + prefill + '"></label>' +
+      '<button class="btn btn--primary" type="submit">Enviar link de recuperação</button>' +
+      '<button class="btn btn--ghost" type="button" id="qf-password-recovery-cancel">Cancelar</button>' +
+      '</form></div>'
+    );
+    const form = document.getElementById('qf-password-recovery-form');
+    const cancel = document.getElementById('qf-password-recovery-cancel');
+    if (cancel) cancel.onclick = function () { PU.closeSheet(); };
+    if (!form) return;
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const email = String(new FormData(form).get('email') || '').trim();
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
+      try {
+        if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.requestPasswordReset)) {
+          PU.toast('A recuperação de senha precisa de conexão com a internet.', 'danger');
+          return;
+        }
+        const res = await global.QFCloud.requestPasswordReset(email);
+        if (!res.ok) { PU.toast(res.error || 'Não foi possível enviar o link.', 'danger'); return; }
+        PU.openSheet(
+          '<div class="stack"><h3 class="sheet__title">Confira seu e-mail</h3>' +
+          '<p class="text text--secondary">Se esse e-mail estiver cadastrado no QuemFaz, você receberá um link para criar uma nova senha.</p>' +
+          '<button class="btn btn--primary" id="qf-password-recovery-done">Entendi</button></div>'
+        );
+        const done = document.getElementById('qf-password-recovery-done');
+        if (done) done.onclick = function () { PU.closeSheet(); };
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar link de recuperação'; }
+      }
+    });
+  }
+
+  let newPasswordSheetOpen = false;
+  async function openNewPassword() {
+    if (newPasswordSheetOpen || document.getElementById('qf-new-password-form')) return;
+    if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.updatePassword)) return;
+    newPasswordSheetOpen = true;
+    PU.openSheet(
+      '<div class="stack"><h3 class="sheet__title">Crie uma nova senha</h3>' +
+      '<p class="text text--secondary">Digite sua nova senha para voltar a acessar o QuemFaz.</p>' +
+      '<form id="qf-new-password-form" class="stack">' +
+      '<label class="field"><span class="field__label">Nova senha</span><input class="input" type="password" name="senha" minlength="6" autocomplete="new-password" required placeholder="Mínimo 6 caracteres"></label>' +
+      '<label class="field"><span class="field__label">Confirmar nova senha</span><input class="input" type="password" name="confirmar" minlength="6" autocomplete="new-password" required placeholder="Digite novamente"></label>' +
+      '<button class="btn btn--primary" type="submit">Salvar nova senha</button>' +
+      '</form></div>',
+      { persistent: true }
+    );
+    const form = document.getElementById('qf-new-password-form');
+    if (!form) { newPasswordSheetOpen = false; return; }
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const senha = String(fd.get('senha') || '');
+      const confirmar = String(fd.get('confirmar') || '');
+      if (senha.length < 6) { PU.toast('A senha precisa ter pelo menos 6 caracteres.', 'danger'); return; }
+      if (senha !== confirmar) { PU.toast('As senhas não são iguais.', 'danger'); return; }
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+      try {
+        const res = await global.QFCloud.updatePassword(senha);
+        if (!res.ok) { PU.toast(res.error || 'Não foi possível atualizar a senha.', 'danger'); return; }
+        newPasswordSheetOpen = false;
+        PU.closeSheet();
+        PU.toast('Senha atualizada com sucesso.', 'success');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
+      }
+    });
+  }
+
+  global.QFPasswordRecovery = { openRequest: openPasswordRecovery, openNewPassword: openNewPassword };
+  global.addEventListener('qf-password-recovery', function () { setTimeout(openNewPassword, 0); });
+
   // ---------------- Vínculo pós-render (rotas anônimas) ----------------
 
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/auth/:role/login') {
       const form = content.querySelector('#login-form');
+      const forgot = content.querySelector('#qf-forgot-password');
+      if (forgot) forgot.addEventListener('click', function () {
+        const emailInput = form && form.querySelector('[name="email"]');
+        openPasswordRecovery(emailInput ? emailInput.value : '');
+      });
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
@@ -7166,10 +7289,26 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (!sess || (sess.role !== 'cliente' && sess.role !== 'profissional')) {
       PU.openSheet(
         '<div class="stack"><h3 class="sheet__title">Suporte QuemFaz</h3>' +
-        '<p class="text text--secondary">Entre na sua conta para conversar com o suporte pelo próprio aplicativo. O atendimento não usa WhatsApp.</p>' +
-        '<button class="btn btn--primary" id="qf-support-ok">Entendi</button></div>'
+        '<p class="text text--secondary">Para proteger suas conversas, o suporte fica vinculado à sua conta. Se você esqueceu a senha, pode recuperar o acesso agora.</p>' +
+        '<button class="btn btn--primary" id="qf-support-login-cliente">Entrar como cliente</button>' +
+        '<button class="btn btn--outline" id="qf-support-login-prof">Entrar como profissional</button>' +
+        '<button class="btn btn--ghost" id="qf-support-forgot">Esqueci minha senha</button>' +
+        '<div class="divider-label">primeiro acesso?</div>' +
+        '<div class="btn-row"><button class="btn btn--outline" id="qf-support-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-support-cad-prof">Criar conta profissional</button></div>' +
+        '<button class="btn btn--ghost" id="qf-support-close">Fechar</button></div>'
       );
-      const b=document.getElementById('qf-support-ok'); if(b) b.onclick=function(){PU.closeSheet();};
+      const loginCliente=document.getElementById('qf-support-login-cliente');
+      const loginProf=document.getElementById('qf-support-login-prof');
+      const forgot=document.getElementById('qf-support-forgot');
+      const cadCliente=document.getElementById('qf-support-cad-cliente');
+      const cadProf=document.getElementById('qf-support-cad-prof');
+      const close=document.getElementById('qf-support-close');
+      if(loginCliente) loginCliente.onclick=function(){PU.closeSheet(); global.navigate('/auth/cliente/login', true);};
+      if(loginProf) loginProf.onclick=function(){PU.closeSheet(); global.navigate('/auth/profissional/login', true);};
+      if(forgot) forgot.onclick=function(){PU.closeSheet(); if(global.QFPasswordRecovery) global.QFPasswordRecovery.openRequest('');};
+      if(cadCliente) cadCliente.onclick=function(){PU.closeSheet(); global.navigate('/auth/cliente/cadastro', true);};
+      if(cadProf) cadProf.onclick=function(){PU.closeSheet(); global.navigate('/auth/profissional/cadastro', true);};
+      if(close) close.onclick=function(){PU.closeSheet();};
       return;
     }
     if (!global.QFCloud || !global.QFCloud.enabled) {
@@ -7768,6 +7907,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     }
     if (global.QFCloud && global.QFCloud.enabled) global.QFCloud.prepareLocalState();
     await route();
+    try {
+      if (sessionStorage.getItem('qf_password_recovery') === '1' && global.QFPasswordRecovery) {
+        global.QFPasswordRecovery.openNewPassword();
+      }
+    } catch (_) {}
     if (global.QFApp) global.QFApp.checkVersion(true).catch(function () {});
     if (global.QFPush) global.QFPush.restore().catch(function () {});
   });
