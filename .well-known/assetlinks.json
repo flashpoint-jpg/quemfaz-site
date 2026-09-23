@@ -4,7 +4,7 @@
     "target": {
       "namespace": "android_app",
       "package_name": "br.app.quemfaz",
-      "sha256_cert_fingerprints": ["COLE:AQUI:A:IMPRESSAO:SHA256:DA:CHAVE:QUE:ASSINOU:O:APK"]
+      "sha256_cert_fingerprints": ["32:11:CB:A9:28:4D:6A:47:40:40:EE:6A:BD:A0:24:0E:EF:3C:7C:8A:22:A3:53:20:24:2B:36:F0:20:7F:FC:4D"]
     }
   }
 ]
