@@ -5849,6 +5849,15 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     );
   };
 
+  function distanceHighlight(req) {
+    if (!Number.isFinite(Number(req && req.distanciaKm))) return '';
+    const km = Number(req.distanciaKm).toFixed(1).replace('.', ',');
+    return '<div style="margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--orange-100);border:1px solid rgba(234,88,12,.22);display:flex;align-items:center;gap:8px;color:var(--orange-800);font-weight:700;">' +
+      icon('mapPin', 'list-item__chevron') +
+      '<span>Este pedido está a <strong>' + km + ' km</strong> de você</span>' +
+    '</div>';
+  }
+
   function chamadaCard(req, user) {
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
@@ -5862,8 +5871,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
-            '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || '') + (Number.isFinite(Number(req.distanciaKm)) ? ' · ' + Number(req.distanciaKm).toFixed(1).replace('.', ',') + ' km de você' : '') + '</div>' +
-            '<div class="text--sm text--strong" style="margin-top:4px;color:' + (primeiraGratis ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
+            '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || '') + '</div>' +
+            distanceHighlight(req) +
+            '<div class="text--sm text--strong" style="margin-top:7px;color:' + (primeiraGratis ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
               (primeiraGratis ? '1º desbloqueio GRÁTIS' : 'Desbloquear por ' + PU.formatCurrency(valor)) +
             '</div>' +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
@@ -5880,7 +5890,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       user.online && user.statusAprovacao === 'aprovado' && !user.bloqueado &&
       user.categorias.indexOf(req.categoriaId) !== -1 &&
       (req.recusadoPor || []).indexOf(user.id) === -1;
-    if (!disponivel) return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('lock') + '</div><h2 class="h3">Chamado indisponível</h2><p class="text text--secondary">Esta oportunidade já foi assumida ou não está mais disponível.</p></div></div>';
+    if (!disponivel) {
+      const emNegociacao = req && [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(req.status) !== -1;
+      return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon(emNegociacao ? 'clock' : 'lock') + '</div><h2 class="h3">' + (emNegociacao ? 'Pedido em negociação' : 'Chamado indisponível') + '</h2><p class="text text--secondary">' + (emNegociacao ? 'Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.' : 'Esta oportunidade já foi assumida ou não está mais disponível.') + '</p></div></div>';
+    }
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
@@ -5898,7 +5911,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
           (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           '<hr class="hairline">' +
-          '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || '') + (Number.isFinite(Number(req.distanciaKm)) ? ' · ' + Number(req.distanciaKm).toFixed(1).replace('.', ',') + ' km de você' : '') + '</span></div>' +
+          '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || '') + '</span></div>' +
+          distanceHighlight(req) +
         '</div>' +
 
         '<div class="section card stack--sm" style="background:var(--navy-900);border:none;">' +
@@ -7054,7 +7068,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.4';
+  const APP_VERSION = '11.0.5';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
