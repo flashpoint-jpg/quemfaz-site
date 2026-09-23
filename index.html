@@ -3061,7 +3061,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         cidade: row.cidade || '',
         uf: row.uf || '',
         cep: global.QFGeo ? global.QFGeo.formatCep(row.cep || '') : (row.cep || ''),
-        complemento: ''
+        complemento: '',
+        latitude: row.latitude == null ? null : Number(row.latitude),
+        longitude: row.longitude == null ? null : Number(row.longitude)
       },
       cidadeId: cidadeId,
       latitude: row.latitude == null ? null : Number(row.latitude),
@@ -3429,8 +3431,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       rua: String(e.rua || '').trim(), bairro: String(e.bairro || '').trim(),
       cidade: String(e.cidade || '').trim(), uf: String(e.uf || '').trim().toUpperCase(),
       complemento: String(e.complemento || '').trim() || null,
-      latitude: Number.isFinite(Number(e.latitude)) ? Number(e.latitude) : null,
-      longitude: Number.isFinite(Number(e.longitude)) ? Number(e.longitude) : null,
+      latitude: (e.latitude !== null && e.latitude !== undefined && String(e.latitude).trim() !== '' && Number.isFinite(Number(e.latitude)) && Math.abs(Number(e.latitude)) <= 90) ? Number(e.latitude) : null,
+      longitude: (e.longitude !== null && e.longitude !== undefined && String(e.longitude).trim() !== '' && Number.isFinite(Number(e.longitude)) && Math.abs(Number(e.longitude)) <= 180) ? Number(e.longitude) : null,
       atualizado_em: new Date().toISOString()
     };
     const res = await client.from('qf_enderecos').upsert(row, { onConflict: 'user_id' }).select('*').single();
@@ -3648,8 +3650,16 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const city = cityFromId(data.endereco.cidadeId);
     const cat = DB.categoryById(data.categoriaId);
     const enderecoCompleto = [data.endereco.rua, data.endereco.complemento].filter(Boolean).join(' · ');
-    const loc = (Number.isFinite(Number(data.endereco.latitude)) && Number.isFinite(Number(data.endereco.longitude)))
-      ? { latitude: Number(data.endereco.latitude), longitude: Number(data.endereco.longitude) }
+    const rawLat = data.endereco.latitude;
+    const rawLng = data.endereco.longitude;
+    const hasAddressCoords =
+      rawLat !== null && rawLat !== undefined && String(rawLat).trim() !== '' &&
+      rawLng !== null && rawLng !== undefined && String(rawLng).trim() !== '' &&
+      Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng)) &&
+      Math.abs(Number(rawLat)) <= 90 && Math.abs(Number(rawLng)) <= 180 &&
+      !(Number(rawLat) === 0 && Number(rawLng) === 0);
+    const loc = hasAddressCoords
+      ? { latitude: Number(rawLat), longitude: Number(rawLng) }
       : await getCurrentPositionSafe({ timeout: 7000, maximumAge: 20000 });
     // O chamado nasce NORMAL. Prioridade só é ativada no banco depois de pagamento aprovado.
     const row = {
@@ -7044,7 +7054,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.3';
+  const APP_VERSION = '11.0.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
