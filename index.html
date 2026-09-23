@@ -4974,78 +4974,47 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
   // ---------------- Início ----------------
 
   function renderCategoryBrowser(cats) {
-    const groupOrder = [
-      ['casa', 'Casa e manutenção'],
-      ['auto', 'Automotivo e transporte'],
-      ['tecnica', 'Assistência técnica'],
-      ['pessoas', 'Cuidados e pessoas'],
-      ['outros', 'Outros']
-    ];
-    const filters = [['todos', 'Todos']].concat(groupOrder);
-    const filterHtml = filters.map(function (g, i) {
-      return '<button type="button" class="category-filter-chip' + (i === 0 ? ' is-active' : '') + '" data-category-filter="' + g[0] + '">' + PU.escapeHtml(g[1]) + '</button>';
+    const groupOrder = [['casa','Casa e manutenção'],['auto','Automotivo e transporte'],['tecnica','Assistência técnica'],['pessoas','Cuidados e pessoas'],['outros','Outros']];
+    const filters = [['todos','Todos']].concat(groupOrder);
+    function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+    const popularNames=['Montador de móveis','Encanador','Eletricista','Diarista','Marido de aluguel','Pintor'];
+    const popular=popularNames.map(function(name){return cats.find(function(c){return norm(c.nome)===norm(name);});}).filter(Boolean).slice(0,6);
+    const popularHtml=popular.length?'<div class="qf-popular-wrap"><div class="qf-popular-title">Mais pedidos</div><div class="qf-popular-row">'+popular.map(function(c){
+      return '<button class="category-tile" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
+    }).join('')+'</div></div>':'';
+    const filterHtml=filters.map(function(g,i){return '<button type="button" class="category-filter-chip'+(i===0?' is-active':'')+'" data-category-filter="'+g[0]+'">'+PU.escapeHtml(g[1])+'</button>';}).join('');
+    const groupsHtml=groupOrder.map(function(g){
+      const groupCats=cats.filter(function(c){return (c.grupoId||'outros')===g[0];});
+      if(!groupCats.length)return '';
+      return '<section class="category-group" data-category-group="'+g[0]+'"><div class="category-group__title"><span>'+PU.escapeHtml(g[1])+'</span><span class="category-group__count">'+groupCats.length+'</span></div><div class="category-tiles">'+groupCats.map(function(c){
+        return '<button class="category-tile" data-cat-group="'+g[0]+'" data-cat-name="'+PU.escapeHtml(c.nome)+'" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
+      }).join('')+'</div></section>';
     }).join('');
-    const groupsHtml = groupOrder.map(function (g) {
-      const groupCats = cats.filter(function (c) { return (c.grupoId || 'outros') === g[0]; });
-      if (!groupCats.length) return '';
-      return '<section class="category-group" data-category-group="' + g[0] + '">' +
-        '<div class="category-group__title"><span>' + PU.escapeHtml(g[1]) + '</span><span class="category-group__count">' + groupCats.length + '</span></div>' +
-        '<div class="category-tiles">' + groupCats.map(function (c) {
-          return '<button class="category-tile" data-cat-group="' + g[0] + '" data-cat-name="' + PU.escapeHtml(c.nome) + '" data-nav="/cliente/categoria/' + c.id + '">' +
-            '<span class="category-tile__icon">' + icon(c.icon) + '</span>' +
-            '<span class="category-tile__label">' + PU.escapeHtml(c.nome) + '</span>' +
-          '</button>';
-        }).join('') + '</div></section>';
-    }).join('');
-    return '<div class="category-browser">' +
-      '<label class="category-browser-search"><span class="category-browser-search__icon">' + icon('search') + '</span>' +
-        '<input class="input" type="search" placeholder="Qual serviço você precisa?" autocomplete="off" data-category-search aria-label="Buscar serviço"></label>' +
-      '<div class="category-filter-row" aria-label="Filtrar serviços">' + filterHtml + '</div>' +
-      '<div class="category-grid">' + groupsHtml + '</div>' +
-      '<div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div>' +
-    '</div>';
+    return '<div class="category-browser"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Qual serviço você precisa?" autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+popularHtml+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
+  }
+
+  function qfPendenciaDismissed(tipo) {
+    try { const ts=Number(localStorage.getItem('qf_dismiss_'+tipo)||0); return !!ts && Date.now()-ts<86400000; } catch(_){ return false; }
+  }
+  function clientePendenciaHtml() {
+    let tipo='',iconName='',texto='',action='';
+    if(global.QFPush && !global.QFPush.isActive() && !qfPendenciaDismissed('notificacoes')){
+      tipo='notificacoes';iconName='bell';texto=global.QFPush.permission()==='denied'?'Notificações estão bloqueadas neste aparelho.':'Ative as notificações para acompanhar seu pedido.';action='<button class="btn btn--primary" type="button" data-action="ativar-notificacoes">Ativar</button>';
+    } else if(global.QFApp&&global.QFApp.canOfferInstall&&global.QFApp.canOfferInstall()&&!qfPendenciaDismissed('instalar')){
+      tipo='instalar';iconName='smartphone';texto='Instale o QuemFaz para abrir mais rápido como aplicativo.';action='<button class="btn btn--primary" type="button" data-install-app>Instalar</button>';
+    }
+    if(!tipo)return '';
+    return '<div class="qf-pendencia" data-pendencia="'+tipo+'"><div class="icon-tile icon-tile--orange">'+icon(iconName)+'</div><div class="qf-pendencia__txt">'+texto+'</div>'+action+'<button class="qf-pendencia__x" type="button" data-dismiss-pendencia="'+tipo+'" aria-label="Ocultar por 24 horas">'+icon('x')+'</button></div>';
   }
 
   Screens.clienteHomeRender = function (params, user) {
-    const ativos = DB.requestsByCliente(user.id).filter(function (r) { return ACTIVE_STATUSES.indexOf(r.status) !== -1; });
-    const cats = DB.categories();
-    return (
-      '<div class="view">' +
-        '<div class="row">' +
-          '<div class="avatar avatar--orange">' + PU.initials(user.nome) + '</div>' +
-          '<div>' +
-            '<div class="text--sm text--secondary">Olá,</div>' +
-            '<div class="h2">' + PU.escapeHtml(user.nome.split(' ')[0]) + '</div>' +
-          '</div>' +
-        '</div>' +
-        '<div data-install-slot style="display:none;margin-top:12px;"></div>' +
-        (global.QFPush ? '<div class="section">' + global.QFPush.card('cliente') + '</div>' : '') +
-
-        '<div class="section">' +
-          '<div class="card" style="background:var(--success-100);border:1px solid #bfe8d6;">' +
-            '<div class="row" style="align-items:flex-start;">' +
-              '<div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div>' +
-              '<div class="spacer"><div class="text--strong" style="color:var(--success-600);">Pedir um profissional é grátis</div>' +
-              '<div class="text--sm text--secondary" style="margin-top:3px;">Você não paga para publicar seu pedido nem para buscar profissionais. Só decide contratar depois de receber e analisar os orçamentos.</div></div>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-
-        anunciosCarousel(user) +
-
-        (ativos.length ? (
-          '<div class="section">' +
-            '<div class="section-head"><h2 class="h3">Acompanhar agora</h2></div>' +
-            '<div class="stack--sm">' + ativos.slice(0, 2).map(pedidoCard).join('') + '</div>' +
-          '</div>'
-        ) : '') +
-
-        '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">' + cats.length + ' serviços</span></div>' +
-          renderCategoryBrowser(cats) +
-        '</div>' +
-      '</div>'
-    );
+    const ativos=DB.requestsByCliente(user.id).filter(function(r){return ACTIVE_STATUSES.indexOf(r.status)!==-1;});
+    const cats=DB.categories();
+    return '<div class="view">'+
+      '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
+      (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
+      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats)+'<div class="qf-free-line">'+icon('checkCircle')+'<span>Pedir um profissional é grátis. Você só decide contratar depois do orçamento.</span></div></div>'+
+      clientePendenciaHtml()+anunciosCarousel(user)+'</div>';
   };
 
 
@@ -5320,6 +5289,7 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
           '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos dentro da área escolhida podem visualizar o serviço. O primeiro que desbloquear o chamado será conectado a você.</p>' +
+          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '">Avisando os profissionais mais próximos…</div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
@@ -5858,9 +5828,34 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
     });
   }
 
+  let qfReachTimer=null;
+  function stopCallReachPolling(){if(qfReachTimer){clearInterval(qfReachTimer);qfReachTimer=null;}}
+  function renderCallReach(el,req,data){
+    if(!el||!req||!data)return;
+    const avisados=Number(data.avisados||0),online=Number(data.online_na_regiao||0);
+    if(avisados>0){el.innerHTML='<strong>'+avisados+' profissional'+(avisados===1?'':'is')+' perto de você '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
+    if(online>0){el.textContent='Avisando os profissionais mais próximos…';return;}
+    const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
+    if(!Number.isFinite(created)||Date.now()-created<120000){el.textContent='Procurando profissionais online na sua região…';return;}
+    const cat=DB.categoryById(req.categoriaId);
+    el.innerHTML='<div class="qf-no-coverage"><div class="text--strong">Nenhum profissional online agora</div><div class="text--sm text--secondary" style="margin-top:4px;">No momento não há profissionais de '+PU.escapeHtml((cat&&cat.nome)||'serviço')+' online na sua região. Seu pedido continua publicado e avisaremos assim que alguém ficar disponível.</div><button class="btn btn--outline" type="button" data-support-open>Falar com o QuemFaz</button><button class="btn btn--primary" type="button" data-action="manter-pedido">Manter pedido</button></div>';
+  }
+  function startCallReachPolling(content,req){
+    stopCallReachPolling();
+    if(!req||(req.status!==STATUS.BUSCANDO&&req.status!==STATUS.AGUARDANDO_ACEITE))return;
+    const el=content.querySelector('[data-call-reach]');
+    if(!el||!(global.QFCloud&&global.QFCloud.client))return;
+    async function load(){
+      if(location.hash!=='#/cliente/pedido/'+req.id){stopCallReachPolling();return;}
+      try{const res=await global.QFCloud.client.rpc('qf_chamado_alcance',{p_chamado_id:req.id});if(res.error)throw res.error;renderCallReach(el,req,res.data||{});}catch(err){console.warn('QuemFaz alcance do chamado',err);}
+    }
+    load();qfReachTimer=setInterval(load,15000);
+  }
+
   function bindPedidoDetalhe(content, params, user) {
     const req = DB.requestById(params.id);
     if (!req) return;
+    startCallReachPolling(content, req);
 
     if (req.status === STATUS.BUSCANDO && !(global.QFCloud && global.QFCloud.enabled)) {
       setTimeout(function () {
@@ -5875,6 +5870,11 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
       if (!action) return;
       const act = action.getAttribute('data-action');
 
+      if (act === 'manter-pedido') {
+        const box=action.closest('.qf-no-coverage');
+        if(box)box.innerHTML='<div class="text--sm text--secondary">Pedido mantido. Continuaremos procurando e avisaremos quando houver profissional disponível.</div>';
+        return;
+      }
       if (act === 'tentar-novamente') {
         if (global.QFCloud && global.QFCloud.enabled) {
           global.QFCloud.syncForCurrentSession(true).then(function () { global.navigate('/cliente/pedido/' + req.id, true); });
