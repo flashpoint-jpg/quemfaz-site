@@ -604,6 +604,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .notify-required { background:var(--orange-100); border:1px solid #ffd0ae; }
 .notify-ok { background:var(--success-100); border:1px solid #bfe8d6; }
 .notify-local { background:var(--navy-100); border:1px solid #ccd6e8; }
+/* V11.1: faixa "online sem notificação" no topo das telas do profissional */
+.qf-push-banner { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 16px; background:var(--warning-100); border-bottom:1px solid #f0cf91; color:var(--warning-600); font-size:13.5px; font-weight:600; }
+.qf-push-banner .btn { width:auto; flex:none; }
 
 /* ---------- Badges / status ---------- */
 
@@ -1791,7 +1794,48 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     } catch (e) { /* aparelho sem WebAudio */ }
   }
 
+  // V11.1: toque do QuemFaz (mp3) para chamado/alerta forte; o bipe abaixo fica como reserva.
+  let qfRingAudio = null, qfRingUnlocked = false;
+  function ringAudio() {
+    if (!qfRingAudio) { try { qfRingAudio = new Audio('./quemfaz_chamado.mp3'); qfRingAudio.preload = 'auto'; } catch (e) { qfRingAudio = null; } }
+    return qfRingAudio;
+  }
+  function unlockRingAudio() {
+    if (qfRingUnlocked) return;
+    const a = ringAudio();
+    if (!a) return;
+    qfRingUnlocked = true;
+    try {
+      a.muted = true;
+      const p = a.play();
+      const done = function () { try { a.pause(); a.currentTime = 0; } catch (_) {} a.muted = false; };
+      if (p && p.then) p.then(done).catch(function () { a.muted = false; qfRingUnlocked = false; }); else done();
+    } catch (e) { a.muted = false; qfRingUnlocked = false; }
+  }
+
+  // V11.1: quando um push acabou de tocar, a sincronização logo em seguida não toca de novo.
+  let lastPushSoundAt = 0;
+  function notePushSound() { lastPushSoundAt = Date.now(); }
+  function pushSoundRecent() { return Date.now() - lastPushSoundAt < 10000; }
+
   function playNotificationSound(strong) {
+    if (strong) {
+      const a = ringAudio();
+      if (a) {
+        try {
+          a.muted = false;
+          try { a.currentTime = 0; } catch (_) {}
+          const p = a.play();
+          if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+          if (p && p.catch) p.catch(function () { playBeep(true); });
+          return;
+        } catch (e) { /* cai no bipe */ }
+      }
+    }
+    playBeep(strong);
+  }
+
+  function playBeep(strong) {
     try {
       unlockNotificationAudio();
       if (!qfAudioCtx || qfAudioCtx.state !== 'running') { if (navigator.vibrate) navigator.vibrate(strong ? [400, 150, 400, 150, 600] : [120]); return; }
@@ -1828,6 +1872,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   document.addEventListener('pointerdown', function () {
     unlockNotificationAudio();
+    unlockRingAudio();
     try {
       if (window.isSecureContext && 'Notification' in window && Notification.permission === 'default' && !localStorage.getItem('qf_notif_permission_asked')) {
         localStorage.setItem('qf_notif_permission_asked', '1');
@@ -1881,7 +1926,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   global.PU = {
     uid, formatCurrency, parseCurrencyInput, formatDate, formatDateTime, timeAgo,
     escapeHtml, initials, clamp, fileToCompressedDataUrl,
-    toast, playNotificationSound, browserNotification, unlockNotificationAudio, openSheet, closeSheet, confirmDialog,
+    toast, playNotificationSound, browserNotification, unlockNotificationAudio, notePushSound, pushSoundRecent, openSheet, closeSheet, confirmDialog,
   };
 })(window);
 
@@ -2877,7 +2922,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   async function refreshProfessionalLocation(force) {
     if (!client) return null;
-    if (!force && Date.now() - lastLocationRefreshAt < 45000) return null;
+    if (!force && Date.now() - lastLocationRefreshAt < 120000) return null; // V11.1: GPS no máximo a cada 2 min
     const loc = await getCurrentPositionSafe({ timeout: force ? 9000 : 5000, maximumAge: force ? 0 : 30000 });
     if (!loc) return null;
     const uRes = await client.auth.getUser();
@@ -3524,6 +3569,20 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     } catch (e) { console.warn('QuemFaz origem de marketing pendente', e); }
   }
 
+  // V11.1: consulta leve para o profissional (só ids/status); a sincronização completa roda quando algo muda.
+  async function professionalQuickSignature() {
+    if (!client) return null;
+    const res = await Promise.all([
+      client.rpc('qf_listar_chamados_disponiveis'),
+      client.from('qf_chamados_desbloqueados').select('id,status,atualizado_em')
+    ]);
+    if (res[0].error) throw res[0].error;
+    if (res[1].error) throw res[1].error;
+    const a = (res[0].data || []).map(function (r) { return r.id + ':' + r.status; }).sort();
+    const u = (res[1].data || []).map(function (r) { return r.id + ':' + r.status + ':' + (r.atualizado_em || ''); }).sort();
+    return a.join(',') + '|' + u.join(',');
+  }
+
   async function syncForCurrentSession(force) {
     if (!enabled) return null;
     prepareLocalState();
@@ -4068,6 +4127,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     projectUrl: SUPABASE_URL,
     prepareLocalState: prepareLocalState,
     syncForCurrentSession: syncForCurrentSession,
+    professionalQuickSignature: professionalQuickSignature,
     signUp: signUp,
     signIn: signIn,
     requestPasswordReset: requestPasswordReset,
@@ -4104,11 +4164,142 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 /* QuemFaz — Web Push real para PWA instalada (HTTPS). */
 (function (global) {
   const VAPID_PUBLIC_KEY = 'BEEKzUpJ3vaPQDakbiM0igTGDma4U3EPnH2TrV7PW_QguRgueQ_qPA1C5UnjISqnfudUVxC09B6prywwta4Z7J8';
+  const PUSH_APIKEY = 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A';
+
+  // ---------- V11.1: push nativo no APK (Capacitor + Firebase) ----------
+  function nativePush() {
+    const C = global.Capacitor;
+    if (!C || !C.isNativePlatform || !C.isNativePlatform()) return null;
+    if (global.QFApp && global.QFApp.platform() !== 'android') return null;
+    return (C.Plugins && C.Plugins.PushNotifications) || null;
+  }
+  let nativePerm = 'default';
+  function mapNativePerm(p) { return p === 'granted' ? 'granted' : (p === 'denied' ? 'denied' : 'default'); }
+  async function refreshNativePerm() {
+    const P = nativePush();
+    if (!P) return nativePerm;
+    try { const st = await P.checkPermissions(); nativePerm = mapNativePerm(st && st.receive); } catch (_) {}
+    return nativePerm;
+  }
+  async function sessionToken() {
+    if (!global.QFCloud || !global.QFCloud.client) throw new Error('Entre na conta antes de ativar as notificações.');
+    const sess = await global.QFCloud.client.auth.getSession();
+    const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : '';
+    if (!token) throw new Error('Sua sessão expirou. Entre novamente na conta e tente ativar as notificações.');
+    return token;
+  }
+  async function callPushFunction(body) {
+    const resp = await fetch(global.QFCloud.projectUrl + '/functions/v1/quemfaz-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': PUSH_APIKEY, 'Authorization': 'Bearer ' + await sessionToken() },
+      body: JSON.stringify(body)
+    });
+    const out = await resp.json().catch(function () { return {}; });
+    if (!resp.ok || !out || !out.ok) throw new Error((out && out.error) || 'Não foi possível registrar as notificações.');
+    return out;
+  }
+  async function sendFcmToken(token) {
+    const out = await callPushFunction({ action: 'subscribe_fcm', token: token, platform: 'android' });
+    try {
+      localStorage.setItem('qf_fcm_token', token);
+      localStorage.setItem('qf_push_enabled', '1');
+      localStorage.setItem('qf_fcm_ready', out.fcm_ready ? '1' : '0');
+    } catch (_) {}
+    return out;
+  }
+  let nativeListenersOn = false;
+  let tokenWaiters = [];
+  function ensureNativeListeners(P) {
+    if (nativeListenersOn) return;
+    nativeListenersOn = true;
+    P.addListener('registration', function (t) {
+      const value = t && t.value;
+      const waiters = tokenWaiters; tokenWaiters = [];
+      if (waiters.length) { waiters.forEach(function (w) { w.resolve(value); }); return; }
+      // Token renovado pelo Firebase sem ninguém esperando: reenvia se houver sessão.
+      if (value) sendFcmToken(value).catch(function () {});
+    });
+    P.addListener('registrationError', function (e) {
+      const waiters = tokenWaiters; tokenWaiters = [];
+      const err = new Error('Não foi possível registrar o aparelho para notificações. ' + ((e && e.error) || ''));
+      waiters.forEach(function (w) { w.reject(err); });
+    });
+    // App aberto: o Android já mostrou a notificação; aqui só toca o som do app e atualiza a tela.
+    P.addListener('pushNotificationReceived', function (n) {
+      const data = (n && n.data) || {};
+      const payload = {
+        title: data.title || (n && n.title) || '',
+        body: data.body || (n && n.body) || '',
+        url: data.url || '',
+        strong: data.strong === '1' || data.strong === true || data.strong === 1
+      };
+      if (global.QFApp && global.QFApp.onPush) global.QFApp.onPush(payload);
+    });
+    P.addListener('pushNotificationActionPerformed', function (a) {
+      const url = a && a.notification && a.notification.data && a.notification.data.url;
+      if (!url) return;
+      const i = String(url).indexOf('#');
+      if (i >= 0) location.hash = String(url).slice(i);
+    });
+  }
+  function registerNativeToken(P) {
+    ensureNativeListeners(P);
+    return new Promise(function (resolve, reject) {
+      const w = { resolve: resolve, reject: reject };
+      tokenWaiters.push(w);
+      const timer = setTimeout(function () {
+        tokenWaiters = tokenWaiters.filter(function (x) { return x !== w; });
+        reject(new Error('O aparelho demorou para responder. Verifique a internet e tente de novo.'));
+      }, 20000);
+      w.resolve = function (v) { clearTimeout(timer); resolve(v); };
+      w.reject = function (e) { clearTimeout(timer); reject(e); };
+      P.register().catch(function (e) { w.reject(e); });
+    });
+  }
+  async function activateNative(P) {
+    ensureNativeListeners(P);
+    let st = await P.checkPermissions();
+    if (st.receive !== 'granted') st = await P.requestPermissions();
+    nativePerm = mapNativePerm(st && st.receive);
+    if (nativePerm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Abra Configurações > Apps > QuemFaz > Notificações e permita.');
+    await sessionToken(); // falha cedo se não houver sessão
+    const token = await registerNativeToken(P);
+    if (!token) throw new Error('Não foi possível obter o registro do aparelho.');
+    await sendFcmToken(token);
+    pedirLiberarBateria();
+    return true;
+  }
+  // Pede uma vez para o QuemFaz ignorar a economia de bateria (sem isso o Android pode atrasar o toque).
+  function pedirLiberarBateria() {
+    try { if (localStorage.getItem('qf_battery_asked') === '1') return; localStorage.setItem('qf_battery_asked', '1'); } catch (_) { return; }
+    const C = global.Capacitor;
+    const plugin = C && C.Plugins && C.Plugins.QFBattery;
+    const PU = global.PU;
+    if (!PU || !PU.openSheet) return;
+    PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + global.icon('bell') + '</div>' +
+      '<h3 class="sheet__title" style="text-align:center;">Libere a bateria</h3>' +
+      '<p class="text text--secondary" style="text-align:center;">Para o toque chegar com o celular no bolso, permita o QuemFaz ignorar a economia de bateria.</p>' +
+      (plugin ? '' : '<div class="text--sm text--secondary" style="text-align:center;">Configurações &gt; Apps &gt; QuemFaz &gt; Bateria &gt; <strong>Sem restrições</strong>.</div>') +
+      '<button class="btn btn--primary" id="qf-bat-ok">' + (plugin ? 'Permitir' : 'Entendi') + '</button></div>');
+    const ok = document.getElementById('qf-bat-ok');
+    if (ok) ok.onclick = function () {
+      PU.closeSheet();
+      if (plugin && plugin.request) { try { plugin.request(); } catch (_) {} }
+    };
+  }
+  function isActive() {
+    try {
+      if (nativePush()) return nativePerm === 'granted' && !!localStorage.getItem('qf_fcm_token') && localStorage.getItem('qf_push_enabled') === '1';
+      return supported() && permission() === 'granted' && localStorage.getItem('qf_push_enabled') === '1';
+    } catch (_) { return false; }
+  }
 
   function supported() {
+    if (nativePush()) return true;
     return !!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window);
   }
   function permission() {
+    if (nativePush()) return nativePerm;
     if (!('Notification' in window)) return 'unsupported';
     return Notification.permission;
   }
@@ -4128,6 +4319,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return reg;
   }
   async function activate() {
+    const NP = nativePush();
+    if (NP) return activateNative(NP);
     if (!supported()) throw new Error('Abra a versão online do QuemFaz e instale o app para ativar notificações com o app fechado.');
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Ative nas configurações do navegador/app.');
@@ -4153,6 +4346,13 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return true;
   }
   async function restore() {
+    const NP = nativePush();
+    if (NP) {
+      // APK: se a permissão já existe, registra de novo (o token do Firebase pode ter mudado).
+      ensureNativeListeners(NP);
+      if (await refreshNativePerm() !== 'granted') return false;
+      try { const token = await registerNativeToken(NP); if (token) await sendFcmToken(token); return true; } catch (_) { return false; }
+    }
     if (!supported() || permission() !== 'granted') return false;
     try { await activate(); return true; } catch (_) { return false; }
   }
@@ -4169,7 +4369,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     throw lastErr || new Error('Não foi possível enviar a notificação.');
   }
   function card(role) {
-    if (isLocalViewer() || !supported()) {
+    if (!nativePush() && (isLocalViewer() || !supported())) {
       return '<div class="card notify-local"><div class="row" style="align-items:flex-start;"><div class="icon-tile">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Avisos com o app fechado</div><div class="text--sm text--secondary">Nesta visualização local os avisos funcionam apenas com a tela aberta. Depois de publicar em HTTPS e instalar o QuemFaz, ative as notificações para receber chamados mesmo com o app fechado.</div></div></div></div>';
     }
     if (permission() === 'granted') {
@@ -4179,7 +4379,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return '<div class="card notify-required"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Ative as notificações</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Obrigatório para ficar online e não perder chamados.' : 'Ative para perceber imediatamente quando houver atualização do seu pedido.') + '</div></div></div>' +
       (denied ? '<div class="text--sm" style="color:var(--danger-600);margin-top:10px;">A permissão foi bloqueada. Libere Notificações nas configurações do navegador/app.</div>' : '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes" style="margin-top:12px;">' + global.icon('bell') + ' Ativar notificações</button>') + '</div>';
   }
-  global.QFPush = { supported, permission, isLocalViewer, activate, restore, notify, card };
+  global.QFPush = { supported, permission, isLocalViewer, activate, restore, notify, card, isActive, isNative: function () { return !!nativePush(); } };
+  // APK: carrega a permissão atual cedo, para a tela já mostrar o estado certo.
+  setTimeout(function () { refreshNativePerm().catch(function () {}); }, 0);
 })(window);
 
 /* QuemFaz — endereço nacional, CEP, GPS e CPF */
@@ -6596,7 +6798,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   }
 
   function pushJaAtivo() {
-    try { return global.QFPush.permission() === 'granted' && localStorage.getItem('qf_push_enabled') === '1'; } catch (_) { return false; }
+    try { return global.QFPush.isActive(); } catch (_) { return false; }
   }
 
   function garantirNotificacoesParaOnline() {
@@ -7152,7 +7354,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.8';
+  const APP_VERSION = '11.1.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -7196,6 +7398,18 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return 0;
   }
 
+  // Push recebido com o app aberto (Web Push pelo SW ou push nativo do APK): som + aviso + atualiza.
+  function onPush(payload) {
+    payload = payload || {};
+    const strong = !!payload.strong;
+    PU.notePushSound();
+    PU.playNotificationSound(strong);
+    const visualTitle = payload.title || (strong ? 'Novo chamado recebido' : 'Nova notificação');
+    const visualBody = payload.body || 'Abra o QuemFaz para ver os detalhes.';
+    PU.toast(visualTitle + ' — ' + visualBody, strong ? 'success' : '', strong ? 9000 : 5000);
+    if (global.QFCloud && global.QFCloud.enabled && global.PROAKI_APP) global.PROAKI_APP.refreshNow();
+  }
+
   // ---------------- Service Worker ----------------
   let swReg = null;
   let userRequestedUpdate = false;
@@ -7228,15 +7442,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     });
     navigator.serviceWorker.addEventListener('message', function (e) {
       const d = e.data || {};
-      if (d.type === 'QF_PUSH') {
-        const payload = d.payload || {};
-        const strong = !!payload.strong;
-        PU.playNotificationSound(strong);
-        const visualTitle = payload.title || (strong ? 'Novo chamado recebido' : 'Nova notificação');
-        const visualBody = payload.body || 'Abra o QuemFaz para ver os detalhes.';
-        PU.toast(visualTitle + ' — ' + visualBody, strong ? 'success' : '', strong ? 9000 : 5000);
-        if (global.QFCloud && global.QFCloud.enabled && global.PROAKI_APP) global.PROAKI_APP.refreshNow();
-      }
+      if (d.type === 'QF_PUSH') onPush(d.payload || {});
       if (d.type === 'QF_NAVIGATE' && d.url) {
         try { const u = new URL(d.url); if (u.hash) location.hash = u.hash; } catch (_) {}
       }
@@ -7491,7 +7697,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   global.QFApp = {
     afterRender: function () { if (softEv) showSoftUpdate(softEv, false); },
-    VERSION: APP_VERSION, platform: platform, installedVersion: installedVersion, isStandalone: isStandalone, cmp: cmp,
+    VERSION: APP_VERSION, platform: platform, onPush: onPush, installedVersion: installedVersion, isStandalone: isStandalone, cmp: cmp,
     registerSW: registerSW, checkVersion: checkVersion, evaluate: evaluate, updateWebApp: updateWebApp,
     fillInstallSlots: fillInstallSlots, canOfferInstall: canOfferInstall
   };
@@ -7732,9 +7938,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       createdAt: new Date().toISOString(), read: false
     });
     saveNotices(session, items);
-    PU.playNotificationSound(!!strong);
+    const pushJustRang = PU.pushSoundRecent();
+    if (!pushJustRang) PU.playNotificationSound(!!strong);
     PU.toast(title + (body ? ' — ' + body : ''), 'success');
-    PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
+    if (!pushJustRang) PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
   }
   async function syncPersistentProfessionalNotices(session, alertNew) {
     if (!session || session.role !== 'profissional') return false;
@@ -7763,9 +7970,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     if (alertNew) {
       const title = fresh.length === 1 ? fresh[0].title : fresh.length + ' chamados perdidos';
       const body = fresh.length === 1 ? fresh[0].body : 'Abra Avisos para conferir.';
-      PU.playNotificationSound(true);
+      const pushJustRang = PU.pushSoundRecent();
+      if (!pushJustRang) PU.playNotificationSound(true);
       PU.toast(title + (body ? ' — ' + body : ''), 'warning');
-      PU.browserNotification(title, body || 'Abra o QuemFaz para conferir.');
+      if (!pushJustRang) PU.browserNotification(title, body || 'Abra o QuemFaz para conferir.');
     }
     return true;
   }
@@ -7796,9 +8004,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         const novos = batch.filter(function (n) { return n.title === 'Novo chamado perto de você'; }).length;
         const title = batch.length === 1 ? batch[0].title : (novos === batch.length ? novos + ' novos chamados perto de você' : batch.length + ' novas atualizações');
         const body = batch.length === 1 ? (batch[0].body || '') : 'Abra Avisos para ver todos.';
-        PU.playNotificationSound(strong);
+        // V11.1: se um push acabou de tocar, não toca de novo (o aviso continua na tela e em Avisos).
+        const pushJustRang = PU.pushSoundRecent();
+        if (!pushJustRang) PU.playNotificationSound(strong);
         PU.toast(title + (body ? ' — ' + body : ''), 'success');
-        PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
+        if (!pushJustRang) PU.browserNotification(title, body || 'Abra o QuemFaz para ver os detalhes.');
       }
     }
   }
@@ -8022,14 +8232,35 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
         '</div>';
     }
 
+    // V11.1: profissional online sem notificações ativas só recebe chamados com o app aberto — avisa no topo.
+    let pushBannerHtml = '';
+    if (session.role === 'profissional' && user && user.online && global.QFPush && !global.QFPush.isActive()) {
+      pushBannerHtml = '<div class="qf-push-banner" role="status"><span>Você está online, mas só recebe chamados com o app aberto.</span>' +
+        '<button class="btn btn--primary btn--sm" type="button" data-action="ativar-notificacoes-faixa">' + icon('bell') + ' Ativar notificações</button></div>';
+    }
+
     shell.setAttribute('data-route', routeKey(found.route.pattern));
     shell.setAttribute('data-role', session.role);
     shell.innerHTML =
       '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
+      pushBannerHtml +
       topbarHtml +
       '<main id="app-content" role="main"></main>' +
       renderTabbar(tabs, found.route.tab) +
       (global.QFSupport ? global.QFSupport.buttonHtml() : '');
+
+    const pushBannerBtn = shell.querySelector('[data-action="ativar-notificacoes-faixa"]');
+    if (pushBannerBtn) pushBannerBtn.addEventListener('click', async function () {
+      pushBannerBtn.disabled = true;
+      try {
+        await global.QFPush.activate();
+        PU.toast('Notificações ativadas. Você receberá novos chamados mesmo com o app fechado.', 'success');
+        navigate(currentPath(), true);
+      } catch (err) {
+        PU.toast((err && err.message) || 'Não foi possível ativar as notificações.', 'danger');
+        pushBannerBtn.disabled = false;
+      }
+    });
 
     const content = document.getElementById('app-content');
     content.innerHTML = found.route.render(found.params, user);
@@ -8112,6 +8343,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
   let liveCallsBusy = false;
   let pendingRefresh = false;
+  let lastQuickSig = '';
+  let lastFullLiveSyncAt = 0;
   // V10.2: não re-renderiza a tela enquanto o usuário digita ou com uma janela aberta
   // (antes, um chamado novo apagava o orçamento/formulário que estava sendo preenchido).
   function userIsEditing() {
@@ -8148,6 +8381,15 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const before = requestStateSignature();
     const y = window.scrollY;
     try {
+      // V11.1: profissional — primeiro só a consulta leve; sincronização completa se algo mudou ou a cada 30 s.
+      if (session.role === 'profissional' && global.QFCloud.professionalQuickSignature) {
+        const quick = await global.QFCloud.professionalQuickSignature();
+        const quickKey = session.userId + '#' + quick;
+        const due = Date.now() - lastFullLiveSyncAt >= 30000;
+        if (quickKey === lastQuickSig && !due && !pendingRefresh) return;
+        lastQuickSig = quickKey;
+      }
+      lastFullLiveSyncAt = Date.now();
       await global.QFCloud.syncForCurrentSession(true);
       let serverNoticesChanged = false;
       if (session.role === 'profissional') {

@@ -3,9 +3,9 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.0.8';
+const SW_VERSION = '11.1.0';
 const CACHE = 'quemfaz-' + SW_VERSION;
-const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon.svg', './icon.svg', './icon.svg'];
+const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon.svg', './icon.svg', './icon.svg', './quemfaz_chamado.mp3'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).catch(() => null));
