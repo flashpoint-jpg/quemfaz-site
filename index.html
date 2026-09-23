@@ -1763,7 +1763,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     return stack;
   }
 
-  function toast(message, variant) {
+  function toast(message, variant, durationMs) {
     const stack = ensureToastStack();
     const el = document.createElement('div');
     el.className = 'toast' + (variant ? ' toast--' + variant : '');
@@ -1776,7 +1776,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
       el.style.transition = 'opacity 200ms ease';
       el.style.opacity = '0';
       setTimeout(function () { el.remove(); }, 220);
-    }, 2600);
+    }, Math.max(2600, Number(durationMs || 2600)));
   }
 
   // ---------- Avisos sonoros e notificações do aparelho ----------
@@ -7152,7 +7152,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.6';
+  const APP_VERSION = '11.0.8';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -7229,7 +7229,12 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     navigator.serviceWorker.addEventListener('message', function (e) {
       const d = e.data || {};
       if (d.type === 'QF_PUSH') {
-        PU.playNotificationSound(!!(d.payload && d.payload.strong));
+        const payload = d.payload || {};
+        const strong = !!payload.strong;
+        PU.playNotificationSound(strong);
+        const visualTitle = payload.title || (strong ? 'Novo chamado recebido' : 'Nova notificação');
+        const visualBody = payload.body || 'Abra o QuemFaz para ver os detalhes.';
+        PU.toast(visualTitle + ' — ' + visualBody, strong ? 'success' : '', strong ? 9000 : 5000);
         if (global.QFCloud && global.QFCloud.enabled && global.PROAKI_APP) global.PROAKI_APP.refreshNow();
       }
       if (d.type === 'QF_NAVIGATE' && d.url) {
