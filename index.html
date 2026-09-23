@@ -3708,7 +3708,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
     const localClient = DB.clienteById(data.clienteId);
     if (localClient) localClient.enderecos = [data.endereco];
     DB.persist();
-    if (global.QFPush) global.QFPush.notify('new_call', req.id).catch(function () {});
+    if (global.QFPush) {
+      try { await global.QFPush.notify('new_call', req.id); }
+      catch (pushErr) { console.warn('QuemFaz push do novo chamado', pushErr); }
+    }
     return req;
   }
 
@@ -4062,9 +4065,14 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   async function notify(event, callId, extra) {
     if (!global.QFCloud || !global.QFCloud.client || !callId) return false;
     const body = Object.assign({ action: 'notify', event: event, call_id: callId }, extra || {});
-    const out = await global.QFCloud.client.functions.invoke('quemfaz-push', { body: body });
-    if (out.error) throw out.error;
-    return true;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const out = await global.QFCloud.client.functions.invoke('quemfaz-push', { body: body });
+      if (!out.error) return out.data || true;
+      lastErr = out.error;
+      if (attempt === 0) await new Promise(function (resolve) { setTimeout(resolve, 900); });
+    }
+    throw lastErr || new Error('Não foi possível enviar a notificação.');
   }
   function card(role) {
     if (isLocalViewer() || !supported()) {
@@ -6990,7 +6998,7 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.0.1';
+  const APP_VERSION = '11.0.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
