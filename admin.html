@@ -1157,6 +1157,11 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     fridge: svg('<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M7 10h10M10 6v2M10 13v3"/>'),
     washer: svg('<rect x="5" y="3.5" width="14" height="17" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 7h1M11 7h4"/>'),
     heart: svg('<path d="M12 20s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.7-7 10-7 10Z"/>'),
+    sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'),
+    scissors: svg('<circle cx="6.5" cy="6.5" r="2.8"/><circle cx="6.5" cy="17.5" r="2.8"/><path d="M8.8 8.3 20 18M8.8 15.7 20 6"/>'),
+    paw: svg('<ellipse cx="12" cy="16.2" rx="4.4" ry="3.6"/><circle cx="6.2" cy="10.6" r="1.9"/><circle cx="9.6" cy="6.4" r="1.9"/><circle cx="14.4" cy="6.4" r="1.9"/><circle cx="17.8" cy="10.6" r="1.9"/>'),
+    music: svg('<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+    book: svg('<path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v14H6.5a2 2 0 0 0-2 2Z"/><path d="M4.5 19.5a2 2 0 0 0 2 2H19v-4"/>'),
     whatsapp: svg('<path d="M4 20l1.3-3.8A8 8 0 1 1 8 19Z"/><path d="M9.2 9.1c.2-.5.6-.6.9-.6h.4c.2 0 .4.1.5.4l.6 1.4c.1.2 0 .4-.1.6l-.5.6c.5 1 1.3 1.8 2.3 2.3l.6-.5c.2-.1.4-.2.6-.1l1.4.6c.3.1.4.3.4.5v.4c0 .3-.1.7-.6.9-.9.4-2.4.2-4-1.1-1.4-1.1-2.5-2.7-2.7-3.6-.1-.6 0-1.2.2-1.8Z"/>'),
     car: svg('<path d="M4.5 15.5v-3.2l2-4.3a2 2 0 0 1 1.8-1.1h7.4a2 2 0 0 1 1.8 1.1l2 4.3v3.2"/><rect x="3.2" y="13.5" width="17.6" height="5" rx="1.6"/><circle cx="7.3" cy="18.4" r="1.2"/><circle cx="16.7" cy="18.4" r="1.2"/>'),
     document: svg('<path d="M7 3.5h7l3.5 3.5V20a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5V7h3.5"/><path d="M9 12h6M9 15.5h6"/>'),
@@ -1415,35 +1420,70 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
   function buildDemoData() {
     const categories = [
-      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
+      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
       { id: 'cat_informatica', nome: 'Técnico em informática', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_geladeira', nome: 'Técnico de geladeira', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_maquina_lavar', nome: 'Técnico de máquina de lavar', icon: 'washer', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_celular', nome: 'Assistência de celular', icon: 'smartphone', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
-      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Cuidados e pessoas', grupoId: 'pessoas' },
+      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_gesseiro', nome: 'Gesseiro', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_azulejista', nome: 'Azulejista/Pisos', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_telhadista', nome: 'Telhadista', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_calheiro', nome: 'Calheiro', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_impermeabilizacao', nome: 'Impermeabilização', icon: 'droplet', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_toldos_cortinas', nome: 'Montador de toldos e cortinas', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_energia_solar', nome: 'Instalador de energia solar', icon: 'sun', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_cftv_alarmes', nome: 'Instalador de câmeras (CFTV) e alarmes', icon: 'camera', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_internet_redes', nome: 'Técnico de internet e redes', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_caixa_dagua', nome: 'Limpeza de caixa d\'água', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_passadeira', nome: 'Passadeira', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_cozinheira', nome: 'Cozinheira', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_baba', nome: 'Babá', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_poda_paisagista', nome: 'Poda de árvores/Paisagista', icon: 'leaf', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_mudancas', nome: 'Mudanças', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_funileiro', nome: 'Funileiro e pintor automotivo', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_lava_jato', nome: 'Lava-jato/Estética automotiva', icon: 'car', leadTier: 'padrao', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_cabeleireiro', nome: 'Cabeleireiro(a)', icon: 'scissors', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_manicure', nome: 'Manicure/Pedicure', icon: 'heart', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_maquiador', nome: 'Maquiador(a)', icon: 'star', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_banho_tosa', nome: 'Banho e tosa', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_pet_sitter', nome: 'Pet sitter/Passeador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_adestrador', nome: 'Adestrador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_professor', nome: 'Professor particular', icon: 'book', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_personal', nome: 'Personal trainer', icon: 'heart', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_fotografo', nome: 'Fotógrafo', icon: 'camera', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_garcom_buffet', nome: 'Garçom/Buffet', icon: 'users', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_dj_som', nome: 'DJ/Som para eventos', icon: 'music', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_costureira', nome: 'Costureira', icon: 'scissors', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
       { id: 'cat_outros', nome: 'Outros serviços', icon: 'more', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
     ];
 
@@ -1603,35 +1643,70 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (!Array.isArray(state.ads)) { state.ads = []; changed = true; }
     if (!Array.isArray(state.categories)) { state.categories = []; changed = true; }
     const requiredCategories = [
-      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
+      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
       { id: 'cat_informatica', nome: 'Técnico em informática', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_geladeira', nome: 'Técnico de geladeira', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_maquina_lavar', nome: 'Técnico de máquina de lavar', icon: 'washer', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_celular', nome: 'Assistência de celular', icon: 'smartphone', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
-      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Cuidados e pessoas', grupoId: 'pessoas' },
+      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_gesseiro', nome: 'Gesseiro', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_azulejista', nome: 'Azulejista/Pisos', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_telhadista', nome: 'Telhadista', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_calheiro', nome: 'Calheiro', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_impermeabilizacao', nome: 'Impermeabilização', icon: 'droplet', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_toldos_cortinas', nome: 'Montador de toldos e cortinas', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_energia_solar', nome: 'Instalador de energia solar', icon: 'sun', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_cftv_alarmes', nome: 'Instalador de câmeras (CFTV) e alarmes', icon: 'camera', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_internet_redes', nome: 'Técnico de internet e redes', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_caixa_dagua', nome: 'Limpeza de caixa d\'água', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_passadeira', nome: 'Passadeira', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_cozinheira', nome: 'Cozinheira', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_baba', nome: 'Babá', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_poda_paisagista', nome: 'Poda de árvores/Paisagista', icon: 'leaf', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_mudancas', nome: 'Mudanças', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_funileiro', nome: 'Funileiro e pintor automotivo', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_lava_jato', nome: 'Lava-jato/Estética automotiva', icon: 'car', leadTier: 'padrao', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_cabeleireiro', nome: 'Cabeleireiro(a)', icon: 'scissors', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_manicure', nome: 'Manicure/Pedicure', icon: 'heart', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_maquiador', nome: 'Maquiador(a)', icon: 'star', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_banho_tosa', nome: 'Banho e tosa', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_pet_sitter', nome: 'Pet sitter/Passeador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_adestrador', nome: 'Adestrador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_professor', nome: 'Professor particular', icon: 'book', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_personal', nome: 'Personal trainer', icon: 'heart', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_fotografo', nome: 'Fotógrafo', icon: 'camera', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_garcom_buffet', nome: 'Garçom/Buffet', icon: 'users', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_dj_som', nome: 'DJ/Som para eventos', icon: 'music', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_costureira', nome: 'Costureira', icon: 'scissors', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
       { id: 'cat_outros', nome: 'Outros serviços', icon: 'more', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
     ];
     requiredCategories.forEach(function (cat) {
@@ -2560,7 +2635,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   async function syncSupport() {
     if (!client) return [];
     const res = await client.from('qf_suporte_atendimentos')
-      .select('id,usuario_id,usuario_tipo,assunto,status,atendido_por,criado_em,atualizado_em,ultima_mensagem_em,resolvido_em')
+      .select('id,usuario_id,usuario_tipo,assunto,status,atendido_por,criado_em,atualizado_em,ultima_mensagem_em,resolvido_em,visitante_nome,visitante_contato')
       .order('ultima_mensagem_em', { ascending:false });
     if (res.error) throw res.error;
     supportTicketsCache = res.data || [];
@@ -4722,7 +4797,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<span class="badge badge--navy">Aberto</span>';
   }
 
+  function supportTipo(t) { return t.usuario_tipo === 'profissional' ? 'Profissional' : t.usuario_tipo === 'visitante' ? 'Sem conta' : 'Cliente'; }
   function supportUserName(ticket) {
+    if (ticket.usuario_tipo === 'visitante') return (ticket.visitante_nome || 'Visitante') + (ticket.visitante_contato ? ' · ' + ticket.visitante_contato : '');
     const p = DB.profissionalById(ticket.usuario_id);
     if (p) return p.nome || 'Profissional';
     const cl = DB.clienteById(ticket.usuario_id);
@@ -4737,7 +4814,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     function card(t) {
       return '<button class="card qf-admin-support-card" data-nav="/admin/suporte/'+t.id+'">' +
         '<div class="row-between"><div><div class="text--strong">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
-        '<div class="row-between" style="margin-top:10px;"><span class="badge badge--muted">'+(t.usuario_tipo==='profissional'?'Profissional':'Cliente')+'</span><span class="text--sm text--muted">'+PU.escapeHtml(PU.formatDateTime(t.ultima_mensagem_em||t.atualizado_em))+'</span></div>' +
+        '<div class="row-between" style="margin-top:10px;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">'+PU.escapeHtml(PU.formatDateTime(t.ultima_mensagem_em||t.atualizado_em))+'</span></div>' +
       '</button>';
     }
     return '<div class="view">' +
@@ -4753,7 +4830,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (!t) return '<div class="view"><div class="empty-state"><p class="text text--secondary">Atendimento não encontrado.</p></div></div>';
     return '<div class="view stack">' +
       '<div class="card"><div class="row-between"><div><div class="h3">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
-      '<div class="row" style="margin-top:10px;gap:7px;flex-wrap:wrap;"><span class="badge badge--muted">'+(t.usuario_tipo==='profissional'?'Profissional':'Cliente')+'</span><span class="text--sm text--muted">Aberto '+PU.escapeHtml(PU.formatDateTime(t.criado_em))+'</span></div></div>' +
+      '<div class="row" style="margin-top:10px;gap:7px;flex-wrap:wrap;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">Aberto '+PU.escapeHtml(PU.formatDateTime(t.criado_em))+'</span></div></div>' +
       '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
       '<div class="card stack--sm"><label class="field"><span class="field__label">Status do atendimento</span><select class="select" id="qf-admin-support-status"><option value="aberto"'+(t.status==='aberto'?' selected':'')+'>Aberto</option><option value="em_atendimento"'+(t.status==='em_atendimento'?' selected':'')+'>Em atendimento</option><option value="resolvido"'+(t.status==='resolvido'?' selected':'')+'>Resolvido</option></select></label><button class="btn btn--outline" data-action="support-save-status">Salvar status</button></div>' +
     '</div>';

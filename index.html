@@ -1654,6 +1654,44 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-update-close{all:unset;position:absolute;top:8px;right:8px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:rgba(255,255,255,.8);cursor:pointer}
 .qf-update-close svg{width:18px;height:18px}
 .qf-update-close:hover{background:rgba(255,255,255,.12)}
+/* ================= V11.5.0 ================= */
+/* escolha de profissões em grupos */
+.qf-catpick{display:flex;flex-direction:column;gap:8px}
+.qf-catpick__search{position:relative;display:block}
+.qf-catpick__search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none}
+.qf-catpick__search .input{padding-left:38px}
+.qf-catpick__summary{display:flex;flex-direction:column;gap:2px;padding:9px 12px;border-radius:12px;background:var(--bg-sunken);font-size:13px;line-height:1.35}
+.qf-catpick__sumtitle{font-weight:850;color:var(--navy-900)}
+.qf-catpick__sumlist{color:var(--text-secondary)}
+.qf-catpick__group{border:1px solid var(--border-subtle,rgba(11,29,58,.12));border-radius:12px;background:var(--bg-surface)}
+.qf-catpick__group>summary{list-style:none;display:flex;align-items:center;gap:8px;min-height:46px;padding:0 12px;cursor:pointer;font-weight:800;font-size:14px;color:var(--navy-900)}
+.qf-catpick__group>summary::-webkit-details-marker{display:none}
+.qf-catpick__gname{flex:1;min-width:0}
+.qf-catpick__count{min-width:22px;height:22px;padding:0 6px;border-radius:999px;display:none;place-items:center;font-size:12px;background:var(--orange-500);color:#fff}
+.qf-catpick__count.is-on{display:grid}
+.qf-catpick__group>summary svg{width:18px;height:18px;flex:none;transition:transform .15s}
+.qf-catpick__group[open]>summary svg{transform:rotate(180deg)}
+.qf-catpick__chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 12px 12px}
+.qf-catpick .chip{min-height:34px;height:auto;padding:6px 12px;font-size:14px;line-height:1.2;white-space:normal;text-align:left}
+.qf-catpick__empty{font-size:13px;color:var(--text-secondary);padding:4px 2px}
+.qf-catpick [hidden]{display:none!important}
+/* cartão de anúncio da tela inicial */
+.qf-ad-cta{border:2px solid var(--orange-500)!important;background:var(--bg-surface)}
+/* faixa de notificação do cliente */
+.qf-cli-notif{display:flex;align-items:center;gap:9px;margin:0;padding:10px 8px 10px 14px;background:var(--orange-500);color:#fff;font-size:13px;font-weight:750;line-height:1.3}
+.qf-cli-notif>svg{width:19px;height:19px;flex:none}
+.qf-cli-notif__txt{flex:1;min-width:0}
+.qf-cli-notif__btn{flex:none;min-height:36px;padding:0 14px;border:0;border-radius:999px;background:#fff;color:var(--orange-700);font:inherit;font-weight:850;cursor:pointer}
+.qf-cli-notif__x{all:unset;flex:none;width:36px;height:36px;display:grid;place-items:center;border-radius:50%;cursor:pointer}
+.qf-cli-notif__x svg{width:18px;height:18px}
+@media (min-width:768px){.qf-cli-notif{border-radius:14px;margin:12px auto 0;max-width:calc(var(--desk-max,1100px) - 2 * var(--desk-pad,24px))}}
+/* suporte: botão flutuante com 48 px de toque, acima da barra de gestos */
+.qf-support-fab{min-height:48px;height:48px;min-width:48px;padding:0 16px;font-size:13px;bottom:calc(env(safe-area-inset-bottom, 0px) + 84px);touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+#app-shell[data-role="anon"] .qf-support-fab,body:not(:has(.tabbar)) .qf-support-fab{bottom:calc(env(safe-area-inset-bottom, 0px) + 20px)}
+@media (min-width:768px){.qf-support-fab{bottom:24px}}
+.qf-support-links{display:flex;flex-direction:column;gap:8px}
+#app-shell[data-role="anon"] .qf-landing-help,.qf-topbar-support{min-width:40px;min-height:40px}
+
 /* ================= V11.4.2 — "Baixar app" na barra de cima ================= */
 .qf-landing-topbar{gap:8px;flex-wrap:nowrap}
 .qf-landing-brand{min-width:0;flex:1 1 auto;white-space:nowrap}
@@ -1782,6 +1820,11 @@ alt=""></noscript>
     fridge: svg('<rect x="7" y="3" width="10" height="18" rx="1.5"/><path d="M7 10h10M10 6v2M10 13v3"/>'),
     washer: svg('<rect x="5" y="3.5" width="14" height="17" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 7h1M11 7h4"/>'),
     heart: svg('<path d="M12 20s-7-4.3-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.7-7 10-7 10Z"/>'),
+    sun: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>'),
+    scissors: svg('<circle cx="6.5" cy="6.5" r="2.8"/><circle cx="6.5" cy="17.5" r="2.8"/><path d="M8.8 8.3 20 18M8.8 15.7 20 6"/>'),
+    paw: svg('<ellipse cx="12" cy="16.2" rx="4.4" ry="3.6"/><circle cx="6.2" cy="10.6" r="1.9"/><circle cx="9.6" cy="6.4" r="1.9"/><circle cx="14.4" cy="6.4" r="1.9"/><circle cx="17.8" cy="10.6" r="1.9"/>'),
+    music: svg('<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>'),
+    book: svg('<path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v14H6.5a2 2 0 0 0-2 2Z"/><path d="M4.5 19.5a2 2 0 0 0 2 2H19v-4"/>'),
     whatsapp: svg('<path d="M4 20l1.3-3.8A8 8 0 1 1 8 19Z"/><path d="M9.2 9.1c.2-.5.6-.6.9-.6h.4c.2 0 .4.1.5.4l.6 1.4c.1.2 0 .4-.1.6l-.5.6c.5 1 1.3 1.8 2.3 2.3l.6-.5c.2-.1.4-.2.6-.1l1.4.6c.3.1.4.3.4.5v.4c0 .3-.1.7-.6.9-.9.4-2.4.2-4-1.1-1.4-1.1-2.5-2.7-2.7-3.6-.1-.6 0-1.2.2-1.8Z"/>'),
     car: svg('<path d="M4.5 15.5v-3.2l2-4.3a2 2 0 0 1 1.8-1.1h7.4a2 2 0 0 1 1.8 1.1l2 4.3v3.2"/><rect x="3.2" y="13.5" width="17.6" height="5" rx="1.6"/><circle cx="7.3" cy="18.4" r="1.2"/><circle cx="16.7" cy="18.4" r="1.2"/>'),
     key: svg('<circle cx="8" cy="12" r="3.5"/><path d="M11.2 10.8 20 4v4h-3v3h-3v2.2"/>'),
@@ -2143,35 +2186,70 @@ alt=""></noscript>
 
   function buildDemoData() {
     const categories = [
-      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
+      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
       { id: 'cat_informatica', nome: 'Técnico em informática', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_geladeira', nome: 'Técnico de geladeira', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_maquina_lavar', nome: 'Técnico de máquina de lavar', icon: 'washer', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_celular', nome: 'Assistência de celular', icon: 'smartphone', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
-      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Cuidados e pessoas', grupoId: 'pessoas' },
+      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_gesseiro', nome: 'Gesseiro', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_azulejista', nome: 'Azulejista/Pisos', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_telhadista', nome: 'Telhadista', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_calheiro', nome: 'Calheiro', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_impermeabilizacao', nome: 'Impermeabilização', icon: 'droplet', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_toldos_cortinas', nome: 'Montador de toldos e cortinas', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_energia_solar', nome: 'Instalador de energia solar', icon: 'sun', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_cftv_alarmes', nome: 'Instalador de câmeras (CFTV) e alarmes', icon: 'camera', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_internet_redes', nome: 'Técnico de internet e redes', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_caixa_dagua', nome: 'Limpeza de caixa d\'água', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_passadeira', nome: 'Passadeira', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_cozinheira', nome: 'Cozinheira', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_baba', nome: 'Babá', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_poda_paisagista', nome: 'Poda de árvores/Paisagista', icon: 'leaf', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_mudancas', nome: 'Mudanças', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_funileiro', nome: 'Funileiro e pintor automotivo', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_lava_jato', nome: 'Lava-jato/Estética automotiva', icon: 'car', leadTier: 'padrao', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_cabeleireiro', nome: 'Cabeleireiro(a)', icon: 'scissors', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_manicure', nome: 'Manicure/Pedicure', icon: 'heart', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_maquiador', nome: 'Maquiador(a)', icon: 'star', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_banho_tosa', nome: 'Banho e tosa', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_pet_sitter', nome: 'Pet sitter/Passeador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_adestrador', nome: 'Adestrador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_professor', nome: 'Professor particular', icon: 'book', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_personal', nome: 'Personal trainer', icon: 'heart', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_fotografo', nome: 'Fotógrafo', icon: 'camera', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_garcom_buffet', nome: 'Garçom/Buffet', icon: 'users', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_dj_som', nome: 'DJ/Som para eventos', icon: 'music', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_costureira', nome: 'Costureira', icon: 'scissors', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
       { id: 'cat_outros', nome: 'Outros serviços', icon: 'more', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
     ];
 
@@ -2329,35 +2407,70 @@ alt=""></noscript>
     if (!Array.isArray(state.ads)) { state.ads = []; changed = true; }
     if (!Array.isArray(state.categories)) { state.categories = []; changed = true; }
     const requiredCategories = [
-      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e manutenção', grupoId: 'casa' },
-      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Automotivo e transporte', grupoId: 'auto' },
-      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Automotivo e transporte', grupoId: 'auto' },
+      { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_pedreiro', nome: 'Pedreiro', icon: 'trowel', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_jardinagem', nome: 'Jardineiro', icon: 'leaf', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_arcondicionado', nome: 'Ar-condicionado', icon: 'snowflake', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_chaveiro', nome: 'Chaveiro', icon: 'key', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_pintor', nome: 'Pintor', icon: 'paintRoller', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_soldador', nome: 'Soldador', icon: 'welding', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_desentupidor', nome: 'Desentupidor', icon: 'pipe', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_dedetizador', nome: 'Dedetizador', icon: 'bug', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_vidraceiro', nome: 'Vidraceiro', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_serralheiro', nome: 'Serralheiro', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marceneiro', nome: 'Marceneiro', icon: 'saw', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_marido_aluguel', nome: 'Marido de aluguel', icon: 'toolbox', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_mecanico', nome: 'Mecânico', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_autoeletrico', nome: 'Autoelétrico', icon: 'bolt', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_bateria_auto', nome: 'Bateria automotiva', icon: 'battery', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_guincho', nome: 'Guincho', icon: 'towTruck', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_borracheiro', nome: 'Borracheiro', icon: 'tire', leadTier: 'medio', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_motorista', nome: 'Motorista', icon: 'steeringWheel', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_entregador', nome: 'Entregador', icon: 'truck', leadTier: 'medio', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_frete', nome: 'Frete/Carreto', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
       { id: 'cat_informatica', nome: 'Técnico em informática', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_geladeira', nome: 'Técnico de geladeira', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_maquina_lavar', nome: 'Técnico de máquina de lavar', icon: 'washer', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_celular', nome: 'Assistência de celular', icon: 'smartphone', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
-      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Cuidados e pessoas', grupoId: 'pessoas' },
+      { id: 'cat_cuidador_idosos', nome: 'Cuidador de idosos', icon: 'heart', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_gesseiro', nome: 'Gesseiro', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_azulejista', nome: 'Azulejista/Pisos', icon: 'trowel', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_telhadista', nome: 'Telhadista', icon: 'hammer', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_calheiro', nome: 'Calheiro', icon: 'droplet', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_impermeabilizacao', nome: 'Impermeabilização', icon: 'droplet', leadTier: 'premium', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_toldos_cortinas', nome: 'Montador de toldos e cortinas', icon: 'window', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
+      { id: 'cat_energia_solar', nome: 'Instalador de energia solar', icon: 'sun', leadTier: 'premium', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_cftv_alarmes', nome: 'Instalador de câmeras (CFTV) e alarmes', icon: 'camera', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_internet_redes', nome: 'Técnico de internet e redes', icon: 'laptop', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_caixa_dagua', nome: 'Limpeza de caixa d\'água', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_passadeira', nome: 'Passadeira', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_cozinheira', nome: 'Cozinheira', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_baba', nome: 'Babá', icon: 'heart', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_poda_paisagista', nome: 'Poda de árvores/Paisagista', icon: 'leaf', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
+      { id: 'cat_mudancas', nome: 'Mudanças', icon: 'truck', leadTier: 'premium', grupo: 'Transporte e mudanças', grupoId: 'transporte' },
+      { id: 'cat_funileiro', nome: 'Funileiro e pintor automotivo', icon: 'car', leadTier: 'premium', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_lava_jato', nome: 'Lava-jato/Estética automotiva', icon: 'car', leadTier: 'padrao', grupo: 'Automotivo', grupoId: 'auto' },
+      { id: 'cat_cabeleireiro', nome: 'Cabeleireiro(a)', icon: 'scissors', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_manicure', nome: 'Manicure/Pedicure', icon: 'heart', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_maquiador', nome: 'Maquiador(a)', icon: 'star', leadTier: 'padrao', grupo: 'Beleza e bem-estar', grupoId: 'beleza' },
+      { id: 'cat_banho_tosa', nome: 'Banho e tosa', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_pet_sitter', nome: 'Pet sitter/Passeador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_adestrador', nome: 'Adestrador', icon: 'paw', leadTier: 'padrao', grupo: 'Pets', grupoId: 'pets' },
+      { id: 'cat_professor', nome: 'Professor particular', icon: 'book', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_personal', nome: 'Personal trainer', icon: 'heart', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_fotografo', nome: 'Fotógrafo', icon: 'camera', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_garcom_buffet', nome: 'Garçom/Buffet', icon: 'users', leadTier: 'padrao', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_dj_som', nome: 'DJ/Som para eventos', icon: 'music', leadTier: 'medio', grupo: 'Aulas e eventos', grupoId: 'aulas' },
+      { id: 'cat_costureira', nome: 'Costureira', icon: 'scissors', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
       { id: 'cat_outros', nome: 'Outros serviços', icon: 'more', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros' },
     ];
     requiredCategories.forEach(function (cat) {
@@ -4681,9 +4794,10 @@ alt=""></noscript>
       '<section class="qf-landing-hero"><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div><div class="qf-landing-copy"><span class="qf-landing-kicker">PRECISOU? TEM QUEM FAÇA.</span><h1 class="qf-landing-title">Encontre o <em>profissional certo</em> perto de você</h1><p class="qf-landing-sub">Descreva o serviço, receba orçamentos e combine direto com o profissional.</p><div class="qf-landing-actions"><button class="btn btn--primary" data-nav="/auth/cliente/login">Pedir um serviço grátis</button><button class="btn qf-landing-outline" data-nav="/auth/profissional/login">Sou profissional, quero chamados</button></div></div></section>' +
       '<div class="qf-trust-row"><span class="qf-trust-pill">' + icon('camera') + ' Profissional com selfie</span><span class="qf-trust-pill">' + icon('document') + ' Orçamento sem compromisso</span><span class="qf-trust-pill">' + icon('checkCircle') + ' Pague direto ao profissional</span></div>' +
       '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary">Escolha um serviço para começar.</div></div></div><div class="qf-landing-popular">' + popular.map(function(c){return '<button class="category-tile" type="button" data-landing-cat="'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';}).join('') + '</div><button class="qf-landing-link" type="button" data-action="landing-all-services">Ver os ' + cats.length + ' serviços →</button></section>' +
+      '<section class="section"><div class="card qf-ad-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3">Tem uma empresa?</div><div class="text--sm text--secondary" style="margin-top:3px;">Apareça para clientes da sua região — a partir de R$ 79 por 30 dias.</div></div></div><button class="btn btn--primary" type="button" data-nav="/anuncie" style="margin-top:13px;">Anunciar minha empresa</button></div></section>' +
       '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div></section>' +
       '<section class="section"><div class="card qf-pro-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3" style="color:#fff;">É profissional?</div><div class="text--sm text--secondary" style="margin-top:3px;">Receba chamados de clientes perto de você. Comece com R$ 25 em créditos grátis.</div></div></div><button class="btn btn--primary" data-nav="/auth/profissional/login" style="margin-top:13px;">Quero receber chamados</button></div></section>' +
-      '<footer class="qf-landing-footer"><button class="btn btn--outline" data-nav="/anuncie">' + icon('briefcase') + ' Anuncie sua empresa no QuemFaz</button><p class="text text--sm text--muted" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p></footer></div></div>';
+      '<footer class="qf-landing-footer"><p class="text text--sm text--muted" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p></footer></div></div>';
   };
 
   function roleCard(role) {
@@ -4751,10 +4865,66 @@ alt=""></noscript>
     );
   }
 
-  function cadastroProfissionalView() {
-    const cats = DB.categories().map(function (c) {
-      return '<button type="button" class="chip" data-chip-cat="' + c.id + '">' + PU.escapeHtml(c.nome) + '</button>';
+  // V11.5.0: escolha de profissões em grupos recolhíveis, com busca e resumo das selecionadas.
+  const CAT_GROUPS = [['casa','Casa e reforma'],['limpeza','Limpeza e cuidados da casa'],['instalacoes','Elétrica, hidráulica e gás'],['tecnica','Assistência técnica'],['auto','Automotivo'],['transporte','Transporte e mudanças'],['beleza','Beleza e bem-estar'],['pets','Pets'],['aulas','Aulas e eventos'],['outros','Outros']];
+  function catNorm(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function catPickerHtml(id, selectedIds) {
+    const sel = selectedIds || [];
+    const all = DB.categories();
+    const known = CAT_GROUPS.map(function (g) { return g[0]; });
+    const groups = CAT_GROUPS.map(function (g) {
+      const list = all.filter(function (c) { return (known.indexOf(c.grupoId) === -1 ? 'outros' : c.grupoId) === g[0]; });
+      if (!list.length) return '';
+      return '<details class="qf-catpick__group" data-catpick-group="' + g[0] + '"><summary><span class="qf-catpick__gname">' + PU.escapeHtml(g[1]) + '</span><span class="qf-catpick__count" data-catpick-count></span>' + icon('chevronDown') + '</summary>' +
+        '<div class="qf-catpick__chips">' + list.map(function (c) {
+          return '<button type="button" class="chip' + (sel.indexOf(c.id) !== -1 ? ' is-selected' : '') + '" data-chip-cat="' + c.id + '" data-cat-search="' + PU.escapeHtml(catNorm(c.nome)) + '">' + PU.escapeHtml(c.nome) + '</button>';
+        }).join('') + '</div></details>';
     }).join('');
+    return '<div class="qf-catpick" id="' + id + '">' +
+      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar profissão" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
+      '<div class="qf-catpick__summary" data-catpick-summary aria-live="polite"></div>' +
+      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden>Nenhuma profissão encontrada. Tente outro nome ou escolha "Outros serviços".</div></div>';
+  }
+  function bindCatPicker(root) {
+    if (!root || root.dataset.catpickBound) return;
+    root.dataset.catpickBound = '1';
+    const search = root.querySelector('[data-catpick-search]');
+    function update() {
+      const selected = Array.prototype.slice.call(root.querySelectorAll('[data-chip-cat].is-selected'));
+      Array.prototype.forEach.call(root.querySelectorAll('[data-catpick-group]'), function (g) {
+        const n = g.querySelectorAll('[data-chip-cat].is-selected').length;
+        const badge = g.querySelector('[data-catpick-count]');
+        badge.textContent = n ? String(n) : '';
+        badge.classList.toggle('is-on', n > 0);
+      });
+      const sum = root.querySelector('[data-catpick-summary]');
+      sum.innerHTML = '<span class="qf-catpick__sumtitle">Selecionadas: ' + selected.length + '</span>' +
+        (selected.length ? '<span class="qf-catpick__sumlist">' + selected.map(function (c) { return PU.escapeHtml(c.textContent); }).join(' · ') + '</span>' : '<span class="qf-catpick__sumlist">Toque num grupo e escolha suas profissões.</span>');
+    }
+    function filter() {
+      const q = catNorm(search.value).trim();
+      let any = false;
+      Array.prototype.forEach.call(root.querySelectorAll('[data-catpick-group]'), function (g) {
+        let hits = 0;
+        Array.prototype.forEach.call(g.querySelectorAll('[data-chip-cat]'), function (c) {
+          const ok = !q || (' ' + c.getAttribute('data-cat-search').replace(/[^a-z0-9]+/g, ' ')).indexOf(' ' + q.replace(/[^a-z0-9]+/g, ' ')) !== -1;
+          c.hidden = !ok;
+          if (ok) hits++;
+        });
+        g.hidden = !hits;
+        if (q) g.open = hits > 0; else g.open = false;
+        if (hits) any = true;
+      });
+      root.querySelector('[data-catpick-empty]').hidden = any;
+    }
+    search.addEventListener('input', filter);
+    search.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search.blur(); } });
+    root.addEventListener('click', function (e) { if (e.target.closest('[data-chip-cat]')) setTimeout(update, 0); });
+    update();
+  }
+  global.QFCatPicker = { html: catPickerHtml, bind: bindCatPicker };
+
+  function cadastroProfissionalView() {
     const ufOpts = '<option value="">UF</option><option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option><option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option><option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option><option value="MA">MA</option><option value="MT">MT</option><option value="MS">MS</option><option value="MG">MG</option><option value="PA">PA</option><option value="PB">PB</option><option value="PR">PR</option><option value="PE">PE</option><option value="PI">PI</option><option value="RJ">RJ</option><option value="RN">RN</option><option value="RS">RS</option><option value="RO">RO</option><option value="RR">RR</option><option value="SC">SC</option><option value="SP">SP</option><option value="SE">SE</option><option value="TO">TO</option>';
     return (
       '<div class="view stack--lg">' +
@@ -4765,7 +4935,7 @@ alt=""></noscript>
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
           field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
-          field('Categorias de serviço', '<div class="chip-group" id="cadastro-prof-cats">' + cats + '</div><input type="hidden" name="categorias" id="cadastro-prof-cats-input">') +
+          field('Profissões que você atende', catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input">') +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
           field('Cidade base', '<input class="input" name="cidade" required placeholder="Digite sua cidade">') +
@@ -5014,6 +5184,7 @@ alt=""></noscript>
         chip.classList.toggle('is-selected');
         hiddenInput.value = selected.join(',');
       });
+      bindCatPicker(chipsWrap);
       const raioRange = content.querySelector('#raio-range');
       const raioValor = content.querySelector('#raio-valor');
       raioRange.addEventListener('input', function () { raioValor.textContent = raioRange.value; });
@@ -5130,9 +5301,10 @@ alt=""></noscript>
 
   // ---------------- Início ----------------
 
-  function renderCategoryBrowser(cats) {
-    const groupOrder = [['casa','Casa e manutenção'],['auto','Automotivo e transporte'],['tecnica','Assistência técnica'],['pessoas','Cuidados e pessoas'],['outros','Outros']];
-    const filters = [['todos','Todos']].concat(groupOrder);
+  function renderCategoryBrowser(cats, afterPopular) {
+    const groupOrder = [['casa','Casa e reforma'],['limpeza','Limpeza e cuidados da casa'],['instalacoes','Elétrica, hidráulica e gás'],['tecnica','Assistência técnica'],['auto','Automotivo'],['transporte','Transporte e mudanças'],['beleza','Beleza e bem-estar'],['pets','Pets'],['aulas','Aulas e eventos'],['outros','Outros']];
+    const shortNames = {casa:'Casa',limpeza:'Limpeza',instalacoes:'Elétrica e hidráulica',tecnica:'Técnica',auto:'Automotivo',transporte:'Transporte',beleza:'Beleza',pets:'Pets',aulas:'Aulas e eventos',outros:'Outros'};
+    const filters = [['todos','Todos']].concat(groupOrder.map(function(g){return [g[0], shortNames[g[0]] || g[1]];}));
     function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
     const popularNames=['Montador de móveis','Encanador','Eletricista','Diarista','Marido de aluguel','Pintor'];
     const popular=popularNames.map(function(name){return cats.find(function(c){return norm(c.nome)===norm(name);});}).filter(Boolean).slice(0,6);
@@ -5148,7 +5320,7 @@ alt=""></noscript>
         return '<button class="category-tile" data-cat-group="'+g[0]+'" data-cat-name="'+PU.escapeHtml(c.nome)+'" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
       }).join('')+'</div></section>';
     }).join('');
-    return '<div class="category-browser"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Qual serviço você precisa?" autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+freeLineHtml+popularHtml+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
+    return '<div class="category-browser"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Qual serviço você precisa?" autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+freeLineHtml+popularHtml+(afterPopular||'')+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
   }
 
   function qfPendenciaDismissed(tipo) {
@@ -5158,8 +5330,6 @@ alt=""></noscript>
     let tipo='',iconName='',texto='',action='';
     if(global.QFPush && !global.QFPush.isActive() && !qfPendenciaDismissed('notificacoes')){
       tipo='notificacoes';iconName='bell';texto=global.QFPush.permission()==='denied'?'Notificações estão bloqueadas neste aparelho.':'Ative as notificações para acompanhar seu pedido.';action='<button class="btn btn--primary" type="button" data-action="ativar-notificacoes">Ativar</button>';
-    } else if(global.QFApp&&global.QFApp.canOfferInstall&&global.QFApp.canOfferInstall()&&!qfPendenciaDismissed('instalar')){
-      tipo='instalar';iconName='smartphone';texto='Instale o QuemFaz para abrir mais rápido como aplicativo.';action='<button class="btn btn--primary" type="button" data-install-app>Instalar</button>';
     }
     if(!tipo)return '';
     return '<div class="qf-pendencia" data-pendencia="'+tipo+'"><div class="icon-tile icon-tile--orange">'+icon(iconName)+'</div><div class="qf-pendencia__txt">'+texto+'</div>'+action+'<button class="qf-pendencia__x" type="button" data-dismiss-pendencia="'+tipo+'" aria-label="Ocultar por 24 horas">'+icon('x')+'</button></div>';
@@ -5171,8 +5341,8 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats)+'</div>'+
-      clientePendenciaHtml()+anunciosCarousel(user)+'</div>';
+      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user))+'</div>'+
+      '</div>';
   };
 
 
@@ -6322,11 +6492,11 @@ alt=""></noscript>
     return '<div class="view">'+
       pendingGate(user)+
       '<div class="card qf-prof-status'+(user.online?' is-online':'')+'"><div class="qf-prof-status__title">'+(user.online?'Você está online':'Você está offline')+'</div><div class="qf-prof-status__sub">'+(user.online?'Recebendo chamados de '+PU.escapeHtml(firstCat?firstCat.nome:'suas categorias')+extraCats+' até '+raio+' km':'Fique online para receber chamados perto de você')+'</div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
+      '<div class="section"><div class="section-head"><div><h2 class="h3">Divulgue seus serviços</h2><div class="text--sm text--secondary">Profissionais também podem anunciar no carrossel do QuemFaz.</div></div></div><div class="ad-plan-grid">'+['local','destaque','premium'].map(function(key){const p=adPlans[key]||{nome:key,valor:0};return '<div class="ad-plan" style="cursor:default;"><div class="row-between"><span class="ad-plan__name">'+PU.escapeHtml(p.nome||key)+'</span><span class="ad-plan__price">'+PU.formatCurrency(p.valor||0)+'</span></div><div class="text--sm text--secondary" style="margin-top:4px;">30 dias</div></div>';}).join('')+'</div><button class="btn btn--primary" data-nav="/profissional/anuncie" style="margin-top:12px;">'+icon('briefcase')+' Criar anúncio</button>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div></div>':'')+'</div>'+
       profileProgressHtml(user)+
       (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhuma oportunidade no momento.'+(user.online?' Você será avisado quando surgir um chamado da sua categoria dentro da sua área de atendimento.':' Fique online para visualizar oportunidades.')+'</p></div>')+'</div>'+
       '<div class="section"><div class="card row-between" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button></div></div>'+
-      '<div class="section"><div class="section-head"><div><h2 class="h3">Divulgue seus serviços</h2><div class="text--sm text--secondary">Profissionais também podem anunciar no carrossel do QuemFaz.</div></div></div><div class="ad-plan-grid">'+['local','destaque','premium'].map(function(key){const p=adPlans[key]||{nome:key,valor:0};return '<div class="ad-plan" style="cursor:default;"><div class="row-between"><span class="ad-plan__name">'+PU.escapeHtml(p.nome||key)+'</span><span class="ad-plan__price">'+PU.formatCurrency(p.valor||0)+'</span></div><div class="text--sm text--secondary" style="margin-top:4px;">30 dias</div></div>';}).join('')+'</div><button class="btn btn--primary" data-nav="/profissional/anuncie" style="margin-top:12px;">'+icon('briefcase')+' Criar anúncio</button>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div></div>':'')+'</div>'+
       '</div>';
   };
 
@@ -6685,9 +6855,7 @@ alt=""></noscript>
 
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Categorias de atendimento</h2></div>' +
-          '<div class="chip-group" id="perfil-cats">' + cats.map(function (c) {
-            return '<button type="button" class="chip' + (user.categorias.indexOf(c.id) !== -1 ? ' is-selected' : '') + '" data-chip-cat="' + c.id + '">' + PU.escapeHtml(c.nome) + '</button>';
-          }).join('') + '</div>' +
+          global.QFCatPicker.html('perfil-cats', user.categorias || []) +
         '</div>' +
 
         '<div class="section stack--sm">' +
@@ -7505,6 +7673,7 @@ alt=""></noscript>
       user.categorias = cats;
       chip.classList.toggle('is-selected');
     });
+    global.QFCatPicker.bind(chips);
 
     const areasWrap = content.querySelector('#perfil-areas');
     const addArea = content.querySelector('#adicionar-area');
@@ -7591,7 +7760,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.4.2';
+  const APP_VERSION = '11.5.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -7599,16 +7768,19 @@ alt=""></noscript>
   (function detectPlatform() {
     try {
       const q = new URLSearchParams(location.search);
-      if (q.get('source') === 'twa' || /^android-app:\/\//.test(document.referrer || '')) {
+      // V11.5.0: document.referrer "android-app://" também aparece quando o link é aberto pelo WhatsApp/Gmail
+      // no Chrome; não serve para saber se é o app. Marcas antigas no localStorage são ignoradas.
+      if (q.get('source') === 'twa') {
         localStorage.setItem('qf_platform', 'android');
         if (q.get('apk')) localStorage.setItem('qf_apk_version', q.get('apk'));
       }
     } catch (_) {}
   })();
   function platform() {
-    try { if (localStorage.getItem('qf_platform') === 'android') return 'android'; } catch (_) {}
     if (global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform()) return 'android';
-    return isStandalone() ? 'pwa' : 'web';
+    if (!isStandalone()) return 'web';
+    try { if (localStorage.getItem('qf_platform') === 'android') return 'android'; } catch (_) {}
+    return 'pwa';
   }
   function installedVersion() {
     if (platform() === 'android') { try { return localStorage.getItem('qf_apk_version') || APP_VERSION; } catch (_) { return APP_VERSION; } }
@@ -7619,9 +7791,11 @@ alt=""></noscript>
       if (global.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: minimal-ui)').matches)) return true;
     } catch (_) {}
     if (global.navigator && navigator.standalone === true) return true;
-    if (/^android-app:\/\//.test(document.referrer || '')) return true;
-    try { if (localStorage.getItem('qf_platform') === 'android') return true; } catch (_) {}
     return false;
+  }
+  // Aberto no navegador: limpa marcas antigas que escondiam o botão "Baixar app".
+  if (!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform()) && !isStandalone()) {
+    try { ['qf_platform', 'qf_pwa_installed'].forEach(function (k) { localStorage.removeItem(k); }); } catch (_) {}
   }
 
   // ---------------- Comparação de versões ----------------
@@ -7914,8 +8088,7 @@ alt=""></noscript>
     try {
       if (global.matchMedia && (matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches || matchMedia('(display-mode: minimal-ui)').matches)) return true;
     } catch (_) {}
-    if (global.navigator && navigator.standalone === true) return true;
-    return /^android-app:\/\//.test(document.referrer || '');
+    return !!(global.navigator && navigator.standalone === true);
   }
   function isAndroidBrowser() { return /android/i.test(navigator.userAgent || '') && !isNativeApp(); }
   const APK_URL = './download/quemfaz.apk';
@@ -8027,6 +8200,45 @@ alt=""></noscript>
     document.getElementById('qf-install-ok').onclick = function () { PU.closeSheet(); };
   });
 
+  // V11.5.0: no APK, "Tirar selfie" abre a câmera frontal, "Tirar foto" a traseira e "Galeria"/"escolher logo"
+  // a galeria, pelo plugin Camera. O arquivo volta para o mesmo <input>, então o resto da tela não muda.
+  function cameraPlugin() {
+    try { return isNativeApp() && global.Capacitor.Plugins && global.Capacitor.Plugins.Camera ? global.Capacitor.Plugins.Camera : null; } catch (_) { return null; }
+  }
+  async function dataUrlToFile(dataUrl, name) {
+    const blob = await (await fetch(dataUrl)).blob();
+    return new File([blob], name, { type: blob.type || 'image/jpeg' });
+  }
+  document.addEventListener('click', async function (e) {
+    const Camera = cameraPlugin();
+    if (!Camera) return;
+    const label = e.target.closest && e.target.closest('label');
+    const input = label && label.querySelector('input[type="file"]');
+    if (!input || input.disabled) return;
+    const accept = input.getAttribute('accept') || '';
+    const capture = input.getAttribute('capture');
+    if (/video/.test(accept) && (capture || !/image/.test(accept.replace(/video[^,]*/g, '')))) return; // vídeo: fica com o seletor do Android
+    if (!capture && /video/.test(accept)) return; // galeria de fotos e vídeos do pedido: seletor do Android
+    e.preventDefault();
+    e.stopPropagation();
+    const opts = { resultType: 'dataUrl', quality: 85, correctOrientation: true, saveToGallery: false,
+      source: capture ? 'CAMERA' : 'PHOTOS', direction: capture === 'user' ? 'FRONT' : 'REAR' };
+    try {
+      const photo = await Camera.getPhoto(opts);
+      if (!photo || !photo.dataUrl) return;
+      const file = await dataUrlToFile(photo.dataUrl, (capture === 'user' ? 'selfie' : 'foto') + '-' + Date.now() + '.' + (photo.format || 'jpg'));
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    } catch (err) {
+      const msg = String((err && err.message) || '');
+      if (/cancel/i.test(msg)) return;
+      if (/denied|permission/i.test(msg)) PU.toast('Libere a câmera em Configurações > Apps > QuemFaz > Permissões.', 'danger');
+      else PU.toast('Não foi possível abrir a câmera agora.', 'danger');
+    }
+  }, true);
+
   global.QFApp = {
     afterRender: function () { if (softEv) showSoftUpdate(softEv, false); },
     VERSION: APP_VERSION, platform: platform, onPush: onPush, installedVersion: installedVersion, isStandalone: isStandalone, cmp: cmp,
@@ -8060,31 +8272,7 @@ alt=""></noscript>
   async function openHome() {
     clearPoll();
     const sess = DB.getSession();
-    if (!sess || (sess.role !== 'cliente' && sess.role !== 'profissional')) {
-      PU.openSheet(
-        '<div class="stack"><h3 class="sheet__title">Suporte QuemFaz</h3>' +
-        '<p class="text text--secondary">Para proteger suas conversas, o suporte fica vinculado à sua conta. Se você esqueceu a senha, pode recuperar o acesso agora.</p>' +
-        '<button class="btn btn--primary" id="qf-support-login-cliente">Entrar como cliente</button>' +
-        '<button class="btn btn--outline" id="qf-support-login-prof">Entrar como profissional</button>' +
-        '<button class="btn btn--ghost" id="qf-support-forgot">Esqueci minha senha</button>' +
-        '<div class="divider-label">primeiro acesso?</div>' +
-        '<div class="btn-row"><button class="btn btn--outline" id="qf-support-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-support-cad-prof">Criar conta profissional</button></div>' +
-        '<button class="btn btn--ghost" id="qf-support-close">Fechar</button></div>'
-      );
-      const loginCliente=document.getElementById('qf-support-login-cliente');
-      const loginProf=document.getElementById('qf-support-login-prof');
-      const forgot=document.getElementById('qf-support-forgot');
-      const cadCliente=document.getElementById('qf-support-cad-cliente');
-      const cadProf=document.getElementById('qf-support-cad-prof');
-      const close=document.getElementById('qf-support-close');
-      if(loginCliente) loginCliente.onclick=function(){PU.closeSheet(); global.navigate('/auth/cliente/login', true);};
-      if(loginProf) loginProf.onclick=function(){PU.closeSheet(); global.navigate('/auth/profissional/login', true);};
-      if(forgot) forgot.onclick=function(){PU.closeSheet(); if(global.QFPasswordRecovery) global.QFPasswordRecovery.openRequest('');};
-      if(cadCliente) cadCliente.onclick=function(){PU.closeSheet(); global.navigate('/auth/cliente/cadastro', true);};
-      if(cadProf) cadProf.onclick=function(){PU.closeSheet(); global.navigate('/auth/profissional/cadastro', true);};
-      if(close) close.onclick=function(){PU.closeSheet();};
-      return;
-    }
+    if (!sess || (sess.role !== 'cliente' && sess.role !== 'profissional')) { openVisitorHome(); return; }
     if (!global.QFCloud || !global.QFCloud.enabled) {
       PU.toast('O suporte precisa de conexão com a internet.', 'danger');
       return;
@@ -8192,6 +8380,107 @@ alt=""></noscript>
 
   function clearPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;}}
 
+  // ---------- V11.5.0: suporte sem login (visitante), respondido pelo painel ----------
+  const VKEY = 'qf_support_visitor';
+  function visitorTickets() { try { const v = JSON.parse(localStorage.getItem(VKEY) || '[]'); return Array.isArray(v) ? v.filter(function (t) { return t && t.id && t.token; }) : []; } catch (_) { return []; } }
+  function saveVisitorTicket(t) { try { const l = visitorTickets().filter(function (x) { return x.id !== t.id; }); l.unshift(t); localStorage.setItem(VKEY, JSON.stringify(l.slice(0, 10))); } catch (_) {} }
+  function visitorRpc(name, args) {
+    const c = global.QFCloud && global.QFCloud.client;
+    if (!c) return Promise.reject(new Error('O suporte precisa de conexão com a internet.'));
+    return c.rpc(name, args).then(function (r) { if (r.error) throw new Error(r.error.message || 'Não foi possível falar com o suporte.'); return r.data; });
+  }
+  function visitorLinks() {
+    return '<div class="qf-support-links"><button class="btn btn--outline" type="button" id="qf-support-forgot">Esqueci minha senha</button>' +
+      '<button class="btn btn--ghost" type="button" id="qf-support-login">Já tenho conta: Entrar</button></div>';
+  }
+  function bindVisitorLinks() {
+    const forgot = document.getElementById('qf-support-forgot');
+    const login = document.getElementById('qf-support-login');
+    if (forgot) forgot.onclick = function () { PU.closeSheet(); if (global.QFPasswordRecovery) global.QFPasswordRecovery.openRequest(''); };
+    if (login) login.onclick = function () {
+      PU.openSheet('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz</h3><button class="btn btn--primary" id="qf-support-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-support-login-prof">Entrar como profissional</button></div>');
+      document.getElementById('qf-support-login-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
+      document.getElementById('qf-support-login-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
+    };
+  }
+  function openVisitorHome() {
+    clearPoll();
+    const mine = visitorTickets();
+    let draftName = '', draftContact = '';
+    try { const d = JSON.parse(localStorage.getItem('qf_support_visitor_me') || '{}'); draftName = d.nome || ''; draftContact = d.contato || ''; } catch (_) {}
+    PU.openSheet(
+      '<div class="stack"><div><h3 class="sheet__title">Suporte QuemFaz</h3><div class="text text--secondary text--sm">Escreva sua dúvida. A equipe QuemFaz responde por aqui mesmo, pelo painel de suporte.</div></div>' +
+      (mine.length ? '<button class="card qf-support-ticket" type="button" data-visitor-ticket="' + PU.escapeHtml(mine[0].id) + '"><div class="row-between"><div class="text--strong">Ver minha conversa</div>' + icon('chevronRight') + '</div><div class="text--sm text--muted" style="margin-top:4px;">' + PU.escapeHtml(mine[0].assunto || 'Suporte') + '</div></button>' : '') +
+      '<label class="field"><span class="field__label">Seu nome</span><input class="input" id="qf-sv-nome" maxlength="80" autocomplete="name" value="' + PU.escapeHtml(draftName) + '"></label>' +
+      '<label class="field"><span class="field__label">WhatsApp ou e-mail para contato</span><input class="input" id="qf-sv-contato" maxlength="120" autocomplete="tel" value="' + PU.escapeHtml(draftContact) + '"></label>' +
+      '<label class="field"><span class="field__label">Assunto</span><select class="select" id="qf-sv-assunto"><option>Cadastro ou acesso</option><option>Problema no aplicativo</option><option>Chamado ou serviço</option><option>Pagamento ou créditos</option><option>Outro assunto</option></select></label>' +
+      '<label class="field"><span class="field__label">Mensagem</span><textarea class="textarea" id="qf-sv-msg" maxlength="4000" placeholder="Explique onde você travou. Ex.: não consigo terminar o cadastro de profissional."></textarea></label>' +
+      '<button class="btn btn--primary" type="button" id="qf-sv-enviar">' + icon('arrowRight') + ' Enviar para o suporte</button>' +
+      '<div class="divider-label">ou</div>' + visitorLinks() + '</div>'
+    );
+    bindVisitorLinks();
+    const btn = document.getElementById('qf-sv-enviar');
+    btn.onclick = async function () {
+      const nome = document.getElementById('qf-sv-nome').value.trim();
+      const contato = document.getElementById('qf-sv-contato').value.trim();
+      const assunto = document.getElementById('qf-sv-assunto').value;
+      const msg = document.getElementById('qf-sv-msg').value.trim();
+      if (nome.length < 2) { PU.toast('Digite seu nome.', 'danger'); return; }
+      if (contato.replace(/\D/g, '').length < 10 && !/@/.test(contato)) { PU.toast('Digite um WhatsApp com DDD ou um e-mail para a resposta.', 'danger'); return; }
+      if (!msg) { PU.toast('Escreva a mensagem para o suporte.', 'danger'); return; }
+      btn.disabled = true;
+      try {
+        const out = await visitorRpc('qf_suporte_visitante_abrir', { p_nome: nome, p_contato: contato, p_assunto: assunto, p_mensagem: msg });
+        try { localStorage.setItem('qf_support_visitor_me', JSON.stringify({ nome: nome, contato: contato })); } catch (_) {}
+        saveVisitorTicket({ id: out.id, token: out.token, assunto: assunto });
+        PU.toast('Mensagem enviada ao suporte.', 'success');
+        openVisitorThread(out.id);
+      } catch (err) { PU.toast(err.message, 'danger'); btn.disabled = false; }
+    };
+  }
+  async function openVisitorThread(id) {
+    clearPoll();
+    PU.openSheet('<div class="stack"><div class="row-between"><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-visitor-home>' + icon('chevronLeft') + ' Suporte</button><span id="qf-support-thread-status"></span></div>' +
+      '<div id="qf-support-thread"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>');
+    await refreshVisitorThread(id, true);
+    pollTimer = setInterval(function () {
+      if (!document.getElementById('qf-support-thread')) { clearPoll(); return; }
+      refreshVisitorThread(id, false).catch(function () {});
+    }, 6000);
+  }
+  async function refreshVisitorThread(id, first) {
+    const wrap = document.getElementById('qf-support-thread');
+    if (!wrap) return;
+    const t = visitorTickets().find(function (x) { return x.id === id; });
+    if (!t) { wrap.innerHTML = '<div class="text--sm text--secondary">Conversa não encontrada neste aparelho.</div>'; return; }
+    let data;
+    try { data = await visitorRpc('qf_suporte_visitante_conversa', { p_id: id, p_token: t.token }); }
+    catch (err) { if (first) wrap.innerHTML = '<div class="text--sm" style="color:var(--danger-600);">' + PU.escapeHtml(err.message) + '</div>'; return; }
+    const status = document.getElementById('qf-support-thread-status');
+    if (status) status.innerHTML = statusLabel(data.status);
+    const bubbles = (data.mensagens || []).map(function (m) {
+      const mine = m.autor_tipo === 'usuario';
+      return '<div class="qf-support-msg ' + (mine ? 'qf-support-msg--mine' : 'qf-support-msg--admin') + '"><div class="qf-support-msg__who">' + (mine ? 'Você' : 'Suporte QuemFaz') + '</div><div class="qf-support-msg__text">' + PU.escapeHtml(m.mensagem) + '</div><div class="qf-support-msg__time">' + PU.escapeHtml(fmtDate(m.criado_em)) + '</div></div>';
+    }).join('');
+    const cur = document.getElementById('qf-support-reply-text');
+    const draft = cur ? cur.value : '';
+    wrap.innerHTML = '<div class="stack--sm"><div><div class="h3">' + PU.escapeHtml(data.assunto || 'Suporte') + '</div><div class="text--sm text--secondary">A resposta aparece aqui. Deixe esta tela aberta ou volte pelo botão Suporte.</div></div>' +
+      '<div class="qf-support-messages" id="qf-support-message-list">' + bubbles + '</div>' +
+      (data.status === 'resolvido'
+        ? '<div class="card card--tight" style="background:var(--success-100);border:none;"><div class="text--sm" style="color:var(--success-600);">Este atendimento foi resolvido. Se precisar de outra coisa, envie uma nova mensagem.</div></div><button class="btn btn--primary" type="button" data-visitor-new>Nova mensagem</button>'
+        : '<div class="qf-support-reply"><textarea class="textarea" id="qf-support-reply-text" maxlength="4000" placeholder="Digite sua mensagem...">' + PU.escapeHtml(draft) + '</textarea><button class="btn btn--primary" id="qf-support-send" aria-label="Enviar mensagem">' + icon('arrowRight') + '</button></div>') +
+      '</div>';
+    const list = document.getElementById('qf-support-message-list'); if (list && (first || !draft)) list.scrollTop = list.scrollHeight;
+    const send = document.getElementById('qf-support-send');
+    if (send) send.onclick = async function () {
+      const input = document.getElementById('qf-support-reply-text');
+      const msg = input.value.trim(); if (!msg) return;
+      send.disabled = true;
+      try { await visitorRpc('qf_suporte_visitante_enviar', { p_id: id, p_token: t.token, p_mensagem: msg }); input.value = ''; await refreshVisitorThread(id, true); }
+      catch (err) { PU.toast(err.message, 'danger'); send.disabled = false; }
+    };
+  }
+
   document.addEventListener('click',function(e){
     const open=e.target.closest&&e.target.closest('[data-support-open]');
     if(open){e.preventDefault();openHome();return;}
@@ -8201,6 +8490,9 @@ alt=""></noscript>
     if(back){e.preventDefault();openHome();return;}
     const t=e.target.closest&&e.target.closest('[data-support-ticket]');
     if(t){e.preventDefault();openThread(t.getAttribute('data-support-ticket'));return;}
+    const vt=e.target.closest&&e.target.closest('[data-visitor-ticket]');
+    if(vt){e.preventDefault();openVisitorThread(vt.getAttribute('data-visitor-ticket'));return;}
+    if(e.target.closest&&e.target.closest('[data-visitor-home],[data-visitor-new]')){e.preventDefault();openVisitorHome();return;}
   });
 
   global.QFSupport={buttonHtml:buttonHtml,open:openHome};
@@ -8603,7 +8895,7 @@ alt=""></noscript>
     const isLanding = found.route.pattern === '/';
     shell.innerHTML = '<div id="app-content"></div>' + (!isLanding && global.QFSupport ? global.QFSupport.buttonHtml() : '');
     const content = document.getElementById('app-content');
-    content.style.paddingBottom = isLanding ? '0' : '72px';
+    content.style.paddingBottom = isLanding ? '0' : 'calc(env(safe-area-inset-bottom, 0px) + 96px)';
     content.innerHTML = found.route.render(found.params);
     bindGlobalDelegation(content);
     if (Screens.afterRenderAnon) Screens.afterRenderAnon(found.route.pattern, content, found.params);
@@ -8646,6 +8938,15 @@ alt=""></noscript>
     }
 
     if (global.QFApp && global.QFApp.apkStripHtml) pushBannerHtml += global.QFApp.apkStripHtml(session.role);
+    // V11.5.0: cliente sem notificação ativa vê a faixa em toda abertura do app (o X esconde só até fechar o app).
+    let clientNotifHtml = '';
+    if (session.role === 'cliente' && global.QFPush && !global.QFPush.isActive()) {
+      let hidden = false;
+      try { hidden = sessionStorage.getItem('qf_cli_notif_x') === '1'; } catch (_) {}
+      if (!hidden) clientNotifHtml = '<div class="qf-cli-notif" role="status">' + icon('bell') + '<span class="qf-cli-notif__txt">Ative as notificações para saber na hora quando um profissional responder</span>' +
+        '<button class="qf-cli-notif__btn" type="button" data-action="cli-notif-ativar">Ativar</button>' +
+        '<button class="qf-cli-notif__x" type="button" data-action="cli-notif-fechar" aria-label="Fechar aviso">' + icon('x') + '</button></div>';
+    }
 
     shell.setAttribute('data-route', routeKey(found.route.pattern));
     shell.setAttribute('data-role', session.role);
@@ -8653,6 +8954,7 @@ alt=""></noscript>
       '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
       pushBannerHtml +
       topbarHtml +
+      clientNotifHtml +
       '<main id="app-content" role="main"></main>' +
       renderTabbar(tabs, found.route.tab);
 
@@ -8699,7 +9001,46 @@ alt=""></noscript>
     });
   }
 
+  function notifSteps() {
+    const P = global.QFPush;
+    const nativo = !!(P && P.isNative && P.isNative()) || !!(global.QFApp && global.QFApp.isNativeApp && global.QFApp.isNativeApp());
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    let passos;
+    if (P && !P.supported()) {
+      passos = ios
+        ? '1. Abra o QuemFaz no <strong>Safari</strong>.<br>2. Toque em <strong>Compartilhar</strong> &gt; <strong>Adicionar à Tela de Início</strong>.<br>3. Abra pelo ícone e toque em <strong>Ativar</strong>.'
+        : 'Este navegador não recebe notificações. Toque em <strong>Baixar app</strong> no topo da tela, instale o QuemFaz e entre com sua conta.';
+    } else if (nativo) {
+      passos = '1. Abra <strong>Configurações</strong> do celular.<br>2. Toque em <strong>Apps</strong> &gt; <strong>QuemFaz</strong> &gt; <strong>Notificações</strong>.<br>3. Ligue <strong>Permitir notificações</strong> e volte ao QuemFaz.';
+    } else {
+      passos = '1. Toque no <strong>cadeado</strong> (ou nos ajustes) ao lado do endereço do site.<br>2. Toque em <strong>Permissões</strong> &gt; <strong>Notificações</strong>.<br>3. Escolha <strong>Permitir</strong> e volte ao QuemFaz.';
+    }
+    PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
+      '<h3 class="sheet__title" style="text-align:center;">' + (P && !P.supported() ? 'Receba avisos no celular' : 'Libere as notificações') + '</h3>' +
+      '<p class="text text--secondary">' + passos + '</p><button class="btn btn--primary" id="qf-notif-steps-ok">Entendi</button></div>');
+    const ok = document.getElementById('qf-notif-steps-ok');
+    if (ok) ok.onclick = function () { PU.closeSheet(); };
+  }
   document.addEventListener('click', async function (e) {
+    const cliNotifX = e.target.closest && e.target.closest('[data-action="cli-notif-fechar"]');
+    if (cliNotifX) { e.preventDefault(); try { sessionStorage.setItem('qf_cli_notif_x', '1'); } catch (_) {} const bar = cliNotifX.closest('.qf-cli-notif'); if (bar) bar.remove(); return; }
+    const cliNotifOn = e.target.closest && e.target.closest('[data-action="cli-notif-ativar"]');
+    if (cliNotifOn) {
+      e.preventDefault();
+      const P = global.QFPush;
+      if (!P || !P.supported() || P.permission() === 'denied') { notifSteps(); return; }
+      cliNotifOn.disabled = true;
+      try {
+        await P.activate();
+        PU.toast('Notificações ativadas! Você será avisado quando um profissional responder.', 'success');
+        navigate(currentPath(), true);
+      } catch (err) {
+        if (P.permission() === 'denied') notifSteps();
+        else PU.toast((err && err.message) || 'Não foi possível ativar as notificações.', 'danger');
+        cliNotifOn.disabled = false;
+      }
+      return;
+    }
     const dismiss=e.target.closest&&e.target.closest('[data-dismiss-pendencia]');
     if(dismiss){e.preventDefault();const tipo=dismiss.getAttribute('data-dismiss-pendencia');try{localStorage.setItem('qf_dismiss_'+tipo,String(Date.now()));}catch(_){}const bar=dismiss.closest('.qf-pendencia');if(bar)bar.remove();return;}
     const deleteNotice = e.target.closest('[data-delete-notice]');
