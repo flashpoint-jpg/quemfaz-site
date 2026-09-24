@@ -1654,6 +1654,18 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-update-close{all:unset;position:absolute;top:8px;right:8px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:rgba(255,255,255,.8);cursor:pointer}
 .qf-update-close svg{width:18px;height:18px}
 .qf-update-close:hover{background:rgba(255,255,255,.12)}
+/* ================= V11.6.3 — regras de devolução ================= */
+.qf-rules-link{all:unset;display:inline-flex;align-items:center;min-height:36px;margin-top:4px;color:var(--orange-700);font-weight:800;font-size:13px;text-decoration:underline;cursor:pointer}
+.qf-refund-note .qf-rules-link{color:var(--orange-400);display:block}
+.qf-rules__box{padding:12px 13px;border-radius:14px;background:var(--bg-sunken);display:flex;flex-direction:column;gap:9px}
+.qf-rules__box--auto{background:var(--success-100)}
+.qf-rules__box--no{background:var(--danger-100)}
+.qf-rules__title{font-weight:850;font-size:14px;color:var(--navy-900)}
+.qf-rules__item{display:flex;gap:10px;align-items:flex-start}
+.qf-rules__item>svg{width:18px;height:18px;flex:none;margin-top:2px;color:var(--orange-600)}
+.qf-rules__list{list-style:disc;margin:0;padding-left:18px;font-size:13px;line-height:1.5;color:var(--text-secondary)}
+.qf-rules__note{font-weight:700}
+
 /* ================= V11.6.1 — devolução do lead ================= */
 .qf-refund-note{display:flex;gap:8px;align-items:flex-start;color:var(--text-on-navy-muted);margin-top:8px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.08)}
 .qf-refund-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--orange-400)}
@@ -6604,7 +6616,7 @@ alt=""></noscript>
               ? 'Este é o seu primeiro desbloqueio e não usa saldo. Depois dele, para abrir novos chamados, visualizar os dados do cliente e enviar orçamento, você precisará ter saldo na carteira.'
               : 'Ao desbloquear, usamos os créditos da carteira e liberamos nome, telefone/WhatsApp e endereço exato. O chamado fica reservado para você.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês).</span></p>') +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês). ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -6882,6 +6894,15 @@ alt=""></noscript>
           '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/avaliacoes">' +
             '<div class="icon-tile icon-tile--orange">' + icon('star') + '</div>' +
             '<div class="spacer"><div class="text--strong">' + (user.avaliacaoMedia ? user.avaliacaoMedia.toFixed(1) : '—') + '</div><div class="text--sm text--secondary">' + (user.totalAvaliacoes || 0) + ' avaliações recebidas</div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</button>' +
+        '</div>' +
+
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Créditos e leads</h2></div>' +
+          '<button class="card row" type="button" style="width:100%;text-align:left;" data-action="regras-devolucao">' +
+            '<div class="icon-tile">' + icon('refresh') + '</div>' +
+            '<div class="spacer"><div class="text--strong">Regras de devolução do lead</div><div class="text--sm text--secondary">Quando o valor do desbloqueio volta para a sua carteira</div></div>' +
             icon('chevronRight', 'list-item__chevron') +
           '</button>' +
         '</div>' +
@@ -7832,7 +7853,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.6.2';
+  const APP_VERSION = '11.6.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8448,6 +8469,37 @@ alt=""></noscript>
   }
 
   // ---------- devolução do lead ----------
+  // V11.6.3: tela "Regras de devolução do lead" (abre do desbloqueio, do serviço, da Carteira e do Perfil)
+  function openRefundRules() {
+    function item(ic, t, d) { return '<div class="qf-rules__item">' + icon(ic) + '<div><div class="text--strong">' + t + '</div><div class="text--sm text--secondary">' + d + '</div></div></div>'; }
+    PU.openSheet('<div class="stack qf-rules">' +
+      '<div><h3 class="sheet__title">Regras de devolução do lead</h3><div class="text text--secondary text--sm">Você paga para desbloquear o contato do cliente. Se o pedido não andar, o valor do desbloqueio pode voltar para a sua carteira.</div></div>' +
+      '<div class="qf-rules__box qf-rules__box--auto"><div class="qf-rules__title">1. Volta sozinho (automático)</div>' +
+        item('xCircle', 'O cliente cancelou', 'Se ele cancelar o pedido antes de aprovar um orçamento, o valor volta na hora.') +
+        item('clock', 'O pedido ficou 3 dias parado', 'Sem nenhuma resposta do cliente por 3 dias, o pedido expira e o valor volta em até 1 hora.') +
+        '<div class="text--sm qf-rules__note">Você recebe o aviso "Crédito devolvido". Não precisa fazer nada e não conta no limite.</div></div>' +
+      '<div class="qf-rules__box"><div class="qf-rules__title">2. Você pede: "o cliente não respondeu"</div>' +
+        item('clock', 'Espere 24 horas', 'O pedido de devolução libera 24 horas depois do desbloqueio.') +
+        item('document', 'O cliente não respondeu no app', 'Ele não aprovou nem recusou o seu orçamento.') +
+        item('refresh', 'Onde pedir', 'Meus serviços › abra o serviço › "Pedir devolução do lead". O valor volta na hora e o pedido fica aberto para outros profissionais.') +
+        item('alertTriangle', 'Limite: 2 pedidos a cada 30 dias', 'Conta os seus pedidos dos últimos 30 dias. Ex.: pediu dia 1 e dia 10; no dia 20 o 3º é recusado; no dia 1 do mês seguinte o pedido do dia 1 sai da conta e você pode pedir de novo.') +
+      '</div>' +
+      '<div class="qf-rules__box qf-rules__box--no"><div class="qf-rules__title">3. Não tem devolução quando</div>' +
+        '<ul class="qf-rules__list"><li>o cliente aprovou ou recusou o seu orçamento;</li><li>o serviço já foi iniciado ou concluído;</li><li>o desbloqueio foi grátis (não saiu da sua carteira);</li><li>o mesmo lead já foi devolvido uma vez.</li></ul></div>' +
+      '<div class="qf-rules__box"><div class="qf-rules__title">Onde conferir</div><div class="text--sm text--secondary">Carteira › "Devoluções de lead" mostra quantos pedidos você usou no mês e as últimas devoluções. Em Movimentações, a devolução aparece como "+R$" em verde.</div></div>' +
+      '<div class="text--sm text--secondary qf-rules__note">Use com honestidade: se você combinou o serviço com o cliente pelo WhatsApp, não peça devolução.</div>' +
+      '<button class="btn btn--primary" type="button" id="qf-rules-ok">Entendi</button></div>');
+    const ok = document.getElementById('qf-rules-ok');
+    if (ok) ok.onclick = function () { PU.closeSheet(); };
+  }
+  global.QFRefundRules = { open: openRefundRules };
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-action="regras-devolucao"]');
+    if (!b) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openRefundRules();
+  });
   const REFUND_MSG = {
     aguarde_24h: 'A devolução por falta de resposta fica disponível 24 horas depois do desbloqueio.',
     cliente_respondeu: 'O cliente já respondeu o seu orçamento, então este lead não pode ser devolvido.',
@@ -8462,7 +8514,7 @@ alt=""></noscript>
       '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon('refresh') + '</div><div class="spacer">' +
       '<div class="text--strong">O cliente não respondeu?</div>' +
       '<div class="text--sm text--secondary" style="margin-top:3px;">Se passaram 24 horas do desbloqueio e o cliente não respondeu nada no app, você pode pedir o valor do lead de volta. O pedido volta a ficar aberto para outros profissionais. Limite: 2 pedidos a cada 30 dias.</div>' +
-      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, a devolução é automática: você não precisa fazer nada e não conta no limite.</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, a devolução é automática: você não precisa fazer nada e não conta no limite.</div>' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' +
       '</div></div><button class="btn btn--outline" type="button" data-action="pedir-devolucao" data-req="' + PU.escapeHtml(reqId) + '" style="margin-top:12px;">' + icon('refresh') + ' Pedir devolução do lead</button></div></div>';
   }
   document.addEventListener('click', async function (e) {
@@ -8499,7 +8551,7 @@ alt=""></noscript>
     el.setAttribute('data-refund-summary', '');
     el.innerHTML = '<div class="card qf-refund"><div class="row-between"><div class="text--strong">' + icon('refresh') + ' Devoluções de lead</div><span class="badge badge--muted">' + Number(d.usados_30d || 0) + ' de ' + Number(d.limite || 2) + ' pedidos no mês</span></div>' +
       (itens.length ? '<div class="stack--sm" style="margin-top:10px;">' + itens.slice(0, 5).map(function (i) { return '<div class="row-between text--sm"><span>' + PU.formatDateTime(i.criado_em) + ' · ' + (motivo[i.motivo] || '') + '</span><strong style="color:var(--success-600);">+' + money(i.valor_centavos) + '</strong></div>'; }).join('') + '</div>'
-        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento ou o pedido fica 3 dias parado; por pedido quando ele não responde em 24 horas.</div>') + '</div>';
+        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento ou o pedido fica 3 dias parado; por pedido quando ele não responde em 24 horas.</div>') + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</div>';
     const anchor = content.querySelector('[data-indicacao]') || content.querySelector('.view > .card');
     if (anchor) anchor.insertAdjacentElement('afterend', el);
   }
