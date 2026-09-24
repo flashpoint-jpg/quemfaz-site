@@ -1654,6 +1654,12 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-update-close{all:unset;position:absolute;top:8px;right:8px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:rgba(255,255,255,.8);cursor:pointer}
 .qf-update-close svg{width:18px;height:18px}
 .qf-update-close:hover{background:rgba(255,255,255,.12)}
+/* ================= V11.6.1 — devolução do lead ================= */
+.qf-refund-note{display:flex;gap:8px;align-items:flex-start;color:var(--text-on-navy-muted);margin-top:8px;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.08)}
+.qf-refund-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--orange-400)}
+.qf-refund .text--strong svg{width:16px;height:16px;vertical-align:-3px;color:var(--orange-600)}
+.qf-refund .btn{width:100%}
+
 /* ================= V11.6.0 ================= */
 .qf-coverage{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:12px;font-size:13.5px;line-height:1.4;border:1px solid transparent}
 .qf-coverage svg{width:19px;height:19px;flex:none;margin-top:1px}
@@ -6598,6 +6604,7 @@ alt=""></noscript>
               ? 'Este é o seu primeiro desbloqueio e não usa saldo. Depois dele, para abrir novos chamados, visualizar os dados do cliente e enviar orçamento, você precisará ter saldo na carteira.'
               : 'Ao desbloquear, usamos os créditos da carteira e liberamos nome, telefone/WhatsApp e endereço exato. O chamado fica reservado para você.') +
           '</p>' +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você pode pedir a devolução (até 2 por mês).</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -6806,6 +6813,7 @@ alt=""></noscript>
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
+            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
           '</div>' +
         '</div>' +
 
@@ -6817,7 +6825,7 @@ alt=""></noscript>
                 const bonusTx = t.tipo === 'bonus';
                 const pending = t.tipo === 'recarga_pendente' || t.status === 'pendente';
                 const failed = t.status === 'cancelado' || t.status === 'expirado' || t.status === 'estornado';
-                const positive = t.tipo === 'recarga' || t.tipo === 'credito';
+                const positive = t.tipo === 'recarga' || t.tipo === 'credito' || t.tipo === 'estorno';
                 const valueText = bonusTx ? 'GRÁTIS' : (debit ? '−' : (positive ? '+' : '')) + PU.formatCurrency(t.valor || 0);
                 const valueColor = debit || failed ? 'var(--danger-600)' : (pending ? 'var(--warning-600)' : 'var(--success-600)');
                 const statusText = pending ? ' · aguardando pagamento' : (failed ? ' · ' + t.status : '');
@@ -7824,7 +7832,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.6.0';
+  const APP_VERSION = '11.6.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8439,10 +8447,75 @@ alt=""></noscript>
     status.insertAdjacentElement('afterend', el);
   }
 
+  // ---------- devolução do lead ----------
+  const REFUND_MSG = {
+    aguarde_24h: 'A devolução por falta de resposta fica disponível 24 horas depois do desbloqueio.',
+    cliente_respondeu: 'O cliente já respondeu o seu orçamento, então este lead não pode ser devolvido.',
+    limite_mensal: 'Você já usou os 2 pedidos de devolução dos últimos 30 dias.',
+    ja_devolvido: 'Este lead já foi devolvido para a sua carteira.',
+    status_invalido: 'Este pedido já andou (aprovado, concluído ou encerrado) e não pode ser devolvido.',
+    sem_cobranca: 'Este desbloqueio não foi cobrado da carteira, então não há valor a devolver.',
+    sem_desbloqueio: 'Este pedido não está mais com você.'
+  };
+  function refundCardHtml(reqId) {
+    return '<div class="section" data-refund-card><div class="card qf-refund">' +
+      '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon('refresh') + '</div><div class="spacer">' +
+      '<div class="text--strong">O cliente não respondeu?</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:3px;">Se passaram 24 horas do desbloqueio e o cliente não respondeu nada no app, você pode pedir o valor do lead de volta. O pedido volta a ficar aberto para outros profissionais. Limite: 2 pedidos a cada 30 dias.</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, a devolução é automática: você não precisa fazer nada.</div>' +
+      '</div></div><button class="btn btn--outline" type="button" data-action="pedir-devolucao" data-req="' + PU.escapeHtml(reqId) + '" style="margin-top:12px;">' + icon('refresh') + ' Pedir devolução do lead</button></div></div>';
+  }
+  document.addEventListener('click', async function (e) {
+    const b = e.target.closest && e.target.closest('[data-action="pedir-devolucao"]');
+    if (!b || b.disabled) return;
+    const cl = cloud();
+    if (!cl) { PU.toast('A devolução precisa de conexão com a internet.', 'danger'); return; }
+    const ok = await PU.confirmDialog({ title: 'Pedir devolução do lead', message: 'O valor do desbloqueio volta para a sua carteira e este pedido sai da sua lista, ficando aberto para outros profissionais. Confirma que o cliente não respondeu?', okLabel: 'Pedir devolução' });
+    if (!ok) return;
+    b.disabled = true;
+    try {
+      const r = await cl.rpc('qf_pedir_devolucao_lead', { p_chamado_id: b.getAttribute('data-req') });
+      if (r.error) throw r.error;
+      const d = r.data || {};
+      if (!d.ok) {
+        let msg = REFUND_MSG[d.reason] || 'Não foi possível pedir a devolução agora.';
+        if (d.reason === 'aguarde_24h' && d.liberado_em) msg += ' Liberado em ' + PU.formatDateTime(d.liberado_em) + '.';
+        PU.toast(msg, 'danger'); b.disabled = false; return;
+      }
+      PU.toast(money(d.valor_centavos) + ' voltaram para a sua carteira.', 'success');
+      global.navigate('/profissional/carteira', true);
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível pedir a devolução agora.', 'danger'); b.disabled = false; }
+  });
+  async function fillRefundSummary(content) {
+    const cl = cloud();
+    if (!cl || content.querySelector('[data-refund-summary]')) return;
+    let d;
+    try { const r = await cl.rpc('qf_minhas_devolucoes'); if (r.error) throw r.error; d = r.data || {}; } catch (_) { return; }
+    if (!d.ok) return;
+    const itens = d.itens || [];
+    const motivo = { cliente_cancelou: 'cliente cancelou', chamado_expirou: 'pedido expirou', cliente_nao_respondeu: 'cliente não respondeu' };
+    const el = document.createElement('div');
+    el.className = 'section';
+    el.setAttribute('data-refund-summary', '');
+    el.innerHTML = '<div class="card qf-refund"><div class="row-between"><div class="text--strong">' + icon('refresh') + ' Devoluções de lead</div><span class="badge badge--muted">' + Number(d.usados_30d || 0) + ' de ' + Number(d.limite || 2) + ' pedidos no mês</span></div>' +
+      (itens.length ? '<div class="stack--sm" style="margin-top:10px;">' + itens.slice(0, 5).map(function (i) { return '<div class="row-between text--sm"><span>' + PU.formatDateTime(i.criado_em) + ' · ' + (motivo[i.motivo] || '') + '</span><strong style="color:var(--success-600);">+' + money(i.valor_centavos) + '</strong></div>'; }).join('') + '</div>'
+        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento; por pedido quando ele não responde em 24 horas.</div>') + '</div>';
+    const anchor = content.querySelector('[data-indicacao]') || content.querySelector('.view > .card');
+    if (anchor) anchor.insertAdjacentElement('afterend', el);
+  }
+
   const prevAfter = Screens.afterRender;
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfter) prevAfter(pattern, content, params, user);
     try {
+      if (pattern === '/profissional/pedido/:id' && cloud()) {
+        const req = DB.requestById(params.id);
+        if (req && (req.status === STATUS.AGUARDANDO_ORCAMENTO || req.status === STATUS.ORCAMENTO_ENVIADO) && !content.querySelector('[data-refund-card]')) {
+          const view = content.querySelector('.view');
+          if (view) view.insertAdjacentHTML('beforeend', refundCardHtml(req.id));
+        }
+      }
+      if (pattern === '/profissional/carteira') fillRefundSummary(content);
       if (pattern === '/cliente/novo-pedido/:catId') bindCoverage(content, params);
       if (pattern === '/cliente/pedido/:id') bindStillSearching(content);
       if (pattern === '/profissional/home') { profRating(content, user); Indicacao.registerPending(); }
