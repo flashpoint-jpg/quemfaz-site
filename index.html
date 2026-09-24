@@ -4054,7 +4054,10 @@ alt=""></noscript>
       valor: Number(row.valor_centavos || valorCentavos || 0),
       metodo: row.metodo || metodo || 'pix',
       checkoutUrl: checkout.checkout_url || null,
-      checkoutId: checkout.checkout_id || null
+      checkoutId: checkout.checkout_id || null,
+      pixCopyPaste: checkout.pix_copy_paste || null,
+      qrImage: checkout.qr_image || null,
+      provider: checkout.provider || 'efi'
     };
   }
 
@@ -7558,6 +7561,45 @@ alt=""></noscript>
       (async function () {
         try {
           const rec = await global.QFCloud.createRecharge(valor, method);
+          if (method === 'pix' && (rec.pixCopyPaste || rec.qrImage)) {
+            const qrHtml = rec.qrImage
+              ? '<div class="card" style="padding:14px;text-align:center;background:#fff;"><img src="' + PU.escapeHtml(rec.qrImage) + '" alt="QR Code Pix" style="width:min(230px,72vw);height:auto;display:block;margin:0 auto;border-radius:12px;"></div>'
+              : '';
+            const codeHtml = rec.pixCopyPaste
+              ? '<label class="field"><span class="field__label">Pix copia e cola</span><textarea class="textarea" id="wallet-pix-real-code" readonly style="min-height:96px;">' + PU.escapeHtml(rec.pixCopyPaste) + '</textarea></label><button class="btn btn--outline" id="wallet-pix-real-copy">Copiar código Pix</button>'
+              : '';
+            PU.openSheet(
+              '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bolt') + '</div>' +
+              '<h3 class="sheet__title" style="text-align:center;">Pague com Pix</h3>' +
+              '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' · pague sem sair do QuemFaz.</p>' +
+              qrHtml + codeHtml +
+              '<button class="btn btn--primary" id="wallet-refresh-after-pay">Já paguei · atualizar saldo</button>' +
+              '<p class="text--sm text--secondary" style="text-align:center;">O saldo entra automaticamente assim que a Efí confirmar o Pix.</p></div>'
+            );
+            const copyPix = document.getElementById('wallet-pix-real-copy');
+            if (copyPix) copyPix.onclick = async function () {
+              const input = document.getElementById('wallet-pix-real-code');
+              const code = input ? input.value : '';
+              try {
+                if (navigator.clipboard) await navigator.clipboard.writeText(code);
+                else { input.select(); document.execCommand('copy'); }
+                PU.toast('Código Pix copiado.', 'success');
+              } catch (_) { PU.toast('Selecione e copie o código Pix.', 'danger'); }
+            };
+            const refreshPix = document.getElementById('wallet-refresh-after-pay');
+            if (refreshPix) refreshPix.onclick = async function () {
+              refreshPix.disabled = true;
+              try {
+                await global.QFCloud.syncForCurrentSession(true);
+                PU.closeSheet();
+                global.navigate('/profissional/carteira', true);
+              } catch (err) {
+                PU.toast('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.', 'danger');
+                refreshPix.disabled = false;
+              }
+            };
+            return;
+          }
           if (!rec.checkoutUrl) throw new Error('O link de pagamento não foi gerado.');
           PU.openSheet(
             '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon(method === 'cartao' ? 'creditCard' : (method === 'boleto' ? 'document' : 'bolt')) + '</div>' +
