@@ -1654,6 +1654,24 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-update-close{all:unset;position:absolute;top:8px;right:8px;width:32px;height:32px;display:grid;place-items:center;border-radius:50%;color:rgba(255,255,255,.8);cursor:pointer}
 .qf-update-close svg{width:18px;height:18px}
 .qf-update-close:hover{background:rgba(255,255,255,.12)}
+/* ================= V11.6.0 ================= */
+.qf-coverage{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:12px;font-size:13.5px;line-height:1.4;border:1px solid transparent}
+.qf-coverage svg{width:19px;height:19px;flex:none;margin-top:1px}
+.qf-coverage--on{background:var(--success-100);color:var(--success-600);border-color:rgba(22,163,74,.25)}
+.qf-coverage--some{background:var(--navy-100,#e8eef8);color:var(--navy-800);border-color:rgba(11,29,58,.14)}
+.qf-coverage--none{background:var(--warning-100);color:var(--warning-600);border-color:rgba(202,138,4,.3)}
+.qf-still-searching{margin-top:14px;padding:13px 14px;border-radius:14px;background:var(--orange-100);text-align:left;display:flex;flex-direction:column;gap:6px;width:100%}
+.qf-still-searching[hidden]{display:none}
+.qf-still-searching .btn{align-self:flex-start;width:auto;margin-top:4px}
+.qf-rating{align-items:center}
+.qf-rating__star{color:var(--orange-500);font-size:15px;line-height:1}
+.qf-rating__new{color:var(--text-secondary)}
+.qf-prof-rating{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;padding:9px 13px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border-subtle,rgba(11,29,58,.12));font-size:14px}
+.qf-indica .qf-indica__code{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px;padding:11px 13px;border-radius:12px;background:var(--bg-sunken)}
+.qf-indica .qf-indica__code strong{font-size:20px;letter-spacing:.06em;color:var(--navy-900)}
+.qf-indica__sum{margin:10px 0 12px}
+@media (max-width:420px){.qf-landing-brand{font-size:18px}}
+
 /* ================= V11.5.0 ================= */
 /* escolha de profissões em grupos */
 .qf-catpick{display:flex;flex-direction:column;gap:8px}
@@ -4936,6 +4954,7 @@ alt=""></noscript>
           field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
           field('Profissões que você atende', catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input">') +
+          field('Código de indicação (opcional)', '<input class="input" name="indicacao" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Se um colega indicou você" value="' + PU.escapeHtml(global.QFIndicacao ? global.QFIndicacao.stored() : '') + '">') +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
           field('Cidade base', '<input class="input" name="cidade" required placeholder="Digite sua cidade">') +
@@ -5210,6 +5229,7 @@ alt=""></noscript>
         };
         const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
+        if (global.QFIndicacao) global.QFIndicacao.beforeSignup(fd.get('indicacao'));
         try {
           if (global.QFCloud && global.QFCloud.enabled) {
             const res = await global.QFCloud.signUp('profissional', dados);
@@ -5522,6 +5542,7 @@ alt=""></noscript>
             '<input type="checkbox" name="prioridade" value="1" style="width:22px;height:22px;accent-color:var(--orange-600);margin-top:4px;">' +
           '</label>' +
           '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão de crédito</option><option value="boleto">Boleto</option></select></label>' +
+          '<div data-coverage aria-live="polite"></div>' +
           '<button class="btn btn--primary" type="submit" style="margin-top:4px;">' + icon('search') + ' Publicar chamado</button>' +
         '</form>' +
       '</div>'
@@ -5618,6 +5639,7 @@ alt=""></noscript>
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
           '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos dentro da área escolhida podem visualizar o serviço. O primeiro que desbloquear o chamado será conectado a você.</p>' +
           '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '">Avisando os profissionais mais próximos…</div>' +
+          '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando alguém aceitar.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
@@ -5680,7 +5702,7 @@ alt=""></noscript>
             '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="text--strong">' + PU.escapeHtml(prof.nome) + '</div>' +
               (prof.verificado ? '<span class="badge badge--success"><span class="badge__dot"></span>Verificado</span>' : (prof.fotoUrl ? '<span class="badge badge--warning"><span class="badge__dot"></span>Identificação cadastrada</span>' : '')) +
             '</div>' +
-            '<div class="row text--sm text--secondary" style="gap:6px;margin-top:4px;">' + starsDisplay(prof.avaliacaoMedia) + '<span>' + (prof.avaliacaoMedia ? prof.avaliacaoMedia.toFixed(1) + ' · ' + prof.totalAvaliacoes + ' avaliações' : 'Novo na plataforma') + '</span></div>' +
+            '<div class="row text--sm text--secondary qf-rating" style="gap:6px;margin-top:4px;">' + global.QFRating(prof.avaliacaoMedia, prof.totalAvaliacoes) + '</div>' +
             ((prof.cidadeNome || prof.uf) ? '<div class="text--sm text--secondary" style="margin-top:4px;">' + icon('mapPin', 'list-item__chevron') + ' ' + PU.escapeHtml([prof.cidadeNome, prof.uf].filter(Boolean).join(' · ')) + '</div>' : '') +
             '<div class="text--sm text--secondary" style="margin-top:4px;">Foto e dados do perfil exibidos para sua segurança.</div>' +
             (extra || '') +
@@ -5755,10 +5777,10 @@ alt=""></noscript>
   }
 
   function avaliacaoBlock(req, prof) {
-    if (req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) {
+    if ((req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) && !req.avaliacaoCliente) {
       return (
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Serviço concluído · avalie</h2></div>' +
+          '<div class="section-head"><h2 class="h3">Como foi o serviço?</h2></div>' +
           '<div class="card stack" id="avaliacao-form">' +
             '<div class="text--sm text--secondary">Como foi seu atendimento com ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '?</div>' +
             '<div class="star-picker" id="cliente-star-picker">' +
@@ -7760,7 +7782,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.5.0';
+  const APP_VERSION = '11.6.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8247,6 +8269,148 @@ alt=""></noscript>
   };
 })(window);
 
+
+
+/* QuemFaz V11.6 — cobertura da região, pedido parado, indicação e estrelas */
+(function (global) {
+  const DB = global.DB, PU = global.PU, icon = global.icon, Screens = global.Screens;
+  const STATUS = DB.STATUS;
+  function cloud() { return global.QFCloud && global.QFCloud.enabled && global.QFCloud.client ? global.QFCloud.client : null; }
+  function money(c) { return PU.formatCurrency(Number(c || 0)); }
+
+  // ---------- estrelas: "★ 4,8 (12 avaliações)" ou "Novo no QuemFaz" ----------
+  global.QFRating = function (media, total) {
+    media = Number(media || 0); total = Number(total || 0);
+    if (!media || !total) return '<span class="qf-rating__new">Novo no QuemFaz</span>';
+    return '<span class="qf-rating__star" aria-hidden="true">★</span><span><strong>' + media.toFixed(1).replace('.', ',') + '</strong> (' + total + (total === 1 ? ' avaliação' : ' avaliações') + ')</span>';
+  };
+
+  // ---------- indicação ----------
+  const IND_KEY = 'qf_ind', IND_PENDING = 'qf_ind_cadastro';
+  function cleanCode(v) { return String(v || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 40); }
+  (function captureInd() {
+    try { const c = cleanCode(new URLSearchParams(location.search).get('ind')); if (c) localStorage.setItem(IND_KEY, c); } catch (_) {}
+  })();
+  const Indicacao = {
+    stored: function () { try { return localStorage.getItem(IND_KEY) || ''; } catch (_) { return ''; } },
+    beforeSignup: function (v) {
+      const c = cleanCode(v);
+      try { if (c) { localStorage.setItem(IND_KEY, c); localStorage.setItem(IND_PENDING, '1'); } else { localStorage.removeItem(IND_KEY); localStorage.removeItem(IND_PENDING); } } catch (_) {}
+    },
+    // chamado logo depois do cadastro (primeira tela do profissional com sessão); opcional: nunca mostra erro
+    registerPending: async function () {
+      let c = '';
+      try { if (localStorage.getItem(IND_PENDING) !== '1') return; c = localStorage.getItem(IND_KEY) || ''; } catch (_) { return; }
+      const cl = cloud();
+      if (!c) { try { localStorage.removeItem(IND_PENDING); } catch (_) {} return; }
+      if (!cl) return;
+      try { await cl.rpc('qf_registrar_indicacao', { p_codigo: c }); } catch (_) {}
+      try { localStorage.removeItem(IND_KEY); localStorage.removeItem(IND_PENDING); } catch (_) {}
+    }
+  };
+  global.QFIndicacao = Indicacao;
+
+  async function fillIndicacao(content) {
+    const slot = content.querySelector('[data-indicacao]');
+    const cl = cloud();
+    if (!slot || !cl) return;
+    let d;
+    try { const r = await cl.rpc('qf_minha_indicacao'); if (r.error) throw r.error; d = r.data || {}; } catch (_) { return; }
+    if (!d.ok || d.ativo === false || !d.codigo) return;
+    const bonus = money(d.bonus_centavos || 1000);
+    const link = d.link || (location.origin + location.pathname + '?ind=' + encodeURIComponent(d.codigo));
+    const msg = 'Estou recebendo chamados de serviço pelo QuemFaz. Cadastre-se como profissional com meu código ' + d.codigo + ': ' + link;
+    slot.innerHTML = '<div class="section"><div class="card qf-indica">' +
+      '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('users') + '</div><div class="spacer">' +
+      '<div class="h3">Indique um profissional e ganhe ' + bonus + '</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:3px;">Convide um colega da sua área ou de outra cidade. Quando ele se cadastrar e receber o selo Verificado, você ganha ' + bonus + ' em créditos.</div></div></div>' +
+      '<div class="qf-indica__code"><span class="text--sm text--secondary">Seu código</span><strong>' + PU.escapeHtml(d.codigo) + '</strong></div>' +
+      '<div class="text--sm text--secondary qf-indica__sum">' + Number(d.indicados || 0) + ' indicados · ' + Number(d.aguardando_selo || 0) + ' aguardando selo · ' + money(d.ganho_centavos) + ' ganhos</div>' +
+      '<div class="btn-row"><a class="btn btn--whatsapp" href="https://wa.me/?text=' + encodeURIComponent(msg) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Enviar pelo WhatsApp</a>' +
+      '<button class="btn btn--outline" type="button" data-copy-ind="' + PU.escapeHtml(link) + '">Copiar link</button></div></div></div>';
+  }
+  document.addEventListener('click', async function (e) {
+    const b = e.target.closest && e.target.closest('[data-copy-ind]');
+    if (!b) return;
+    const v = b.getAttribute('data-copy-ind');
+    try { await navigator.clipboard.writeText(v); PU.toast('Link copiado.', 'success'); }
+    catch (_) {
+      const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); PU.toast('Link copiado.', 'success'); } catch (__) { PU.toast(v, null); }
+      t.remove();
+    }
+  });
+
+  // ---------- cobertura da região (Novo pedido) ----------
+  function bindCoverage(content, params) {
+    const form = content.querySelector('#novo-pedido-form');
+    const slot = content.querySelector('[data-coverage]');
+    const cl = cloud();
+    if (!form || !slot || !cl) return;
+    let lastKey = '', seq = 0;
+    function val(n) { const el = form.querySelector('[name="' + n + '"]'); return el ? String(el.value || '').trim() : ''; }
+    async function check() {
+      const cidade = val('cidade'), uf = val('uf');
+      const lat = parseFloat(val('latitude')), lng = parseFloat(val('longitude'));
+      const key = [params.catId, cidade.toLowerCase(), uf, isFinite(lat) ? lat.toFixed(4) : '', isFinite(lng) ? lng.toFixed(4) : ''].join('|');
+      if (key === lastKey) return;
+      lastKey = key;
+      if (!cidade || !uf) { slot.innerHTML = ''; return; }
+      const my = ++seq;
+      try {
+        const r = await cl.rpc('qf_cobertura_regiao', { p_categoria: params.catId, p_cidade: cidade, p_uf: uf, p_lat: isFinite(lat) ? lat : null, p_lng: isFinite(lng) ? lng : null });
+        if (my !== seq) return;
+        if (r.error || !r.data || !r.data.ok) { slot.innerHTML = ''; return; }
+        const on = Number(r.data.online_agora || 0), tot = Number(r.data.profissionais || 0);
+        if (on > 0) slot.innerHTML = '<div class="qf-coverage qf-coverage--on">' + icon('checkCircle') + '<span><strong>' + on + (on === 1 ? ' profissional online agora' : ' profissionais online agora') + '</strong> perto de você</span></div>';
+        else if (tot > 0) slot.innerHTML = '<div class="qf-coverage qf-coverage--some">' + icon('users') + '<span>Temos <strong>' + tot + (tot === 1 ? ' profissional' : ' profissionais') + '</strong> dessa área na sua região. Eles recebem o aviso assim que ficarem online.</span></div>';
+        else slot.innerHTML = '<div class="qf-coverage qf-coverage--none">' + icon('alertTriangle') + '<span>Ainda não temos profissionais dessa área na sua região. Você pode publicar mesmo assim: avisamos você assim que alguém aceitar.</span></div>';
+      } catch (_) { if (my === seq) slot.innerHTML = ''; }
+    }
+    // os campos ocultos de latitude/longitude mudam sem evento: confere de tempos em tempos enquanto a tela está aberta
+    let debounce = 0;
+    form.addEventListener('input', function () { clearTimeout(debounce); debounce = setTimeout(check, 700); });
+    form.addEventListener('change', function () { clearTimeout(debounce); debounce = setTimeout(check, 200); });
+    const timer = setInterval(function () { if (!document.body.contains(form)) { clearInterval(timer); return; } check(); }, 1500);
+    check();
+  }
+
+  // ---------- pedido aberto há mais de 10 minutos ----------
+  function bindStillSearching(content) {
+    const card = content.querySelector('[data-still-searching]');
+    if (!card) return;
+    const raw = card.getAttribute('data-created');
+    const created = /^\d+$/.test(raw) ? Number(raw) : Date.parse(raw);
+    if (!isFinite(created)) return;
+    function upd() { card.hidden = Date.now() - created < 10 * 60 * 1000; }
+    upd();
+    const t = setInterval(function () { if (!document.body.contains(card)) { clearInterval(t); return; } upd(); }, 30000);
+  }
+
+  // ---------- nota do próprio profissional na tela inicial ----------
+  function profRating(content, user) {
+    const status = content.querySelector('.qf-prof-status');
+    if (!status || content.querySelector('.qf-prof-rating')) return;
+    const el = document.createElement('div');
+    el.className = 'qf-prof-rating qf-rating';
+    el.innerHTML = '<span class="text--sm text--secondary">Sua nota</span>' + global.QFRating(user && user.avaliacaoMedia, user && user.totalAvaliacoes);
+    status.insertAdjacentElement('afterend', el);
+  }
+
+  const prevAfter = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (prevAfter) prevAfter(pattern, content, params, user);
+    try {
+      if (pattern === '/cliente/novo-pedido/:catId') bindCoverage(content, params);
+      if (pattern === '/cliente/pedido/:id') bindStillSearching(content);
+      if (pattern === '/profissional/home') { profRating(content, user); Indicacao.registerPending(); }
+      if (pattern === '/profissional/carteira') {
+        const first = content.querySelector('.view > .card');
+        if (first && !content.querySelector('[data-indicacao]')) { const d = document.createElement('div'); d.setAttribute('data-indicacao', ''); first.insertAdjacentElement('afterend', d); fillIndicacao(content); }
+      }
+    } catch (err) { console.warn('QuemFaz 11.6', err); }
+  };
+})(window);
 
 
 /* QuemFaz — Central de suporte interna */

@@ -1069,6 +1069,19 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 body{overflow-x:clip}
 .topbar{position:sticky;top:0;z-index:50;background:var(--bg-page)}
 html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
+/* V11.6.0 — chamados parados */
+.qf-parados{margin-top:4px;margin-bottom:14px;scroll-margin-top:80px}
+.qf-parados .section-head{align-items:center}
+.qf-parados-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--danger-600,#dc2626);color:#fff;font-size:12px;font-weight:850;vertical-align:middle;margin-left:4px}
+.qf-parado{border-left:4px solid var(--danger-600,#dc2626)}
+.qf-parado .btn--whatsapp{background:#128c4a;color:#fff;border:1px solid #128c4a}
+.qf-parado .btn--whatsapp:hover{background:#0f7a40}
+.qf-parado .btn--whatsapp svg{stroke:#fff}
+.qf-parados-vazio{color:var(--success-600);font-weight:750}
+.qf-admin-push{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:12px;border-radius:14px;background:var(--orange-100);font-size:13px;font-weight:700}
+.qf-admin-push svg{width:18px;height:18px;flex:none;color:var(--orange-600)}
+.qf-admin-push span{flex:1}
+.qf-admin-push .btn{width:auto;flex:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2382,6 +2395,124 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     cancelamentos, pagamentos, dashboardStats,
     get state() { return state; },
   };
+})(window);
+
+
+/* QuemFaz V11.6 — admin: chamados parados e notificação do admin */
+(function (global) {
+  const PU = global.PU, icon = global.icon, Screens = global.Screens;
+  const VAPID_PUBLIC_KEY = 'BEEKzUpJ3vaPQDakbiM0igTGDma4U3EPnH2TrV7PW_QguRgueQ_qPA1C5UnjISqnfudUVxC09B6prywwta4Z7J8';
+  const PUSH_KEY = 'qf_admin_push_enabled';
+  let cache = null, timer = null;
+  // o push "Chamado sem resposta" abre admin.html#parados: lembra de rolar até a seção depois de entrar
+  function wantParados() { return /^#\/?parados/.test(location.hash || ''); }
+  try { if (wantParados()) sessionStorage.setItem('qf_goto_parados', '1'); } catch (_) {}
+  global.addEventListener('hashchange', function () {
+    if (!wantParados()) return;
+    try { sessionStorage.setItem('qf_goto_parados', '1'); } catch (_) {}
+    global.navigate('/admin/dashboard', true);
+  });
+  function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
+  function waHref(tel) {
+    let d = String(tel || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.indexOf('55') !== 0 || d.length <= 11) d = '55' + d;
+    return 'https://wa.me/' + d;
+  }
+  function catName(id) { try { const c = global.DB.categoryById(id); return c ? c.nome : (id || ''); } catch (_) { return id || ''; } }
+  function itemHtml(it) {
+    const wa = waHref(it.cliente_telefone);
+    const lugar = [it.bairro, it.cidade, it.uf].filter(Boolean).join(', ');
+    const min = Math.max(0, Math.round(Number(it.minutos || 0)));
+    return '<div class="card qf-parado"><div class="row-between" style="align-items:flex-start;gap:10px;"><div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(it.titulo || 'Chamado') + '</div>' +
+      '<div class="text--sm text--secondary">' + PU.escapeHtml(catName(it.categoria)) + (lugar ? ' · ' + PU.escapeHtml(lugar) : '') + '</div></div>' +
+      '<span class="badge badge--danger">há ' + min + ' min</span></div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;">' + Number(it.avisados || 0) + (Number(it.avisados) === 1 ? ' profissional avisado' : ' profissionais avisados') + ' · Cliente: ' + PU.escapeHtml(it.cliente_nome || '—') + '</div>' +
+      '<div class="btn-row" style="margin-top:10px;">' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' WhatsApp do cliente</a>' : '') +
+      '<button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + PU.escapeHtml(it.id) + '">Ver chamado</button></div></div>';
+  }
+  function bodyHtml() {
+    if (!client()) return '<div class="text--sm text--secondary">Disponível com o painel conectado ao Supabase.</div>';
+    if (!cache) return '<div class="text--sm text--secondary">Carregando…</div>';
+    if (cache.error) return '<div class="text--sm" style="color:var(--danger-600);">' + PU.escapeHtml(cache.error) + '</div>';
+    if (!cache.itens.length) return '<div class="card card--tight qf-parados-vazio">Nenhum chamado parado agora ✅</div>';
+    return '<div class="stack--sm">' + cache.itens.map(itemHtml).join('') + '</div>';
+  }
+  function countHtml() { const n = cache && cache.itens ? cache.itens.length : 0; return n ? '<span class="qf-parados-count" aria-label="' + n + ' chamados parados">' + n + '</span>' : ''; }
+  function pushBanner() {
+    let on = false; try { on = localStorage.getItem(PUSH_KEY) === '1' && 'Notification' in window && Notification.permission === 'granted'; } catch (_) {}
+    if (on || !client()) return '';
+    return '<div class="qf-admin-push" data-admin-push>' + icon('bell') + '<span>Ative as notificações para ser avisado de chamado parado</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">Ativar</button></div>';
+  }
+  function html() {
+    return pushBanner() + '<section class="section qf-parados" id="parados"><div class="section-head"><h2 class="h3">Chamados parados ' + countHtml() + '</h2><span class="text--sm text--muted">atualiza a cada 60 s</span></div><div data-parados-body>' + bodyHtml() + '</div></section>';
+  }
+  function paint() {
+    const sec = document.getElementById('parados');
+    if (!sec) return;
+    sec.querySelector('h2').innerHTML = 'Chamados parados ' + countHtml();
+    sec.querySelector('[data-parados-body]').innerHTML = bodyHtml();
+  }
+  async function refresh() {
+    const cl = client();
+    if (!cl) return;
+    try {
+      const r = await cl.rpc('qf_admin_chamados_parados');
+      if (r.error) throw r.error;
+      const d = r.data || {};
+      if (d.ok === false) throw new Error(d.reason || 'Não foi possível carregar os chamados parados.');
+      cache = { itens: Array.isArray(d.itens) ? d.itens : [] };
+    } catch (err) { cache = { itens: [], error: (err && err.message) || 'Não foi possível carregar os chamados parados.' }; }
+    paint();
+  }
+  function start() {
+    if (timer) return;
+    refresh();
+    timer = setInterval(function () {
+      if (!document.getElementById('parados')) { clearInterval(timer); timer = null; return; }
+      refresh();
+    }, 60000);
+  }
+  function b64ToUint8(x) { const pad = '='.repeat((4 - x.length % 4) % 4); const raw = atob((x + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(Array.from(raw).map(function (c) { return c.charCodeAt(0); })); }
+  // mesma inscrição do app (quemfaz-push, action "subscribe"), com a sessão do admin
+  async function activatePush() {
+    if (!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window)) throw new Error('Este navegador não recebe notificações. Use o Chrome no celular ou no computador.');
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Libere nas configurações do navegador.');
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
+    await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) });
+    const cl = client();
+    const sess = cl ? await cl.auth.getSession() : null;
+    const token = sess && sess.data && sess.data.session ? sess.data.session.access_token : '';
+    if (!token) throw new Error('Sua sessão expirou. Entre de novo no painel.');
+    const resp = await fetch('https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ action: 'subscribe', subscription: sub.toJSON(), platform: 'web' })
+    });
+    const out = await resp.json().catch(function () { return {}; });
+    if (!resp.ok || !out || !out.ok) throw new Error((out && out.error) || 'Não foi possível registrar as notificações.');
+    localStorage.setItem(PUSH_KEY, '1');
+  }
+  document.addEventListener('click', async function (e) {
+    const b = e.target.closest && e.target.closest('[data-action="admin-push-ativar"]');
+    if (!b) return;
+    b.disabled = true;
+    try { await activatePush(); PU.toast('Notificações ativadas neste aparelho.', 'success'); const bar = b.closest('[data-admin-push]'); if (bar) bar.remove(); }
+    catch (err) { PU.toast((err && err.message) || 'Não foi possível ativar.', 'danger'); b.disabled = false; }
+  });
+  const prevAfter = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (prevAfter) prevAfter(pattern, content, params, user);
+    if (pattern !== '/admin/dashboard') return;
+    timer = null; start();
+    let go = false; try { go = sessionStorage.getItem('qf_goto_parados') === '1'; sessionStorage.removeItem('qf_goto_parados'); } catch (_) {}
+    if (go) setTimeout(function () { const el = document.getElementById('parados'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
+  };
+  global.QFAdminParados = { html: html, refresh: refresh, _set: function (itens) { cache = { itens: itens }; paint(); } };
 })(window);
 
 
@@ -4321,7 +4452,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const s = DB.dashboardStats();
     const meta = DB.state.meta || {};
     return (
-      '<div class="view">' + migrationBanner() +
+      '<div class="view">' + migrationBanner() + (global.QFAdminParados ? global.QFAdminParados.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
           kpi(s.pedidosAbertos, 'Pedidos abertos') +
