@@ -3442,7 +3442,7 @@ alt=""></noscript>
       avaliacaoProfissional: null,
       recusadoPor: [],
       canceladoPor: null,
-      motivoCancelamento: null,
+      motivoCancelamento: row.status === 'expirado' ? 'O pedido expirou depois de 3 dias sem resposta. Toque em "Refazer o mesmo pedido" para publicar de novo.' : null,
       historico: []
     };
   }
@@ -6604,7 +6604,7 @@ alt=""></noscript>
               ? 'Este é o seu primeiro desbloqueio e não usa saldo. Depois dele, para abrir novos chamados, visualizar os dados do cliente e enviar orçamento, você precisará ter saldo na carteira.'
               : 'Ao desbloquear, usamos os créditos da carteira e liberamos nome, telefone/WhatsApp e endereço exato. O chamado fica reservado para você.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você pode pedir a devolução (até 2 por mês).</span></p>') +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês).</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -6813,7 +6813,7 @@ alt=""></noscript>
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
-            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
+            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas e você não quiser esperar, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
           '</div>' +
         '</div>' +
 
@@ -7832,7 +7832,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.6.1';
+  const APP_VERSION = '11.6.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8462,7 +8462,7 @@ alt=""></noscript>
       '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon('refresh') + '</div><div class="spacer">' +
       '<div class="text--strong">O cliente não respondeu?</div>' +
       '<div class="text--sm text--secondary" style="margin-top:3px;">Se passaram 24 horas do desbloqueio e o cliente não respondeu nada no app, você pode pedir o valor do lead de volta. O pedido volta a ficar aberto para outros profissionais. Limite: 2 pedidos a cada 30 dias.</div>' +
-      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, a devolução é automática: você não precisa fazer nada.</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, a devolução é automática: você não precisa fazer nada e não conta no limite.</div>' +
       '</div></div><button class="btn btn--outline" type="button" data-action="pedir-devolucao" data-req="' + PU.escapeHtml(reqId) + '" style="margin-top:12px;">' + icon('refresh') + ' Pedir devolução do lead</button></div></div>';
   }
   document.addEventListener('click', async function (e) {
@@ -8499,7 +8499,7 @@ alt=""></noscript>
     el.setAttribute('data-refund-summary', '');
     el.innerHTML = '<div class="card qf-refund"><div class="row-between"><div class="text--strong">' + icon('refresh') + ' Devoluções de lead</div><span class="badge badge--muted">' + Number(d.usados_30d || 0) + ' de ' + Number(d.limite || 2) + ' pedidos no mês</span></div>' +
       (itens.length ? '<div class="stack--sm" style="margin-top:10px;">' + itens.slice(0, 5).map(function (i) { return '<div class="row-between text--sm"><span>' + PU.formatDateTime(i.criado_em) + ' · ' + (motivo[i.motivo] || '') + '</span><strong style="color:var(--success-600);">+' + money(i.valor_centavos) + '</strong></div>'; }).join('') + '</div>'
-        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento; por pedido quando ele não responde em 24 horas.</div>') + '</div>';
+        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento ou o pedido fica 3 dias parado; por pedido quando ele não responde em 24 horas.</div>') + '</div>';
     const anchor = content.querySelector('[data-indicacao]') || content.querySelector('.view > .card');
     if (anchor) anchor.insertAdjacentElement('afterend', el);
   }
