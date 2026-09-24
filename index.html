@@ -7853,7 +7853,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.6.3';
+  const APP_VERSION = '11.6.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8055,11 +8055,17 @@ alt=""></noscript>
   }
 
   async function runUpdate(ev, errEl) {
-    if (ev.plat === 'android') {
+    // V11.6.4: só baixa o APK quando a configuração pede uma versão nova do app.
+    // O aviso do Service Worker (latest null) recarrega o site, inclusive dentro do APK.
+    if (ev.plat === 'android' && ev.latest && ev.cfg && ev.cfg.apk_url) {
       const url = ev.cfg.apk_url;
-      if (!url || !/^https:\/\//i.test(url)) { if (errEl) errEl.textContent = 'Link de atualização não configurado. Fale com o suporte do QuemFaz.'; return; }
+      if (!/^https:\/\//i.test(url)) {
+        const reason = 'Link de atualização não configurado. Fale com o suporte do QuemFaz.';
+        if (errEl) errEl.textContent = reason;
+        return { ok: false, reason: reason };
+      }
       global.location.href = url;
-      return;
+      return { ok: true, apk: true };
     }
     const out = await updateWebApp(ev.latest);
     if (!out.ok && errEl) errEl.textContent = out.reason;
@@ -8126,15 +8132,26 @@ alt=""></noscript>
       btn.disabled = true;
       const original = btn.innerHTML;
       btn.textContent = 'Atualizando...';
+      const restore = function () { btn.disabled = false; btn.innerHTML = original; };
+      // V11.6.4: se a página não recarregar, o botão não fica preso em "Atualizando...".
+      const guard = setTimeout(function () {
+        restore();
+        PU.toast('A atualização não terminou. Feche o QuemFaz por completo e abra novamente.', 'danger', 7000);
+      }, 20000);
       try {
         const out = await runUpdate(softEv, null);
-        if (out && out.ok === false) {
-          PU.toast(out.reason || 'Não foi possível atualizar agora.', 'danger');
-          btn.disabled = false; btn.innerHTML = original;
+        if (out && out.apk) {
+          clearTimeout(guard); restore();
+          PU.toast('Baixando a nova versão do app. Depois toque no arquivo para instalar.');
+        } else if (!out || out.ok === false) {
+          clearTimeout(guard);
+          PU.toast((out && out.reason) || 'Não foi possível atualizar agora.', 'danger');
+          restore();
         }
       } catch (err) {
+        clearTimeout(guard);
         PU.toast('Não foi possível atualizar agora. Verifique a internet e tente novamente.', 'danger');
-        btn.disabled = false; btn.innerHTML = original;
+        restore();
       }
     });
   }
