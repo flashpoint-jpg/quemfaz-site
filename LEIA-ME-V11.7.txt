@@ -1,0 +1,25 @@
+QuemFaz V11.7.0
+
+Tela de abertura:
+- Embaixo do nome "QuemFaz" agora aparece a frase "Aqui você encontra quem resolve." e, abaixo dela, "Carregando..." menor.
+
+Tela Chamadas do profissional:
+- Online: o card de status mostra "Você está online" com uma bolinha piscando, um radar animado
+  (3 anéis, varredura girando e o ícone de chamada no centro), uma frase que muda a cada 2,8s
+  e a linha "<categoria> · até <raio> km".
+- Offline: o card continua como antes. Os botões "Ficar offline" / "FICAR ONLINE" não mudaram.
+- "Chamados disponíveis" subiu para logo abaixo do card de status.
+- Mensagem sem chamados: online explica que o profissional está visível e que o celular toca
+  quando chegar um pedido; offline pede para ficar online.
+- Nova ordem: status → chamados → perfil (progresso) → bônus grátis → Carteira → divulgação.
+- Os 3 planos com preços saíram da tela inicial. No lugar há um card "Quer aparecer mais?"
+  com o botão "Divulgar" (abre /profissional/anuncie). Os planos continuam na tela Anuncie.
+- "Seu último anúncio": se estiver reprovado, mostra o motivo numa caixa vermelha clara e o
+  botão "Corrigir e enviar de novo".
+- No computador (≥ 1024px) a grade segue a mesma ordem do celular.
+- Quem usa "reduzir movimento" no aparelho vê o radar parado.
+
+Versão:
+- APP_VERSION e SW_VERSION = 11.7.0 (o cache do PWA é renovado).
+
+Nada foi alterado no Supabase.

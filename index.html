@@ -1454,12 +1454,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   /* Profissional — chamadas */
   #app-shell[data-route="profissional-home"] .view { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 24px; align-items: stretch; }
   #app-shell[data-route="profissional-home"] .view > * { grid-column: auto; margin-top: 0 !important; }
-  #app-shell[data-route="profissional-home"] .view > #chamados-disponiveis { grid-column: 1 / -1; order: 5; }
-  #app-shell[data-route="profissional-home"] .view > .section:has(.ad-plan-grid) { grid-column: 1 / -1; order: 7; }
-  #app-shell[data-route="profissional-home"] .view > .section:has(> .card.row-between) { order: 6; grid-column: 1 / -1; }
+  #app-shell[data-route="profissional-home"] .view > #chamados-disponiveis { grid-column: 1 / -1; }
+  #app-shell[data-route="profissional-home"] .view > .section:has(> .card.row-between) { grid-column: 1 / -1; }
   #app-shell[data-route="profissional-home"] .view > div:has(> .qf-install) > .qf-install { height: 100%; }
   #app-shell[data-route="profissional-home"] .view > .card { height: 100%; }
-  #app-shell[data-route="profissional-home"] .ad-plan-grid + .btn { max-width: 360px; }
 
   /* Profissional — carteira: saldo no topo, recarga à esquerda, ajuda e histórico à direita */
   #app-shell[data-route="profissional-carteira"] .view {
@@ -1554,6 +1552,19 @@ input[type="range"]{accent-color:var(--orange-500)}
 .qf-free-line{display:flex;align-items:center;gap:7px;color:var(--success-600);font-size:13px;font-weight:750;margin-top:10px}.qf-free-line svg{width:17px;height:17px;flex:none}
 .qf-popular-wrap{margin-bottom:13px}.qf-popular-title{font-size:13px;font-weight:850;color:var(--navy-900);margin-bottom:8px}.qf-popular-row{display:flex;gap:9px;overflow-x:auto;padding:1px 2px 8px;scrollbar-width:none;scroll-snap-type:x proximity}.qf-popular-row::-webkit-scrollbar{display:none}.qf-popular-row .category-tile{min-width:104px;max-width:104px;scroll-snap-align:start}
 .qf-prof-status{border:none!important;padding:20px 18px!important;color:#fff;background:var(--navy-900)!important}.qf-prof-status.is-online{background:var(--success-600)!important}.qf-prof-status__title{font-size:22px;font-weight:900;letter-spacing:-.02em}.qf-prof-status__sub{font-size:13px;line-height:1.45;margin-top:4px;color:rgba(255,255,255,.82)}.qf-prof-status .btn{height:56px;margin-top:16px;font-size:15px;font-weight:900}.qf-prof-status .btn--online-off{border:1.5px solid rgba(255,255,255,.78);background:transparent;color:#fff}
+.qf-live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#86efac;margin-right:8px;vertical-align:middle;animation:qfLiveDot 1.4s ease-in-out infinite}
+@keyframes qfLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+.qf-radar{position:relative;width:176px;height:176px;margin:18px auto 14px}
+.qf-radar__ring{position:absolute;inset:0;border:2px solid rgba(255,255,255,.9);border-radius:50%;opacity:0;transform:scale(.35);animation:qfRadarRing 2.4s ease-out infinite}
+.qf-radar__ring:nth-child(2){animation-delay:.8s}.qf-radar__ring:nth-child(3){animation-delay:1.6s}
+@keyframes qfRadarRing{0%{transform:scale(.35);opacity:.8}100%{transform:scale(1.15);opacity:0}}
+.qf-radar__sweep{position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 0deg,rgba(255,255,255,0) 0deg,rgba(255,255,255,0) 250deg,rgba(255,255,255,.32) 360deg);animation:qfRadarSweep 3s linear infinite}
+@keyframes qfRadarSweep{to{transform:rotate(360deg)}}
+.qf-radar__core{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:16px;background:#fff;color:var(--success-600);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -10px rgba(0,0,0,.35);z-index:1}
+.qf-radar__core svg{width:28px;height:28px}
+.qf-radar-msg{text-align:center;font-size:16px;font-weight:800;line-height:1.35;min-height:2.7em;display:flex;align-items:center;justify-content:center;transition:opacity .35s ease}.qf-radar-msg.is-fading{opacity:0}
+.qf-radar-meta{text-align:center;font-size:13px;margin-top:4px;color:rgba(255,255,255,.82)}
+@media (prefers-reduced-motion: reduce){.qf-live-dot,.qf-radar__ring,.qf-radar__sweep{animation:none}.qf-radar__ring{opacity:.3;transform:scale(1)}.qf-radar__ring:nth-child(2){transform:scale(.75)}.qf-radar__ring:nth-child(3){transform:scale(.5)}.qf-radar__sweep{display:none}.qf-radar-msg{transition:none}}
 .qf-profile-progress{margin-top:12px}.qf-profile-progress__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.qf-progress-track{height:9px;border-radius:999px;background:var(--bg-sunken);overflow:hidden;margin:12px 0}.qf-progress-fill{height:100%;background:var(--orange-500);border-radius:inherit}.qf-progress-list{display:flex;flex-direction:column;gap:8px}.qf-progress-item{display:flex;align-items:center;gap:9px;min-height:36px}.qf-progress-item__mark{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--bg-sunken);color:var(--text-muted)}.qf-progress-item__mark.is-done{background:var(--success-100);color:var(--success-600)}.qf-progress-item__mark svg{width:15px;height:15px}.qf-progress-item .btn{width:auto;margin-left:auto;padding:7px 10px;font-size:12px}
 .qf-topbar-support{width:38px;height:38px;border:none;border-radius:50%;display:grid;place-items:center;background:var(--bg-surface);color:var(--navy-800);cursor:pointer;flex:none}.qf-topbar-support svg{width:19px;height:19px;color:var(--orange-600)}
 body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,body:has(select:focus) .qf-support-fab{display:none}
@@ -1777,7 +1788,8 @@ alt=""></noscript>
       </svg>
     </div>
     <div style="font-weight:900;font-size:22px;color:#0b1d3a;letter-spacing:-.02em;">QuemFaz</div>
-    <div style="font-size:13px;margin-top:6px;">Carregando...</div>
+    <div style="font-size:15px;color:#34405a;font-weight:600;margin-top:6px;">Aqui você encontra quem resolve.</div>
+    <div style="font-size:12px;margin-top:6px;">Carregando...</div>
   </div>
 </div>
 <script>
@@ -6525,7 +6537,6 @@ alt=""></noscript>
   Screens.profHomeRender = function (params, user) {
     const chamadas=DB.chamadasPendentes(user.id);
     const podeFicarOnline=user.statusAprovacao==='aprovado'&&!!user.fotoUrl;
-    const adPlans=(DB.state.settings&&DB.state.settings.adPlans)||{};
     const meusAnuncios=(DB.state.ads||[]).filter(function(a){return a.anuncianteId===user.id;}).sort(function(a,b){return new Date(b.criadoEm||0)-new Date(a.criadoEm||0);});
     const firstCat=user.categorias&&user.categorias.length?DB.categoryById(user.categorias[0]):null;
     const area=user.areasAtendimento&&user.areasAtendimento.length?user.areasAtendimento[0]:null;
@@ -6534,12 +6545,12 @@ alt=""></noscript>
     function adStatusLabel(a){if(!a)return '';if(a.status==='ativo')return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';if(a.status==='reprovado')return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';if(a.status==='pausado')return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';}
     return '<div class="view">'+
       pendingGate(user)+
-      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'"><div class="qf-prof-status__title">'+(user.online?'Você está online':'Você está offline')+'</div><div class="qf-prof-status__sub">'+(user.online?'Recebendo chamados de '+PU.escapeHtml(firstCat?firstCat.nome:'suas categorias')+extraCats+' até '+raio+' km':'Fique online para receber chamados perto de você')+'</div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
-      '<div class="section"><div class="section-head"><div><h2 class="h3">Divulgue seus serviços</h2><div class="text--sm text--secondary">Profissionais também podem anunciar no carrossel do QuemFaz.</div></div></div><div class="ad-plan-grid">'+['local','destaque','premium'].map(function(key){const p=adPlans[key]||{nome:key,valor:0};return '<div class="ad-plan" style="cursor:default;"><div class="row-between"><span class="ad-plan__name">'+PU.escapeHtml(p.nome||key)+'</span><span class="ad-plan__price">'+PU.formatCurrency(p.valor||0)+'</span></div><div class="text--sm text--secondary" style="margin-top:4px;">30 dias</div></div>';}).join('')+'</div><button class="btn btn--primary" data-nav="/profissional/anuncie" style="margin-top:12px;">'+icon('briefcase')+' Criar anúncio</button>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div></div>':'')+'</div>'+
+      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title">Você está offline</div><div class="qf-prof-status__sub">Fique online para receber chamados perto de você</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       profileProgressHtml(user)+
       (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhuma oportunidade no momento.'+(user.online?' Você será avisado quando surgir um chamado da sua categoria dentro da sua área de atendimento.':' Fique online para visualizar oportunidades.')+'</p></div>')+'</div>'+
       '<div class="section"><div class="card row-between" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button></div></div>'+
+      '<div class="section qf-prof-divulgar"><div class="card row-between"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '</div>';
   };
 
@@ -7312,6 +7323,16 @@ alt=""></noscript>
   }
 
   function bindHome(content, user) {
+    const radarMsg=content.querySelector('#qf-radar-msg');
+    if(radarMsg){
+      const frases=['Buscando clientes perto de você…','Verificando pedidos na sua região…','Fique atento, pode chegar a qualquer momento…','Seu perfil está visível para clientes…'];
+      let fraseAtual=0;
+      const radarTimer=setInterval(function(){
+        if(!document.body.contains(radarMsg)){clearInterval(radarTimer);return;}
+        radarMsg.classList.add('is-fading');
+        setTimeout(function(){if(!document.body.contains(radarMsg))return;fraseAtual=(fraseAtual+1)%frases.length;radarMsg.textContent=frases[fraseAtual];radarMsg.classList.remove('is-fading');},350);
+      },2800);
+    }
     bindNotificationActivation(content);
     exigirNotificacaoSeOnline(user);
     const toggle = content.querySelector('#toggle-online');
@@ -7853,7 +7874,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.6.4';
+  const APP_VERSION = '11.7.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
