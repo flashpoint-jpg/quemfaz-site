@@ -4615,9 +4615,9 @@ alt=""></noscript>
     if (!PU || !PU.openSheet) return;
     PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + global.icon('bell') + '</div>' +
       '<h3 class="sheet__title" style="text-align:center;">Libere a bateria</h3>' +
-      '<p class="text text--secondary" style="text-align:center;">Para o toque chegar com o celular no bolso, permita o QuemFaz ignorar a economia de bateria.</p>' +
+      '<p class="text text--secondary" style="text-align:center;">Para o toque chegar com o celular no bolso, permita o QuemFaz ignorar a economia de bateria.' + (plugin ? ' Na próxima tela, mostre <strong>Todos os apps</strong>, toque em <strong>QuemFaz</strong> e escolha <strong>Não otimizar</strong>.' : '') + '</p>' +
       (plugin ? '' : '<div class="text--sm text--secondary" style="text-align:center;">Configurações &gt; Apps &gt; QuemFaz &gt; Bateria &gt; <strong>Sem restrições</strong>.</div>') +
-      '<button class="btn btn--primary" id="qf-bat-ok">' + (plugin ? 'Permitir' : 'Entendi') + '</button></div>');
+      '<button class="btn btn--primary" id="qf-bat-ok">' + (plugin ? 'Abrir configurações' : 'Entendi') + '</button></div>');
     const ok = document.getElementById('qf-bat-ok');
     if (ok) ok.onclick = function () {
       PU.closeSheet();
@@ -4854,7 +4854,7 @@ alt=""></noscript>
       '<section class="section"><div class="card qf-ad-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3">Tem uma empresa?</div><div class="text--sm text--secondary" style="margin-top:3px;">Apareça para clientes da sua região — a partir de R$ 79 por 30 dias.</div></div></div><button class="btn btn--primary" type="button" data-nav="/anuncie" style="margin-top:13px;">Anunciar minha empresa</button></div></section>' +
       '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div></section>' +
       '<section class="section"><div class="card qf-pro-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3" style="color:#fff;">É profissional?</div><div class="text--sm text--secondary" style="margin-top:3px;">Receba chamados de clientes perto de você. Comece com R$ 25 em créditos grátis.</div></div></div><button class="btn btn--primary" data-nav="/auth/profissional/login" style="margin-top:13px;">Quero receber chamados</button></div></section>' +
-      '<footer class="qf-landing-footer"><p class="text text--sm text--muted" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p></footer></div></div>';
+      '<footer class="qf-landing-footer"><p class="text text--sm text--muted" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div></div>';
   };
 
   function roleCard(role) {
@@ -5945,6 +5945,7 @@ alt=""></noscript>
           '<button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button>' +
         '</div>' +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
+        '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
       '</div>'
     );
   };
@@ -6962,6 +6963,7 @@ alt=""></noscript>
           '<button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button>' +
         '</div>' +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
+        '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
       '</div>'
     );
   };
@@ -7274,11 +7276,11 @@ alt=""></noscript>
         let corpo = '<p class="text text--secondary" style="text-align:center;">' + intro + '</p>';
         if (androidSemApk) {
           corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>Para ficar online, instale o app QuemFaz.</strong><br>Assim o chamado usa notificação nativa e pode tocar mesmo com a tela apagada.</div></div>' +
-            '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app QuemFaz</button>';
+            '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button>';
         } else if (!suportado) {
           corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Esta forma de abrir o QuemFaz não permite notificações. ' +
             (/android/i.test(navigator.userAgent || '') ? 'Baixe o app QuemFaz para Android e entre com sua conta.' : 'No iPhone, abra o QuemFaz pelo Safari, toque em Compartilhar &gt; Adicionar à Tela de Início e abra pelo ícone.') + '</div></div>' +
-            (/android/i.test(navigator.userAgent || '') && !nativo ? '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app</button>' : '');
+            (/android/i.test(navigator.userAgent || '') && !nativo ? '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button>' : '');
         } else if (negado) {
           corpo += '<div class="card card--tight" style="background:var(--danger-100);border:none;"><div class="text--sm" style="color:var(--danger-600);">As notificações estão bloqueadas para o QuemFaz. ' +
             (nativo ? 'Abra <strong>Configurações &gt; Apps &gt; QuemFaz &gt; Notificações</strong> e toque em <strong>Permitir</strong>.'
@@ -7905,7 +7907,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.7.1';
+  const APP_VERSION = '11.8.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -7920,6 +7922,17 @@ alt=""></noscript>
         if (q.get('apk')) localStorage.setItem('qf_apk_version', q.get('apk'));
       }
     } catch (_) {}
+  })();
+  // 12.1 (Play): a versão instalada vem do próprio app, não de marcas antigas no localStorage.
+  const nativeVersionReady = (function () {
+    const C = global.Capacitor;
+    if (!(C && C.isNativePlatform && C.isNativePlatform() && C.isPluginAvailable && C.isPluginAvailable('QFOnline'))) return Promise.resolve(null);
+    const ask = C.Plugins.QFOnline.getStatus().then(function (r) {
+      const v = r && (r.appVersion || (Number(r.version) >= 12 ? '12.0.0' : null));
+      if (v) { try { localStorage.setItem('qf_apk_version', String(v)); } catch (_) {} }
+      return v || null;
+    }).catch(function () { return null; });
+    return Promise.race([ask, new Promise(function (res) { setTimeout(function () { res(null); }, 2000); })]);
   })();
   function platform() {
     if (global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform()) return 'android';
@@ -8106,19 +8119,23 @@ alt=""></noscript>
     return { state: 'ok', installed: installed };
   }
 
-  async function runUpdate(ev, errEl) {
-    // V11.6.4: só baixa o APK quando a configuração pede uma versão nova do app.
-    // O aviso do Service Worker (latest null) recarrega o site, inclusive dentro do APK.
-    if (ev.plat === 'android' && ev.latest && ev.cfg && ev.cfg.apk_url) {
-      const url = ev.cfg.apk_url;
-      if (!/^https:\/\//i.test(url)) {
-        const reason = 'Link de atualização não configurado. Fale com o suporte do QuemFaz.';
-        if (errEl) errEl.textContent = reason;
-        return { ok: false, reason: reason };
+  // 12.1 (Play): o app é atualizado pela Play Store; o site não baixa mais APK.
+  const PLAY_ID = 'br.app.quemfaz';
+  async function openPlayStore() {
+    const C = global.Capacitor;
+    try {
+      if (C && C.isPluginAvailable && C.isPluginAvailable('QFOnline')) {
+        const r = await C.Plugins.QFOnline.openStore(); // app 12.1+: market:// e, sem Play Store, o link https
+        if (r && r.opened) return { ok: true, store: true };
       }
-      global.location.href = url;
-      return { ok: true, apk: true };
-    }
+    } catch (_) {}
+    global.location.href = 'https://play.google.com/store/apps/details?id=' + PLAY_ID;
+    return { ok: true, store: true };
+  }
+
+  async function runUpdate(ev, errEl) {
+    // O aviso do Service Worker (latest null) recarrega o site, inclusive dentro do app.
+    if (ev.plat === 'android' && ev.latest) return openPlayStore();
     const out = await updateWebApp(ev.latest);
     if (!out.ok && errEl) errEl.textContent = out.reason;
     return out;
@@ -8192,9 +8209,9 @@ alt=""></noscript>
       }, 20000);
       try {
         const out = await runUpdate(softEv, null);
-        if (out && out.apk) {
+        if (out && out.store) {
           clearTimeout(guard); restore();
-          PU.toast('Baixando a nova versão do app. Depois toque no arquivo para instalar.');
+          PU.toast('Abrindo o QuemFaz na Play Store para atualizar.');
         } else if (!out || out.ok === false) {
           clearTimeout(guard);
           PU.toast((out && out.reason) || 'Não foi possível atualizar agora.', 'danger');
@@ -8211,6 +8228,7 @@ alt=""></noscript>
   async function checkVersion(force) {
     if (!force && Date.now() - lastCheck < 30 * 60 * 1000) return;
     lastCheck = Date.now();
+    await nativeVersionReady;
     let cfg = null;
     try { cfg = await fetchVersionConfig(); } catch (_) { cfg = null; }
     const ev = evaluate(cfg);
@@ -8253,7 +8271,9 @@ alt=""></noscript>
     return !!(global.navigator && navigator.standalone === true);
   }
   function isAndroidBrowser() { return /android/i.test(navigator.userAgent || '') && !isNativeApp(); }
-  const APK_URL = './download/quemfaz.apk';
+  // Enquanto o app estiver em teste fechado, "Baixar" leva à página de como virar testador.
+  // Quando for para produção, troque por 'https://play.google.com/store/apps/details?id=br.app.quemfaz'.
+  const PLAY_DOWNLOAD_URL = './testar/';
   function canOfferInstall() {
     if (isNativeApp()) return false;     // já é o app
     if (isRealStandalone()) return false; // app aberto instalado (PWA)
@@ -8261,10 +8281,10 @@ alt=""></noscript>
   }
   function installCardHtml(compact) {
     if (isAndroidBrowser()) {
-      if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div></div><button class="btn btn--primary" type="button" data-download-apk>Baixar app</button></div>';
+      if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div></div><button class="btn btn--primary" type="button" data-download-apk>Baixar pela Google Play</button></div>';
       return '<div class="qf-install" data-install-card><div class="icon-tile icon-tile--orange">' + icon('smartphone') + '</div>' +
         '<div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div><div class="text--sm text--secondary">Chamados e avisos tocam alto mesmo com o celular no bolso.</div></div>' +
-        '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app</button></div>';
+        '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button></div>';
     }
     if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Instale o app</div></div><button class="btn btn--primary" type="button" data-install-app>Instalar</button></div>';
     return '<div class="qf-install" data-install-card><div class="icon-tile icon-tile--orange">' + icon('smartphone') + '</div>' +
@@ -8273,7 +8293,7 @@ alt=""></noscript>
   }
   // V11.4.2: "Baixar app" fica só na barra de cima. Quem já usa o app (APK ou instalado) vê "Atualizar" só quando há versão nova.
   function topInstallInner() {
-    if (canOfferInstall()) return '<button class="qf-top-dl" type="button" ' + (isAndroidBrowser() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>Baixar app</span></button>';
+    if (canOfferInstall()) return '<button class="qf-top-dl" type="button" ' + (isAndroidBrowser() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + (isAndroidBrowser() ? 'Google Play' : 'Baixar app') + '</span></button>';
     if (softEv && softEv.state === 'optional') return '<button class="qf-top-dl" type="button" data-top-update>' + icon('download') + '<span>Atualizar</span></button>';
     return '';
   }
@@ -8300,19 +8320,10 @@ alt=""></noscript>
       slot.style.display = canOfferInstall() ? '' : 'none';
     });
   }
-  // V11.3: Android no navegador baixa o APK do próprio site e mostra os 3 passos.
+  // 12.1: Android no navegador instala pela Google Play (não baixa mais APK do site).
   function downloadApk() {
-    const a = document.createElement('a');
-    a.href = APK_URL; a.setAttribute('download', 'quemfaz.apk'); a.rel = 'noopener';
-    document.body.appendChild(a); a.click(); a.remove();
     try { localStorage.setItem('qf_apk_strip_day', new Date().toISOString().slice(0, 10)); } catch (_) {}
-    setTimeout(function () {
-      PU.openSheet('<div class="stack"><h3 class="sheet__title">Instalar o app QuemFaz</h3>' +
-        '<p class="text text--secondary">1. Abra o arquivo baixado (<strong>quemfaz.apk</strong>).<br>2. Se o Android pedir, permita instalar apps desta fonte.<br>3. Toque em <strong>Instalar</strong> e entre com sua conta.</p>' +
-        '<button class="btn btn--primary" id="qf-apk-ok">Entendi</button></div>');
-      const ok = document.getElementById('qf-apk-ok');
-      if (ok) ok.onclick = function () { PU.closeSheet(); };
-    }, 600);
+    global.location.href = PLAY_DOWNLOAD_URL;
   }
   document.addEventListener('click', function (e) {
     const dl = e.target.closest && e.target.closest('[data-download-apk]');
@@ -8343,7 +8354,7 @@ alt=""></noscript>
           '<div class="card card--tight" style="background:var(--warning-100);border:none;">' +
             '<div class="text--sm" style="color:var(--warning-700);"><strong>Profissional:</strong> instale o app e permita as notificações para poder ficar online e receber pedidos.</div>' +
           '</div>' +
-          '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app Quem Faz</button>' +
+          '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button>' +
           '<button class="btn btn--outline" type="button" id="qf-continuar-site">Continuar no site</button>' +
         '</div>'
       );
@@ -8361,7 +8372,7 @@ alt=""></noscript>
     if (role !== 'profissional' || isNativeApp() || !isRealStandalone() || !/android/i.test(navigator.userAgent || '')) return '';
     try { if (localStorage.getItem('qf_apk_strip_day') === new Date().toISOString().slice(0, 10)) return ''; } catch (_) {}
     return '<div class="qf-apk-strip" role="status"><span>Instale o app novo do QuemFaz para o chamado tocar alto com o celular no bolso.</span>' +
-      '<button class="btn btn--primary btn--sm" type="button" data-download-apk>Baixar app</button>' +
+      '<button class="btn btn--primary btn--sm" type="button" data-download-apk>Baixar pela Google Play</button>' +
       '<button class="qf-apk-strip__x" type="button" data-dismiss-apk-strip aria-label="Ocultar hoje">' + icon('x') + '</button></div>';
   }
   document.addEventListener('click', async function (e) {
@@ -9482,7 +9493,7 @@ alt=""></noscript>
     if (P && !P.supported()) {
       passos = ios
         ? '1. Abra o QuemFaz no <strong>Safari</strong>.<br>2. Toque em <strong>Compartilhar</strong> &gt; <strong>Adicionar à Tela de Início</strong>.<br>3. Abra pelo ícone e toque em <strong>Ativar</strong>.'
-        : 'Este navegador não recebe notificações. Toque em <strong>Baixar app</strong> no topo da tela, instale o QuemFaz e entre com sua conta.';
+        : 'Este navegador não recebe notificações. Toque no botão de baixar no topo da tela, instale o QuemFaz e entre com sua conta.';
     } else if (nativo) {
       passos = '1. Abra <strong>Configurações</strong> do celular.<br>2. Toque em <strong>Apps</strong> &gt; <strong>QuemFaz</strong> &gt; <strong>Notificações</strong>.<br>3. Ligue <strong>Permitir notificações</strong> e volte ao QuemFaz.';
     } else {
