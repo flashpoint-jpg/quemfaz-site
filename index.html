@@ -4275,7 +4275,7 @@ alt=""></noscript>
       let loc = null;
       try { loc = await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
       if (!loc) {
-        throw new Error('Ative a localização do aparelho para ficar online e receber apenas chamados próximos de você.');
+        throw new Error('Ative a localização do aparelho para ficar online. Ela é usada para mostrar a distância entre você e cada chamado.');
       }
     }
     const res = await client.from('qf_profissionais').update({ online: !!online, atualizado_em: new Date().toISOString() }).eq('user_id', uRes.data.user.id);
@@ -7226,7 +7226,16 @@ alt=""></noscript>
   }
 
   function pushJaAtivo() {
-    try { return global.QFPush.isActive(); } catch (_) { return false; }
+    try {
+      const P = global.QFPush;
+      if (!P) return false;
+      const android = /android/i.test(navigator.userAgent || '');
+      const nativo = !!(P.isNative && P.isNative());
+      // Android: só consideramos "apto" quando está no APK com FCM nativo.
+      // Web Push/PWA pode ser suspenso pelo sistema com a tela apagada.
+      if (android && !nativo) return false;
+      return P.isActive();
+    } catch (_) { return false; }
   }
 
   // V11.3: profissional só fica online com notificação ativa (permissão + inscrição salva no servidor).
@@ -7237,14 +7246,20 @@ alt=""></noscript>
     if (P.supported() && pushJaAtivo()) return Promise.resolve(true);
     return new Promise(function (resolve) {
       const nativo = !!(P.isNative && P.isNative());
-      const intro = opts.jaOnline
-        ? 'Você está online, mas as notificações estão desligadas neste aparelho. Sem elas você não recebe chamados com o app fechado. Ative agora para continuar online.'
-        : 'Para ficar online é obrigatório ativar as notificações. É assim que os chamados chegam, mesmo com o app fechado.';
+      const androidSemApk = /android/i.test(navigator.userAgent || '') && !nativo;
+      const intro = androidSemApk
+        ? 'Para receber chamado com a tela apagada, o profissional precisa usar o app QuemFaz para Android. No navegador/PWA o Android pode suspender os avisos.'
+        : (opts.jaOnline
+          ? 'Você está online, mas as notificações estão desligadas neste aparelho. Sem elas você não recebe chamados com o app fechado. Ative agora para continuar online.'
+          : 'Para ficar online é obrigatório ativar as notificações. É assim que os chamados chegam, mesmo com o app fechado.');
       function render() {
         const suportado = P.supported();
         const negado = P.permission() === 'denied';
         let corpo = '<p class="text text--secondary" style="text-align:center;">' + intro + '</p>';
-        if (!suportado) {
+        if (androidSemApk) {
+          corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>Para ficar online, instale o app QuemFaz.</strong><br>Assim o chamado usa notificação nativa e pode tocar mesmo com a tela apagada.</div></div>' +
+            '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app QuemFaz</button>';
+        } else if (!suportado) {
           corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Esta forma de abrir o QuemFaz não permite notificações. ' +
             (/android/i.test(navigator.userAgent || '') ? 'Baixe o app QuemFaz para Android e entre com sua conta.' : 'No iPhone, abra o QuemFaz pelo Safari, toque em Compartilhar &gt; Adicionar à Tela de Início e abra pelo ícone.') + '</div></div>' +
             (/android/i.test(navigator.userAgent || '') && !nativo ? '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app</button>' : '');
