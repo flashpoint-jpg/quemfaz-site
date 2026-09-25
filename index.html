@@ -4530,7 +4530,11 @@ alt=""></noscript>
     return out;
   }
   async function sendFcmToken(token) {
-    const out = await callPushFunction({ action: 'subscribe_fcm', token: token, platform: 'android' });
+    // V12: o APK novo (com o plugin QFOnline) avisa a versão, para o servidor mandar o chamado só com dados
+    // e o próprio app tocar como ligação.
+    const C = global.Capacitor;
+    const v12 = !!(C && C.isPluginAvailable && C.isPluginAvailable('QFOnline'));
+    const out = await callPushFunction({ action: 'subscribe_fcm', token: token, platform: v12 ? 'android;v=12' : 'android' });
     try {
       localStorage.setItem('qf_fcm_token', token);
       localStorage.setItem('qf_push_enabled', '1');
@@ -4604,6 +4608,8 @@ alt=""></noscript>
   function pedirLiberarBateria(force) {
     try { if (!force && localStorage.getItem('qf_battery_asked') === '1') return; localStorage.setItem('qf_battery_asked', '1'); } catch (_) { return; }
     const C = global.Capacitor;
+    // V12: o APK novo pede a bateria na própria tela de permissões ao ficar online; evita pedir duas vezes.
+    if (!force && C && C.isPluginAvailable && C.isPluginAvailable('QFOnline')) return;
     const plugin = C && C.Plugins && C.Plugins.QFBattery;
     const PU = global.PU;
     if (!PU || !PU.openSheet) return;
@@ -6918,6 +6924,16 @@ alt=""></noscript>
           '</button>' +
         '</div>' +
 
+        // V12: só no APK novo — revisa notificação, bateria, tela cheia e início automático.
+        ((global.QFNativeOnline && global.QFNativeOnline.available()) ? '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Alertas de chamado</h2></div>' +
+          '<button class="card row" type="button" style="width:100%;text-align:left;" data-action="revisar-alertas">' +
+            '<div class="icon-tile icon-tile--orange">' + icon('bell') + '</div>' +
+            '<div class="spacer"><div class="text--strong">Revisar permissões de alerta</div><div class="text--sm text--secondary">Para o chamado tocar mesmo com a tela apagada</div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</button>' +
+        '</div>' : '') +
+
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Categorias de atendimento</h2></div>' +
           global.QFCatPicker.html('perfil-cats', user.categorias || []) +
@@ -7889,7 +7905,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.7.0';
+  const APP_VERSION = '11.7.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8586,6 +8602,46 @@ alt=""></noscript>
     e.stopPropagation();
     openRefundRules();
   });
+
+  // ---------- V12 (APK): serviço "Você está online, aguardando chamados" ----------
+  // O app nativo mantém uma notificação fixa enquanto o profissional está online, para o Android
+  // não congelar o QuemFaz com a tela apagada. Aqui o site só informa se está online ou não.
+  (function () {
+    function plugin() {
+      const C = global.Capacitor;
+      return C && C.isPluginAvailable && C.isPluginAvailable('QFOnline') && C.Plugins ? C.Plugins.QFOnline : null;
+    }
+    const inicio = Date.now();
+    let enviado = null;
+    function desejado() {
+      const s = DB.getSession && DB.getSession();
+      if (!s || s.role !== 'profissional') return false;
+      const p = DB.profissionalById && DB.profissionalById(s.userId);
+      return !!(p && p.online && !p.bloqueado);
+    }
+    function sync() {
+      const P = plugin();
+      if (!P) return;
+      const on = desejado();
+      // Logo ao abrir a sessão ainda pode estar carregando: não desliga o serviço nesses primeiros segundos.
+      if (!on && enviado === null && Date.now() - inicio < 8000) return;
+      if (on === enviado) return;
+      enviado = on;
+      try { P.setOnline({ online: on }).catch(function () { enviado = null; }); } catch (_) { enviado = null; }
+    }
+    global.QFNativeOnline = { available: function () { return !!plugin(); }, sync: sync };
+    setTimeout(sync, 1500);
+    setInterval(sync, 4000);
+    window.addEventListener('hashchange', function () { setTimeout(sync, 300); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) sync(); });
+    document.addEventListener('click', function (e) {
+      const b = e.target.closest && e.target.closest('[data-action="revisar-alertas"]');
+      if (!b) return;
+      e.preventDefault();
+      const P = plugin();
+      if (P && P.reviewPermissions) P.reviewPermissions().catch(function () {});
+    });
+  })();
   const REFUND_MSG = {
     aguarde_24h: 'A devolução por falta de resposta fica disponível 24 horas depois do desbloqueio.',
     cliente_respondeu: 'O cliente já respondeu o seu orçamento, então este lead não pode ser devolvido.',
