@@ -8307,6 +8307,39 @@ alt=""></noscript>
       const strip = x.closest('.qf-apk-strip'); if (strip) strip.remove();
     }
   });
+
+  // V11.8: aviso imediato ao abrir o site no Android.
+  // Profissional precisa do APK para receber chamados com tela apagada/app fechado.
+  function showAndroidInstallEntryNotice() {
+    if (!isAndroidBrowser()) return;
+    try {
+      if (sessionStorage.getItem('qf_android_install_entry_notice') === '1') return;
+      sessionStorage.setItem('qf_android_install_entry_notice', '1');
+    } catch (_) {}
+
+    setTimeout(function () {
+      if (!global.PU || !PU.openSheet) return;
+      PU.openSheet(
+        '<div class="stack">' +
+          '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
+          '<h3 class="sheet__title" style="text-align:center;">Quer receber pedidos?</h3>' +
+          '<p class="text text--secondary" style="text-align:center;">Para receber novos chamados mesmo com a tela apagada ou o site fechado, é necessário instalar o <strong>app Quem Faz</strong>.</p>' +
+          '<div class="card card--tight" style="background:var(--warning-100);border:none;">' +
+            '<div class="text--sm" style="color:var(--warning-700);"><strong>Profissional:</strong> instale o app e permita as notificações para poder ficar online e receber pedidos.</div>' +
+          '</div>' +
+          '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar app Quem Faz</button>' +
+          '<button class="btn btn--outline" type="button" id="qf-continuar-site">Continuar no site</button>' +
+        '</div>'
+      );
+      const cont = document.getElementById('qf-continuar-site');
+      if (cont) cont.onclick = function () { PU.closeSheet(); };
+    }, 650);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', showAndroidInstallEntryNotice, { once: true });
+  } else {
+    showAndroidInstallEntryNotice();
+  }
   // Profissional usando o PWA instalado no Android: uma faixa por dia sugerindo o app novo.
   function apkStripHtml(role) {
     if (role !== 'profissional' || isNativeApp() || !isRealStandalone() || !/android/i.test(navigator.userAgent || '')) return '';
