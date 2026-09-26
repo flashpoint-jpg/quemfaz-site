@@ -99,6 +99,8 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
       tag,
       strong: strong ? "1" : "0",
       channel,
+      // V11.11: preferência do profissional ("toque" = toque + vibração, "vibrar" = só vibração).
+      alerta: String(payload.alerta || "toque"),
     },
     android: {
       priority: "HIGH",
@@ -248,6 +250,13 @@ async function sendToUsers(userIds: string[], payload: any) {
     .eq("ativo", true);
   if (error) throw error;
 
+  // V11.11: modo do alerta escolhido por cada profissional (vai junto com o aviso para o app aplicar).
+  const alertaPorUser: Record<string, string> = {};
+  if (payload && payload.strong) {
+    const { data: prefs } = await admin.from("qf_profissionais").select("user_id,alerta_modo").in("user_id", ids);
+    for (const p of prefs || []) alertaPorUser[String(p.user_id)] = String(p.alerta_modo || "toque");
+  }
+
   const webOk = await ensureVapid();
   let sent = 0;
   const errors: number[] = [];
@@ -259,7 +268,8 @@ async function sendToUsers(userIds: string[], payload: any) {
         // V12: "apk android;v=12" (ou maior) recebe só dados.
         const m = /^apk android;v=(\d+)/.exec(String(s.user_agent || ""));
         const soDados = !!m && Number(m[1]) >= 12;
-        const r = await sendFcm(endpoint.slice(FCM_PREFIX.length), payload, soDados);
+        const userPayload = alertaPorUser[String(s.user_id)] ? { ...payload, alerta: alertaPorUser[String(s.user_id)] } : payload;
+        const r = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, soDados);
         if (r === "ok") sent++;
         if (r === "gone") {
           await admin.from("qf_push_subscriptions")

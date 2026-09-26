@@ -3449,6 +3449,9 @@ alt=""></noscript>
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
       plano: planoAtivo,
+      horarioInicio: String(pr.horario_inicio || '06:00').slice(0, 5),
+      horarioFim: String(pr.horario_fim || '22:00').slice(0, 5),
+      alertaModo: pr.alerta_modo === 'vibrar' ? 'vibrar' : 'toque',
       bonusDesbloqueios: 0,
       avaliacaoMedia: Number(pr.avaliacao_media || 0),
       totalAvaliacoes: Number(pr.total_avaliacoes || 0),
@@ -7148,6 +7151,74 @@ alt=""></noscript>
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  // ---------------- Preferências de chamado (V11.11) ----------------
+  // Horário para receber chamado estando offline + modo do alerta (toque+vibração ou só vibração).
+  function prefChamadoSection(user) {
+    const ini = (user && user.horarioInicio) || '06:00';
+    const fim = (user && user.horarioFim) || '22:00';
+    const modo = (user && user.alertaModo) === 'vibrar' ? 'vibrar' : 'toque';
+    function opt(val, titulo, sub) {
+      return '<label class="card row" style="cursor:pointer;gap:12px;' + (modo === val ? 'border-color:var(--orange-500);box-shadow:0 0 0 1px var(--orange-500);' : '') + '">' +
+        '<input type="radio" name="pref-alerta" value="' + val + '"' + (modo === val ? ' checked' : '') + ' style="width:20px;height:20px;accent-color:var(--orange-500);flex:none;">' +
+        '<div><div class="text--strong">' + titulo + '</div><div class="text--sm text--secondary">' + sub + '</div></div></label>';
+    }
+    return '<div class="section" id="pref-chamado">' +
+      '<div class="section-head"><div><h2 class="h3">Quando receber chamados</h2><div class="text--sm text--secondary">Online você recebe sempre. Offline, só no horário que escolher.</div></div></div>' +
+      '<div class="card stack">' +
+        '<div class="row" style="gap:10px;">' +
+          '<label class="field" style="flex:1;"><span class="field__label">Das</span><input class="input" type="time" id="pref-inicio" value="' + PU.escapeHtml(ini) + '" required></label>' +
+          '<label class="field" style="flex:1;"><span class="field__label">Até</span><input class="input" type="time" id="pref-fim" value="' + PU.escapeHtml(fim) + '" required></label>' +
+        '</div>' +
+        '<p class="text--sm text--secondary" style="margin:0;">Fora desse horário, se estiver offline, você não é chamado. Para receber o dia todo, coloque o mesmo horário nos dois campos.</p>' +
+        '<div class="field__label" style="margin-top:4px;">Como avisar um chamado novo</div>' +
+        '<div class="stack stack--sm">' +
+          opt('toque', 'Tocar e vibrar', 'Recomendado: você não perde chamado.') +
+          opt('vibrar', 'Só vibrar', 'Sem som. Vale no app da Play Store atualizado.') +
+        '</div>' +
+        '<button class="btn btn--primary" type="button" data-action="salvar-pref-chamado">' + icon('check') + ' Salvar preferências</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  document.addEventListener('click', async function (e) {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-action="salvar-pref-chamado"]') : null;
+    if (!btn) return;
+    const box = btn.closest('#pref-chamado') || document;
+    const ini = (box.querySelector('#pref-inicio') || {}).value || '';
+    const fim = (box.querySelector('#pref-fim') || {}).value || '';
+    const marcado = box.querySelector('input[name="pref-alerta"]:checked');
+    const modo = marcado ? marcado.value : 'toque';
+    if (!/^\d{2}:\d{2}$/.test(ini) || !/^\d{2}:\d{2}$/.test(fim)) { PU.toast('Escolha o horário de início e de fim.', 'danger'); return; }
+    if (!(global.QFCloud && global.QFCloud.client)) { PU.toast('Sem conexão com o QuemFaz agora. Tente de novo.', 'danger'); return; }
+    btn.disabled = true;
+    try {
+      const res = await global.QFCloud.client.rpc('qf_salvar_preferencias_chamado', { p_inicio: ini, p_fim: fim, p_alerta: modo });
+      if (res.error) throw res.error;
+      const s = DB.getSession();
+      const u = s ? DB.profissionalById(s.userId) : null;
+      if (u) { u.horarioInicio = ini; u.horarioFim = fim; u.alertaModo = modo; DB.persist(); }
+      PU.toast(ini === fim ? 'Salvo! Você recebe chamados o dia todo.' : 'Salvo! Offline, você recebe chamados das ' + ini + ' às ' + fim + '.', 'success');
+      Array.prototype.forEach.call(box.querySelectorAll('input[name="pref-alerta"]'), function (r) {
+        const card = r.closest('label');
+        if (card) { card.style.borderColor = r.checked ? 'var(--orange-500)' : ''; card.style.boxShadow = r.checked ? '0 0 0 1px var(--orange-500)' : ''; }
+      });
+    } catch (err) {
+      console.warn('QuemFaz preferências', err);
+      PU.toast('Não foi possível salvar agora. Tente de novo.', 'danger');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+  document.addEventListener('change', function (e) {
+    if (!e.target || e.target.name !== 'pref-alerta') return;
+    const box = e.target.closest('#pref-chamado');
+    if (!box) return;
+    Array.prototype.forEach.call(box.querySelectorAll('input[name="pref-alerta"]'), function (r) {
+      const card = r.closest('label');
+      if (card) { card.style.borderColor = r.checked ? 'var(--orange-500)' : ''; card.style.boxShadow = r.checked ? '0 0 0 1px var(--orange-500)' : ''; }
+    });
+  });
+
   // ---------------- Perfil profissional ----------------
 
   Screens.profPerfilRender = function (params, user) {
@@ -7173,6 +7244,8 @@ alt=""></noscript>
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
           '</div>' +
         '</div>' +
+
+        prefChamadoSection(user) +
 
         '<div class="section">' +
           '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/como-funciona">' +
@@ -8195,7 +8268,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.10.1';
+  const APP_VERSION = '11.11.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
