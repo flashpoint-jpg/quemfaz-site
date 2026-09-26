@@ -5,7 +5,7 @@
    - EMAIL_CONTATO: e-mail de contato mostrado na política de privacidade e na exclusão de conta (vazio = não mostra) */
 window.QF_PLAY = {
   LINK_DO_GRUPO: 'LINK_DO_GRUPO',
-  LINK_DO_TESTE: 'LINK_DO_TESTE',
+  LINK_DO_TESTE: 'https://play.google.com/apps/testing/br.app.quemfaz',
   EMAIL_CONTATO: '',
   LINK_DA_LOJA: 'https://play.google.com/store/apps/details?id=br.app.quemfaz'
 };
