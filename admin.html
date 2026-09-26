@@ -1082,6 +1082,26 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-admin-push svg{width:18px;height:18px;flex:none;color:var(--orange-600)}
 .qf-admin-push span{flex:1}
 .qf-admin-push .btn{width:auto;flex:none}
+/* V11.9.0 — cascata de chamados e chamados sem resposta (WhatsApp) */
+.qf-semresp,.qf-cascata{margin-bottom:14px;scroll-margin-top:80px}
+.qf-semresp .section-head,.qf-cascata .section-head{align-items:center}
+.qf-semresp-item{border-left:4px solid #128c4a}
+.qf-semresp-pro{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--border,#e5e7eb)}
+.qf-semresp-pro:first-child{border-top:0}
+.qf-semresp-pro .btn{width:auto;flex:none}
+.qf-semresp .btn--whatsapp{background:#128c4a;color:#fff;border:1px solid #128c4a}
+.qf-semresp .btn--whatsapp:hover{background:#0f7a40}
+.qf-semresp .btn--whatsapp svg{stroke:#fff}
+.qf-semresp .btn--whatsapp.is-sent{background:#fff;color:#128c4a}
+.qf-semresp .btn--whatsapp.is-sent svg{stroke:#128c4a}
+.qf-cascata-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.qf-cascata-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
+.qf-cascata-form input[type=number]{width:100%}
+.qf-cascata-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:12px}
+.qf-cascata-stats .card{padding:10px 12px;margin:0}
+.qf-cascata-stats .h2{line-height:1.1}
+.qf-cascata-lista{margin-top:12px}
+.qf-cascata-lista .qf-semresp-pro{align-items:flex-start}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -2513,6 +2533,165 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (go) setTimeout(function () { const el = document.getElementById('parados'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
   };
   global.QFAdminParados = { html: html, refresh: refresh, _set: function (itens) { cache = { itens: itens }; paint(); } };
+})(window);
+
+
+/* QuemFaz V11.9 — admin: cascata do chamado (etapas 1/2/3) e chamados sem resposta com WhatsApp */
+(function (global) {
+  const PU = global.PU, icon = global.icon, Screens = global.Screens;
+  const SENT_KEY = 'qf_semresp_enviados';
+  let semResp = null, cfg = null, resumo = null, timer = null;
+  function wantSemResp() { return /^#\/?sem-resposta/.test(location.hash || ''); }
+  try { if (wantSemResp()) sessionStorage.setItem('qf_goto_semresp', '1'); } catch (_) {}
+  global.addEventListener('hashchange', function () {
+    if (!wantSemResp()) return;
+    try { sessionStorage.setItem('qf_goto_semresp', '1'); } catch (_) {}
+    global.navigate('/admin/dashboard', true);
+  });
+  function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
+  function esc(v) { return PU.escapeHtml(v == null ? '' : String(v)); }
+  function catName(id) { try { const c = global.DB.categoryById(id); return c ? c.nome : (id || ''); } catch (_) { return id || ''; } }
+  function phoneDigits(tel) {
+    let d = String(tel || '').replace(/\D/g, '');
+    if (!d) return '';
+    if (d.indexOf('55') !== 0 || d.length <= 11) d = '55' + d;
+    return d;
+  }
+  function callLink(id) { return location.origin + '/#/profissional/chamada/' + encodeURIComponent(id); }
+  function waMessage(it) {
+    return 'Chamado de ' + catName(it.categoria) + ' em ' + (it.cidade || 'sua região') + ', toque pra ver: ' + callLink(it.id);
+  }
+  function sentMap() { try { return JSON.parse(localStorage.getItem(SENT_KEY) || '{}') || {}; } catch (_) { return {}; } }
+  function markSent(key) { try { const m = sentMap(); m[key] = Date.now(); localStorage.setItem(SENT_KEY, JSON.stringify(m)); } catch (_) {} }
+
+  function proHtml(it, p, sent) {
+    const d = phoneDigits(p.whatsapp);
+    const key = it.id + ':' + p.user_id;
+    const badges = (p.online ? '<span class="badge badge--success">online</span>' : '<span class="badge">offline</span>') +
+      (p.avisado && p.tem_push ? ' <span class="badge">push enviado</span>' : '') + (!p.tem_push ? ' <span class="badge badge--danger">sem app/notificação</span>' : '');
+    const btn = d
+      ? '<a class="btn btn--whatsapp btn--sm' + (sent[key] ? ' is-sent' : '') + '" data-semresp-wa="' + esc(key) + '" href="https://wa.me/' + d + '?text=' + encodeURIComponent(waMessage(it)) + '" target="_blank" rel="noopener">' + icon('whatsapp') + (sent[key] ? ' Enviado' : ' WhatsApp') + '</a>'
+      : '<span class="text--sm text--muted">sem telefone</span>';
+    return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(p.nome || 'Profissional') + '</div><div class="text--sm">' + badges + '</div></div>' + btn + '</div>';
+  }
+  function semRespItemHtml(it, sent) {
+    const lugar = [it.bairro, it.cidade, it.uf].filter(Boolean).join(', ');
+    const pros = Array.isArray(it.profissionais) ? it.profissionais : [];
+    return '<div class="card qf-semresp-item"><div class="row-between" style="align-items:flex-start;gap:10px;"><div style="min-width:0;"><div class="text--strong">' + esc(it.titulo || 'Chamado') + '</div>' +
+      '<div class="text--sm text--secondary">' + esc(catName(it.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + '</div></div>' +
+      '<span class="badge badge--danger">há ' + Math.max(0, Math.round(Number(it.minutos || 0))) + ' min</span></div>' +
+      '<div class="text--sm text--secondary" style="margin:6px 0 4px;">' + pros.length + (pros.length === 1 ? ' profissional da região' : ' profissionais da região') + ' · a mensagem já leva o link direto do chamado</div>' +
+      (pros.length ? '<div>' + pros.map(function (p) { return proHtml(it, p, sent); }).join('') + '</div>' : '<div class="text--sm text--muted">Nenhum profissional cadastrado nesta região e categoria.</div>') +
+      '<div class="btn-row" style="margin-top:8px;"><button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + esc(it.id) + '">Ver chamado</button></div></div>';
+  }
+  function semRespBody() {
+    if (!client()) return '<div class="text--sm text--secondary">Disponível com o painel conectado ao Supabase.</div>';
+    if (!semResp) return '<div class="text--sm text--secondary">Carregando…</div>';
+    if (semResp.error) return '<div class="text--sm" style="color:var(--danger-600);">' + esc(semResp.error) + '</div>';
+    if (!semResp.itens.length) return '<div class="card card--tight qf-parados-vazio">Nenhum chamado sem resposta agora ✅</div>';
+    const sent = sentMap();
+    return '<div class="stack--sm">' + semResp.itens.map(function (it) { return semRespItemHtml(it, sent); }).join('') + '</div>';
+  }
+  function countHtml() { const n = semResp && semResp.itens ? semResp.itens.length : 0; return n ? '<span class="qf-parados-count" aria-label="' + n + ' chamados sem resposta">' + n + '</span>' : ''; }
+
+  function etapaTxt(n) { return n ? 'etapa ' + n : '—'; }
+  function cascataBody() {
+    if (!client()) return '<div class="text--sm text--secondary">Disponível com o painel conectado ao Supabase.</div>';
+    if (!cfg) return '<div class="text--sm text--secondary">Carregando…</div>';
+    if (cfg.error) return '<div class="text--sm" style="color:var(--danger-600);">' + esc(cfg.error) + '</div>';
+    let out = '<div class="card"><p class="text--sm text--secondary" style="margin:0 0 10px;">Etapa 1: só quem está online. Etapa 2: todos os profissionais da região e categoria (online ou offline). Etapa 3: o chamado entra em "Chamados sem resposta" para você avisar por WhatsApp. O tempo conta a partir da criação do chamado; quando alguém aceita, a cascata para na hora.</p>' +
+      '<form class="qf-cascata-form" data-cascata-form>' +
+      '<label>Etapa 2 depois de (segundos)<input class="input" type="number" name="x" min="10" max="3600" step="5" value="' + Number(cfg.etapa2_segundos || 60) + '" required></label>' +
+      '<label>Etapa 3 depois de (minutos)<input class="input" type="number" name="y" min="1" max="720" step="1" value="' + Number(cfg.etapa3_minutos || 5) + '" required></label>' +
+      '<label style="flex-direction:row;align-items:center;gap:8px;"><input type="checkbox" name="ativo"' + (cfg.ativo === false ? '' : ' checked') + '> Cascata ligada</label>' +
+      '<button class="btn btn--primary btn--sm" type="submit">Salvar</button></form></div>';
+    if (resumo && !resumo.error) {
+      out += '<div class="qf-cascata-stats">' +
+        [['Aceitos na etapa 1', resumo.aceitos_etapa1], ['Aceitos na etapa 2', resumo.aceitos_etapa2], ['Aceitos na etapa 3', resumo.aceitos_etapa3], ['Aceitos por quem estava offline', resumo.aceitos_por_offline], ['Chamados (' + Number(resumo.dias || 30) + ' dias)', resumo.total]]
+          .map(function (k) { return '<div class="card"><div class="h2">' + Number(k[1] || 0) + '</div><div class="text--sm text--secondary">' + esc(k[0]) + '</div></div>'; }).join('') + '</div>';
+      const rec = Array.isArray(resumo.recentes) ? resumo.recentes : [];
+      if (rec.length) {
+        out += '<div class="card qf-cascata-lista"><div class="text--strong" style="margin-bottom:4px;">Últimos chamados</div>' + rec.map(function (r) {
+          const lugar = [r.cidade, r.uf].filter(Boolean).join('/');
+          const aceite = r.aceito_etapa ? '<span class="badge badge--success">aceito na ' + etapaTxt(r.aceito_etapa) + (r.aceito_online === false ? ' (offline)' : '') + '</span>' : '<span class="badge">sem aceite · chegou na ' + etapaTxt(r.etapa) + '</span>';
+          return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(r.titulo || 'Chamado') + '</div><div class="text--sm text--secondary">' + esc(catName(r.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + ' · ' + PU.formatDateTime(r.criado_em) + ' · avisados: ' + Number(r.avisados_etapa1 || 0) + ' na etapa 1, ' + Number(r.avisados_etapa2 || 0) + ' na etapa 2</div></div>' + aceite + '</div>';
+        }).join('') + '</div>';
+      }
+    }
+    return out;
+  }
+  function html() {
+    return '<section class="section qf-semresp" id="sem-resposta"><div class="section-head"><h2 class="h3">Chamados sem resposta ' + countHtml() + '</h2><span class="text--sm text--muted">avisar por WhatsApp</span></div><div data-semresp-body>' + semRespBody() + '</div></section>' +
+      '<section class="section qf-cascata" id="cascata"><div class="section-head"><h2 class="h3">Cascata do chamado</h2><span class="text--sm text--muted">sem novo deploy</span></div><div data-cascata-body>' + cascataBody() + '</div></section>';
+  }
+  function paint(which) {
+    const a = document.getElementById('sem-resposta');
+    if (a && which !== 'cascata') {
+      a.querySelector('h2').innerHTML = 'Chamados sem resposta ' + countHtml();
+      a.querySelector('[data-semresp-body]').innerHTML = semRespBody();
+    }
+    const b = document.getElementById('cascata');
+    if (b && which !== 'semresp') {
+      const f = b.querySelector('[data-cascata-form]');
+      if (f && f.contains(document.activeElement)) return; // não apaga o que o admin está digitando
+      b.querySelector('[data-cascata-body]').innerHTML = cascataBody();
+    }
+  }
+  async function rpc(name, args) {
+    const r = await client().rpc(name, args || {});
+    if (r.error) throw r.error;
+    const d = r.data || {};
+    if (d.ok === false) throw new Error(d.reason === 'sem_permissao' ? 'Sem permissão de administrador.' : (d.reason || 'Não foi possível carregar.'));
+    return d;
+  }
+  async function refresh() {
+    if (!client()) return;
+    try { const d = await rpc('qf_admin_chamados_sem_resposta'); semResp = { itens: Array.isArray(d.itens) ? d.itens : [] }; }
+    catch (err) { semResp = { itens: [], error: (err && err.message) || 'Não foi possível carregar.' }; }
+    try { cfg = await rpc('qf_admin_cascata_config'); } catch (err) { cfg = { error: (err && err.message) || 'Não foi possível carregar.' }; }
+    try { resumo = await rpc('qf_admin_cascata_resumo', { p_dias: 30 }); } catch (err) { resumo = { error: (err && err.message) || '' }; }
+    paint();
+  }
+  function start() {
+    if (timer) return;
+    refresh();
+    timer = setInterval(function () {
+      if (!document.getElementById('sem-resposta')) { clearInterval(timer); timer = null; return; }
+      refresh();
+    }, 30000);
+  }
+  document.addEventListener('click', function (e) {
+    const a = e.target.closest && e.target.closest('[data-semresp-wa]');
+    if (!a) return;
+    markSent(a.getAttribute('data-semresp-wa'));
+    setTimeout(function () { paint('semresp'); }, 400);
+  });
+  document.addEventListener('submit', async function (e) {
+    const f = e.target.closest && e.target.closest('[data-cascata-form]');
+    if (!f) return;
+    e.preventDefault();
+    const btn = f.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    try {
+      const x = parseInt(f.x.value, 10), y = parseInt(f.y.value, 10);
+      const d = await rpc('qf_admin_salvar_cascata_config', { p_etapa2_segundos: x, p_etapa3_minutos: y, p_ativo: !!f.ativo.checked });
+      cfg = d;
+      if (document.activeElement) document.activeElement.blur();
+      paint('cascata');
+      PU.toast('Cascata salva: etapa 2 em ' + d.etapa2_segundos + ' s, etapa 3 em ' + d.etapa3_minutos + ' min.', 'success');
+    } catch (err) {
+      PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger');
+    } finally { if (btn) btn.disabled = false; }
+  });
+  const prevAfter = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (prevAfter) prevAfter(pattern, content, params, user);
+    if (pattern !== '/admin/dashboard') return;
+    timer = null; start();
+    let go = false; try { go = sessionStorage.getItem('qf_goto_semresp') === '1'; sessionStorage.removeItem('qf_goto_semresp'); } catch (_) {}
+    if (go) setTimeout(function () { const el = document.getElementById('sem-resposta'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
+  };
+  global.QFAdminCascata = { html: html, refresh: refresh, _set: function (a, b, c) { semResp = a; cfg = b; resumo = c; paint(); } };
 })(window);
 
 
@@ -4452,7 +4631,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const s = DB.dashboardStats();
     const meta = DB.state.meta || {};
     return (
-      '<div class="view">' + migrationBanner() + (global.QFAdminParados ? global.QFAdminParados.html() : '') +
+      '<div class="view">' + migrationBanner() + (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
           kpi(s.pedidosAbertos, 'Pedidos abertos') +

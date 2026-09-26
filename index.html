@@ -2609,7 +2609,9 @@ alt=""></noscript>
   function chamadasPendentes(profissionalId) {
     const prof = profissionalById(profissionalId);
     const ignorados = dismissedCalls(profissionalId);
-    if (!prof || prof.statusAprovacao !== 'aprovado' || !prof.online || prof.bloqueado) return [];
+    // V11.9: com o Supabase, o servidor decide a lista (profissional offline avisado pela cascata também vê).
+    const cloudOn = !!(global.QFCloud && global.QFCloud.enabled);
+    if (!prof || prof.statusAprovacao !== 'aprovado' || (!prof.online && !cloudOn) || prof.bloqueado) return [];
     return state.requests.filter(function (r) {
       const recusados = r.recusadoPor || [];
       return r.status === STATUS.BUSCANDO && !r.profissionalId &&
@@ -3230,18 +3232,37 @@ alt=""></noscript>
     if (!force && Date.now() - lastLocationRefreshAt < 120000) return null; // V11.1: GPS no máximo a cada 2 min
     const loc = await getCurrentPositionSafe({ timeout: force ? 9000 : 5000, maximumAge: force ? 0 : 30000 });
     if (!loc) return null;
-    const uRes = await client.auth.getUser();
-    if (uRes.error || !uRes.data.user) return null;
-    const upd = await client.from('qf_profissionais').update({
-      latitude: loc.latitude,
-      longitude: loc.longitude,
-      localizacao_atualizada_em: new Date().toISOString(),
-      atualizado_em: new Date().toISOString()
-    }).eq('user_id', uRes.data.user.id);
-    if (upd.error) throw upd.error;
+    // V11.9: a posição vai pelo heartbeat, que também reafirma online=true (se não ficou offline de propósito).
+    const hb = await heartbeat(loc);
+    if (!hb) return null;
     lastLocationRefreshAt = Date.now();
     try { localStorage.setItem('qf_location_ready','1'); } catch (_) {}
     return loc;
+  }
+
+  // V11.9: heartbeat do profissional. Nunca desliga ninguém: só reafirma online=true no banco,
+  // a menos que ele tenha tocado em "ficar offline" (offline_manual) ou o app tenha tirado do online
+  // nesta sessão por falta de notificação (qf_gate_offline).
+  function gateOffline() {
+    try { return sessionStorage.getItem('qf_gate_offline') === '1'; } catch (_) { return false; }
+  }
+  async function heartbeat(loc) {
+    if (!client) return null;
+    const res = await client.rpc('qf_profissional_heartbeat', {
+      p_latitude: loc ? loc.latitude : null,
+      p_longitude: loc ? loc.longitude : null,
+      p_reafirmar: !gateOffline()
+    });
+    if (res.error) throw res.error;
+    const out = res.data || {};
+    if (!out.ok) return null;
+    const s = DB.getSession();
+    const p = s && s.role === 'profissional' ? DB.profissionalById(s.userId) : null;
+    if (p && typeof out.online === 'boolean' && p.online !== out.online) {
+      p.online = out.online;
+      DB.persist();
+    }
+    return out;
   }
 
   function cityFromId(id) {
@@ -4263,7 +4284,8 @@ alt=""></noscript>
     return DB.requestById(chamadoId);
   }
 
-  async function setOnline(online) {
+  async function setOnline(online, opts) {
+    const automatico = !!(opts && opts.automatico);
     const uRes = await client.auth.getUser();
     if (uRes.error || !uRes.data.user) throw new Error('Sessão expirada.');
     if (online) {
@@ -4278,7 +4300,9 @@ alt=""></noscript>
         throw new Error('Ative a localização do aparelho para ficar online. Ela é usada para mostrar a distância entre você e cada chamado.');
       }
     }
-    const res = await client.from('qf_profissionais').update({ online: !!online, atualizado_em: new Date().toISOString() }).eq('user_id', uRes.data.user.id);
+    const upd = { online: !!online, atualizado_em: new Date().toISOString() };
+    if (!automatico) upd.offline_manual = !online; // V11.9: tocou em "ficar offline" → o online automático respeita
+    const res = await client.from('qf_profissionais').update(upd).eq('user_id', uRes.data.user.id);
     if (res.error) throw res.error;
     const p = DB.profissionalById(uRes.data.user.id);
     if (p) p.online = !!online;
@@ -4459,6 +4483,7 @@ alt=""></noscript>
     prepareLocalState: prepareLocalState,
     syncForCurrentSession: syncForCurrentSession,
     professionalQuickSignature: professionalQuickSignature,
+    heartbeat: heartbeat,
     signUp: signUp,
     signIn: signIn,
     requestPasswordReset: requestPasswordReset,
@@ -5143,6 +5168,12 @@ alt=""></noscript>
           PU.toast('Bem-vindo(a), ' + res.user.nome.split(' ')[0] + '!', 'success');
           if (sessionStorage.getItem('qf_pending_ad_draft')) {
             global.navigate('/' + params.role + '/anuncie', true);
+            return;
+          }
+          let posLogin = null;
+          try { posLogin = sessionStorage.getItem('qf_pos_login'); sessionStorage.removeItem('qf_pos_login'); } catch (_) {}
+          if (posLogin && posLogin.indexOf('/' + params.role + '/') === 0) {
+            global.navigate(posLogin, true);
             return;
           }
           if (params.role === 'cliente') {
@@ -6552,7 +6583,7 @@ alt=""></noscript>
     function adStatusLabel(a){if(!a)return '';if(a.status==='ativo')return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';if(a.status==='reprovado')return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';if(a.status==='pausado')return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';}
     return '<div class="view">'+
       pendingGate(user)+
-      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title">Você está offline</div><div class="qf-prof-status__sub">Fique online para receber chamados perto de você</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
+      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title">Você está offline</div><div class="qf-prof-status__sub">Você ainda recebe chamados da sua região, mas quem está online recebe primeiro</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       profileProgressHtml(user)+
       (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
@@ -6599,7 +6630,7 @@ alt=""></noscript>
   Screens.profChamadaRender = function (params, user) {
     const req = DB.requestById(params.id);
     const disponivel = req && req.status === STATUS.BUSCANDO && !req.profissionalId &&
-      user.online && user.statusAprovacao === 'aprovado' && !user.bloqueado &&
+      (user.online || !!(global.QFCloud && global.QFCloud.enabled)) && user.statusAprovacao === 'aprovado' && !user.bloqueado &&
       user.categorias.indexOf(req.categoriaId) !== -1 &&
       (req.recusadoPor || []).indexOf(user.id) === -1;
     if (!disponivel) {
@@ -7324,7 +7355,8 @@ alt=""></noscript>
     garantirNotificacoesParaOnline({ jaOnline: true }).then(async function (ok) {
       if (ok) { global.navigate('/profissional/home', true); return; }
       try {
-        if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.setOnline(false);
+        try { sessionStorage.setItem('qf_gate_offline', '1'); } catch (_) {}
+        if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.setOnline(false, { automatico: true });
         else DB.setOnlineStatus(user.id, false);
         PU.toast('Você ficou offline porque as notificações não estão ativas.', null);
       } catch (err) {
@@ -7393,6 +7425,7 @@ alt=""></noscript>
             if (!ok) return;
           }
           PU.unlockNotificationAudio();
+          if (querOnline) { try { sessionStorage.removeItem('qf_gate_offline'); } catch (_) {} }
           if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.setOnline(querOnline);
           else DB.setOnlineStatus(user.id, querOnline);
           toggle.checked = querOnline;
@@ -7907,7 +7940,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.8.0';
+  const APP_VERSION = '11.9.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -8648,6 +8681,31 @@ alt=""></noscript>
       try { P.setOnline({ online: on }).catch(function () { enviado = null; }); } catch (_) { enviado = null; }
     }
     global.QFNativeOnline = { available: function () { return !!plugin(); }, sync: sync };
+    // V11.9: online automático. Ao abrir o app, o profissional fica online sozinho (a menos que tenha
+    // tocado em "ficar offline"). O heartbeat a cada 60 s reafirma online=true no banco. Não existe
+    // desconexão por tempo: o heartbeat nunca desliga ninguém.
+    let batendo = false;
+    async function batida() {
+      if (batendo || !(global.QFCloud && global.QFCloud.enabled && global.QFCloud.heartbeat)) return;
+      const s = DB.getSession && DB.getSession();
+      if (!s || s.role !== 'profissional') return;
+      const p = DB.profissionalById && DB.profissionalById(s.userId);
+      if (!p || p.bloqueado) return;
+      batendo = true;
+      const antes = !!p.online;
+      try {
+        const out = await global.QFCloud.heartbeat(null);
+        if (out && !!out.online !== antes) {
+          sync();
+          if (/^#\/profissional\/home/.test(location.hash || '') && global.navigate) global.navigate('/profissional/home', true);
+        }
+      } catch (err) { console.warn('QuemFaz heartbeat', err); }
+      finally { batendo = false; }
+    }
+    setTimeout(batida, 2500);
+    setInterval(batida, 60000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) batida(); });
+    window.addEventListener('hashchange', function () { if (/^#\/profissional\//.test(location.hash || '')) setTimeout(batida, 800); });
     setTimeout(sync, 1500);
     setInterval(sync, 4000);
     window.addEventListener('hashchange', function () { setTimeout(sync, 300); });
@@ -9360,6 +9418,12 @@ alt=""></noscript>
     }
 
     if (!session || session.role !== found.route.role) {
+      // V11.9: link direto do chamado (WhatsApp/push) sem sessão: entra e volta direto para o chamado.
+      if (!session && found.route.role === 'profissional' && /^\/profissional\/chamada\//.test(path)) {
+        try { sessionStorage.setItem('qf_pos_login', path); } catch (_) {}
+        navigate('/auth/profissional/login', true);
+        return;
+      }
       navigate('/', true);
       return;
     }
