@@ -4889,7 +4889,7 @@ alt=""></noscript>
       '<div class="qf-trust-row"><span class="qf-trust-pill">' + icon('camera') + ' Profissional com selfie</span><span class="qf-trust-pill">' + icon('document') + ' Orçamento sem compromisso</span><span class="qf-trust-pill">' + icon('checkCircle') + ' Pague direto ao profissional</span></div>' +
       '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary">Escolha um serviço para começar.</div></div></div><div class="qf-landing-popular">' + popular.map(function(c){return '<button class="category-tile" type="button" data-landing-cat="'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';}).join('') + '</div><button class="qf-landing-link" type="button" data-action="landing-all-services">Ver os ' + cats.length + ' serviços →</button></section>' +
       '<section class="section"><div class="card qf-ad-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3">Tem uma empresa?</div><div class="text--sm text--secondary" style="margin-top:3px;">Apareça para clientes da sua região — a partir de R$ 79 por 30 dias.</div></div></div><button class="btn btn--primary" type="button" data-nav="/anuncie" style="margin-top:13px;">Anunciar minha empresa</button></div></section>' +
-      '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div></section>' +
+      '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div><button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:10px;">' + icon('info') + ' Preços, planos e dúvidas</button></section>' +
       '<section class="section"><div class="card qf-pro-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3" style="color:#fff;">É profissional?</div><div class="text--sm text--secondary" style="margin-top:3px;">Receba chamados de clientes perto de você. Comece com R$ 25 em créditos grátis.</div></div></div><button class="btn btn--primary" data-nav="/auth/profissional/login" style="margin-top:13px;">Quero receber chamados</button></div></section>' +
       '<footer class="qf-landing-footer"><p class="text text--sm text--muted" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div></div>';
   };
@@ -5981,6 +5981,7 @@ alt=""></noscript>
           '<div class="card" style="padding:4px 16px;">' +
             listItem('mapPin', 'Endereço', end ? (end.rua + ', ' + end.bairro) : 'Nenhum endereço cadastrado', '/cliente/endereco') +
             listItem('user', 'Telefone', user.telefone || 'Não informado', null) +
+            listItem('info', 'Como funciona', 'Passo a passo e dúvidas', '/cliente/como-funciona') +
           '</div>' +
         '</div>' +
 
@@ -6886,6 +6887,7 @@ alt=""></noscript>
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
+            '<div class="list-item" data-nav="/profissional/como-funciona"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Pague menos por chamado. Veja como funciona.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas e você não quiser esperar, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
           '</div>' +
         '</div>' +
@@ -6924,6 +6926,146 @@ alt=""></noscript>
     return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon(iconName) + '</div><div class="list-item__body"><div class="list-item__title">' + title + '</div><div class="list-item__sub">' + subtitle + '</div></div></div>';
   }
 
+  // ---------------- Como funciona (V11.10.0) ----------------
+  // Tela única que explica o app, preços, planos e diferenciais. Aberta a visitantes, clientes e profissionais.
+  const QF_WHATS_PLANOS = '5535998845703';
+  const QF_PRECOS_FAIXAS = [
+    { valor: 'R$ 4,90', cats: 'Diarista, jardinagem e outros serviços' },
+    { valor: 'R$ 7,90', cats: 'Montador de móveis, eletricista, encanador, pintor, chaveiro, informática, borracheiro, motorista e entregador' },
+    { valor: 'R$ 12,90', cats: 'Pedreiro, mecânico, frete, soldador e guincho' }
+  ];
+
+  function cfStep(n, title, sub) {
+    return '<div class="list-item"><div class="icon-tile icon-tile--orange" style="font-weight:800;">' + n + '</div><div class="list-item__body"><div class="list-item__title">' + title + '</div><div class="list-item__sub">' + sub + '</div></div></div>';
+  }
+  function cfFaq(q, a) {
+    return '<details class="card" style="padding:14px 16px;"><summary class="text--strong" style="cursor:pointer;">' + q + '</summary><p class="text--sm text--secondary" style="margin:10px 0 0;">' + a + '</p></details>';
+  }
+  function cfPlano(nome, destaque, preco, unidade, detalhe, itens, botao) {
+    return '<div class="card stack stack--sm" style="' + (destaque ? 'border:2px solid var(--orange-500, #f06a1d);' : '') + 'position:relative;">' +
+      (destaque ? '<span class="badge" style="position:absolute;top:-11px;right:14px;background:var(--orange-500, #f06a1d);color:#fff;">Mais vantagem</span>' : '') +
+      '<div class="eyebrow">' + nome + '</div>' +
+      '<div class="h2" style="margin:0;">' + preco + ' <span class="text--sm text--secondary" style="font-weight:600;">' + unidade + '</span></div>' +
+      '<div class="text--sm text--strong">' + detalhe + '</div>' +
+      '<div class="stack stack--sm" style="margin-top:4px;">' + itens.map(function (t) { return '<div class="row text--sm" style="gap:8px;align-items:flex-start;"><span style="color:var(--success-600);flex:none;display:inline-flex;width:18px;height:18px;">' + icon('check').replace('<svg ', '<svg width="18" height="18" ') + '</span><span>' + t + '</span></div>'; }).join('') + '</div>' +
+      (botao || '') +
+    '</div>';
+  }
+
+  Screens.comoFuncionaRender = function () {
+    const session = DB.getSession();
+    const role = session && session.role;
+    const zap = function (plano) {
+      const txt = 'Olá! Quero assinar o plano ' + plano + ' do QuemFaz.';
+      return '<a class="btn btn--primary" href="https://wa.me/' + QF_WHATS_PLANOS + '?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Assinar pelo WhatsApp</a>';
+    };
+
+    const profissional =
+      '<section class="section" id="cf-profissional">' +
+        '<div class="section-head"><div><h2 class="h2">Para o profissional</h2><div class="text--sm text--secondary">Receba clientes da sua região direto no celular.</div></div></div>' +
+        '<div class="card" style="padding:4px 16px;">' +
+          cfStep(1, 'O chamado chega no seu celular', 'Receber é grátis. Você vê o serviço, a cidade e o bairro antes de decidir.') +
+          cfStep(2, 'Você desbloqueia o chamado', 'Paga um valor pequeno com os créditos da carteira e vê o contato do cliente.') +
+          cfStep(3, 'Manda o orçamento', 'Combine o serviço, o preço e o dia direto com o cliente.') +
+          cfStep(4, 'Fecha o serviço', 'O valor do serviço é todo seu. O QuemFaz não cobra comissão.') +
+        '</div>' +
+      '</section>' +
+
+      '<section class="section">' +
+        '<div class="section-head"><div><h2 class="h3">Quanto custa desbloquear um chamado</h2><div class="text--sm text--secondary">O valor depende do tipo de serviço.</div></div></div>' +
+        '<div class="card" style="padding:4px 16px;">' +
+          QF_PRECOS_FAIXAS.map(function (f) {
+            return '<div class="list-item"><div class="text--strong" style="min-width:84px;color:var(--orange-600, #c2410c);">' + f.valor + '</div><div class="list-item__body"><div class="list-item__sub">' + f.cats + '</div></div></div>';
+          }).join('') +
+        '</div>' +
+        '<div class="card card--tight" style="background:var(--success-100);border:none;margin-top:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><div class="text--sm"><strong>Ganhe R$ 25 em créditos no cadastro.</strong> Dá para desbloquear seus primeiros chamados sem pagar nada. Os créditos não vencem.</div></div></div>' +
+      '</section>' +
+
+      '<section class="section" id="cf-planos">' +
+        '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Escolha o jeito que fica melhor para você.</div></div></div>' +
+        '<div class="stack">' +
+          cfPlano('Avulso', false, 'R$ 4,90', 'a R$ 12,90', 'por chamado desbloqueado',
+            ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
+            role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
+          cfPlano('Mensal', false, 'R$ 49,90', 'por mês', '10 chamados por mês',
+            ['Sai a R$ 4,99 por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem fidelidade: cancela quando quiser'],
+            zap('Mensal (R$ 49,90)')) +
+          cfPlano('Pro', true, 'R$ 99,90', 'por mês', '25 chamados por mês',
+            ['Sai a R$ 4,00 por chamado', 'Perfil em destaque para os clientes', 'Sem fidelidade: cancela quando quiser'],
+            zap('Pro (R$ 99,90)')) +
+        '</div>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Os chamados do plano valem por 30 dias a partir do pagamento. Por enquanto, a assinatura dos planos Mensal e Pro é feita pelo WhatsApp com a equipe QuemFaz.</p>' +
+      '</section>' +
+
+      '<section class="section">' +
+        '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
+        '<div class="card" style="padding:4px 16px;">' +
+          walletInfoRow('lock', 'O cliente fica só com você', 'Em muitos apps, o mesmo pedido vai para 3 ou 4 profissionais e ganha quem cobra menos. No QuemFaz, quem desbloqueia primeiro fica com o cliente. Ninguém mais pega o mesmo chamado.') +
+          walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
+          walletInfoRow('refresh', 'Seu dinheiro volta se não der certo', 'Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a sua carteira.') +
+          walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não.') +
+          walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
+          walletInfoRow('creditCard', 'Pagamento seguro', 'Recargas por Pix, cartão ou boleto pelo Efí Bank. O saldo entra assim que o pagamento é confirmado.') +
+        '</div>' +
+      '</section>' +
+
+      '<section class="section">' +
+        '<div class="section-head"><h2 class="h3">Dúvidas de profissionais</h2></div>' +
+        '<div class="stack--sm">' +
+          cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline.') +
+          cfFaq('E se o cliente sumir depois que eu desbloquear?', 'Se o pedido ficar 3 dias parado sem resposta, ou o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira.') +
+          cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
+          cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
+          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
+          cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm fidelidade: é só não renovar no mês seguinte.') +
+        '</div>' +
+      '</section>';
+
+    const cliente =
+      '<section class="section" id="cf-cliente">' +
+        '<div class="section-head"><div><h2 class="h2">Para quem precisa de um serviço</h2><div class="text--sm text--secondary">Pedir é grátis e sem compromisso.</div></div></div>' +
+        '<div class="card" style="padding:4px 16px;">' +
+          cfStep(1, 'Conte o que precisa', 'Escolha o serviço, descreva o que precisa e informe sua região.') +
+          cfStep(2, 'Profissionais perto de você são avisados', 'Quem atende sua região recebe o chamado na hora.') +
+          cfStep(3, 'Receba o orçamento', 'Veja a proposta, a foto e as avaliações do profissional.') +
+          cfStep(4, 'Combine e avalie', 'Acerte o pagamento direto com o profissional e, no fim, avalie o serviço.') +
+        '</div>' +
+        '<div class="card" style="padding:4px 16px;margin-top:10px;">' +
+          walletInfoRow('money', 'Grátis para o cliente', 'Você não paga nada para pedir nem para receber orçamento.') +
+          walletInfoRow('camera', 'Profissional com selfie', 'Você vê quem vai até a sua casa antes de fechar.') +
+          walletInfoRow('star', 'Avaliações reais', 'As notas vêm de clientes que contrataram o serviço pelo QuemFaz.') +
+        '</div>' +
+      '</section>';
+
+    return '<div class="view stack">' +
+      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;">' +
+        '<div class="eyebrow" style="color:var(--orange-400);">Tudo sobre o QuemFaz</div>' +
+        '<div class="h2" style="color:#fff;margin-top:4px;">Como funciona</div>' +
+        '<p class="text--sm" style="color:#c7d1e3;margin:6px 0 0;">Passo a passo, preços, planos e o que o QuemFaz tem de diferente.</p>' +
+        '<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+          '<a class="btn btn--primary" style="flex:1 1 140px;" href="#cf-profissional" data-cf-jump="cf-profissional">Profissional</a>' +
+          '<a class="btn btn--outline" style="flex:1 1 140px;background:#fff;" href="#cf-cliente" data-cf-jump="cf-cliente">Cliente</a>' +
+        '</div>' +
+      '</div>' +
+      (role === 'cliente' ? cliente + profissional : profissional + cliente) +
+      '<section class="section"><div class="card stack stack--sm" style="text-align:center;align-items:stretch;">' +
+        '<div class="h3">Ainda ficou com dúvida?</div>' +
+        '<p class="text--sm text--secondary" style="margin:0;">Fale com a equipe QuemFaz.</p>' +
+        '<a class="btn btn--outline" href="https://wa.me/' + QF_WHATS_PLANOS + '?text=' + encodeURIComponent('Olá! Tenho uma dúvida sobre o QuemFaz.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
+        (role ? '' : '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/cadastro">' + icon('briefcase') + ' Quero me cadastrar como profissional</button>') +
+      '</div></section>' +
+    '</div>';
+  };
+
+  // Os botões do topo rolam até a seção sem mexer na rota (o app usa o # para navegar).
+  document.addEventListener('click', function (e) {
+    const a = e.target && e.target.closest ? e.target.closest('[data-cf-jump]') : null;
+    if (!a) return;
+    e.preventDefault();
+    const el = document.getElementById(a.getAttribute('data-cf-jump'));
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
   // ---------------- Perfil profissional ----------------
 
   Screens.profPerfilRender = function (params, user) {
@@ -6948,6 +7090,14 @@ alt=""></noscript>
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie do profissional<input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
           '</div>' +
+        '</div>' +
+
+        '<div class="section">' +
+          '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/como-funciona">' +
+            '<div class="icon-tile icon-tile--orange">' + icon('info') + '</div>' +
+            '<div class="spacer"><div class="text--strong">Como funciona e planos</div><div class="text--sm text--secondary">Preços, planos Mensal e Pro, diferenciais e dúvidas</div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</button>' +
         '</div>' +
 
         '<div class="section">' +
@@ -7952,7 +8102,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.9.1';
+  const APP_VERSION = '11.10.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -9344,6 +9494,7 @@ alt=""></noscript>
     { pattern: '/auth/:role/cadastro', anon: true, render: function (p) { return Screens.authCadastro(p); } },
 
     { pattern: '/anuncie', anon: true, title: 'Anuncie no QuemFaz', render: Screens.anuncieRender },
+    { pattern: '/como-funciona', anon: true, title: 'Como funciona', render: Screens.comoFuncionaRender },
 
     { pattern: '/cliente/home', role: 'cliente', tab: 'home', title: 'QuemFaz', render: Screens.clienteHomeRender },
     { pattern: '/cliente/categoria/:catId', role: 'cliente', title: 'Categoria', back: '/cliente/home', render: Screens.clienteCategoriaRender },
@@ -9354,6 +9505,7 @@ alt=""></noscript>
     { pattern: '/cliente/perfil', role: 'cliente', tab: 'perfil', title: 'Perfil', render: Screens.clientePerfilRender },
     { pattern: '/cliente/endereco', role: 'cliente', title: 'Meu endereço', back: '/cliente/perfil', render: Screens.clienteEnderecoRender },
 
+    { pattern: '/cliente/como-funciona', role: 'cliente', title: 'Como funciona', back: '/cliente/perfil', render: Screens.comoFuncionaRender },
     { pattern: '/cliente/anuncie', role: 'cliente', title: 'Anuncie no QuemFaz', back: '/cliente/home', render: Screens.anuncieRender },
 
     { pattern: '/profissional/home', role: 'profissional', tab: 'home', title: 'Chamadas', render: Screens.profHomeRender },
@@ -9363,6 +9515,7 @@ alt=""></noscript>
     { pattern: '/profissional/pedido/:id', role: 'profissional', title: 'Detalhes do serviço', back: '/profissional/servicos', render: Screens.profPedidoDetalheRender },
     { pattern: '/profissional/orcamento/:id', role: 'profissional', title: 'Criar orçamento', back: '/profissional/servicos', render: Screens.profOrcamentoFormRender },
     { pattern: '/profissional/carteira', role: 'profissional', tab: 'carteira', title: 'Carteira', render: Screens.profCarteiraRender },
+    { pattern: '/profissional/como-funciona', role: 'profissional', title: 'Como funciona e planos', back: '/profissional/perfil', render: Screens.comoFuncionaRender },
     { pattern: '/profissional/anuncie', role: 'profissional', title: 'Anuncie no QuemFaz', back: '/profissional/home', render: Screens.anuncieRender },
     { pattern: '/profissional/perfil', role: 'profissional', tab: 'perfil', title: 'Perfil profissional', render: Screens.profPerfilRender },
     { pattern: '/profissional/avaliacoes', role: 'profissional', title: 'Avaliações', back: '/profissional/perfil', render: Screens.profAvaliacoesRender },
