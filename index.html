@@ -7096,8 +7096,8 @@ alt=""></noscript>
         '<div class="section-head"><h2 class="h3">Dúvidas de profissionais</h2></div>' +
         '<div class="stack--sm">' +
           cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline, dentro do horário que você escolheu.') +
-          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. No seu Perfil, em \u201cQuando receber chamados\u201d, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
-          cfFaq('Posso deixar o aviso só vibrando?', 'Pode. No seu Perfil, em \u201cComo avisar um chamado novo\u201d, escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
+          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Em Perfil \u203a Configurações de chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
+          cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Em Perfil \u203a Configurações de chamados, escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'Se o pedido ficar 3 dias parado sem resposta, ou o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira.') +
           cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
@@ -7182,6 +7182,15 @@ alt=""></noscript>
     '</div>';
   }
 
+  Screens.profConfigRender = function (params, user) {
+    return '<div class="view stack">' +
+      prefChamadoSection(user) +
+      '<div class="section"><div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('info') + '</div>' +
+        '<div class="text--sm">Ficar <strong>online</strong> faz você receber o chamado antes dos outros, a qualquer hora. O horário acima vale só para quando você está <strong>offline</strong>.</div></div></div></div>' +
+      '<div class="section"><button class="btn btn--outline" type="button" data-nav="/profissional/como-funciona">' + icon('info') + ' Dúvidas? Veja como funciona</button></div>' +
+    '</div>';
+  };
+
   document.addEventListener('click', async function (e) {
     const btn = e.target && e.target.closest ? e.target.closest('[data-action="salvar-pref-chamado"]') : null;
     if (!btn) return;
@@ -7247,7 +7256,16 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
-        prefChamadoSection(user) +
+        '<div class="section">' +
+          '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/configuracoes">' +
+            '<div class="icon-tile icon-tile--orange">' + icon('sliders') + '</div>' +
+            '<div class="spacer"><div class="text--strong">Configurações de chamados</div><div class="text--sm text--secondary">' +
+              PU.escapeHtml(((user && user.horarioInicio) || '06:00') === ((user && user.horarioFim) || '22:00') ? 'Recebe o dia todo' : 'Offline: das ' + ((user && user.horarioInicio) || '06:00') + ' às ' + ((user && user.horarioFim) || '22:00')) +
+              ' · ' + ((user && user.alertaModo) === 'vibrar' ? 'Só vibrar' : 'Tocar e vibrar') +
+            '</div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</button>' +
+        '</div>' +
 
         '<div class="section">' +
           '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/como-funciona">' +
@@ -8270,7 +8288,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.1';
+  const APP_VERSION = '11.11.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -9683,6 +9701,7 @@ alt=""></noscript>
     { pattern: '/profissional/pedido/:id', role: 'profissional', title: 'Detalhes do serviço', back: '/profissional/servicos', render: Screens.profPedidoDetalheRender },
     { pattern: '/profissional/orcamento/:id', role: 'profissional', title: 'Criar orçamento', back: '/profissional/servicos', render: Screens.profOrcamentoFormRender },
     { pattern: '/profissional/carteira', role: 'profissional', tab: 'carteira', title: 'Carteira', render: Screens.profCarteiraRender },
+    { pattern: '/profissional/configuracoes', role: 'profissional', title: 'Configurações de chamados', back: '/profissional/perfil', render: Screens.profConfigRender },
     { pattern: '/profissional/como-funciona', role: 'profissional', title: 'Como funciona e planos', back: '/profissional/perfil', render: Screens.comoFuncionaRender },
     { pattern: '/profissional/anuncie', role: 'profissional', title: 'Anuncie no QuemFaz', back: '/profissional/home', render: Screens.anuncieRender },
     { pattern: '/profissional/perfil', role: 'profissional', tab: 'perfil', title: 'Perfil profissional', render: Screens.profPerfilRender },
