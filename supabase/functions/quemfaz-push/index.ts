@@ -5,11 +5,37 @@ import { importPKCS8, SignJWT } from "npm:jose@5.9.6";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const VAPID_PUBLIC = "BEEKzUpJ3vaPQDakbiM0igTGDma4U3EPnH2TrV7PW_QguRgueQ_qPA1C5UnjISqnfudUVxC09B6prywwta4Z7J8";
-const VAPID_PRIVATE = "e1N0TT0FE7spK2j47-M_T9p9qZuXn1tgI48Cf14BjLE";
+// V11.9.1: par VAPID trocado. A chave pública pode ficar aqui (vai no site também);
+// a privada NUNCA fica no código: vem do segredo VAPID_PRIVATE_KEY ou, sem ele, do Vault
+// (segredo "qf_vapid_private", lido por qf_push_vapid_private(), que só o service_role executa).
+const VAPID_PUBLIC = "BHKGLb0G49jDzmd6zoWU4HYzk8gAF3ilPMBx_-O3SMy1vPELJJZ6euC2XkSRcy8mF9MMYDKY9Lf7039nokcCHqw";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false, autoRefreshToken: false } });
 
-webpush.setVapidDetails("mailto:suporte@quemfaz.app", VAPID_PUBLIC, VAPID_PRIVATE);
+let vapidReady: Promise<boolean> | null = null;
+function ensureVapid(): Promise<boolean> {
+  if (!vapidReady) {
+    vapidReady = (async () => {
+      let priv = (Deno.env.get("VAPID_PRIVATE_KEY") || "").trim();
+      if (!priv) {
+        const { data, error } = await admin.rpc("qf_push_vapid_private");
+        if (error) console.error("VAPID privada (Vault)", error.message);
+        priv = String(data || "").trim();
+      }
+      if (!priv) {
+        console.error("VAPID privada ausente: push web desativado");
+        vapidReady = null;
+        return false;
+      }
+      webpush.setVapidDetails("mailto:suporte@quemfaz.app", VAPID_PUBLIC, priv);
+      return true;
+    })().catch((err) => {
+      console.error("VAPID", err);
+      vapidReady = null;
+      return false;
+    });
+  }
+  return vapidReady;
+}
 
 // V11.1: push nativo (APK) via Firebase Cloud Messaging HTTP v1.
 // Ativa sozinho quando o segredo FCM_SERVICE_ACCOUNT (JSON da conta de serviço do Firebase) existir.
@@ -222,7 +248,9 @@ async function sendToUsers(userIds: string[], payload: any) {
     .eq("ativo", true);
   if (error) throw error;
 
+  const webOk = await ensureVapid();
   let sent = 0;
+  const errors: number[] = [];
   for (const s of subs || []) {
     const endpoint = String(s.endpoint || "");
     if (endpoint.startsWith(FCM_PREFIX)) {
@@ -243,6 +271,7 @@ async function sendToUsers(userIds: string[], payload: any) {
       }
       continue;
     }
+    if (!webOk) continue;
     try {
       await webpush.sendNotification(
         { endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
@@ -252,14 +281,16 @@ async function sendToUsers(userIds: string[], payload: any) {
       sent++;
     } catch (err: any) {
       const code = Number(err?.statusCode || err?.status || 0);
-      if (code === 404 || code === 410) {
+      errors.push(code);
+      // 401/403: inscrição feita com a chave VAPID antiga. Desativa; o app se reinscreve ao abrir.
+      if (code === 404 || code === 410 || code === 401 || code === 403) {
         await admin.from("qf_push_subscriptions")
           .update({ ativo: false, atualizado_em: new Date().toISOString() })
           .eq("id", s.id);
       }
     }
   }
-  return { sent, total: (subs || []).length };
+  return errors.length ? { sent, total: (subs || []).length, errors } : { sent, total: (subs || []).length };
 }
 
 function newCallPayload(call: any) {
@@ -497,6 +528,18 @@ Deno.serve(async (req) => {
     }, { onConflict: "endpoint" });
     if (error) return json({ error: error.message }, 400);
     return json({ ok: true, vapid_public_key: VAPID_PUBLIC });
+  }
+
+  // V11.9.1: aviso de teste só para os aparelhos do próprio usuário (diagnóstico).
+  if (action === "test_self") {
+    const result = await sendToUsers([user.id], {
+      title: "Teste de notificação",
+      body: "Se você está vendo isto, as notificações do QuemFaz estão funcionando.",
+      url: "/#/",
+      tag: "qf-test-" + Date.now(),
+      strong: false,
+    });
+    return json({ ok: true, ...result });
   }
 
   // V11.1: registro do token do Firebase enviado pelo APK.

@@ -2421,7 +2421,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 /* QuemFaz V11.6 — admin: chamados parados e notificação do admin */
 (function (global) {
   const PU = global.PU, icon = global.icon, Screens = global.Screens;
-  const VAPID_PUBLIC_KEY = 'BEEKzUpJ3vaPQDakbiM0igTGDma4U3EPnH2TrV7PW_QguRgueQ_qPA1C5UnjISqnfudUVxC09B6prywwta4Z7J8';
+  const VAPID_PUBLIC_KEY = 'BHKGLb0G49jDzmd6zoWU4HYzk8gAF3ilPMBx_-O3SMy1vPELJJZ6euC2XkSRcy8mF9MMYDKY9Lf7039nokcCHqw';
   const PUSH_KEY = 'qf_admin_push_enabled';
   let cache = null, timer = null;
   // o push "Chamado sem resposta" abre admin.html#parados: lembra de rolar até a seção depois de entrar
@@ -2494,6 +2494,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     }, 60000);
   }
   function b64ToUint8(x) { const pad = '='.repeat((4 - x.length % 4) % 4); const raw = atob((x + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(Array.from(raw).map(function (c) { return c.charCodeAt(0); })); }
+  function sameKey(buf, want) {
+    if (!buf) return false;
+    const a = new Uint8Array(buf);
+    if (a.length !== want.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== want[i]) return false;
+    return true;
+  }
   // mesma inscrição do app (quemfaz-push, action "subscribe"), com a sessão do admin
   async function activatePush() {
     if (!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window)) throw new Error('Este navegador não recebe notificações. Use o Chrome no celular ou no computador.');
@@ -2503,6 +2510,11 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
     await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
+    // V11.9.1: a chave VAPID mudou; inscrição feita com a chave antiga é refeita.
+    if (sub && !sameKey(sub.options && sub.options.applicationServerKey, b64ToUint8(VAPID_PUBLIC_KEY))) {
+      try { await sub.unsubscribe(); } catch (_) {}
+      sub = null;
+    }
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToUint8(VAPID_PUBLIC_KEY) });
     const cl = client();
     const sess = cl ? await cl.auth.getSession() : null;

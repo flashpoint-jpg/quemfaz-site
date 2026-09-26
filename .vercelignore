@@ -1,0 +1,6 @@
+# Não publicar no site: código do servidor, SQL, automações e anotações internas.
+/supabase
+/.github
+*.sql
+*.md
+LEIA-ME-*.txt
