@@ -9811,7 +9811,7 @@ alt=""></noscript>
   }, 4000);
 
   // V11.9.1: modo demonstração (dados locais de exemplo) só em ambiente local, nunca no site publicado.
-  function isDemoMode() { try { return /^(localhost|127.0.0.1|[::1])$/.test(location.hostname) && new URLSearchParams(location.search).get('demo') === '1'; } catch (_) { return false; } }
+  function isDemoMode() { try { return ['localhost', '127.0.0.1', '[::1]'].indexOf(location.hostname) !== -1 && new URLSearchParams(location.search).get('demo') === '1'; } catch (_) { return false; } }
   function renderConnectionError() {
     const shell = document.getElementById('app-shell');
     shell.innerHTML = '<div class="qf-conn-error"><img src="./icon.svg" alt="QuemFaz" style="width:72px;height:72px;border-radius:18px;">' +
