@@ -2053,7 +2053,22 @@ alt=""></noscript>
   function notePushSound() { lastPushSoundAt = Date.now(); }
   function pushSoundRecent() { return Date.now() - lastPushSoundAt < 10000; }
 
+  // V11.11.3: profissional que escolheu "Só vibrar" não ouve o toque do chamado nem com o app aberto.
+  function qfSoVibrar() {
+    try {
+      const D = global.DB; const sess = D && D.getSession && D.getSession();
+      if (!sess || sess.role !== 'profissional') return false;
+      const u = D.profissionalById && D.profissionalById(sess.userId);
+      return !!(u && u.alertaModo === 'vibrar');
+    } catch (_) { return false; }
+  }
+  global.qfSoVibrar = qfSoVibrar;
+
   function playNotificationSound(strong) {
+    if (strong && qfSoVibrar()) {
+      if (navigator.vibrate) navigator.vibrate([400, 150, 400, 150, 600]);
+      return;
+    }
     if (strong) {
       const a = ringAudio();
       if (a) {
@@ -8288,7 +8303,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.2';
+  const APP_VERSION = '11.11.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -9411,8 +9426,17 @@ alt=""></noscript>
     if(da!==db)return da-db;
     return new Date(a.criadoEm||0)-new Date(b.criadoEm||0);
   }
-  function stopAudio(){if(!audio)return;try{audio.pause();audio.currentTime=0;}catch(_){}audio=null;}
-  function startAudio(){stopAudio();try{audio=new Audio('./quemfaz_chamado.mp3');audio.loop=true;audio.volume=1;const p=audio.play();if(p&&p.catch)p.catch(function(){});}catch(_){}}
+  let vibTimer=null;
+  function stopAudio(){if(vibTimer){clearInterval(vibTimer);vibTimer=null;try{if(navigator.vibrate)navigator.vibrate(0);}catch(_){}}if(!audio)return;try{audio.pause();audio.currentTime=0;}catch(_){}audio=null;}
+  function startAudio(){
+    stopAudio();
+    // V11.11.3: "Só vibrar" = vibra em loop enquanto a tela do chamado estiver aberta, sem som.
+    if(global.qfSoVibrar&&global.qfSoVibrar()){
+      const pulse=function(){try{if(navigator.vibrate)navigator.vibrate([600,300,600,300,600]);}catch(_){}};
+      pulse();vibTimer=setInterval(pulse,3000);return;
+    }
+    try{audio=new Audio('./quemfaz_chamado.mp3');audio.loop=true;audio.volume=1;const p=audio.play();if(p&&p.catch)p.catch(function(){});}catch(_){}
+  }
   function stopTimer(){if(countdown){clearInterval(countdown);countdown=null;}}
   function close(clearAll){stopTimer();stopAudio();const el=document.getElementById('qf-call-overlay');if(el)el.remove();if(clearAll)queue=[];activeId='';seconds=30;}
   function updateTimer(){
