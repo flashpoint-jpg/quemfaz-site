@@ -7086,7 +7086,7 @@ alt=""></noscript>
           walletInfoRow('lock', 'O cliente fica só com você', 'Em muitos apps, o mesmo pedido vai para 3 ou 4 profissionais e ganha quem cobra menos. No QuemFaz, quem desbloqueia primeiro fica com o cliente. Ninguém mais pega o mesmo chamado.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
           walletInfoRow('refresh', 'Seu dinheiro volta se não der certo', 'Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a sua carteira. Se foi pelo plano, o chamado volta para o plano.') +
-          walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não.') +
+          walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não. Você escolhe o horário: fora dele, estando offline, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
           walletInfoRow('creditCard', 'Pagamento seguro', 'Recargas por Pix, cartão ou boleto pelo Efí Bank. O saldo entra assim que o pagamento é confirmado.') +
         '</div>' +
@@ -7095,7 +7095,9 @@ alt=""></noscript>
       '<section class="section">' +
         '<div class="section-head"><h2 class="h3">Dúvidas de profissionais</h2></div>' +
         '<div class="stack--sm">' +
-          cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline.') +
+          cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline, dentro do horário que você escolheu.') +
+          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. No seu Perfil, em \u201cQuando receber chamados\u201d, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
+          cfFaq('Posso deixar o aviso só vibrando?', 'Pode. No seu Perfil, em \u201cComo avisar um chamado novo\u201d, escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'Se o pedido ficar 3 dias parado sem resposta, ou o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira.') +
           cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
@@ -8268,7 +8270,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.0';
+  const APP_VERSION = '11.11.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
