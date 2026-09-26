@@ -3409,6 +3409,26 @@ alt=""></noscript>
     });
     const primaryArea = areas[0] || null;
     const w = walletRes.data;
+    // V11.10.1: plano Mensal/Pro ativo (chamados que o profissional ainda pode usar).
+    let planoAtivo = null;
+    try {
+      const planRes = await client.from('qf_planos_profissional')
+        .select('plano,chamados_restantes,chamados_total,valido_ate')
+        .eq('profissional_id', user.id)
+        .gt('valido_ate', new Date().toISOString())
+        .gt('chamados_restantes', 0)
+        .order('valido_ate', { ascending: true });
+      if (!planRes.error && planRes.data && planRes.data.length) {
+        const rows = planRes.data;
+        const ultimo = rows[rows.length - 1];
+        planoAtivo = {
+          plano: ultimo.plano,
+          nome: ultimo.plano === 'pro' ? 'Pro' : 'Mensal',
+          restantes: rows.reduce(function (t, x) { return t + Number(x.chamados_restantes || 0); }, 0),
+          validoAte: rows[0].valido_ate
+        };
+      }
+    } catch (_) {}
     const local = {
       id: user.id,
       nome: p.nome,
@@ -3428,6 +3448,7 @@ alt=""></noscript>
       online: !!pr.online,
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
+      plano: planoAtivo,
       bonusDesbloqueios: 0,
       avaliacaoMedia: Number(pr.avaliacao_media || 0),
       totalAvaliacoes: Number(pr.total_avaliacoes || 0),
@@ -4112,6 +4133,36 @@ alt=""></noscript>
     };
   }
 
+  // V11.10.1: compra de plano Mensal/Pro. O preço vem do servidor; a Efí confirma e o plano ativa sozinho.
+  async function createPlan(plano, metodo) {
+    const pay = await client.rpc('qf_solicitar_plano', { p_plano: plano, p_metodo: metodo || 'pix' });
+    if (pay.error) throw pay.error;
+    const row = pay.data || {};
+    if (!row.recarga_id) throw new Error('O pagamento do plano não foi criado.');
+    let checkout;
+    try {
+      checkout = await startEfiCheckout('recarga', row.recarga_id);
+    } catch (err) {
+      if ((metodo === 'cartao' || metodo === 'boleto') && err && err.qfCheckoutFailed) {
+        const e = new Error('Pagamento com ' + (metodo === 'boleto' ? 'boleto' : 'cartão') + ' indisponível no momento. Use o Pix — o plano é ativado assim que o pagamento for confirmado.');
+        e.qfOfferPix = true;
+        throw e;
+      }
+      throw err;
+    }
+    return {
+      id: row.recarga_id,
+      status: row.status || 'pendente',
+      valor: Number(row.valor_centavos || 0),
+      metodo: row.metodo || metodo || 'pix',
+      checkoutUrl: checkout.checkout_url || null,
+      checkoutId: checkout.checkout_id || null,
+      pixCopyPaste: checkout.pix_copy_paste || null,
+      qrImage: checkout.qr_image || null,
+      provider: checkout.provider || 'efi'
+    };
+  }
+
   async function createCall(data) {
     const city = cityFromId(data.endereco.cidadeId);
     const cat = DB.categoryById(data.categoriaId);
@@ -4216,6 +4267,8 @@ alt=""></noscript>
       valor: Number(out.preco_centavos || 0),
       valorTabela: Number(out.preco_tabela_centavos || out.preco_centavos || 0),
       usouBonus: out.usou_bonus === true || out.origem === 'bonus',
+      origem: out.origem || 'saldo',
+      planoRestantes: out.plano_restantes == null ? null : Number(out.plano_restantes),
       saldo: prof ? Number(prof.creditos || 0) : Number(out.saldo_centavos || 0),
       bonusDesbloqueios: 0
     };
@@ -4491,6 +4544,7 @@ alt=""></noscript>
     signOut: signOut,
     startEfiCheckout: startEfiCheckout,
     createRecharge: createRecharge,
+    createPlan: createPlan,
     createCall: createCall,
     unlockCall: unlockCall,
     sendQuote: sendQuote,
@@ -6684,7 +6738,7 @@ alt=""></noscript>
 
         '<div class="section btn-row">' +
           '<button class="btn btn--outline" data-action="recusar-chamada">Agora não</button>' +
-          '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + (primeiraGratis ? 'Desbloquear grátis' : 'Desbloquear ' + PU.formatCurrency(valor)) + '</button>' +
+          '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + (primeiraGratis ? 'Desbloquear grátis' : (user.plano && user.plano.restantes > 0 ? 'Desbloquear com o plano (' + user.plano.restantes + ' restantes)' : 'Desbloquear ' + PU.formatCurrency(valor))) + '</button>' +
         '</div>' +
       '</div>'
     );
@@ -6881,13 +6935,15 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
+        walletPlanosSection(user) +
+
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
-            '<div class="list-item" data-nav="/profissional/como-funciona"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Pague menos por chamado. Veja como funciona.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
+            '<div class="list-item" data-nav="/profissional/como-funciona"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos, preços e devolução.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas e você não quiser esperar, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
           '</div>' +
         '</div>' +
@@ -6922,13 +6978,35 @@ alt=""></noscript>
     '</button>';
   }
 
+  // V11.10.1: planos Mensal e Pro na carteira (compra e liberação 100% automáticas).
+  function walletPlanosSection(user) {
+    const ativo = user && user.plano && user.plano.restantes > 0 ? user.plano : null;
+    const validade = ativo && ativo.validoAte ? new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '';
+    function buy(plano, nome, preco, valor, detalhe, destaque) {
+      return '<div class="card row-between" style="gap:12px;' + (destaque ? 'border:2px solid var(--orange-500);' : '') + '">' +
+        '<div><div class="text--strong">' + nome + ' · ' + preco + '<span class="text--sm text--secondary" style="font-weight:600;"> por 30 dias</span></div><div class="text--sm text--secondary">' + detalhe + '</div></div>' +
+        '<button class="btn btn--primary btn--sm" type="button" data-action="assinar-plano" data-plano="' + plano + '" data-valor="' + valor + '" style="flex:none;width:auto;">Assinar</button>' +
+      '</div>';
+    }
+    return '<div class="section" id="carteira-planos">' +
+      '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
+      (ativo
+        ? '<div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div></div>'
+        : '') +
+      '<div class="stack stack--sm">' +
+        buy('mensal', 'Mensal', 'R$ 49,90', 4990, '10 chamados · sai a R$ 4,99 cada', false) +
+        buy('pro', 'Pro', 'R$ 99,90', 9990, '25 chamados · sai a R$ 4,00 cada', true) +
+      '</div>' +
+      '<p class="text--sm text--secondary" style="margin-top:8px;">Paga com a forma escolhida acima (Pix, cartão ou boleto). O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
+    '</div>';
+  }
+
   function walletInfoRow(iconName, title, subtitle) {
     return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon(iconName) + '</div><div class="list-item__body"><div class="list-item__title">' + title + '</div><div class="list-item__sub">' + subtitle + '</div></div></div>';
   }
 
   // ---------------- Como funciona (V11.10.0) ----------------
   // Tela única que explica o app, preços, planos e diferenciais. Aberta a visitantes, clientes e profissionais.
-  const QF_WHATS_PLANOS = '5535998845703';
   const QF_PRECOS_FAIXAS = [
     { valor: 'R$ 4,90', cats: 'Diarista, jardinagem e outros serviços' },
     { valor: 'R$ 7,90', cats: 'Montador de móveis, eletricista, encanador, pintor, chaveiro, informática, borracheiro, motorista e entregador' },
@@ -6955,9 +7033,11 @@ alt=""></noscript>
   Screens.comoFuncionaRender = function () {
     const session = DB.getSession();
     const role = session && session.role;
-    const zap = function (plano) {
-      const txt = 'Olá! Quero assinar o plano ' + plano + ' do QuemFaz.';
-      return '<a class="btn btn--primary" href="https://wa.me/' + QF_WHATS_PLANOS + '?text=' + encodeURIComponent(txt) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Assinar pelo WhatsApp</a>';
+    // Profissional logado assina na carteira; visitante faz o cadastro primeiro.
+    const assinar = function (plano) {
+      if (role === 'profissional') return '<button class="btn btn--primary" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Assinar o plano ' + plano + '</button>';
+      if (role === 'cliente') return '';
+      return '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/cadastro">' + icon('briefcase') + ' Cadastrar e assinar</button>';
     };
 
     const profissional =
@@ -6988,13 +7068,13 @@ alt=""></noscript>
             ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
             role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
           cfPlano('Mensal', false, 'R$ 49,90', 'por mês', '10 chamados por mês',
-            ['Sai a R$ 4,99 por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem fidelidade: cancela quando quiser'],
-            zap('Mensal (R$ 49,90)')) +
+            ['Sai a R$ 4,99 por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática e sem fidelidade'],
+            assinar('Mensal')) +
           cfPlano('Pro', true, 'R$ 99,90', 'por mês', '25 chamados por mês',
-            ['Sai a R$ 4,00 por chamado', 'Perfil em destaque para os clientes', 'Sem fidelidade: cancela quando quiser'],
-            zap('Pro (R$ 99,90)')) +
+            ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'O menor preço por chamado do QuemFaz', 'Sem renovação automática e sem fidelidade'],
+            assinar('Pro')) +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">Os chamados do plano valem por 30 dias a partir do pagamento. Por enquanto, a assinatura dos planos Mensal e Pro é feita pelo WhatsApp com a equipe QuemFaz.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na Carteira, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
       '</section>' +
 
       '<section class="section">' +
@@ -7002,7 +7082,7 @@ alt=""></noscript>
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente fica só com você', 'Em muitos apps, o mesmo pedido vai para 3 ou 4 profissionais e ganha quem cobra menos. No QuemFaz, quem desbloqueia primeiro fica com o cliente. Ninguém mais pega o mesmo chamado.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
-          walletInfoRow('refresh', 'Seu dinheiro volta se não der certo', 'Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a sua carteira.') +
+          walletInfoRow('refresh', 'Seu dinheiro volta se não der certo', 'Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a sua carteira. Se foi pelo plano, o chamado volta para o plano.') +
           walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
           walletInfoRow('creditCard', 'Pagamento seguro', 'Recargas por Pix, cartão ou boleto pelo Efí Bank. O saldo entra assim que o pagamento é confirmado.') +
@@ -7017,7 +7097,9 @@ alt=""></noscript>
           cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
           cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
-          cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm fidelidade: é só não renovar no mês seguinte.') +
+          cfFaq('Como assino um plano?', 'Na aba Carteira, em Planos, toque em Assinar e pague por Pix, cartão ou boleto. O plano é ativado sozinho quando o pagamento é confirmado, sem precisar falar com ninguém.') +
+          cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm renovação automática nem fidelidade: é só não comprar de novo no mês seguinte.') +
+          cfFaq('E se eu comprar outro plano antes de acabar?', 'Os chamados que sobraram passam para o plano novo, e a validade conta de novo a partir da compra.') +
         '</div>' +
       '</section>';
 
@@ -7050,8 +7132,8 @@ alt=""></noscript>
       (role === 'cliente' ? cliente + profissional : profissional + cliente) +
       '<section class="section"><div class="card stack stack--sm" style="text-align:center;align-items:stretch;">' +
         '<div class="h3">Ainda ficou com dúvida?</div>' +
-        '<p class="text--sm text--secondary" style="margin:0;">Fale com a equipe QuemFaz.</p>' +
-        '<a class="btn btn--outline" href="https://wa.me/' + QF_WHATS_PLANOS + '?text=' + encodeURIComponent('Olá! Tenho uma dúvida sobre o QuemFaz.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
+        '<p class="text--sm text--secondary" style="margin:0;">Fale com o suporte QuemFaz aqui pelo app.</p>' +
+        '<button class="btn btn--outline" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button>' +
         (role ? '' : '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/cadastro">' + icon('briefcase') + ' Quero me cadastrar como profissional</button>') +
       '</div></section>' +
     '</div>';
@@ -7611,19 +7693,22 @@ alt=""></noscript>
         const req = DB.requestById(params.id);
         const valor = req ? DB.leadFeeForRequest(req) : 0;
         const primeiraGratis = false;
+        const usaPlano = !!(user && user.plano && user.plano.restantes > 0);
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: primeiraGratis
             ? 'Nenhum crédito será usado neste primeiro chamado. O contato e o endereço completo do cliente serão liberados. Nos próximos chamados, será necessário ter saldo na Carteira QuemFaz.'
-            : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Depois disso, o contato e o endereço completo do cliente serão liberados para você.',
-          okLabel: primeiraGratis ? 'Desbloquear grátis' : 'Pagar e desbloquear'
+            : (usaPlano
+              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). Seu saldo não é usado. Depois disso, o contato e o endereço completo do cliente serão liberados para você.'
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Depois disso, o contato e o endereço completo do cliente serão liberados para você.'),
+          okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
           const result = (global.QFCloud && global.QFCloud.enabled)
             ? await global.QFCloud.unlockCall(params.id, user.id)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
-            PU.toast(result.usouBonus ? 'Primeiro chamado desbloqueado GRÁTIS! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.', 'success');
+            PU.toast(result.usouBonus ? 'Primeiro chamado desbloqueado GRÁTIS! Contato liberado.' : (result.origem === 'plano' ? 'Chamado desbloqueado pelo seu plano! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.'), 'success');
             global.navigate('/profissional/pedido/' + params.id, true);
             return;
           }
@@ -7818,6 +7903,13 @@ alt=""></noscript>
       badge.textContent = 'Selecionado';
     });
 
+    content.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-action="assinar-plano"]');
+      if (!b) return;
+      const method = action.getAttribute('data-wallet-selected-method') || 'pix';
+      openRechargeSheet(user, Number(b.getAttribute('data-valor') || 0), method, b.getAttribute('data-plano'));
+    });
+
     action.addEventListener('click', function () {
       const valor = selectedValue();
       if (valor < 500) { PU.toast('A recarga mínima é R$ 5,00.', 'danger'); return; }
@@ -7826,7 +7918,8 @@ alt=""></noscript>
     });
   }
 
-  function openRechargeSheet(user, valor, method) {
+  function openRechargeSheet(user, valor, method, plano) {
+    const planoNome = plano === 'pro' ? 'Pro' : (plano === 'mensal' ? 'Mensal' : '');
     const displayValue = PU.formatCurrency(valor);
     if (global.QFCloud && global.QFCloud.enabled) {
       const methodLabel = method === 'cartao' ? 'cartão de crédito' : (method === 'boleto' ? 'boleto' : 'Pix');
@@ -7834,11 +7927,11 @@ alt=""></noscript>
         '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('wallet') + '</div>' +
         '<h3 class="sheet__title" style="text-align:center;">Gerando pagamento</h3>' +
         '<p class="text text--secondary" style="text-align:center;">Preparando ' + methodLabel + ' de <strong>' + displayValue + '</strong> no Efí Bank...</p>' +
-        '<div class="text--sm text--secondary" style="text-align:center;">O saldo só entra após a confirmação do pagamento.</div></div>'
+        '<div class="text--sm text--secondary" style="text-align:center;">' + (plano ? 'O plano ' + planoNome + ' é ativado sozinho após a confirmação do pagamento.' : 'O saldo só entra após a confirmação do pagamento.') + '</div></div>'
       );
       (async function () {
         try {
-          const rec = await global.QFCloud.createRecharge(valor, method);
+          const rec = await (plano ? global.QFCloud.createPlan(plano, method) : global.QFCloud.createRecharge(valor, method));
           if (method === 'pix' && (rec.pixCopyPaste || rec.qrImage)) {
             const qrHtml = rec.qrImage
               ? '<div class="card" style="padding:14px;text-align:center;background:#fff;"><img src="' + PU.escapeHtml(rec.qrImage) + '" alt="QR Code Pix" style="width:min(230px,72vw);height:auto;display:block;margin:0 auto;border-radius:12px;"></div>'
@@ -7849,10 +7942,10 @@ alt=""></noscript>
             PU.openSheet(
               '<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bolt') + '</div>' +
               '<h3 class="sheet__title" style="text-align:center;">Pague com Pix</h3>' +
-              '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' · pague sem sair do QuemFaz.</p>' +
+              '<p class="text text--secondary" style="text-align:center;">' + (plano ? 'Plano ' + planoNome + ' · ' : '') + displayValue + ' · pague sem sair do QuemFaz.</p>' +
               qrHtml + codeHtml +
-              '<button class="btn btn--primary" id="wallet-refresh-after-pay">Já paguei · atualizar saldo</button>' +
-              '<p class="text--sm text--secondary" style="text-align:center;">O saldo entra automaticamente assim que a Efí confirmar o Pix.</p></div>'
+              '<button class="btn btn--primary" id="wallet-refresh-after-pay">' + (plano ? 'Já paguei · ver meu plano' : 'Já paguei · atualizar saldo') + '</button>' +
+              '<p class="text--sm text--secondary" style="text-align:center;">' + (plano ? 'O plano ' + planoNome + ' é ativado automaticamente assim que a Efí confirmar o Pix.' : 'O saldo entra automaticamente assim que a Efí confirmar o Pix.') + '</p></div>'
             );
             const copyPix = document.getElementById('wallet-pix-real-copy');
             if (copyPix) copyPix.onclick = async function () {
@@ -7884,7 +7977,7 @@ alt=""></noscript>
             '<h3 class="sheet__title" style="text-align:center;">Pagamento seguro</h3>' +
             '<p class="text text--secondary" style="text-align:center;">' + displayValue + ' via ' + methodLabel + '. Você será direcionado ao Efí Bank para concluir.</p>' +
             '<a class="btn btn--primary" href="' + PU.escapeHtml(rec.checkoutUrl) + '" rel="noopener">Ir para o Efí Bank</a>' +
-            '<button class="btn btn--outline" id="wallet-refresh-after-pay">Já paguei · atualizar saldo</button>' +
+            '<button class="btn btn--outline" id="wallet-refresh-after-pay">' + (plano ? 'Já paguei · ver meu plano' : 'Já paguei · atualizar saldo') + '</button>' +
             '<p class="text--sm text--secondary" style="text-align:center;">O QuemFaz não recebe nem armazena número do cartão ou CVV.</p></div>'
           );
           const refresh = document.getElementById('wallet-refresh-after-pay');
@@ -8102,7 +8195,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.10.0';
+  const APP_VERSION = '11.10.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
