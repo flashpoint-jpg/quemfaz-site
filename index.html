@@ -8274,8 +8274,13 @@ alt=""></noscript>
   // Enquanto o app estiver em teste fechado, "Baixar" leva à página de como virar testador.
   // Quando for para produção, troque por 'https://play.google.com/store/apps/details?id=br.app.quemfaz'.
   const PLAY_DOWNLOAD_URL = './testar/';
+  // 12.2: a Google Play é para o profissional (chamado tocando alto). Cliente logado não vê "Google Play".
+  function sessionRole() {
+    try { const s = global.DB && global.DB.getSession ? global.DB.getSession() : null; return (s && s.role) || ''; } catch (_) { return ''; }
+  }
   function canOfferInstall() {
     if (isNativeApp()) return false;     // já é o app
+    if (isAndroidBrowser() && sessionRole() === 'cliente') return false; // cliente usa o site normalmente
     if (isRealStandalone()) return false; // app aberto instalado (PWA)
     return true;
   }
@@ -8339,6 +8344,8 @@ alt=""></noscript>
   // Profissional precisa do APK para receber chamados com tela apagada/app fechado.
   function showAndroidInstallEntryNotice() {
     if (!isAndroidBrowser()) return;
+    // 12.2: o aviso "Quer receber pedidos?" só abre sozinho para o profissional logado (cliente e visitante do anúncio não veem).
+    if (sessionRole() !== 'profissional') return;
     try {
       if (sessionStorage.getItem('qf_android_install_entry_notice') === '1') return;
       sessionStorage.setItem('qf_android_install_entry_notice', '1');
