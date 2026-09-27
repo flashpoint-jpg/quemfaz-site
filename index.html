@@ -1761,6 +1761,57 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
   .qf-top-dl{padding:0 10px;font-size:12.5px}
   .qf-landing-topbar .btn.qf-landing-login{padding:0 10px}
 }
+
+/* ================= V11.12 — ativação do profissional e cidade pelo CEP ================= */
+.qf-ativacao{border:2px solid var(--orange-500)!important;padding:16px!important}
+.qf-ativacao__eyebrow{margin:0 0 8px;font-size:13px;font-weight:800;color:var(--orange-700);overflow-wrap:anywhere}
+.qf-ativacao__head{display:flex;align-items:flex-start;gap:12px}
+.qf-ativacao__icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--orange-500);color:#fff}
+.qf-ativacao__icon svg{width:22px;height:22px}
+.qf-ativacao__headtxt{flex:1;min-width:0}
+.qf-ativacao__title{margin:0;font-size:18px;line-height:1.25;font-weight:900;letter-spacing:-.01em;color:var(--navy-900)}
+.qf-ativacao__msg{margin:3px 0 0;font-size:14px;line-height:1.45;color:var(--text-secondary);overflow-wrap:anywhere}
+.qf-ativacao__count{flex:none;margin-top:2px}
+.qf-ativacao .qf-progress-track{margin:14px 0 4px}
+.qf-ativacao__steps{list-style:none;margin:0;padding:0}
+.qf-ativ-step{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-top:1px solid var(--border-subtle)}
+.qf-ativ-step:first-child{border-top:0}
+.qf-ativ-step__mark{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--orange-100);color:var(--orange-700);font-size:14px;font-weight:900}
+.qf-ativ-step__mark svg{width:16px;height:16px}
+.qf-ativ-step.is-done .qf-ativ-step__mark{background:var(--success-100);color:var(--success-600)}
+.qf-ativ-step__body{flex:1;min-width:0}
+.qf-ativ-step__top{display:flex;align-items:center;justify-content:space-between;gap:6px 10px;flex-wrap:wrap;min-height:28px}
+.qf-ativ-step__title{font-size:15px;font-weight:800;line-height:1.3;color:var(--text-primary)}
+.qf-ativ-step.is-done .qf-ativ-step__title{font-weight:700;color:var(--text-secondary)}
+.qf-ativ-step__state{flex:none;padding:5px 9px;border-radius:999px;background:var(--warning-100);color:var(--warning-600);font-size:12px;font-weight:800;line-height:1;white-space:nowrap}
+.qf-ativ-step__state.is-done{background:var(--success-100);color:var(--success-600)}
+.qf-ativ-step__text{margin:4px 0 10px;font-size:13.5px;line-height:1.45;color:var(--text-secondary)}
+.qf-ativ-step .btn{height:auto;min-height:48px;padding:10px 16px;line-height:1.2;white-space:normal}
+.qf-ativacao.is-ready{border-color:var(--success-600)!important;background:var(--success-100)!important}
+.qf-ativacao.is-ready .qf-ativacao__icon{background:var(--success-600)}
+.qf-ativacao__x{all:unset;cursor:pointer;flex:none;display:grid;place-items:center;width:36px;height:36px;margin:-6px -6px 0 0;border-radius:50%;color:var(--text-secondary)}
+.qf-ativacao__x svg{width:18px;height:18px}
+.qf-ativacao__x:focus-visible{outline:2px solid var(--navy-700);outline-offset:2px}
+.qf-ativacao__chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.qf-ativ-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:#fff;color:var(--success-600);font-size:12.5px;font-weight:800}
+.qf-ativ-chip svg{width:14px;height:14px}
+.qf-prof-status.is-offline{box-shadow:0 0 0 3px var(--orange-500),var(--shadow-card)!important}
+.qf-off-dot{display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:50%;background:var(--orange-400);box-shadow:0 0 0 4px rgba(255,149,72,.28);vertical-align:middle}
+@media (min-width:768px){
+  #app-shell[data-route="profissional-home"] .view > .qf-ativacao{grid-column:1 / -1;height:auto}
+  .qf-ativacao__steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:10px}
+  .qf-ativ-step,.qf-ativ-step:first-child{border:1px solid var(--border-subtle);border-radius:16px;padding:14px;background:var(--bg-surface)}
+  .qf-ativ-step__body{align-self:stretch;display:flex;flex-direction:column}
+  .qf-ativ-step .btn{margin-top:auto}
+  .qf-ativacao.is-ready .qf-ativacao__chips{margin-left:52px}
+}
+.input.is-locked{background:var(--bg-sunken);cursor:default}
+.select.is-locked{background-color:var(--bg-sunken);pointer-events:none}
+.qf-cidade-cep{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:-4px;font-size:13px;font-weight:700;color:var(--success-600)}
+.qf-cidade-cep[hidden]{display:none}
+.qf-cidade-cep svg{width:16px;height:16px;flex:none}
+.qf-cidade-cep__txt{flex:1 1 180px;min-width:0}
+.qf-cidade-cep .btn{width:auto;height:36px;min-height:36px;padding:0 12px;font-size:13px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -3290,6 +3341,7 @@ alt=""></noscript>
       p.online = out.online;
       DB.persist();
     }
+    if (p && typeof out.offline_manual === 'boolean') p.offlineManual = out.offline_manual;
     return out;
   }
 
@@ -3474,6 +3526,7 @@ alt=""></noscript>
       documentos: { rg: false, cpf: false, comprovanteEndereco: false },
       statusAprovacao: 'aprovado',
       online: !!pr.online,
+      offlineManual: !!pr.offline_manual, // V11.12: tocou em "Ficar offline" (escolheu ficar offline)
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
       plano: planoAtivo,
@@ -4410,7 +4463,7 @@ alt=""></noscript>
     const res = await client.from('qf_profissionais').update(upd).eq('user_id', uRes.data.user.id);
     if (res.error) throw res.error;
     const p = DB.profissionalById(uRes.data.user.id);
-    if (p) p.online = !!online;
+    if (p) { p.online = !!online; if (!automatico) p.offlineManual = !online; }
     DB.persist();
     if (online) await syncProfessionalCalls(uRes.data.user.id);
     return p;
@@ -4944,27 +4997,46 @@ alt=""></noscript>
     function set(name, value) { const el=form.querySelector('[name="'+name+'"]'); if (el && value != null && value !== '') el.value=value; }
     set('cep', data.cep); set('rua', data.rua); set('bairro', data.bairro); set('cidade', data.cidade); set('uf', data.uf); set('latitude', data.latitude); set('longitude', data.longitude);
   }
-  function bindAddressForm(form) {
+  // opts (V11.12, opcionais — sem opts o comportamento é o de antes):
+  //   buscarAoCompletar: busca o CEP assim que os 8 números são digitados (antes de a pessoa ir para a cidade);
+  //   onFill(data, origem): chamado depois de preencher pelo CEP ('cep') ou pelo GPS ('gps').
+  function bindAddressForm(form, opts) {
     if (!form) return;
+    opts = opts || {};
     const cep = form.querySelector('[name="cep"]');
     const cpf = form.querySelector('[name="cpf"]');
     const cepBtn = form.querySelector('[data-lookup-cep]');
     const locBtn = form.querySelector('[data-use-location]');
+    let cepAplicado = '';
+    function aplicar(data, origem) {
+      fillAddress(form, data);
+      if (origem === 'cep') cepAplicado = normalizeCep(data && data.cep);
+      if (opts.onFill) { try { opts.onFill(data, origem); } catch (_) {} }
+    }
+    // Resposta atrasada de um CEP que já foi trocado não sobrescreve a cidade.
+    function aindaEhOCep(data) { return !cep || normalizeCep(cep.value) === normalizeCep(data && data.cep); }
     if (cep) {
-      cep.addEventListener('input', function () { cep.value = formatCep(cep.value); });
+      cep.addEventListener('input', function () {
+        cep.value = formatCep(cep.value);
+        const atual = normalizeCep(cep.value);
+        if (opts.buscarAoCompletar && atual && atual !== cepAplicado) {
+          lookupCep(atual).then(function (d) { if (aindaEhOCep(d)) aplicar(d, 'cep'); }).catch(function () {});
+        }
+      });
       cep.addEventListener('blur', async function () {
         if (normalizeCep(cep.value).length !== 8) return;
-        try { fillAddress(form, await lookupCep(cep.value)); } catch (_) {}
+        if (opts.buscarAoCompletar && normalizeCep(cep.value) === cepAplicado) return;
+        try { const d = await lookupCep(cep.value); if (aindaEhOCep(d)) aplicar(d, 'cep'); } catch (_) {}
       });
     }
     if (cpf) cpf.addEventListener('input', function () { cpf.value = formatCpf(cpf.value); });
     if (cepBtn) cepBtn.addEventListener('click', async function () {
-      try { cepBtn.disabled=true; fillAddress(form, await lookupCep(cep.value)); if (global.PU) global.PU.toast('CEP localizado e endereço preenchido.', 'success'); }
+      try { cepBtn.disabled=true; aplicar(await lookupCep(cep.value), 'cep'); if (global.PU) global.PU.toast('CEP localizado e endereço preenchido.', 'success'); }
       catch (e) { if (global.PU) global.PU.toast(e.message || 'CEP não encontrado.', 'danger'); }
       finally { cepBtn.disabled=false; }
     });
     if (locBtn) locBtn.addEventListener('click', async function () {
-      try { locBtn.disabled=true; const pos=await currentPosition(); const data=await reverseGeocode(pos.latitude,pos.longitude); fillAddress(form,data); if (global.PU) global.PU.toast('Localização encontrada. Confira o número do endereço.', 'success'); }
+      try { locBtn.disabled=true; const pos=await currentPosition(); const data=await reverseGeocode(pos.latitude,pos.longitude); aplicar(data, 'gps'); if (global.PU) global.PU.toast('Localização encontrada. Confira o número do endereço.', 'success'); }
       catch (e) { if (global.PU) global.PU.toast(e.message || 'Não foi possível localizar o endereço.', 'danger'); }
       finally { locBtn.disabled=false; }
     });
@@ -5184,8 +5256,9 @@ alt=""></noscript>
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 4</div><div class="h2">Onde você atende</div><div class="text--sm text--secondary">Toque em Usar GPS ou digite seu CEP.</div><div class="qf-step__bar"><span style="width:75%"></span></div></div>' +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
-          field('Cidade base', '<input class="input" name="cidade" required placeholder="Digite sua cidade">') +
+          field('Cidade base', '<input class="input" name="cidade" required maxlength="80" autocapitalize="words" placeholder="Digite sua cidade">') +
           field('Estado (UF)', '<select class="select" name="uf" required>' + ufOpts + '</select>') +
+          '<div class="qf-cidade-cep" data-cidade-cep hidden>' + icon('checkCircle') + '<span class="qf-cidade-cep__txt">Cidade e estado localizados pelo CEP.</span><button class="btn btn--outline" type="button" data-cidade-alterar>Alterar</button></div>' +
           '<input type="hidden" name="latitude"><input type="hidden" name="longitude">' +
           field('Raio de atendimento: <span id="raio-valor">10</span> km', '<input class="input" type="range" name="raioKm" min="1" max="200" step="1" value="10" id="raio-range">') +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">Depois do cadastro você pode adicionar várias cidades e definir um raio diferente para cada uma no Perfil.</div></div>' +
@@ -5409,7 +5482,86 @@ alt=""></noscript>
 
     if (pattern === '/auth/:role/cadastro' && params.role === 'profissional') {
       const form = content.querySelector('#cadastro-prof-form');
-      global.QFGeo.bindAddressForm(form);
+      // V11.12: a cidade vem do CEP (ou do CEP achado pelo GPS) e fica travada para não ser editada sem querer
+      // (ex.: "São Pauloulo" — o CEP preenchia a cidade enquanto a pessoa ainda digitava). "Alterar" libera a edição.
+      const cidadeInput = form.querySelector('[name="cidade"]');
+      const ufSelect = form.querySelector('[name="uf"]');
+      const cidadeAviso = form.querySelector('[data-cidade-cep]');
+      let cidadeCep = null;       // { cidade, uf, cep } localizada pelo CEP
+      let cidadeConfirmada = '';  // cidade diferente do CEP que a pessoa já confirmou
+      function normCidade(v) { return String(v || '').replace(/\s+/g, ' ').trim(); }
+      function chaveCidade(v) { return normCidade(v).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+      function travarCidade(travar) {
+        cidadeInput.readOnly = !!travar;
+        cidadeInput.classList.toggle('is-locked', !!travar);
+        ufSelect.classList.toggle('is-locked', !!travar);
+        if (travar) ufSelect.setAttribute('aria-disabled', 'true'); else ufSelect.removeAttribute('aria-disabled');
+        cidadeAviso.hidden = !travar;
+      }
+      function aplicarCidadeDoCep(d) {
+        const cidade = normCidade(d && d.cidade);
+        const uf = String((d && d.uf) || '').trim().toUpperCase();
+        if (!cidade || global.QFGeo.UF_LIST.indexOf(uf) === -1) { cidadeCep = null; travarCidade(false); return; }
+        cidadeCep = { cidade: cidade, uf: uf, cep: global.QFGeo.normalizeCep(d.cep) };
+        cidadeConfirmada = '';
+        if (document.activeElement === cidadeInput) { try { cidadeInput.blur(); } catch (_) {} }
+        cidadeInput.value = cidade;
+        ufSelect.value = uf;
+        cidadeInput.style.borderColor = ''; ufSelect.style.borderColor = '';
+        travarCidade(true);
+      }
+      global.QFGeo.bindAddressForm(form, {
+        buscarAoCompletar: true,
+        onFill: function (d, origem) {
+          if (origem !== 'gps') { aplicarCidadeDoCep(d); return; }
+          // GPS: o nome oficial da cidade vem do CEP encontrado na localização (quando houver).
+          const cepGps = global.QFGeo.normalizeCep(d && d.cep);
+          if (!cepGps) { cidadeCep = null; travarCidade(false); return; }
+          global.QFGeo.lookupCep(cepGps).then(function (oficial) {
+            if (global.QFGeo.normalizeCep(form.querySelector('[name="cep"]').value) === cepGps) aplicarCidadeDoCep(oficial);
+          }).catch(function () { cidadeCep = null; travarCidade(false); });
+        }
+      });
+      form.querySelector('[name="cep"]').addEventListener('input', function () {
+        // CEP trocado: a cidade antiga deixa de valer até a nova busca terminar.
+        if (cidadeCep && global.QFGeo.normalizeCep(this.value) !== cidadeCep.cep) { cidadeCep = null; travarCidade(false); }
+      });
+      form.querySelector('[data-cidade-alterar]').addEventListener('click', function () {
+        travarCidade(false);
+        try { cidadeInput.focus(); cidadeInput.select(); } catch (_) {}
+      });
+      ufSelect.addEventListener('keydown', function (e) { if (ufSelect.classList.contains('is-locked') && e.key !== 'Tab') e.preventDefault(); });
+      cidadeInput.addEventListener('blur', function () { const v = normCidade(cidadeInput.value); if (v !== cidadeInput.value) cidadeInput.value = v; });
+      function perguntarCidadeDiferente(cidade, uf) {
+        return new Promise(function (resolve) {
+          PU.openSheet('<div class="stack">' +
+            '<h3 class="sheet__title">Confira a cidade</h3>' +
+            '<p class="text text--secondary">A cidade informada é diferente da localizada pelo CEP. Deseja continuar?</p>' +
+            '<div class="card card--tight" style="background:var(--bg-sunken);border:none;">' +
+              '<div class="text--sm"><strong>Pelo CEP:</strong> ' + PU.escapeHtml(cidadeCep.cidade + ' - ' + cidadeCep.uf) + '</div>' +
+              '<div class="text--sm" style="margin-top:4px;"><strong>Informada:</strong> ' + PU.escapeHtml(cidade + ' - ' + uf) + '</div></div>' +
+            '<button class="btn btn--primary" type="button" id="qf-cidade-continuar">Continuar</button>' +
+            '<button class="btn btn--outline" type="button" id="qf-cidade-usar-cep">Usar a cidade do CEP</button></div>', { persistent: true });
+          document.getElementById('qf-cidade-continuar').onclick = function () { PU.closeSheet(); resolve('continuar'); };
+          document.getElementById('qf-cidade-usar-cep').onclick = function () { PU.closeSheet(); resolve('cep'); };
+        });
+      }
+      // Cidade mudada à mão depois do CEP: pede confirmação (não corrige sozinho um nome diferente).
+      async function confirmarCidade() {
+        if (!cidadeCep) return true;
+        const cidade = normCidade(cidadeInput.value);
+        const uf = String(ufSelect.value || '').toUpperCase();
+        if (chaveCidade(cidade) === chaveCidade(cidadeCep.cidade) && uf === cidadeCep.uf) {
+          cidadeInput.value = cidadeCep.cidade; // mesma cidade (só acento, maiúscula ou espaço): fica o nome oficial
+          return true;
+        }
+        const chave = chaveCidade(cidade) + '|' + uf;
+        if (cidadeConfirmada === chave) return true;
+        const resp = await perguntarCidadeDiferente(cidade, uf);
+        if (resp === 'cep') { aplicarCidadeDoCep(cidadeCep); return true; }
+        cidadeConfirmada = chave;
+        return true;
+      }
       const chipsWrap = content.querySelector('#cadastro-prof-cats');
       const hiddenInput = content.querySelector('#cadastro-prof-cats-input');
       const selfieInput = content.querySelector('#cadastro-prof-selfie');
@@ -5482,13 +5634,25 @@ alt=""></noscript>
         }
         if (n === 3) {
           if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite o CEP de onde você trabalha.', 'danger'); marcarErro('cep'); return false; }
-          if (!String(fd.get('cidade') || '').trim()) { PU.toast('Digite sua cidade.', 'danger'); marcarErro('cidade'); return false; }
+          const cidadeTxt = normCidade(fd.get('cidade'));
+          if (!cidadeTxt) { PU.toast('Digite sua cidade.', 'danger'); marcarErro('cidade'); return false; }
+          // Nome de cidade não tem números (evita CEP ou número digitado no campo da cidade).
+          if (/\d/.test(cidadeTxt) || (cidadeTxt.match(/\p{L}/gu) || []).length < 2) { PU.toast('Digite o nome da sua cidade, sem números.', 'danger'); marcarErro('cidade'); return false; }
           if (!fd.get('uf')) { PU.toast('Escolha seu estado (UF).', 'danger'); marcarErro('uf'); return false; }
         }
         return true;
       }
+      let avancando = false;
+      async function avancar() {
+        if (avancando || !validarEtapa(stepAtual)) return;
+        avancando = true;
+        try {
+          if (stepAtual === 3 && !(await confirmarCidade())) return;
+          goStep(Math.min(4, stepAtual + 1));
+        } finally { avancando = false; }
+      }
       form.addEventListener('click', function (e) {
-        if (e.target.closest('[data-step-next]')) { if (validarEtapa(stepAtual)) goStep(Math.min(4, stepAtual + 1)); }
+        if (e.target.closest('[data-step-next]')) avancar();
         else if (e.target.closest('[data-step-back]')) goStep(Math.max(1, stepAtual - 1));
       });
       const raioRange = content.querySelector('#raio-range');
@@ -5498,8 +5662,9 @@ alt=""></noscript>
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         // Enter no teclado numa etapa do meio = Continuar.
-        if (stepAtual < 4) { if (validarEtapa(stepAtual)) goStep(stepAtual + 1); return; }
+        if (stepAtual < 4) { avancar(); return; }
         for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
+        if (!(await confirmarCidade())) { goStep(3); return; }
         const fd = new FormData(form);
         if (!selfieData) {
           try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
@@ -5518,7 +5683,7 @@ alt=""></noscript>
         if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Digite um CEP válido da sua base.', 'danger'); return; }
         const dados = {
           nome: fd.get('nome').trim(), email: String(fd.get('email') || '').trim().toLowerCase(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf,
-          categorias: selected, cidade: fd.get('cidade').trim(), uf: fd.get('uf'), cep: fd.get('cep').trim(),
+          categorias: selected, cidade: normCidade(fd.get('cidade')), uf: fd.get('uf'), cep: fd.get('cep').trim(),
           latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null, raioKm: Number(fd.get('raioKm')),
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
           selfieData: selfieData
@@ -5530,6 +5695,8 @@ alt=""></noscript>
           if (global.QFCloud && global.QFCloud.enabled) {
             const res = await global.QFCloud.signUp('profissional', dados);
             if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return; }
+            // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
+            if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
             if (res.needsConfirmation) {
               PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
               global.navigate('/auth/profissional/login', true);
@@ -5547,6 +5714,7 @@ alt=""></noscript>
           const localCity = foundCity || DB.criarCidade(dados.cidade, dados.uf);          dados.cidadeId = localCity.id;
           const user = DB.cadastrarProfissional(dados);
           DB.setSession({ role: 'profissional', userId: user.id });
+          if (global.QFAtivacao) global.QFAtivacao.boasVindas(user.id);
           PU.toast('Cadastro criado! Você ganhou R$ 25 em créditos para começar.', 'success');
           if (sessionStorage.getItem('qf_pending_ad_draft')) {
             global.navigate('/profissional/anuncie', true);
@@ -6799,7 +6967,193 @@ alt=""></noscript>
     return '<div class="card qf-profile-progress"><div class="qf-profile-progress__head"><div><div class="text--strong">Seu perfil está '+ready+' de 6 pronto</div><div class="text--sm text--secondary">Complete estes itens para receber chamados sem interrupção.</div></div><span class="badge badge--orange">'+ready+'/6</span></div><div class="qf-progress-track" aria-label="'+ready+' de 6 itens concluídos"><div class="qf-progress-fill" style="width:'+Math.round(ready/6*100)+'%"></div></div><div class="qf-progress-list">'+items.map(function(i){return '<div class="qf-progress-item"><span class="qf-progress-item__mark'+(i.done?' is-done':'')+'">'+icon(i.done?'check':'info')+'</span><span class="text--sm spacer">'+PU.escapeHtml(i.label)+'</span>'+(i.done?'':i.action)+'</div>';}).join('')+'</div></div>';
   }
 
+  // ---------------- V11.12: ativação do profissional (instalar o app, notificações e online) ----------------
+  // Nada é salvo no banco: cada etapa vem do estado real (app aberto no APK/instalado, notificações
+  // registradas no QFPush e online no banco). Só marcas de interface ficam no aparelho.
+  const ATIV_OK = 'qf_ativacao_ok_';        // já concluiu as 3 etapas neste aparelho
+  const ATIV_FESTA = 'qf_ativacao_festa_';  // mostrando "Tudo pronto!" nesta sessão (some ao fechar ou na próxima abertura)
+  const ATIV_SRV = 'qf_ativacao_srv_';      // cache da consulta ao servidor: app Android com notificação registrada
+  const ATIV_BOAS_VINDAS = 'qf_ativacao_boasvindas'; // acabou de criar a conta (sessão atual)
+  function ativLer(store, key) { try { return global[store].getItem(key); } catch (_) { return null; } }
+  function ativGravar(store, key, val) { try { if (val == null) global[store].removeItem(key); else global[store].setItem(key, val); } catch (_) {} }
+  function ativAndroid() { return /android/i.test(navigator.userAgent || ''); }
+  function ativCelular() { return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || ''); }
+  // App instalado: dentro do app Android, ou (iPhone/computador) aberto pelo ícone instalado.
+  // No Android só o app da Google Play conta, porque é ele que toca com a tela apagada.
+  function ativAppAberto() {
+    const A = global.QFApp;
+    if (A && A.isNativeApp && A.isNativeApp()) return true;
+    if (ativAndroid()) return false;
+    return !!(A && A.isStandalone && A.isStandalone());
+  }
+  function ativServidor(uid) { try { return JSON.parse(ativLer('localStorage', ATIV_SRV + uid) || 'null'); } catch (_) { return null; } }
+  function ativacaoEstado(user) {
+    const srv = ativServidor(user.id) || {};
+    // srv.apk: o app Android já registrou as notificações desta conta (em qualquer aparelho).
+    const app = ativAppAberto() || !!srv.apk;
+    const push = pushJaAtivo() || !!srv.apk;
+    const online = !!user.online;
+    return { app: app, push: push, online: online, feitas: (app ? 1 : 0) + (push ? 1 : 0) + (online ? 1 : 0) };
+  }
+  // '' = sem cartão · 'pendente' = Complete sua ativação · 'pronto' = Tudo pronto!
+  function ativacaoModo(user, st) {
+    const uid = user.id;
+    if (st.feitas === 3) {
+      if (ativLer('localStorage', ATIV_OK + uid) !== '1') { ativGravar('localStorage', ATIV_OK + uid, '1'); ativGravar('sessionStorage', ATIV_FESTA + uid, '1'); }
+      return ativLer('sessionStorage', ATIV_FESTA + uid) === '1' ? 'pronto' : '';
+    }
+    // Quem já ativou (ou tocou em "Ficar offline") e só está offline vê o aviso no cartão de status, sem repetir a ativação.
+    if (st.app && st.push && !st.online && (ativLer('localStorage', ATIV_OK + uid) === '1' || user.offlineManual)) return '';
+    return 'pendente';
+  }
+  // Notificação que dá para ativar aqui mesmo (no Android só dentro do app; no iPhone só pelo ícone da tela de início).
+  function ativPushPossivelAqui() {
+    const P = global.QFPush;
+    if (!P || !P.supported || !P.supported()) return false;
+    return !(ativAndroid() && !(P.isNative && P.isNative()));
+  }
+  // Qual etapa o aviso aponta: a mais importante que dá para fazer agora neste aparelho.
+  function ativacaoPrimeiro(st) {
+    if (!st.push && ativPushPossivelAqui()) return 'push';
+    if (!st.app) return 'app';
+    if (!st.push) return 'push';
+    return 'online';
+  }
+  function ativacaoMensagem(st) {
+    const P = global.QFPush;
+    const alvo = ativacaoPrimeiro(st);
+    if (alvo === 'app') return 'Falta instalar o app para receber chamados mesmo quando o site estiver fechado.';
+    if (alvo === 'push') {
+      const motivo = ativCelular() ? 'receber chamados com o celular bloqueado.' : 'ser avisado dos chamados mesmo com o site fechado.';
+      if (P && P.permission && P.permission() === 'denied') return 'As notificações estão bloqueadas neste aparelho. Libere para ' + motivo;
+      return 'Falta ativar as notificações para você ' + motivo;
+    }
+    return 'Você está offline. Fique online para receber oportunidades.';
+  }
+  function ativacaoPasso(n, id, feito, titulo, texto, botao) {
+    return '<li class="qf-ativ-step' + (feito ? ' is-done' : '') + '" data-ativ-step="' + id + '" data-ativ-feito="' + (feito ? '1' : '0') + '">' +
+      '<span class="qf-ativ-step__mark" aria-hidden="true">' + (feito ? icon('check') : n) + '</span>' +
+      '<div class="qf-ativ-step__body">' +
+        '<div class="qf-ativ-step__top"><span class="qf-ativ-step__title">' + titulo + '</span>' +
+        '<span class="qf-ativ-step__state' + (feito ? ' is-done' : '') + '">' + (feito ? 'Concluído' : 'Pendente') + '</span></div>' +
+        (feito ? '' : '<p class="qf-ativ-step__text">' + texto + '</p>' + botao) +
+      '</div></li>';
+  }
+  function ativacaoCard(user) {
+    const st = ativacaoEstado(user);
+    const modo = ativacaoModo(user, st);
+    if (!modo) return { html: '', pendente: false, estado: st };
+    if (modo === 'pronto') {
+      const chip = function (t) { return '<span class="qf-ativ-chip">' + icon('check') + t + '</span>'; };
+      return { pendente: false, estado: st, html: '<section class="card qf-ativacao is-ready" data-ativacao="pronto" role="status" aria-labelledby="qf-ativ-titulo">' +
+        '<div class="qf-ativacao__head"><span class="qf-ativacao__icon" aria-hidden="true">' + icon('checkCircle') + '</span>' +
+        '<div class="qf-ativacao__headtxt"><h2 class="qf-ativacao__title" id="qf-ativ-titulo">Tudo pronto!</h2>' +
+        '<p class="qf-ativacao__msg">Agora você está preparado para receber chamados do Quem Faz.</p></div>' +
+        '<button class="qf-ativacao__x" type="button" data-ativacao-fechar aria-label="Fechar aviso">' + icon('x') + '</button></div>' +
+        '<div class="qf-ativacao__chips">' + chip('App instalado') + chip('Notificações ativas') + chip('Online') + '</div></section>' };
+    }
+    const primeiro = ativacaoPrimeiro(st);
+    const boasVindas = ativLer('sessionStorage', ATIV_BOAS_VINDAS) === String(user.id);
+    const nome = String(user.nome || '').trim().split(/\s+/)[0] || '';
+    const pct = Math.round(st.feitas / 3 * 100);
+    const btnApp = '<button class="btn btn--primary" type="button" ' + (ativAndroid() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + ' Instalar app</button>';
+    const btnPush = '<button class="btn btn--primary" type="button" data-ativacao-notificacoes>' + icon('bell') + ' Ativar notificações</button>';
+    const btnOnline = '<button class="btn ' + (primeiro === 'online' ? 'btn--primary' : 'btn--outline') + '" type="button" data-action="ficar-online-agora">' + icon('power') + ' Ficar online</button>';
+    return { pendente: true, estado: st, html: '<section class="card qf-ativacao" data-ativacao="pendente" aria-labelledby="qf-ativ-titulo">' +
+      (boasVindas ? '<div class="qf-ativacao__eyebrow">Conta criada' + (nome ? ', ' + PU.escapeHtml(nome) : '') + '! Faltam poucos passos.</div>' : '') +
+      '<div class="qf-ativacao__head"><span class="qf-ativacao__icon" aria-hidden="true">' + icon('shieldCheck') + '</span>' +
+      '<div class="qf-ativacao__headtxt"><h2 class="qf-ativacao__title" id="qf-ativ-titulo">Complete sua ativação</h2>' +
+      '<p class="qf-ativacao__msg" data-ativacao-msg>' + ativacaoMensagem(st) + '</p></div>' +
+      '<span class="badge badge--orange qf-ativacao__count">' + st.feitas + ' de 3</span></div>' +
+      '<div class="qf-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="3" aria-valuenow="' + st.feitas + '" aria-label="' + st.feitas + ' de 3 etapas concluídas"><div class="qf-progress-fill" style="width:' + pct + '%"></div></div>' +
+      '<ol class="qf-ativacao__steps">' +
+        ativacaoPasso(1, 'app', st.app, 'Instale o Quem Faz', 'Instale o app para receber chamados mesmo quando não estiver com o site aberto.', btnApp) +
+        ativacaoPasso(2, 'notificacoes', st.push, 'Ative as notificações', 'Permita as notificações para ser avisado imediatamente quando surgir um chamado.', btnPush) +
+        ativacaoPasso(3, 'online', st.online, 'Fique online', 'Você precisa estar online para receber novas oportunidades de serviço.', btnOnline) +
+      '</ol></section>' };
+  }
+  // Consulta leve (no máximo a cada 2 min): o app Android desta conta já registrou notificação?
+  // Serve para quem abre o site no navegador ou no computador tendo o app instalado no celular.
+  let ativSrvOcupado = false;
+  async function ativacaoServidor(user) {
+    const c = global.QFCloud && global.QFCloud.enabled ? global.QFCloud.client : null;
+    if (!c || !user || ativSrvOcupado) return false;
+    const antes = ativServidor(user.id);
+    if (antes && Date.now() - Number(antes.t || 0) < 120000) return false;
+    ativSrvOcupado = true;
+    try {
+      const r = await c.from('qf_push_subscriptions').select('endpoint,user_agent').eq('user_id', user.id).eq('ativo', true);
+      if (r.error) { ativGravar('localStorage', ATIV_SRV + user.id, JSON.stringify({ t: Date.now(), apk: !!(antes && antes.apk) })); return false; }
+      const apk = (r.data || []).some(function (s) { return /^apk /i.test(String(s.user_agent || '')) || String(s.endpoint || '').indexOf('fcm:') === 0; });
+      ativGravar('localStorage', ATIV_SRV + user.id, JSON.stringify({ t: Date.now(), apk: apk }));
+      return !!(antes && antes.apk) !== apk;
+    } catch (_) { return false; } finally { ativSrvOcupado = false; }
+  }
+  // Botão "Ativar notificações" do passo 2: usa o QFPush. Android fora do app, aparelho sem suporte ou
+  // permissão bloqueada mostram as instruções que o QuemFaz já tem (sem janelas extras).
+  async function ativarNotificacoesPasso(btn) {
+    const P = global.QFPush;
+    if (!P || btn.disabled) return;
+    const nativo = !!(P.isNative && P.isNative());
+    if ((ativAndroid() && !nativo) || !P.supported() || P.permission() === 'denied') {
+      // Android no navegador: registra o aviso do navegador (quando permitido) e explica que o toque com a tela apagada vem do app.
+      if (ativAndroid() && !nativo && P.supported() && P.permission() !== 'denied' && !P.isActive()) { try { await P.activate(); } catch (_) {} }
+      const ok = await garantirNotificacoesParaOnline({ passo: true });
+      if (ok) global.navigate('/profissional/home', true);
+      return;
+    }
+    const label = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Ativando…';
+    try {
+      await P.activate();
+      if (!pushJaAtivo()) throw new Error('As notificações ainda não foram confirmadas. Tente de novo.');
+      PU.toast('Notificações ativadas. Você será avisado assim que surgir um chamado.', 'success');
+      global.navigate('/profissional/home', true);
+    } catch (err) {
+      if (P.permission() === 'denied') {
+        const ok = await garantirNotificacoesParaOnline({ passo: true });
+        if (ok) global.navigate('/profissional/home', true);
+      } else PU.toast((err && err.message) || 'Não foi possível ativar as notificações.', 'danger');
+    } finally {
+      if (document.body.contains(btn)) { btn.disabled = false; btn.innerHTML = label; }
+    }
+  }
+  function bindAtivacao(content, user) {
+    ativacaoServidor(user).then(function (mudou) {
+      if (!mudou || !document.body.contains(content) || !/^#\/profissional\/home/.test(location.hash || '')) return;
+      const app = global.PROAKI_APP;
+      if (app && app.userIsEditing && app.userIsEditing()) return;
+      const y = window.scrollY;
+      global.navigate('/profissional/home', true);
+      requestAnimationFrame(function () { window.scrollTo(0, y); });
+    });
+    const card = content.querySelector('[data-ativacao]');
+    if (!card) return;
+    const fechar = card.querySelector('[data-ativacao-fechar]');
+    if (fechar) fechar.addEventListener('click', function () { ativGravar('sessionStorage', ATIV_FESTA + user.id, null); card.remove(); });
+    const notif = card.querySelector('[data-ativacao-notificacoes]');
+    if (notif) notif.addEventListener('click', function () { ativarNotificacoesPasso(notif); });
+    // Ao abrir o app, o QFPush restaura a inscrição em segundo plano; quando terminar, o passo 2 se atualiza sozinho.
+    if (notif && !pushJaAtivo()) {
+      let tentativas = 0;
+      const timer = setInterval(function () {
+        tentativas++;
+        if (!document.body.contains(card) || tentativas > 8) { clearInterval(timer); return; }
+        if (!pushJaAtivo()) return;
+        clearInterval(timer);
+        const app = global.PROAKI_APP;
+        if (app && app.userIsEditing && app.userIsEditing()) return;
+        const y = window.scrollY;
+        global.navigate('/profissional/home', true);
+        requestAnimationFrame(function () { window.scrollTo(0, y); });
+      }, 1500);
+    }
+  }
+  global.QFAtivacao = { estado: ativacaoEstado, boasVindas: function (uid) { ativGravar('sessionStorage', ATIV_BOAS_VINDAS, uid ? String(uid) : null); } };
+
   Screens.profHomeRender = function (params, user) {
+    const ativ = ativacaoCard(user);
     const chamadas=DB.chamadasPendentes(user.id);
     const podeFicarOnline=user.statusAprovacao==='aprovado'&&!!user.fotoUrl;
     const meusAnuncios=(DB.state.ads||[]).filter(function(a){return a.anuncianteId===user.id;}).sort(function(a,b){return new Date(b.criadoEm||0)-new Date(a.criadoEm||0);});
@@ -6810,8 +7164,9 @@ alt=""></noscript>
     function adStatusLabel(a){if(!a)return '';if(a.status==='ativo')return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';if(a.status==='reprovado')return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';if(a.status==='pausado')return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';}
     return '<div class="view">'+
       pendingGate(user)+
-      '<div class="card qf-prof-status'+(user.online?' is-online':'')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title">Você está offline</div><div class="qf-prof-status__sub">Você ainda recebe chamados da sua região, mas quem está online recebe primeiro</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
-      profileProgressHtml(user)+
+      ativ.html+
+      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
+      (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
       '<div class="section"><div class="card row-between" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button></div></div>'+
@@ -7794,13 +8149,15 @@ alt=""></noscript>
         ? 'Para receber chamado com a tela apagada, o profissional precisa usar o app QuemFaz para Android. No navegador/PWA o Android pode suspender os avisos.'
         : (opts.jaOnline
           ? 'Você está online, mas as notificações estão desligadas neste aparelho. Sem elas você não recebe chamados com o app fechado. Ative agora para continuar online.'
-          : 'Para ficar online é obrigatório ativar as notificações. É assim que os chamados chegam, mesmo com o app fechado.');
+          : (opts.passo // V11.12: aberto pelo passo "Ative as notificações" da ativação
+            ? 'Permita as notificações para ser avisado imediatamente quando surgir um chamado.'
+            : 'Para ficar online é obrigatório ativar as notificações. É assim que os chamados chegam, mesmo com o app fechado.'));
       function render() {
         const suportado = P.supported();
         const negado = P.permission() === 'denied';
         let corpo = '<p class="text text--secondary" style="text-align:center;">' + intro + '</p>';
         if (androidSemApk) {
-          corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>Para ficar online, instale o app QuemFaz.</strong><br>Assim o chamado usa notificação nativa e pode tocar mesmo com a tela apagada.</div></div>' +
+          corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>' + (opts.passo ? 'Instale o app QuemFaz e ative as notificações por ele.' : 'Para ficar online, instale o app QuemFaz.') + '</strong><br>Assim o chamado usa notificação nativa e pode tocar mesmo com a tela apagada.</div></div>' +
             '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button>';
         } else if (!suportado) {
           corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Esta forma de abrir o QuemFaz não permite notificações. ' +
@@ -7814,7 +8171,7 @@ alt=""></noscript>
         } else {
           corpo += '<button class="btn btn--primary" id="qf-notif-ativar">' + icon('bell') + ' ' + (opts.jaOnline ? 'Ativar agora' : 'Ativar notificações') + '</button>';
         }
-        corpo += '<button class="btn btn--outline" id="qf-notif-offline">Ficar offline</button>';
+        corpo += '<button class="btn btn--outline" id="qf-notif-offline">' + (opts.passo ? 'Agora não' : 'Ficar offline') + '</button>';
         PU.openSheet('<div class="stack" id="qf-notif-sheet"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
           '<h3 class="sheet__title" style="text-align:center;">Ative as notificações</h3>' + corpo +
           '<div class="text--sm" id="qf-notif-erro" role="alert" style="color:var(--danger-600);text-align:center;"></div></div>', { persistent: true });
@@ -7894,11 +8251,13 @@ alt=""></noscript>
     }
     bindNotificationActivation(content);
     exigirNotificacaoSeOnline(user);
+    bindAtivacao(content, user);
     const toggle = content.querySelector('#toggle-online');
     if (toggle) {
-      const onlineNow=content.querySelector('[data-action="ficar-online-agora"]');
+      // V11.12: "Ficar online agora" (cartão de status) e "Ficar online" (passo 3 da ativação) usam a mesma lógica.
+      const onlineBtns=Array.prototype.slice.call(content.querySelectorAll('[data-action="ficar-online-agora"]'));
       const offlineNow=content.querySelector('[data-action="ficar-offline-agora"]');
-      if(onlineNow)onlineNow.addEventListener('click',function(){if(toggle.disabled)return;onlineNow.disabled=true;onlineNow.dataset.label=onlineNow.textContent;onlineNow.textContent='Ficando online…';toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
+      onlineBtns.forEach(function(onlineNow){onlineNow.addEventListener('click',function(){if(toggle.disabled)return;onlineBtns.forEach(function(b){b.disabled=true;b.dataset.label=b.innerHTML;});onlineNow.textContent='Ficando online…';toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});});
       if(offlineNow)offlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
       // V12.0.2: só "permissão negada" (code 1) conta como erro. Demora do GPS (timeout) ou GPS
       // desligado não significam falta de permissão — antes o app dizia "permita nas configurações"
@@ -7942,7 +8301,7 @@ alt=""></noscript>
           PU.toast('Não foi possível atualizar seu status. ' + (err && err.message ? err.message : ''), 'danger');
         } finally {
           toggle.disabled = false;
-          if (onlineNow && document.body.contains(onlineNow)) { onlineNow.disabled = false; if (onlineNow.dataset.label) onlineNow.textContent = onlineNow.dataset.label; }
+          onlineBtns.forEach(function (b) { if (document.body.contains(b)) { b.disabled = false; if (b.dataset.label) b.innerHTML = b.dataset.label; } });
         }
       });
     }
@@ -8464,7 +8823,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.14';
+  const APP_VERSION = '11.12.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
