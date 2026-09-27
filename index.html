@@ -4006,7 +4006,8 @@ alt=""></noscript>
   async function signUp(role, data) {
     if (!enabled) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     if (String(data.senha || '').length < 6) return { ok: false, error: 'A senha precisa ter pelo menos 6 caracteres.' };
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(data.email || ''))) return { ok: false, error: 'Digite um e-mail válido.' };
+    const email = String(data.email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'O e-mail é obrigatório. Digite um e-mail válido.' };
     if (!String(data.nome || '').trim()) return { ok: false, error: 'Informe seu nome.' };
     if (role === 'profissional' && !/^data:image\//i.test(String(data.selfieData || ''))) {
       return { ok: false, error: 'É obrigatório enviar uma selfie do profissional ou a marca oficial da empresa representada.' };
@@ -4023,25 +4024,25 @@ alt=""></noscript>
       qf_categorias: data.categorias || [],
       qf_raio_km: data.raioKm || 10
     };
-    if (data.cpf) { try { localStorage.setItem(pendingCpfKey(data.email), data.cpf); } catch (_) {} }
-    if (data.endereco) { try { localStorage.setItem(pendingAddressKey(data.email), JSON.stringify(data.endereco)); } catch (_) {} }
+    if (data.cpf) { try { localStorage.setItem(pendingCpfKey(email), data.cpf); } catch (_) {} }
+    if (data.endereco) { try { localStorage.setItem(pendingAddressKey(email), JSON.stringify(data.endereco)); } catch (_) {} }
     if (role === 'profissional' && data.selfieData) {
-      try { localStorage.setItem(pendingSelfieKey(data.email), data.selfieData); } catch (_) {}
+      try { localStorage.setItem(pendingSelfieKey(email), data.selfieData); } catch (_) {}
     }
     const res = await client.auth.signUp({
-      email: data.email,
+      email: email,
       password: data.senha,
       options: { data: meta }
     });
     if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     if (!res.data.session) {
       // V11.11.6: o banco já confirma o e-mail no cadastro; entra direto sem pedir para abrir o e-mail.
-      try { const li = await signIn(role, data.email, data.senha); if (li && li.ok) return li; } catch (_) {}
+      try { const li = await signIn(role, email, data.senha); if (li && li.ok) return li; } catch (_) {}
       return { ok: true, needsConfirmation: true, user: res.data.user };
     }
     try {
       await ensureProfile(res.data.user, role, data);
-      await applyPendingIdentity(data.email, role);
+      await applyPendingIdentity(email, role);
       const local = await syncLocalUser(res.data.user, role);
       DB.setSession({ role: role, userId: res.data.user.id });      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       return { ok: true, user: local, session: DB.getSession() };
@@ -5055,7 +5056,7 @@ alt=""></noscript>
         backRow('/auth/cliente/login', 'Criar conta') +
         '<form id="cadastro-cliente-form" class="stack" novalidate>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
-          field('E-mail', '<input class="input" type="email" name="email" required placeholder="voce@exemplo.com">') +
+          field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
           field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
@@ -5168,7 +5169,7 @@ alt=""></noscript>
           '<div class="qf-step stack" data-step="1">' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 4</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:25%"></span></div></div>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
-          field('E-mail', '<input class="input" type="email" name="email" required placeholder="voce@exemplo.com">') +
+          field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
           field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
@@ -5363,10 +5364,12 @@ alt=""></noscript>
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
+        const email = String(fd.get('email') || '').trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { PU.toast('Informe um e-mail válido. O e-mail é obrigatório para criar a conta.', 'danger'); return; }
         const cpf = fd.get('cpf').trim();
         if (!global.QFGeo.validCpf(cpf)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
         if (!validPhone(fd.get('telefone'))) { PU.toast('Informe um WhatsApp/celular com DDD.', 'danger'); return; }
-        const dados = { nome: fd.get('nome').trim(), email: fd.get('email').trim(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf };
+        const dados = { nome: fd.get('nome').trim(), email: email, senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf };
         const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
         try {
@@ -5514,7 +5517,7 @@ alt=""></noscript>
         if (!validPhone(fd.get('telefone'))) { PU.toast('Informe um WhatsApp/celular com DDD.', 'danger'); return; }
         if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Digite um CEP válido da sua base.', 'danger'); return; }
         const dados = {
-          nome: fd.get('nome').trim(), email: fd.get('email').trim(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf,
+          nome: fd.get('nome').trim(), email: String(fd.get('email') || '').trim().toLowerCase(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf,
           categorias: selected, cidade: fd.get('cidade').trim(), uf: fd.get('uf'), cep: fd.get('cep').trim(),
           latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null, raioKm: Number(fd.get('raioKm')),
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
@@ -8461,7 +8464,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.12';
+  const APP_VERSION = '11.11.13';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
