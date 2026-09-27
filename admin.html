@@ -1101,6 +1101,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-parados-count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--danger-600,#dc2626);color:#fff;font-size:12px;font-weight:850;vertical-align:middle;margin-left:4px}
 .qf-parado{border-left:4px solid var(--danger-600,#dc2626)}
 .qf-parado .btn--whatsapp{background:#128c4a;color:#fff;border:1px solid #128c4a}
+.qf-bv-btn{background:#128c4a!important;color:#fff!important;border:1px solid #128c4a!important;width:100%;justify-content:center}
+.qf-bv-btn svg{stroke:#fff}
 .qf-parado .btn--whatsapp:hover{background:#0f7a40}
 .qf-parado .btn--whatsapp svg{stroke:#fff}
 .qf-parados-vazio{color:var(--success-600);font-weight:750}
@@ -2904,7 +2906,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const pushUsers = {}; (d.push_usuarios || []).forEach(function (id) { pushUsers[id] = true; });
     const clientes = [], profissionais = [];
     (d.profiles || []).forEach(function (p) {
-      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', fotoUrl: p.foto_url || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id] };
+      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', fotoUrl: p.foto_url || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id], boasVindasEm: p.boas_vindas_em || null };
       if (p.tipo === 'profissional') {
         const pr = pros[p.id] || {};
         const a = (areas[p.id] || [])[0];
@@ -3068,6 +3070,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     editarUsuario: async function(id, dados){ const r = await client.rpc('qf_admin_editar_usuario', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
     excluirUsuario: async function(id){ const r = await client.rpc('qf_admin_excluir_usuario', { p_id: id }); if (r.error) throw r.error; },
     nuncaEntraram: async function(){ const r = await client.rpc('qf_admin_nunca_entraram'); if (r.error) throw r.error; return r.data || []; },
+    marcarBoasVindas: async function(id){ const r = await client.rpc('qf_admin_marcar_boas_vindas', { p_user: id }); if (r.error) throw r.error; return true; },
     marcarAvisado: async function(id){ const r = await client.rpc('qf_admin_marcar_avisado', { p_user: id }); if (r.error) throw r.error; return true; },
     get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
@@ -4798,7 +4801,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone) + '</div>' : '') + '</div>';
+    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
   function topCats(list) {
     const cnt = {};
@@ -4945,7 +4948,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<button class="btn btn--outline" data-action="toggle-verificado">' + icon('shieldCheck') + ' ' + (p.verificado ? 'Remover selo' : 'Marcar verificado') + '</button>' +
         '<button class="btn ' + (p.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + '" data-action="toggle-bloqueio">' + icon(p.bloqueado ? 'unlock' : 'lock') + ' ' + (p.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
       '</div>' +
-      '<div class="section">' + acoesHtml('profissional', p.id, 'Excluir conta') + '<div class="text--sm text--muted" style="margin-top:6px;">Excluir apaga o login, o perfil e as áreas de atendimento. As movimentações da carteira ficam no histórico.</div></div>' +
+      '<div class="section">' + acoesHtml('profissional', p.id, 'Excluir conta', null, p) + '<div class="text--sm text--muted" style="margin-top:6px;">Excluir apaga o login, o perfil e as áreas de atendimento. As movimentações da carteira ficam no histórico.</div></div>' +
     '</div>';
   }
 
@@ -5032,9 +5035,37 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); b.disabled = false; }
     };
   }
-  function acoesHtml(tipo, id, excluirLabel, tel) {
+  // V11.11.14: botão de boas-vindas no WhatsApp — só no primeiro contato; depois de enviado some.
+  function boasVindasTexto(u, tipo) {
+    const n = String(u.nome || '').trim().split(/\s+/)[0] || '';
+    const nome = n ? ' ' + n.charAt(0).toUpperCase() + n.slice(1).toLowerCase() : '';
+    if (tipo === 'profissional') return 'Oi' + nome + ', tudo bem? Aqui é do QuemFaz 👋\n\n' +
+      'Seja bem-vindo(a)! Seu cadastro já está ativo e você ganhou R$ 25 em créditos para desbloquear seus primeiros chamados.\n\n' +
+      'Quando aparecer um serviço na sua região, o app te avisa e você decide se quer pegar. Deixe o app instalado e as notificações ativadas.\n\n' +
+      'Qualquer dúvida, é só responder aqui!';
+    return 'Oi' + nome + ', tudo bem? Aqui é do QuemFaz 👋\n\n' +
+      'Seja bem-vindo(a)! Precisando de um profissional, é só abrir o app e pedir o serviço — a gente avisa os profissionais da sua região.\n\n' +
+      'Qualquer dúvida, é só responder aqui!';
+  }
+  function boasVindasBtn(tipo, u) {
+    if (!u || u.boasVindasEm || (tipo !== 'profissional' && tipo !== 'cliente')) return '';
+    const h = waHref(u.telefone);
+    if (!h) return '';
+    return '<a class="btn btn--whatsapp btn--sm qf-bv-btn" href="' + h + '?text=' + encodeURIComponent(boasVindasTexto(u, tipo)) + '" target="_blank" rel="noopener" data-boas-vindas="' + u.id + '">' + icon('whatsapp') + ' Boas-vindas</a>';
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-boas-vindas]');
+    if (!b) return;
+    const id = b.getAttribute('data-boas-vindas');
+    const u = DB.profissionalById(id) || DB.clienteById(id);
+    if (u) u.boasVindasEm = new Date().toISOString();
+    setTimeout(function () { if (b.isConnected) b.remove(); }, 400);
+    global.QFAdminCloud.marcarBoasVindas(id).catch(function (err) { PU.toast('Não salvou a boas-vindas: ' + ((err && err.message) || ''), 'danger'); });
+  }, true);
+  function acoesHtml(tipo, id, excluirLabel, tel, u) {
     const h = waHref(tel);
-    return '<div class="qf-crud-row">' +
+    const bv = boasVindasBtn(tipo, u);
+    return (bv ? '<div style="margin-bottom:8px;">' + bv + '</div>' : '') + '<div class="qf-crud-row">' +
       (h ? '<a class="btn btn--outline btn--sm qf-wa-btn" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + ' WhatsApp</a>' : '') +
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="' + tipo + ':' + id + '">' + icon('edit') + ' Editar</button>' +
       '<button type="button" class="btn btn--outline btn--sm qf-crud-del" data-crud-del="' + tipo + ':' + id + '">' + icon('trash') + ' ' + (excluirLabel || 'Excluir') + '</button>' +
@@ -5081,7 +5112,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
             '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
             '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml(c.email || '') + (c.telefone ? (c.email ? ' · ' : '') + waLink(c.telefone) : '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
             '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
-          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id, null, c.telefone) + '</div>' : '');
+          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id, null, c.telefone, c) + '</div>' : '');
         }).join('') + '</div>' +
       '</div>'
     );
