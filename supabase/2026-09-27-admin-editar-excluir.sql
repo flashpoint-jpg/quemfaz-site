@@ -5,3 +5,4 @@
 -- Excluir chamado: fotos/desbloqueios/orçamentos/avaliações/cascata saem junto (FK on delete cascade).
 -- Excluir usuário: apaga auth.users (perfil, profissional, chamados do cliente em cascata);
 --   anúncios do usuário, mensagens de suporte e áreas de atendimento são removidos antes; carteira fica.
+-- V11.11.10: qf_admin_excluir_anuncio(uuid), só admin.

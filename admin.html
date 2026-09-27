@@ -3058,6 +3058,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
     syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
+    excluirAnuncio: async function(id){ const r = await client.rpc('qf_admin_excluir_anuncio', { p_id: id }); if (r.error) throw r.error; try { await syncAds(); } catch (_) {} },
     editarChamado: async function(id, dados){ const r = await client.rpc('qf_admin_editar_chamado', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
     excluirChamados: async function(ids){ const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: ids }); if (r.error) throw r.error; return r.data; },
     editarUsuario: async function(id, dados){ const r = await client.rpc('qf_admin_editar_usuario', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
@@ -5045,6 +5046,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       return;
     }
     confirm2(dl, async function () {
+      if (tipo === 'anuncio') { await global.QFAdminCloud.excluirAnuncio(id); PU.toast('Anúncio excluído.', 'success'); global.navigate('/admin/anuncios', true); return; }
       if (tipo === 'servico') { await global.QFAdminCloud.excluirChamados([id]); PU.toast('Serviço excluído.', 'success'); await recarregar(/^\/admin\/servicos\//.test(location.hash.replace('#', '')) ? '/admin/servicos' : location.hash.replace(/^#/, '')); }
       else { await global.QFAdminCloud.excluirUsuario(id); PU.toast((tipo === 'profissional' ? 'Profissional' : 'Cliente') + ' excluído.', 'success'); await recarregar(tipo === 'profissional' ? '/admin/profissionais' : '/admin/clientes'); }
     });
@@ -5255,6 +5257,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           (a.status === 'aguardando_aprovacao' ? '<button class="btn btn--sm btn--primary btn--block-auto" data-ad-action="aprovar" data-id="' + a.id + '">Aprovar</button><button class="btn btn--sm btn--danger-ghost btn--block-auto" data-ad-action="reprovar" data-id="' + a.id + '">Reprovar</button>' : '') +
           (a.status === 'ativo' ? '<button class="btn btn--sm btn--outline btn--block-auto" data-ad-action="pausar" data-id="' + a.id + '">Pausar</button>' : '') +
           (a.status === 'pausado' ? '<button class="btn btn--sm btn--primary btn--block-auto" data-ad-action="reativar" data-id="' + a.id + '">Reativar</button>' : '') +
+          (cloudOn() ? '<button class="btn btn--sm btn--outline btn--block-auto qf-crud-del" data-crud-del="anuncio:' + a.id + '">' + icon('trash') + ' Excluir</button>' : '') +
         '</div>' +
       '</div>';
     }).join('') : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('image') + '</div><p class="text text--secondary">Nenhum anúncio enviado ainda.</p></div>';
