@@ -1055,6 +1055,10 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 #servicos-segmented{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #servicos-segmented .segmented__item{flex:0 0 auto;white-space:nowrap}
 .qf-crud-row{display:flex;gap:8px;flex-wrap:wrap}
+.qf-wa-link{display:inline-flex;align-items:center;gap:4px;color:#128C4A;font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
+.qf-wa-link svg{width:14px;height:14px;flex:0 0 auto}
+.qf-wa-btn{color:#128C4A!important;border-color:#25D366!important;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.qf-wa-btn svg{width:15px;height:15px}
 .qf-crud-row .btn{flex:1 1 120px;width:auto}
 .qf-crud-row svg,.qf-crud-del svg{width:15px;height:15px}
 .qf-crud-del{color:var(--danger-600,#dc2626)!important;border-color:var(--danger-600,#dc2626)!important}
@@ -4794,7 +4798,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id) + '</div>' : '') + '</div>';
+    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone) + '</div>' : '') + '</div>';
   }
   function topCats(list) {
     const cnt = {};
@@ -4880,7 +4884,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '</div>' +
 
         '<div class="section card stack--sm">' +
-          rowInfo('Telefone', p.telefone || '—') +
+          rowInfoHtml('Telefone', waLink(p.telefone)) +
           rowInfo('Categorias', cats || '—') +
           rowInfo('Cidade / região', (cidade ? cidade.nome + ' - ' + cidade.uf : '—') + ' · raio ' + p.raioKm + ' km') +
           rowInfo('Avaliação', p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) + ' (' + p.totalAvaliacoes + ' avaliações)' : 'Sem avaliações') +
@@ -4922,7 +4926,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           '<div class="text--sm text--secondary" style="margin-top:5px;">Imagem visível no painel administrativo para conferência de segurança.</div></div>' +
         '</div></div>' +
       '<div class="section card stack--sm">' +
-        rowInfo('WhatsApp', p.telefone || '—') + rowInfo('Categorias', cats || '—') +
+        rowInfoHtml('WhatsApp', waLink(p.telefone)) + rowInfo('E-mail', p.email || '—') + rowInfo('Categorias', cats || '—') +
         rowInfo('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
         rowInfo('Selfie', p.temFoto ? 'Cadastrada' : 'Não cadastrada') +
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
@@ -4945,6 +4949,16 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     '</div>';
   }
 
+  // V11.11.12: número vira botão discreto que abre o WhatsApp da pessoa.
+  function waHref(tel) { const d = String(tel || '').replace(/\D/g, ''); if (d.length < 10) return ''; return 'https://wa.me/' + (d.length <= 11 ? '55' + d : d); }
+  function waLink(tel, compact) {
+    const h = waHref(tel);
+    if (!h) return PU.escapeHtml(tel || '—');
+    return '<a class="qf-wa-link" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + (compact ? 'WhatsApp' : PU.escapeHtml(tel)) + '</a>';
+  }
+  function rowInfoHtml(label, html) {
+    return '<div class="row-between"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + html + '</span></div>';
+  }
   function rowInfo(label, value) {
     return '<div class="row-between"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + PU.escapeHtml(value) + '</span></div>';
   }
@@ -5018,8 +5032,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); b.disabled = false; }
     };
   }
-  function acoesHtml(tipo, id, excluirLabel) {
+  function acoesHtml(tipo, id, excluirLabel, tel) {
+    const h = waHref(tel);
     return '<div class="qf-crud-row">' +
+      (h ? '<a class="btn btn--outline btn--sm qf-wa-btn" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + ' WhatsApp</a>' : '') +
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="' + tipo + ':' + id + '">' + icon('edit') + ' Editar</button>' +
       '<button type="button" class="btn btn--outline btn--sm qf-crud-del" data-crud-del="' + tipo + ':' + id + '">' + icon('trash') + ' ' + (excluirLabel || 'Excluir') + '</button>' +
     '</div>';
@@ -5063,9 +5079,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<div class="card" style="padding:4px 16px;">' + list.map(function (c) {
           return '<div class="list-item">' +
             '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
-            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml([c.email, c.telefone].filter(Boolean).join(' · ')) + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
+            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml(c.email || '') + (c.telefone ? (c.email ? ' · ' : '') + waLink(c.telefone) : '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
             '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
-          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id) + '</div>' : '');
+          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id, null, c.telefone) + '</div>' : '');
         }).join('') + '</div>' +
       '</div>'
     );
@@ -5129,7 +5145,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
         '<div class="section card stack--sm">' +
           rowInfo('Cliente', (cliente || {}).nome || '—') +
+          (cliente && cliente.telefone ? rowInfoHtml('WhatsApp do cliente', waLink(cliente.telefone)) : '') +
           rowInfo('Profissional', prof ? prof.nome : 'Não atribuído') +
+          (prof && prof.telefone ? rowInfoHtml('WhatsApp do profissional', waLink(prof.telefone)) : '') +
           rowInfo('Endereço', r.endereco.rua + ', ' + r.endereco.bairro) +
           rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
         '</div>' +
@@ -5402,8 +5420,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const tickets = (global.QFAdminCloud && global.QFAdminCloud.supportTickets) || [];
     const t = tickets.find(function(x){return x.id===params.id;});
     if (!t) return '<div class="view"><div class="empty-state"><p class="text text--secondary">Atendimento não encontrado.</p></div></div>';
+    const ctt = supportContato(t);
     return '<div class="view stack">' +
-      '<div class="card"><div class="row-between"><div><div class="h3">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
+      '<div class="card"><div class="row-between"><div><div class="h3">'+PU.escapeHtml(supportUserName(t))+'</div>'+(ctt&&ctt.tipo==='whatsapp'?'<div style="margin-top:4px;">'+waLink(ctt.valor.replace(/^55/,''),true)+'</div>':'')+'<div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
       '<div class="row" style="margin-top:10px;gap:7px;flex-wrap:wrap;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">Aberto '+PU.escapeHtml(PU.formatDateTime(t.criado_em))+'</span></div></div>' +
       '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="qf-admin-support-thread" id="qf-admin-support-message-list"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
         '<div id="qf-admin-support-resolved" class="card card--tight" style="background:var(--success-100);border:none;'+(t.status==='resolvido'?'':'display:none;')+'"><div class="text--sm" style="color:var(--success-600);">Atendimento resolvido. Reabra pelo status se precisar responder novamente.</div></div>' +
