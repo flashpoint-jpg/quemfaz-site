@@ -3027,6 +3027,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
     syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
+    nuncaEntraram: async function(){ const r = await client.rpc('qf_admin_nunca_entraram'); if (r.error) throw r.error; return r.data || []; },
+    marcarAvisado: async function(id){ const r = await client.rpc('qf_admin_marcar_avisado', { p_user: id }); if (r.error) throw r.error; return true; },
     get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
 })(window);
@@ -5248,6 +5250,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     }
     return '<div class="view">' +
       '<div class="row-between" style="margin-bottom:12px;"><div><div class="h3">Central de suporte</div><div class="text--sm text--secondary">'+ativos.length+' atendimento(s) aguardando</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-action="support-refresh">'+icon('refresh')+' Atualizar</button></div>' +
+      '<button type="button" class="card row-between" style="width:100%;text-align:left;margin-bottom:12px;" data-nav="/admin/avisar-acesso"><div><div class="text--strong">Avisar quem não entrou</div><div class="text--sm text--secondary">Mensagem pronta no WhatsApp, um por um</div></div>'+icon('chevronRight','list-item__chevron')+'</button>' +
       (ativos.length?'<div class="qf-admin-support-list">'+ativos.map(card).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('checkCircle')+'</div><div class="h3">Tudo resolvido</div><p class="text text--secondary">Nenhum atendimento aberto no momento.</p></div>') +
       (resolvidos.length?'<div class="section"><div class="section-head"><h2 class="h3">Resolvidos</h2></div><div class="qf-admin-support-list">'+resolvidos.slice(0,20).map(card).join('')+'</div></div>':'') +
     '</div>';
@@ -5349,6 +5352,71 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if(del) del.addEventListener('click',function(){supportDeleteConfirm(del,params.id,function(){clearInterval(timer);global.navigate('/admin/suporte',true);});});
   }
 
+  // ---------------- V11.11.7: avisar quem se cadastrou e nunca entrou ----------------
+  let avisoLista = null, avisoEm = 0;
+  function avisoFone(v) { const f = String(v || '').replace(/\D/g, ''); if (f.length < 10) return ''; return f.length <= 11 ? '55' + f : f; }
+  function avisoTexto(u) {
+    const primeiro = String(u.nome || '').trim().split(/\s+/)[0] || '';
+    const papel = u.tipo === 'cliente' ? 'cliente' : 'profissional';
+    const link = location.origin + '/#/auth/' + papel + '/login';
+    return 'Olá' + (primeiro ? ' ' + primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase() : '') + '! Aqui é do QuemFaz 👋\n\n' +
+      'Seu cadastro' + (papel === 'profissional' ? ' de profissional' : '') + ' está liberado. Já pode entrar:\n' + link + '\n\n' +
+      'E-mail: ' + (u.email || '') + '\nSenha: a que você criou no cadastro.\n\n' +
+      'Esqueceu a senha? Na tela de entrar toque em "Esqueci minha senha" que chega um link no seu e-mail.\n\n' +
+      'Qualquer dificuldade, responda esta mensagem.';
+  }
+  Screens.adminAvisarAcessoRender = function () {
+    if (!avisoLista) return '<div class="view"><div class="card"><div class="text--sm text--secondary">Carregando quem ainda não entrou…</div></div></div>';
+    const pend = avisoLista.filter(function (u) { return !u.avisado_em; });
+    const feitos = avisoLista.filter(function (u) { return u.avisado_em; });
+    function linha(u) {
+      const fone = avisoFone(u.whatsapp);
+      return '<div class="card stack--sm" data-aviso-row="' + u.id + '">' +
+        '<div class="row-between"><div><div class="text--strong">' + PU.escapeHtml(u.nome || 'Sem nome') + '</div>' +
+        '<div class="text--sm text--secondary">' + PU.escapeHtml((u.email || '') + (u.whatsapp ? ' · ' + u.whatsapp : '')) + '</div>' +
+        '<div class="text--sm text--muted">' + PU.escapeHtml((u.tipo || '') + (u.cidade ? ' · ' + u.cidade + (u.uf ? '/' + u.uf : '') : '') + ' · cadastro ' + PU.formatDateTime(u.criado_em)) + '</div></div>' +
+        (u.avisado_em ? '<span class="badge badge--success">Avisado' + (u.vezes > 1 ? ' ' + u.vezes + 'x' : '') + '</span>' : '<span class="badge badge--warning">Falta avisar</span>') + '</div>' +
+        (fone ? '<button type="button" class="btn ' + (u.avisado_em ? 'btn--outline' : 'btn--primary') + '" data-aviso-wa="' + u.id + '">' + (u.avisado_em ? 'Avisar de novo no WhatsApp' : 'Avisar no WhatsApp') + '</button>'
+              : '<div class="text--sm text--muted">Sem WhatsApp no cadastro.</div>') +
+      '</div>';
+    }
+    return '<div class="view stack">' +
+      '<div class="card stack--sm"><div class="h3">Quem se cadastrou e nunca entrou</div>' +
+      '<div class="text--sm text--secondary">A confirmação de e-mail foi removida: todos já podem entrar. Toque em <b>Enviar próximo</b>, aperte enviar no WhatsApp e volte aqui — a lista anda sozinha.</div>' +
+      '<div class="row" style="gap:8px;flex-wrap:wrap;"><span class="badge badge--warning">' + pend.length + ' falta avisar</span><span class="badge badge--success">' + feitos.length + ' avisados</span><span class="badge badge--muted">' + avisoLista.length + ' no total</span></div>' +
+      (pend.some(function (u) { return avisoFone(u.whatsapp); }) ? '<button type="button" class="btn btn--primary" data-aviso-proximo>Enviar próximo (' + PU.escapeHtml(pend.find(function (u) { return avisoFone(u.whatsapp); }).nome || '') + ')</button>' : '<div class="text--sm" style="color:var(--success-600);font-weight:700;">Todos com WhatsApp já foram avisados.</div>') +
+      '</div>' +
+      (pend.length ? '<div class="section-head"><h2 class="h3">Falta avisar</h2></div><div class="stack--sm">' + pend.map(linha).join('') + '</div>' : '') +
+      (feitos.length ? '<div class="section-head"><h2 class="h3">Já avisados (ainda não entraram)</h2></div><div class="stack--sm">' + feitos.map(linha).join('') + '</div>' : '') +
+    '</div>';
+  };
+  async function bindAvisarAcesso(content) {
+    if (!avisoLista || Date.now() - avisoEm > 60000) {
+      try { avisoLista = await global.QFAdminCloud.nuncaEntraram(); avisoEm = Date.now(); }
+      catch (err) { avisoLista = null; content.innerHTML = '<div class="view"><div class="card text--sm" style="color:var(--danger-600);">' + PU.escapeHtml((err && err.message) || 'Erro ao carregar.') + '</div></div>'; return; }
+      global.navigate('/admin/avisar-acesso', true);
+      return;
+    }
+    function enviar(id) {
+      const u = avisoLista.find(function (x) { return x.id === id; });
+      const fone = u && avisoFone(u.whatsapp);
+      if (!fone) return;
+      window.open('https://wa.me/' + fone + '?text=' + encodeURIComponent(avisoTexto(u)), '_blank');
+      u.avisado_em = new Date().toISOString(); u.vezes = (u.vezes || 0) + 1;
+      global.QFAdminCloud.marcarAvisado(id).catch(function (err) { PU.toast('Não salvou o "avisado": ' + ((err && err.message) || ''), 'danger'); });
+      avisoLista.sort(function (a, b) { return (a.avisado_em ? 1 : 0) - (b.avisado_em ? 1 : 0); });
+      setTimeout(function () { global.navigate('/admin/avisar-acesso', true); }, 300);
+    }
+    content.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-aviso-wa]');
+      if (b) { enviar(b.getAttribute('data-aviso-wa')); return; }
+      if (e.target.closest('[data-aviso-proximo]')) {
+        const u = avisoLista.find(function (x) { return !x.avisado_em && avisoFone(x.whatsapp); });
+        if (u) enviar(u.id);
+      }
+    });
+  }
+
   // ---------------- Mais opções ----------------
 
   Screens.adminMaisRender = function () {
@@ -5362,6 +5430,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         maisItem('money', 'Receitas do app', '/admin/pagamentos') +
         maisItem('alertTriangle', 'Cancelamentos', '/admin/cancelamentos') +
         maisItem('info', 'Central de suporte', '/admin/suporte') +
+        maisItem('users', 'Avisar quem não entrou', '/admin/avisar-acesso') +
         maisItem('smartphone', 'Versão do app e atualização obrigatória', '/admin/versao') +
         (cloudOn() ? '' : '<div class="section">' +
           '<button class="btn btn--outline" data-action="restaurar-demo">' + icon('refresh') + ' Restaurar dados de demonstração</button>' +
@@ -5431,6 +5500,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (pattern === '/admin/mais') bindMais(content);
     if (pattern === '/admin/versao') bindVersao(content);
     if (pattern === '/admin/suporte') bindSuporteLista(content);
+    if (pattern === '/admin/avisar-acesso') bindAvisarAcesso(content);
     if (pattern === '/admin/suporte/:id') bindSuporteDetalhe(content, params);
     if (pattern === '/admin/dashboard') {
       const days=content.querySelector('#admin-alert-days');
@@ -5729,6 +5799,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios patrocinados', back: '/admin/mais', render: Screens.adminAnunciosRender },
     { pattern: '/admin/pagamentos', role: 'admin', title: 'Receitas do app', back: '/admin/mais', render: Screens.adminPagamentosRender },
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/mais', render: Screens.adminCancelamentosRender },
+    { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/mais', render: function(){ return Screens.adminAvisarAcessoRender(); } },
     { pattern: '/admin/suporte', role: 'admin', title: 'Central de suporte', back: '/admin/mais', render: Screens.adminSuporteRender },
     { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
