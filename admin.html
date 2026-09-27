@@ -1062,6 +1062,17 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 .qf-admin-support-reply{display:flex;gap:8px;align-items:flex-end}
 .qf-admin-support-reply .textarea{min-height:54px;max-height:140px}
 .qf-admin-support-reply .btn{width:auto;min-width:54px}
+.qf-admin-support-card--row{display:flex;flex-direction:column;gap:10px;padding:0;overflow:hidden}
+.qf-admin-support-card__open{all:unset;box-sizing:border-box;display:block;width:100%;padding:16px 16px 0;cursor:pointer}
+.qf-admin-support-del{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;border-top:1px solid var(--border,#e5e7eb);padding:10px;font-size:13px;font-weight:700;color:var(--danger-600,#dc2626);cursor:pointer}
+.qf-admin-support-del svg,.qf-admin-support-del-big svg{width:16px;height:16px}
+.qf-admin-support-del.is-confirm,.qf-admin-support-del-big.is-confirm{background:var(--danger-600,#dc2626);color:#fff}
+.qf-admin-support-del-big{color:var(--danger-600,#dc2626);border-color:var(--danger-600,#dc2626)}
+.qf-prof-cities{display:flex;gap:8px;overflow-x:auto;padding:2px 0 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch}
+.qf-prof-cities .chip{flex:0 0 auto;white-space:nowrap}
+.qf-prof-city{margin-top:16px}
+.qf-prof-city__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+.qf-prof-city__cats{font-size:12px;color:var(--text-secondary,#64748b);margin:-4px 0 10px;line-height:1.4}
 
 
 /* V11.4: barra de cima presa no topo (hidden criava caixa rolável e desligava o sticky) */
@@ -3005,9 +3016,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return true;
   }
 
+  async function supportDelete(atendimentoId) {
+    const res = await client.from('qf_suporte_atendimentos').delete().eq('id', atendimentoId).select('id');
+    if (res.error) throw res.error;
+    if (!res.data || !res.data.length) throw new Error('Não foi possível excluir (sem permissão).');
+    supportTicketsCache = supportTicketsCache.filter(function (t) { return t.id !== atendimentoId; });
+    return true;
+  }
+
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
     syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
-    syncSupport, getSupportMessages, supportReply, supportSetStatus,
+    syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
     get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
 })(window);
@@ -4715,25 +4734,93 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       (p.bloqueado ? '<span class="badge badge--danger">Bloqueado</span>' : '') +
       '<span class="badge badge--navy">' + PU.formatCurrency(p.saldo || 0) + '</span>';
   }
+  // V12.2: profissionais separados por cidade (para saber onde abrir campanha de cliente).
+  let profCidadeFiltro = 'todas';
+  let profBusca = '';
+  function profCidadeInfo(p) {
+    const c = DB.cityById(p.cidadeId);
+    const nome = (c && c.nome) || p.cidadeNome || 'Sem cidade';
+    const uf = (c && c.uf) || p.uf || '';
+    const key = catNormAdmin(nome) + '|' + String(uf).toUpperCase();
+    return { key: key, nome: nome, uf: String(uf).toUpperCase(), label: nome + (uf ? '/' + String(uf).toUpperCase() : '') };
+  }
+  function catNormAdmin(v) { return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function profCard(p) {
+    const cidade = profCidadeInfo(p);
+    const extra = (p.areas && p.areas.length > 1) ? ' · +' + (p.areas.length - 1) + ' cidade(s)' : '';
+    return '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '" data-prof-search="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '">' +
+      '<div class="row-between">' +
+        '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
+        '<div><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(cidade.label) + PU.escapeHtml(extra) + (p.bloqueado ? ' · Bloqueado' : '') + '</div></div></div>' +
+        icon('chevronRight', 'list-item__chevron') +
+      '</div>' +
+      '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
+    '</button>';
+  }
+  function topCats(list) {
+    const cnt = {};
+    list.forEach(function (p) { (p.categorias || []).forEach(function (id) { cnt[id] = (cnt[id] || 0) + 1; }); });
+    return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 5).map(function (id) {
+      const c = DB.categoryById(id); return ((c && c.nome) || String(id).replace(/^cat_/, '').replace(/_/g, ' ')) + ' (' + cnt[id] + ')';
+    }).join(' · ');
+  }
   Screens.adminProfissionaisRender = function () {
     const list = DB.state.users.profissionais;
     if (!list.length) return '<div class="view">' + migrationBanner() + '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('users') + '</div><p class="text text--secondary">Nenhum profissional cadastrado ainda.</p></div></div>';
+    const groups = {};
+    list.forEach(function (p) {
+      const c = profCidadeInfo(p);
+      (groups[c.key] = groups[c.key] || { key: c.key, label: c.label, itens: [] }).itens.push(p);
+    });
+    const ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.itens.length - a.itens.length || a.label.localeCompare(b.label); });
+    if (profCidadeFiltro !== 'todas' && !groups[profCidadeFiltro]) profCidadeFiltro = 'todas';
+    const visiveis = ordered.filter(function (g) { return profCidadeFiltro === 'todas' || g.key === profCidadeFiltro; }).map(function (g) {
+      const itens = g.itens.slice().sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || String(a.nome).localeCompare(String(b.nome)); });
+      return { key: g.key, label: g.label, itens: itens, todos: g.itens };
+    }).filter(function (g) { return g.itens.length; });
+    const chips = '<div class="qf-prof-cities" role="tablist">' +
+      '<button type="button" class="chip' + (profCidadeFiltro === 'todas' ? ' is-selected' : '') + '" data-prof-city="todas">Todas (' + list.length + ')</button>' +
+      ordered.map(function (g) { return '<button type="button" class="chip' + (profCidadeFiltro === g.key ? ' is-selected' : '') + '" data-prof-city="' + PU.escapeHtml(g.key) + '">' + PU.escapeHtml(g.label) + ' (' + g.itens.length + ')</button>'; }).join('') +
+    '</div>';
     return (
       '<div class="view">' + migrationBanner() +
-        '<div class="stack--sm">' + list.map(function (p) {
-          const cidade = DB.cityById(p.cidadeId);
-          return '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '">' +
-            '<div class="row-between">' +
-              '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
-              '<div><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cidade || {}).nome || '') + (p.bloqueado ? ' · Bloqueado' : '') + '</div></div></div>' +
-              icon('chevronRight', 'list-item__chevron') +
-            '</div>' +
-            '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-          '</button>';
-        }).join('') + '</div>' +
+        '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
+        '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
+        chips +
+        (visiveis.length ? visiveis.map(function (g) {
+          const online = g.todos.filter(function (p) { return p.online; }).length;
+          return '<section class="qf-prof-city">' +
+            '<div class="qf-prof-city__head"><div class="h3">' + PU.escapeHtml(g.label) + '</div><span class="text--sm text--secondary">' + g.todos.length + ' prof. · ' + online + ' online</span></div>' +
+            '<div class="qf-prof-city__cats">' + PU.escapeHtml(topCats(g.todos) || 'Sem profissões marcadas') + '</div>' +
+            '<div class="stack--sm">' + g.itens.map(profCard).join('') + '</div>' +
+          '</section>';
+        }).join('') : '<div class="empty-state"><p class="text text--secondary">Nenhum profissional encontrado.</p></div>') +
       '</div>'
     );
   };
+  function bindProfissionaisLista(content) {
+    content.addEventListener('click', function (e) {
+      const chip = e.target.closest('[data-prof-city]');
+      if (!chip) return;
+      profCidadeFiltro = chip.getAttribute('data-prof-city');
+      global.navigate('/admin/profissionais', true);
+      window.scrollTo(0, 0);
+    });
+    const busca = content.querySelector('#qf-prof-busca');
+    function filtrar() {
+      profBusca = busca.value;
+      const q = catNormAdmin(busca.value);
+      Array.prototype.forEach.call(content.querySelectorAll('.qf-prof-city'), function (sec) {
+        let n = 0;
+        Array.prototype.forEach.call(sec.querySelectorAll('[data-prof-search]'), function (c) {
+          const ok = !q || c.getAttribute('data-prof-search').indexOf(q) !== -1;
+          c.style.display = ok ? '' : 'none'; if (ok) n++;
+        });
+        sec.style.display = n ? '' : 'none';
+      });
+    }
+    if (busca) { busca.addEventListener('input', filtrar); if (busca.value) filtrar(); }
+  }
 
   Screens.adminProfissionalDetalheRender = function (params) {
     const p = DB.profissionalById(params.id);
@@ -5134,10 +5221,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const ativos = tickets.filter(function(t){return t.status !== 'resolvido';});
     const resolvidos = tickets.filter(function(t){return t.status === 'resolvido';});
     function card(t) {
-      return '<button class="card qf-admin-support-card" data-nav="/admin/suporte/'+t.id+'">' +
-        '<div class="row-between"><div><div class="text--strong">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
-        '<div class="row-between" style="margin-top:10px;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">'+PU.escapeHtml(PU.formatDateTime(t.ultima_mensagem_em||t.atualizado_em))+'</span></div>' +
-      '</button>';
+      return '<div class="card qf-admin-support-card qf-admin-support-card--row" data-support-card="'+t.id+'">' +
+        '<button type="button" class="qf-admin-support-card__open" data-nav="/admin/suporte/'+t.id+'">' +
+          '<div class="row-between"><div><div class="text--strong">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
+          '<div class="row-between" style="margin-top:10px;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">'+PU.escapeHtml(PU.formatDateTime(t.ultima_mensagem_em||t.atualizado_em))+'</span></div>' +
+        '</button>' +
+        '<button type="button" class="qf-admin-support-del" data-support-del="'+t.id+'" aria-label="Excluir atendimento">'+icon('trash')+'<span>Excluir</span></button>' +
+      '</div>';
     }
     return '<div class="view">' +
       '<div class="row-between" style="margin-bottom:12px;"><div><div class="h3">Central de suporte</div><div class="text--sm text--secondary">'+ativos.length+' atendimento(s) aguardando</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-action="support-refresh">'+icon('refresh')+' Atualizar</button></div>' +
@@ -5153,44 +5243,79 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div class="view stack">' +
       '<div class="card"><div class="row-between"><div><div class="h3">'+PU.escapeHtml(supportUserName(t))+'</div><div class="text--sm text--secondary">'+PU.escapeHtml(t.assunto||'Suporte')+'</div></div>'+supportStatusBadge(t.status)+'</div>' +
       '<div class="row" style="margin-top:10px;gap:7px;flex-wrap:wrap;"><span class="badge badge--muted">'+supportTipo(t)+'</span><span class="text--sm text--muted">Aberto '+PU.escapeHtml(PU.formatDateTime(t.criado_em))+'</span></div></div>' +
-      '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
-      '<div class="card stack--sm"><label class="field"><span class="field__label">Status do atendimento</span><select class="select" id="qf-admin-support-status"><option value="aberto"'+(t.status==='aberto'?' selected':'')+'>Aberto</option><option value="em_atendimento"'+(t.status==='em_atendimento'?' selected':'')+'>Em atendimento</option><option value="resolvido"'+(t.status==='resolvido'?' selected':'')+'>Resolvido</option></select></label><button class="btn btn--outline" data-action="support-save-status">Salvar status</button></div>' +
+      '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="qf-admin-support-thread" id="qf-admin-support-message-list"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
+        '<div id="qf-admin-support-resolved" class="card card--tight" style="background:var(--success-100);border:none;'+(t.status==='resolvido'?'':'display:none;')+'"><div class="text--sm" style="color:var(--success-600);">Atendimento resolvido. Reabra pelo status se precisar responder novamente.</div></div>' +
+        '<div class="qf-admin-support-reply" id="qf-admin-support-reply-box" style="'+(t.status==='resolvido'?'display:none;':'')+'"><textarea class="textarea" id="qf-admin-support-reply" maxlength="4000" placeholder="Responder ao usuário..."></textarea><button type="button" class="btn btn--primary" id="qf-admin-support-send">'+icon('arrowRight')+' Enviar</button></div>' +
+      '</div>' +
+      '<div class="card stack--sm"><label class="field"><span class="field__label">Status do atendimento</span><select class="select" id="qf-admin-support-status"><option value="aberto"'+(t.status==='aberto'?' selected':'')+'>Aberto</option><option value="em_atendimento"'+(t.status==='em_atendimento'?' selected':'')+'>Em atendimento</option><option value="resolvido"'+(t.status==='resolvido'?' selected':'')+'>Resolvido</option></select></label><button class="btn btn--outline" data-action="support-save-status">Salvar status</button>' +
+        '<button type="button" class="btn btn--outline qf-admin-support-del-big" data-action="support-delete">'+icon('trash')+' Excluir atendimento</button></div>' +
     '</div>';
   };
 
+  function supportDeleteConfirm(btn, id, after) {
+    if (btn.dataset.confirm !== '1') {
+      btn.dataset.confirm = '1';
+      btn.classList.add('is-confirm');
+      const lbl = btn.querySelector('span'); if (lbl) lbl.textContent = 'Toque de novo'; else btn.lastChild.textContent = ' Toque de novo para excluir';
+      setTimeout(function(){ if(btn.isConnected && btn.dataset.confirm==='1'){ btn.dataset.confirm=''; btn.classList.remove('is-confirm'); const l=btn.querySelector('span'); if(l) l.textContent='Excluir'; else btn.lastChild.textContent=' Excluir atendimento'; } }, 4000);
+      return;
+    }
+    btn.disabled = true;
+    global.QFAdminCloud.supportDelete(id).then(function(){ PU.toast('Atendimento excluído.', 'success'); after(); })
+      .catch(function(err){ PU.toast((err&&err.message)||'Não foi possível excluir.', 'danger'); btn.disabled=false; });
+  }
+
   async function bindSuporteLista(content) {
+    content.addEventListener('click', function (e) {
+      const del = e.target.closest('[data-support-del]');
+      if (!del) return;
+      e.preventDefault(); e.stopPropagation();
+      const id = del.getAttribute('data-support-del');
+      supportDeleteConfirm(del, id, function(){ const c = content.querySelector('[data-support-card="'+id+'"]'); if (c) c.remove(); global.navigate('/admin/suporte', true); });
+    }, true);
     const b=content.querySelector('[data-action="support-refresh"]');
     if(b) b.addEventListener('click',async function(){b.disabled=true;try{await global.QFAdminCloud.syncSupport();global.navigate('/admin/suporte',true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');b.disabled=false;}});
   }
 
   function bindSuporteDetalhe(content, params) {
-    let timer=null;
+    // V12.2: a caixa de resposta é fixa; o refresh de 4 s só troca as mensagens.
+    // Antes a textarea era recriada a cada 4 s e o teclado do celular fechava.
+    let timer=null, lastSig='';
     async function load(first) {
-      const wrap=content.querySelector('#qf-admin-support-thread');
-      if(!wrap) return;
+      const list=content.querySelector('#qf-admin-support-message-list');
+      if(!list) return;
       try {
-        const tickets=global.QFAdminCloud.supportTickets||[];
-        const ticket=tickets.find(function(x){return x.id===params.id;});
         const messages=await global.QFAdminCloud.getSupportMessages(params.id);
-        const old=content.querySelector('#qf-admin-support-reply');
-        const draft=old?old.value:'';
-        const bubbles=messages.map(function(m){
+        const sig=messages.map(function(m){return m.id;}).join(',');
+        if(!first && sig===lastSig) return;
+        lastSig=sig;
+        const nearBottom=list.scrollHeight-list.scrollTop-list.clientHeight<60;
+        list.innerHTML=messages.map(function(m){
           const admin=m.autor_tipo==='admin';
           return '<div class="qf-admin-support-msg'+(admin?' qf-admin-support-msg--admin':'')+'"><div class="qf-admin-support-msg__who">'+(admin?'Você / Suporte':'Usuário')+'</div><div class="qf-admin-support-msg__text">'+PU.escapeHtml(m.mensagem)+'</div><div class="qf-admin-support-msg__time">'+PU.escapeHtml(PU.formatDateTime(m.criado_em))+'</div></div>';
-        }).join('');
-        wrap.innerHTML='<div class="qf-admin-support-thread" id="qf-admin-support-message-list">'+(bubbles||'<div class="text--sm text--secondary">Nenhuma mensagem.</div>')+'</div>'+
-          (ticket && ticket.status==='resolvido'
-            ? '<div class="card card--tight" style="background:var(--success-100);border:none;"><div class="text--sm" style="color:var(--success-600);">Atendimento resolvido. Reabra pelo status se precisar responder novamente.</div></div>'
-            : '<div class="qf-admin-support-reply"><textarea class="textarea" id="qf-admin-support-reply" maxlength="4000" placeholder="Responder ao usuário...">'+PU.escapeHtml(draft)+'</textarea><button class="btn btn--primary" id="qf-admin-support-send">'+icon('arrowRight')+' Enviar</button></div>');
-        const list=content.querySelector('#qf-admin-support-message-list'); if(list&&(first||!draft))list.scrollTop=list.scrollHeight;
-        const send=content.querySelector('#qf-admin-support-send');
-        if(send) send.onclick=async function(){const inp=content.querySelector('#qf-admin-support-reply');const msg=inp.value.trim();if(!msg)return;send.disabled=true;try{await global.QFAdminCloud.supportReply(params.id,msg);inp.value='';await load(true);}catch(err){PU.toast((err&&err.message)||'Não foi possível enviar.','danger');send.disabled=false;}};
-      } catch(err){wrap.innerHTML='<div class="text--sm" style="color:var(--danger-600);">'+PU.escapeHtml((err&&err.message)||'Não foi possível carregar a conversa.')+'</div>';}
+        }).join('') || '<div class="text--sm text--secondary">Nenhuma mensagem.</div>';
+        if(first||nearBottom) list.scrollTop=list.scrollHeight;
+      } catch(err){ if(first) list.innerHTML='<div class="text--sm" style="color:var(--danger-600);">'+PU.escapeHtml((err&&err.message)||'Não foi possível carregar a conversa.')+'</div>'; }
     }
     load(true);
     timer=setInterval(function(){if(location.hash!=='#/admin/suporte/'+params.id){clearInterval(timer);return;}load(false);},4000);
+    const send=content.querySelector('#qf-admin-support-send');
+    if(send){
+      // pointerdown sem preventDefault tiraria o foco antes do clique; mantém o teclado aberto.
+      send.addEventListener('mousedown',function(e){e.preventDefault();});
+      send.addEventListener('click',async function(){
+        const inp=content.querySelector('#qf-admin-support-reply');
+        const msg=inp.value.trim(); if(!msg){inp.focus();return;}
+        send.disabled=true;
+        try{await global.QFAdminCloud.supportReply(params.id,msg);inp.value='';await load(true);}
+        catch(err){PU.toast((err&&err.message)||'Não foi possível enviar.','danger');}
+        finally{send.disabled=false;}
+      });
+    }
     const save=content.querySelector('[data-action="support-save-status"]');
-    if(save) save.addEventListener('click',async function(){save.disabled=true;try{const status=content.querySelector('#qf-admin-support-status').value;await global.QFAdminCloud.supportSetStatus(params.id,status);PU.toast(status==='resolvido'?'Atendimento resolvido.':'Status atualizado.','success');global.navigate('/admin/suporte/'+params.id,true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');save.disabled=false;}});
+    if(save) save.addEventListener('click',async function(){save.disabled=true;try{const status=content.querySelector('#qf-admin-support-status').value;await global.QFAdminCloud.supportSetStatus(params.id,status);PU.toast(status==='resolvido'?'Atendimento resolvido.':'Status atualizado.','success');global.navigate(status==='resolvido'?'/admin/suporte':'/admin/suporte/'+params.id,true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');save.disabled=false;}});
+    const del=content.querySelector('[data-action="support-delete"]');
+    if(del) del.addEventListener('click',function(){supportDeleteConfirm(del,params.id,function(){clearInterval(timer);global.navigate('/admin/suporte',true);});});
   }
 
   // ---------------- Mais opções ----------------
@@ -5264,6 +5389,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfterRender) prevAfterRender(pattern, content, params, user);
 
+    if (pattern === '/admin/profissionais') bindProfissionaisLista(content);
     if (pattern === '/admin/profissionais/:id') bindProfissionalDetalhe(content, params);
     if (pattern === '/admin/clientes') bindClientes(content);
     if (pattern === '/admin/servicos') bindServicosLista(content, params);
