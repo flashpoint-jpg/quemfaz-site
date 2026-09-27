@@ -239,7 +239,8 @@ async function recipientsForNewCallAtRadius(call: any, _stageRadiusKm: number | 
   return out;
 }
 
-async function sendToUsers(userIds: string[], payload: any) {
+// V11.13: perUser = aviso próprio de cada profissional (distância, tempo e preço dele).
+async function sendToUsers(userIds: string[], payload: any, perUser?: Record<string, any>) {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (!ids.length) return { sent: 0, total: 0 };
 
@@ -268,7 +269,8 @@ async function sendToUsers(userIds: string[], payload: any) {
         // V12: "apk android;v=12" (ou maior) recebe só dados.
         const m = /^apk android;v=(\d+)/.exec(String(s.user_agent || ""));
         const soDados = !!m && Number(m[1]) >= 12;
-        const userPayload = alertaPorUser[String(s.user_id)] ? { ...payload, alerta: alertaPorUser[String(s.user_id)] } : payload;
+        const base = (perUser && perUser[String(s.user_id)]) || payload;
+        const userPayload = alertaPorUser[String(s.user_id)] ? { ...base, alerta: alertaPorUser[String(s.user_id)] } : base;
         const r = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, soDados);
         if (r === "ok") sent++;
         if (r === "gone") {
@@ -285,7 +287,7 @@ async function sendToUsers(userIds: string[], payload: any) {
     try {
       await webpush.sendNotification(
         { endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
-        JSON.stringify(payload),
+        JSON.stringify((perUser && perUser[String(s.user_id)]) || payload),
         { TTL: 90, urgency: payload.strong ? "high" : "normal" }
       );
       sent++;
@@ -311,6 +313,47 @@ function newCallPayload(call: any) {
     tag: "qf-new-call-" + call.id,
     strong: true,
   };
+}
+
+// V11.13: aviso de chamado já detalhado para cada profissional (só o contato do cliente fica escondido).
+function fmtKm(km: number) { return km.toFixed(1).replace(".", ",") + " km"; }
+function fmtMin(m: number) {
+  if (m >= 60) { const h = Math.floor(m / 60), r = m % 60; return "~" + h + " h" + (r ? " " + r + " min" : ""); }
+  return "~" + m + " min";
+}
+function fmtBRL(c: number) { return "R$ " + (c / 100).toFixed(2).replace(".", ","); }
+
+function newCallBody(call: any, d: any) {
+  const parts: string[] = [];
+  const km = d.distancia_km == null ? null : Number(d.distancia_km);
+  const min = d.tempo_min == null ? null : Number(d.tempo_min);
+  if (km != null && Number.isFinite(km)) parts.push(fmtKm(km) + (min != null && Number.isFinite(min) ? " (" + fmtMin(min) + ")" : ""));
+  parts.push(Number(d.plano_restantes) > 0 ? "Desbloqueio pelo seu plano" : "Desbloqueio " + fmtBRL(Number(d.preco_centavos || 0)));
+  const place = [call.bairro, call.cidade].filter(Boolean).join(", ");
+  if (place) parts.push(place);
+  let body = parts.join(" · ");
+  const desc = String(d.descricao || "").replace(/\s+/g, " ").trim();
+  if (desc) body += "\n\u201c" + (desc.length > 120 ? desc.slice(0, 117).trimEnd() + "\u2026" : desc) + "\u201d";
+  const media: string[] = [];
+  const f = Number(d.fotos || 0), v = Number(d.videos || 0);
+  if (f > 0) media.push(f + (f > 1 ? " fotos" : " foto"));
+  if (v > 0) media.push(v + (v > 1 ? " vídeos" : " vídeo"));
+  if (media.length) body += "\n" + media.join(" + ") + " — toque para ver";
+  return body;
+}
+
+async function newCallPayloads(call: any, userIds: string[]) {
+  const out: Record<string, any> = {};
+  if (!userIds.length) return out;
+  try {
+    const base = newCallPayload(call);
+    const { data, error } = await admin.rpc("qf_push_detalhes_chamado", { p_chamado_id: call.id, p_user_ids: userIds });
+    if (error) throw error;
+    for (const r of data || []) out[String(r.user_id)] = { ...base, body: newCallBody(call, r) };
+  } catch (err) {
+    console.error("detalhes do chamado", err);
+  }
+  return out;
 }
 
 async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
@@ -354,7 +397,7 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
     return { stopped: false, recipients: 0, sent: 0, total: 0 };
   }
 
-  const result = await sendToUsers(freshIds, newCallPayload(call));
+  const result = await sendToUsers(freshIds, newCallPayload(call), await newCallPayloads(call, freshIds));
   return { stopped: false, recipients: freshIds.length, ...result };
 }
 
@@ -384,7 +427,7 @@ async function sendCascadeStage2(callId: string) {
     if (reserveErr) throw reserveErr;
     fresh = Array.isArray(reserved) ? reserved : [];
   }
-  const result = fresh.length ? await sendToUsers(fresh, newCallPayload(call)) : { sent: 0, total: 0 };
+  const result = fresh.length ? await sendToUsers(fresh, newCallPayload(call), await newCallPayloads(call, fresh)) : { sent: 0, total: 0 };
   await admin.from("qf_chamado_cascata")
     .update({ etapa2_destinatarios: ids.length, etapa2_enviados: result.sent, atualizado_em: new Date().toISOString() })
     .eq("chamado_id", call.id);

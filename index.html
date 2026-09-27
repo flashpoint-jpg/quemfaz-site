@@ -1812,6 +1812,86 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-cidade-cep svg{width:16px;height:16px;flex:none}
 .qf-cidade-cep__txt{flex:1 1 180px;min-width:0}
 .qf-cidade-cep .btn{width:auto;height:36px;min-height:36px;padding:0 12px;font-size:13px}
+
+/* ===== V11.13: barra do profissional com Planos e Configurações + chamado detalhado ===== */
+.tabbar__item--desk{display:none}
+.tabbar__lbl-long{display:none}
+.tabbar__item > span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:767px){
+  #app-shell[data-role="profissional"] .tabbar__item{font-size:10.5px;gap:3px;padding:6px 0 0;letter-spacing:0}
+  #app-shell[data-role="profissional"] .tabbar__item svg{width:21px;height:21px}
+}
+@media (max-width:340px){
+  #app-shell[data-role="profissional"] .tabbar__item{font-size:9.5px}
+}
+@media (min-width:768px){
+  .tabbar__item--desk{display:flex}
+  .tabbar__lbl-short{display:none}
+  .tabbar__lbl-long{display:inline}
+  .qf-topbar-bell{display:none !important}
+}
+@media (min-width:768px) and (max-width:1199px){
+  .tabbar__item{padding:0 10px;font-size:13px;gap:6px}
+  .tabbar__item svg{width:17px;height:17px}
+  .tabbar__brand-word{font-size:19px}
+  .qf-tabbar-dl{display:none !important}
+}
+@media (min-width:768px) and (max-width:940px){
+  .tabbar__item > span:last-child{display:none}
+  .tabbar__item{padding:0 12px}
+  .tabbar__item svg{width:20px;height:20px}
+}
+.qf-topbar-bell{position:relative;width:40px;height:40px;min-width:40px;border:none;border-radius:50%;display:grid;place-items:center;background:var(--bg-surface);color:var(--navy-800);cursor:pointer;flex:none}
+.qf-topbar-bell svg{width:20px;height:20px}
+.qf-topbar-bell.is-active{background:var(--orange-100);color:var(--orange-700)}
+.qf-topbar-bell__badge{position:absolute;top:-2px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;border:2px solid var(--bg-page);font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;line-height:1;animation:qf-notice-pulse 1.5s ease-in-out infinite}
+.topbar .qf-top-dl + .qf-topbar-bell{margin-left:0}
+.topbar__title + .qf-topbar-bell{margin-left:auto}
+
+/* Planos */
+.qf-plan-status{display:flex;gap:12px;align-items:flex-start}
+.qf-pay-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.qf-pay-method{min-height:46px;border-radius:14px;border:1.5px solid var(--border-subtle);background:#fff;color:var(--navy-900);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 6px}
+.qf-pay-method svg{width:17px;height:17px}
+.qf-pay-method.is-selected{border-color:var(--orange-500);box-shadow:0 0 0 1px var(--orange-500);background:var(--orange-100);color:var(--orange-800)}
+.qf-ad-plan-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-subtle)}
+.qf-ad-plan-row:last-child{border-bottom:none}
+.qf-ad-plan-row__price{font-weight:900;color:var(--orange-700);white-space:nowrap}
+
+/* Chamado detalhado (antes do desbloqueio) */
+.qf-call-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.qf-call-fact{border-radius:14px;background:var(--orange-100);border:1px solid rgba(234,88,12,.18);padding:10px 8px;text-align:center;min-width:0}
+.qf-call-fact strong{display:block;font-size:16px;font-weight:900;color:var(--orange-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qf-call-fact span{display:block;font-size:11px;color:var(--text-secondary);margin-top:2px}
+.qf-call-desc{font-size:15px;line-height:1.5;color:var(--text-primary);white-space:pre-wrap;overflow-wrap:anywhere}
+.qf-call-media{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.qf-call-media > *{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:14px;border:1px solid var(--border-subtle);background:#0b1d3a;display:block}
+.qf-call-media img{cursor:zoom-in}
+.qf-call-media > :only-child{grid-column:1 / -1;aspect-ratio:16/10}
+.qf-card-snippet{font-size:13px;color:var(--text-secondary);margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.qf-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qf-card-meta span{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;padding:4px 9px;border-radius:999px;background:var(--bg-sunken);color:var(--navy-800)}
+.qf-card-meta svg{width:14px;height:14px}
+.qf-media-zoom{position:fixed;inset:0;z-index:400;background:rgba(3,10,24,.94);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out}
+.qf-media-zoom img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+.qf-media-zoom__x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;width:44px;height:44px;border-radius:50%;border:none;background:rgba(255,255,255,.14);color:#fff;display:grid;place-items:center;cursor:pointer}
+/* Tela cheia do chamado novo com detalhes: rola se não couber */
+.qf-call-overlay{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.qf-call-overlay__inner{padding:18px 0 8px}
+.qf-call-overlay__icon{width:64px;height:64px;border-radius:20px;margin-bottom:10px}
+.qf-call-overlay__icon svg{width:34px;height:34px}
+.qf-call-overlay__facts--3{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:14px 0 10px}
+.qf-call-overlay__facts--3 .qf-call-overlay__fact{padding:11px 6px}
+.qf-call-overlay__facts--3 .qf-call-overlay__fact strong{font-size:17px;white-space:nowrap}
+.qf-call-overlay__desc{text-align:left;background:rgba(255,255,255,.08);border-radius:16px;padding:12px 14px;font-size:15px;line-height:1.45;color:#fff;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.qf-call-overlay__desc small{display:block;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-400);margin-bottom:4px}
+.qf-call-overlay__media{display:flex;gap:8px;justify-content:center;margin-bottom:12px;cursor:pointer;border:none;background:none;padding:0;width:100%}
+.qf-call-overlay__media img,.qf-call-overlay__media .qf-call-overlay__vid{width:84px;height:84px;border-radius:14px;object-fit:cover;flex:none}
+.qf-call-overlay__vid{display:grid;place-items:center;background:rgba(255,255,255,.12);color:#fff}
+.qf-call-overlay__vid svg{width:30px;height:30px}
+.qf-call-overlay__lock{font-size:12px;color:var(--text-on-navy-muted);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.qf-call-overlay__lock svg{width:14px;height:14px}
+@media (max-height:640px){.qf-call-overlay__icon{display:none}.qf-call-overlay__title{font-size:25px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -1885,6 +1965,9 @@ alt=""></noscript>
     edit: svg('<path d="M4 20h4.2L18.8 9.4a2 2 0 0 0 0-2.8l-1.4-1.4a2 2 0 0 0-2.8 0L4 15.8Z"/><path d="m13.2 6.4 4.4 4.4"/>'),
     logout: svg('<path d="M14 8V6a2 2 0 0 0-2-2H6.5A2.5 2.5 0 0 0 4 6.5v11A2.5 2.5 0 0 0 6.5 20H12a2 2 0 0 0 2-2v-2"/><path d="M9 12h11m0 0-3-3m3 3-3 3"/>'),
     power: svg('<path d="M12 4v7"/><path d="M6.3 7.3a7.5 7.5 0 1 0 11.4 0"/>'),
+    crown: svg('<path d="M4 17.5 3 7.5l5 4 4-6.5 4 6.5 5-4-1 10z"/><path d="M5 20.5h14"/>'),
+    settings: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+    megaphone: svg('<path d="M3.5 10.5v3a1 1 0 0 0 1 1H7l7.5 4.5v-14L7 9.5H4.5a1 1 0 0 0-1 1Z"/><path d="M18 9a4 4 0 0 1 0 6"/><path d="M8 14.5 9.2 20h2.3"/>'),
     sliders: svg('<path d="M5 6h9M18 6h1M5 12h4M13 12h6M5 18h13M18 18h1"/><circle cx="16" cy="6" r="2" fill="var(--bg-surface,#fff)"/><circle cx="9" cy="12" r="2" fill="var(--bg-surface,#fff)"/><circle cx="16" cy="18" r="2" fill="var(--bg-surface,#fff)"/>'),
     briefcase: svg('<rect x="3.5" y="7.5" width="17" height="11" rx="2"/><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><path d="M3.5 12.5h17"/>'),
     tag: svg('<path d="M12.6 4H7a2 2 0 0 0-2 2v5.6a2 2 0 0 0 .6 1.4l8 8a2 2 0 0 0 2.8 0l4.8-4.8a2 2 0 0 0 0-2.8l-8-8a2 2 0 0 0-1.6-.6Z"/><circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none"/>'),
@@ -3571,6 +3654,7 @@ alt=""></noscript>
       longitude: row.longitude == null ? null : Number(row.longitude),
       distanciaKm: row.distancia_km == null ? null : Number(row.distancia_km),
       precoDesbloqueio: row.preco_centavos == null ? null : Number(row.preco_centavos),
+      tempoMin: row.tempo_min == null ? null : Number(row.tempo_min), // V11.13: tempo estimado até o cliente
       raioAtualKm: row.raio_atual_km == null ? null : Number(row.raio_atual_km),
       status: localStatus(row.status),
       profissionalId: professionalId || null,
@@ -7174,13 +7258,74 @@ alt=""></noscript>
       '</div>';
   };
 
+  // V11.13: informações do chamado para o profissional decidir ANTES de pagar
+  // (distância, tempo estimado, valor do desbloqueio, fotos e vídeos). O contato só aparece depois.
+  const CallInfo = global.QFCallInfo = {
+    km: function (req) { const k = Number(req && req.distanciaKm); return req && req.distanciaKm != null && Number.isFinite(k) ? k : null; },
+    kmTxt: function (req) { const k = CallInfo.km(req); return k == null ? '' : k.toFixed(1).replace('.', ',') + ' km'; },
+    // Mesmo cálculo do banco (qf_tempo_estimado_min): trajeto ≈ 1,3 × linha reta; cidade ~27 km/h, estrada ~50 km/h.
+    minutos: function (req) {
+      if (req && req.tempoMin != null && Number.isFinite(Number(req.tempoMin))) return Number(req.tempoMin);
+      const k = CallInfo.km(req);
+      if (k == null) return null;
+      const r = k * 1.3;
+      return Math.max(3, Math.ceil(r <= 10 ? 3 + r * 2.2 : 25 + (r - 10) * 1.2));
+    },
+    tempoTxt: function (req) {
+      const m = CallInfo.minutos(req);
+      if (m == null) return '';
+      if (m >= 60) { const h = Math.floor(m / 60), r = m % 60; return '~' + h + ' h' + (r ? ' ' + r : ''); }
+      return '~' + m + ' min';
+    },
+    usaPlano: function (user) { return !!(user && user.plano && user.plano.restantes > 0); },
+    precoTxt: function (req, user) { return CallInfo.usaPlano(user) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
+    midias: function (req) {
+      const list = (req && Array.isArray(req.fotos) ? req.fotos : []).map(function (x) { return String(x || ''); }).filter(Boolean);
+      const videos = list.filter(function (x) { return /^data:video\//i.test(x) || /\.(mp4|webm|mov)(\?|$)/i.test(x); });
+      return { list: list, fotos: list.length - videos.length, videos: videos.length, isVideo: function (x) { return videos.indexOf(x) !== -1; } };
+    },
+    midiasTxt: function (req) {
+      const m = CallInfo.midias(req), out = [];
+      if (m.fotos) out.push(m.fotos + (m.fotos > 1 ? ' fotos' : ' foto'));
+      if (m.videos) out.push(m.videos + (m.videos > 1 ? ' vídeos' : ' vídeo'));
+      return out.join(' + ');
+    }
+  };
+
+  // Foto do chamado em tela cheia (toque para ampliar, toque para fechar).
+  document.addEventListener('click', function (e) {
+    const img = e.target && e.target.closest ? e.target.closest('img[data-media-zoom]') : null;
+    if (!img) return;
+    e.preventDefault();
+    const box = document.createElement('div');
+    box.className = 'qf-media-zoom';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', 'Foto ampliada');
+    box.innerHTML = '<img alt="Foto enviada pelo cliente"><button class="qf-media-zoom__x" type="button" aria-label="Fechar">' + icon('x') + '</button>';
+    box.querySelector('img').src = img.getAttribute('src');
+    box.addEventListener('click', function () { box.remove(); });
+    document.body.appendChild(box);
+  });
+  window.addEventListener('hashchange', function () { document.querySelectorAll('.qf-media-zoom').forEach(function (b) { b.remove(); }); });
+
   function distanceHighlight(req) {
-    if (!Number.isFinite(Number(req && req.distanciaKm))) return '';
-    const km = Number(req.distanciaKm).toFixed(1).replace('.', ',');
+    const km = CallInfo.kmTxt(req);
+    if (!km) return '';
+    const tempo = CallInfo.tempoTxt(req);
     return '<div style="margin-top:8px;padding:10px 12px;border-radius:12px;background:var(--orange-100);border:1px solid rgba(234,88,12,.22);display:flex;align-items:center;gap:8px;color:var(--orange-800);font-weight:700;">' +
       icon('mapPin', 'list-item__chevron') +
-      '<span>Este pedido está a <strong>' + km + ' km</strong> de você</span>' +
+      '<span>Este pedido está a <strong>' + km + '</strong> de você' + (tempo ? ' · <strong>' + tempo + '</strong> de carro' : '') + '</span>' +
     '</div>';
+  }
+
+  // Fotos e vídeos que o cliente mandou (a mesma função existia só na área do cliente e quebrava esta tela).
+  function renderCallMedia(src) {
+    src = String(src || '');
+    const safe = PU.escapeHtml(src);
+    if (/^data:video\//i.test(src) || /\.(mp4|webm|mov)(\?|$)/i.test(src)) {
+      return '<video src="' + safe + '" controls playsinline preload="metadata" aria-label="Vídeo enviado pelo cliente"></video>';
+    }
+    return '<img src="' + safe + '" alt="Foto enviada pelo cliente" data-media-zoom loading="lazy">';
   }
 
   function chamadaCard(req, user) {
@@ -7196,10 +7341,15 @@ alt=""></noscript>
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
-            '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || '') + '</div>' +
-            distanceHighlight(req) +
-            '<div class="text--sm text--strong" style="margin-top:7px;color:' + (primeiraGratis ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
-              (primeiraGratis ? '1º desbloqueio GRÁTIS' : 'Desbloquear por ' + PU.formatCurrency(valor)) +
+            '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
+            (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
+            '<div class="qf-card-meta">' +
+              (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
+              (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
+              (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
+            '</div>' +
+            '<div class="text--sm text--strong" style="margin-top:7px;color:' + (primeiraGratis || CallInfo.usaPlano(user) ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
+              (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por ' + PU.formatCurrency(valor))) +
             '</div>' +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
@@ -7230,14 +7380,22 @@ alt=""></noscript>
           (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') +
         '</div>' +
 
+        // V11.13: tudo do serviço antes de pagar; só o contato fica para depois do desbloqueio.
+        '<div class="section qf-call-facts">' +
+          '<div class="qf-call-fact"><strong>' + (CallInfo.kmTxt(req) || '—') + '</strong><span>de você</span></div>' +
+          '<div class="qf-call-fact"><strong>' + (CallInfo.tempoTxt(req) || '—') + '</strong><span>de carro (estimado)</span></div>' +
+          '<div class="qf-call-fact"><strong>' + CallInfo.precoTxt(req, user) + '</strong><span>' + (CallInfo.usaPlano(user) ? 'usa 1 do plano' : 'para desbloquear') + '</span></div>' +
+        '</div>' +
+
         '<div class="section card stack--sm">' +
-          '<div class="row"><div class="avatar avatar--sm">?</div><div><div class="text--strong">Cliente verificado</div><div class="text--sm text--muted">Identidade protegida até o desbloqueio</div></div></div>' +
+          '<div class="text--sm text--strong" style="color:var(--orange-700);text-transform:uppercase;letter-spacing:.06em;">O que o cliente precisa</div>' +
+          '<div class="qf-call-desc">' + (req.descricao ? PU.escapeHtml(req.descricao) : '<span class="text--secondary">O cliente não escreveu detalhes.</span>') + '</div>' +
+          (CallInfo.midias(req).list.length ? '<div class="text--sm text--secondary">' + CallInfo.midiasTxt(req) + ' do cliente · toque na foto para ampliar</div><div class="qf-call-media">' + CallInfo.midias(req).list.map(renderCallMedia).join('') + '</div>' : '') +
           '<hr class="hairline">' +
-          '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
-          '<hr class="hairline">' +
-          '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || '') + '</span></div>' +
+          '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</span></div>' +
           distanceHighlight(req) +
+          '<hr class="hairline">' +
+          '<div class="row"><div class="avatar avatar--sm">' + icon('lock') + '</div><div><div class="text--strong">Contato do cliente protegido</div><div class="text--sm text--muted">Nome, telefone/WhatsApp e endereço exato aparecem depois do desbloqueio</div></div></div>' +
         '</div>' +
 
         '<div class="section card stack--sm" style="background:var(--navy-900);border:none;">' +
@@ -7323,7 +7481,7 @@ alt=""></noscript>
           ((cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + whatsappHref(cliente.telefone, 'Olá ' + (cliente.nome || '') + ', sou ' + user.nome + ' do QuemFaz. Desbloqueei seu chamado e estou entrando em contato sobre o serviço.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-          (req.fotos && req.fotos.length ? '<div class="upload-row">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
+          (req.fotos && req.fotos.length ? '<div class="qf-call-media">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.rua) + ', ' + PU.escapeHtml(req.endereco.bairro) + (req.endereco.complemento ? ' · ' + PU.escapeHtml(req.endereco.complemento) : '') + '</span></div>' +
         '</div>' +
 
@@ -7458,7 +7616,7 @@ alt=""></noscript>
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
-            '<div class="list-item" data-nav="/profissional/como-funciona"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos, preços e devolução.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
+            '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos, preços e devolução.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas e você não quiser esperar, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
           '</div>' +
         '</div>' +
@@ -7550,7 +7708,7 @@ alt=""></noscript>
     const role = session && session.role;
     // Profissional logado assina na carteira; visitante faz o cadastro primeiro.
     const assinar = function (plano) {
-      if (role === 'profissional') return '<button class="btn btn--primary" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Assinar o plano ' + plano + '</button>';
+      if (role === 'profissional') return '<button class="btn btn--primary" type="button" data-nav="/profissional/planos">' + icon('crown') + ' Assinar o plano ' + plano + '</button>';
       if (role === 'cliente') return '';
       return '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/cadastro">' + icon('briefcase') + ' Cadastrar e assinar</button>';
     };
@@ -7589,7 +7747,7 @@ alt=""></noscript>
             ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'O menor preço por chamado do QuemFaz', 'Sem renovação automática e sem fidelidade'],
             assinar('Pro')) +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na Carteira, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
       '</section>' +
 
       '<section class="section">' +
@@ -7608,13 +7766,13 @@ alt=""></noscript>
         '<div class="section-head"><h2 class="h3">Dúvidas de profissionais</h2></div>' +
         '<div class="stack--sm">' +
           cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline, dentro do horário que você escolheu.') +
-          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Em Perfil \u203a Configurações de chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
-          cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Em Perfil \u203a Configurações de chamados, escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
+          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Na aba Config. (barra de baixo), em Quando receber chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
+          cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Na aba Config. (barra de baixo), escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'Se o pedido ficar 3 dias parado sem resposta, ou o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira.') +
           cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
           cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
-          cfFaq('Como assino um plano?', 'Na aba Carteira, em Planos, toque em Assinar e pague por Pix, cartão ou boleto. O plano é ativado sozinho quando o pagamento é confirmado, sem precisar falar com ninguém.') +
+          cfFaq('Como assino um plano?', 'Na aba Planos (barra de baixo), toque em Assinar e pague por Pix, cartão ou boleto. O plano é ativado sozinho quando o pagamento é confirmado, sem precisar falar com ninguém.') +
           cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm renovação automática nem fidelidade: é só não comprar de novo no mês seguinte.') +
           cfFaq('E se eu comprar outro plano antes de acabar?', 'Os chamados que sobraram passam para o plano novo, e a validade conta de novo a partir da compra.') +
         '</div>' +
@@ -7694,12 +7852,95 @@ alt=""></noscript>
     '</div>';
   }
 
+  // V11.13: Configurações virou aba própria na barra de baixo (antes ficava dentro do Perfil).
   Screens.profConfigRender = function (params, user) {
+    function linha(nav, iconName, titulo, sub, action) {
+      return '<button class="card row" type="button" style="width:100%;text-align:left;"' + (nav ? ' data-nav="' + nav + '"' : '') + (action ? ' data-action="' + action + '"' : '') + '>' +
+        '<div class="icon-tile icon-tile--orange">' + icon(iconName) + '</div>' +
+        '<div class="spacer"><div class="text--strong">' + titulo + '</div><div class="text--sm text--secondary">' + sub + '</div></div>' +
+        icon('chevronRight', 'list-item__chevron') + '</button>';
+    }
     return '<div class="view stack">' +
       prefChamadoSection(user) +
       '<div class="section"><div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('info') + '</div>' +
         '<div class="text--sm">Ficar <strong>online</strong> faz você receber o chamado antes dos outros, a qualquer hora. O horário acima vale só para quando você está <strong>offline</strong>.</div></div></div></div>' +
-      '<div class="section"><button class="btn btn--outline" type="button" data-nav="/profissional/como-funciona">' + icon('info') + ' Dúvidas? Veja como funciona</button></div>' +
+      '<div class="section stack--sm"><div class="section-head"><h2 class="h3">Notificações</h2></div>' +
+        (global.QFPush ? global.QFPush.card('profissional') : '') +
+        ((global.QFNativeOnline && global.QFNativeOnline.available()) ? linha('', 'bell', 'Revisar permissões de alerta', 'Para o chamado tocar mesmo com a tela apagada', 'revisar-alertas') : '') +
+      '</div>' +
+      '<div class="section stack--sm"><div class="section-head"><h2 class="h3">Onde e o que você atende</h2></div>' +
+        linha('/profissional/perfil', 'mapPin', 'Serviços, cidades e raio', 'Escolha as categorias e as cidades onde quer receber chamados') +
+        linha('/profissional/perfil', 'camera', 'Foto e dados do perfil', 'Sua selfie ou logo aparece para o cliente') +
+      '</div>' +
+      '<div class="section stack--sm"><div class="section-head"><h2 class="h3">Ajuda</h2></div>' +
+        linha('/profissional/como-funciona', 'info', 'Como funciona', 'Passo a passo, preços, planos e dúvidas') +
+        linha('', 'refresh', 'Regras de devolução do lead', 'Quando o valor do desbloqueio volta para a sua carteira', 'regras-devolucao') +
+      '</div>' +
+      '<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>' +
+    '</div>';
+  };
+
+  // V11.13: aba Planos — planos de chamados (Mensal/Pro) e divulgação, tudo num lugar só.
+  Screens.profPlanosRender = function (params, user) {
+    const ativo = user && user.plano && user.plano.restantes > 0 ? user.plano : null;
+    const validade = ativo && ativo.validoAte ? new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '';
+    const adPlans = ((DB.state.settings || {}).adPlans) || {};
+    const meusAnuncios = (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).sort(function (a, b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
+    const ultimoAd = meusAnuncios[0] || null;
+    function assinar(plano, valor, nome) {
+      return '<button class="btn btn--primary" type="button" data-action="assinar-plano" data-plano="' + plano + '" data-valor="' + valor + '">' + icon('crown') + ' Assinar o plano ' + nome + '</button>';
+    }
+    function adRow(key, desc) {
+      const p = adPlans[key];
+      if (!p) return '';
+      return '<div class="qf-ad-plan-row"><div class="spacer"><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + desc + ' · ' + (p.dias || 30) + ' dias</div></div><div class="qf-ad-plan-row__price">' + PU.formatCurrency(p.valor) + '</div></div>';
+    }
+    function adStatus(a) {
+      if (!a) return '';
+      const map = { ativo: ['badge--success', 'No ar'], reprovado: ['badge--danger', 'Reprovado'], pausado: ['badge--warning', 'Pausado'] };
+      const b = map[a.status] || ['badge--warning', 'Aguardando aprovação'];
+      return '<div class="card card--tight row-between" style="margin-top:10px;"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">' + PU.escapeHtml(a.empresa || 'Anúncio') + '</div></div><span class="badge ' + b[0] + '"><span class="badge__dot"></span>' + b[1] + '</span></div>';
+    }
+    return '<div class="view stack">' +
+      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;">' +
+        '<div class="eyebrow" style="color:var(--orange-400);">Planos e divulgação</div>' +
+        '<div class="h2" style="color:#fff;margin-top:4px;">Pegue mais clientes pagando menos</div>' +
+        '<p class="text--sm" style="color:#c7d1e3;margin:6px 0 0;">Escolha um plano de chamados ou divulgue seu serviço para os clientes da sua região.</p>' +
+      '</div>' +
+
+      '<div class="section">' +
+        (ativo
+          ? '<div class="card qf-plan-status" style="background:var(--success-100);border:none;"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div>'
+          : '<div class="card qf-plan-status"><div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div><div class="spacer"><div class="text--strong">Hoje você está no Avulso</div><div class="text--sm text--secondary">Paga de R$ 4,90 a R$ 12,90 por chamado desbloqueado, com o saldo da carteira. Saldo: <strong>' + PU.formatCurrency(user.creditos || 0) + '</strong></div><button class="btn btn--outline btn--sm btn--block-auto" type="button" data-nav="/profissional/carteira" style="margin-top:10px;">' + icon('plus') + ' Colocar saldo</button></div></div>') +
+      '</div>' +
+
+      '<section class="section" id="planos-chamados">' +
+        '<div class="section-head"><div><h2 class="h3">Planos de chamados</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
+        '<div class="stack">' +
+          cfPlano('Mensal', false, 'R$ 49,90', 'por 30 dias', '10 chamados · sai a R$ 4,99 cada',
+            ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática'], assinar('mensal', 4990, 'Mensal')) +
+          cfPlano('Pro', true, 'R$ 99,90', 'por 30 dias', '25 chamados · sai a R$ 4,00 cada',
+            ['O menor preço por chamado do QuemFaz', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', 9990, 'Pro')) +
+        '</div>' +
+        '<div style="margin-top:14px;"><div class="field__label" style="margin-bottom:8px;">Como quer pagar o plano?</div>' +
+          '<div class="qf-pay-methods" id="planos-metodos">' +
+            '<button type="button" class="qf-pay-method is-selected" data-plano-metodo="pix">' + icon('bolt') + ' Pix</button>' +
+            '<button type="button" class="qf-pay-method" data-plano-metodo="cartao">' + icon('creditCard') + ' Cartão</button>' +
+            '<button type="button" class="qf-pay-method" data-plano-metodo="boleto">' + icon('document') + ' Boleto</button>' +
+          '</div></div>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
+      '</section>' +
+
+      '<section class="section" id="planos-divulgacao">' +
+        '<div class="section-head"><div><h2 class="h3">Divulgação</h2><div class="text--sm text--secondary">Seu serviço no carrossel do QuemFaz, para os clientes da sua região.</div></div></div>' +
+        '<div class="card" style="padding:4px 16px;">' +
+          adRow('local', 'Carrossel da cidade/região') + adRow('destaque', 'Prioridade no carrossel + selo') + adRow('premium', 'Primeira posição + destaque maior') +
+        '</div>' +
+        '<button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:12px;">' + icon('megaphone') + ' Divulgar meu serviço</button>' +
+        adStatus(ultimoAd) +
+      '</section>' +
+
+      '<div class="section"><button class="btn btn--outline" type="button" data-nav="/profissional/como-funciona">' + icon('info') + ' Dúvidas sobre planos e preços</button></div>' +
     '</div>';
   };
 
@@ -7905,6 +8146,8 @@ alt=""></noscript>
     if (pattern === '/profissional/orcamento/:id') bindOrcamentoForm(content, params, user);
     if (pattern === '/profissional/perfil') bindPerfil(content, user);
     if (pattern === '/profissional/carteira') bindCarteira(content, user);
+    if (pattern === '/profissional/planos') bindPlanos(content, user);
+    if (pattern === '/profissional/configuracoes') bindNotificationActivation(content);
     if (pattern === '/cliente/home') { bindAnunciosHome(content); bindNotificationActivation(content); }
     if (pattern === '/anuncie' || pattern === '/cliente/anuncie' || pattern === '/profissional/anuncie') bindAnuncie(content);
   };
@@ -8541,6 +8784,22 @@ alt=""></noscript>
     });
   }
 
+  // V11.13: aba Planos — escolhe a forma de pagamento e assina.
+  function bindPlanos(content, user) {
+    let metodo = 'pix';
+    content.addEventListener('click', function (e) {
+      const m = e.target.closest('[data-plano-metodo]');
+      if (m) {
+        metodo = m.getAttribute('data-plano-metodo') || 'pix';
+        Array.prototype.forEach.call(content.querySelectorAll('[data-plano-metodo]'), function (b) { b.classList.toggle('is-selected', b === m); });
+        return;
+      }
+      const b = e.target.closest('[data-action="assinar-plano"]');
+      if (!b) return;
+      openRechargeSheet(user, Number(b.getAttribute('data-valor') || 0), metodo, b.getAttribute('data-plano'));
+    });
+  }
+
   function openRechargeSheet(user, valor, method, plano) {
     const planoNome = plano === 'pro' ? 'Pro' : (plano === 'mensal' ? 'Mensal' : '');
     const displayValue = PU.formatCurrency(valor);
@@ -8586,7 +8845,7 @@ alt=""></noscript>
               try {
                 await global.QFCloud.syncForCurrentSession(true);
                 PU.closeSheet();
-                global.navigate('/profissional/carteira', true);
+                global.navigate(plano ? '/profissional/planos' : '/profissional/carteira', true);
               } catch (err) {
                 PU.toast('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.', 'danger');
                 refreshPix.disabled = false;
@@ -8609,7 +8868,7 @@ alt=""></noscript>
             try {
               await global.QFCloud.syncForCurrentSession(true);
               PU.closeSheet();
-              global.navigate('/profissional/carteira', true);
+              global.navigate(plano ? '/profissional/planos' : '/profissional/carteira', true);
             } catch (err) {
               PU.toast('Pagamento ainda não confirmado. Aguarde alguns segundos e tente novamente.', 'danger');
               refresh.disabled = false;
@@ -8823,7 +9082,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.12.0';
+  const APP_VERSION = '11.13.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -9990,8 +10249,17 @@ alt=""></noscript>
     activeId=req.id;
     const bairro=(req.endereco&&req.endereco.bairro)||'';
     const cidade=(req.endereco&&req.endereco.cidade)||(city&&city.nome)||'';
-    const dist=Number.isFinite(Number(req.distanciaKm))?Number(req.distanciaKm).toFixed(1).replace('.',',')+' km':'—';
-    const price=DB.leadFeeForRequest(req);
+    // V11.13: chamado já detalhado no aviso (descrição, fotos/vídeos, distância, tempo e valor). Contato só depois.
+    const CI=global.QFCallInfo;
+    const sessU=DB.getSession&&DB.getSession();
+    const me=sessU&&DB.profissionalById?DB.profissionalById(sessU.userId):null;
+    const dist=(CI&&CI.kmTxt(req))||(Number.isFinite(Number(req.distanciaKm))&&req.distanciaKm!=null?Number(req.distanciaKm).toFixed(1).replace('.',',')+' km':'—');
+    const tempo=(CI&&CI.tempoTxt(req))||'—';
+    const priceTxt=CI?CI.precoTxt(req,me):PU.formatCurrency(DB.leadFeeForRequest(req));
+    const planoOk=!!(CI&&CI.usaPlano(me));
+    const midias=CI?CI.midias(req):{list:[],isVideo:function(){return false;}};
+    const thumbs=midias.list.slice(0,3).map(function(m){return midias.isVideo(m)?'<span class="qf-call-overlay__vid">'+icon('video')+'</span>':'<img src="'+PU.escapeHtml(m)+'" alt="Foto do cliente">';}).join('');
+    const desc=String(req.descricao||'').trim();
     let el=document.getElementById('qf-call-overlay');
     if(!el){el=document.createElement('div');el.id='qf-call-overlay';el.className='qf-call-overlay';document.body.appendChild(el);}
     el.innerHTML='<div class="qf-call-overlay__inner" role="alertdialog" aria-modal="true" aria-labelledby="qf-new-call-title">'+
@@ -9999,12 +10267,15 @@ alt=""></noscript>
       '<h2 class="qf-call-overlay__title" id="qf-new-call-title">'+PU.escapeHtml(cat?cat.nome:'Serviço')+'</h2>'+
       '<div class="qf-call-overlay__place">'+PU.escapeHtml([bairro,cidade].filter(Boolean).join(' · '))+'</div>'+
       (req.prioridade?'<div class="qf-call-overlay__priority">PRIORITÁRIO</div>':'')+
-      '<div class="qf-call-overlay__facts"><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(dist)+'</strong><span>de você</span></div><div class="qf-call-overlay__fact"><strong>'+PU.formatCurrency(price)+'</strong><span>para desbloquear</span></div></div>'+
+      '<div class="qf-call-overlay__facts qf-call-overlay__facts--3"><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(dist)+'</strong><span>de você</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(tempo)+'</strong><span>de carro</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(priceTxt)+'</strong><span>'+(planoOk?'usa 1 do plano':'desbloqueio')+'</span></div></div>'+
+      (desc?'<div class="qf-call-overlay__desc"><small>O que o cliente precisa</small>'+PU.escapeHtml(desc)+'</div>':'')+
+      (thumbs?'<button class="qf-call-overlay__media" type="button" data-call-accept aria-label="Ver fotos e detalhes">'+thumbs+'</button>':'')+
+      '<div class="qf-call-overlay__lock">'+icon('lock')+'Contato do cliente liberado depois do desbloqueio</div>'+
       (reqs.length>1?'<div class="qf-call-overlay__others">+'+(reqs.length-1)+' outro'+(reqs.length-1===1?'':'s')+' chamado'+(reqs.length-1===1?'':'s')+'</div>':'')+
       '<button class="btn btn--primary qf-call-overlay__accept" type="button" data-call-accept>VER E ACEITAR</button><button class="qf-call-overlay__later" type="button" data-call-later>Agora não</button>'+
       '<div class="qf-call-timer"><div class="qf-call-timer__bar"><div class="qf-call-timer__fill" data-call-fill></div></div><div class="qf-call-timer__txt">Fecha em <span data-call-seconds>30 s</span></div></div></div>';
-    const accept=el.querySelector('[data-call-accept]'),later=el.querySelector('[data-call-later]');
-    if(accept)accept.onclick=function(){const id=activeId;close(true);if(global.navigate)global.navigate('/profissional/chamada/'+id);};
+    const later=el.querySelector('[data-call-later]');
+    Array.prototype.forEach.call(el.querySelectorAll('[data-call-accept]'),function(accept){accept.onclick=function(){const id=activeId;close(true);if(global.navigate)global.navigate('/profissional/chamada/'+id);};});
     if(later)later.onclick=function(){close(true);};
     if(!countdown){seconds=30;updateTimer();startAudio();countdown=setInterval(function(){seconds--;updateTimer();},1000);}
     return true;
@@ -10036,10 +10307,14 @@ alt=""></noscript>
       { id: 'perfil', label: 'Perfil', icon: 'user', route: '/cliente/perfil' },
     ],
     profissional: [
+      // V11.13: Planos e Configurações direto na barra (antes ficavam escondidos dentro do Perfil).
+      // No celular, Avisos vira o sininho no topo para caber tudo sem apertar; no computador fica na barra.
       { id: 'home', label: 'Chamadas', icon: 'phoneCall', route: '/profissional/home' },
       { id: 'servicos', label: 'Serviços', icon: 'clipboard', route: '/profissional/servicos' },
-      { id: 'avisos', label: 'Avisos', icon: 'bell', route: '/profissional/avisos' },
+      { id: 'avisos', label: 'Avisos', icon: 'bell', route: '/profissional/avisos', deskOnly: true },
       { id: 'carteira', label: 'Créditos', icon: 'wallet', route: '/profissional/carteira' },
+      { id: 'planos', label: 'Planos', icon: 'crown', route: '/profissional/planos' },
+      { id: 'config', label: 'Config.', labelLong: 'Configurações', icon: 'settings', route: '/profissional/configuracoes' },
       { id: 'perfil', label: 'Perfil', icon: 'user', route: '/profissional/perfil' },
     ],
   };
@@ -10164,7 +10439,13 @@ alt=""></noscript>
       const detail = describeRequest(a);
       if (session.role === 'profissional') {
         if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO) {
-          pushNotice(session, 'novo_chamado:' + id, 'Novo chamado perto de você', detail, '/profissional/chamada/' + id, true);
+          // V11.13: aviso já com distância, tempo e valor do desbloqueio.
+          let detalheNovo = detail;
+          try {
+            const CI = global.QFCallInfo, r = DB.requestById(id);
+            if (CI && r) detalheNovo = [detail, CI.kmTxt(r), CI.tempoTxt(r), CI.precoTxt(r, currentUser())].filter(Boolean).join(' · ');
+          } catch (_) {}
+          pushNotice(session, 'novo_chamado:' + id, 'Novo chamado perto de você', detalheNovo, '/profissional/chamada/' + id, true);
           if (global.QFCallAlert) global.QFCallAlert.offer(id);
         }
         if (b && b.status !== a.status && a.profissionalId === session.userId) {
@@ -10257,8 +10538,9 @@ alt=""></noscript>
     { pattern: '/profissional/pedido/:id', role: 'profissional', title: 'Detalhes do serviço', back: '/profissional/servicos', render: Screens.profPedidoDetalheRender },
     { pattern: '/profissional/orcamento/:id', role: 'profissional', title: 'Criar orçamento', back: '/profissional/servicos', render: Screens.profOrcamentoFormRender },
     { pattern: '/profissional/carteira', role: 'profissional', tab: 'carteira', title: 'Carteira', render: Screens.profCarteiraRender },
-    { pattern: '/profissional/configuracoes', role: 'profissional', title: 'Configurações de chamados', back: '/profissional/perfil', render: Screens.profConfigRender },
-    { pattern: '/profissional/como-funciona', role: 'profissional', title: 'Como funciona e planos', back: '/profissional/perfil', render: Screens.comoFuncionaRender },
+    { pattern: '/profissional/planos', role: 'profissional', tab: 'planos', title: 'Planos', render: Screens.profPlanosRender },
+    { pattern: '/profissional/configuracoes', role: 'profissional', tab: 'config', title: 'Configurações', render: Screens.profConfigRender },
+    { pattern: '/profissional/como-funciona', role: 'profissional', title: 'Como funciona e planos', back: '/profissional/planos', render: Screens.comoFuncionaRender },
     { pattern: '/profissional/anuncie', role: 'profissional', title: 'Anuncie no QuemFaz', back: '/profissional/home', render: Screens.anuncieRender },
     { pattern: '/profissional/perfil', role: 'profissional', tab: 'perfil', title: 'Perfil profissional', render: Screens.profPerfilRender },
     { pattern: '/profissional/avaliacoes', role: 'profissional', title: 'Avaliações', back: '/profissional/perfil', render: Screens.profAvaliacoesRender },
@@ -10389,6 +10671,7 @@ alt=""></noscript>
           ? '<h1 class="topbar__title topbar__title--brand">' + QF_BRAND_MARK + '<span>Quem<span>Faz</span></span></h1>'
           : '<h1 class="topbar__title">' + PU.escapeHtml(tabTitle) + '</h1>') +
         (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') +
+        topbarBellHtml(session, found.route.tab) +
         '<button class="qf-topbar-support" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
         '</div>';
     }
@@ -10442,14 +10725,23 @@ alt=""></noscript>
     window.scrollTo(0, 0);
   }
 
+  // V11.13: sininho de Avisos no topo (celular) para o profissional.
+  function topbarBellHtml(session, activeTab) {
+    if (!session || session.role !== 'profissional') return '';
+    const count = unreadNotices(session);
+    return '<button class="qf-topbar-bell' + (activeTab === 'avisos' ? ' is-active' : '') + '" type="button" data-nav="/profissional/avisos" aria-label="Avisos' + (count ? ' (' + count + ' não lidos)' : '') + '">' + icon('bell') +
+      (count ? '<span class="qf-topbar-bell__badge">' + (count > 9 ? '9+' : count) + '</span>' : '') + '</button>';
+  }
+
   function renderTabbar(tabs, activeId) {
     if (!tabs.length) return '';
     return '<nav class="tabbar" aria-label="Navegação principal">' +
       '<button class="tabbar__brand" data-nav="' + tabs[0].route + '" aria-label="QuemFaz — início">' + QF_BRAND_MARK + '<span class="tabbar__brand-word">Quem<span>Faz</span></span></button>' +
       tabs.map(function (t) {
         const count = t.id === 'avisos' ? unreadNotices(currentSession()) : 0;
-        return '<button class="tabbar__item' + (t.id === activeId ? ' is-active' : '') + '" data-nav="' + t.route + '" aria-current="' + (t.id === activeId ? 'page' : 'false') + '">' +
-          icon(t.icon) + (count ? '<span class="tabbar__notice-badge" aria-label="' + count + ' avisos não lidos">' + (count > 9 ? '9+' : count) + '</span>' : '') + '<span>' + t.label + '</span></button>';
+        const lbl = t.labelLong ? '<span class="tabbar__lbl-short">' + t.label + '</span><span class="tabbar__lbl-long">' + t.labelLong + '</span>' : '<span>' + t.label + '</span>';
+        return '<button class="tabbar__item' + (t.deskOnly ? ' tabbar__item--desk' : '') + (t.id === activeId ? ' is-active' : '') + '" data-nav="' + t.route + '" title="' + (t.labelLong || t.label) + '" aria-label="' + (t.labelLong || t.label) + '" aria-current="' + (t.id === activeId ? 'page' : 'false') + '">' +
+          icon(t.icon) + (count ? '<span class="tabbar__notice-badge" aria-label="' + count + ' avisos não lidos">' + (count > 9 ? '9+' : count) + '</span>' : '') + lbl + '</button>';
       }).join('') +
       (global.QFApp && global.QFApp.topInstallHtml ? '<span class="qf-tabbar-dl">' + global.QFApp.topInstallHtml() + '</span>' : '') +
       '</nav>';
