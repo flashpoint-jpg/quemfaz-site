@@ -4379,14 +4379,28 @@ alt=""></noscript>
       if (!pf.data || !String(pf.data.foto_url || '').trim()) {
         throw new Error('Imagem de identificação obrigatória: envie sua selfie ou, se representar uma empresa, a marca oficial antes de ficar online.');
       }
-      let loc = null;
-      try { loc = await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
-      // V12.0.3: só bloqueia o online se a permissão estiver negada de verdade. GPS demorando ou
-      // desligado não impede de ficar online (o chamado usa também a região cadastrada).
-      onlineSemGps = !loc;
-      if (!loc && lastGeoErrorCode === 1) {
+      // V12.1.1: fica online NA HORA. Antes o app esperava o GPS (até ~20s sem nenhum retorno na tela)
+      // e o profissional achava que o botão não funcionava. Agora só checa rápido se a permissão foi
+      // negada; a posição é buscada em segundo plano depois de ficar online.
+      let permNegada = false;
+      try {
+        if (global.navigator && global.navigator.permissions && global.navigator.permissions.query) {
+          const st = await Promise.race([
+            global.navigator.permissions.query({ name: 'geolocation' }),
+            new Promise(function (r) { setTimeout(function () { r(null); }, 1500); })
+          ]);
+          permNegada = !!(st && st.state === 'denied');
+        }
+      } catch (_) {}
+      if (permNegada) {
         throw new Error('A localização está bloqueada para o QuemFaz. Abra Configurações > Apps > QuemFaz > Permissões > Localização e escolha "Permitir".');
       }
+      onlineSemGps = false;
+      setTimeout(function () {
+        refreshProfessionalLocation(true).then(function (loc) {
+          if (!loc && lastGeoErrorCode === 2 && global.PU) global.PU.toast('Você está online. Ligue a Localização (GPS) do celular para ver a distância até cada chamado.', null, 5000);
+        }).catch(function (err) { console.warn('QuemFaz localização', err); });
+      }, 300);
     }
     const upd = { online: !!online, atualizado_em: new Date().toISOString() };
     if (!automatico) upd.offline_manual = !online; // V11.9: tocou em "ficar offline" → o online automático respeita
@@ -7879,7 +7893,7 @@ alt=""></noscript>
     if (toggle) {
       const onlineNow=content.querySelector('[data-action="ficar-online-agora"]');
       const offlineNow=content.querySelector('[data-action="ficar-offline-agora"]');
-      if(onlineNow)onlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
+      if(onlineNow)onlineNow.addEventListener('click',function(){if(toggle.disabled)return;onlineNow.disabled=true;onlineNow.dataset.label=onlineNow.textContent;onlineNow.textContent='Ficando online…';toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
       if(offlineNow)offlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
       // V12.0.2: só "permissão negada" (code 1) conta como erro. Demora do GPS (timeout) ou GPS
       // desligado não significam falta de permissão — antes o app dizia "permita nas configurações"
@@ -7923,6 +7937,7 @@ alt=""></noscript>
           PU.toast('Não foi possível atualizar seu status. ' + (err && err.message ? err.message : ''), 'danger');
         } finally {
           toggle.disabled = false;
+          if (onlineNow && document.body.contains(onlineNow)) { onlineNow.disabled = false; if (onlineNow.dataset.label) onlineNow.textContent = onlineNow.dataset.label; }
         }
       });
     }
