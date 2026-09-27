@@ -5207,6 +5207,23 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   }
 
   function supportTipo(t) { return t.usuario_tipo === 'profissional' ? 'Profissional' : t.usuario_tipo === 'visitante' ? 'Sem conta' : 'Cliente'; }
+  // V11.11.5: quem abriu o suporte não recebe aviso da resposta; o admin avisa por WhatsApp ou e-mail.
+  function supportContato(t) {
+    let nome = '', contato = '';
+    if (t.usuario_tipo === 'visitante') { nome = t.visitante_nome || ''; contato = t.visitante_contato || ''; }
+    else { const u = DB.profissionalById(t.usuario_id) || DB.clienteById(t.usuario_id) || {}; nome = u.nome || ''; contato = u.telefone || u.email || ''; }
+    const fone = String(contato).replace(/\D/g, '');
+    if (!/@/.test(contato) && fone.length >= 10) return { nome: nome, tipo: 'whatsapp', valor: fone.length <= 11 ? '55' + fone : fone };
+    const mail = /@/.test(contato) ? contato.trim() : '';
+    if (mail) return { nome: nome, tipo: 'email', valor: mail };
+    return null;
+  }
+  function supportAvisoTexto(t, resposta) {
+    const c = supportContato(t) || {};
+    const primeiro = String(c.nome || '').trim().split(/\s+/)[0] || '';
+    return 'Olá' + (primeiro ? ' ' + primeiro : '') + ', aqui é o suporte do QuemFaz. Sobre sua mensagem (' + (t.assunto || 'suporte') + '):\n\n' +
+      (resposta || '') + (resposta ? '\n\n' : '') + 'Qualquer dúvida é só responder aqui.';
+  }
   function supportUserName(ticket) {
     if (ticket.usuario_tipo === 'visitante') return (ticket.visitante_nome || 'Visitante') + (ticket.visitante_contato ? ' · ' + ticket.visitante_contato : '');
     const p = DB.profissionalById(ticket.usuario_id);
@@ -5246,6 +5263,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       '<div class="card stack--sm"><div id="qf-admin-support-thread"><div class="qf-admin-support-thread" id="qf-admin-support-message-list"><div class="text--sm text--secondary">Carregando conversa...</div></div></div>' +
         '<div id="qf-admin-support-resolved" class="card card--tight" style="background:var(--success-100);border:none;'+(t.status==='resolvido'?'':'display:none;')+'"><div class="text--sm" style="color:var(--success-600);">Atendimento resolvido. Reabra pelo status se precisar responder novamente.</div></div>' +
         '<div class="qf-admin-support-reply" id="qf-admin-support-reply-box" style="'+(t.status==='resolvido'?'display:none;':'')+'"><textarea class="textarea" id="qf-admin-support-reply" maxlength="4000" placeholder="Responder ao usuário..."></textarea><button type="button" class="btn btn--primary" id="qf-admin-support-send">'+icon('arrowRight')+' Enviar</button></div>' +
+        (function(){const c=supportContato(t);if(!c)return '<div class="text--sm text--muted">Sem WhatsApp/e-mail para avisar. A pessoa só vê a resposta se abrir o Suporte no app.</div>';
+          return '<button type="button" class="btn btn--outline" data-action="support-avisar" style="border-color:#25D366;color:#128C7E;">'+(c.tipo==='whatsapp'?'Avisar no WhatsApp':'Avisar por e-mail')+'</button>'+
+          '<div class="text--sm text--muted">A pessoa não recebe aviso automático. Toque aqui para mandar a resposta direto pra ela (usa o que estiver escrito acima ou a última resposta).</div>';})() +
       '</div>' +
       '<div class="card stack--sm"><label class="field"><span class="field__label">Status do atendimento</span><select class="select" id="qf-admin-support-status"><option value="aberto"'+(t.status==='aberto'?' selected':'')+'>Aberto</option><option value="em_atendimento"'+(t.status==='em_atendimento'?' selected':'')+'>Em atendimento</option><option value="resolvido"'+(t.status==='resolvido'?' selected':'')+'>Resolvido</option></select></label><button class="btn btn--outline" data-action="support-save-status">Salvar status</button>' +
         '<button type="button" class="btn btn--outline qf-admin-support-del-big" data-action="support-delete">'+icon('trash')+' Excluir atendimento</button></div>' +
@@ -5314,6 +5334,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     }
     const save=content.querySelector('[data-action="support-save-status"]');
     if(save) save.addEventListener('click',async function(){save.disabled=true;try{const status=content.querySelector('#qf-admin-support-status').value;await global.QFAdminCloud.supportSetStatus(params.id,status);PU.toast(status==='resolvido'?'Atendimento resolvido.':'Status atualizado.','success');global.navigate(status==='resolvido'?'/admin/suporte':'/admin/suporte/'+params.id,true);}catch(err){PU.toast((err&&err.message)||'Não foi possível atualizar.','danger');save.disabled=false;}});
+    const avisar=content.querySelector('[data-action="support-avisar"]');
+    if(avisar) avisar.addEventListener('click',async function(){
+      const t=(global.QFAdminCloud.supportTickets||[]).find(function(x){return x.id===params.id;});
+      const c=t&&supportContato(t); if(!c) return;
+      let resp=(content.querySelector('#qf-admin-support-reply')||{}).value||'';
+      resp=resp.trim();
+      if(!resp){try{const ms=await global.QFAdminCloud.getSupportMessages(params.id);const adm=ms.filter(function(m){return m.autor_tipo==='admin';});if(adm.length)resp=adm[adm.length-1].mensagem;}catch(_){}}
+      const txt=supportAvisoTexto(t,resp);
+      const url=c.tipo==='whatsapp'?'https://wa.me/'+c.valor+'?text='+encodeURIComponent(txt):'mailto:'+c.valor+'?subject='+encodeURIComponent('Suporte QuemFaz')+'&body='+encodeURIComponent(txt);
+      window.open(url,'_blank');
+    });
     const del=content.querySelector('[data-action="support-delete"]');
     if(del) del.addEventListener('click',function(){supportDeleteConfirm(del,params.id,function(){clearInterval(timer);global.navigate('/admin/suporte',true);});});
   }

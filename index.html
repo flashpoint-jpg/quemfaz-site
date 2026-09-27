@@ -8459,7 +8459,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.4';
+  const APP_VERSION = '11.11.5';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -9428,6 +9428,10 @@ alt=""></noscript>
     }).join('');
     const currentInput=document.getElementById('qf-support-reply-text');
     const draft=currentInput?currentInput.value:'';
+    const sig=(ticket.status||'')+'|'+messages.length;
+    if(!first&&wrap.dataset.sig===sig) return;
+    wrap.dataset.sig=sig;
+    if(!first&&currentInput&&document.activeElement===currentInput&&ticket.status!=='resolvido'){const ml=document.getElementById('qf-support-message-list');if(ml){ml.innerHTML=bubbles;ml.scrollTop=ml.scrollHeight;return;}}
     wrap.innerHTML=
       '<div class="stack--sm"><div><div class="h3">'+PU.escapeHtml(ticket.assunto||'Suporte')+'</div><div class="text--sm text--secondary">Atendimento interno QuemFaz</div></div>' +
       '<div class="qf-support-messages" id="qf-support-message-list">'+(bubbles||'<div class="text--sm text--secondary">Nenhuma mensagem.</div>')+'</div>' +
@@ -9532,6 +9536,14 @@ alt=""></noscript>
     }).join('');
     const cur = document.getElementById('qf-support-reply-text');
     const draft = cur ? cur.value : '';
+    // V11.11.5: não recria a caixa de digitação se nada mudou (o teclado fechava a cada 6 s).
+    const sig = (data.status || '') + '|' + (data.mensagens || []).length;
+    if (!first && wrap.dataset.sig === sig) return;
+    wrap.dataset.sig = sig;
+    if (!first && cur && document.activeElement === cur && data.status !== 'resolvido') {
+      const ml = document.getElementById('qf-support-message-list');
+      if (ml) { ml.innerHTML = bubbles; ml.scrollTop = ml.scrollHeight; return; }
+    }
     wrap.innerHTML = '<div class="stack--sm"><div><div class="h3">' + PU.escapeHtml(data.assunto || 'Suporte') + '</div><div class="text--sm text--secondary">A resposta aparece aqui. Deixe esta tela aberta ou volte pelo botão Suporte.</div></div>' +
       '<div class="qf-support-messages" id="qf-support-message-list">' + bubbles + '</div>' +
       (data.status === 'resolvido'
