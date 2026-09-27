@@ -5065,8 +5065,36 @@ alt=""></noscript>
       });
       const sum = root.querySelector('[data-catpick-summary]');
       sum.innerHTML = '<span class="qf-catpick__sumtitle">Selecionadas: ' + selected.length + '</span>' +
-        (selected.length ? '<span class="qf-catpick__sumlist">' + selected.map(function (c) { return PU.escapeHtml(c.textContent); }).join(' · ') + '</span>' : '<span class="qf-catpick__sumlist">Toque num grupo e escolha suas profissões.</span>');
+        (selected.length ? '<span class="qf-catpick__sumlist">' + selected.map(function (c) { return PU.escapeHtml(c.textContent); }).join(' · ') + '</span>'
+          : (search && search.value.trim()
+            ? '<span class="qf-catpick__sumlist" style="color:var(--warning-600);font-weight:800;">Agora toque na sua profissão na lista abaixo para marcar.</span>'
+            : '<span class="qf-catpick__sumlist">Toque num grupo e escolha suas profissões.</span>'));
     }
+    // V12.0.1: quem digita a profissão na busca e não toca no botão ficava sem profissão marcada.
+    // Se só uma profissão bate com o que foi digitado, marca ela automaticamente.
+    function visibleChips() {
+      return Array.prototype.filter.call(root.querySelectorAll('[data-chip-cat]'), function (c) { return !c.hidden && !(c.closest('[data-catpick-group]') || {}).hidden; });
+    }
+    function autoPick() {
+      if (root.querySelector('[data-chip-cat].is-selected')) return true;
+      const q = catNorm(search && search.value).trim();
+      if (!q) return false;
+      const vis = visibleChips();
+      const exact = vis.filter(function (c) { return c.getAttribute('data-cat-search') === q; });
+      const pick = exact.length === 1 ? exact[0] : (vis.length === 1 ? vis[0] : null);
+      if (!pick) return false;
+      pick.click();
+      return true;
+    }
+    function highlight() {
+      root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      root.style.transition = 'box-shadow .2s';
+      root.style.boxShadow = '0 0 0 3px var(--warning-600, #d97706)';
+      root.style.borderRadius = '12px';
+      setTimeout(function () { root.style.boxShadow = ''; }, 2500);
+    }
+    root.qfAutoPick = autoPick;
+    root.qfHighlight = highlight;
     function filter() {
       const q = catNorm(search.value).trim();
       let any = false;
@@ -5082,9 +5110,16 @@ alt=""></noscript>
         if (hits) any = true;
       });
       root.querySelector('[data-catpick-empty]').hidden = any;
+      update();
     }
     search.addEventListener('input', filter);
-    search.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); search.blur(); } });
+    search.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        if (visibleChips().length === 1) autoPick();
+        search.blur();
+      }
+    });
     root.addEventListener('click', function (e) { if (e.target.closest('[data-chip-cat]')) setTimeout(update, 0); });
     update();
   }
@@ -5369,7 +5404,12 @@ alt=""></noscript>
           PU.toast('Envie uma selfie do profissional ou, se representar uma empresa, a marca oficial da empresa.', 'danger');
           return;
         }
-        if (!selected.length) { PU.toast('Selecione ao menos uma categoria de serviço.', 'danger'); return; }
+        if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
+        if (!selected.length) {
+          if (chipsWrap.qfHighlight) chipsWrap.qfHighlight();
+          PU.toast('Toque na sua profissão na lista para marcar (ela fica destacada). Só digitar na busca não marca.', 'danger');
+          return;
+        }
         const cpf = fd.get('cpf').trim();
         if (!global.QFGeo.validCpf(cpf)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
         if (!validPhone(fd.get('telefone'))) { PU.toast('Informe um WhatsApp/celular com DDD.', 'danger'); return; }
@@ -8258,10 +8298,15 @@ alt=""></noscript>
         };
       }).filter(function (a) { return a.cidade; });
       if (!areas.length) { PU.toast('Adicione pelo menos uma cidade de atendimento.', 'danger'); return; }
+      if (chips.qfAutoPick) chips.qfAutoPick();
       const categorias = Array.prototype.map.call(chips.querySelectorAll('[data-chip-cat].is-selected'), function (chip) {
         return chip.getAttribute('data-chip-cat');
       });
-      if (!categorias.length) { PU.toast('Selecione pelo menos uma categoria.', 'danger'); return; }
+      if (!categorias.length) {
+        if (chips.qfHighlight) chips.qfHighlight();
+        PU.toast('Toque na sua profissão na lista para marcar (ela fica destacada). Só digitar na busca não marca.', 'danger');
+        return;
+      }
 
       const btn = content.querySelector('#salvar-atendimento');
       btn.disabled = true;
