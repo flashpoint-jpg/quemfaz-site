@@ -3225,21 +3225,31 @@ alt=""></noscript>
     });
   }
 
-  function getCurrentPositionSafe(options) {
-    options = options || {};
+  // V12.0.3: se o GPS de alta precisão falhar (demora dentro de casa, GPS fraco), tenta de novo com a
+  // localização por rede/Wi-Fi e aceita uma posição recente. lastGeoErrorCode guarda o motivo da falha
+  // (1 = permissão negada, 2 = localização do celular desligada/indisponível, 3 = demorou).
+  let lastGeoErrorCode = 0;
+  function getCurrentPositionOnce(opts) {
     return new Promise(function (resolve) {
-      if (!global.navigator || !global.navigator.geolocation) { resolve(null); return; }
+      if (!global.navigator || !global.navigator.geolocation) { lastGeoErrorCode = 2; resolve(null); return; }
       global.navigator.geolocation.getCurrentPosition(function (pos) {
         const lat = Number(pos && pos.coords && pos.coords.latitude);
         const lng = Number(pos && pos.coords && pos.coords.longitude);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) { resolve(null); return; }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) { lastGeoErrorCode = 2; resolve(null); return; }
+        lastGeoErrorCode = 0;
         resolve({ latitude: lat, longitude: lng, accuracy: Number(pos.coords.accuracy || 0) });
-      }, function () { resolve(null); }, {
-        enableHighAccuracy: options.enableHighAccuracy !== false,
-        timeout: Number(options.timeout || 7000),
-        maximumAge: Number(options.maximumAge || 30000)
-      });
+      }, function (err) { lastGeoErrorCode = (err && err.code) || 2; resolve(null); }, opts);
     });
+  }
+  async function getCurrentPositionSafe(options) {
+    options = options || {};
+    const first = await getCurrentPositionOnce({
+      enableHighAccuracy: options.enableHighAccuracy !== false,
+      timeout: Number(options.timeout || 7000),
+      maximumAge: Number(options.maximumAge || 30000)
+    });
+    if (first || lastGeoErrorCode === 1) return first;
+    return getCurrentPositionOnce({ enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
   }
 
   async function refreshProfessionalLocation(force) {
@@ -4355,6 +4365,7 @@ alt=""></noscript>
     return DB.requestById(chamadoId);
   }
 
+  let onlineSemGps = false;
   async function setOnline(online, opts) {
     const automatico = !!(opts && opts.automatico);
     const uRes = await client.auth.getUser();
@@ -4367,8 +4378,11 @@ alt=""></noscript>
       }
       let loc = null;
       try { loc = await refreshProfessionalLocation(true); } catch (err) { console.warn('QuemFaz localização', err); }
-      if (!loc) {
-        throw new Error('Ative a localização do aparelho para ficar online. Ela é usada para mostrar a distância entre você e cada chamado.');
+      // V12.0.3: só bloqueia o online se a permissão estiver negada de verdade. GPS demorando ou
+      // desligado não impede de ficar online (o chamado usa também a região cadastrada).
+      onlineSemGps = !loc;
+      if (!loc && lastGeoErrorCode === 1) {
+        throw new Error('A localização está bloqueada para o QuemFaz. Abra Configurações > Apps > QuemFaz > Permissões > Localização e escolha "Permitir".');
       }
     }
     const upd = { online: !!online, atualizado_em: new Date().toISOString() };
@@ -4570,6 +4584,7 @@ alt=""></noscript>
     updateProfessionalCallStatus: updateProfessionalCallStatus,
     submitEvaluation: submitEvaluation,
     setOnline: setOnline,
+    onlineSemGps: function () { return onlineSemGps; },
     refreshProfessionalLocation: refreshProfessionalLocation,
     saveProfessionalSettings: saveProfessionalSettings,
     saveProfessionalSelfie: saveProfessionalSelfie,
@@ -7833,7 +7848,8 @@ alt=""></noscript>
           if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.setOnline(querOnline);
           else DB.setOnlineStatus(user.id, querOnline);
           toggle.checked = querOnline;
-          PU.toast(querOnline ? 'Você está online.' : 'Você está offline.', querOnline ? 'success' : null);
+          const semGps = querOnline && global.QFCloud && global.QFCloud.onlineSemGps && global.QFCloud.onlineSemGps();
+          PU.toast(querOnline ? (semGps ? 'Você está online. Ligue a Localização (GPS) do celular para ver a distância até cada chamado.' : 'Você está online.') : 'Você está offline.', querOnline ? 'success' : null);
           global.navigate('/profissional/home', true);
         } catch (err) {
           PU.toast('Não foi possível atualizar seu status. ' + (err && err.message ? err.message : ''), 'danger');
