@@ -1,0 +1,7 @@
+-- V11.11.9: admin edita e exclui serviços, profissionais e clientes. Já aplicado em dczlyrgnzlxmzghzaooz.
+-- Funções (só admin, private.qf_is_admin()):
+--   qf_admin_editar_chamado(uuid, jsonb), qf_admin_excluir_chamados(uuid[])
+--   qf_admin_editar_usuario(uuid, jsonb), qf_admin_excluir_usuario(uuid)
+-- Excluir chamado: fotos/desbloqueios/orçamentos/avaliações/cascata saem junto (FK on delete cascade).
+-- Excluir usuário: apaga auth.users (perfil, profissional, chamados do cliente em cascata);
+--   anúncios do usuário, mensagens de suporte e áreas de atendimento são removidos antes; carteira fica.

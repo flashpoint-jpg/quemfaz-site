@@ -1052,6 +1052,14 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 
 /* Central administrativa de suporte */
 .qf-admin-support-list{display:flex;flex-direction:column;gap:10px}
+#servicos-segmented{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+#servicos-segmented .segmented__item{flex:0 0 auto;white-space:nowrap}
+.qf-crud-row{display:flex;gap:8px;flex-wrap:wrap}
+.qf-crud-row .btn{flex:1 1 120px;width:auto}
+.qf-crud-row svg,.qf-crud-del svg{width:15px;height:15px}
+.qf-crud-del{color:var(--danger-600,#dc2626)!important;border-color:var(--danger-600,#dc2626)!important}
+.qf-crud-del.is-confirm{background:var(--danger-600,#dc2626)!important;color:#fff!important}
+.qf-crud-open{all:unset;box-sizing:border-box;display:block;width:100%;padding:16px;cursor:pointer}
 .qf-ocultar-btn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--danger-600,#dc2626);padding:6px 8px;border-radius:8px;cursor:pointer}
 .qf-ocultar-btn svg{width:14px;height:14px}
 .qf-ocultar-btn:disabled{opacity:.5}
@@ -2931,7 +2939,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       if (c.status === 'cancelado') hist.push({ texto: 'Chamado cancelado', quando: c.atualizado_em });
       if (revCli) hist.push({ texto: 'Cliente avaliou com ' + revCli.nota + ' estrela(s)', quando: revCli.criado_em });
       return {
-        id: c.id, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [],
+        id: c.id, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
         endereco: { rua: c.endereco_completo || '', bairro: c.bairro || '', cidade: c.cidade || '', uf: c.uf || '' },
         cidadeId: cityId(c.cidade, c.uf), status: st, profissionalId: c.profissional_id || null,
         criadoEm: c.criado_em, atualizadoEm: c.atualizado_em || c.criado_em, prioridade: !!c.prioridade,
@@ -3050,6 +3058,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
     syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
+    editarChamado: async function(id, dados){ const r = await client.rpc('qf_admin_editar_chamado', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
+    excluirChamados: async function(ids){ const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: ids }); if (r.error) throw r.error; return r.data; },
+    editarUsuario: async function(id, dados){ const r = await client.rpc('qf_admin_editar_usuario', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
+    excluirUsuario: async function(id){ const r = await client.rpc('qf_admin_excluir_usuario', { p_id: id }); if (r.error) throw r.error; },
     nuncaEntraram: async function(){ const r = await client.rpc('qf_admin_nunca_entraram'); if (r.error) throw r.error; return r.data || []; },
     marcarAvisado: async function(id){ const r = await client.rpc('qf_admin_marcar_avisado', { p_user: id }); if (r.error) throw r.error; return true; },
     get supportTickets() { return supportTicketsCache; },
@@ -4773,14 +4785,14 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   function profCard(p) {
     const cidade = profCidadeInfo(p);
     const extra = (p.areas && p.areas.length > 1) ? ' · +' + (p.areas.length - 1) + ' cidade(s)' : '';
-    return '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '" data-prof-search="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '">' +
+    return '<div data-prof-search="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '"><button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '" data-x="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '">' +
       '<div class="row-between">' +
         '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
         '<div><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(cidade.label) + PU.escapeHtml(extra) + (p.bloqueado ? ' · Bloqueado' : '') + '</div></div></div>' +
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-    '</button>';
+    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id) + '</div>' : '') + '</div>';
   }
   function topCats(list) {
     const cnt = {};
@@ -4927,6 +4939,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<button class="btn btn--outline" data-action="toggle-verificado">' + icon('shieldCheck') + ' ' + (p.verificado ? 'Remover selo' : 'Marcar verificado') + '</button>' +
         '<button class="btn ' + (p.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + '" data-action="toggle-bloqueio">' + icon(p.bloqueado ? 'unlock' : 'lock') + ' ' + (p.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
       '</div>' +
+      '<div class="section">' + acoesHtml('profissional', p.id, 'Excluir conta') + '<div class="text--sm text--muted" style="margin-top:6px;">Excluir apaga o login, o perfil e as áreas de atendimento. As movimentações da carteira ficam no histórico.</div></div>' +
     '</div>';
   }
 
@@ -4940,6 +4953,103 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     '</div>';
   }
 
+  // ---------------- V11.11.9: editar e excluir tudo ----------------
+  const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+  const STATUS_DB = [['aberto','Aberto (buscando profissional)'],['em_negociacao','Em negociação / orçamento'],['confirmado','Confirmado'],['em_andamento','Em andamento'],['concluido','Concluído'],['cancelado','Cancelado'],['expirado','Expirado']];
+  function confirm2(btn, fn) {
+    if (btn.dataset.confirm !== '1') {
+      btn.dataset.confirm = '1'; btn.dataset.label = btn.innerHTML;
+      btn.innerHTML = icon('trash') + ' Toque de novo para confirmar';
+      btn.classList.add('is-confirm');
+      setTimeout(function () { if (btn.isConnected && btn.dataset.confirm === '1') { btn.dataset.confirm = ''; btn.innerHTML = btn.dataset.label; btn.classList.remove('is-confirm'); } }, 4000);
+      return;
+    }
+    btn.dataset.confirm = ''; btn.disabled = true;
+    Promise.resolve().then(fn).catch(function (err) { PU.toast((err && err.message) || 'Não foi possível concluir.', 'danger'); }).finally(function () { if (btn.isConnected) { btn.disabled = false; btn.innerHTML = btn.dataset.label; btn.classList.remove('is-confirm'); } });
+  }
+  async function recarregar(rota) { try { await global.QFAdminCloud.syncSnapshot(true); } catch (_) {} global.navigate(rota, true); }
+  function campo(id, label, html) { return '<label class="field"><span class="field__label">' + label + '</span>' + html + '</label>'; }
+  function inputTxt(id, v, extra) { return '<input class="input" id="' + id + '" value="' + PU.escapeHtml(v || '') + '"' + (extra || '') + '>'; }
+  function selectUf(id, v) { return '<select class="select" id="' + id + '"><option value="">UF</option>' + UFS.map(function (u) { return '<option' + (u === String(v || '').toUpperCase() ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select>'; }
+  function selectCat(id, v) { return '<select class="select" id="' + id + '">' + DB.categories().map(function (c) { return '<option value="' + c.id + '"' + (c.id === v ? ' selected' : '') + '>' + PU.escapeHtml(c.nome) + '</option>'; }).join('') + '</select>'; }
+  function val(id) { const el = document.getElementById(id); return el ? el.value : ''; }
+
+  function editarChamadoSheet(r) {
+    PU.openSheet('<div class="stack"><h3 class="sheet__title">Editar serviço</h3>' +
+      campo('ed-cat', 'Serviço', selectCat('ed-cat', r.categoriaId)) +
+      campo('ed-tit', 'Título', inputTxt('ed-tit', r.titulo || ((DB.categoryById(r.categoriaId) || {}).nome || ''), ' maxlength="120"')) +
+      campo('ed-desc', 'Descrição', '<textarea class="textarea" id="ed-desc" maxlength="2000">' + PU.escapeHtml(r.descricao || '') + '</textarea>') +
+      campo('ed-status', 'Situação', '<select class="select" id="ed-status">' + STATUS_DB.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === r.statusDb ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select>') +
+      '<div class="row" style="gap:8px;">' + '<div style="flex:1">' + campo('ed-cid', 'Cidade', inputTxt('ed-cid', r.endereco.cidade)) + '</div><div style="width:92px">' + campo('ed-uf', 'UF', selectUf('ed-uf', r.endereco.uf)) + '</div></div>' +
+      campo('ed-bai', 'Bairro', inputTxt('ed-bai', r.endereco.bairro)) +
+      campo('ed-end', 'Endereço', inputTxt('ed-end', r.endereco.rua)) +
+      '<button class="btn btn--primary" type="button" id="ed-salvar">Salvar alterações</button></div>');
+    document.getElementById('ed-salvar').onclick = async function () {
+      const b = this; b.disabled = true;
+      try {
+        await global.QFAdminCloud.editarChamado(r.id, { categoria: val('ed-cat'), titulo: val('ed-tit').trim(), descricao: val('ed-desc'), status: val('ed-status'), cidade: val('ed-cid').trim(), uf: val('ed-uf'), bairro: val('ed-bai').trim(), endereco_completo: val('ed-end').trim() });
+        PU.closeSheet(); PU.toast('Serviço atualizado.', 'success'); recarregar(location.hash.replace(/^#/, ''));
+      } catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); b.disabled = false; }
+    };
+  }
+  function editarUsuarioSheet(u, tipo) {
+    const cats = tipo === 'profissional' ? (u.categorias || []) : null;
+    const c = DB.cityById(u.cidadeId);
+    const cidade = u.cidadeNome || (c && c.nome) || '';
+    const uf = u.uf || (c && c.uf) || '';
+    PU.openSheet('<div class="stack"><h3 class="sheet__title">Editar ' + (tipo === 'profissional' ? 'profissional' : 'cliente') + '</h3>' +
+      campo('eu-nome', 'Nome', inputTxt('eu-nome', u.nome, ' maxlength="100"')) +
+      campo('eu-wa', 'WhatsApp', inputTxt('eu-wa', u.telefone, ' inputmode="tel" maxlength="20"')) +
+      '<div class="row" style="gap:8px;"><div style="flex:1">' + campo('eu-cid', 'Cidade', inputTxt('eu-cid', cidade)) + '</div><div style="width:92px">' + campo('eu-uf', 'UF', selectUf('eu-uf', uf)) + '</div></div>' +
+      (cats ? '<div class="field"><span class="field__label">Profissões (toque para marcar)</span><div class="row" id="eu-cats" style="gap:6px;flex-wrap:wrap;max-height:260px;overflow:auto;">' +
+        DB.categories().map(function (k) { return '<button type="button" class="chip' + (cats.indexOf(k.id) !== -1 ? ' is-selected' : '') + '" data-eu-cat="' + k.id + '">' + PU.escapeHtml(k.nome) + '</button>'; }).join('') + '</div></div>' : '') +
+      '<label class="row" style="gap:8px;align-items:center;"><input type="checkbox" id="eu-ativo"' + (u.bloqueado ? '' : ' checked') + '> Conta ativa (desmarque para bloquear)</label>' +
+      '<div class="text--sm text--muted">E-mail de login: ' + PU.escapeHtml(u.email || '—') + '</div>' +
+      '<button class="btn btn--primary" type="button" id="eu-salvar">Salvar alterações</button></div>');
+    const box = document.getElementById('eu-cats');
+    if (box) box.addEventListener('click', function (e) { const ch = e.target.closest('[data-eu-cat]'); if (ch) ch.classList.toggle('is-selected'); });
+    document.getElementById('eu-salvar').onclick = async function () {
+      const b = this; b.disabled = true;
+      const dados = { nome: val('eu-nome').trim(), whatsapp: val('eu-wa').trim(), cidade: val('eu-cid').trim(), uf: val('eu-uf'), ativo: document.getElementById('eu-ativo').checked };
+      if (box) dados.especialidades = Array.prototype.map.call(box.querySelectorAll('.is-selected'), function (x) { return x.getAttribute('data-eu-cat'); });
+      try { await global.QFAdminCloud.editarUsuario(u.id, dados); PU.closeSheet(); PU.toast('Dados atualizados.', 'success'); recarregar(location.hash.replace(/^#/, '')); }
+      catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); b.disabled = false; }
+    };
+  }
+  function acoesHtml(tipo, id, excluirLabel) {
+    return '<div class="qf-crud-row">' +
+      '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="' + tipo + ':' + id + '">' + icon('edit') + ' Editar</button>' +
+      '<button type="button" class="btn btn--outline btn--sm qf-crud-del" data-crud-del="' + tipo + ':' + id + '">' + icon('trash') + ' ' + (excluirLabel || 'Excluir') + '</button>' +
+    '</div>';
+  }
+  // Um só tratador de cliques para Editar/Excluir em qualquer tela do admin.
+  document.addEventListener('click', function (e) {
+    const ed = e.target.closest && e.target.closest('[data-crud-edit]');
+    const dl = e.target.closest && e.target.closest('[data-crud-del]');
+    const bulk = e.target.closest && e.target.closest('[data-crud-bulk]');
+    if (!ed && !dl && !bulk) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!cloudOn()) { PU.toast('Disponível com o painel conectado ao Supabase.', 'danger'); return; }
+    if (bulk) {
+      const ids = String(bulk.getAttribute('data-crud-bulk') || '').split(',').filter(Boolean);
+      if (!ids.length) return;
+      confirm2(bulk, async function () { const n = await global.QFAdminCloud.excluirChamados(ids); PU.toast((n || ids.length) + ' serviço(s) excluído(s).', 'success'); await recarregar('/admin/servicos'); });
+      return;
+    }
+    const parts = (ed || dl).getAttribute(ed ? 'data-crud-edit' : 'data-crud-del').split(':');
+    const tipo = parts[0], id = parts[1];
+    if (ed) {
+      if (tipo === 'servico') { const r = DB.requestById(id); if (r) editarChamadoSheet(r); }
+      if (tipo === 'profissional') { const p = DB.profissionalById(id); if (p) editarUsuarioSheet(p, 'profissional'); }
+      if (tipo === 'cliente') { const c = DB.clienteById(id); if (c) editarUsuarioSheet(c, 'cliente'); }
+      return;
+    }
+    confirm2(dl, async function () {
+      if (tipo === 'servico') { await global.QFAdminCloud.excluirChamados([id]); PU.toast('Serviço excluído.', 'success'); await recarregar(/^\/admin\/servicos\//.test(location.hash.replace('#', '')) ? '/admin/servicos' : location.hash.replace(/^#/, '')); }
+      else { await global.QFAdminCloud.excluirUsuario(id); PU.toast((tipo === 'profissional' ? 'Profissional' : 'Cliente') + ' excluído.', 'success'); await recarregar(tipo === 'profissional' ? '/admin/profissionais' : '/admin/clientes'); }
+    });
+  }, true);
+
   // ---------------- Clientes ----------------
 
   Screens.adminClientesRender = function () {
@@ -4952,7 +5062,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
             '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
             '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub">' + PU.escapeHtml(c.email || c.telefone || '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
             '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
-          '</div>';
+          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id) + '</div>' : '');
         }).join('') + '</div>' +
       '</div>'
     );
@@ -4965,6 +5075,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     { id: 'solicitados', label: 'Solicitados', filter: function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE, STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO].indexOf(r.status) !== -1; } },
     { id: 'andamento', label: 'Em andamento', filter: function (r) { return [STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(r.status) !== -1; } },
     { id: 'concluidos', label: 'Concluídos', filter: function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; } },
+    { id: 'cancelados', label: 'Cancelados', filter: function (r) { return r.status === STATUS.CANCELADO; } },
   ];
 
   Screens.adminServicosRender = function (params) {
@@ -4984,16 +5095,19 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const tab = TABS_SERVICOS.find(function (t) { return t.id === tabId; }) || TABS_SERVICOS[0];
     const list = all.filter(tab.filter);
     if (!list.length) return '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('clipboard') + '</div><p class="text text--secondary">Nenhum serviço nesta categoria.</p></div>';
-    return '<div class="stack--sm">' + list.map(function (r) {
+    const bulk = cloudOn() ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--secondary">' + list.length + ' serviço(s)</span><button type="button" class="btn btn--outline btn--sm btn--block-auto qf-crud-del" data-crud-bulk="' + list.map(function (r) { return r.id; }).join(',') + '">' + icon('trash') + ' Excluir ' + (tab.id === 'todos' ? 'todos' : 'todos desta aba') + '</button></div>' : '';
+    return bulk + '<div class="stack--sm">' + list.map(function (r) {
       const cat = DB.categoryById(r.categoriaId);
       const cliente = DB.clienteById(r.clienteId);
-      return '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/servicos/' + r.id + '">' +
+      const lugar = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
+      return '<div class="card" style="padding:0;overflow:hidden;">' +
+        '<button type="button" class="qf-crud-open" data-nav="/admin/servicos/' + r.id + '">' +
         '<div class="row-between">' +
-          '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : '') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cliente || {}).nome || '') + '</div></div></div>' +
+          '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : '') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(((cliente || {}).nome || '') + (lugar ? ' · ' + lugar : '') + ' · ' + PU.formatDateTime(r.criadoEm)) + '</div></div></div>' +
           icon('chevronRight', 'list-item__chevron') +
         '</div>' +
         '<div style="margin-top:10px;">' + statusBadge(r.status) + '</div>' +
-      '</button>';
+      '</button>' + (cloudOn() ? '<div style="padding:0 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') + '</div>';
     }).join('') + '</div>';
   }
 
@@ -5043,6 +5157,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
             return '<div class="row-between"><span class="text--sm">' + PU.escapeHtml(h.texto) + '</span><span class="text--sm text--muted">' + PU.formatDateTime(h.quando) + '</span></div>';
           }).join('') + '</div>' +
         '</div>' +
+        (cloudOn() ? '<div class="section">' + acoesHtml('servico', r.id, 'Excluir serviço') + '</div>' : '') +
       '</div>'
     );
   };
