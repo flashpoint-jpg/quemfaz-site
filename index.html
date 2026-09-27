@@ -4035,6 +4035,8 @@ alt=""></noscript>
     });
     if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     if (!res.data.session) {
+      // V11.11.6: o banco já confirma o e-mail no cadastro; entra direto sem pedir para abrir o e-mail.
+      try { const li = await signIn(role, data.email, data.senha); if (li && li.ok) return li; } catch (_) {}
       return { ok: true, needsConfirmation: true, user: res.data.user };
     }
     try {
@@ -8459,7 +8461,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.11.5';
+  const APP_VERSION = '11.11.6';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
