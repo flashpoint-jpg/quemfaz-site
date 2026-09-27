@@ -4789,7 +4789,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div data-prof-search="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '"><button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '" data-x="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '">' +
       '<div class="row-between">' +
         '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
-        '<div><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(cidade.label) + PU.escapeHtml(extra) + (p.bloqueado ? ' · Bloqueado' : '') + '</div></div></div>' +
+        '<div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(cidade.label) + PU.escapeHtml(extra) + (p.bloqueado ? ' · Bloqueado' : '') + '</div>' +
+        '<div class="text--sm" style="word-break:break-all;">' + PU.escapeHtml(p.email || 'sem e-mail') + (p.telefone ? ' · ' + PU.escapeHtml(p.telefone) : '') + '</div></div></div>' +
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
@@ -5062,7 +5063,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<div class="card" style="padding:4px 16px;">' + list.map(function (c) {
           return '<div class="list-item">' +
             '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
-            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub">' + PU.escapeHtml(c.email || c.telefone || '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
+            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml([c.email, c.telefone].filter(Boolean).join(' · ')) + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
             '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
           '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id) + '</div>' : '');
         }).join('') + '</div>' +
