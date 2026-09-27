@@ -4707,7 +4707,12 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const s = DB.dashboardStats();
     const meta = DB.state.meta || {};
     return (
-      '<div class="view">' + migrationBanner() + (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
+      '<div class="view">' + migrationBanner() +
+        '<div class="card stack--sm" style="border:2px solid #128c4a;margin-bottom:14px;background:#f1fff6;">' +
+          '<div class="row-between" style="gap:10px;align-items:flex-start;"><div><div class="h3">Profissionais sem notificação</div><div class="text--sm text--secondary">Abra a lista de quem está sem push e chame no WhatsApp com a mensagem pronta.</div></div><span class="badge badge--warning">' + (cloudOn() ? semPushListaAtual().length : 0) + ' sem push</span></div>' +
+          '<button class="btn btn--primary" type="button" data-nav="/admin/sem-push">' + icon('whatsapp') + ' Chamar no WhatsApp</button>' +
+        '</div>' +
+        (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
           kpi(s.pedidosAbertos, 'Pedidos abertos') +
