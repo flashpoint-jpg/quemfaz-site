@@ -2387,6 +2387,8 @@ alt=""></noscript>
   function buildDemoData() {
     const categories = [
       { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_automacao_residencial', nome: 'Automação residencial', icon: 'home', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_automacao_industrial', nome: 'Automação industrial', icon: 'settings', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
       { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
@@ -2608,6 +2610,8 @@ alt=""></noscript>
     if (!Array.isArray(state.categories)) { state.categories = []; changed = true; }
     const requiredCategories = [
       { id: 'cat_eletricista', nome: 'Eletricista', icon: 'bolt', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_automacao_residencial', nome: 'Automação residencial', icon: 'home', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
+      { id: 'cat_automacao_industrial', nome: 'Automação industrial', icon: 'settings', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_encanador', nome: 'Encanador', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_montador', nome: 'Montador de móveis', icon: 'wrench', leadTier: 'medio', grupo: 'Casa e reforma', grupoId: 'casa' },
       { id: 'cat_diarista', nome: 'Diarista', icon: 'broom', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
@@ -9082,7 +9086,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.13.0';
+  const APP_VERSION = '11.13.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
