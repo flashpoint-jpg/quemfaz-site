@@ -7798,12 +7798,24 @@ alt=""></noscript>
       const offlineNow=content.querySelector('[data-action="ficar-offline-agora"]');
       if(onlineNow)onlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=true;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
       if(offlineNow)offlineNow.addEventListener('click',function(){if(toggle.disabled)return;toggle.checked=false;toggle.dispatchEvent(new Event('change',{bubbles:true}));});
+      // V12.0.2: só "permissão negada" (code 1) conta como erro. Demora do GPS (timeout) ou GPS
+      // desligado não significam falta de permissão — antes o app dizia "permita nas configurações"
+      // mesmo com a permissão já dada.
       const locationBtn=content.querySelector('[data-action="qf-progress-location"]');
       if(locationBtn)locationBtn.addEventListener('click',function(){
         locationBtn.disabled=true;
         if(!navigator.geolocation){PU.toast('Localização não disponível neste aparelho.','danger');locationBtn.disabled=false;return;}
-        navigator.geolocation.getCurrentPosition(function(){try{localStorage.setItem('qf_location_ready','1');}catch(_){}PU.toast('Localização permitida.','success');global.navigate('/profissional/home',true);},function(){PU.toast('Permita a localização nas configurações do aparelho/navegador.','danger');locationBtn.disabled=false;},{enableHighAccuracy:true,timeout:9000,maximumAge:0});
+        function marcarOk(msg){try{localStorage.setItem('qf_location_ready','1');}catch(_){}PU.toast(msg,'success');global.navigate('/profissional/home',true);}
+        navigator.geolocation.getCurrentPosition(function(){marcarOk('Localização permitida.');},function(err){
+          if(err&&err.code===1){PU.toast('A localização está bloqueada para o QuemFaz. Abra Configurações > Apps > QuemFaz > Permissões > Localização e escolha "Permitir".','danger');locationBtn.disabled=false;return;}
+          marcarOk(err&&err.code===2?'Localização permitida. Deixe a Localização (GPS) do celular ligada para receber chamados perto de você.':'Localização permitida.');
+        },{enableHighAccuracy:false,timeout:20000,maximumAge:600000});
       });
+      if(locationBtn&&navigator.permissions&&navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(function(st){
+          if(st&&st.state==='granted'&&document.body.contains(locationBtn)){try{localStorage.setItem('qf_location_ready','1');}catch(_){}global.navigate('/profissional/home',true);}
+        }).catch(function(){});
+      }
       const batteryBtn=content.querySelector('[data-action="qf-progress-battery"]');
       if(batteryBtn)batteryBtn.addEventListener('click',function(){if(global.QFPush&&global.QFPush.requestBattery)global.QFPush.requestBattery();});
       toggle.addEventListener('change', async function () {
