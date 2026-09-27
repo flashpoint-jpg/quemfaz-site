@@ -4782,6 +4782,16 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
   // ---------------- Profissionais ----------------
 
+  // V12.3: etiqueta de cadastro novo com dia e hora.
+  const NOVO_HORAS = 24;
+  function ehCadastroNovo(u) { const t = Date.parse(u && u.criadoEm); return !isNaN(t) && (Date.now() - t) < NOVO_HORAS * 3600000; }
+  function tsCadastro(u) { const t = Date.parse(u && u.criadoEm); return isNaN(t) ? 0 : t; }
+  function cadastroTag(u) {
+    if (!u || !u.criadoEm) return '';
+    return ehCadastroNovo(u)
+      ? '<span class="badge" style="background:#16a34a;color:#fff;font-weight:700;">🆕 Cadastro novo · ' + PU.escapeHtml(PU.formatDateTime(u.criadoEm)) + '</span>'
+      : '<span class="badge badge--muted">Cadastro ' + PU.escapeHtml(PU.formatDateTime(u.criadoEm)) + '</span>';
+  }
   function profBadges(p) {
     return (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
       (p.verificado ? '<span class="badge badge--success">Verificado</span>' : '') +
@@ -4810,7 +4820,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<div class="text--sm" style="word-break:break-all;">' + PU.escapeHtml(p.email || 'sem e-mail') + (p.telefone ? ' · ' + PU.escapeHtml(p.telefone) : '') + '</div></div></div>' +
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
-      '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
+      '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
     '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
   function topCats(list) {
@@ -4831,7 +4841,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.itens.length - a.itens.length || a.label.localeCompare(b.label); });
     if (profCidadeFiltro !== 'todas' && !groups[profCidadeFiltro]) profCidadeFiltro = 'todas';
     const visiveis = ordered.filter(function (g) { return profCidadeFiltro === 'todas' || g.key === profCidadeFiltro; }).map(function (g) {
-      const itens = g.itens.slice().sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || String(a.nome).localeCompare(String(b.nome)); });
+      const itens = g.itens.slice().sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || tsCadastro(b) - tsCadastro(a); });
       return { key: g.key, label: g.label, itens: itens, todos: g.itens };
     }).filter(function (g) { return g.itens.length; });
     const chips = '<div class="qf-prof-cities" role="tablist">' +
@@ -4843,6 +4853,15 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
         '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
         chips +
+        (function () {
+          if (profCidadeFiltro !== 'todas') return '';
+          const novos = list.filter(ehCadastroNovo).sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); });
+          if (!novos.length) return '';
+          return '<section class="qf-prof-city">' +
+            '<div class="qf-prof-city__head"><div class="h3">🆕 Cadastros novos</div><span class="text--sm text--secondary">' + novos.length + ' nas últimas ' + NOVO_HORAS + 'h · mais recente primeiro</span></div>' +
+            '<div class="stack--sm">' + novos.map(profCard).join('') + '</div>' +
+          '</section>';
+        })() +
         (visiveis.length ? visiveis.map(function (g) {
           const online = g.todos.filter(function (p) { return p.online; }).length;
           return '<section class="qf-prof-city">' +
@@ -4945,7 +4964,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
         rowInfo('Avaliação', p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) + ' (' + p.totalAvaliacoes + ' avaliações)' : 'Sem avaliações') +
         rowInfo('Saldo em carteira', PU.formatCurrency(p.saldo || 0)) +
-        rowInfo('Cadastro', PU.formatDate(p.criadoEm)) +
+        rowInfo('Cadastro', PU.formatDateTime(p.criadoEm)) +
       '</div>' +
       '<div class="section"><div class="section-head"><h2 class="h3">Adicionar créditos</h2></div><div class="card stack--sm">' +
         '<div class="text--sm text--secondary">Use quando o profissional pagar diretamente ao QuemFaz (ex.: Pix). Fica registrado na carteira dele.</div>' +
@@ -5113,14 +5132,16 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   // ---------------- Clientes ----------------
 
   Screens.adminClientesRender = function () {
-    const list = DB.state.users.clientes;
+    const list = DB.state.users.clientes.slice().sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); });
+    const novosCli = list.filter(ehCadastroNovo).length;
     if (!list.length) return '<div class="view">' + migrationBanner() + '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('user') + '</div><p class="text text--secondary">Nenhum cliente cadastrado ainda.</p></div></div>';
     return (
       '<div class="view">' + migrationBanner() +
+        '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + list.length + ' clientes · <b>' + novosCli + ' novo(s) nas últimas ' + NOVO_HORAS + 'h</b> · mais recente primeiro</div></div>' +
         '<div class="card" style="padding:4px 16px;">' + list.map(function (c) {
           return '<div class="list-item">' +
             '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
-            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml(c.email || '') + (c.telefone ? (c.email ? ' · ' : '') + waLink(c.telefone) : '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div></div>' +
+            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml(c.email || '') + (c.telefone ? (c.email ? ' · ' : '') + waLink(c.telefone) : '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div><div style="margin-top:4px;">' + cadastroTag(c) + '</div></div>' +
             '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
           '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id, null, c.telefone, c) + '</div>' : '');
         }).join('') + '</div>' +
