@@ -1565,7 +1565,7 @@ input[type="range"]{accent-color:var(--orange-500)}
 .qf-radar-msg{text-align:center;font-size:16px;font-weight:800;line-height:1.35;min-height:2.7em;display:flex;align-items:center;justify-content:center;transition:opacity .35s ease}.qf-radar-msg.is-fading{opacity:0}
 .qf-radar-meta{text-align:center;font-size:13px;margin-top:4px;color:rgba(255,255,255,.82)}
 @media (prefers-reduced-motion: reduce){.qf-live-dot,.qf-radar__ring,.qf-radar__sweep{animation:none}.qf-radar__ring{opacity:.3;transform:scale(1)}.qf-radar__ring:nth-child(2){transform:scale(.75)}.qf-radar__ring:nth-child(3){transform:scale(.5)}.qf-radar__sweep{display:none}.qf-radar-msg{transition:none}}
-.qf-profile-progress{margin-top:12px}.qf-profile-progress__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.qf-progress-track{height:9px;border-radius:999px;background:var(--bg-sunken);overflow:hidden;margin:12px 0}.qf-progress-fill{height:100%;background:var(--orange-500);border-radius:inherit}.qf-progress-list{display:flex;flex-direction:column;gap:8px}.qf-progress-item{display:flex;align-items:center;gap:9px;min-height:36px}.qf-progress-item__mark{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--bg-sunken);color:var(--text-muted)}.qf-progress-item__mark.is-done{background:var(--success-100);color:var(--success-600)}.qf-progress-item__mark svg{width:15px;height:15px}.qf-progress-item .btn{width:auto;margin-left:auto;padding:7px 10px;font-size:12px}
+.qf-profile-progress{margin-top:12px}.qf-profile-progress__head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.qf-progress-track{height:9px;border-radius:999px;background:var(--bg-sunken);overflow:hidden;margin:12px 0}.qf-progress-fill{height:100%;background:var(--orange-500);border-radius:inherit}.qf-progress-list{display:flex;flex-direction:column;gap:8px}.qf-progress-item{display:flex;align-items:center;gap:9px;min-height:36px}.qf-progress-item__mark{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--bg-sunken);color:var(--text-muted)}.qf-progress-item__mark.is-done{background:var(--success-100);color:var(--success-600)}.qf-progress-item__mark svg{width:15px;height:15px}.qf-progress-item .btn{width:auto;margin-left:auto;padding:7px 14px;font-size:13px;flex:none;height:auto;min-height:36px;white-space:nowrap}
 .qf-topbar-support{width:38px;height:38px;border:none;border-radius:50%;display:grid;place-items:center;background:var(--bg-surface);color:var(--navy-800);cursor:pointer;flex:none}.qf-topbar-support svg{width:19px;height:19px;color:var(--orange-600)}
 body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,body:has(select:focus) .qf-support-fab{display:none}
 .qf-install{flex-wrap:wrap}.qf-install .btn{width:100%;margin-top:10px}
@@ -1704,6 +1704,7 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 /* ================= V11.5.0 ================= */
 /* escolha de profissões em grupos */
 .qf-catpick{display:flex;flex-direction:column;gap:8px}
+.qf-step__head{display:flex;flex-direction:column;gap:4px}.qf-step__count{font-size:13px;font-weight:800;color:var(--orange-500)}.qf-step__bar{height:6px;border-radius:99px;background:var(--bg-sunken);overflow:hidden;margin-top:6px}.qf-step__bar span{display:block;height:100%;background:var(--orange-500);border-radius:99px}.qf-step__nav{display:flex;gap:10px;margin-top:6px}.qf-step__nav .btn{flex:1}.qf-step__opt{border:1px solid var(--border-subtle,rgba(11,29,58,.12));border-radius:12px;padding:12px;background:var(--bg-surface)}.qf-step__opt>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy-900)}.qf-step[hidden]{display:none!important}.qf-step__nav:has(button[type=submit]){flex-direction:column-reverse}.qf-step__nav:has(button[type=submit]) .btn{flex:none;width:100%}body:has(#cadastro-prof-form) .qf-support-fab,body:has(#cadastro-cliente-form) .qf-support-fab,body:has(#login-form) .qf-support-fab{top:calc(env(safe-area-inset-top, 0px) + 12px);bottom:auto!important;padding:0;width:44px;min-width:44px;height:44px;min-height:44px;justify-content:center;font-size:0;gap:0}body:has(#cadastro-prof-form) .view>.row:first-child,body:has(#cadastro-cliente-form) .view>.row:first-child,body:has(#login-form) .view>.row:first-child{padding-right:52px}
 .qf-catpick__search{position:relative;display:block}
 .qf-catpick__search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none}
 .qf-catpick__search .input{padding-left:38px}
@@ -2008,6 +2009,8 @@ alt=""></noscript>
     const iconName = variant === 'success' ? 'checkCircle' : variant === 'danger' ? 'xCircle' : 'info';
     el.innerHTML = global.icon(iconName, 'toast-icon') + '<span>' + escapeHtml(message) + '</span>';
     el.querySelector('svg').style.cssText = 'width:18px;height:18px;flex:none;';
+    // V12.1: um aviso de erro novo substitui os antigos (antes ficavam empilhados erros já corrigidos).
+    Array.prototype.forEach.call(stack.querySelectorAll('.toast--danger'), function (t) { t.remove(); });
     stack.appendChild(el);
     while (stack.children.length > 3) stack.removeChild(stack.firstChild); // no máximo 3 avisos na tela
     setTimeout(function () {
@@ -5146,13 +5149,22 @@ alt=""></noscript>
       '<div class="view stack--lg">' +
         backRow('/auth/profissional/login', 'Cadastro de profissional') +
         '<form id="cadastro-prof-form" class="stack" novalidate>' +
+          '<div class="qf-step stack" data-step="1">' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 4</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:25%"></span></div></div>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
           field('E-mail', '<input class="input" type="email" name="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
           field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
-          field('Profissões que você atende', catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input">') +
-          field('Código de indicação (opcional)', '<input class="input" name="indicacao" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Se um colega indicou você" value="' + PU.escapeHtml(global.QFIndicacao ? global.QFIndicacao.stored() : '') + '">') +
+          '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
+          '</div>' +
+          '<div class="qf-step stack" data-step="2" hidden>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 4</div><div class="h2">O que você faz</div><div class="text--sm text--secondary">Marque todas as profissões que você atende.</div><div class="qf-step__bar"><span style="width:50%"></span></div></div>' +
+          '<div class="field"><span class="field__label">Toque no grupo, depois toque na sua profissão para marcar</span>' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
+          '</div>' +
+          '<div class="qf-step stack" data-step="3" hidden>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 4</div><div class="h2">Onde você atende</div><div class="text--sm text--secondary">Toque em Usar GPS ou digite seu CEP.</div><div class="qf-step__bar"><span style="width:75%"></span></div></div>' +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
           field('Cidade base', '<input class="input" name="cidade" required placeholder="Digite sua cidade">') +
@@ -5160,7 +5172,10 @@ alt=""></noscript>
           '<input type="hidden" name="latitude"><input type="hidden" name="longitude">' +
           field('Raio de atendimento: <span id="raio-valor">10</span> km', '<input class="input" type="range" name="raioKm" min="1" max="200" step="1" value="10" id="raio-range">') +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">Depois do cadastro você pode adicionar várias cidades e definir um raio diferente para cada uma no Perfil.</div></div>' +
-          field('Taxa de visita padrão (opcional)', '<input class="input" name="taxaVisita" inputmode="decimal" placeholder="R$ 0,00">') +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
+          '</div>' +
+          '<div class="qf-step stack" data-step="4" hidden>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 4</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="card stack--sm" style="background:var(--warning-100);border:2px solid #efc46e;">' +
             '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Escolha uma opção: tire uma selfie sua ou, se você representa uma empresa, envie o logotipo ou a marca oficial da empresa pela galeria.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
@@ -5168,10 +5183,15 @@ alt=""></noscript>
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="cadastro-prof-logo" accept="image/*" style="display:none;"></label>' +
             '<div class="text--sm text--secondary"><strong>Pessoa física:</strong> use sua selfie atual, de frente e com boa iluminação. <strong>Empresa:</strong> use somente a marca ou logotipo oficial da empresa que você representa. Uma dessas imagens é obrigatória para criar a conta, ficar online e desbloquear chamados.</div>' +
           '</div>' +
+          '<details class="qf-step__opt"><summary>Opcional: código de indicação e taxa de visita</summary><div class="stack" style="margin-top:12px;">' +
+          field('Código de indicação (opcional)', '<input class="input" name="indicacao" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Se um colega indicou você" value="' + PU.escapeHtml(global.QFIndicacao ? global.QFIndicacao.stored() : '') + '">') +
+          field('Taxa de visita padrão (opcional)', '<input class="input" name="taxaVisita" inputmode="decimal" placeholder="R$ 0,00">') +
+          '</div></details>' +
           '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--navy-800);">A imagem de identificação fica vinculada ao cadastro e pode aparecer ao cliente quando você assumir um chamado. Se você atua como pessoa física, envie sua própria selfie. Se representa uma empresa, envie somente a marca ou logotipo oficial dessa empresa. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">Você começa com R$ 25,00 em créditos de lançamento. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.</div></div></div>' +
+            '<p class="text text--sm" style="color:var(--navy-800);">Sua foto aparece para o cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">Você começa com R$ 25,00 em créditos de lançamento. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.</div></div></div>' +
           '</div>' +
-          '<button class="btn btn--primary" type="submit" style="margin-top:2px;">Criar conta de profissional</button>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit">Criar conta de profissional</button></div>' +
+          '</div>' +
         '</form>' +
       '</div>'
     );
@@ -5408,15 +5428,63 @@ alt=""></noscript>
         hiddenInput.value = selected.join(',');
       });
       bindCatPicker(chipsWrap);
+      // V12.1: cadastro em 4 etapas curtas. Cada etapa só avança se estiver completa.
+      let stepAtual = 1;
+      function goStep(n) {
+        stepAtual = n;
+        Array.prototype.forEach.call(document.querySelectorAll('.toast--danger'), function (t) { t.remove(); });
+        Array.prototype.forEach.call(form.querySelectorAll('[data-step]'), function (el) { el.hidden = Number(el.getAttribute('data-step')) !== n; });
+        try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (_) {}
+        window.scrollTo(0, 0);
+      }
+      function marcarErro(nome) {
+        const el = form.querySelector('[name="' + nome + '"]');
+        if (!el) return;
+        el.style.borderColor = 'var(--danger-600)';
+        el.addEventListener('input', function limpar() { el.style.borderColor = ''; el.removeEventListener('input', limpar); });
+        try { el.focus(); } catch (_) {}
+      }
+      function validarEtapa(n) {
+        const fd = new FormData(form);
+        if (n === 1) {
+          if (!String(fd.get('nome') || '').trim()) { PU.toast('Digite seu nome completo.', 'danger'); marcarErro('nome'); return false; }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(fd.get('email') || '').trim())) { PU.toast('Digite um e-mail válido. Exemplo: nome@gmail.com', 'danger'); marcarErro('email'); return false; }
+          if (!validPhone(fd.get('telefone'))) { PU.toast('Digite seu WhatsApp com DDD. Exemplo: (11) 99999-0000', 'danger'); marcarErro('telefone'); return false; }
+          if (!global.QFGeo.validCpf(String(fd.get('cpf') || '').trim())) { PU.toast('Digite um CPF válido (só números já serve).', 'danger'); marcarErro('cpf'); return false; }
+          if (String(fd.get('senha') || '').length < 6) { PU.toast('Crie uma senha com pelo menos 6 letras ou números.', 'danger'); marcarErro('senha'); return false; }
+        }
+        if (n === 2) {
+          if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
+          if (!selected.length) {
+            if (chipsWrap.qfHighlight) chipsWrap.qfHighlight();
+            PU.toast('Toque no grupo e depois na sua profissão para marcar (ela fica escura).', 'danger');
+            return false;
+          }
+        }
+        if (n === 3) {
+          if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite o CEP de onde você trabalha.', 'danger'); marcarErro('cep'); return false; }
+          if (!String(fd.get('cidade') || '').trim()) { PU.toast('Digite sua cidade.', 'danger'); marcarErro('cidade'); return false; }
+          if (!fd.get('uf')) { PU.toast('Escolha seu estado (UF).', 'danger'); marcarErro('uf'); return false; }
+        }
+        return true;
+      }
+      form.addEventListener('click', function (e) {
+        if (e.target.closest('[data-step-next]')) { if (validarEtapa(stepAtual)) goStep(Math.min(4, stepAtual + 1)); }
+        else if (e.target.closest('[data-step-back]')) goStep(Math.max(1, stepAtual - 1));
+      });
       const raioRange = content.querySelector('#raio-range');
       const raioValor = content.querySelector('#raio-valor');
       raioRange.addEventListener('input', function () { raioValor.textContent = raioRange.value; });
 
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        // Enter no teclado numa etapa do meio = Continuar.
+        if (stepAtual < 4) { if (validarEtapa(stepAtual)) goStep(stepAtual + 1); return; }
+        for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
         const fd = new FormData(form);
         if (!selfieData) {
-          PU.toast('Envie uma selfie do profissional ou, se representar uma empresa, a marca oficial da empresa.', 'danger');
+          try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+          PU.toast('Falta a foto: toque em "Tirar selfie" (ou, se for empresa, escolha o logo).', 'danger');
           return;
         }
         if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
@@ -5460,7 +5528,7 @@ alt=""></noscript>
           const localCity = foundCity || DB.criarCidade(dados.cidade, dados.uf);          dados.cidadeId = localCity.id;
           const user = DB.cadastrarProfissional(dados);
           DB.setSession({ role: 'profissional', userId: user.id });
-          PU.toast('Cadastro criado! Adicione créditos para desbloquear oportunidades.', 'success');
+          PU.toast('Cadastro criado! Você ganhou R$ 25 em créditos para começar.', 'success');
           if (sessionStorage.getItem('qf_pending_ad_draft')) {
             global.navigate('/profissional/anuncie', true);
             return;
@@ -6724,8 +6792,8 @@ alt=""></noscript>
     return '<div class="view">'+
       pendingGate(user)+
       '<div class="card qf-prof-status'+(user.online?' is-online':'')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title">Você está offline</div><div class="qf-prof-status__sub">Você ainda recebe chamados da sua região, mas quem está online recebe primeiro</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">FICAR ONLINE</button>')+'</div>'+
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       profileProgressHtml(user)+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       (Number(user.bonusDesbloqueios||0)>0?'<div class="card" style="margin-top:12px;background:var(--success-100);border:1px solid #bfe8d6;"><div class="row" style="align-items:flex-start;"><div class="icon-tile" style="background:var(--success-600);">'+icon('unlock')+'</div><div class="spacer"><div class="text--strong" style="color:var(--success-600);">Seu 1º chamado é GRÁTIS</div><div class="text--sm text--secondary" style="margin-top:3px;">O primeiro desbloqueio é por nossa conta. Depois, mantenha saldo na Carteira QuemFaz para abrir novos chamados.</div></div></div></div>':'')+
       '<div class="section"><div class="card row-between" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div></div><button class="btn btn--sm btn--outline btn--block-auto" data-nav="/profissional/carteira">Adicionar</button></div></div>'+
       '<div class="section qf-prof-divulgar"><div class="card row-between"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
