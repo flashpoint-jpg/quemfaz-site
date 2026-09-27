@@ -1052,6 +1052,9 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 
 /* Central administrativa de suporte */
 .qf-admin-support-list{display:flex;flex-direction:column;gap:10px}
+.qf-ocultar-btn{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;color:var(--danger-600,#dc2626);padding:6px 8px;border-radius:8px;cursor:pointer}
+.qf-ocultar-btn svg{width:14px;height:14px}
+.qf-ocultar-btn:disabled{opacity:.5}
 .qf-admin-support-card{width:100%;text-align:left}
 .qf-admin-support-thread{display:flex;flex-direction:column;gap:9px;max-height:min(52vh,520px);overflow:auto;padding:4px 2px 10px}
 .qf-admin-support-msg{max-width:86%;padding:9px 11px;border-radius:14px;background:var(--bg-sunken);align-self:flex-start}
@@ -2605,7 +2608,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       '<span class="badge badge--danger">há ' + Math.max(0, Math.round(Number(it.minutos || 0))) + ' min</span></div>' +
       '<div class="text--sm text--secondary" style="margin:6px 0 4px;">' + pros.length + (pros.length === 1 ? ' profissional da região' : ' profissionais da região') + ' · a mensagem já leva o link direto do chamado</div>' +
       (pros.length ? '<div>' + pros.map(function (p) { return proHtml(it, p, sent); }).join('') + '</div>' : '<div class="text--sm text--muted">Nenhum profissional cadastrado nesta região e categoria.</div>') +
-      '<div class="btn-row" style="margin-top:8px;"><button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + esc(it.id) + '">Ver chamado</button></div></div>';
+      '<div class="btn-row" style="margin-top:8px;"><button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + esc(it.id) + '">Ver chamado</button><button class="btn btn--outline btn--sm" type="button" data-ocultar="' + esc(it.id) + '">' + icon('trash') + ' Excluir da lista</button></div></div>';
   }
   function semRespBody() {
     if (!client()) return '<div class="text--sm text--secondary">Disponível com o painel conectado ao Supabase.</div>';
@@ -2634,10 +2637,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           .map(function (k) { return '<div class="card"><div class="h2">' + Number(k[1] || 0) + '</div><div class="text--sm text--secondary">' + esc(k[0]) + '</div></div>'; }).join('') + '</div>';
       const rec = Array.isArray(resumo.recentes) ? resumo.recentes : [];
       if (rec.length) {
-        out += '<div class="card qf-cascata-lista"><div class="text--strong" style="margin-bottom:4px;">Últimos chamados</div>' + rec.map(function (r) {
+        out += '<div class="card qf-cascata-lista"><div class="row-between" style="margin-bottom:4px;gap:8px;"><div class="text--strong">Últimos chamados</div><button type="button" class="btn btn--outline btn--sm btn--block-auto" data-ocultar-todos>' + icon('trash') + ' Limpar lista</button></div>' + rec.map(function (r) {
           const lugar = [r.cidade, r.uf].filter(Boolean).join('/');
           const aceite = r.aceito_etapa ? '<span class="badge badge--success">aceito na ' + etapaTxt(r.aceito_etapa) + (r.aceito_online === false ? ' (offline)' : '') + '</span>' : '<span class="badge">sem aceite · chegou na ' + etapaTxt(r.etapa) + '</span>';
-          return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(r.titulo || 'Chamado') + '</div><div class="text--sm text--secondary">' + esc(catName(r.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + ' · ' + PU.formatDateTime(r.criado_em) + ' · avisados: ' + Number(r.avisados_etapa1 || 0) + ' na etapa 1, ' + Number(r.avisados_etapa2 || 0) + ' na etapa 2</div></div>' + aceite + '</div>';
+          return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(r.titulo || 'Chamado') + '</div><div class="text--sm text--secondary">' + esc(catName(r.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + ' · ' + PU.formatDateTime(r.criado_em) + ' · avisados: ' + Number(r.avisados_etapa1 || 0) + ' na etapa 1, ' + Number(r.avisados_etapa2 || 0) + ' na etapa 2</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">' + aceite + '<button type="button" class="qf-ocultar-btn" data-ocultar="' + esc(r.id) + '" aria-label="Remover da lista">' + icon('trash') + ' Excluir</button></div></div>';
         }).join('') + '</div>';
       }
     }
@@ -2683,7 +2686,27 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       refresh();
     }, 30000);
   }
+  // V11.11.8: tira o chamado das listas do painel (o chamado do cliente continua existindo).
+  async function rpc2(name, args) { const r = await client().rpc(name, args || {}); if (r.error) throw r.error; return r.data; }
+  async function ocultar(ids, btn) {
+    if (btn) btn.disabled = true;
+    try {
+      await rpc2('qf_admin_ocultar_chamados', { p_ids: ids });
+      if (resumo && Array.isArray(resumo.recentes)) resumo.recentes = ids ? resumo.recentes.filter(function (r) { return ids.indexOf(r.id) === -1; }) : [];
+      if (semResp && Array.isArray(semResp.itens)) semResp.itens = ids ? semResp.itens.filter(function (r) { return ids.indexOf(r.id) === -1; }) : [];
+      paint();
+      PU.toast(ids ? 'Removido da lista.' : 'Lista limpa.', 'success');
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível remover.', 'danger'); if (btn) btn.disabled = false; }
+  }
   document.addEventListener('click', function (e) {
+    const o = e.target.closest && e.target.closest('[data-ocultar]');
+    if (o) { e.preventDefault(); ocultar([o.getAttribute('data-ocultar')], o); return; }
+    const t = e.target.closest && e.target.closest('[data-ocultar-todos]');
+    if (t) {
+      e.preventDefault();
+      if (t.dataset.confirm !== '1') { t.dataset.confirm = '1'; t.innerHTML = icon('trash') + ' Toque de novo para limpar'; setTimeout(function () { if (t.isConnected) { t.dataset.confirm = ''; t.innerHTML = icon('trash') + ' Limpar lista'; } }, 4000); return; }
+      ocultar(null, t); return;
+    }
     const a = e.target.closest && e.target.closest('[data-semresp-wa]');
     if (!a) return;
     markSent(a.getAttribute('data-semresp-wa'));
