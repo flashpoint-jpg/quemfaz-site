@@ -1849,7 +1849,7 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .topbar__title + .qf-topbar-bell{margin-left:auto}
 
 /* Planos */
-.qf-plan-status{display:flex;gap:12px;align-items:flex-start}
+.qf-plan-status{display:flex;gap:12px;align-items:flex-start}.qf-plan-hint{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;font-weight:700;color:var(--success-600);background:var(--success-100);border-radius:999px;padding:3px 9px}.qf-plan-hint svg{width:13px;height:13px}.qf-plan-save{background:#fff;border:1.5px solid #bfe8d6;border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-card)}.qf-plan-save__top{display:flex;gap:12px;align-items:flex-start}.qf-plan-save__big{font-size:22px;font-weight:900;color:var(--success-600);letter-spacing:-.02em;line-height:1.1}.qf-plan-save__cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.qf-plan-save__cmp>div{border-radius:12px;padding:9px 10px;background:var(--bg-sunken)}.qf-plan-save__cmp>div.is-plan{background:var(--success-100)}.qf-plan-save__cmp small{display:block;font-size:11px;color:var(--text-secondary);font-weight:700;text-transform:uppercase;letter-spacing:.04em}.qf-plan-save__cmp strong{font-size:17px}.qf-plan-save .btn{margin-top:12px}
 .qf-pay-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .qf-pay-method{min-height:46px;border-radius:14px;border:1.5px solid var(--border-subtle);background:#fff;color:var(--navy-900);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0 6px}
 .qf-pay-method svg{width:17px;height:17px}
@@ -7296,6 +7296,47 @@ alt=""></noscript>
     }
   };
 
+  // V11.14: incentivo ao plano — mostra ao profissional avulso quanto ele economizaria.
+  // Mesmos preços da tela Planos (Mensal R$ 49,90 / 10 chamados; Pro R$ 99,90 / 25 chamados).
+  const PlanoIncentivo = global.QFPlanoIncentivo = {
+    planos: [
+      { id: 'mensal', nome: 'Mensal', preco: 4990, chamados: 10 },
+      { id: 'pro', nome: 'Pro', preco: 9990, chamados: 25 }
+    ],
+    unit: function (p) { return Math.round(p.preco / p.chamados); },
+    // Melhor plano para UM chamado deste valor (menor preço por chamado que ainda economiza).
+    porChamado: function (valor) {
+      valor = Number(valor || 0);
+      let best = null;
+      PlanoIncentivo.planos.forEach(function (p) {
+        const u = PlanoIncentivo.unit(p), eco = valor - u;
+        if (eco > 0 && (!best || eco > best.economia)) best = { plano: p, unit: u, economia: eco, pct: Math.round(eco * 100 / valor) };
+      });
+      return best;
+    },
+    // Desbloqueios avulsos pagos com saldo nos últimos 30 dias.
+    historico: function (user) {
+      const lim = Date.now() - 30 * 86400000;
+      const txs = (DB.transactionsForProfissional ? DB.transactionsForProfissional(user.id) : []).filter(function (t) {
+        const ms = Date.parse(t.criadoEm || '');
+        return t.tipo === 'debito' && t.requestId && Number(t.valor) > 0 && Number.isFinite(ms) && ms >= lim;
+      });
+      return { n: txs.length, total: txs.reduce(function (a, t) { return a + Number(t.valor || 0); }, 0) };
+    },
+    // Plano mais barato que cobre n chamados (compra repetida se precisar) e a economia sobre o avulso.
+    simular: function (n, totalAvulso) {
+      let best = null;
+      PlanoIncentivo.planos.forEach(function (p) {
+        const custo = Math.ceil(n / p.chamados) * p.preco;
+        if (!best || custo < best.custo) best = { plano: p, custo: custo };
+      });
+      if (!best) return null;
+      best.economia = totalAvulso - best.custo;
+      return best;
+    },
+    semPlano: function (user) { return !(user && user.plano && user.plano.restantes > 0); }
+  };
+
   // Foto do chamado em tela cheia (toque para ampliar, toque para fechar).
   document.addEventListener('click', function (e) {
     const img = e.target && e.target.closest ? e.target.closest('img[data-media-zoom]') : null;
@@ -7355,6 +7396,7 @@ alt=""></noscript>
             '<div class="text--sm text--strong" style="margin-top:7px;color:' + (primeiraGratis || CallInfo.usaPlano(user) ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
               (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por ' + PU.formatCurrency(valor))) +
             '</div>' +
+            (function () { if (primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
@@ -7413,6 +7455,19 @@ alt=""></noscript>
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
+        (function () {
+          if (primeiraGratis || !global.QFPlanoIncentivo || !global.QFPlanoIncentivo.semPlano(user)) return '';
+          const b = global.QFPlanoIncentivo.porChamado(valor);
+          if (!b) return '';
+          return '<div class="section"><div class="qf-plan-save">' +
+            '<div class="qf-plan-save__top"><div class="icon-tile" style="background:var(--success-600);">' + icon('crown') + '</div><div class="spacer">' +
+              '<div class="text--sm text--secondary">Com o plano ' + b.plano.nome + ', este chamado sairia por ' + PU.formatCurrency(b.unit) + '</div>' +
+              '<div class="qf-plan-save__big">Economize ' + PU.formatCurrency(b.economia) + ' (' + b.pct + '%)</div>' +
+            '</div></div>' +
+            '<div class="qf-plan-save__cmp"><div><small>Avulso</small><strong>' + PU.formatCurrency(valor) + '</strong></div><div class="is-plan"><small>Plano ' + b.plano.nome + '</small><strong>' + PU.formatCurrency(b.unit) + '</strong></div></div>' +
+            '<button class="btn btn--outline btn--sm" type="button" data-nav="/profissional/planos">' + icon('crown') + ' Ver planos</button>' +
+          '</div></div>';
+        })() +
         '<div class="section btn-row">' +
           '<button class="btn btn--outline" data-action="recusar-chamada">Agora não</button>' +
           '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + (primeiraGratis ? 'Desbloquear grátis' : (user.plano && user.plano.restantes > 0 ? 'Desbloquear com o plano (' + user.plano.restantes + ' restantes)' : 'Desbloquear ' + PU.formatCurrency(valor))) + '</button>' +
@@ -7918,6 +7973,32 @@ alt=""></noscript>
           : '<div class="card qf-plan-status"><div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div><div class="spacer"><div class="text--strong">Hoje você está no Avulso</div><div class="text--sm text--secondary">Paga de R$ 4,90 a R$ 12,90 por chamado desbloqueado, com o saldo da carteira. Saldo: <strong>' + PU.formatCurrency(user.creditos || 0) + '</strong></div><button class="btn btn--outline btn--sm btn--block-auto" type="button" data-nav="/profissional/carteira" style="margin-top:10px;">' + icon('plus') + ' Colocar saldo</button></div></div>') +
       '</div>' +
 
+      (function () {
+        if (ativo || !global.QFPlanoIncentivo) return '';
+        const PI = global.QFPlanoIncentivo;
+        const h = PI.historico(user);
+        let titulo, texto, avulso, plano, nomePlano, economia;
+        const sim = h.n > 0 ? PI.simular(h.n, h.total) : null;
+        if (sim && sim.economia > 0) {
+          titulo = 'Com plano você teria economizado ' + PU.formatCurrency(sim.economia);
+          texto = 'Nos últimos 30 dias você desbloqueou ' + h.n + ' chamado' + (h.n === 1 ? '' : 's') + ' no avulso. No plano ' + sim.plano.nome + ' teria pago bem menos.';
+          avulso = h.total; plano = sim.custo; nomePlano = sim.plano.nome; economia = sim.economia;
+        } else {
+          // Exemplo com o valor mais comum de desbloqueio (R$ 7,90): 10 chamados no avulso x Mensal.
+          const ex = 790 * 10, m = PI.planos[0];
+          titulo = 'Pegue 10 chamados e economize ' + PU.formatCurrency(ex - m.preco);
+          texto = '10 chamados de R$ 7,90 no avulso custam ' + PU.formatCurrency(ex) + '. No plano Mensal saem por ' + PU.formatCurrency(m.preco) + '. Em pedreiro, frete e mecânico (R$ 12,90) a economia é maior.';
+          avulso = ex; plano = m.preco; nomePlano = m.nome; economia = ex - m.preco;
+        }
+        return '<div class="section"><div class="qf-plan-save">' +
+          '<div class="qf-plan-save__top"><div class="icon-tile" style="background:var(--success-600);">' + icon('crown') + '</div><div class="spacer">' +
+            '<div class="qf-plan-save__big">' + titulo + '</div>' +
+            '<div class="text--sm text--secondary" style="margin-top:4px;">' + texto + '</div>' +
+          '</div></div>' +
+          '<div class="qf-plan-save__cmp"><div><small>Avulso</small><strong>' + PU.formatCurrency(avulso) + '</strong></div><div class="is-plan"><small>Plano ' + nomePlano + '</small><strong>' + PU.formatCurrency(plano) + '</strong></div></div>' +
+          '<button class="btn btn--primary btn--sm" type="button" data-scroll-planos>' + icon('crown') + ' Quero economizar</button>' +
+        '</div></div>';
+      })() +
       '<section class="section" id="planos-chamados">' +
         '<div class="section-head"><div><h2 class="h3">Planos de chamados</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
         '<div class="stack">' +
@@ -8578,7 +8659,12 @@ alt=""></noscript>
             ? await global.QFCloud.unlockCall(params.id, user.id)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
-            PU.toast(result.usouBonus ? 'Primeiro chamado desbloqueado GRÁTIS! Contato liberado.' : (result.origem === 'plano' ? 'Chamado desbloqueado pelo seu plano! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.'), 'success');
+            let msgOk = result.usouBonus ? 'Primeiro chamado desbloqueado GRÁTIS! Contato liberado.' : (result.origem === 'plano' ? 'Chamado desbloqueado pelo seu plano! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.');
+            if (!result.usouBonus && result.origem !== 'plano' && global.QFPlanoIncentivo) {
+              const b = global.QFPlanoIncentivo.porChamado(result.valor || valor);
+              if (b) msgOk += ' No plano ' + b.plano.nome + ' teria saído ' + PU.formatCurrency(b.unit) + '.';
+            }
+            PU.toast(msgOk, 'success');
             global.navigate('/profissional/pedido/' + params.id, true);
             return;
           }
@@ -8792,6 +8878,11 @@ alt=""></noscript>
   function bindPlanos(content, user) {
     let metodo = 'pix';
     content.addEventListener('click', function (e) {
+      if (e.target.closest('[data-scroll-planos]')) {
+        const sec = content.querySelector('#planos-chamados');
+        if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       const m = e.target.closest('[data-plano-metodo]');
       if (m) {
         metodo = m.getAttribute('data-plano-metodo') || 'pix';
@@ -9086,7 +9177,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.13.1';
+  const APP_VERSION = '11.14.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

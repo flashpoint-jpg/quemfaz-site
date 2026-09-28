@@ -1,0 +1,14 @@
+QuemFaz 11.14.0 — incentivo ao plano (profissional avulso vê quanto economiza)
+
+- Card do chamado (tela Chamadas): selo verde "No plano Pro: R$ 4,00" embaixo do "Desbloquear por".
+- Tela do chamado, antes de desbloquear: cartão "Com o plano Pro, este chamado sairia por R$ 4,00 —
+  Economize R$ X (Y%)", comparando Avulso x Plano, com botão "Ver planos".
+- Depois de desbloquear no avulso: a mensagem de sucesso diz quanto teria saído no plano.
+- Aba Planos: calculadora pessoal. Se nos últimos 30 dias o avulso saiu mais caro que um plano,
+  mostra "Com plano você teria economizado R$ X" com o total pago x preço do plano. Senão, mostra
+  o exemplo de 10 chamados de R$ 7,90 (R$ 79,00) x Mensal (R$ 49,90). Botão "Quero economizar"
+  rola até os planos.
+- Nada aparece para quem já tem plano ativo. Só mostra economia quando ela existe de verdade.
+- Preços usados: Mensal R$ 49,90 / 10 chamados; Pro R$ 99,90 / 25 chamados (os mesmos da aba Planos).
+
+Nada foi alterado no Supabase nem nos pagamentos.
