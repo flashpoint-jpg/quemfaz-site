@@ -4435,7 +4435,6 @@ alt=""></noscript>
     await syncProfessionalCalls(profissionalId);
     const req = DB.requestById(chamadoId);
     const prof = DB.profissionalById(profissionalId);
-    if (global.QFPush) global.QFPush.notify('professional_connected', chamadoId).catch(function () {});
     return {
       ok: true,
       request: req,
@@ -6723,6 +6722,9 @@ alt=""></noscript>
         } else {
           PU.toast('Chamado criado grátis! O sistema começou a procurar os profissionais mais próximos da categoria.', 'success');
         }
+        if (global.QFPush && !global.QFPush.isActive()) {
+          try { sessionStorage.setItem('qf_cli_notif_pos_pedido', String(req.id)); } catch (_) {}
+        }
         global.navigate('/cliente/pedido/' + req.id, true);
       } catch (err) {
         PU.toast('Não foi possível criar o chamado. ' + (err && err.message ? err.message : ''), 'danger');
@@ -6753,6 +6755,60 @@ alt=""></noscript>
         catch (err) { PU.closeSheet(); resolve(false); }
       };
     });
+  }
+
+  function mostrarNotificacaoPosPedido(req) {
+    const P = global.QFPush;
+    if (!P || P.isActive() || !req) return;
+
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    const suportado = P.supported();
+    const negado = P.permission() === 'denied';
+
+    let acao = '';
+    let ajuda = '';
+    if (suportado && !negado) {
+      acao = '<button class="btn btn--primary" id="qf-cli-pos-ativar">' + icon('bell') + ' ATIVAR NOTIFICAÇÕES</button>';
+      ajuda = '<div class="text--sm text--secondary" style="text-align:center;">Assim você será avisado quando um profissional aceitar ou enviar orçamento, mesmo sem ficar olhando a tela.</div>';
+    } else if (ios) {
+      acao = '<button class="btn btn--primary" type="button" data-install-app>' + icon('download') + ' Criar atalho no iPhone</button>';
+      ajuda = '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>No iPhone:</strong> abra pelo Safari, adicione o QuemFaz à Tela de Início e depois abra pelo ícone para ativar as notificações.</div></div>';
+    } else {
+      ajuda = '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>Notificações estão bloqueadas ou indisponíveis.</strong> Libere as notificações do QuemFaz nas configurações do navegador/celular para receber a resposta com a tela apagada.</div></div>';
+    }
+
+    PU.openSheet(
+      '<div class="stack">' +
+        '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
+        '<h3 class="sheet__title" style="text-align:center;">Pedido publicado! Não perca a resposta</h3>' +
+        '<p class="text text--secondary" style="text-align:center;">Quando um profissional aceitar seu pedido, o QuemFaz pode avisar você no celular.</p>' +
+        ajuda + acao +
+        '<button class="btn btn--outline" id="qf-cli-pos-continuar">Continuar acompanhando</button>' +
+        '<div class="text--sm" id="qf-cli-pos-erro" role="alert" style="color:var(--danger-600);text-align:center;"></div>' +
+      '</div>',
+      { persistent: true }
+    );
+
+    const continuar = document.getElementById('qf-cli-pos-continuar');
+    if (continuar) continuar.onclick = function () { PU.closeSheet(); };
+
+    const ativar = document.getElementById('qf-cli-pos-ativar');
+    if (ativar) ativar.onclick = async function () {
+      ativar.disabled = true;
+      ativar.textContent = 'Ativando…';
+      const erro = document.getElementById('qf-cli-pos-erro');
+      try {
+        await P.activate();
+        if (!P.isActive()) throw new Error('A ativação ainda não foi confirmada.');
+        PU.closeSheet();
+        PU.toast('Notificações ativadas! Você será avisado quando houver resposta.', 'success');
+        global.navigate('/cliente/pedido/' + req.id, true);
+      } catch (err) {
+        if (erro) erro.textContent = (err && err.message) || 'Não foi possível ativar. Verifique a permissão de notificações.';
+        ativar.disabled = false;
+        ativar.innerHTML = icon('bell') + ' ATIVAR NOTIFICAÇÕES';
+      }
+    };
   }
 
   let qfReachTimer=null;
@@ -6787,9 +6843,17 @@ alt=""></noscript>
       const strip = document.createElement('div');
       strip.className = 'qf-no-notif-strip';
       strip.setAttribute('role', 'status');
-      strip.innerHTML = icon('bell') + '<span>Você não será avisado — acompanhe pelo app.</span>';
+      strip.innerHTML = icon('bell') + '<span><strong>Ative os avisos.</strong> Assim você sabe na hora quando um profissional aceitar.</span><button class="btn btn--primary btn--sm" type="button" data-action="cli-notif-ativar">Ativar</button>';
       const view = content.querySelector('.view') || content;
       view.insertBefore(strip, view.firstChild);
+    }
+    let mostrarPosPedido = false;
+    try {
+      mostrarPosPedido = sessionStorage.getItem('qf_cli_notif_pos_pedido') === String(req.id);
+      if (mostrarPosPedido) sessionStorage.removeItem('qf_cli_notif_pos_pedido');
+    } catch (_) {}
+    if (mostrarPosPedido && global.QFPush && !global.QFPush.isActive()) {
+      setTimeout(function () { mostrarNotificacaoPosPedido(req); }, 250);
     }
     startCallReachPolling(content, req);
 
@@ -9179,7 +9243,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.1';
+  const APP_VERSION = '11.14.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
