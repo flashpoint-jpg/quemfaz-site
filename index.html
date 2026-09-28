@@ -5382,7 +5382,7 @@ alt=""></noscript>
           field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
           field('Tipo de cadastro', '<select class="select" name="tipoPessoa" required><option value="cpf">Pessoa Física (CPF)</option><option value="cnpj">Empresa / Pessoa Jurídica (CNPJ)</option></select>') +
-          field('CPF', '<input class="input" name="documento" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00" autocomplete="off">') +
+          '<label class="field"><span class="field__label" data-documento-label>CPF</span><input class="input" name="documento" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>' +
           '<label class="field"><span class="field__label" data-fantasia-label>Nome fantasia (opcional)</span><input class="input" name="nomeFantasia" maxlength="120" placeholder="Nome profissional ou da sua marca"></label>' +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
@@ -5631,9 +5631,11 @@ alt=""></noscript>
       const tipoPessoaSelect = form.querySelector('[name="tipoPessoa"]');
       const documentoInput = form.querySelector('[name="documento"]');
       const nomeFantasiaInput = form.querySelector('[name="nomeFantasia"]');
+      const documentoLabel = form.querySelector('[data-documento-label]');
       const fantasiaLabel = form.querySelector('[data-fantasia-label]');
       function atualizarTipoPessoa(limparDocumento) {
         const pj = tipoPessoaSelect && tipoPessoaSelect.value === 'cnpj';
+        if (documentoLabel) documentoLabel.textContent = pj ? 'CNPJ' : 'CPF';
         if (fantasiaLabel) fantasiaLabel.textContent = pj ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)';
         if (nomeFantasiaInput) nomeFantasiaInput.required = pj;
         if (documentoInput) {
@@ -9349,7 +9351,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.3';
+  const APP_VERSION = '11.14.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
