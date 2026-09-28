@@ -9457,14 +9457,16 @@ alt=""></noscript>
   function sessionRole() {
     try { const s = global.DB && global.DB.getSession ? global.DB.getSession() : null; return (s && s.role) || ''; } catch (_) { return ''; }
   }
+  // 12.3: Google Play só para o profissional logado (app em teste fechado). Cliente/visitante no Android ganha atalho do site na tela (PWA).
+  function usePlay() { return isAndroidBrowser() && sessionRole() === 'profissional'; }
+  function isInAppBrowser() { const ua = navigator.userAgent || ''; return /; wv\)|Instagram|FBAN|FBAV|WhatsApp|Line\//i.test(ua); }
   function canOfferInstall() {
     if (isNativeApp()) return false;     // já é o app
-    if (isAndroidBrowser() && sessionRole() !== 'profissional') return false; // cliente e visitante usam o site; Google Play só pro profissional logado (app ainda em teste fechado)
     if (isRealStandalone()) return false; // app aberto instalado (PWA)
     return true;
   }
   function installCardHtml(compact) {
-    if (isAndroidBrowser()) {
+    if (usePlay()) {
       if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div></div><button class="btn btn--primary" type="button" data-download-apk>Baixar pela Google Play</button></div>';
       return '<div class="qf-install" data-install-card><div class="icon-tile icon-tile--orange">' + icon('smartphone') + '</div>' +
         '<div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div><div class="text--sm text--secondary">Chamados e avisos tocam alto mesmo com o celular no bolso.</div></div>' +
@@ -9477,7 +9479,7 @@ alt=""></noscript>
   }
   // V11.4.2: "Baixar app" fica só na barra de cima. Quem já usa o app (APK ou instalado) vê "Atualizar" só quando há versão nova.
   function topInstallInner() {
-    if (canOfferInstall()) return '<button class="qf-top-dl" type="button" ' + (isAndroidBrowser() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + (isAndroidBrowser() ? 'Google Play' : 'Baixar app') + '</span></button>';
+    if (canOfferInstall()) return '<button class="qf-top-dl" type="button" ' + (usePlay() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + (usePlay() ? 'Google Play' : 'Instalar app') + '</span></button>';
     if (softEv && softEv.state === 'optional') return '<button class="qf-top-dl" type="button" data-top-update>' + icon('download') + '<span>Atualizar</span></button>';
     return '';
   }
@@ -9581,6 +9583,11 @@ alt=""></noscript>
       return;
     }
 
+    if (isInAppBrowser()) {
+      PU.openSheet('<div class="stack"><h3 class="sheet__title">Abra no Chrome para instalar</h3><p class="text text--secondary">Você abriu o QuemFaz dentro do WhatsApp/Instagram/Facebook, e por aqui não dá para instalar. Toque nos <strong>3 pontinhos ⋮</strong> lá em cima e escolha <strong>Abrir no Chrome</strong> (ou "Abrir no navegador"). Depois toque em <strong>Instalar app</strong> de novo.</p><button class="btn btn--primary" id="qf-install-ok">Entendi</button></div>');
+      document.getElementById('qf-install-ok').onclick = function () { PU.closeSheet(); };
+      return;
+    }
     // Android/desktop: o navegador pode não disparar beforeinstallprompt imediatamente.
     // Mantemos o botão visível e damos o caminho manual correto em vez de escondê-lo.
     const insecureLocal = !(location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
