@@ -4121,8 +4121,11 @@ alt=""></noscript>
           if (mr.error) throw mr.error;
           localStorage.removeItem('qf_marketing_attribution');
           try {
-            if (role === 'profissional' && typeof global.fbq === 'function') {
-              global.fbq('track', 'CompleteRegistration', { content_name: 'QuemFaz Profissional' });
+            if ((role === 'profissional' || role === 'cliente') && typeof global.fbq === 'function') {
+              global.fbq('track', 'CompleteRegistration', {
+                content_name: role === 'profissional' ? 'QuemFaz Profissional' : 'QuemFaz Cliente',
+                content_category: role
+              });
             }
           } catch (_) {}
         }
@@ -6835,6 +6838,14 @@ alt=""></noscript>
         const req = (global.QFCloud && global.QFCloud.enabled)
           ? await global.QFCloud.createCall(dados)
           : DB.criarPedido(dados);
+        try {
+          if (typeof global.fbq === 'function') {
+            global.fbq('track', 'Lead', {
+              content_name: 'QuemFaz Pedido de Serviço',
+              content_category: params.catId || 'servico'
+            });
+          }
+        } catch (_) {}
         if (prioridade) {
           const pp = req.pagamentoPrioridade || {};
           if (pp.status === 'aprovado') PU.toast('Pagamento confirmado. Prioridade ativada!', 'success');
@@ -9475,7 +9486,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.6';
+  const APP_VERSION = '11.14.7';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
