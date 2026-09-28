@@ -1,0 +1,39 @@
+{
+  "id": "./admin.html",
+  "name": "QuemFaz Admin",
+  "short_name": "QuemFaz Admin",
+  "description": "Painel de controle do QuemFaz.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./admin.html?source=pwa#/admin/dashboard",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#0b1d3a",
+  "theme_color": "#0b1d3a",
+  "orientation": "portrait",
+  "categories": ["business", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Painel",
+      "short_name": "Painel",
+      "url": "./admin.html?source=pwa#/admin/dashboard",
+      "icons": [{"src":"./icon.svg","sizes":"any","type":"image/svg+xml"}]
+    }
+  ]
+}
