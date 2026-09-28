@@ -3576,6 +3576,8 @@ alt=""></noscript>
       };
     });
     const primaryArea = areas[0] || null;
+    let enderecoCloud = null;
+    try { enderecoCloud = await loadOwnAddress(); } catch (_) {}
     const w = walletRes.data;
     // V11.10.1: plano Mensal/Pro ativo (chamados que o profissional ainda pode usar).
     let planoAtivo = null;
@@ -3602,6 +3604,16 @@ alt=""></noscript>
       nome: p.nome,
       email: user.email || '',
       telefone: p.telefone || '',
+      tipoPessoa: p.tipo_pessoa || '',
+      nomeFantasia: p.nome_fantasia || '',
+      enderecoCadastro: enderecoCloud ? {
+        id: enderecoCloud.id || 'cloud_address',
+        cep: global.QFGeo ? global.QFGeo.formatCep(enderecoCloud.cep || '') : (enderecoCloud.cep || ''),
+        rua: enderecoCloud.rua || '', numero: enderecoCloud.numero || '', bairro: enderecoCloud.bairro || '',
+        cidade: enderecoCloud.cidade || '', uf: enderecoCloud.uf || '', complemento: enderecoCloud.complemento || '',
+        latitude: enderecoCloud.latitude == null ? null : Number(enderecoCloud.latitude),
+        longitude: enderecoCloud.longitude == null ? null : Number(enderecoCloud.longitude)
+      } : null,
       fotoUrl: p.foto_url || '',
       verificado: !!pr.verificado,
       categorias: pr.especialidades || [],
@@ -4787,6 +4799,7 @@ alt=""></noscript>
     submitAd: submitAd,
     saveClientAddress: saveClientAddress,
     saveCpf: saveCpf,
+    saveCnpj: saveCnpj,
     supportMyTickets: supportMyTickets,
     supportMessages: supportMessages,
     supportCreate: supportCreate,
@@ -7184,6 +7197,23 @@ alt=""></noscript>
     return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';
   }
 
+  function cadastroPendente(prof) {
+    const e = (prof && prof.enderecoCadastro) || {};
+    const tipo = String((prof && prof.tipoPessoa) || '');
+    const docOk = tipo === 'cpf' || (tipo === 'cnpj' && !!String((prof && prof.nomeFantasia) || '').trim());
+    const enderecoOk = !!(String(e.cep || '').replace(/\D/g,'').length === 8 && String(e.rua || '').trim() && String(e.numero || '').trim() && String(e.bairro || '').trim() && String(e.cidade || '').trim() && String(e.uf || '').trim());
+    return !(docOk && enderecoOk);
+  }
+  function avisoAtualizacaoCadastral(prof) {
+    if (!cadastroPendente(prof)) return '';
+    return '<div class="card" style="background:var(--warning-100);border:2px solid #efc46e;margin-bottom:14px;">' +
+      '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('id') + '</div>' +
+      '<div class="spacer"><div class="text--strong" style="color:var(--warning-600);">Atualize seus dados cadastrais</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:4px;">Estamos atualizando a segurança do QuemFaz. Confirme seu CPF ou CNPJ e complete seu endereço. Esses dados não ficam públicos.</div></div></div>' +
+      '<button class="btn btn--primary" data-nav="/profissional/perfil" data-cadastro-update style="margin-top:12px;">Atualizar agora</button>' +
+    '</div>';
+  }
+
   function pendingGate(prof) {
     if (prof.statusAprovacao === 'aprovado') return '';
     if (prof.statusAprovacao === 'reprovado') {
@@ -7425,6 +7455,7 @@ alt=""></noscript>
     function adStatusLabel(a){if(!a)return '';if(a.status==='ativo')return '<span class="badge badge--success"><span class="badge__dot"></span>No ar</span>';if(a.status==='reprovado')return '<span class="badge badge--danger"><span class="badge__dot"></span>Reprovado</span>';if(a.status==='pausado')return '<span class="badge badge--warning"><span class="badge__dot"></span>Pausado</span>';return '<span class="badge badge--warning"><span class="badge__dot"></span>Aguardando aprovação</span>';}
     return '<div class="view">'+
       pendingGate(user)+
+      avisoAtualizacaoCadastral(user)+
       ativ.html+
       '<div class="card" style="margin-bottom:12px;background:var(--warning-100);border:1px solid #f3cf8b;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">'+icon('bell')+'</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">AVISO DE TESTE — aceite seu primeiro chamado</div><div class="text--sm text--secondary" style="margin-top:4px;">No primeiro pedido que aparecer, toque em <strong>Aceitar</strong> para confirmar que os chamados estão chegando, mesmo que esteja longe. <strong>Seu primeiro teste não consome crédito.</strong> Se não puder fazer o serviço, avise ou cancele logo depois para o cliente continuar buscando e não ficar sem resposta.</div></div></div></div>'+
       '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div>'+'<div class="qf-radar" aria-hidden="true"><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__ring"></span><span class="qf-radar__sweep"></span><span class="qf-radar__core">'+icon('phoneCall')+'</span></div>'+'<div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Buscando clientes perto de você…</div>'+'<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
@@ -8257,6 +8288,28 @@ alt=""></noscript>
             '<div class="text--sm text--secondary">' + PU.escapeHtml(user.email) + '</div>' +
             '<div style="margin-top:6px;">' + ((global.QFCloud && global.QFCloud.enabled) ? (user.verificado ? '<span class="badge badge--success"><span class="badge__dot"></span>Verificado</span>' : '<span class="badge badge--navy"><span class="badge__dot"></span>Conta ativa</span>') : aprovacaoBadge(user.statusAprovacao)) + '</div>' +
           '</div>' +
+        '</div>' +
+
+        '<div class="section" id="atualizacao-cadastral">' +
+          '<div class="section-head"><div><h2 class="h3">Dados cadastrais</h2><div class="text--sm text--secondary">CPF/CNPJ e endereço são usados para segurança e não aparecem publicamente.</div></div>' +
+            (cadastroPendente(user) ? '<span class="badge badge--warning"><span class="badge__dot"></span>Atualização necessária</span>' : '<span class="badge badge--success"><span class="badge__dot"></span>Atualizado</span>') +
+          '</div>' +
+          '<form id="prof-cadastro-update-form" class="card stack">' +
+            '<label class="field"><span class="field__label">Tipo de cadastro</span><select class="select" name="tipoPessoa" required><option value="cpf"' + (user.tipoPessoa !== 'cnpj' ? ' selected' : '') + '>Pessoa Física (CPF)</option><option value="cnpj"' + (user.tipoPessoa === 'cnpj' ? ' selected' : '') + '>Empresa / Pessoa Jurídica (CNPJ)</option></select></label>' +
+            '<label class="field"><span class="field__label" data-update-doc-label>' + (user.tipoPessoa === 'cnpj' ? 'CNPJ' : 'CPF') + '</span><input class="input" name="documento" inputmode="numeric" required autocomplete="off" placeholder="' + (user.tipoPessoa === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00') + '"></label>' +
+            '<label class="field"><span class="field__label" data-update-fantasia-label>' + (user.tipoPessoa === 'cnpj' ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)') + '</span><input class="input" name="nomeFantasia" maxlength="120" value="' + PU.escapeHtml(user.nomeFantasia || '') + '" placeholder="Nome profissional ou da empresa"></label>' +
+            '<div class="divider-label">Endereço</div>' +
+            '<label class="field"><span class="field__label">CEP</span><div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.cep) || '') + '" placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div></label>' +
+            '<label class="field"><span class="field__label">Rua / Avenida</span><input class="input" name="rua" required maxlength="160" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.rua) || '') + '" placeholder="Nome da rua ou avenida"></label>' +
+            '<label class="field"><span class="field__label">Número</span><input class="input" name="numero" required maxlength="20" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.numero) || '') + '" placeholder="Ex.: 120"></label>' +
+            '<label class="field"><span class="field__label">Bairro</span><input class="input" name="bairro" required maxlength="100" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.bairro) || '') + '" placeholder="Seu bairro"></label>' +
+            '<label class="field"><span class="field__label">Cidade</span><input class="input" name="cidade" required maxlength="80" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.cidade) || '') + '" placeholder="Sua cidade"></label>' +
+            '<label class="field"><span class="field__label">Estado (UF)</span><select class="select" name="uf" required>' + ufOptions((user.enderecoCadastro && user.enderecoCadastro.uf) || '') + '</select></label>' +
+            '<label class="field"><span class="field__label">Complemento (opcional)</span><input class="input" name="complemento" maxlength="120" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.complemento) || '') + '" placeholder="Apto, bloco, referência..."></label>' +
+            '<input type="hidden" name="latitude" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.latitude) == null ? '' : user.enderecoCadastro.latitude) + '"><input type="hidden" name="longitude" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.longitude) == null ? '' : user.enderecoCadastro.longitude) + '">' +
+            '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm">Por segurança, o CPF/CNPJ atual não é exibido. Digite novamente o documento para confirmar a atualização.</div></div>' +
+            '<button class="btn btn--primary" type="submit">' + icon('check') + ' Salvar atualização cadastral</button>' +
+          '</form>' +
         '</div>' +
 
         '<div class="section">' +
@@ -9230,6 +9283,77 @@ alt=""></noscript>
   }
 
   function bindPerfil(content, user) {
+    const cadastroForm = content.querySelector('#prof-cadastro-update-form');
+    if (cadastroForm) {
+      const tipo = cadastroForm.querySelector('[name="tipoPessoa"]');
+      const doc = cadastroForm.querySelector('[name="documento"]');
+      const fantasia = cadastroForm.querySelector('[name="nomeFantasia"]');
+      const docLabel = cadastroForm.querySelector('[data-update-doc-label]');
+      const fantasiaLabel = cadastroForm.querySelector('[data-update-fantasia-label]');
+      function atualizarTipoCadastro(limpar) {
+        const pj = tipo.value === 'cnpj';
+        docLabel.textContent = pj ? 'CNPJ' : 'CPF';
+        fantasiaLabel.textContent = pj ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)';
+        fantasia.required = pj;
+        doc.maxLength = pj ? 18 : 14;
+        doc.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
+        if (limpar) doc.value = '';
+        else doc.value = pj ? global.QFGeo.formatCnpj(doc.value) : global.QFGeo.formatCpf(doc.value);
+      }
+      tipo.addEventListener('change', function () { atualizarTipoCadastro(true); });
+      doc.addEventListener('input', function () { doc.value = tipo.value === 'cnpj' ? global.QFGeo.formatCnpj(doc.value) : global.QFGeo.formatCpf(doc.value); });
+      atualizarTipoCadastro(false);
+      global.QFGeo.bindAddressForm(cadastroForm, { buscarAoCompletar: true });
+
+      cadastroForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const fd = new FormData(cadastroForm);
+        const tipoPessoa = String(fd.get('tipoPessoa') || 'cpf');
+        const documento = String(fd.get('documento') || '').trim();
+        const nomeFantasia = String(fd.get('nomeFantasia') || '').trim();
+        if (tipoPessoa === 'cnpj') {
+          if (!global.QFGeo.validCnpj(documento)) { PU.toast('Digite um CNPJ válido.', 'danger'); return; }
+          if (!nomeFantasia) { PU.toast('Para empresa, o nome fantasia é obrigatório.', 'danger'); return; }
+        } else if (!global.QFGeo.validCpf(documento)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
+
+        const cep = global.QFGeo.normalizeCep(fd.get('cep'));
+        const rua = String(fd.get('rua') || '').trim();
+        const numero = String(fd.get('numero') || '').trim();
+        const bairro = String(fd.get('bairro') || '').trim();
+        const cidade = String(fd.get('cidade') || '').trim();
+        const uf = String(fd.get('uf') || '').trim().toUpperCase();
+        if (!cep || !rua || !numero || !bairro || !cidade || !uf) { PU.toast('Preencha CEP, rua, número, bairro, cidade e UF.', 'danger'); return; }
+
+        const btn = cadastroForm.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        try {
+          if (!(global.QFCloud && global.QFCloud.enabled)) throw new Error('Atualização cadastral disponível somente com conexão ao banco.');
+          if (tipoPessoa === 'cnpj') await global.QFCloud.saveCnpj(documento); else await global.QFCloud.saveCpf(documento);
+
+          const cli = global.QFCloud.client;
+          const uRes = await cli.auth.getUser();
+          if (uRes.error || !uRes.data.user) throw new Error('Sua sessão expirou. Entre novamente.');
+          const up = await cli.from('qf_profiles').update({
+            tipo_pessoa: tipoPessoa,
+            nome_fantasia: nomeFantasia || null,
+            atualizado_em: new Date().toISOString()
+          }).eq('id', uRes.data.user.id);
+          if (up.error) throw up.error;
+
+          await global.QFCloud.saveClientAddress({
+            cep: cep, rua: rua, numero: numero, bairro: bairro, cidade: cidade, uf: uf,
+            complemento: String(fd.get('complemento') || '').trim(),
+            latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null
+          });
+          await global.QFCloud.syncForCurrentSession(true);
+          PU.toast('Dados cadastrais atualizados com sucesso!', 'success');
+          global.navigate('/profissional/perfil', true);
+        } catch (err) {
+          PU.toast((err && err.message) || 'Não foi possível atualizar seus dados.', 'danger');
+        } finally { if (btn) btn.disabled = false; }
+      });
+    }
+
     const selfieInput = content.querySelector('#perfil-selfie');
     const companyLogoInput = content.querySelector('#perfil-empresa-logo');
     async function salvarImagemPerfil(input, tipo) {
@@ -9351,7 +9475,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.4';
+  const APP_VERSION = '11.14.5';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
