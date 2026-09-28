@@ -9459,7 +9459,7 @@ alt=""></noscript>
   }
   function canOfferInstall() {
     if (isNativeApp()) return false;     // já é o app
-    if (isAndroidBrowser() && sessionRole() === 'cliente') return false; // cliente usa o site normalmente
+    if (isAndroidBrowser() && sessionRole() !== 'profissional') return false; // cliente e visitante usam o site; Google Play só pro profissional logado (app ainda em teste fechado)
     if (isRealStandalone()) return false; // app aberto instalado (PWA)
     return true;
   }
