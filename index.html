@@ -5290,11 +5290,10 @@ alt=""></noscript>
       '<div class="view stack--lg">' +
         backRow('/auth/cliente/login', 'Criar conta') +
         '<form id="cadastro-cliente-form" class="stack" novalidate>' +
-          field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
-          field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
-          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
-          field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
+          field('Nome completo', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
+          field('E-mail', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
+          field('WhatsApp / celular (opcional)', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(35) 99999-0000">') +
           '<button class="btn btn--primary" type="submit" style="margin-top:6px;">Criar conta</button>' +
         '</form>' +
       '</div>'
@@ -5602,16 +5601,18 @@ alt=""></noscript>
 
     if (pattern === '/auth/:role/cadastro' && params.role === 'cliente') {
       const form = content.querySelector('#cadastro-cliente-form');
-      global.QFGeo.bindAddressForm(form);
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
+        const nome = String(fd.get('nome') || '').trim();
         const email = String(fd.get('email') || '').trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { PU.toast('Informe um e-mail válido. O e-mail é obrigatório para criar a conta.', 'danger'); return; }
-        const cpf = fd.get('cpf').trim();
-        if (!global.QFGeo.validCpf(cpf)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
-        if (!validPhone(fd.get('telefone'))) { PU.toast('Informe um WhatsApp/celular com DDD.', 'danger'); return; }
-        const dados = { nome: fd.get('nome').trim(), email: email, senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf };
+        const senha = String(fd.get('senha') || '');
+        const telefone = String(fd.get('telefone') || '').trim();
+        if (!nome) { PU.toast('Informe seu nome.', 'danger'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { PU.toast('Informe um e-mail válido.', 'danger'); return; }
+        if (senha.length < 6) { PU.toast('A senha precisa ter pelo menos 6 caracteres.', 'danger'); return; }
+        if (telefone && !validPhone(telefone)) { PU.toast('Confira o WhatsApp/celular ou deixe o campo vazio.', 'danger'); return; }
+        const dados = { nome: nome, email: email, senha: senha, telefone: telefone };
         const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
         try {
@@ -9654,7 +9655,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.10';
+  const APP_VERSION = '11.14.11';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
