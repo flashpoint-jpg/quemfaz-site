@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Painel administrativo separado do app público -->
-<title>QuemFaz — O profissional que você precisa, perto de você</title>
+<title>QuemFaz Admin — Painel de Controle</title>
 <!-- V6 Carteira: 1º chamado grátis + recarga Pix/Cartão/Boleto -->
-<meta name="description" content="QuemFaz conecta clientes a profissionais de serviços próximos: eletricistas, encanadores, diaristas, pedreiros e muito mais.">
+<meta name="description" content="Painel administrativo do QuemFaz para acompanhar pedidos, profissionais, clientes, alertas e suporte.">
 <meta name="theme-color" content="#0b1d3a">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="QuemFaz">
+<meta name="apple-mobile-web-app-title" content="QuemFaz Admin">
+<link rel="manifest" href="./admin-manifest.webmanifest">
 <style>
 /* QuemFaz — Design tokens
    Azul-marinho como base de marca, laranja como acento de ação.
@@ -2456,7 +2457,25 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   const PU = global.PU, icon = global.icon, Screens = global.Screens;
   const VAPID_PUBLIC_KEY = 'BHKGLb0G49jDzmd6zoWU4HYzk8gAF3ilPMBx_-O3SMy1vPELJJZ6euC2XkSRcy8mF9MMYDKY9Lf7039nokcCHqw';
   const PUSH_KEY = 'qf_admin_push_enabled';
-  let cache = null, timer = null;
+  let cache = null, timer = null, adminInstallPrompt = null;
+
+  function adminStandalone() {
+    try { return !!(global.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (_) { return false; }
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(function () {});
+  }
+  global.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    adminInstallPrompt = e;
+    const slot = document.querySelector('[data-admin-install-slot]');
+    if (slot) slot.innerHTML = installBanner();
+  });
+  global.addEventListener('appinstalled', function () {
+    adminInstallPrompt = null;
+    document.querySelectorAll('[data-admin-install]').forEach(function (el) { el.remove(); });
+    try { PU.toast('QuemFaz Admin instalado neste aparelho.', 'success'); } catch (_) {}
+  });
   // o push "Chamado sem resposta" abre admin.html#parados: lembra de rolar até a seção depois de entrar
   function wantParados() { return /^#\/?parados/.test(location.hash || ''); }
   try { if (wantParados()) sessionStorage.setItem('qf_goto_parados', '1'); } catch (_) {}
@@ -2492,13 +2511,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div class="stack--sm">' + cache.itens.map(itemHtml).join('') + '</div>';
   }
   function countHtml() { const n = cache && cache.itens ? cache.itens.length : 0; return n ? '<span class="qf-parados-count" aria-label="' + n + ' chamados parados">' + n + '</span>' : ''; }
+  function installBanner() {
+    if (adminStandalone()) return '';
+    return '<div class="card card--tight" data-admin-install style="margin-bottom:10px;background:var(--navy-100);border:none;"><div class="row-between" style="gap:10px;"><div><div class="text--strong">Instale o QuemFaz Admin</div><div class="text--sm text--secondary">Painel separado no celular, abrindo direto no controle do aplicativo.</div></div><button class="btn btn--primary btn--sm btn--block-auto" type="button" data-action="admin-install">Instalar</button></div></div>';
+  }
   function pushBanner() {
     let on = false; try { on = localStorage.getItem(PUSH_KEY) === '1' && 'Notification' in window && Notification.permission === 'granted'; } catch (_) {}
     if (on || !client()) return '';
-    return '<div class="qf-admin-push" data-admin-push>' + icon('bell') + '<span>Ative as notificações para ser avisado de chamado parado</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">Ativar</button></div>';
+    return '<div class="qf-admin-push" data-admin-push>' + icon('bell') + '<span>Ative as notificações para ser avisado de novos pedidos e mudanças importantes</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">Ativar</button></div>';
   }
   function html() {
-    return pushBanner() + '<section class="section qf-parados" id="parados"><div class="section-head"><h2 class="h3">Chamados parados ' + countHtml() + '</h2><span class="text--sm text--muted">atualiza a cada 60 s</span></div><div data-parados-body>' + bodyHtml() + '</div></section>';
+    return '<div data-admin-install-slot>' + installBanner() + '</div>' + pushBanner() + '<section class="section qf-parados" id="parados"><div class="section-head"><h2 class="h3">Chamados parados ' + countHtml() + '</h2><span class="text--sm text--muted">atualiza a cada 60 s</span></div><div data-parados-body>' + bodyHtml() + '</div></section>';
   }
   function paint() {
     const sec = document.getElementById('parados');
@@ -2563,6 +2586,29 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     localStorage.setItem(PUSH_KEY, '1');
   }
   document.addEventListener('click', async function (e) {
+    const installBtn = e.target.closest && e.target.closest('[data-action="admin-install"]');
+    if (installBtn) {
+      installBtn.disabled = true;
+      try {
+        if (adminInstallPrompt) {
+          const ev = adminInstallPrompt;
+          adminInstallPrompt = null;
+          await ev.prompt();
+          await ev.userChoice;
+        } else if (/iphone|ipad|ipod/i.test(navigator.userAgent || '')) {
+          PU.openSheet('<div class="stack"><h3 class="sheet__title">Instalar QuemFaz Admin no iPhone</h3><p class="text text--secondary">Abra esta página no <strong>Safari</strong>, toque em <strong>Compartilhar</strong>, escolha <strong>Adicionar à Tela de Início</strong> e confirme em <strong>Adicionar</strong>.</p><button class="btn btn--primary" id="qf-admin-install-ok">Entendi</button></div>');
+          const ok = document.getElementById('qf-admin-install-ok'); if (ok) ok.onclick = function () { PU.closeSheet(); };
+        } else {
+          PU.toast('Se a janela não abrir, use o menu do navegador e escolha Instalar aplicativo ou Adicionar à tela inicial.');
+        }
+      } catch (_) {
+        PU.toast('Não foi possível abrir a instalação agora.', 'danger');
+      } finally {
+        if (document.body.contains(installBtn)) installBtn.disabled = false;
+      }
+      return;
+    }
+
     const b = e.target.closest && e.target.closest('[data-action="admin-push-ativar"]');
     if (!b) return;
     b.disabled = true;
