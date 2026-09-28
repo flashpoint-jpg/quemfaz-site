@@ -2816,6 +2816,7 @@ alt=""></noscript>
     const u = {
       id: PU.uid('pro'), nome: data.nome, email: data.email, senha: data.senha,
       telefone: data.telefone || '', categorias: data.categorias || [], cidadeId: data.cidadeId,
+      tipoPessoa: data.tipoPessoa || 'cpf', nomeFantasia: data.nomeFantasia || '', endereco: data.endereco || null,
       fotoUrl: data.selfieData || data.fotoUrl || '',
       raioKm: data.raioKm || 10, documentos: { rg: false, cpf: false, comprovanteEndereco: false },
       statusAprovacao: 'pendente', online: false, saldo: 0, creditos: 2500, bonusDesbloqueios: 0, avaliacaoMedia: 0, totalAvaliacoes: 0,
@@ -4001,11 +4002,19 @@ alt=""></noscript>
   }
 
   function pendingCpfKey(email) { return 'qf_pending_cpf_' + String(email || '').trim().toLowerCase(); }
+  function pendingCnpjKey(email) { return 'qf_pending_cnpj_' + String(email || '').trim().toLowerCase(); }
+  function pendingProfessionalProfileKey(email) { return 'qf_pending_prof_profile_' + String(email || '').trim().toLowerCase(); }
   function pendingAddressKey(email) { return 'qf_pending_address_' + String(email || '').trim().toLowerCase(); }
   function pendingSelfieKey(email) { return 'qf_pending_selfie_' + String(email || '').trim().toLowerCase(); }
   async function saveCpf(cpf) {
     if (!client || !cpf) return null;
     const res = await client.rpc('qf_salvar_cpf', { p_cpf: String(cpf) });
+    if (res.error) throw res.error;
+    return res.data;
+  }
+  async function saveCnpj(cnpj) {
+    if (!client || !cnpj) return null;
+    const res = await client.rpc('qf_salvar_cnpj', { p_cnpj: String(cnpj) });
     if (res.error) throw res.error;
     return res.data;
   }
@@ -4017,7 +4026,7 @@ alt=""></noscript>
     const row = {
       user_id: uRes.data.user.id,
       cep: global.QFGeo ? global.QFGeo.normalizeCep(e.cep) : String(e.cep || '').replace(/\D/g,''),
-      rua: String(e.rua || '').trim(), bairro: String(e.bairro || '').trim(),
+      rua: String(e.rua || '').trim(), numero: String(e.numero || '').trim() || null, bairro: String(e.bairro || '').trim(),
       cidade: String(e.cidade || '').trim(), uf: String(e.uf || '').trim().toUpperCase(),
       complemento: String(e.complemento || '').trim() || null,
       latitude: (e.latitude !== null && e.latitude !== undefined && String(e.latitude).trim() !== '' && Number.isFinite(Number(e.latitude)) && Math.abs(Number(e.latitude)) <= 90) ? Number(e.latitude) : null,
@@ -4041,6 +4050,26 @@ alt=""></noscript>
       const k = pendingCpfKey(email); const cpf = localStorage.getItem(k);
       if (cpf) { await saveCpf(cpf); localStorage.removeItem(k); }
     } catch (e) { console.warn('QuemFaz CPF pendente', e); }
+    try {
+      const kc = pendingCnpjKey(email); const cnpj = localStorage.getItem(kc);
+      if (cnpj) { await saveCnpj(cnpj); localStorage.removeItem(kc); }
+    } catch (e) { console.warn('QuemFaz CNPJ pendente', e); }
+    try {
+      const kp = pendingProfessionalProfileKey(email); const rawProfile = localStorage.getItem(kp);
+      if (rawProfile && role === 'profissional') {
+        const metaProf = JSON.parse(rawProfile);
+        const uRes = await client.auth.getUser();
+        if (uRes && uRes.data && uRes.data.user) {
+          const up = await client.from('qf_profiles').update({
+            tipo_pessoa: metaProf.tipoPessoa === 'cnpj' ? 'cnpj' : 'cpf',
+            nome_fantasia: String(metaProf.nomeFantasia || '').trim() || null,
+            atualizado_em: new Date().toISOString()
+          }).eq('id', uRes.data.user.id);
+          if (up.error) throw up.error;
+          localStorage.removeItem(kp);
+        }
+      }
+    } catch (e) { console.warn('QuemFaz dados profissionais pendentes', e); }
     try {
       const k2 = pendingAddressKey(email); const raw = localStorage.getItem(k2);
       if (raw) { await saveClientAddress(JSON.parse(raw)); localStorage.removeItem(k2); }
@@ -4166,6 +4195,10 @@ alt=""></noscript>
       qf_raio_km: data.raioKm || 10
     };
     if (data.cpf) { try { localStorage.setItem(pendingCpfKey(email), data.cpf); } catch (_) {} }
+    if (data.cnpj) { try { localStorage.setItem(pendingCnpjKey(email), data.cnpj); } catch (_) {} }
+    if (role === 'profissional') {
+      try { localStorage.setItem(pendingProfessionalProfileKey(email), JSON.stringify({ tipoPessoa: data.tipoPessoa || (data.cnpj ? 'cnpj' : 'cpf'), nomeFantasia: data.nomeFantasia || '' })); } catch (_) {}
+    }
     if (data.endereco) { try { localStorage.setItem(pendingAddressKey(email), JSON.stringify(data.endereco)); } catch (_) {} }
     if (role === 'profissional' && data.selfieData) {
       try { localStorage.setItem(pendingSelfieKey(email), data.selfieData); } catch (_) {}
@@ -5029,6 +5062,24 @@ alt=""></noscript>
     let d2 = 11 - (sum % 11); if (d2 >= 10) d2 = 0;
     return d2 === Number(cpf[10]);
   }
+  function formatCnpj(v) {
+    const d = digits(v).slice(0,14);
+    return d.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+  }
+  function validCnpj(v) {
+    const cnpj = digits(v);
+    if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+    const calc = function (base, weights) {
+      let sum = 0;
+      for (let i=0;i<weights.length;i++) sum += Number(base[i]) * weights[i];
+      const rem = sum % 11;
+      return rem < 2 ? 0 : 11 - rem;
+    };
+    const d1 = calc(cnpj, [5,4,3,2,9,8,7,6,5,4,3,2]);
+    if (d1 !== Number(cnpj[12])) return false;
+    const d2 = calc(cnpj, [6,5,4,3,2,9,8,7,6,5,4,3,2]);
+    return d2 === Number(cnpj[13]);
+  }
   function ufOptions(selected) {
     selected = String(selected || '').toUpperCase();
     return UF_LIST.map(function (uf) { return '<option value="' + uf + '"' + (uf === selected ? ' selected' : '') + '>' + uf + '</option>'; }).join('');
@@ -5129,7 +5180,7 @@ alt=""></noscript>
     });
   }
   function regionKey(cidade, uf) { const city=String(cidade||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); return city && uf ? 'BR|' + String(uf).toUpperCase() + '|' + city : 'all'; }
-  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
+  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, validCnpj: validCnpj, formatCnpj: formatCnpj, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
 })(window);
 
 
@@ -5330,7 +5381,9 @@ alt=""></noscript>
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
           field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
-          field('CPF', '<input class="input" name="cpf" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00">') +
+          field('Tipo de cadastro', '<select class="select" name="tipoPessoa" required><option value="cpf">Pessoa Física (CPF)</option><option value="cnpj">Empresa / Pessoa Jurídica (CNPJ)</option></select>') +
+          field('CPF', '<input class="input" name="documento" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00" autocomplete="off">') +
+          '<label class="field"><span class="field__label" data-fantasia-label>Nome fantasia (opcional)</span><input class="input" name="nomeFantasia" maxlength="120" placeholder="Nome profissional ou da sua marca"></label>' +
           field('Senha', '<input class="input" type="password" name="senha" required minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres">') +
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
@@ -5340,9 +5393,13 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="3" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 4</div><div class="h2">Onde você atende</div><div class="text--sm text--secondary">Toque em Usar GPS ou digite seu CEP.</div><div class="qf-step__bar"><span style="width:75%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 4</div><div class="h2">Seu endereço e onde você atende</div><div class="text--sm text--secondary">Informe seu endereço obrigatório. O CEP ou GPS pode preencher os campos automaticamente.</div><div class="qf-step__bar"><span style="width:75%"></span></div></div>' +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
+          field('Rua / Avenida', '<input class="input" name="rua" required maxlength="160" autocomplete="address-line1" placeholder="Nome da rua ou avenida">') +
+          field('Número', '<input class="input" name="numero" required maxlength="20" autocomplete="address-line2" placeholder="Ex.: 120">') +
+          field('Bairro', '<input class="input" name="bairro" required maxlength="100" placeholder="Seu bairro">') +
+          field('Complemento (opcional)', '<input class="input" name="complemento" maxlength="120" placeholder="Apto, bloco, referência...">') +
           field('Cidade base', '<input class="input" name="cidade" required maxlength="80" autocapitalize="words" placeholder="Digite sua cidade">') +
           field('Estado (UF)', '<select class="select" name="uf" required>' + ufOpts + '</select>') +
           '<div class="qf-cidade-cep" data-cidade-cep hidden>' + icon('checkCircle') + '<span class="qf-cidade-cep__txt">Cidade e estado localizados pelo CEP.</span><button class="btn btn--outline" type="button" data-cidade-alterar>Alterar</button></div>' +
@@ -5571,6 +5628,29 @@ alt=""></noscript>
       const form = content.querySelector('#cadastro-prof-form');
       // V11.12: a cidade vem do CEP (ou do CEP achado pelo GPS) e fica travada para não ser editada sem querer
       // (ex.: "São Pauloulo" — o CEP preenchia a cidade enquanto a pessoa ainda digitava). "Alterar" libera a edição.
+      const tipoPessoaSelect = form.querySelector('[name="tipoPessoa"]');
+      const documentoInput = form.querySelector('[name="documento"]');
+      const nomeFantasiaInput = form.querySelector('[name="nomeFantasia"]');
+      const fantasiaLabel = form.querySelector('[data-fantasia-label]');
+      function atualizarTipoPessoa(limparDocumento) {
+        const pj = tipoPessoaSelect && tipoPessoaSelect.value === 'cnpj';
+        if (fantasiaLabel) fantasiaLabel.textContent = pj ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)';
+        if (nomeFantasiaInput) nomeFantasiaInput.required = pj;
+        if (documentoInput) {
+          if (limparDocumento) documentoInput.value = '';
+          documentoInput.maxLength = pj ? 18 : 14;
+          documentoInput.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
+          documentoInput.value = pj ? global.QFGeo.formatCnpj(documentoInput.value) : global.QFGeo.formatCpf(documentoInput.value);
+        }
+      }
+      if (tipoPessoaSelect) tipoPessoaSelect.addEventListener('change', function () { atualizarTipoPessoa(true); });
+      if (documentoInput) documentoInput.addEventListener('input', function () {
+        documentoInput.value = tipoPessoaSelect && tipoPessoaSelect.value === 'cnpj'
+          ? global.QFGeo.formatCnpj(documentoInput.value)
+          : global.QFGeo.formatCpf(documentoInput.value);
+      });
+      atualizarTipoPessoa(false);
+
       const cidadeInput = form.querySelector('[name="cidade"]');
       const ufSelect = form.querySelector('[name="uf"]');
       const cidadeAviso = form.querySelector('[data-cidade-cep]');
@@ -5708,7 +5788,14 @@ alt=""></noscript>
           if (!String(fd.get('nome') || '').trim()) { PU.toast('Digite seu nome completo.', 'danger'); marcarErro('nome'); return false; }
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(fd.get('email') || '').trim())) { PU.toast('Digite um e-mail válido. Exemplo: nome@gmail.com', 'danger'); marcarErro('email'); return false; }
           if (!validPhone(fd.get('telefone'))) { PU.toast('Digite seu WhatsApp com DDD. Exemplo: (11) 99999-0000', 'danger'); marcarErro('telefone'); return false; }
-          if (!global.QFGeo.validCpf(String(fd.get('cpf') || '').trim())) { PU.toast('Digite um CPF válido (só números já serve).', 'danger'); marcarErro('cpf'); return false; }
+          const tipoPessoa = String(fd.get('tipoPessoa') || 'cpf');
+          const documento = String(fd.get('documento') || '').trim();
+          if (tipoPessoa === 'cnpj') {
+            if (!global.QFGeo.validCnpj(documento)) { PU.toast('Digite um CNPJ válido.', 'danger'); marcarErro('documento'); return false; }
+            if (!String(fd.get('nomeFantasia') || '').trim()) { PU.toast('Para cadastro com CNPJ, o nome fantasia é obrigatório.', 'danger'); marcarErro('nomeFantasia'); return false; }
+          } else if (!global.QFGeo.validCpf(documento)) {
+            PU.toast('Digite um CPF válido (só números já serve).', 'danger'); marcarErro('documento'); return false;
+          }
           if (String(fd.get('senha') || '').length < 6) { PU.toast('Crie uma senha com pelo menos 6 letras ou números.', 'danger'); marcarErro('senha'); return false; }
         }
         if (n === 2) {
@@ -5720,7 +5807,10 @@ alt=""></noscript>
           }
         }
         if (n === 3) {
-          if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite o CEP de onde você trabalha.', 'danger'); marcarErro('cep'); return false; }
+          if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite um CEP válido.', 'danger'); marcarErro('cep'); return false; }
+          if (!String(fd.get('rua') || '').trim()) { PU.toast('Informe a rua ou avenida do seu endereço.', 'danger'); marcarErro('rua'); return false; }
+          if (!String(fd.get('numero') || '').trim()) { PU.toast('Informe o número do seu endereço.', 'danger'); marcarErro('numero'); return false; }
+          if (!String(fd.get('bairro') || '').trim()) { PU.toast('Informe o bairro do seu endereço.', 'danger'); marcarErro('bairro'); return false; }
           const cidadeTxt = normCidade(fd.get('cidade'));
           if (!cidadeTxt) { PU.toast('Digite sua cidade.', 'danger'); marcarErro('cidade'); return false; }
           // Nome de cidade não tem números (evita CEP ou número digitado no campo da cidade).
@@ -5764,14 +5854,30 @@ alt=""></noscript>
           PU.toast('Toque na sua profissão na lista para marcar (ela fica destacada). Só digitar na busca não marca.', 'danger');
           return;
         }
-        const cpf = fd.get('cpf').trim();
-        if (!global.QFGeo.validCpf(cpf)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
+        const tipoPessoa = String(fd.get('tipoPessoa') || 'cpf');
+        const documento = String(fd.get('documento') || '').trim();
+        const nomeFantasia = String(fd.get('nomeFantasia') || '').trim();
+        if (tipoPessoa === 'cnpj') {
+          if (!global.QFGeo.validCnpj(documento)) { PU.toast('Digite um CNPJ válido.', 'danger'); return; }
+          if (!nomeFantasia) { PU.toast('Para cadastro com CNPJ, o nome fantasia é obrigatório.', 'danger'); return; }
+        } else if (!global.QFGeo.validCpf(documento)) { PU.toast('Digite um CPF válido.', 'danger'); return; }
         if (!validPhone(fd.get('telefone'))) { PU.toast('Informe um WhatsApp/celular com DDD.', 'danger'); return; }
         if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Digite um CEP válido da sua base.', 'danger'); return; }
+        if (!String(fd.get('rua') || '').trim() || !String(fd.get('numero') || '').trim() || !String(fd.get('bairro') || '').trim()) {
+          PU.toast('Preencha rua, número e bairro do seu endereço.', 'danger'); goStep(3); return;
+        }
+        const enderecoProf = {
+          cep: fd.get('cep').trim(), rua: String(fd.get('rua') || '').trim(), numero: String(fd.get('numero') || '').trim(),
+          bairro: String(fd.get('bairro') || '').trim(), cidade: normCidade(fd.get('cidade')), uf: fd.get('uf'),
+          complemento: String(fd.get('complemento') || '').trim(),
+          latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null
+        };
         const dados = {
-          nome: fd.get('nome').trim(), email: String(fd.get('email') || '').trim().toLowerCase(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(), cpf: cpf,
-          categorias: selected, cidade: normCidade(fd.get('cidade')), uf: fd.get('uf'), cep: fd.get('cep').trim(),
-          latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null, raioKm: Number(fd.get('raioKm')),
+          nome: fd.get('nome').trim(), email: String(fd.get('email') || '').trim().toLowerCase(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(),
+          tipoPessoa: tipoPessoa, nomeFantasia: nomeFantasia,
+          cpf: tipoPessoa === 'cpf' ? documento : '', cnpj: tipoPessoa === 'cnpj' ? documento : '',
+          categorias: selected, cidade: enderecoProf.cidade, uf: enderecoProf.uf, cep: enderecoProf.cep, endereco: enderecoProf,
+          latitude: enderecoProf.latitude, longitude: enderecoProf.longitude, raioKm: Number(fd.get('raioKm')),
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
           selfieData: selfieData
         };
@@ -9243,7 +9349,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.2';
+  const APP_VERSION = '11.14.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
