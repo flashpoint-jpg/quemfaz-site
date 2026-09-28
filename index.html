@@ -6664,13 +6664,59 @@ alt=""></noscript>
     function norm(v) {
       return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     }
+    const aliases = {
+      cat_pintor: 'pintura pintar parede paredes pintores',
+      cat_eletricista: 'eletrica eletrico eletricidade instalacao eletrica',
+      cat_encanador: 'encanamento hidraulica hidraulico vazamento',
+      cat_montador: 'montagem moveis montar movel',
+      cat_diarista: 'faxina limpeza domestica',
+      cat_jardinagem: 'jardim jardinagem jardineiro',
+      cat_arcondicionado: 'ar condicionado climatizacao',
+      cat_chaveiro: 'chave fechadura',
+      cat_mecanico: 'mecanica carro automovel',
+      cat_borracheiro: 'pneu borracharia',
+      cat_frete: 'carreto mudanca transporte',
+      cat_informatica: 'computador notebook pc informatica'
+    };
+    function tileId(tile) {
+      const nav = String(tile.getAttribute('data-nav') || '');
+      const parts = nav.split('/');
+      return parts[parts.length - 1] || '';
+    }
+    function haystack(tile) {
+      const id = tileId(tile);
+      return norm((tile.getAttribute('data-cat-name') || '') + ' ' + (aliases[id] || ''));
+    }
+    function matches(tile, q) {
+      return !q || haystack(tile).indexOf(q) !== -1;
+    }
+    function exactTile(q) {
+      if (!q) return null;
+      return tiles.find(function (tile) {
+        const id = tileId(tile);
+        const name = norm(tile.getAttribute('data-cat-name'));
+        const aliasWords = norm(aliases[id] || '').split(/\s+/).filter(Boolean);
+        return name === q || aliasWords.indexOf(q) !== -1;
+      }) || null;
+    }
+    function visibleMatches(q) {
+      return tiles.filter(function (tile) { return matches(tile, q); });
+    }
+    function openTile(tile) {
+      if (!tile) return false;
+      const nav = tile.getAttribute('data-nav');
+      if (!nav) return false;
+      global.navigate(nav);
+      return true;
+    }
     function apply() {
       const q = norm(input.value);
       let visible = 0;
+      // Quando há texto digitado, a busca procura em TODAS as categorias,
+      // mesmo que o cliente tenha tocado antes em algum filtro.
       tiles.forEach(function (tile) {
-        const byGroup = active === 'todos' || tile.getAttribute('data-cat-group') === active;
-        const byText = !q || norm(tile.getAttribute('data-cat-name')).indexOf(q) !== -1;
-        const show = byGroup && byText;
+        const byGroup = q ? true : (active === 'todos' || tile.getAttribute('data-cat-group') === active);
+        const show = byGroup && matches(tile, q);
         tile.style.display = show ? '' : 'none';
         if (show) visible++;
       });
@@ -6679,8 +6725,33 @@ alt=""></noscript>
         group.style.display = has ? '' : 'none';
       });
       if (empty) empty.style.display = visible ? 'none' : 'block';
+      return visible;
     }
-    input.addEventListener('input', apply);
+    function openBestMatch() {
+      const q = norm(input.value);
+      if (!q) return false;
+      const exact = exactTile(q);
+      if (exact) return openTile(exact);
+      const found = visibleMatches(q);
+      if (found.length) return openTile(found[0]);
+      PU.toast('Não encontramos esse serviço. Tente outro nome.', 'danger');
+      return false;
+    }
+    input.addEventListener('input', function () {
+      apply();
+      // Ex.: digitou "pintor": abre imediatamente a página correta.
+      const exact = exactTile(norm(input.value));
+      if (exact && norm(input.value).length >= 3) openTile(exact);
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      openBestMatch();
+    });
+    input.addEventListener('search', function () {
+      apply();
+      if (norm(input.value)) openBestMatch();
+    });
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
         active = chip.getAttribute('data-category-filter') || 'todos';
@@ -9486,7 +9557,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.7';
+  const APP_VERSION = '11.14.8';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
