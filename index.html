@@ -7066,6 +7066,7 @@ alt=""></noscript>
   function ativGravar(store, key, val) { try { if (val == null) global[store].removeItem(key); else global[store].setItem(key, val); } catch (_) {} }
   function ativAndroid() { return /android/i.test(navigator.userAgent || ''); }
   function ativCelular() { return /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent || ''); }
+  function ativIos() { return /iphone|ipad|ipod/i.test(navigator.userAgent || ''); }
   // App instalado: dentro do app Android, ou (iPhone/computador) aberto pelo ícone instalado.
   // No Android só o app da Google Play conta, porque é ele que toca com a tela apagada.
   function ativAppAberto() {
@@ -7110,7 +7111,7 @@ alt=""></noscript>
   function ativacaoMensagem(st) {
     const P = global.QFPush;
     const alvo = ativacaoPrimeiro(st);
-    if (alvo === 'app') return 'Falta instalar o app para receber chamados mesmo quando o site estiver fechado.';
+    if (alvo === 'app') return ativIos() ? 'Falta criar o atalho do QuemFaz na Tela de Início do iPhone.' : 'Falta instalar o app para receber chamados mesmo quando o site estiver fechado.';
     if (alvo === 'push') {
       const motivo = ativCelular() ? 'receber chamados com o celular bloqueado.' : 'ser avisado dos chamados mesmo com o site fechado.';
       if (P && P.permission && P.permission() === 'denied') return 'As notificações estão bloqueadas neste aparelho. Libere para ' + motivo;
@@ -7144,7 +7145,7 @@ alt=""></noscript>
     const boasVindas = ativLer('sessionStorage', ATIV_BOAS_VINDAS) === String(user.id);
     const nome = String(user.nome || '').trim().split(/\s+/)[0] || '';
     const pct = Math.round(st.feitas / 3 * 100);
-    const btnApp = '<button class="btn btn--primary" type="button" ' + (ativAndroid() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + ' Instalar app</button>';
+    const btnApp = '<button class="btn btn--primary" type="button" ' + (ativAndroid() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + ' ' + (ativIos() ? 'Criar atalho no iPhone' : 'Instalar app') + '</button>';
     const btnPush = '<button class="btn btn--primary" type="button" data-ativacao-notificacoes>' + icon('bell') + ' Ativar notificações</button>';
     const btnOnline = '<button class="btn ' + (primeiro === 'online' ? 'btn--primary' : 'btn--outline') + '" type="button" data-action="ficar-online-agora">' + icon('power') + ' Ficar online</button>';
     return { pendente: true, estado: st, html: '<section class="card qf-ativacao" data-ativacao="pendente" aria-labelledby="qf-ativ-titulo">' +
@@ -9530,6 +9531,9 @@ alt=""></noscript>
     const ua = navigator.userAgent || '';
     return /iphone|ipad|ipod/i.test(ua) && /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
   }
+  function isIosDevice() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+  }
   // V11.3: decide pela situação real (dentro do APK ou app aberto instalado), não por marcas salvas.
   function isNativeApp() {
     try { return !!(global.Capacitor && global.Capacitor.isNativePlatform && global.Capacitor.isNativePlatform()); } catch (_) { return false; }
@@ -9563,6 +9567,12 @@ alt=""></noscript>
         '<div class="spacer"><div class="text--strong">Baixe o app QuemFaz</div><div class="text--sm text--secondary">Chamados e avisos tocam alto mesmo com o celular no bolso.</div></div>' +
         '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button></div>';
     }
+    if (isIosDevice()) {
+      if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Crie o atalho no iPhone</div></div><button class="btn btn--primary" type="button" data-install-app>Criar atalho</button></div>';
+      return '<div class="qf-install" data-install-card><div class="icon-tile icon-tile--orange">' + icon('smartphone') + '</div>' +
+        '<div class="spacer"><div class="text--strong">Crie o atalho no iPhone</div><div class="text--sm text--secondary">Coloque o QuemFaz na Tela de Início para abrir pelo ícone como um app.</div></div>' +
+        '<button class="btn btn--primary" type="button" data-install-app>' + icon('download') + ' Criar atalho</button></div>';
+    }
     if (compact) return '<div class="qf-install-line" data-install-card><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('smartphone') + '</div><div class="spacer"><div class="text--strong">Instale o app</div></div><button class="btn btn--primary" type="button" data-install-app>Instalar</button></div>';
     return '<div class="qf-install" data-install-card><div class="icon-tile icon-tile--orange">' + icon('smartphone') + '</div>' +
       '<div class="spacer"><div class="text--strong">Instale o QuemFaz</div><div class="text--sm text--secondary">Acesso rápido, tela cheia e avisos de novos chamados.</div></div>' +
@@ -9570,7 +9580,11 @@ alt=""></noscript>
   }
   // V11.4.2: "Baixar app" fica só na barra de cima. Quem já usa o app (APK ou instalado) vê "Atualizar" só quando há versão nova.
   function topInstallInner() {
-    if (canOfferInstall()) return '<button class="qf-top-dl" type="button" ' + (usePlay() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + (usePlay() ? 'Google Play' : 'Instalar app') + '</span></button>';
+    if (canOfferInstall()) {
+      const play = usePlay();
+      const label = play ? 'Google Play' : (isIosDevice() ? 'Criar atalho' : 'Instalar app');
+      return '<button class="qf-top-dl" type="button" ' + (play ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + label + '</span></button>';
+    }
     if (softEv && softEv.state === 'optional') return '<button class="qf-top-dl" type="button" data-top-update>' + icon('download') + '<span>Atualizar</span></button>';
     return '';
   }
@@ -9668,14 +9682,15 @@ alt=""></noscript>
       fillInstallSlots();
       return;
     }
-    if (isIosSafari()) {
-      PU.openSheet('<div class="stack"><h3 class="sheet__title">Instalar no iPhone</h3><p class="text text--secondary">1. Toque no botão <strong>Compartilhar</strong> do Safari (quadrado com seta).<br>2. Escolha <strong>Adicionar à Tela de Início</strong>.<br>3. Toque em <strong>Adicionar</strong>.</p><button class="btn btn--primary" id="qf-install-ok">Entendi</button></div>');
+    if (isIosSafari() && !isInAppBrowser()) {
+      PU.openSheet('<div class="stack"><h3 class="sheet__title">Criar atalho no iPhone</h3><p class="text text--secondary" style="text-align:center;">Falta só a confirmação do iPhone.</p><div class="card card--tight"><div class="text--strong">1. Toque em Compartilhar</div><div class="text--sm text--secondary">Use o botão do Safari com o quadrado e a seta para cima.</div></div><div class="card card--tight"><div class="text--strong">2. Adicionar à Tela de Início</div><div class="text--sm text--secondary">Role o menu se essa opção não aparecer de primeira.</div></div><div class="card card--tight"><div class="text--strong">3. Toque em Adicionar</div><div class="text--sm text--secondary">Pronto: o ícone do QuemFaz ficará na tela do iPhone.</div></div><button class="btn btn--primary" id="qf-install-ok">Entendi</button></div>');
       document.getElementById('qf-install-ok').onclick = function () { PU.closeSheet(); };
       return;
     }
 
     if (isInAppBrowser()) {
-      PU.openSheet('<div class="stack"><h3 class="sheet__title">Abra no Chrome para instalar</h3><p class="text text--secondary">Você abriu o QuemFaz dentro do WhatsApp/Instagram/Facebook, e por aqui não dá para instalar. Toque nos <strong>3 pontinhos ⋮</strong> lá em cima e escolha <strong>Abrir no Chrome</strong> (ou "Abrir no navegador"). Depois toque em <strong>Instalar app</strong> de novo.</p><button class="btn btn--primary" id="qf-install-ok">Entendi</button></div>');
+      const ios = isIosDevice();
+      PU.openSheet('<div class="stack"><h3 class="sheet__title">' + (ios ? 'Abra no Safari' : 'Abra no Chrome para instalar') + '</h3><p class="text text--secondary">Você abriu o QuemFaz dentro do WhatsApp/Instagram/Facebook. ' + (ios ? 'Toque no menu do navegador e escolha <strong>Abrir no Safari</strong>. Depois toque em <strong>Criar atalho</strong> no QuemFaz.' : 'Toque nos <strong>3 pontinhos ⋮</strong> lá em cima e escolha <strong>Abrir no Chrome</strong> (ou "Abrir no navegador"). Depois toque em <strong>Instalar app</strong> de novo.') + '</p><button class="btn btn--primary" id="qf-install-ok">Entendi</button></div>');
       document.getElementById('qf-install-ok').onclick = function () { PU.closeSheet(); };
       return;
     }
