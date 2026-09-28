@@ -519,6 +519,14 @@ input, select, textarea { font-size: 16px; }
 .category-browser-search .input { padding-left:44px; background:var(--bg-surface); }
 .category-browser-search__icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); width:20px; height:20px; z-index:1; pointer-events:none; }
 .category-browser-search__icon svg { width:20px; height:20px; }
+.qf-service-region { margin:10px 0 12px; padding:12px; }
+.qf-service-region__row { display:flex; gap:8px; align-items:stretch; }
+.qf-service-region__row .input { min-width:0; flex:1; }
+.qf-service-region__row .select { width:92px; flex:none; }
+.qf-service-region__cep { display:flex; gap:8px; align-items:stretch; margin-top:8px; }
+.qf-service-region__cep .input { min-width:0; flex:1; }
+.qf-service-region__cep .btn { width:auto; flex:none; padding-inline:14px; }
+.qf-service-region__status { margin-top:8px; font-size:12.5px; font-weight:750; color:var(--success-600); }
 .category-filter-row { display:flex; gap:8px; overflow-x:auto; padding:2px 0 4px; scrollbar-width:none; }
 .category-filter-row::-webkit-scrollbar { display:none; }
 .category-filter-chip { flex:none; border:1px solid var(--border-subtle); background:var(--bg-surface); color:var(--text-secondary); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:800; white-space:nowrap; }
@@ -5185,7 +5193,7 @@ alt=""></noscript>
     }
     if (cpf) cpf.addEventListener('input', function () { cpf.value = formatCpf(cpf.value); });
     if (cepBtn) cepBtn.addEventListener('click', async function () {
-      try { cepBtn.disabled=true; aplicar(await lookupCep(cep.value), 'cep'); if (global.PU) global.PU.toast('CEP localizado e endereço preenchido.', 'success'); }
+      try { cepBtn.disabled=true; aplicar(await lookupCep(cep.value), 'cep'); if (global.PU) global.PU.toast('CEP localizado.', 'success'); }
       catch (e) { if (global.PU) global.PU.toast(e.message || 'CEP não encontrado.', 'danger'); }
       finally { cepBtn.disabled=false; }
     });
@@ -5996,7 +6004,7 @@ alt=""></noscript>
 
   // ---------------- Início ----------------
 
-  function renderCategoryBrowser(cats, afterPopular) {
+  function renderCategoryBrowser(cats, afterPopular, user) {
     const groupOrder = [['casa','Casa e reforma'],['limpeza','Limpeza e cuidados da casa'],['instalacoes','Elétrica, hidráulica e gás'],['tecnica','Assistência técnica'],['auto','Automotivo'],['transporte','Transporte e mudanças'],['beleza','Beleza e bem-estar'],['pets','Pets'],['aulas','Aulas e eventos'],['outros','Outros']];
     const shortNames = {casa:'Casa',limpeza:'Limpeza',instalacoes:'Elétrica e hidráulica',tecnica:'Técnica',auto:'Automotivo',transporte:'Transporte',beleza:'Beleza',pets:'Pets',aulas:'Aulas e eventos',outros:'Outros'};
     const filters = [['todos','Todos']].concat(groupOrder.map(function(g){return [g[0], shortNames[g[0]] || g[1]];}));
@@ -6015,7 +6023,22 @@ alt=""></noscript>
         return '<button class="category-tile" data-cat-group="'+g[0]+'" data-cat-name="'+PU.escapeHtml(c.nome)+'" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
       }).join('')+'</div></section>';
     }).join('');
-    return '<div class="category-browser"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Qual serviço você precisa?" autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+freeLineHtml+popularHtml+(afterPopular||'')+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
+    let savedRegion = null;
+    try { savedRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { savedRegion = null; }
+    const userEnd = user && user.enderecos && user.enderecos[0] ? user.enderecos[0] : null;
+    const userCityObj = userEnd && userEnd.cidadeId ? DB.cityById(userEnd.cidadeId) : null;
+    const regionCity = (savedRegion && savedRegion.cidade) || (userEnd && (userEnd.cidade || (userCityObj && userCityObj.nome))) || '';
+    const regionUf = (savedRegion && savedRegion.uf) || (userEnd && (userEnd.uf || (userCityObj && userCityObj.uf))) || '';
+    const regionCep = (savedRegion && savedRegion.cep) || '';
+    const regionStatus = regionCity && regionUf ? ('Buscando profissionais em ' + regionCity + '/' + regionUf) : 'Escolha a cidade ou informe o CEP.';
+    return '<div class="category-browser">'+
+      '<label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Ex.: pintor, reformar, montar..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+
+      '<div class="card card--tight qf-service-region"><div class="field__label">Onde precisa do serviço?</div>'+
+        '<div class="qf-service-region__row" style="margin-top:8px;"><input class="input" type="text" placeholder="Cidade, ex.: Santo André" data-service-city value="'+PU.escapeHtml(regionCity)+'"><select class="select" data-service-uf aria-label="Estado"><option value="">UF</option>'+global.QFGeo.ufOptions(regionUf)+'</select></div>'+
+        '<div class="qf-service-region__cep"><input class="input" type="text" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" data-service-cep value="'+PU.escapeHtml(regionCep)+'"><button class="btn btn--outline" type="button" data-service-lookup-cep>Localizar</button></div>'+
+        '<div class="qf-service-region__status" data-service-region-status>'+PU.escapeHtml(regionStatus)+'</div>'+
+      '</div>'+
+      freeLineHtml+popularHtml+(afterPopular||'')+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
   }
 
   function qfPendenciaDismissed(tipo) {
@@ -6036,7 +6059,7 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user))+'</div>'+
+      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
 
@@ -6118,6 +6141,9 @@ alt=""></noscript>
     const cat = DB.categoryById(params.catId);
     if (!cat) return '<div class="view"><p class="text">Categoria não encontrada.</p></div>';
     const cloudMode = !!(global.QFCloud && global.QFCloud.enabled);
+    let searchRegion = null;
+    try { searchRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { searchRegion = null; }
+    const regionLabel = searchRegion && searchRegion.cidade ? (searchRegion.cidade + (searchRegion.uf ? '/' + searchRegion.uf : '')) : '';
     const disponiveis = cloudMode ? [] : DB.state.users.profissionais.filter(function (p) {
       return p.statusAprovacao === 'aprovado' && p.online && p.categorias.indexOf(cat.id) !== -1;
     });
@@ -6126,8 +6152,8 @@ alt=""></noscript>
         '<div class="row">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(cat.icon) + '</div>' +
           '<div>' +
-            '<div class="h2">' + PU.escapeHtml(cat.nome) + '</div>' +
-            '<div class="text--sm text--secondary">' + (cloudMode ? 'Profissionais da sua região recebem o chamado na hora' : disponiveis.length + ' profissional' + (disponiveis.length === 1 ? '' : 'is') + ' online agora') + '</div>' +
+            '<div class="h2">' + PU.escapeHtml(cat.nome + (regionLabel ? ' em ' + regionLabel : '')) + '</div>' +
+            '<div class="text--sm text--secondary">' + (cloudMode ? (regionLabel ? 'Profissionais de ' + PU.escapeHtml(regionLabel) + ' recebem o chamado na hora' : 'Profissionais da sua região recebem o chamado na hora') : disponiveis.length + ' profissional' + (disponiveis.length === 1 ? '' : 'is') + ' online agora') + '</div>' +
           '</div>' +
         '</div>' +
 
@@ -6169,8 +6195,11 @@ alt=""></noscript>
     const cat = DB.categoryById(params.catId);
     const end = user.enderecos && user.enderecos[0];
     const endCityObj = end && end.cidadeId ? DB.cityById(end.cidadeId) : null;
-    const endCidade = end ? (end.cidade || (endCityObj && endCityObj.nome) || '') : '';
-    const endUf = end ? (end.uf || (endCityObj && endCityObj.uf) || '') : '';
+    let searchRegion = null;
+    try { searchRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { searchRegion = null; }
+    const endCidade = (searchRegion && searchRegion.cidade) || (end ? (end.cidade || (endCityObj && endCityObj.nome) || '') : '');
+    const endUf = (searchRegion && searchRegion.uf) || (end ? (end.uf || (endCityObj && endCityObj.uf) || '') : '');
+    const endCep = (searchRegion && searchRegion.cep) || (end ? (end.cep || '') : '');
     return (
       '<div class="view">' +
         '<div class="row" style="margin-bottom:4px;">' +
@@ -6194,18 +6223,15 @@ alt=""></noscript>
           '</div>' +
 
           '<div class="field">' +
-            '<span class="field__label">Endereço de atendimento</span>' +
+            '<span class="field__label">Cidade do atendimento</span>' +
             '<div class="stack--sm">' +
-              '<div class="row" style="gap:8px;align-items:stretch;"><input class="input" name="cep" inputmode="numeric" maxlength="9" placeholder="CEP" style="flex:1;" value="' + (end ? PU.escapeHtml(end.cep || '') : '') + '"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar CEP</button></div>' +
-              '<button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar minha localização atual</button>' +
-              '<input class="input" name="rua" required placeholder="Rua e número" value="' + (end ? PU.escapeHtml(end.rua || '') : '') + '">' +
-              '<input class="input" name="bairro" required placeholder="Bairro" value="' + (end ? PU.escapeHtml(end.bairro || '') : '') + '">' +
               '<div class="row" style="gap:10px;">' +
-                '<input class="input" name="cidade" required placeholder="Cidade" style="flex:2;" value="' + PU.escapeHtml(endCidade) + '">' +
+                '<input class="input" name="cidade" required placeholder="Cidade, ex.: Santo André" style="flex:2;" value="' + PU.escapeHtml(endCidade) + '">' +
                 '<select class="select" name="uf" required style="flex:1;"><option value="">UF</option>' + global.QFGeo.ufOptions(endUf) + '</select>' +
               '</div>' +
-              '<input class="input" name="complemento" placeholder="Complemento (opcional)" value="' + (end && end.complemento ? PU.escapeHtml(end.complemento) : '') + '">' +
-              '<input type="hidden" name="latitude" value="' + (end && end.latitude != null ? PU.escapeHtml(end.latitude) : '') + '"><input type="hidden" name="longitude" value="' + (end && end.longitude != null ? PU.escapeHtml(end.longitude) : '') + '">' +
+              '<div class="row" style="gap:8px;align-items:stretch;"><input class="input" name="cep" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" style="flex:1;" value="' + PU.escapeHtml(endCep) + '"><button class="btn btn--outline" type="button" data-lookup-cep>Localizar</button></div>' +
+              '<div class="text--sm text--secondary">Não precisa informar rua nem número agora. O chamado é localizado pela cidade ou pelo CEP.</div>' +
+              '<input type="hidden" name="latitude" value=""><input type="hidden" name="longitude" value="">' +
             '</div>' +
           '</div>' +
 
@@ -6659,6 +6685,11 @@ alt=""></noscript>
     const groups = Array.prototype.slice.call(content.querySelectorAll('[data-category-group]'));
     const tiles = Array.prototype.slice.call(content.querySelectorAll('.category-tile[data-cat-name]'));
     const empty = content.querySelector('[data-category-empty]');
+    const cityInput = content.querySelector('[data-service-city]');
+    const ufInput = content.querySelector('[data-service-uf]');
+    const cepInput = content.querySelector('[data-service-cep]');
+    const cepBtn = content.querySelector('[data-service-lookup-cep]');
+    const regionStatus = content.querySelector('[data-service-region-status]');
     if (!input || !tiles.length) return;
     let active = 'todos';
     function norm(v) {
@@ -6668,16 +6699,33 @@ alt=""></noscript>
       cat_pintor: 'pintura pintar parede paredes pintores',
       cat_eletricista: 'eletrica eletrico eletricidade instalacao eletrica',
       cat_encanador: 'encanamento hidraulica hidraulico vazamento',
-      cat_montador: 'montagem moveis montar movel',
+      cat_montador: 'montagem moveis montar movel armario guarda roupa',
       cat_diarista: 'faxina limpeza domestica',
       cat_jardinagem: 'jardim jardinagem jardineiro',
       cat_arcondicionado: 'ar condicionado climatizacao',
       cat_chaveiro: 'chave fechadura',
+      cat_pedreiro: 'reforma reformar obra construcao construir',
       cat_mecanico: 'mecanica carro automovel',
       cat_borracheiro: 'pneu borracharia',
       cat_frete: 'carreto mudanca transporte',
       cat_informatica: 'computador notebook pc informatica'
     };
+    function region() {
+      const cidade = String(cityInput && cityInput.value || '').trim();
+      const uf = String(ufInput && ufInput.value || '').trim().toUpperCase();
+      const cep = global.QFGeo.normalizeCep(cepInput && cepInput.value || '');
+      return { cidade: cidade, uf: uf, cep: cep ? global.QFGeo.formatCep(cep) : '' };
+    }
+    function saveRegion(showToast) {
+      const r = region();
+      if (!r.cidade || !r.uf) {
+        if (showToast) PU.toast('Escolha a cidade e o estado, ou informe o CEP.', 'danger');
+        return null;
+      }
+      try { sessionStorage.setItem('qf_client_search_region', JSON.stringify(r)); } catch (_) {}
+      if (regionStatus) regionStatus.textContent = 'Buscando profissionais em ' + r.cidade + '/' + r.uf;
+      return r;
+    }
     function tileId(tile) {
       const nav = String(tile.getAttribute('data-nav') || '');
       const parts = nav.split('/');
@@ -6704,6 +6752,8 @@ alt=""></noscript>
     }
     function openTile(tile) {
       if (!tile) return false;
+      const r = saveRegion(true);
+      if (!r) return false;
       const nav = tile.getAttribute('data-nav');
       if (!nav) return false;
       global.navigate(nav);
@@ -6712,8 +6762,6 @@ alt=""></noscript>
     function apply() {
       const q = norm(input.value);
       let visible = 0;
-      // Quando há texto digitado, a busca procura em TODAS as categorias,
-      // mesmo que o cliente tenha tocado antes em algum filtro.
       tiles.forEach(function (tile) {
         const byGroup = q ? true : (active === 'todos' || tile.getAttribute('data-cat-group') === active);
         const show = byGroup && matches(tile, q);
@@ -6737,11 +6785,29 @@ alt=""></noscript>
       PU.toast('Não encontramos esse serviço. Tente outro nome.', 'danger');
       return false;
     }
+    async function lookupSearchCep() {
+      const cep = global.QFGeo.normalizeCep(cepInput && cepInput.value || '');
+      if (cep.length !== 8) { PU.toast('Digite um CEP válido.', 'danger'); return false; }
+      try {
+        if (cepBtn) cepBtn.disabled = true;
+        const d = await global.QFGeo.lookupCep(cep);
+        if (cityInput) cityInput.value = d.cidade || '';
+        if (ufInput) ufInput.value = d.uf || '';
+        if (cepInput) cepInput.value = global.QFGeo.formatCep(cep);
+        saveRegion(false);
+        PU.toast('CEP localizado: ' + (d.cidade || '') + (d.uf ? '/' + d.uf : ''), 'success');
+        return true;
+      } catch (err) {
+        PU.toast((err && err.message) || 'CEP não encontrado.', 'danger');
+        return false;
+      } finally {
+        if (cepBtn) cepBtn.disabled = false;
+      }
+    }
     input.addEventListener('input', function () {
       apply();
-      // Ex.: digitou "pintor": abre imediatamente a página correta.
       const exact = exactTile(norm(input.value));
-      if (exact && norm(input.value).length >= 3) openTile(exact);
+      if (exact && norm(input.value).length >= 3 && region().cidade && region().uf) openTile(exact);
     });
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
@@ -6752,6 +6818,22 @@ alt=""></noscript>
       apply();
       if (norm(input.value)) openBestMatch();
     });
+    if (cityInput) cityInput.addEventListener('input', function () { saveRegion(false); });
+    if (ufInput) ufInput.addEventListener('change', function () { saveRegion(false); });
+    if (cepInput) {
+      cepInput.addEventListener('input', function () {
+        cepInput.value = global.QFGeo.formatCep(cepInput.value);
+        if (global.QFGeo.normalizeCep(cepInput.value).length === 8) lookupSearchCep();
+      });
+    }
+    if (cepBtn) cepBtn.addEventListener('click', lookupSearchCep);
+    content.addEventListener('click', function (e) {
+      const tile = e.target.closest && e.target.closest('.category-browser .category-tile[data-nav]');
+      if (!tile) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openTile(tile);
+    }, true);
     chips.forEach(function (chip) {
       chip.addEventListener('click', function () {
         active = chip.getAttribute('data-category-filter') || 'todos';
@@ -6759,6 +6841,7 @@ alt=""></noscript>
         apply();
       });
     });
+    saveRegion(false);
     apply();
   }
 
@@ -6869,11 +6952,8 @@ alt=""></noscript>
 
         const end = draft.endereco || {};
         setField('cep', end.cep || '');
-        setField('rua', end.rua || '');
-        setField('bairro', end.bairro || '');
         setField('cidade', end.cidade || '');
         setField('uf', end.uf || '');
-        setField('complemento', end.complemento || '');
         setField('latitude', end.latitude != null ? end.latitude : '');
         setField('longitude', end.longitude != null ? end.longitude : '');
 
@@ -6887,17 +6967,33 @@ alt=""></noscript>
       form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(form);
-      const cep = fd.get('cep').trim();
-      if (!global.QFGeo.normalizeCep(cep)) { PU.toast('Informe um CEP válido para localizar o chamado corretamente.', 'danger'); return; }
-      const cidade = fd.get('cidade').trim(); const uf = fd.get('uf');
-      if (!cidade || !uf) { PU.toast('Informe cidade e estado.', 'danger'); return; }
+      let cep = String(fd.get('cep') || '').trim();
+      let cidade = String(fd.get('cidade') || '').trim();
+      let uf = String(fd.get('uf') || '').trim().toUpperCase();
+      const cepNormalizado = global.QFGeo.normalizeCep(cep);
+      if (cepNormalizado) {
+        if (cepNormalizado.length !== 8) { PU.toast('Digite um CEP válido ou informe cidade e estado.', 'danger'); return; }
+        try {
+          const dCep = await global.QFGeo.lookupCep(cepNormalizado);
+          cidade = dCep.cidade || cidade;
+          uf = dCep.uf || uf;
+          cep = global.QFGeo.formatCep(cepNormalizado);
+          const cityEl = form.querySelector('[name="cidade"]'); if (cityEl) cityEl.value = cidade;
+          const ufEl = form.querySelector('[name="uf"]'); if (ufEl) ufEl.value = uf;
+        } catch (errCep) {
+          PU.toast((errCep && errCep.message) || 'CEP não encontrado.', 'danger');
+          return;
+        }
+      }
+      if (!cidade || !uf) { PU.toast('Informe a cidade e o estado, ou digite o CEP.', 'danger'); return; }
       let localCity = DB.cities().find(function (c) { return String(c.nome).toLowerCase() === cidade.toLowerCase() && c.uf === uf; });
       if (!localCity) localCity = DB.criarCidade(cidade, uf);
       const endereco = {
-        id: PU.uid('end'), rua: fd.get('rua').trim(), bairro: fd.get('bairro').trim(), cidade: cidade, uf: uf,
-        cidadeId: localCity.id, cep: global.QFGeo.formatCep(cep), complemento: fd.get('complemento').trim(),
+        id: PU.uid('end'), rua: '', bairro: '', cidade: cidade, uf: uf,
+        cidadeId: localCity.id, cep: cepNormalizado ? cep : '', complemento: '',
         latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null
       };
+      try { sessionStorage.setItem('qf_client_search_region', JSON.stringify({ cidade: cidade, uf: uf, cep: endereco.cep })); } catch (_) {}
       const prioridade = fd.get('prioridade') === '1';
       const prioridadeMetodo = fd.get('prioridadeMetodo') || 'pix';
       await pedirNotificacaoAntesDePublicar();
@@ -9557,7 +9653,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.8';
+  const APP_VERSION = '11.14.9';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
