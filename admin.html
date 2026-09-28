@@ -5003,6 +5003,11 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   function adminProfCloud(p) {
     const cats = (p.categorias || []).map(function (id) { const c = DB.categoryById(id); return c ? c.nome : id; }).join(', ');
     const txs = (DB.state.transactions || []).filter(function (t) { return t.profissionalId === p.id; }).slice(0, 8);
+    const documento = p.cpfFinal ? ('CPF cadastrado · final ' + String(p.cpfFinal)) : (p.cnpjFinal ? ('CNPJ cadastrado · final ' + String(p.cnpjFinal)) : 'Não informado');
+    const e = p.enderecoAdmin || null;
+    const ruaNumero = e ? [e.rua || '', e.numero || ''].filter(Boolean).join(', ') : '';
+    const cidadeUf = e ? [e.cidade || '', e.uf || ''].filter(Boolean).join('/') : '';
+    const endereco = e ? [ruaNumero, e.bairro || '', cidadeUf, e.cep ? 'CEP ' + e.cep : '', e.complemento || ''].filter(Boolean).join(' · ') : 'Não informado';
     return '<div class="view">' +
       '<div class="card row"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + profBadges(p) + '</div></div></div>' +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
@@ -5012,7 +5017,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           '<div class="text--sm text--secondary" style="margin-top:5px;">Imagem visível no painel administrativo para conferência de segurança.</div></div>' +
         '</div></div>' +
       '<div class="section card stack--sm">' +
-        rowInfoHtml('WhatsApp', waLink(p.telefone)) + rowInfo('E-mail', p.email || '—') + rowInfo('Categorias', cats || '—') +
+        rowInfoHtml('WhatsApp', waLink(p.telefone)) + rowInfo('E-mail', p.email || '—') +
+        rowInfo('Documento', documento) +
+        rowInfo('Endereço', endereco) +
+        rowInfo('Categorias', cats || '—') +
         rowInfo('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
         rowInfo('Selfie', p.temFoto ? 'Cadastrada' : 'Não cadastrada') +
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
