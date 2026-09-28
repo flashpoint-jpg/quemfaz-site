@@ -4406,9 +4406,10 @@ alt=""></noscript>
       Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng)) &&
       Math.abs(Number(rawLat)) <= 90 && Math.abs(Number(rawLng)) <= 180 &&
       !(Number(rawLat) === 0 && Number(rawLng) === 0);
+    // Cliente escolhe a região por cidade ou CEP. Não pede GPS nem endereço completo nesta etapa.
     const loc = hasAddressCoords
       ? { latitude: Number(rawLat), longitude: Number(rawLng) }
-      : await getCurrentPositionSafe({ timeout: 7000, maximumAge: 20000 });
+      : null;
     // O chamado nasce NORMAL. Prioridade só é ativada no banco depois de pagamento aprovado.
     const row = {
       cliente_id: data.clienteId,
@@ -9653,7 +9654,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.9';
+  const APP_VERSION = '11.14.10';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
