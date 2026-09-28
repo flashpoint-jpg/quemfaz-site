@@ -2955,9 +2955,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const pros = {}; (d.profissionais || []).forEach(function (pr) { pros[pr.user_id] = pr; });
     const areas = {}; (d.cidades || []).forEach(function (a) { (areas[a.profissional_id] = areas[a.profissional_id] || []).push(a); });
     const pushUsers = {}; (d.push_usuarios || []).forEach(function (id) { pushUsers[id] = true; });
+    const enderecos = {}; (d.enderecos || []).forEach(function (e) { if (e && e.user_id) enderecos[e.user_id] = e; });
+    const identidades = {}; (d.identidades || []).forEach(function (i) { if (i && i.user_id) identidades[i.user_id] = i; });
     const clientes = [], profissionais = [];
     (d.profiles || []).forEach(function (p) {
-      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', fotoUrl: p.foto_url || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id], boasVindasEm: p.boas_vindas_em || null };
+      const ident = identidades[p.id] || {};
+      const end = enderecos[p.id] || null;
+      const enderecoAdmin = end ? {
+        cep: end.cep || '', rua: end.rua || '', numero: end.numero || '', bairro: end.bairro || '',
+        cidade: end.cidade || '', uf: end.uf || '', complemento: end.complemento || ''
+      } : null;
+      const base = { id: p.id, nome: p.nome || 'Sem nome', email: emails[p.id] || '', telefone: p.whatsapp || p.telefone || '', fotoUrl: p.foto_url || '', bloqueado: p.ativo === false, criadoEm: p.criado_em, cidadeNome: p.cidade || '', uf: p.uf || '', pushAtivo: !!pushUsers[p.id], boasVindasEm: p.boas_vindas_em || null, cpfFinal: ident.cpf_last4 || '', cnpjFinal: ident.cnpj_last4 || '', enderecoAdmin: enderecoAdmin };
       if (p.tipo === 'profissional') {
         const pr = pros[p.id] || {};
         const a = (areas[p.id] || [])[0];
@@ -2969,7 +2977,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           avaliacaoMedia: Number(pr.avaliacao_media || 0), totalAvaliacoes: Number(pr.total_avaliacoes || 0), documentos: {}
         }));
       } else {
-        clientes.push(Object.assign(base, { enderecos: [] }));
+        clientes.push(Object.assign(base, { enderecos: enderecoAdmin ? [enderecoAdmin] : [] }));
       }
     });
     const debitos = {}; const txs = [];
@@ -5177,6 +5185,20 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
   // ---------------- Clientes ----------------
 
+  function adminClienteDocumento(c) {
+    if (c.cpfFinal) return 'CPF cadastrado · final ' + PU.escapeHtml(String(c.cpfFinal));
+    if (c.cnpjFinal) return 'CNPJ cadastrado · final ' + PU.escapeHtml(String(c.cnpjFinal));
+    return 'CPF não informado';
+  }
+
+  function adminClienteEndereco(c) {
+    const e = c.enderecoAdmin || (c.enderecos && c.enderecos[0]) || null;
+    if (!e) return 'Endereço não informado';
+    const ruaNumero = [e.rua || '', e.numero || ''].filter(Boolean).join(', ');
+    const cidadeUf = [e.cidade || '', e.uf || ''].filter(Boolean).join('/');
+    return [ruaNumero, e.bairro || '', cidadeUf, e.cep ? 'CEP ' + e.cep : '', e.complemento || ''].filter(Boolean).join(' · ');
+  }
+
   Screens.adminClientesRender = function () {
     const list = DB.state.users.clientes.slice().sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); });
     const novosCli = list.filter(ehCadastroNovo).length;
@@ -5184,12 +5206,19 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return (
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + list.length + ' clientes · <b>' + novosCli + ' novo(s) nas últimas ' + NOVO_HORAS + 'h</b> · mais recente primeiro</div></div>' +
-        '<div class="card" style="padding:4px 16px;">' + list.map(function (c) {
-          return '<div class="list-item">' +
-            '<div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
-            '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(c.nome) + '</div><div class="list-item__sub" style="word-break:break-all;">' + PU.escapeHtml(c.email || '') + (c.telefone ? (c.email ? ' · ' : '') + waLink(c.telefone) : '') + (c.cidadeNome ? ' · ' + PU.escapeHtml(c.cidadeNome + '/' + (c.uf || '')) : '') + '</div><div style="margin-top:4px;">' + cadastroTag(c) + '</div></div>' +
-            '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
-          '</div>' + (cloudOn() ? '<div style="padding:0 0 12px 48px;">' + acoesHtml('cliente', c.id, null, c.telefone, c) + '</div>' : '');
+        '<div class="stack--sm">' + list.map(function (c) {
+          return '<div class="card stack--sm">' +
+            '<div class="row-between" style="align-items:flex-start;gap:10px;">' +
+              '<div class="row" style="align-items:flex-start;min-width:0;"><div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
+                '<div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(c.nome) + '</div><div style="margin-top:4px;">' + cadastroTag(c) + '</div></div></div>' +
+              '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
+            '</div>' +
+            '<div class="text--sm text--secondary" style="word-break:break-word;"><b>E-mail:</b> ' + PU.escapeHtml(c.email || 'Não informado') + '</div>' +
+            '<div class="text--sm text--secondary"><b>WhatsApp:</b> ' + (c.telefone ? waLink(c.telefone) : 'Não informado') + '</div>' +
+            '<div class="text--sm text--secondary"><b>Documento:</b> ' + adminClienteDocumento(c) + '</div>' +
+            '<div class="text--sm text--secondary"><b>Endereço:</b> ' + PU.escapeHtml(adminClienteEndereco(c)) + '</div>' +
+            (cloudOn() ? '<div style="padding-top:2px;">' + acoesHtml('cliente', c.id, null, c.telefone, c) + '</div>' : '') +
+          '</div>';
         }).join('') + '</div>' +
       '</div>'
     );
@@ -5729,16 +5758,21 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
     function linha(u) {
       const fone = semPushFone(u.telefone);
+      const email = String(u.email || '').trim();
       const cidade = (u.cidadeNome || '') + (u.uf ? '/' + u.uf : '');
       const chamado = !!status[u.id];
       return '<div class="card stack--sm" data-sem-push-row="' + PU.escapeHtml(u.id) + '">' +
-        '<div class="row-between"><div><div class="text--strong">' + PU.escapeHtml(u.nome || 'Sem nome') + '</div>' +
+        '<div class="row-between"><div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(u.nome || 'Sem nome') + '</div>' +
         '<div class="text--sm text--secondary">' + PU.escapeHtml((u.telefone || '') + (cidade ? ' · ' + cidade : '')) + '</div>' +
+        (email ? '<div class="text--sm text--secondary" style="word-break:break-all;">' + PU.escapeHtml(email) + '</div>' : '<div class="text--sm text--muted">Sem e-mail no cadastro</div>') +
         '<div class="text--sm text--muted">' + (u.online ? 'Online agora' : 'Offline') + ' · push não ativo</div></div>' +
         (chamado ? '<span class="badge badge--success">Já chamado</span>' : '<span class="badge badge--warning">Sem push</span>') + '</div>' +
-        (fone ? '<button type="button" class="btn ' + (chamado ? 'btn--outline' : 'btn--primary') + '" data-sem-push-wa="' + PU.escapeHtml(u.id) + '">' +
-          icon('whatsapp') + (chamado ? ' Chamar novamente no WhatsApp' : ' Chamar no WhatsApp') + '</button>' :
-          '<div class="text--sm text--muted">Sem WhatsApp/telefone válido no cadastro.</div>') +
+        '<div class="btn-row" style="flex-wrap:wrap;">' +
+          (fone ? '<button type="button" class="btn ' + (chamado ? 'btn--outline' : 'btn--primary') + '" data-sem-push-wa="' + PU.escapeHtml(u.id) + '">' +
+            icon('whatsapp') + (chamado ? ' Chamar novamente no WhatsApp' : ' Chamar no WhatsApp') + '</button>' :
+            '<div class="text--sm text--muted">Sem WhatsApp/telefone válido no cadastro.</div>') +
+          (email ? '<button type="button" class="btn btn--outline" data-sem-push-copy-email="' + PU.escapeHtml(u.id) + '">Copiar e-mail</button>' : '') +
+        '</div>' +
       '</div>';
     }
 
@@ -5763,6 +5797,29 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   };
 
   async function bindSemPush(content) {
+    async function copiarEmail(id) {
+      const u = semPushListaAtual().find(function (x) { return x.id === id; });
+      const email = u && String(u.email || '').trim();
+      if (!email) { PU.toast('Este profissional está sem e-mail no cadastro.', 'danger'); return; }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(email);
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = email;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        PU.toast('E-mail copiado: ' + email, 'success');
+      } catch (_) {
+        PU.toast('Não foi possível copiar o e-mail.', 'danger');
+      }
+    }
     function enviar(id) {
       const u = semPushListaAtual().find(function (x) { return x.id === id; });
       const fone = u && semPushFone(u.telefone);
@@ -5774,6 +5831,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       setTimeout(function () { global.navigate('/admin/sem-push', true); }, 250);
     }
     content.addEventListener('click', async function (e) {
+      const copiar = e.target.closest('[data-sem-push-copy-email]');
+      if (copiar) { await copiarEmail(copiar.getAttribute('data-sem-push-copy-email')); return; }
       const b = e.target.closest('[data-sem-push-wa]');
       if (b) { enviar(b.getAttribute('data-sem-push-wa')); return; }
       if (e.target.closest('[data-sem-push-next]')) {
