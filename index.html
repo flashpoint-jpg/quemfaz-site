@@ -1220,8 +1220,25 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .ad-plan input { position:absolute; opacity:0; pointer-events:none; }
 .ad-plan__price { font-size:20px; font-weight:900; color:var(--navy-900); }
 .ad-plan__name { font-weight:800; color:var(--navy-900); }
-.ad-preview { width:100%; aspect-ratio:16/7; border-radius:16px; border:1px dashed var(--border-strong); background:var(--bg-sunken); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
+.ad-preview { width:100%; aspect-ratio:16/9; border-radius:18px; border:1px dashed var(--border-strong); background:var(--bg-sunken); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
 .ad-preview img { width:100%; height:100%; object-fit:cover; }
+.qf-ad-builder-info{border:1px solid rgba(224,99,15,.18);background:linear-gradient(135deg,var(--navy-100),#fff);padding:14px;border-radius:18px}
+.qf-ad-builder-steps{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
+.qf-ad-builder-step{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text-secondary)}
+.qf-ad-builder-step b{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--orange-600);color:#fff;font-size:11px}
+.qf-ad-mode-box{padding:13px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--bg-sunken)}
+.qf-ad-assets{display:grid;grid-template-columns:1fr;gap:10px}
+.qf-ad-asset{padding:12px;border:1px solid var(--border-subtle);border-radius:14px;background:#fff}
+.qf-ad-preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.qf-ad-editing-note{display:none;padding:10px 12px;border-radius:12px;background:var(--warning-100);color:var(--warning-600);font-size:13px;font-weight:700}
+.qf-ad-editing .qf-ad-editing-note{display:block}
+.qf-own-ads{display:grid;grid-template-columns:1fr;gap:10px}
+.qf-own-ad{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;padding:11px;border:1px solid var(--border-subtle);border-radius:16px;background:#fff}
+.qf-own-ad__media{width:110px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:var(--bg-sunken)}
+.qf-own-ad__media img{width:100%;height:100%;object-fit:cover}
+.qf-own-ad__actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.qf-own-ad__actions .btn{width:auto;min-height:36px;padding:0 11px;font-size:12px}
+@media(min-width:700px){.qf-ad-builder-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.qf-ad-assets{grid-template-columns:repeat(2,minmax(0,1fr))}.qf-own-ads{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ad-admin-thumb { width:76px; height:58px; border-radius:10px; overflow:hidden; background:var(--bg-sunken); flex:none; }
 .ad-admin-thumb img { width:100%; height:100%; object-fit:cover; }
 
@@ -4048,7 +4065,8 @@ alt=""></noscript>
       impressoes: Number(row.visualizacoes || 0),
       cliques: Number(row.cliques || 0),
       motivoReprovacao: row.motivo_reprovacao || '',
-      fixo: !!row.fixo
+      fixo: !!row.fixo,
+      arteConfig: row.arte_config || null
     };
   }
 
@@ -4071,7 +4089,7 @@ alt=""></noscript>
     if (!client) return [];
     await syncAdConfig();
     const res = await client.from('qf_anuncios')
-      .select('id,anunciante_id,anunciante_nome,contato,whatsapp,titulo,texto,imagem_path,imagem_data,destino_url,regiao,plano,valor_centavos,status,pagamento_status,motivo_reprovacao,inicio_em,fim_em,visualizacoes,cliques,criado_em,pago_em,aprovado_em,fixo')
+      .select('id,anunciante_id,anunciante_nome,contato,whatsapp,titulo,texto,imagem_path,imagem_data,destino_url,regiao,plano,valor_centavos,status,pagamento_status,motivo_reprovacao,inicio_em,fim_em,visualizacoes,cliques,criado_em,pago_em,aprovado_em,fixo,arte_config')
       .order('criado_em', { ascending: false })
       .limit(40);
     if (res.error) throw res.error;
@@ -4099,6 +4117,18 @@ alt=""></noscript>
     const out = res.data || {};
     if (!out.ok) throw new Error(out.reason || 'Não foi possível enviar o anúncio.');
     if (!out.pagamento_id) throw new Error('Pagamento do anúncio não foi criado.');
+    if (dados.arteConfig) {
+      const artSave = await client.rpc('qf_editar_anuncio_proprio', {
+        p_anuncio_id: out.anuncio_id,
+        p_empresa: String(dados.empresa || '').trim(),
+        p_chamada: String(dados.chamada || '').trim(),
+        p_imagem_data: dados.imagem || '',
+        p_whatsapp: String(dados.whatsapp || '').trim(),
+        p_link: String(dados.link || '').trim() || null,
+        p_arte_config: dados.arteConfig
+      });
+      if (artSave.error) throw artSave.error;
+    }
     const checkout = await startEfiCheckout('anuncio', out.pagamento_id);
     out.checkout_url = checkout.checkout_url || null;
     out.pix_copy_paste = checkout.pix_copy_paste || null;
@@ -4109,6 +4139,22 @@ alt=""></noscript>
     await syncPublicAds();
     const ad = DB.anuncioById(out.anuncio_id);
     return { ad: ad, pagamento: out };
+  }
+
+  async function editAd(dados) {
+    if (!client) throw new Error('Conexão com o Supabase indisponível.');
+    const res = await client.rpc('qf_editar_anuncio_proprio', {
+      p_anuncio_id: dados.id,
+      p_empresa: String(dados.empresa || '').trim(),
+      p_chamada: String(dados.chamada || '').trim(),
+      p_imagem_data: dados.imagem || '',
+      p_whatsapp: String(dados.whatsapp || '').trim(),
+      p_link: String(dados.link || '').trim() || null,
+      p_arte_config: dados.arteConfig || {}
+    });
+    if (res.error) throw res.error;
+    await syncPublicAds();
+    return DB.anuncioById(dados.id);
   }
 
   function pendingCpfKey(email) { return 'qf_pending_cpf_' + String(email || '').trim().toLowerCase(); }
@@ -4912,6 +4958,7 @@ alt=""></noscript>
     cancelProfessionalCall: cancelProfessionalCall,
     syncAds: syncPublicAds,
     submitAd: submitAd,
+    editAd: editAd,
     saveClientAddress: saveClientAddress,
     saveCpf: saveCpf,
     saveCnpj: saveCnpj,
@@ -6262,7 +6309,7 @@ alt=""></noscript>
     const raw = String((ad && ad.link) || '').trim();
     if (/^https?:\/\//i.test(raw)) return raw;
     const phone = String((ad && ad.whatsapp) || '').replace(/\D/g, '');
-    if (phone) return 'https://wa.me/' + (phone.indexOf('55') === 0 ? phone : '55' + phone);
+    if (phone) return 'https://wa.me/' + (phone.indexOf('55') === 0 ? phone : '55' + phone) + '?text=' + encodeURIComponent('Olá, vi seu anúncio no QuemFaz e quero saber mais.');
     return '';
   }
 
@@ -6275,7 +6322,7 @@ alt=""></noscript>
     const ads = DB.activeAdsForCity(cityId);
     const cards = ads.length ? ads.map(function (a) {
       const href = safeAdHref(a);
-      const premiumArt = !!(a.fixo && a.plano === 'premium' && a.imagem);
+      const premiumArt = !!(a.imagem && ((a.fixo && a.plano === 'premium') || (a.arteConfig && a.arteConfig.modelo)));
       if (premiumArt) {
         return '<button class="ad-card ad-card--premium-art" type="button" aria-label="' + PU.escapeHtml(a.empresa + ' · Clique para falar conosco') + '" data-ad-click="' + a.id + '" data-ad-href="' + PU.escapeHtml(href) + '">' +
           '<img class="ad-card__media" src="' + a.imagem + '" alt="' + PU.escapeHtml(a.empresa) + '">' +
@@ -6311,28 +6358,56 @@ alt=""></noscript>
     const userCityObj = userEnd && userEnd.cidadeId ? DB.cityById(userEnd.cidadeId) : null;
     const defaultCidade = userEnd ? (userEnd.cidade || (userCityObj && userCityObj.nome) || '') : '';
     const defaultUf = userEnd ? (userEnd.uf || (userCityObj && userCityObj.uf) || '') : '';
+    const ownAds = session && user ? (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).slice(0, 12) : [];
     function planCard(key, desc) {
       const p = plans[key];
       return '<label class="ad-plan"><input type="radio" name="plano" value="' + key + '"' + (key === 'local' ? ' checked' : '') + '><div class="row-between"><span class="ad-plan__name">' + PU.escapeHtml(p.nome) + '</span><span class="ad-plan__price">' + PU.formatCurrency(p.valor) + '</span></div><div class="text--sm text--secondary" style="margin-top:4px;">' + desc + ' · 30 dias</div></label>';
     }
+    function ownAdCard(a) {
+      const status = a.status === 'ativo' ? 'Ativo' : (a.status === 'reprovado' ? 'Reprovado' : (a.status === 'expirado' ? 'Expirado' : 'Em análise'));
+      return '<div class="qf-own-ad">' +
+        '<div class="qf-own-ad__media">' + (a.imagem ? '<img src="' + a.imagem + '" alt="' + PU.escapeHtml(a.empresa) + '">' : '') + '</div>' +
+        '<div><div class="text--strong">' + PU.escapeHtml(a.empresa || 'Anúncio') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(a.chamada || '') + '</div>' +
+        '<div class="text--sm text--muted" style="margin-top:3px;">' + status + ' · ' + PU.escapeHtml((a.plano || 'local').toUpperCase()) + '</div>' +
+        '<div class="qf-own-ad__actions"><button class="btn btn--outline" type="button" data-edit-ad="' + a.id + '">Editar arte</button>' +
+        (a.imagem ? '<button class="btn btn--outline" type="button" data-download-ad="' + a.id + '">Baixar imagem</button>' : '') +
+        '</div></div></div>';
+    }
     return '<div class="view stack">' +
-      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;"><div class="eyebrow" style="color:var(--orange-400);">Publicidade local</div><div class="h2" style="color:#fff;margin-top:4px;">' + (isProfissional ? 'Divulgue seus serviços no QuemFaz' : 'Coloque sua empresa na frente do QuemFaz') + '</div><p class="text text--sm" style="color:var(--text-on-navy-muted);margin-top:7px;">Até ' + Number((DB.state.settings || {}).adMaxSlots || 4) + ' anunciantes por região. Pagamento válido por 30 dias e publicação após aprovação.</p></div>' +
+      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;"><div class="eyebrow" style="color:var(--orange-400);">Publicidade local</div><div class="h2" style="color:#fff;margin-top:4px;">' + (isProfissional ? 'Divulgue seus serviços no QuemFaz' : 'Coloque sua empresa na frente do QuemFaz') + '</div><p class="text text--sm" style="color:var(--text-on-navy-muted);margin-top:7px;">O cliente envia foto, logo e textos. O QuemFaz monta a arte no padrão profissional e deixa pronta para baixar e publicar.</p></div>' +
+      '<div class="qf-ad-builder-info"><div class="text--strong">Como criar sua arte</div><div class="qf-ad-builder-steps">' +
+        '<div class="qf-ad-builder-step"><b>1</b><span>Escolha o plano e escreva o nome da empresa e a chamada.</span></div>' +
+        '<div class="qf-ad-builder-step"><b>2</b><span>Envie uma foto principal e, se tiver, o logotipo.</span></div>' +
+        '<div class="qf-ad-builder-step"><b>3</b><span>O QuemFaz monta a arte navy + laranja e mostra a prévia.</span></div>' +
+        '<div class="qf-ad-builder-step"><b>4</b><span>Você pode editar, baixar a imagem e só depois publicar.</span></div>' +
+      '</div><div class="text--sm" style="margin-top:9px;color:var(--orange-700);font-weight:800;">No Premium, o anúncio recebe selo Premium e maior destaque no carrossel.</div></div>' +
       '<form id="anuncio-form" class="stack" novalidate>' +
+        '<input type="hidden" name="editingAdId" value=""><input type="hidden" name="artMode" value="auto">' +
+        '<div class="qf-ad-editing-note">Você está editando um anúncio existente. Plano e região continuam os mesmos; aqui você altera a arte, textos e destino do clique.</div>' +
         '<div><div class="field__label" style="margin-bottom:8px;">Escolha o plano</div><div class="ad-plan-grid">' +
           planCard('local','Carrossel da cidade/região') + planCard('destaque','Prioridade no carrossel + selo') + planCard('premium','Primeira posição + destaque maior') +
         '</div></div>' +
         '<label class="field"><span class="field__label">' + (isProfissional ? 'Nome profissional / empresa' : 'Empresa') + '</span><input class="input" name="empresa" required maxlength="60" placeholder="Nome da empresa" value="' + PU.escapeHtml(defaultEmpresa) + '"></label>' +
-        '<label class="field"><span class="field__label">Chamada curta</span><input class="input" name="chamada" required maxlength="90" placeholder="Ex.: Material de construção com entrega rápida"></label>' +
+        '<label class="field"><span class="field__label">Chamada curta</span><input class="input" name="chamada" required maxlength="90" placeholder="Ex.: Qualidade, variedade e estilo para o seu negócio"></label>' +
+        '<label class="field"><span class="field__label">Texto do botão</span><select class="select" name="cta"><option>Fale conosco</option><option>Peça seu catálogo</option><option>Saiba mais</option><option>Ver oferta</option><option>Solicitar orçamento</option></select></label>' +
         '<div class="field"><span class="field__label">Abrangência do anúncio</span><div class="segmented"><label class="segmented__item is-active" style="display:flex;align-items:center;justify-content:center;gap:6px;"><input type="radio" name="regiaoTipo" value="all" checked> Todo Brasil</label><label class="segmented__item" style="display:flex;align-items:center;justify-content:center;gap:6px;"><input type="radio" name="regiaoTipo" value="cidade"> Cidade específica</label></div></div>' +
         '<div class="row" style="gap:10px;"><label class="field" style="flex:2;"><span class="field__label">Cidade (se escolher cidade específica)</span><input class="input" name="cidadeAnuncio" value="' + PU.escapeHtml(defaultCidade) + '" placeholder="Ex.: Campinas"></label><label class="field" style="flex:1;"><span class="field__label">UF</span><select class="select" name="ufAnuncio"><option value="">UF</option>' + global.QFGeo.ufOptions(defaultUf) + '</select></label></div>' +
-        '<div class="field"><span class="field__label">Imagem do anúncio</span><div class="ad-preview" id="ad-preview"><div class="stack--sm" style="text-align:center;align-items:center;">' + icon('image') + '<span class="text--sm">Formato horizontal recomendado</span></div></div><input class="input" type="file" id="ad-image" accept="image/*" required style="margin-top:8px;"><span class="field__hint">Até 900 KB. A imagem será enviada junto com o anúncio.</span></div>' +
-        '<label class="field"><span class="field__label">WhatsApp</span><input class="input" name="whatsapp" inputmode="tel" required placeholder="(35) 99999-9999" value="' + PU.escapeHtml(defaultWhatsapp) + '"></label>' +
-        '<label class="field"><span class="field__label">Site ou link (opcional)</span><input class="input" name="link" type="url" placeholder="https://..."></label>' +
+        '<div class="qf-ad-mode-box"><div class="field__label" style="margin-bottom:8px;">Como quer fazer a arte?</div><div class="segmented" id="ad-art-mode"><button class="segmented__item is-active" type="button" data-art-mode="auto">Montar no QuemFaz</button><button class="segmented__item" type="button" data-art-mode="ready">Enviar arte pronta</button></div><div class="field__hint" style="margin-top:7px;">Montar no QuemFaz mantém o mesmo padrão profissional e deixa a arte editável depois.</div></div>' +
+        '<div data-art-auto class="qf-ad-assets">' +
+          '<div class="qf-ad-asset"><div class="field__label">Foto principal</div><input class="input" type="file" id="ad-photo" accept="image/*" style="margin-top:7px;"><div class="field__hint">Foto do produto, loja ou serviço. O sistema ajusta automaticamente.</div></div>' +
+          '<div class="qf-ad-asset"><div class="field__label">Logotipo (opcional)</div><input class="input" type="file" id="ad-logo" accept="image/png,image/webp,image/jpeg" style="margin-top:7px;"><div class="field__hint">De preferência PNG com fundo transparente.</div></div>' +
+        '</div>' +
+        '<div data-art-ready hidden><div class="field"><span class="field__label">Arte pronta</span><input class="input" type="file" id="ad-image" accept="image/*"><span class="field__hint">Envie uma imagem horizontal 16:9 de até 1,2 MB.</span></div></div>' +
+        '<div class="field"><span class="field__label">Prévia final</span><div class="ad-preview" id="ad-preview"><div class="stack--sm" style="text-align:center;align-items:center;">' + icon('image') + '<span class="text--sm">Preencha os dados e envie uma foto para gerar sua arte.</span></div></div><div class="qf-ad-preview-actions"><button class="btn btn--outline" type="button" id="ad-generate">Atualizar arte</button><button class="btn btn--outline" type="button" id="ad-download" disabled>Baixar imagem</button></div></div>' +
+        '<label class="field"><span class="field__label">WhatsApp</span><input class="input" name="whatsapp" inputmode="tel" required placeholder="(35) 99999-9999" value="' + PU.escapeHtml(defaultWhatsapp) + '"><span class="field__hint">Se não informar site, o clique no anúncio abre este WhatsApp com uma mensagem pronta.</span></label>' +
+        '<label class="field"><span class="field__label">Site ou link (opcional)</span><input class="input" name="link" type="url" placeholder="https://..."><span class="field__hint">Se preencher, o clique vai para este link em vez do WhatsApp.</span></label>' +
         '<div class="field"><span class="field__label">Pagamento</span><div class="segmented" id="ad-payment"><button class="segmented__item is-active" type="button" data-pay="pix">Pix Efí Bank</button></div><input type="hidden" name="formaPagamento" value="pix"></div>' +
-        '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('shieldCheck') + '</div><div><div class="text--strong">Pagamento real e seguro</div><div class="text--sm text--secondary">O anúncio só é marcado como pago depois da confirmação do Pix pela Efí Bank.</div></div></div></div>' +
+        '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('shieldCheck') + '</div><div><div class="text--strong">Pagamento real e seguro</div><div class="text--sm text--secondary">Novo anúncio: o Pix é confirmado pela Efí Bank. Edição de uma arte já comprada não gera nova cobrança.</div></div></div></div>' +
         '<button class="btn btn--primary" type="submit">Gerar Pix e enviar anúncio</button>' +
         '<button class="btn btn--outline" type="button" data-nav="' + backPath + '">Voltar</button>' +
-      '</form></div>';
+      '</form>' +
+      (ownAds.length ? '<div class="section"><div class="section-head"><h2 class="h3">Meus anúncios</h2><span class="text--sm text--muted">Editar ou baixar</span></div><div class="qf-own-ads">' + ownAds.map(ownAdCard).join('') + '</div></div>' : '') +
+      '</div>';
   };
 
   // ---------------- Categoria ----------------
@@ -8962,10 +9037,190 @@ alt=""></noscript>
     const form = content.querySelector('#anuncio-form');
     if (!form) return;
     let imageData = '';
-    const input = content.querySelector('#ad-image');
+    let photoData = '';
+    let logoData = '';
+    let editingAdId = '';
+    let renderTimer = null;
     const preview = content.querySelector('#ad-preview');
+    const photoInput = content.querySelector('#ad-photo');
+    const logoInput = content.querySelector('#ad-logo');
+    const readyInput = content.querySelector('#ad-image');
+    const downloadBtn = content.querySelector('#ad-download');
+    const generateBtn = content.querySelector('#ad-generate');
+    const autoBox = content.querySelector('[data-art-auto]');
+    const readyBox = content.querySelector('[data-art-ready]');
+    const modeWrap = content.querySelector('#ad-art-mode');
+    const submitBtn = form.querySelector('button[type="submit"]');
 
-    // V10.7: mantém o anúncio preenchido quando o visitante precisa entrar/criar conta.
+    function selectedPlan() {
+      const r = form.querySelector('input[name="plano"]:checked');
+      return r ? r.value : 'local';
+    }
+    function currentMode() { return String(form.elements.artMode.value || 'auto'); }
+    function setMode(mode) {
+      mode = mode === 'ready' ? 'ready' : 'auto';
+      form.elements.artMode.value = mode;
+      if (autoBox) autoBox.hidden = mode !== 'auto';
+      if (readyBox) readyBox.hidden = mode !== 'ready';
+      Array.prototype.forEach.call(modeWrap.querySelectorAll('[data-art-mode]'), function (b) {
+        b.classList.toggle('is-active', b.getAttribute('data-art-mode') === mode);
+      });
+      if (mode === 'ready' && imageData) showPreview(imageData);
+      if (mode === 'auto') scheduleRender();
+    }
+    function showPreview(src) {
+      if (!src) return;
+      preview.innerHTML = '<img src="' + src + '" alt="Prévia final do anúncio">';
+      if (downloadBtn) downloadBtn.disabled = false;
+    }
+    function readAsDataUrl(file) {
+      return new Promise(function (resolve, reject) {
+        const r = new FileReader();
+        r.onerror = reject;
+        r.onload = function () { resolve(String(r.result || '')); };
+        r.readAsDataURL(file);
+      });
+    }
+    function loadImage(src) {
+      return new Promise(function (resolve, reject) {
+        const img = new Image();
+        img.onload = function () { resolve(img); };
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+    function roundRect(ctx,x,y,w,h,r) {
+      r = Math.min(r,w/2,h/2);
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+    }
+    function cover(ctx,img,x,y,w,h) {
+      const ir=img.width/img.height, rr=w/h;
+      let sx=0,sy=0,sw=img.width,sh=img.height;
+      if(ir>rr){sw=img.height*rr;sx=(img.width-sw)/2;}else{sh=img.width/rr;sy=(img.height-sh)/2;}
+      ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
+    }
+    function wrapLines(ctx,text,maxWidth,maxLines) {
+      const words=String(text||'').trim().split(/\s+/).filter(Boolean);
+      const lines=[]; let line='';
+      words.forEach(function(w){
+        const test=line?line+' '+w:w;
+        if(ctx.measureText(test).width<=maxWidth || !line) line=test;
+        else { lines.push(line); line=w; }
+      });
+      if(line) lines.push(line);
+      if(lines.length>maxLines){
+        const keep=lines.slice(0,maxLines);
+        let last=keep[maxLines-1];
+        while(ctx.measureText(last+'…').width>maxWidth && last.length>3) last=last.slice(0,-1);
+        keep[maxLines-1]=last.replace(/[ ,.;:-]+$/,'')+'…';
+        return keep;
+      }
+      return lines;
+    }
+    async function buildAutomaticArt() {
+      const fd = new FormData(form);
+      const empresa = String(fd.get('empresa') || '').trim() || 'Sua empresa';
+      const chamada = String(fd.get('chamada') || '').trim() || 'Qualidade e atendimento para você';
+      const cta = String(fd.get('cta') || 'Fale conosco').trim();
+      const plano = selectedPlan();
+      const W=1200,H=675;
+      const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
+      const ctx=canvas.getContext('2d');
+
+      const bg=ctx.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#06162f'); bg.addColorStop(.58,'#0c2446'); bg.addColorStop(1,'#101b2e');
+      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+      if(photoData){
+        try{
+          const p=await loadImage(photoData);
+          cover(ctx,p,560,0,640,H);
+          const shade=ctx.createLinearGradient(420,0,900,0);
+          shade.addColorStop(0,'rgba(6,22,47,1)'); shade.addColorStop(.45,'rgba(6,22,47,.82)'); shade.addColorStop(1,'rgba(6,22,47,.10)');
+          ctx.fillStyle=shade; ctx.fillRect(390,0,570,H);
+        }catch(_){}
+      } else {
+        const glow=ctx.createRadialGradient(930,330,20,930,330,420);
+        glow.addColorStop(0,'rgba(255,122,0,.28)'); glow.addColorStop(1,'rgba(255,122,0,0)');
+        ctx.fillStyle=glow; ctx.fillRect(520,0,680,H);
+      }
+
+      ctx.strokeStyle='rgba(255,132,24,.42)'; ctx.lineWidth=4;
+      ctx.beginPath(); ctx.arc(965,120,360,.72,2.65); ctx.stroke();
+      ctx.strokeStyle='rgba(255,183,92,.22)'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(1010,160,430,.8,2.72); ctx.stroke();
+
+      const badge = plano === 'premium' ? 'PATROCINADO • PREMIUM' : (plano === 'destaque' ? 'PATROCINADO • DESTAQUE' : 'PATROCINADO');
+      ctx.font='800 20px Arial'; const bw=Math.min(360,ctx.measureText(badge).width+42);
+      roundRect(ctx,68,54,bw,46,23); ctx.fillStyle='rgba(8,20,40,.88)'; ctx.fill(); ctx.strokeStyle='#ff941f'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#ffffff'; ctx.fillText(badge,89,84);
+
+      let titleSize=58;
+      ctx.font='900 '+titleSize+'px Arial';
+      let titleLines=wrapLines(ctx,empresa,490,2);
+      while(titleLines.some(function(l){return ctx.measureText(l).width>490;}) && titleSize>42){titleSize-=2;ctx.font='900 '+titleSize+'px Arial';titleLines=wrapLines(ctx,empresa,490,2);}
+      let ty=175;
+      titleLines.forEach(function(line,idx){
+        ctx.fillStyle=idx===titleLines.length-1 && titleLines.length>1 ? '#ff8518' : '#ffffff';
+        ctx.fillText(line,68,ty); ty+=titleSize*1.06;
+      });
+
+      ctx.font='600 27px Arial'; ctx.fillStyle='#e5edf7';
+      const subLines=wrapLines(ctx,chamada,475,2);
+      let sy=ty+22; subLines.forEach(function(line){ctx.fillText(line,68,sy);sy+=35;});
+      ctx.fillStyle='#ff8518'; ctx.fillRect(68,sy+4,94,5);
+
+      const by=Math.min(505,sy+42), btnW=390, btnH=70;
+      const bgrad=ctx.createLinearGradient(68,by,68+btnW,by); bgrad.addColorStop(0,'#ff7a00'); bgrad.addColorStop(1,'#ffb347');
+      roundRect(ctx,68,by,btnW,btnH,35); ctx.fillStyle=bgrad; ctx.fill();
+      ctx.fillStyle='#0b1d3a'; ctx.font='900 25px Arial';
+      let ctaText=cta; while(ctx.measureText(ctaText).width>285 && ctaText.length>8) ctaText=ctaText.slice(0,-1);
+      if(ctaText!==cta) ctaText=ctaText.replace(/[ ,.;:-]+$/,'')+'…';
+      ctx.fillText(ctaText,103,by+44);
+      ctx.beginPath(); ctx.arc(424,by+35,24,0,Math.PI*2); ctx.fillStyle='#0b1d3a'; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(415,by+25);ctx.lineTo(427,by+35);ctx.lineTo(415,by+45);ctx.stroke();
+
+      ctx.font='700 20px Arial'; ctx.fillStyle='#ffb347'; ctx.fillText('Clique aqui',68,by+108);
+      ctx.fillStyle='#ffffff'; ctx.fillText('e fale conosco',180,by+108);
+
+      if(logoData){
+        try{
+          const l=await loadImage(logoData); const maxW=220,maxH=90; const sc=Math.min(maxW/l.width,maxH/l.height,1); const lw=l.width*sc,lh=l.height*sc;
+          roundRect(ctx,W-48-lw-22,H-42-lh-20,lw+44,lh+40,18); ctx.fillStyle='rgba(255,255,255,.92)'; ctx.fill();
+          ctx.drawImage(l,W-48-lw,H-42-lh,lw,lh);
+        }catch(_){}
+      } else {
+        ctx.textAlign='right'; ctx.font='900 24px Arial'; ctx.fillStyle='#ffffff'; ctx.fillText(empresa.slice(0,32),W-46,H-44); ctx.textAlign='left';
+      }
+
+      imageData=canvas.toDataURL('image/jpeg',.86);
+      showPreview(imageData);
+      return imageData;
+    }
+    function scheduleRender() {
+      if(currentMode()!=='auto') return;
+      clearTimeout(renderTimer);
+      renderTimer=setTimeout(function(){ buildAutomaticArt().catch(function(){ }); },220);
+    }
+    function currentArtConfig() {
+      if(currentMode()==='ready') return { modelo:'arte_pronta', modo:'pronta', versao:1 };
+      return {
+        modelo:'premium_01', modo:'auto', versao:1,
+        fotoData:photoData || '', logoData:logoData || '',
+        cta:String(form.elements.cta.value || 'Fale conosco')
+      };
+    }
+    function downloadImage(src,name) {
+      if(!src) return;
+      const a=document.createElement('a');
+      a.href=src; a.download=(String(name||'anuncio').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'anuncio')+'-quemfaz.jpg';
+      document.body.appendChild(a); a.click(); a.remove();
+    }
+
+    // Recupera rascunho após login/cadastro.
     try {
       const saved = JSON.parse(sessionStorage.getItem('qf_pending_ad_draft') || 'null');
       if (saved && saved.fields) {
@@ -8973,154 +9228,132 @@ alt=""></noscript>
           const name = ctrl.name;
           if (!name || !(name in saved.fields) || ctrl.type === 'file') return;
           if (ctrl.type === 'radio') ctrl.checked = String(ctrl.value) === String(saved.fields[name]);
-          else if (ctrl.type === 'checkbox') ctrl.checked = !!saved.fields[name];
           else ctrl.value = saved.fields[name] == null ? '' : saved.fields[name];
         });
-        imageData = String(saved.imageData || '');
-        if (imageData) preview.innerHTML = '<img src="' + imageData + '" alt="Prévia do anúncio">';
+        imageData=String(saved.imageData||''); photoData=String(saved.photoData||''); logoData=String(saved.logoData||'');
+        setMode(String(saved.fields.artMode||'auto'));
+        if(imageData) showPreview(imageData);
         Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) {
-          const item = r.closest('.segmented__item');
-          if (item) item.classList.toggle('is-active', r.checked);
+          const item=r.closest('.segmented__item'); if(item) item.classList.toggle('is-active',r.checked);
         });
-        const savedPay = String(saved.fields.formaPagamento || '');
-        Array.prototype.forEach.call(content.querySelectorAll('#ad-payment [data-pay]'), function (b) {
-          b.classList.toggle('is-active', b.getAttribute('data-pay') === savedPay);
-        });
-        PU.toast('Seu anúncio foi recuperado. Continue de onde parou.', 'success');
+        PU.toast('Seu anúncio foi recuperado. Continue de onde parou.','success');
       }
     } catch (_) {}
-    input.addEventListener('change', function () {
-      const f = input.files && input.files[0];
-      if (!f) return;
-      if (f.size > 900 * 1024) { input.value = ''; PU.toast('A imagem deve ter no máximo 900 KB nesta versão.', 'danger'); return; }
-      const reader = new FileReader();
-      reader.onload = function () { imageData = String(reader.result || ''); preview.innerHTML = '<img src="' + imageData + '" alt="Prévia do anúncio">'; };
-      reader.readAsDataURL(f);
+
+    if(modeWrap) modeWrap.addEventListener('click',function(e){const b=e.target.closest('[data-art-mode]');if(!b)return;setMode(b.getAttribute('data-art-mode'));});
+    if(photoInput) photoInput.addEventListener('change',async function(){
+      const f=photoInput.files&&photoInput.files[0]; if(!f)return;
+      try{photoData=await PU.fileToCompressedDataUrl(f,1200);await buildAutomaticArt();}catch(_){PU.toast('Não foi possível ler essa foto.','danger');}
     });
+    if(logoInput) logoInput.addEventListener('change',async function(){
+      const f=logoInput.files&&logoInput.files[0]; if(!f)return;
+      if(f.size>700*1024){logoInput.value='';PU.toast('O logotipo deve ter no máximo 700 KB.','danger');return;}
+      try{logoData=await readAsDataUrl(f);await buildAutomaticArt();}catch(_){PU.toast('Não foi possível ler o logotipo.','danger');}
+    });
+    if(readyInput) readyInput.addEventListener('change',function(){
+      const f=readyInput.files&&readyInput.files[0]; if(!f)return;
+      if(f.size>1200*1024){readyInput.value='';PU.toast('A arte pronta deve ter no máximo 1,2 MB.','danger');return;}
+      const r=new FileReader();r.onload=function(){imageData=String(r.result||'');showPreview(imageData);};r.readAsDataURL(f);
+    });
+    ['empresa','chamada','cta'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='cta'?'change':'input',scheduleRender);});
+    Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(r){r.addEventListener('change',scheduleRender);});
+    if(generateBtn) generateBtn.addEventListener('click',function(){if(currentMode()==='auto')buildAutomaticArt();else if(!imageData)PU.toast('Envie sua arte pronta primeiro.','danger');});
+    if(downloadBtn) downloadBtn.addEventListener('click',function(){downloadImage(imageData,form.elements.empresa.value);});
+
     Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (radio) {
       radio.addEventListener('change', function () {
         Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) { r.closest('.segmented__item').classList.toggle('is-active', r.checked); });
-        const cityRow = form.querySelector('[name="cidadeAnuncio"]');
-        if (cityRow && radio.value === 'cidade' && radio.checked) cityRow.focus();
+        const cityRow=form.querySelector('[name="cidadeAnuncio"]'); if(cityRow&&radio.value==='cidade'&&radio.checked)cityRow.focus();
       });
     });
-    const pay = content.querySelector('#ad-payment');
-    pay.addEventListener('click', function (e) {
-      const b = e.target.closest('[data-pay]'); if (!b) return;
-      Array.prototype.forEach.call(pay.querySelectorAll('.segmented__item'), function (x) { x.classList.remove('is-active'); });
-      b.classList.add('is-active'); form.elements.formaPagamento.value = b.getAttribute('data-pay');
+    const pay=content.querySelector('#ad-payment');
+    if(pay) pay.addEventListener('click',function(e){const b=e.target.closest('[data-pay]');if(!b)return;Array.prototype.forEach.call(pay.querySelectorAll('.segmented__item'),function(x){x.classList.remove('is-active');});b.classList.add('is-active');form.elements.formaPagamento.value=b.getAttribute('data-pay');});
+
+    content.addEventListener('click',function(e){
+      const down=e.target.closest('[data-download-ad]');
+      if(down){
+        const ad=DB.anuncioById(down.getAttribute('data-download-ad')); if(ad&&ad.imagem)downloadImage(ad.imagem,ad.empresa); return;
+      }
+      const edit=e.target.closest('[data-edit-ad]');
+      if(!edit)return;
+      const ad=DB.anuncioById(edit.getAttribute('data-edit-ad')); if(!ad)return;
+      editingAdId=ad.id; form.elements.editingAdId.value=ad.id; form.classList.add('qf-ad-editing');
+      form.elements.empresa.value=ad.empresa||''; form.elements.chamada.value=ad.chamada||''; form.elements.whatsapp.value=ad.whatsapp||''; form.elements.link.value=ad.link||'';
+      const plan=form.querySelector('input[name="plano"][value="'+(ad.plano||'local')+'"]'); if(plan)plan.checked=true;
+      Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(x){x.disabled=true;});
+      Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'),function(x){x.disabled=true;});
+      form.elements.cidadeAnuncio.disabled=true; form.elements.ufAnuncio.disabled=true;
+      const cfg=ad.arteConfig||{};
+      if(cfg.modo==='auto' || cfg.modelo==='premium_01'){
+        photoData=String(cfg.fotoData||''); logoData=String(cfg.logoData||''); if(cfg.cta)form.elements.cta.value=cfg.cta; setMode('auto');
+      } else { setMode('ready'); }
+      imageData=ad.imagem||''; if(imageData)showPreview(imageData);
+      submitBtn.textContent='Salvar alterações';
+      try{form.scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}
+      PU.toast('Anúncio aberto para edição.','success');
     });
-    form.addEventListener('submit', async function (e) {
+
+    form.addEventListener('submit',async function(e){
       e.preventDefault();
-      const fd = new FormData(form);
-      if (!String(fd.get('empresa') || '').trim() || !String(fd.get('chamada') || '').trim() || !String(fd.get('whatsapp') || '').trim()) { PU.toast('Preencha empresa, chamada e WhatsApp.', 'danger'); return; }
-      if (!imageData) { PU.toast('Adicione a imagem do anúncio.', 'danger'); return; }
+      const fd=new FormData(form);
+      if(!String(fd.get('empresa')||'').trim()||!String(fd.get('chamada')||'').trim()||!String(fd.get('whatsapp')||'').trim()){PU.toast('Preencha empresa, chamada e WhatsApp.','danger');return;}
+      if(currentMode()==='auto'){
+        if(!photoData && !editingAdId){PU.toast('Envie a foto principal para montar a arte.','danger');return;}
+        await buildAutomaticArt();
+      }
+      if(!imageData){PU.toast('Gere a arte ou envie uma imagem pronta.','danger');return;}
 
-      if (!DB.getSession()) {
-        const draftFields = {};
-        fd.forEach(function (value, key) {
-          if (typeof value === 'string') draftFields[key] = value;
-        });
-        try {
-          sessionStorage.setItem('qf_pending_ad_draft', JSON.stringify({ fields: draftFields, imageData: imageData, savedAt: Date.now() }));
-        } catch (_) {}
+      const dadosBase={
+        empresa:fd.get('empresa'), chamada:fd.get('chamada'), imagem:imageData, whatsapp:fd.get('whatsapp'), link:fd.get('link'),
+        arteConfig:currentArtConfig()
+      };
 
-        PU.openSheet(
-          '<div class="stack">' +
-            '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('user') + '</div>' +
-            '<h3 class="sheet__title" style="text-align:center;">Entre para continuar</h3>' +
-            '<p class="text text--secondary" style="text-align:center;">Seu anúncio já está salvo neste aparelho. Entre ou crie sua conta e você volta para finalizar sem preencher tudo de novo.</p>' +
-            '<button class="btn btn--primary" id="qf-ad-login-cliente">Entrar como cliente</button>' +
-            '<button class="btn btn--outline" id="qf-ad-login-prof">Entrar como profissional</button>' +
-            '<div class="divider-label">primeiro acesso?</div>' +
-            '<div class="btn-row"><button class="btn btn--outline" id="qf-ad-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-ad-cad-prof">Criar conta profissional</button></div>' +
-            '<button class="btn btn--ghost" id="qf-ad-voltar">Continuar editando</button>' +
-          '</div>',
-          { persistent: true }
-        );
-        document.getElementById('qf-ad-login-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
-        document.getElementById('qf-ad-login-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
-        document.getElementById('qf-ad-cad-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/cadastro', true); };
-        document.getElementById('qf-ad-cad-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/cadastro', true); };
-        document.getElementById('qf-ad-voltar').onclick = function () { PU.closeSheet(); };
+      if(editingAdId){
+        submitBtn.disabled=true; submitBtn.textContent='Salvando...';
+        try{
+          await global.QFCloud.editAd(Object.assign({id:editingAdId},dadosBase));
+          PU.toast('Arte atualizada com sucesso.','success');
+          const sess=DB.getSession(); global.navigate('/'+sess.role+'/anuncie',true);
+        }catch(err){PU.toast((err&&err.message)||'Não foi possível salvar a edição.','danger');}
+        finally{submitBtn.disabled=false;submitBtn.textContent='Salvar alterações';}
         return;
       }
 
-      const btn = form.querySelector('button[type="submit"]');
-      if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; }
-      try {
-        const regiaoTipo = fd.get('regiaoTipo') || 'all';
-        const cidadeAnuncio = String(fd.get('cidadeAnuncio') || '').trim();
-        const ufAnuncio = String(fd.get('ufAnuncio') || '').trim();
-        if (regiaoTipo === 'cidade' && (!cidadeAnuncio || !ufAnuncio)) { PU.toast('Informe cidade e UF do anúncio.', 'danger'); return; }
-        const regiao = regiaoTipo === 'all' ? 'all' : global.QFGeo.regionKey(cidadeAnuncio, ufAnuncio);
-        const dados = { empresa: fd.get('empresa'), chamada: fd.get('chamada'), cidadeId: regiao, plano: fd.get('plano'), imagem: imageData, whatsapp: fd.get('whatsapp'), link: fd.get('link'), formaPagamento: fd.get('formaPagamento') };
-        let ad, pagamento;
-        if (global.QFCloud && global.QFCloud.enabled) {
-          const out = await global.QFCloud.submitAd(dados);
-          ad = out.ad; pagamento = out.pagamento || {};
-        } else {
-          throw new Error('Pagamento real exige conexão com o servidor. Verifique a internet e tente novamente.');
-        }
-        const p = DB.adPlan((ad && ad.plano) || dados.plano);
-        const valor = Number(pagamento.valor_centavos != null ? pagamento.valor_centavos : p.valor || 0);
-        try { sessionStorage.removeItem('qf_pending_ad_draft'); } catch (_) {}
-
-        const pixCode = String(pagamento.pix_copy_paste || '');
-        const checkoutUrl = String(pagamento.checkout_url || '');
-        const qrImage = String(pagamento.qr_image || '');
-        PU.openSheet(
-          '<div class="stack">' +
-            '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('wallet') + '</div>' +
-            '<h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3>' +
-            '<p class="text text--secondary" style="text-align:center;">Valor: <strong>' + PU.formatCurrency(valor) + '</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>' +
-            (qrImage ? '<img src="' + PU.escapeHtml(qrImage) + '" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">' : '') +
-            (pixCode ? '<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">' + PU.escapeHtml(pixCode) + '</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">' + icon('clipboard') + ' Copiar Pix</button>' : '') +
-            (checkoutUrl ? '<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>' : '') +
-            '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div>' +
-            '<button class="btn btn--outline" id="fechar-anuncio">Fechar</button>' +
-          '</div>',
-          { persistent: true }
-        );
-        const copyPix = document.getElementById('qf-ad-copy-pix');
-        if (copyPix) copyPix.onclick = async function () {
-          try {
-            await navigator.clipboard.writeText(pixCode);
-            PU.toast('Pix copiado.', 'success');
-          } catch (_) {
-            const area = document.getElementById('qf-ad-pix-code');
-            if (area) { area.focus(); area.select(); document.execCommand('copy'); PU.toast('Pix copiado.', 'success'); }
-          }
-        };
-        const openPix = document.getElementById('qf-ad-open-pix');
-        if (openPix) openPix.onclick = function () { location.href = checkoutUrl; };
-        document.getElementById('fechar-anuncio').onclick = function () {
-          PU.closeSheet();
-          const sess = DB.getSession();
-          global.navigate(sess && sess.role === 'profissional' ? '/profissional/home' : '/cliente/home', true);
-        };
-      } catch (err) {
-        const msg = (err && err.message) ? err.message : String(err);
-        if (msg.indexOf('authentication') !== -1 || msg.indexOf('Entre na sua conta') !== -1) {
-          try {
-            const retryFields = {};
-            new FormData(form).forEach(function (value, key) { if (typeof value === 'string') retryFields[key] = value; });
-            sessionStorage.setItem('qf_pending_ad_draft', JSON.stringify({ fields: retryFields, imageData: imageData, savedAt: Date.now() }));
-          } catch (_) {}
-          PU.openSheet(
-            '<div class="stack"><h3 class="sheet__title" style="text-align:center;">Sua sessão expirou</h3>' +
-            '<p class="text text--secondary" style="text-align:center;">Seu anúncio está salvo. Entre novamente para continuar.</p>' +
-            '<button class="btn btn--primary" id="qf-ad-relogin-cliente">Entrar como cliente</button>' +
-            '<button class="btn btn--outline" id="qf-ad-relogin-prof">Entrar como profissional</button></div>'
-          );
-          document.getElementById('qf-ad-relogin-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
-          document.getElementById('qf-ad-relogin-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
-        } else {
-          PU.toast('Não foi possível enviar o anúncio: ' + msg, 'danger');
-        }
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Gerar Pix e enviar anúncio'; }
+      if(!DB.getSession()){
+        const draftFields={}; fd.forEach(function(value,key){if(typeof value==='string')draftFields[key]=value;});
+        try{sessionStorage.setItem('qf_pending_ad_draft',JSON.stringify({fields:draftFields,imageData:imageData,photoData:photoData,logoData:logoData,savedAt:Date.now()}));}catch(_){}
+        PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('user')+'</div><h3 class="sheet__title" style="text-align:center;">Entre para continuar</h3><p class="text text--secondary" style="text-align:center;">Sua arte já está salva neste aparelho. Entre ou crie sua conta e você volta para finalizar sem perder o trabalho.</p><button class="btn btn--primary" id="qf-ad-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-ad-login-prof">Entrar como profissional</button><div class="divider-label">primeiro acesso?</div><div class="btn-row"><button class="btn btn--outline" id="qf-ad-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-ad-cad-prof">Criar conta profissional</button></div><button class="btn btn--ghost" id="qf-ad-voltar">Continuar editando</button></div>',{persistent:true});
+        document.getElementById('qf-ad-login-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true);};
+        document.getElementById('qf-ad-login-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true);};
+        document.getElementById('qf-ad-cad-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/cadastro',true);};
+        document.getElementById('qf-ad-cad-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/cadastro',true);};
+        document.getElementById('qf-ad-voltar').onclick=function(){PU.closeSheet();};
+        return;
       }
+
+      submitBtn.disabled=true; submitBtn.textContent='Enviando...';
+      try{
+        const regiaoTipo=fd.get('regiaoTipo')||'all', cidadeAnuncio=String(fd.get('cidadeAnuncio')||'').trim(), ufAnuncio=String(fd.get('ufAnuncio')||'').trim();
+        if(regiaoTipo==='cidade'&&(!cidadeAnuncio||!ufAnuncio)){PU.toast('Informe cidade e UF do anúncio.','danger');return;}
+        const regiao=regiaoTipo==='all'?'all':global.QFGeo.regionKey(cidadeAnuncio,ufAnuncio);
+        const dados=Object.assign({},dadosBase,{cidadeId:regiao,plano:fd.get('plano'),formaPagamento:fd.get('formaPagamento')});
+        const out=await global.QFCloud.submitAd(dados); const ad=out.ad,pagamento=out.pagamento||{};
+        const p=DB.adPlan((ad&&ad.plano)||dados.plano); const valor=Number(pagamento.valor_centavos!=null?pagamento.valor_centavos:p.valor||0);
+        try{sessionStorage.removeItem('qf_pending_ad_draft');}catch(_){}
+        const pixCode=String(pagamento.pix_copy_paste||''),checkoutUrl=String(pagamento.checkout_url||''),qrImage=String(pagamento.qr_image||'');
+        PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('wallet')+'</div><h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3><p class="text text--secondary" style="text-align:center;">Valor: <strong>'+PU.formatCurrency(valor)+'</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>'+(qrImage?'<img src="'+PU.escapeHtml(qrImage)+'" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">':'')+(pixCode?'<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">'+PU.escapeHtml(pixCode)+'</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">'+icon('clipboard')+' Copiar Pix</button>':'')+(checkoutUrl?'<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>':'')+'<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div><button class="btn btn--outline" id="fechar-anuncio">Fechar</button></div>',{persistent:true});
+        const copyPix=document.getElementById('qf-ad-copy-pix'); if(copyPix)copyPix.onclick=async function(){try{await navigator.clipboard.writeText(pixCode);PU.toast('Pix copiado.','success');}catch(_){const area=document.getElementById('qf-ad-pix-code');if(area){area.focus();area.select();document.execCommand('copy');PU.toast('Pix copiado.','success');}}};
+        const openPix=document.getElementById('qf-ad-open-pix'); if(openPix)openPix.onclick=function(){location.href=checkoutUrl;};
+        document.getElementById('fechar-anuncio').onclick=function(){PU.closeSheet();const sess=DB.getSession();global.navigate(sess&&sess.role==='profissional'?'/profissional/home':'/cliente/home',true);};
+      }catch(err){
+        const msg=(err&&err.message)?err.message:String(err);
+        if(msg.indexOf('authentication')!==-1||msg.indexOf('JWT')!==-1||msg.indexOf('session')!==-1){
+          try{const retryFields={};new FormData(form).forEach(function(value,key){if(typeof value==='string')retryFields[key]=value;});sessionStorage.setItem('qf_pending_ad_draft',JSON.stringify({fields:retryFields,imageData:imageData,photoData:photoData,logoData:logoData,savedAt:Date.now()}));}catch(_){}
+          PU.openSheet('<div class="stack"><h3 class="sheet__title" style="text-align:center;">Sua sessão expirou</h3><p class="text text--secondary" style="text-align:center;">Sua arte está salva. Entre novamente para continuar.</p><button class="btn btn--primary" id="qf-ad-relogin-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-ad-relogin-prof">Entrar como profissional</button></div>');
+          document.getElementById('qf-ad-relogin-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true);};
+          document.getElementById('qf-ad-relogin-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true);};
+        }else PU.toast('Não foi possível enviar o anúncio: '+msg,'danger');
+      }finally{submitBtn.disabled=false;submitBtn.textContent='Gerar Pix e enviar anúncio';}
     });
   }
 
@@ -9957,7 +10190,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.16';
+  const APP_VERSION = '11.14.17';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
