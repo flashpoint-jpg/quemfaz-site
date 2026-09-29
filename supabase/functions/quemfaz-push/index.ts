@@ -197,22 +197,22 @@ async function actorUnlocked(callId: string, userId: string) {
   return !!data;
 }
 
-async function recipientsForNewCallAtRadius(call: any, _stageRadiusKm: number | null) {
-  // Regra principal: o chamado só vai para profissionais da MESMA CIDADE/UF
-  // escolhida pelo cliente e da categoria pedida. Online/offline não muda o
-  // destino; quem tiver push recebe com o app fechado e quem abrir o app vê
-  // o chamado disponível. A distância é apenas informativa e é calculada
-  // individualmente para cada profissional.
-  const { data: rows, error } = await admin.rpc("qf_cascata_destinatarios", {
+async function recipientsForNewCallAtRadius(call: any, stageRadiusKm: number | null) {
+  // Cascata geográfica:
+  // 0 km = somente a cidade/UF escolhida pelo cliente.
+  // Depois amplia para profissionais da mesma categoria em cidades/localizações próximas.
+  const raio = Math.max(0, Number(stageRadiusKm || 0));
+  const { data: rows, error } = await admin.rpc("qf_chamado_destinatarios_alcance", {
     p_chamado_id: call.id,
+    p_raio_km: raio,
   });
   if (error) throw error;
 
   return (Array.isArray(rows) ? rows : []).map((r: any) => ({
     user_id: String(r.user_id),
-    distance_km: null,
-    limit_km: 0,
-    exact_city: true,
+    distance_km: r.distancia_regiao_km == null ? null : Number(r.distancia_regiao_km),
+    limit_km: raio,
+    exact_city: raio === 0,
   }));
 }
 
@@ -381,39 +381,27 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
 // V11.9: etapa 2 da cascata — ninguém aceitou a tempo: avisa TODOS os profissionais ativos
 // da região e da categoria, online ou offline (lista montada no banco: qf_cascata_destinatarios).
 async function sendCascadeStage2(callId: string) {
-  const { data: call } = await admin
-    .from("qf_chamados")
-    .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em")
-    .eq("id", callId)
-    .maybeSingle();
-  if (!call || call.status !== "aberto" || (await professionalForCall(call.id))) {
-    return { stopped: true, recipients: 0, sent: 0, total: 0 };
+  // Sem aceite após a primeira etapa: amplia para até 30 km.
+  const result = await sendNewCallStage(callId, 30);
+  if (!result.stopped) {
+    await admin.from("qf_chamado_cascata")
+      .update({
+        etapa2_destinatarios: Number(result.recipients || 0),
+        etapa2_enviados: Number(result.sent || 0),
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq("chamado_id", callId);
   }
-  const { data: rows, error } = await admin.rpc("qf_cascata_destinatarios", { p_chamado_id: call.id });
-  if (error) throw error;
-  const ids = (Array.isArray(rows) ? rows : []).map((r: any) => r.user_id).filter(Boolean);
-
-  let fresh: string[] = [];
-  if (ids.length) {
-    const { data: reserved, error: reserveErr } = await admin.rpc("qf_push_reservar_entregas", {
-      p_chamado_id: call.id,
-      p_user_ids: ids,
-      p_evento: "new_call",
-      p_raio_etapa_km: null,
-    });
-    if (reserveErr) throw reserveErr;
-    fresh = Array.isArray(reserved) ? reserved : [];
-  }
-  const result = fresh.length ? await sendToUsers(fresh, newCallPayload(call), await newCallPayloads(call, fresh)) : { sent: 0, total: 0 };
-  await admin.from("qf_chamado_cascata")
-    .update({ etapa2_destinatarios: ids.length, etapa2_enviados: result.sent, atualizado_em: new Date().toISOString() })
-    .eq("chamado_id", call.id);
-  return { stopped: false, recipients: ids.length, fresh: fresh.length, ...result };
+  return result;
 }
 
 // V11.9: etapa 3 — ainda sem aceite: o chamado entra em "Chamados sem resposta" no admin
 // (botões de WhatsApp por profissional) e o admin recebe o aviso.
 async function sendCascadeStage3(callId: string) {
+  // Ainda sem aceite: amplia para até 100 km antes de escalar ao admin.
+  const expansion = await sendNewCallStage(callId, 100);
+  if (expansion.stopped) return expansion;
+
   const { data: call } = await admin
     .from("qf_chamados")
     .select("id,categoria,titulo,cidade,uf,bairro,status")
@@ -422,20 +410,22 @@ async function sendCascadeStage3(callId: string) {
   if (!call || call.status !== "aberto" || (await professionalForCall(call.id))) {
     return { stopped: true };
   }
+
   const place = [call.bairro, call.cidade, call.uf].filter(Boolean).join(" · ");
   const { data: admins } = await admin.from("qf_admins").select("user_id");
   const adminResult = await sendToUsers((admins || []).map((a: any) => a.user_id), {
-    title: "Chamado sem resposta: avise por WhatsApp",
-    body: (call.titulo || "Serviço") + (place ? " · " + place : "") + " — ninguém aceitou. Toque para chamar os profissionais da região.",
+    title: "Chamado sem resposta: alcance ampliado",
+    body: (call.titulo || "Serviço") + (place ? " · " + place : "") + " — busca ampliada para cidades próximas.",
     url: "/admin.html#sem-resposta",
     tag: "qf-sem-resposta-" + call.id,
     strong: true,
   });
-  return { stopped: false, admin: adminResult };
+  return { stopped: false, expansion, admin: adminResult };
 }
 
 async function progressiveNewCallPush(callId: string) {
   try {
+    // Dá prioridade à cidade escolhida. Se ninguém aceitar, amplia gradualmente.
     await sleep(30000);
     let stage = await sendNewCallStage(callId, 15);
     if (stage.stopped) return;
@@ -445,7 +435,7 @@ async function progressiveNewCallPush(callId: string) {
     if (stage.stopped) return;
 
     await sleep(30000);
-    await sendNewCallStage(callId, null);
+    await sendNewCallStage(callId, 60);
   } catch (err) {
     console.error("progressiveNewCallPush", err);
   }
@@ -497,8 +487,8 @@ Deno.serve(async (req) => {
       if (!call || call.status !== "aberto" || (await professionalForCall(call.id))) {
         return json({ ok: true, stopped: true });
       }
-      // Nova tentativa com todos os profissionais online (a reserva evita aviso repetido).
-      const retry = await sendNewCallStage(call.id, null);
+      // Última ampliação automática de segurança: até 200 km.
+      const retry = await sendNewCallStage(call.id, 200);
       const place = [call.bairro, call.cidade, call.uf].filter(Boolean).join(" · ");
       const { data: admins } = await admin.from("qf_admins").select("user_id");
       const adminResult = await sendToUsers((admins || []).map((a: any) => a.user_id), {
@@ -520,19 +510,19 @@ Deno.serve(async (req) => {
 
     if (event !== "new_call") return json({ error: "invalid_internal_event" }, 400);
 
-    const stages: Array<number | null> = [8, 15, 30, null];
-    let delivered = { stopped: false, recipients: 0, sent: 0, total: 0 };
-    for (const radius of stages) {
-      const attempt = await sendNewCallStage(callId, radius);
-      if (attempt.stopped) { delivered = attempt; break; }
-      delivered = {
-        stopped: false,
-        recipients: Number(delivered.recipients || 0) + Number(attempt.recipients || 0),
-        sent: Number(delivered.sent || 0) + Number(attempt.sent || 0),
-        total: Number(delivered.total || 0) + Number(attempt.total || 0),
-      };
-      if (attempt.sent > 0) break;
+    // Primeiro tenta SOMENTE a cidade escolhida pelo cliente.
+    let delivered = await sendNewCallStage(callId, 0);
+
+    // Se não existe nenhum profissional dessa categoria na cidade, começa a ampliar já,
+    // sem fazer o cliente esperar inutilmente.
+    if (!delivered.stopped && Number(delivered.recipients || 0) === 0) {
+      for (const radius of [15, 30, 60]) {
+        const attempt = await sendNewCallStage(callId, radius);
+        delivered = attempt;
+        if (attempt.stopped || Number(attempt.recipients || 0) > 0) break;
+      }
     }
+
     EdgeRuntime.waitUntil(progressiveNewCallPush(callId));
     return json({ ok: true, internal: true, ...delivered });
   }
@@ -622,9 +612,13 @@ Deno.serve(async (req) => {
     // Responde na hora (o cliente não fica esperando) e segue a entrega em segundo plano.
     EdgeRuntime.waitUntil((async () => {
       try {
-        for (const radius of [8, 15, 30, null] as Array<number | null>) {
-          const attempt = await sendNewCallStage(call.id, radius);
-          if (attempt.stopped || attempt.sent > 0) break;
+        let first = await sendNewCallStage(call.id, 0);
+        if (!first.stopped && Number(first.recipients || 0) === 0) {
+          for (const radius of [15, 30, 60]) {
+            const attempt = await sendNewCallStage(call.id, radius);
+            first = attempt;
+            if (attempt.stopped || Number(attempt.recipients || 0) > 0) break;
+          }
         }
         await progressiveNewCallPush(call.id);
       } catch (err) {
