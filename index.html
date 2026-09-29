@@ -7061,7 +7061,7 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
-        (user.email ? ('<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>') : '') +
+        '<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>' +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
         '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
       '</div>'
@@ -10539,7 +10539,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.33';
+  const APP_VERSION = '11.14.34';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12339,7 +12339,12 @@ alt=""></noscript>
     const logoutEl = e.target.closest('[data-logout]');
     if (logoutEl) {
       e.preventDefault();
-      PU.confirmDialog({ title: 'Sair da conta', message: 'Deseja realmente sair?', okLabel: 'Sair' }).then(async function (ok) {
+      const u = currentUser();
+      const quickClient = !!(u && currentSession() && currentSession().role === 'cliente' && !u.email);
+      const msg = quickClient
+        ? 'Deseja sair deste cliente? Como este acesso foi criado só com nome e WhatsApp, ao sair você não terá uma senha para voltar a este mesmo acesso.'
+        : 'Deseja realmente sair?';
+      PU.confirmDialog({ title: 'Sair da conta', message: msg, okLabel: 'Sair' }).then(async function (ok) {
         if (!ok) return;
         if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.signOut();
         else DB.logout();
