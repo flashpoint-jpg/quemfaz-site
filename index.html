@@ -4482,7 +4482,7 @@ alt=""></noscript>
 
     try {
       await ensureProfile(res.data.user, role, data);
-      if (!quickClient) await applyPendingIdentity(email, role);
+      await applyPendingIdentity(email, role);
       const local = await syncLocalUser(res.data.user, role);
       DB.setSession({ role: role, userId: res.data.user.id });
       if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
@@ -5635,16 +5635,40 @@ alt=""></noscript>
   }
 
   function cadastroClienteView() {
+    let pendingCat = '';
+    let pendingRegion = null;
+    try { pendingCat = sessionStorage.getItem('qf_pending_category') || ''; } catch (_) {}
+    try { pendingRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { pendingRegion = null; }
+
+    const selectedCat = DB.categoryById(pendingCat);
+    const servicoInicial = selectedCat ? selectedCat.nome : '';
+    const categorias = DB.categories().filter(function (cat) { return cat && cat.id !== 'cat_outros'; });
+    const listaServicos = categorias.map(function (cat) {
+      return '<option value="' + PU.escapeHtml(cat.nome) + '"></option>';
+    }).join('');
+    const cidadeInicial = pendingRegion && pendingRegion.cidade ? pendingRegion.cidade : '';
+    const ufInicial = pendingRegion && pendingRegion.uf ? pendingRegion.uf : '';
+
     return (
       '<div class="view stack--lg">' +
         backRow('/', 'Pedir serviço') +
-        '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--strong">Rápido: sem e-mail e sem senha</div><div class="text--sm text--secondary" style="margin-top:4px;">Precisamos apenas do seu nome e WhatsApp para o profissional poder falar com você depois que o orçamento for aprovado.</div></div>' +
+        '<div class="card card--tight" style="background:var(--success-100);border:none;">' +
+          '<div class="text--strong" style="color:var(--success-600);">Pedido grátis · sem e-mail · sem senha</div>' +
+          '<div class="text--sm" style="color:var(--success-600);margin-top:4px;">Preencha uma vez e o QuemFaz já publica seu pedido para os profissionais da sua região.</div>' +
+        '</div>' +
         '<form id="cadastro-cliente-form" class="stack" novalidate>' +
+          field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista" value="' + PU.escapeHtml(servicoInicial) + '"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>') +
+          '<div class="row" style="gap:10px;align-items:flex-start;">' +
+            '<div style="flex:2;">' + field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') + '</div>' +
+            '<div style="flex:1;">' + field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') + '</div>' +
+          '</div>' +
+          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea>') +
+          '<div class="hairline"></div>' +
           field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-0000">') +
-          '<button class="btn btn--primary" type="submit" style="margin-top:6px;">Continuar e pedir serviço</button>' +
+          '<button class="btn btn--primary" type="submit" style="margin-top:6px;">' + icon('search') + ' Publicar pedido grátis</button>' +
         '</form>' +
-        '<p class="text text--sm text--muted" style="text-align:center;">Seu WhatsApp fica protegido e só é liberado ao profissional no momento correto do fluxo.</p>' +
+        '<p class="text text--sm text--muted" style="text-align:center;">Seu WhatsApp fica protegido. O contato é liberado ao profissional somente no momento correto do orçamento.</p>' +
         cadastroClienteAdsHtml() +
       '</div>'
     );
@@ -6045,48 +6069,93 @@ alt=""></noscript>
         DB.registrarCliqueAnuncio(id);
         if (href && /^https?:\/\//i.test(href)) window.open(href, '_blank', 'noopener');
       });
+
       const form = content.querySelector('#cadastro-cliente-form');
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
         const nome = String(fd.get('nome') || '').trim();
         const telefone = String(fd.get('telefone') || '').trim();
+        const servico = String(fd.get('servico') || '').replace(/\s+/g, ' ').trim();
+        const cidade = String(fd.get('cidade') || '').replace(/\s+/g, ' ').trim();
+        const uf = String(fd.get('uf') || '').trim().toUpperCase();
+        const descricao = String(fd.get('descricao') || '').trim();
+
+        if (!servico) { PU.toast('Digite o serviço que você precisa.', 'danger'); return; }
+        if (!cidade || !uf) { PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
+        if (descricao.length < 8) { PU.toast('Explique rapidamente o que precisa ser feito.', 'danger'); return; }
         if (!nome) { PU.toast('Informe seu nome.', 'danger'); return; }
         if (!validPhone(telefone)) { PU.toast('Informe seu WhatsApp/celular com DDD.', 'danger'); return; }
+
+        let cat = DB.categories().find(function (x) {
+          return x.id !== 'cat_outros' && catNorm(x.nome).trim() === catNorm(servico).trim();
+        });
+        if (!cat) cat = rememberCustomCat(customCatFromName(servico));
+        if (!cat) { PU.toast('Não foi possível identificar o serviço. Tente escrever de outra forma.', 'danger'); return; }
+
+        try {
+          sessionStorage.setItem('qf_client_search_region', JSON.stringify({ cidade: cidade, uf: uf, cep: '' }));
+          sessionStorage.removeItem('qf_pending_category');
+        } catch (_) {}
+
         const dados = { nome: nome, telefone: telefone, quickClient: true };
         const btn = form.querySelector('button[type="submit"]');
-        if (btn) btn.disabled = true;
+        const originalBtn = btn ? btn.innerHTML : '';
+        if (btn) { btn.disabled = true; btn.textContent = 'Publicando seu pedido…'; }
+
         try {
+          let user = null;
           if (global.QFCloud && global.QFCloud.enabled) {
             const res = await global.QFCloud.signUp('cliente', dados);
-            if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return; }
-            if (res.needsConfirmation) {
-              PU.toast('Conta criada. Confirme o e-mail e depois entre no QuemFaz.', 'success');
-              global.navigate('/auth/cliente/login', true);
-              return;
-            }
-            PU.toast('Pronto! Agora escolha o serviço que você precisa.', 'success');
-            if (sessionStorage.getItem('qf_pending_ad_draft')) {
-              global.navigate('/cliente/anuncie', true);
-              return;
-            }
-            const pendingCat=sessionStorage.getItem('qf_pending_category');
-            if(pendingCat){sessionStorage.removeItem('qf_pending_category');global.navigate('/cliente/novo-pedido/'+encodeURIComponent(pendingCat),true);return;}
-            global.navigate('/cliente/home', true);
-            return;
+            if (!res.ok) { PU.toast(res.error || 'Não foi possível iniciar seu acesso.', 'danger'); return; }
+            if (res.needsConfirmation) { PU.toast('Não foi possível abrir o acesso rápido agora. Tente novamente.', 'danger'); return; }
+            user = res.user;
+          } else {
+            user = DB.cadastrarCliente(dados);
+            DB.setSession({ role: 'cliente', userId: user.id });
           }
-          const user = DB.cadastrarCliente(dados);
-          DB.setSession({ role: 'cliente', userId: user.id });
-          PU.toast('Conta criada com sucesso!', 'success');
-          if (sessionStorage.getItem('qf_pending_ad_draft')) {
-            global.navigate('/cliente/anuncie', true);
-            return;
-          }
-          const pendingCat=sessionStorage.getItem('qf_pending_category');
-          if(pendingCat){sessionStorage.removeItem('qf_pending_category');global.navigate('/cliente/novo-pedido/'+encodeURIComponent(pendingCat),true);return;}
-          global.navigate('/cliente/home', true);
+
+          if (!user || !user.id) { PU.toast('Não foi possível identificar seu acesso.', 'danger'); return; }
+
+          const endereco = {
+            rua: '', numero: '', bairro: '', complemento: '', cep: '',
+            cidade: cidade, uf: uf, cidadeId: null, latitude: null, longitude: null
+          };
+          const pedido = (global.QFCloud && global.QFCloud.enabled)
+            ? await global.QFCloud.createCall({
+                clienteId: user.id,
+                categoriaId: cat.id,
+                descricao: descricao,
+                fotos: [],
+                endereco: endereco,
+                prioridade: false,
+                prioridadeMetodo: 'pix'
+              })
+            : DB.criarPedido({
+                clienteId: user.id,
+                categoriaId: cat.id,
+                descricao: descricao,
+                fotos: [],
+                endereco: endereco,
+                prioridade: false,
+                prioridadeMetodo: 'pix'
+              });
+
+          try {
+            if (typeof global.fbq === 'function') {
+              global.fbq('track', 'Lead', {
+                content_name: 'QuemFaz Pedido de Serviço',
+                content_category: cat.id || 'servico'
+              });
+            }
+          } catch (_) {}
+
+          PU.toast('Pedido publicado grátis! Já estamos procurando profissionais.', 'success');
+          global.navigate('/cliente/pedido/' + pedido.id, true);
+        } catch (err) {
+          PU.toast('Não foi possível publicar o pedido. ' + (err && err.message ? err.message : ''), 'danger');
         } finally {
-          if (btn) btn.disabled = false;
+          if (btn) { btn.disabled = false; btn.innerHTML = originalBtn; }
         }
       });
     }
@@ -10620,7 +10689,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.36';
+  const APP_VERSION = '11.14.37';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
