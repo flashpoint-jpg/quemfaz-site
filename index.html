@@ -8478,7 +8478,6 @@ alt=""></noscript>
   function servicoCard(req) {
     const cat = DB.categoryById(req.categoriaId);
     const cliente = DB.clienteById(req.clienteId);
-    const contatoAprovado = !!(req.orcamento && req.orcamento.status === 'aprovado');
     return (
       '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/profissional/pedido/' + req.id + '">' +
         '<div class="row-between">' +
@@ -8496,6 +8495,7 @@ alt=""></noscript>
     if (!req || req.profissionalId !== user.id) return '<div class="view"><p class="text">Serviço não encontrado.</p></div>';
     const cat = DB.categoryById(req.categoriaId);
     const cliente = DB.clienteById(req.clienteId);
+    const contatoAprovado = !!(req.orcamento && req.orcamento.status === 'aprovado');
     return (
       '<div class="view">' +
         '<div class="row-between">' +
