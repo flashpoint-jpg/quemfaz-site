@@ -4543,6 +4543,15 @@ alt=""></noscript>
     if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     newPassword = String(newPassword || '');
     if (newPassword.length < 6) return { ok: false, error: 'A nova senha precisa ter pelo menos 6 caracteres.' };
+
+    // Guarda o e-mail antes da alteração. A troca administrativa de senha pode invalidar
+    // o refresh token atual; nesse caso entramos novamente automaticamente com a senha nova.
+    let email = '';
+    try {
+      const current = await client.auth.getUser();
+      email = String(current && current.data && current.data.user && current.data.user.email || '').trim();
+    } catch (_) {}
+
     const fn = await client.functions.invoke('quemfaz-password-control', {
       body: { action: 'self_change', password: newPassword }
     });
@@ -4552,9 +4561,41 @@ alt=""></noscript>
       return { ok: false, error: (detail && detail.error) || fn.error.message || 'Não foi possível atualizar a senha.' };
     }
     if (!fn.data || !fn.data.ok) return { ok: false, error: (fn.data && fn.data.error) || 'Não foi possível atualizar a senha.' };
-    try { await client.auth.refreshSession(); } catch (_) {}
+
+    if (!email && fn.data.email) email = String(fn.data.email).trim();
+
+    // V11.14.38: cria uma sessão nova imediatamente após a senha mudar.
+    // Evita o profissional receber "sessão inválida" depois de salvar a nova senha.
+    if (email) {
+      const relog = await client.auth.signInWithPassword({ email: email, password: newPassword });
+      if (relog.error || !relog.data || !relog.data.user || !relog.data.session) {
+        try { await client.auth.signOut(); } catch (_) {}
+        DB.setSession(null);
+        clearRuntimeData();
+        try { sessionStorage.removeItem('qf_force_password_change'); } catch (_) {}
+        return { ok: true, needsLogin: true };
+      }
+      try {
+        const p = await ensureProfile(relog.data.user, null, null);
+        const local = await syncLocalUser(relog.data.user, p.tipo);
+        DB.setSession({ role: p.tipo, userId: relog.data.user.id });
+        if (p.tipo === 'cliente') await syncClientCalls(relog.data.user.id); else await syncProfessionalCalls(relog.data.user.id);
+      } catch (e) {
+        console.warn('QuemFaz sessão após troca de senha', e);
+      }
+    } else {
+      const refreshed = await client.auth.refreshSession();
+      if (refreshed.error || !refreshed.data || !refreshed.data.session) {
+        try { await client.auth.signOut(); } catch (_) {}
+        DB.setSession(null);
+        clearRuntimeData();
+        try { sessionStorage.removeItem('qf_force_password_change'); } catch (_) {}
+        return { ok: true, needsLogin: true };
+      }
+    }
+
     try { sessionStorage.removeItem('qf_force_password_change'); } catch (_) {}
-    return { ok: true };
+    return { ok: true, needsLogin: false };
   }
 
   async function needsForcedPasswordChange() {
@@ -5984,6 +6025,11 @@ alt=""></noscript>
         if (!res.ok) { PU.toast(res.error || 'Não foi possível atualizar a senha.', 'danger'); return; }
         newPasswordSheetOpen = false;
         PU.closeSheet();
+        if (forced && res.needsLogin) {
+          PU.toast('Senha atualizada. Entre novamente com sua nova senha.', 'success');
+          global.navigate('/auth/profissional/login', true);
+          return;
+        }
         PU.toast('Senha atualizada com sucesso.', 'success');
         if (forced) {
           const sess = DB.getSession();
@@ -10689,7 +10735,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.37';
+  const APP_VERSION = '11.14.38';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
