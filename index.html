@@ -1298,7 +1298,8 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .tabbar__brand { display: none; }
 
 /* Celular: nomes de categoria não quebram no meio da palavra */
-.category-tile__label { overflow-wrap: break-word; word-break: normal; hyphens: manual; }
+.category-tile { overflow: hidden; }
+.category-tile__label { width:100%; max-width:100%; overflow-wrap:anywhere; word-break:normal; hyphens:auto; }
 @media (max-width: 400px) {
   .category-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -1750,7 +1751,10 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-catpick__group[open]>summary svg{transform:rotate(180deg)}
 .qf-catpick__chips{display:flex;flex-wrap:wrap;gap:8px;padding:2px 12px 12px}
 .qf-catpick .chip{min-height:34px;height:auto;padding:6px 12px;font-size:14px;line-height:1.2;white-space:normal;text-align:left}
-.qf-catpick__empty{font-size:13px;color:var(--text-secondary);padding:4px 2px}
+.qf-catpick__empty{font-size:13px;color:var(--text-secondary);padding:12px;border:1px dashed var(--border-strong,rgba(11,29,58,.2));border-radius:12px;background:var(--bg-sunken)}
+.qf-catpick__empty-title{font-size:14px;font-weight:850;color:var(--navy-900)}
+.qf-catpick__empty-text{margin-top:3px;line-height:1.4}
+.qf-catpick__add{width:100%;margin-top:9px}
 .qf-catpick [hidden]{display:none!important}
 /* cartão de anúncio da tela inicial */
 .qf-ad-cta{border:2px solid var(--orange-500)!important;background:var(--bg-surface)}
@@ -3509,18 +3513,64 @@ alt=""></noscript>
   }
   function firstName(s) { return String(s || '').trim().split(/\s+/)[0] || 'Usuário'; }
 
+  function mergeCloudCustomCategories(rows) {
+    let changed = false;
+    (rows || []).forEach(function (row) {
+      if (!row || !row.id || !row.nome) return;
+      let cat = DB.categoryById(row.id);
+      if (!cat) {
+        DB.state.categories.push({ id: row.id, nome: row.nome, icon: 'briefcase', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros', custom: true });
+        changed = true;
+      } else if (String(cat.id || '').indexOf('cat_custom_') === 0 && (cat.nome !== row.nome || !cat.custom)) {
+        cat.nome = row.nome; cat.icon = 'briefcase'; cat.leadTier = 'padrao'; cat.grupo = 'Outros'; cat.grupoId = 'outros'; cat.custom = true;
+        changed = true;
+      }
+    });
+    if (changed) DB.persist();
+  }
+  async function syncCustomCategories() {
+    if (!client) return [];
+    const res = await client.from('qf_categorias_personalizadas').select('id,nome').order('nome', { ascending: true });
+    if (res.error) throw res.error;
+    mergeCloudCustomCategories(res.data || []);
+    return res.data || [];
+  }
+  async function ensureCustomCategories(items, userId) {
+    if (!client || !Array.isArray(items) || !items.length) return [];
+    const saved = [];
+    for (const item of items) {
+      const cat = customCatFromName(item && item.nome);
+      if (!cat) continue;
+      if (item && item.id && String(item.id).indexOf('cat_custom_') === 0) cat.id = item.id;
+      const found = await client.from('qf_categorias_personalizadas').select('id,nome').eq('id', cat.id).maybeSingle();
+      if (found.error) throw found.error;
+      if (found.data) { saved.push(found.data); continue; }
+      const ins = await client.from('qf_categorias_personalizadas').insert({ id: cat.id, nome: cat.nome, criado_por: userId }).select('id,nome').single();
+      if (ins.error) {
+        if (String(ins.error.code || '') === '23505') {
+          const race = await client.from('qf_categorias_personalizadas').select('id,nome').eq('id', cat.id).maybeSingle();
+          if (race.error) throw race.error;
+          if (race.data) saved.push(race.data);
+        } else throw ins.error;
+      } else if (ins.data) saved.push(ins.data);
+    }
+    mergeCloudCustomCategories(saved);
+    return saved;
+  }
+
   async function ensureProfile(user, expectedRole, signupData) {
     if (!client || !user) throw new Error('Supabase indisponível.');
-    const existing = await client.from('qf_profiles').select('*').eq('id', user.id).maybeSingle();
-    if (existing.error) throw existing.error;
-    if (existing.data) return existing.data;
-
     const meta = user.user_metadata || {};
+    const data = signupData || {};
     const role = expectedRole || meta.qf_role;
     if (role !== 'cliente' && role !== 'profissional') {
       throw new Error('Perfil do QuemFaz não identificado para esta conta.');
     }
-    const data = signupData || {};
+    const customCats = data.categoriasPersonalizadas || meta.qf_categorias_personalizadas || [];
+    if (role === 'profissional' && Array.isArray(customCats) && customCats.length) await ensureCustomCategories(customCats, user.id);
+    const existing = await client.from('qf_profiles').select('*').eq('id', user.id).maybeSingle();
+    if (existing.error) throw existing.error;
+    if (existing.data) return existing.data;
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || meta.qf_cidade || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || meta.qf_uf || '').trim().toUpperCase() || null;
@@ -3560,6 +3610,7 @@ alt=""></noscript>
   }
 
   async function syncLocalUser(user, roleHint) {
+    try { await syncCustomCategories(); } catch (e) { console.warn('QuemFaz categorias personalizadas', e); }
     const pRes = await client.from('qf_profiles').select('*').eq('id', user.id).single();
     if (pRes.error) throw pRes.error;
     const p = pRes.data;
@@ -4236,6 +4287,7 @@ alt=""></noscript>
       qf_cidade: cityName,
       qf_uf: cityUf,
       qf_categorias: data.categorias || [],
+      qf_categorias_personalizadas: data.categoriasPersonalizadas || [],
       qf_raio_km: data.raioKm || 10
     };
     if (data.cpf) { try { localStorage.setItem(pendingCpfKey(email), data.cpf); } catch (_) {} }
@@ -4645,10 +4697,11 @@ alt=""></noscript>
     return p;
   }
 
-  async function saveProfessionalSettings(categorias, areas) {
+  async function saveProfessionalSettings(categorias, areas, categoriasPersonalizadas) {
     const uRes = await client.auth.getUser();
     if (uRes.error || !uRes.data.user) throw new Error('Sessão expirada.');
     const uid = uRes.data.user.id;
+    await ensureCustomCategories(categoriasPersonalizadas || [], uid);
     const cleanAreas = (areas || []).map(function (a) {
       return {
         cidade: String(a.cidade || '').trim(),
@@ -5355,27 +5408,52 @@ alt=""></noscript>
   // V11.5.0: escolha de profissões em grupos recolhíveis, com busca e resumo das selecionadas.
   const CAT_GROUPS = [['casa','Casa e reforma'],['limpeza','Limpeza e cuidados da casa'],['instalacoes','Elétrica, hidráulica e gás'],['tecnica','Assistência técnica'],['auto','Automotivo'],['transporte','Transporte e mudanças'],['beleza','Beleza e bem-estar'],['pets','Pets'],['aulas','Aulas e eventos'],['outros','Outros']];
   function catNorm(v) { return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function customCatFromName(v) {
+    const nome = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (nome.length < 2) return null;
+    const key = catNorm(nome).replace(/\s+/g, ' ').trim();
+    let hash = 2166136261;
+    for (let i = 0; i < key.length; i++) { hash ^= key.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+    const slug = key.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 38) || 'servico';
+    return { id: 'cat_custom_' + slug + '_' + (hash >>> 0).toString(36), nome: nome, icon: 'briefcase', leadTier: 'padrao', grupo: 'Outros', grupoId: 'outros', custom: true };
+  }
+  function rememberCustomCat(cat) {
+    if (!cat) return null;
+    let found = DB.categories().find(function (c) { return c.id === cat.id || (c.id !== 'cat_outros' && catNorm(c.nome).trim() === catNorm(cat.nome).trim()); });
+    if (found) {
+      if (String(found.id || '').indexOf('cat_custom_') === 0) {
+        found.nome = cat.nome; found.icon = 'briefcase'; found.leadTier = 'padrao'; found.grupo = 'Outros'; found.grupoId = 'outros'; found.custom = true;
+        DB.persist();
+      }
+      return found;
+    }
+    DB.state.categories.push(cat);
+    DB.persist();
+    return cat;
+  }
   function catPickerHtml(id, selectedIds) {
     const sel = selectedIds || [];
-    const all = DB.categories();
+    const all = DB.categories().filter(function (c) { return c.id !== 'cat_outros'; });
     const known = CAT_GROUPS.map(function (g) { return g[0]; });
     const groups = CAT_GROUPS.map(function (g) {
       const list = all.filter(function (c) { return (known.indexOf(c.grupoId) === -1 ? 'outros' : c.grupoId) === g[0]; });
       if (!list.length) return '';
       return '<details class="qf-catpick__group" data-catpick-group="' + g[0] + '"><summary><span class="qf-catpick__gname">' + PU.escapeHtml(g[1]) + '</span><span class="qf-catpick__count" data-catpick-count></span>' + icon('chevronDown') + '</summary>' +
         '<div class="qf-catpick__chips">' + list.map(function (c) {
-          return '<button type="button" class="chip' + (sel.indexOf(c.id) !== -1 ? ' is-selected' : '') + '" data-chip-cat="' + c.id + '" data-cat-search="' + PU.escapeHtml(catNorm(c.nome)) + '">' + PU.escapeHtml(c.nome) + '</button>';
+          const customAttr = (c.custom || String(c.id || '').indexOf('cat_custom_') === 0) ? ' data-cat-custom-name="' + PU.escapeHtml(c.nome) + '"' : '';
+          return '<button type="button" class="chip' + (sel.indexOf(c.id) !== -1 ? ' is-selected' : '') + '" data-chip-cat="' + c.id + '" data-cat-search="' + PU.escapeHtml(catNorm(c.nome)) + '"' + customAttr + '>' + PU.escapeHtml(c.nome) + '</button>';
         }).join('') + '</div></details>';
     }).join('');
     return '<div class="qf-catpick" id="' + id + '">' +
       '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar profissão" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
       '<div class="qf-catpick__summary" data-catpick-summary aria-live="polite"></div>' +
-      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden>Nenhuma profissão encontrada. Tente outro nome ou escolha "Outros serviços".</div></div>';
+      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Não encontrou sua profissão?</div><div class="qf-catpick__empty-text">Digite o nome do serviço acima e adicione sua própria categoria.</div><button class="btn btn--outline qf-catpick__add" type="button" data-catpick-add>Adicionar categoria</button></div></div>';
   }
   function bindCatPicker(root) {
     if (!root || root.dataset.catpickBound) return;
     root.dataset.catpickBound = '1';
     const search = root.querySelector('[data-catpick-search]');
+    const addBtn = root.querySelector('[data-catpick-add]');
     function update() {
       const selected = Array.prototype.slice.call(root.querySelectorAll('[data-chip-cat].is-selected'));
       Array.prototype.forEach.call(root.querySelectorAll('[data-catpick-group]'), function (g) {
@@ -5416,6 +5494,41 @@ alt=""></noscript>
     }
     root.qfAutoPick = autoPick;
     root.qfHighlight = highlight;
+    root.qfCustomCategories = function () {
+      return Array.prototype.map.call(root.querySelectorAll('[data-chip-cat].is-selected[data-cat-custom-name]'), function (chip) {
+        const cat = customCatFromName(chip.getAttribute('data-cat-custom-name') || chip.textContent);
+        if (cat) cat.id = chip.getAttribute('data-chip-cat') || cat.id;
+        return cat;
+      }).filter(Boolean);
+    };
+    function addTypedCategory() {
+      const cat = customCatFromName(search && search.value);
+      if (!cat) { PU.toast('Digite o nome do serviço para adicionar.', 'danger'); return false; }
+      const exactChip = Array.prototype.find.call(root.querySelectorAll('[data-chip-cat]'), function (chip) {
+        return catNorm(chip.textContent).trim() === catNorm(cat.nome).trim();
+      });
+      if (exactChip) {
+        if (!exactChip.classList.contains('is-selected')) exactChip.click();
+        exactChip.closest('[data-catpick-group]').open = true;
+        search.blur();
+        return true;
+      }
+      const saved = rememberCustomCat(cat);
+      const group = root.querySelector('[data-catpick-group="outros"]');
+      const wrap = group && group.querySelector('.qf-catpick__chips');
+      if (!group || !wrap) { PU.toast('Não foi possível adicionar a categoria agora.', 'danger'); return false; }
+      const chip = document.createElement('button');
+      chip.type = 'button'; chip.className = 'chip'; chip.setAttribute('data-chip-cat', saved.id);
+      chip.setAttribute('data-cat-search', catNorm(saved.nome)); chip.setAttribute('data-cat-custom-name', saved.nome); chip.textContent = saved.nome;
+      wrap.appendChild(chip);
+      filter();
+      group.open = true;
+      chip.click();
+      search.blur();
+      PU.toast('Categoria "' + saved.nome + '" adicionada.', 'success');
+      return true;
+    }
+    root.qfAddTypedCategory = addTypedCategory;
     function filter() {
       const q = catNorm(search.value).trim();
       let any = false;
@@ -5430,7 +5543,13 @@ alt=""></noscript>
         if (q) g.open = hits > 0; else g.open = false;
         if (hits) any = true;
       });
-      root.querySelector('[data-catpick-empty]').hidden = any;
+      const empty = root.querySelector('[data-catpick-empty]');
+      empty.hidden = any || !q;
+      if (addBtn) {
+        const typed = String(search.value || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+        addBtn.disabled = typed.length < 2;
+        addBtn.textContent = typed ? 'Adicionar "' + typed + '"' : 'Adicionar categoria';
+      }
       update();
     }
     search.addEventListener('input', filter);
@@ -5438,9 +5557,11 @@ alt=""></noscript>
       if (e.key === 'Enter' || e.keyCode === 13) {
         e.preventDefault();
         if (visibleChips().length === 1) autoPick();
+        else if (visibleChips().length === 0) addTypedCategory();
         search.blur();
       }
     });
+    if (addBtn) addBtn.addEventListener('click', addTypedCategory);
     root.addEventListener('click', function (e) { if (e.target.closest('[data-chip-cat]')) setTimeout(update, 0); });
     update();
   }
@@ -5952,11 +6073,12 @@ alt=""></noscript>
           complemento: String(fd.get('complemento') || '').trim(),
           latitude: Number(fd.get('latitude')) || null, longitude: Number(fd.get('longitude')) || null
         };
+        const customCategories = chipsWrap.qfCustomCategories ? chipsWrap.qfCustomCategories() : [];
         const dados = {
           nome: fd.get('nome').trim(), email: String(fd.get('email') || '').trim().toLowerCase(), senha: fd.get('senha'), telefone: fd.get('telefone').trim(),
           tipoPessoa: tipoPessoa, nomeFantasia: nomeFantasia,
           cpf: tipoPessoa === 'cpf' ? documento : '', cnpj: tipoPessoa === 'cnpj' ? documento : '',
-          categorias: selected, cidade: enderecoProf.cidade, uf: enderecoProf.uf, cep: enderecoProf.cep, endereco: enderecoProf,
+          categorias: selected, categoriasPersonalizadas: customCategories, cidade: enderecoProf.cidade, uf: enderecoProf.uf, cep: enderecoProf.cep, endereco: enderecoProf,
           latitude: enderecoProf.latitude, longitude: enderecoProf.longitude, raioKm: Number(fd.get('raioKm')),
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
           selfieData: selfieData
@@ -9764,6 +9886,7 @@ alt=""></noscript>
       const categorias = Array.prototype.map.call(chips.querySelectorAll('[data-chip-cat].is-selected'), function (chip) {
         return chip.getAttribute('data-chip-cat');
       });
+      const categoriasPersonalizadas = chips.qfCustomCategories ? chips.qfCustomCategories() : [];
       if (!categorias.length) {
         if (chips.qfHighlight) chips.qfHighlight();
         PU.toast('Toque na sua profissão na lista para marcar (ela fica destacada). Só digitar na busca não marca.', 'danger');
@@ -9774,7 +9897,7 @@ alt=""></noscript>
       btn.disabled = true;
       try {
         if (global.QFCloud && global.QFCloud.enabled) {
-          const updated = await global.QFCloud.saveProfessionalSettings(categorias, areas);
+          const updated = await global.QFCloud.saveProfessionalSettings(categorias, areas, categoriasPersonalizadas);
           updated.taxaVisitaPadrao = PU.parseCurrencyInput(content.querySelector('#perfil-taxa').value);
         } else {
           const first = areas[0];
@@ -9810,7 +9933,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.13';
+  const APP_VERSION = '11.14.14';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
