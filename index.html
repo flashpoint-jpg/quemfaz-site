@@ -1199,6 +1199,9 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .ad-carousel::-webkit-scrollbar { display:none; }
 .ad-card { flex:0 0 88%; min-height:176px; border-radius:20px; overflow:hidden; position:relative; scroll-snap-align:start; border:1px solid var(--border-subtle); background:var(--navy-900); box-shadow:var(--shadow-card); color:#fff; text-align:left; padding:0; }
 .ad-card__media { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.5; }
+.ad-card--premium-art { flex:0 0 100%!important; min-height:0; aspect-ratio:16/9; border:2px solid var(--orange-500); border-radius:22px; background:var(--navy-900); box-shadow:0 14px 32px rgba(8,20,40,.24),0 0 0 1px rgba(224,99,15,.18); }
+.ad-card--premium-art .ad-card__media { opacity:1; object-fit:cover; }
+.ad-card--premium-art:active { transform:scale(.995); }
 .ad-card__veil { position:absolute; inset:0; background:linear-gradient(90deg,rgba(8,20,40,.94) 0%,rgba(8,20,40,.76) 52%,rgba(8,20,40,.28) 100%); }
 .ad-card__body { position:relative; z-index:2; padding:18px; min-height:176px; display:flex; flex-direction:column; justify-content:flex-end; align-items:flex-start; }
 .ad-card__sponsor { display:inline-flex; align-items:center; gap:5px; border:1px solid rgba(255,255,255,.28); background:rgba(255,255,255,.1); padding:5px 8px; border-radius:999px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; margin-bottom:auto; }
@@ -6272,6 +6275,12 @@ alt=""></noscript>
     const ads = DB.activeAdsForCity(cityId);
     const cards = ads.length ? ads.map(function (a) {
       const href = safeAdHref(a);
+      const premiumArt = !!(a.fixo && a.plano === 'premium' && a.imagem);
+      if (premiumArt) {
+        return '<button class="ad-card ad-card--premium-art" type="button" aria-label="' + PU.escapeHtml(a.empresa + ' · Clique para falar conosco') + '" data-ad-click="' + a.id + '" data-ad-href="' + PU.escapeHtml(href) + '">' +
+          '<img class="ad-card__media" src="' + a.imagem + '" alt="' + PU.escapeHtml(a.empresa) + '">' +
+        '</button>';
+      }
       return '<button class="ad-card" type="button" data-ad-click="' + a.id + '" data-ad-href="' + PU.escapeHtml(href) + '">' +
         (a.imagem ? '<img class="ad-card__media" src="' + a.imagem + '" alt="Anúncio de ' + PU.escapeHtml(a.empresa) + '">' : '') +
         '<span class="ad-card__veil"></span><span class="ad-card__body">' +
@@ -9948,7 +9957,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.15';
+  const APP_VERSION = '11.14.16';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
