@@ -4941,6 +4941,7 @@ Screens.adminDashboardRender = function () {
   }
   Screens.adminProfissionaisRender = function () {
     const list = DB.state.users.profissionais;
+    const novosProf = list.filter(ehCadastroNovo).length;
     if (!list.length) return '<div class="view">' + migrationBanner() + '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('users') + '</div><p class="text text--secondary">Nenhum profissional cadastrado ainda.</p></div></div>';
     const groups = {};
     list.forEach(function (p) {
@@ -4959,18 +4960,10 @@ Screens.adminDashboardRender = function () {
     '</div>';
     return (
       '<div class="view">' + migrationBanner() +
-        '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
+        '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
         '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
         chips +
-        (function () {
-          if (profCidadeFiltro !== 'todas') return '';
-          const novos = list.filter(ehCadastroNovo).sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); });
-          if (!novos.length) return '';
-          return '<section class="qf-prof-city">' +
-            '<div class="qf-prof-city__head"><div class="h3">🆕 Cadastros novos</div><span class="text--sm text--secondary">' + novos.length + ' nas últimas ' + NOVO_HORAS + 'h · mais recente primeiro</span></div>' +
-            '<div class="stack--sm">' + novos.map(profCard).join('') + '</div>' +
-          '</section>';
-        })() +
+        '' +
         (visiveis.length ? visiveis.map(function (g) {
           const online = g.todos.filter(function (p) { return p.online; }).length;
           return '<section class="qf-prof-city">' +
@@ -5214,7 +5207,7 @@ Screens.adminDashboardRender = function () {
     return (bv ? '<div style="margin-bottom:8px;">' + bv + '</div>' : '') + '<div class="qf-crud-row">' +
       (h ? '<a class="btn btn--outline btn--sm qf-wa-btn" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + ' WhatsApp</a>' : '') +
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="' + tipo + ':' + id + '">' + icon('edit') + ' Editar</button>' +
-      (tipo === 'cliente' ? '<button type="button" class="btn btn--outline btn--sm" data-cliente-senha="' + id + '">Alterar senha</button>' : '') +
+      ((tipo === 'cliente' || tipo === 'profissional') ? '<button type="button" class="btn btn--outline btn--sm" data-user-senha="' + tipo + ':' + id + '">Alterar senha</button>' : '') +
       '<button type="button" class="btn btn--outline btn--sm qf-crud-del" data-crud-del="' + tipo + ':' + id + '">' + icon('trash') + ' ' + (excluirLabel || 'Excluir') + '</button>' +
     '</div>';
   }
@@ -5223,9 +5216,17 @@ Screens.adminDashboardRender = function () {
     const ed = e.target.closest && e.target.closest('[data-crud-edit]');
     const dl = e.target.closest && e.target.closest('[data-crud-del]');
     const bulk = e.target.closest && e.target.closest('[data-crud-bulk]');
-    if (!ed && !dl && !bulk) return;
+    const senhaBtn = e.target.closest && e.target.closest('[data-user-senha]');
+    if (!ed && !dl && !bulk && !senhaBtn) return;
     e.preventDefault(); e.stopPropagation();
     if (!cloudOn()) { PU.toast('Disponível com o painel conectado ao Supabase.', 'danger'); return; }
+    if (senhaBtn) {
+      const p = String(senhaBtn.getAttribute('data-user-senha') || '').split(':');
+      const tipoSenha = p[0], idSenha = p[1];
+      const usuarioSenha = tipoSenha === 'profissional' ? DB.profissionalById(idSenha) : DB.clienteById(idSenha);
+      abrirSenhaUsuario(usuarioSenha, tipoSenha);
+      return;
+    }
     if (bulk) {
       const ids = String(bulk.getAttribute('data-crud-bulk') || '').split(',').filter(Boolean);
       if (!ids.length) return;
@@ -6117,12 +6118,13 @@ Screens.adminDashboardRender = function () {
     });
   }
 
-  function abrirSenhaCliente(c) {
-    if (!c) return;
+  function abrirSenhaUsuario(u, tipo) {
+    if (!u) return;
+    const rotulo = tipo === 'profissional' ? 'profissional' : 'cliente';
     PU.openSheet(
-      '<div class="stack"><h3 class="sheet__title">Alterar senha do cliente</h3>' +
-      '<p class="text text--secondary">Defina uma senha temporária para <b>' + PU.escapeHtml(c.nome || 'este cliente') + '</b>. Depois de entrar com ela, o cliente será obrigado a criar uma nova senha antes de usar o QuemFaz.</p>' +
-      '<div class="card card--tight"><div class="text--sm text--secondary"><b>E-mail:</b> ' + PU.escapeHtml(c.email || 'Não informado') + '</div></div>' +
+      '<div class="stack"><h3 class="sheet__title">Alterar senha</h3>' +
+      '<p class="text text--secondary">Defina uma senha temporária para <b>' + PU.escapeHtml(u.nome || 'este usuário') + '</b>. Depois de entrar com ela, o ' + rotulo + ' será obrigado a criar uma nova senha antes de usar o QuemFaz.</p>' +
+      '<div class="card card--tight"><div class="text--sm text--secondary"><b>E-mail:</b> ' + PU.escapeHtml(u.email || 'Não informado') + '</div></div>' +
       '<form id="qf-admin-password-form" class="stack">' +
       '<label class="field"><span class="field__label">Senha temporária</span><input class="input" type="password" name="senha" minlength="6" autocomplete="new-password" required placeholder="Mínimo 6 caracteres"></label>' +
       '<label class="field"><span class="field__label">Confirmar senha</span><input class="input" type="password" name="confirmar" minlength="6" autocomplete="new-password" required placeholder="Digite novamente"></label>' +
@@ -6144,9 +6146,9 @@ Screens.adminDashboardRender = function () {
       const btn = form.querySelector('button[type="submit"]');
       if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
       try {
-        await global.QFAdminCloud.setTemporaryPassword(c.id, senha);
+        await global.QFAdminCloud.setTemporaryPassword(u.id, senha);
         PU.closeSheet();
-        PU.toast('Senha temporária alterada. No próximo acesso o cliente deverá criar uma nova senha.', 'success');
+        PU.toast('Senha temporária alterada. No próximo acesso será obrigatório criar uma nova senha.', 'success');
       } catch (err) {
         PU.toast((err && err.message) || 'Não foi possível alterar a senha.', 'danger');
       } finally {
@@ -6157,13 +6159,6 @@ Screens.adminDashboardRender = function () {
 
   function bindClientes(content) {
     content.addEventListener('click', function (e) {
-      const pass = e.target.closest('[data-cliente-senha]');
-      if (pass) {
-        const cliente = DB.clienteById(pass.getAttribute('data-cliente-senha'));
-        if (!cloudOn()) { PU.toast('Disponível com o painel conectado ao Supabase.', 'danger'); return; }
-        abrirSenhaCliente(cliente);
-        return;
-      }
       const el = e.target.closest('[data-toggle-cliente]');
       if (!el) return;
       const id = el.getAttribute('data-toggle-cliente');
