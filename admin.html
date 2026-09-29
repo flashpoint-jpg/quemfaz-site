@@ -4762,7 +4762,45 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (!cloudOn() || global.QFAdminCloud.snapshotOk !== false) return '';
     return '<div class="card card--tight" style="background:var(--warning-100);border:none;margin-bottom:12px;"><div class="text--strong" style="color:var(--warning-600);">Não foi possível carregar os dados do painel</div><div class="text--sm" style="color:var(--warning-600);">Atualize a página. Se continuar, verifique a conexão com o banco de dados.</div></div>';
   }
-  Screens.adminDashboardRender = function () {
+  
+  // V12.4 — resumo operacional: quem pediu e quem aceitou.
+  function adminPedidoResumoCard(r) {
+    const cat = DB.categoryById(r.categoriaId);
+    const cliente = DB.clienteById(r.clienteId);
+    const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
+    const pedido = String(r.titulo || r.descricao || 'Sem descrição').trim();
+    const resumo = pedido.length > 110 ? pedido.slice(0, 107) + '...' : pedido;
+    const cidade = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
+    return '<button type="button" class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/servicos/' + r.id + '">' +
+      '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
+        '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
+          '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente && cliente.nome) || 'Não identificado') + '</div>' +
+          '<div class="text--sm text--secondary"><b>Aceitou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
+        '</div></div>' +
+        icon('chevronRight', 'list-item__chevron') +
+      '</div>' +
+      '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
+      '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
+        '<div>' + statusBadge(r.status) + '</div>' +
+        '<div class="text--sm text--muted text-right">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
+      '</div>' +
+    '</button>';
+  }
+
+  function adminPedidosRecentesHtml() {
+    const list = DB.allRequests().slice().sort(function (a, b) {
+      return (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0);
+    }).slice(0, 5);
+    if (!list.length) return '';
+    return '<div class="section">' +
+      '<div class="section-head"><div><h2 class="h3">Últimos pedidos</h2><div class="text--sm text--secondary">Veja rapidamente quem pediu e quem aceitou.</div></div></div>' +
+      '<div class="stack--sm">' + list.map(adminPedidoResumoCard).join('') + '</div>' +
+      '<button type="button" class="btn btn--outline" data-nav="/admin/servicos" style="margin-top:10px;">Ver todos os serviços</button>' +
+    '</div>';
+  }
+
+Screens.adminDashboardRender = function () {
     const s = DB.dashboardStats();
     const meta = DB.state.meta || {};
     return (
@@ -4779,6 +4817,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           kpi(s.concluidos, 'Concluídos') +
           kpi(s.cancelados, 'Cancelados') +
         '</div>' +
+
+        adminPedidosRecentesHtml() +
 
         '<div class="section">' +
           '<div class="card stack--sm">' +
@@ -5263,15 +5303,27 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return bulk + '<div class="stack--sm">' + list.map(function (r) {
       const cat = DB.categoryById(r.categoriaId);
       const cliente = DB.clienteById(r.clienteId);
+      const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
       const lugar = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
+      const pedido = String(r.titulo || r.descricao || 'Sem descrição').trim();
+      const resumo = pedido.length > 130 ? pedido.slice(0, 127) + '...' : pedido;
       return '<div class="card" style="padding:0;overflow:hidden;">' +
         '<button type="button" class="qf-crud-open" data-nav="/admin/servicos/' + r.id + '">' +
-        '<div class="row-between">' +
-          '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : '') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(((cliente || {}).nome || '') + (lugar ? ' · ' + lugar : '') + ' · ' + PU.formatDateTime(r.criadoEm)) + '</div></div></div>' +
-          icon('chevronRight', 'list-item__chevron') +
-        '</div>' +
-        '<div style="margin-top:10px;">' + statusBadge(r.status) + '</div>' +
-      '</button>' + (cloudOn() ? '<div style="padding:0 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') + '</div>';
+          '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
+            '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
+              '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
+              '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</div>' +
+              '<div class="text--sm text--secondary"><b>Quem aceitou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
+            '</div></div>' +
+            icon('chevronRight', 'list-item__chevron') +
+          '</div>' +
+          '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
+          '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
+            '<div>' + statusBadge(r.status) + '</div>' +
+            '<div class="text--sm text--muted text-right">' + (lugar ? PU.escapeHtml(lugar) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
+          '</div>' +
+        '</button>' + (cloudOn() ? '<div style="padding:0 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') +
+      '</div>';
     }).join('') + '</div>';
   }
 
@@ -5281,47 +5333,78 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const cat = DB.categoryById(r.categoriaId);
     const cliente = DB.clienteById(r.clienteId);
     const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
+    const end = r.endereco || {};
+    const cidadeUf = [end.cidade || '', end.uf || ''].filter(Boolean).join('/');
+    const endereco = [end.rua || '', end.bairro || '', cidadeUf].filter(Boolean).join(' · ') || 'Não informado';
+    const aceitoEm = r.leadUnlock && r.leadUnlock.criadoEm ? PU.formatDateTime(r.leadUnlock.criadoEm) : (prof ? PU.formatDateTime(r.atualizadoEm || r.criadoEm) : '—');
+    const pedidoTitulo = r.titulo || (cat ? cat.nome : 'Serviço');
+
     return (
       '<div class="view">' +
-        '<div class="row-between">' +
-          '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : '') + '</div></div>' +
+        '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
+          '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--muted" style="margin-top:2px;">Pedido ' + PU.escapeHtml(r.id) + '</div></div></div>' +
           statusBadge(r.status) +
         '</div>' +
 
-        '<div class="section card stack--sm">' +
-          rowInfo('Cliente', (cliente || {}).nome || '—') +
-          (cliente && cliente.telefone ? rowInfoHtml('WhatsApp do cliente', waLink(cliente.telefone)) : '') +
-          rowInfo('Profissional', prof ? prof.nome : 'Não atribuído') +
-          (prof && prof.telefone ? rowInfoHtml('WhatsApp do profissional', waLink(prof.telefone)) : '') +
-          rowInfo('Endereço', r.endereco.rua + ', ' + r.endereco.bairro) +
-          rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Quem fez o pedido</h2></div>' +
+          '<div class="card stack--sm">' +
+            rowInfo('Cliente', (cliente || {}).nome || 'Não identificado') +
+            (cliente && cliente.email ? rowInfo('E-mail do cliente', cliente.email) : '') +
+            (cliente && cliente.telefone ? rowInfoHtml('WhatsApp do cliente', waLink(cliente.telefone)) : '') +
+            rowInfo('Cliente ID', r.clienteId || '—') +
+          '</div>' +
         '</div>' +
 
-        '<div class="section card stack--sm"><p class="text text--sm text--secondary">' + PU.escapeHtml(r.descricao) + '</p></div>' +
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Quem aceitou</h2></div>' +
+          '<div class="card stack--sm" style="' + (prof ? 'border-left:4px solid var(--success-600,#16a34a);' : 'border-left:4px solid var(--orange-500,#f97316);') + '">' +
+            rowInfo('Profissional', prof ? prof.nome : 'Ainda nenhum profissional aceitou') +
+            (prof && prof.email ? rowInfo('E-mail do profissional', prof.email) : '') +
+            (prof && prof.telefone ? rowInfoHtml('WhatsApp do profissional', waLink(prof.telefone)) : '') +
+            (prof ? rowInfo('Profissional ID', prof.id || r.profissionalId || '—') : '') +
+            rowInfo('Aceito / conectado em', aceitoEm) +
+          '</div>' +
+        '</div>' +
+
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Detalhes do pedido</h2></div>' +
+          '<div class="card stack--sm">' +
+            rowInfo('Serviço solicitado', pedidoTitulo) +
+            rowInfo('Categoria', cat ? cat.nome : '—') +
+            rowInfo('Local', endereco) +
+            rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
+            rowInfo('Última atualização', PU.formatDateTime(r.atualizadoEm || r.criadoEm)) +
+          '</div>' +
+          '<div class="card" style="margin-top:10px;"><div class="text--sm text--secondary" style="margin-bottom:5px;">Descrição do cliente</div><p class="text text--sm" style="white-space:pre-wrap;">' + PU.escapeHtml(r.descricao || 'Sem descrição informada.') + '</p></div>' +
+        '</div>' +
 
         (r.orcamento ? (
-          '<div class="section card stack--sm">' +
+          '<div class="section"><div class="section-head"><h2 class="h3">Orçamento</h2></div><div class="card stack--sm">' +
             rowInfo('Mão de obra', PU.formatCurrency(r.orcamento.maoDeObra)) +
             rowInfo('Material', PU.formatCurrency(r.orcamento.material)) +
+            rowInfo('Taxa de visita', PU.formatCurrency(r.taxaVisita || 0)) +
             rowInfo('Total', PU.formatCurrency(r.orcamento.total + (r.taxaVisita || 0))) +
-          '</div>'
+          '</div></div>'
         ) : '') +
 
         (r.leadUnlock ? (
-          '<div class="section card stack--sm" style="background:var(--success-100);border:none;">' +
-            rowInfo('Desbloqueio do chamado', PU.formatCurrency(r.leadUnlock.valor)) +
-            rowInfo('Pago pelo profissional', (DB.profissionalById(r.leadUnlock.profissionalId) || {}).nome || '—') +
-          '</div>'
+          '<div class="section"><div class="section-head"><h2 class="h3">Aceite / desbloqueio</h2></div><div class="card stack--sm" style="background:var(--success-100);border:none;">' +
+            rowInfo('Valor do desbloqueio', PU.formatCurrency(r.leadUnlock.valor || 0)) +
+            rowInfo('Profissional', (DB.profissionalById(r.leadUnlock.profissionalId) || prof || {}).nome || '—') +
+            rowInfo('Data do aceite', PU.formatDateTime(r.leadUnlock.criadoEm || r.atualizadoEm || r.criadoEm)) +
+          '</div></div>'
         ) : '') +
+
         (r.pagamentoPrioridade ? '<div class="section card stack--sm" style="background:var(--warning-100);border:none;">' + rowInfo('Prioridade do cliente', PU.formatCurrency(r.pagamentoPrioridade.valor)) + '</div>' : '') +
 
         (r.status === STATUS.CANCELADO ? '<div class="section card stack--sm" style="background:var(--danger-100);border:none;">' + rowInfo('Cancelado por', r.canceladoPor || '—') + rowInfo('Motivo', r.motivoCancelamento || '—') + '</div>' : '') +
 
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Histórico</h2></div>' +
-          '<div class="card stack--sm">' + (r.historico || []).map(function (h) {
-            return '<div class="row-between"><span class="text--sm">' + PU.escapeHtml(h.texto) + '</span><span class="text--sm text--muted">' + PU.formatDateTime(h.quando) + '</span></div>';
-          }).join('') + '</div>' +
+          '<div class="card stack--sm">' + ((r.historico || []).length ? (r.historico || []).map(function (h) {
+            return '<div class="row-between" style="gap:10px;align-items:flex-start;"><span class="text--sm">' + PU.escapeHtml(h.texto || '') + '</span><span class="text--sm text--muted text-right">' + PU.escapeHtml(PU.formatDateTime(h.quando)) + '</span></div>';
+          }).join('') : '<div class="text--sm text--secondary">Sem eventos registrados.</div>') + '</div>' +
         '</div>' +
         (cloudOn() ? '<div class="section">' + acoesHtml('servico', r.id, 'Excluir serviço') + '</div>' : '') +
       '</div>'
