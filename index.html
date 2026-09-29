@@ -3143,9 +3143,8 @@ alt=""></noscript>
     const req = requestById(requestId);
     if (!req) return null;
     req.avaliacaoCliente = { nota: nota, comentario: comentario || '', criadoEm: nowIso() };
-    req.status = STATUS.FINALIZADO;
     req.atualizadoEm = nowIso();
-    req.historico.push(historicoItem('Cliente avaliou o serviço com nota ' + nota));
+    req.historico.push(historicoItem('Cliente finalizou e avaliou o serviço com nota ' + nota));
     state.reviews.push({ id: PU.uid('rev'), requestId: req.id, de: 'cliente', profissionalId: req.profissionalId, nota: nota, comentario: comentario || '', criadoEm: nowIso() });
     const prof = profissionalById(req.profissionalId);
     if (prof) {
@@ -3155,6 +3154,7 @@ alt=""></noscript>
       prof.avaliacaoMedia = ((media * total) + nota) / novoTotal;
       prof.totalAvaliacoes = novoTotal;
     }
+    if (req.avaliacaoProfissional) req.status = STATUS.FINALIZADO;
     persist();
     return req;
   }
@@ -3163,7 +3163,8 @@ alt=""></noscript>
     const req = requestById(requestId);
     if (!req) return null;
     req.avaliacaoProfissional = { nota: nota, comentario: comentario || '', criadoEm: nowIso() };
-    req.historico.push(historicoItem('Profissional avaliou o cliente com nota ' + nota));
+    req.historico.push(historicoItem('Profissional finalizou e avaliou o cliente com nota ' + nota));
+    if (req.avaliacaoCliente) req.status = STATUS.FINALIZADO;
     persist();
     return req;
   }
@@ -3923,9 +3924,12 @@ alt=""></noscript>
       if (!req) return;
       const local = { id: a.id, nota: Number(a.nota || 0), comentario: a.comentario || '', criadoEm: a.criado_em };
       if (a.autor_tipo === 'profissional') req.avaliacaoProfissional = local;
-      else {
-        req.avaliacaoCliente = local;
-        if (req.status === DB.STATUS.SERVICO_CONCLUIDO || req.status === DB.STATUS.PAGO) req.status = DB.STATUS.FINALIZADO;
+      else req.avaliacaoCliente = local;
+    });
+    reqs.forEach(function (req) {
+      if (req.avaliacaoCliente && req.avaliacaoProfissional &&
+          (req.status === DB.STATUS.SERVICO_CONCLUIDO || req.status === DB.STATUS.PAGO || req.status === DB.STATUS.FINALIZADO)) {
+        req.status = DB.STATUS.FINALIZADO;
       }
     });
     return reqs;
@@ -4692,6 +4696,9 @@ alt=""></noscript>
       if (out.reason === 'saldo_insuficiente') {
         return { ok: false, reason: 'saldo', valor: Number(out.preco_centavos || 0), saldo: Number(out.saldo_centavos || 0) };
       }
+      if (out.reason === 'avaliacao_pendente') {
+        return { ok: false, reason: 'avaliacao_pendente', chamadoId: out.chamado_id || null };
+      }
       return { ok: false, reason: out.reason || 'indisponivel' };
     }
     const uRes = await client.auth.getUser();
@@ -4989,6 +4996,13 @@ alt=""></noscript>
     return true;
   }
 
+  async function pendingFlow() {
+    if (!client) return { ok:false, pending:false };
+    const res = await client.rpc('qf_fluxo_pendente');
+    if (res.error) throw res.error;
+    return res.data || { ok:true, pending:false };
+  }
+
   global.QFCloud = {
     enabled: enabled,
     client: client,
@@ -5032,7 +5046,8 @@ alt=""></noscript>
     supportSend: supportSend,
     professionalNotices: professionalNotices,
     deleteProfessionalNotice: deleteProfessionalNotice,
-    clearProfessionalNotices: clearProfessionalNotices
+    clearProfessionalNotices: clearProfessionalNotices,
+    pendingFlow: pendingFlow
   };
 })(window);
 
@@ -6831,12 +6846,11 @@ alt=""></noscript>
     if (req.status !== STATUS.SERVICO_CONCLUIDO) return '';
     return (
       '<div class="section">' +
-        '<div class="card" style="text-align:center;padding:26px 16px;">' +
-          '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto 12px;">' + icon('creditCard') + '</div>' +
-          '<h2 class="h3">Serviço concluído!</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">O pagamento do serviço é combinado diretamente com o profissional.</p>' +
-          '<div class="h1" style="margin:14px 0;">' + PU.formatCurrency(req.orcamento.total + (req.taxaVisita || 0)) + '</div>' +
-          '<button class="btn btn--primary" data-action="pagar-pedido">' + icon('creditCard') + ' Pagar agora (simulado)</button>' +
+        '<div class="card" style="text-align:center;padding:26px 16px;background:var(--warning-100);border:1px solid rgba(181,114,11,.22);">' +
+          '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto 12px;">' + icon('checkCircle') + '</div>' +
+          '<h2 class="h3">Falta finalizar no QuemFaz</h2>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">O profissional marcou o serviço como concluído. Para continuar usando o app, confirme a finalização e avalie o atendimento abaixo.</p>' +
+          '<div class="text--sm text--secondary" style="margin-top:10px;">O pagamento do serviço continua sendo combinado diretamente com o profissional.</div>' +
         '</div>' +
       '</div>'
     );
@@ -6846,14 +6860,25 @@ alt=""></noscript>
     if ((req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) && !req.avaliacaoCliente) {
       return (
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Como foi o serviço?</h2></div>' +
-          '<div class="card stack" id="avaliacao-form">' +
-            '<div class="text--sm text--secondary">Como foi seu atendimento com ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '?</div>' +
+          '<div class="section-head"><h2 class="h3">Finalizar e avaliar serviço</h2></div>' +
+          '<div class="card stack" id="avaliacao-form" style="border:2px solid var(--orange-500);">' +
+            '<div class="text--strong">Etapa obrigatória</div>' +
+            '<div class="text--sm text--secondary">Confirme que o serviço terminou e avalie ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '. Depois disso, sua parte do fluxo estará concluída.</div>' +
             '<div class="star-picker" id="cliente-star-picker">' +
               [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-star="' + n + '" aria-label="' + n + ' estrelas">' + icon('starFilled') + '</button>'; }).join('') +
             '</div>' +
             '<textarea class="textarea" id="cliente-avaliacao-comentario" placeholder="Conte como foi (opcional)"></textarea>' +
-            '<button class="btn btn--primary" data-action="enviar-avaliacao">Enviar avaliação</button>' +
+            '<button class="btn btn--primary" data-action="enviar-avaliacao">' + icon('checkCircle') + ' Finalizar e enviar avaliação</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
+    if ((req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) && req.avaliacaoCliente) {
+      return (
+        '<div class="section">' +
+          '<div class="card card--tight" style="background:var(--success-100);border:none;">' +
+            '<div class="text--strong" style="color:var(--success-600);">Sua parte foi concluída</div>' +
+            '<div class="text--sm" style="color:var(--success-600);margin-top:4px;">Sua avaliação foi enviada. O serviço será encerrado no sistema quando o profissional também concluir a avaliação dele.</div>' +
           '</div>' +
         '</div>'
       );
@@ -6861,8 +6886,9 @@ alt=""></noscript>
     if (req.status === STATUS.FINALIZADO && req.avaliacaoCliente) {
       return (
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Sua avaliação</h2></div>' +
+          '<div class="section-head"><h2 class="h3">Serviço finalizado</h2></div>' +
           '<div class="card stack--sm">' +
+            '<div class="text--sm text--secondary">Cliente e profissional concluíram o fluxo no QuemFaz.</div>' +
             starsDisplay(req.avaliacaoCliente.nota) +
             (req.avaliacaoCliente.comentario ? '<p class="text text--sm">' + PU.escapeHtml(req.avaliacaoCliente.comentario) + '</p>' : '') +
           '</div>' +
@@ -7881,7 +7907,7 @@ alt=""></noscript>
           try {
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(req.id, nota, comentario);
             else DB.avaliarComoCliente(req.id, nota, comentario);
-            PU.toast('Obrigado pela avaliação!', 'success');
+            PU.toast('Serviço finalizado e sua avaliação foi enviada.', 'success');
             global.navigate('/cliente/pedido/' + req.id, true);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
@@ -8565,14 +8591,23 @@ alt=""></noscript>
       return '<div class="section"><button class="btn btn--primary" data-action="finalizar-servico">' + icon('check') + ' Concluir serviço</button></div>';
     }
     if (s === STATUS.SERVICO_CONCLUIDO || s === STATUS.PAGO) {
+      if (req.avaliacaoProfissional) {
+        return (
+          '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">Sua avaliação foi enviada</div>' +
+          '<div class="text--sm" style="color:var(--success-600);margin-top:4px;">Peça ao cliente para abrir o QuemFaz, finalizar o serviço e avaliar você. Enquanto aguarda, você pode continuar recebendo e aceitando outros chamados.</div></div></div>'
+        );
+      }
       return (
-        '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:12px;"><p class="text text--sm" style="color:var(--success-600);">Serviço marcado como concluído. O pagamento do serviço é combinado diretamente com o cliente.</p></div></div>' +
+        '<div class="section"><div class="card card--tight" style="background:var(--warning-100);border:1px solid rgba(181,114,11,.22);margin-bottom:12px;">' +
+          '<div class="text--strong">Finalize sua parte no QuemFaz</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:4px;">Avalie o cliente para liberar o app. Depois, peça ao cliente para abrir o QuemFaz, tocar em “Finalizar e avaliar” e concluir a parte dele.</div>' +
+        '</div></div>' +
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Avalie o cliente</h2></div>' +
-          '<div class="card stack">' +
+          '<div class="section-head"><h2 class="h3">Finalizar e avaliar cliente</h2></div>' +
+          '<div class="card stack" style="border:2px solid var(--orange-500);">' +
             '<div class="star-picker" id="prof-star-picker">' + [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-star="' + n + '">' + icon('starFilled') + '</button>'; }).join('') + '</div>' +
             '<textarea class="textarea" id="prof-avaliacao-comentario" placeholder="Como foi atender este cliente? (opcional)"></textarea>' +
-            '<button class="btn btn--primary" data-action="enviar-avaliacao-cliente">Enviar avaliação</button>' +
+            '<button class="btn btn--primary" data-action="enviar-avaliacao-cliente">' + icon('checkCircle') + ' Finalizar e enviar avaliação</button>' +
           '</div>' +
         '</div>'
       );
@@ -9836,10 +9871,10 @@ alt=""></noscript>
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: primeiraGratis
-            ? 'Nenhum crédito será usado neste primeiro chamado. O contato e o endereço completo do cliente serão liberados. Nos próximos chamados, será necessário ter saldo na Carteira QuemFaz.'
+            ? 'Nenhum crédito será usado neste primeiro chamado. Você poderá preparar e enviar o orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente aprovar.'
             : (usaPlano
-              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). Seu saldo não é usado. Depois disso, o contato e o endereço completo do cliente serão liberados para você.'
-              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Depois disso, o contato e o endereço completo do cliente serão liberados para você.'),
+              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). Você poderá enviar o orçamento; o contato do cliente só será liberado depois da aprovação.'
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Você poderá enviar o orçamento; o contato do cliente só será liberado depois da aprovação.'),
           okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
@@ -9847,7 +9882,7 @@ alt=""></noscript>
             ? await global.QFCloud.unlockCall(params.id, user.id)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
-            let msgOk = result.origem === 'plano' ? 'Chamado desbloqueado pelo seu plano! Contato liberado.' : 'Chamado desbloqueado! Contato do cliente liberado.';
+            let msgOk = result.origem === 'plano' ? 'Chamado reservado pelo seu plano. Envie o orçamento para o cliente.' : 'Chamado desbloqueado. Agora envie o orçamento para o cliente.';
             if (!result.usouBonus && result.origem !== 'plano' && global.QFPlanoIncentivo) {
               const b = global.QFPlanoIncentivo.porChamado(result.valor || valor);
               if (b) msgOk += ' No plano ' + b.plano.nome + ' teria saído ' + PU.formatCurrency(b.unit) + '.';
@@ -9856,7 +9891,10 @@ alt=""></noscript>
             global.navigate('/profissional/pedido/' + params.id, true);
             return;
           }
-          if (result && result.reason === 'saldo') {
+          if (result && result.reason === 'avaliacao_pendente' && result.chamadoId) {
+            PU.toast('Finalize e avalie o serviço pendente antes de aceitar outro chamado.', 'danger');
+            global.navigate('/profissional/pedido/' + result.chamadoId, true);
+          } else if (result && result.reason === 'saldo') {
             PU.openSheet(
               '<div class="stack"><h3 class="sheet__title">Créditos insuficientes</h3>' +
               '<p class="text text--secondary">Você tem ' + PU.formatCurrency(result.saldo) + ' e precisa de ' + PU.formatCurrency(result.valor) + ' para este chamado.</p>' +
@@ -9906,7 +9944,7 @@ alt=""></noscript>
           try {
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.updateProfessionalCallStatus(params.id, 'concluir');
             else DB.finalizarServico(params.id);
-            PU.toast('Serviço concluído! O cliente já pode avaliar.', 'success');
+            PU.toast('Serviço concluído. Agora avalie o cliente e peça para ele finalizar e avaliar no QuemFaz.', 'success');
             global.navigate('/profissional/pedido/' + params.id, true);
           } catch (err) {
             PU.toast('Não foi possível concluir o serviço. ' + (err && err.message ? err.message : ''), 'danger');
@@ -9937,7 +9975,7 @@ alt=""></noscript>
           try {
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(params.id, nota, comentario);
             else DB.avaliarComoProfissional(params.id, nota, comentario);
-            PU.toast('Avaliação enviada!', 'success');
+            PU.toast('Sua avaliação foi enviada. Agora peça ao cliente para finalizar e avaliar o serviço.', 'success');
             global.navigate('/profissional/servicos', true);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
@@ -10437,7 +10475,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.27';
+  const APP_VERSION = '11.14.28';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -11965,6 +12003,31 @@ alt=""></noscript>
     if (session && session.role === 'profissional') {
       try { await syncPersistentProfessionalNotices(session, false); }
       catch (err) { console.warn('QuemFaz avisos persistentes', err); }
+    }
+
+    if (session && global.QFCloud && global.QFCloud.enabled && global.QFCloud.pendingFlow) {
+      try {
+        const pending = await global.QFCloud.pendingFlow();
+        if (pending && pending.pending && pending.chamado_id) {
+          const target = session.role === 'profissional'
+            ? '/profissional/pedido/' + pending.chamado_id
+            : '/cliente/pedido/' + pending.chamado_id;
+          if (path !== target) {
+            let warned = false;
+            try { warned = sessionStorage.getItem('qf_fluxo_obrigatorio_' + pending.chamado_id) === '1'; } catch (_) {}
+            if (!warned) {
+              PU.toast(session.role === 'profissional'
+                ? 'Finalize e avalie o serviço pendente para continuar usando o app.'
+                : 'Finalize e avalie o serviço pendente para continuar usando o app.', 'danger');
+              try { sessionStorage.setItem('qf_fluxo_obrigatorio_' + pending.chamado_id, '1'); } catch (_) {}
+            }
+            navigate(target, true);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('QuemFaz fluxo obrigatório', err);
+      }
     }
 
     if (!found) { navigate('/', true); return; }
