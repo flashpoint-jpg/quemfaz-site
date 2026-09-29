@@ -4428,7 +4428,7 @@ alt=""></noscript>
   async function signIn(expectedRole, email, senha) {
     if (!enabled) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     const res = await client.auth.signInWithPassword({ email: email, password: senha });
-    if (res.error) return { ok: false, error: 'E-mail ou senha inválidos.' };
+    if (res.error) return { ok: false, error: 'Senha incorreta. Tente novamente ou use “Esqueci minha senha”.' };
     try {
       const p = await ensureProfile(res.data.user, expectedRole, null);
       await applyPendingIdentity(email, p.tipo);
@@ -10475,7 +10475,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.28';
+  const APP_VERSION = '11.14.29';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
