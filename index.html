@@ -4406,18 +4406,29 @@ alt=""></noscript>
       Number.isFinite(Number(rawLat)) && Number.isFinite(Number(rawLng)) &&
       Math.abs(Number(rawLat)) <= 90 && Math.abs(Number(rawLng)) <= 180 &&
       !(Number(rawLat) === 0 && Number(rawLng) === 0);
+    const selectedCity = data.endereco.cidade || (city ? city.nome : null);
+    const selectedUf = data.endereco.uf || (city ? city.uf : null);
     // Cliente escolhe a região por cidade ou CEP. Não pede GPS nem endereço completo nesta etapa.
-    const loc = hasAddressCoords
+    // Se veio só a cidade, usa o centro geográfico dela para permitir a cascata por proximidade.
+    let loc = hasAddressCoords
       ? { latitude: Number(rawLat), longitude: Number(rawLng) }
       : null;
+    if (!loc && selectedCity && global.QFGeo && typeof global.QFGeo.geocodeCity === 'function') {
+      try {
+        const cityLoc = await global.QFGeo.geocodeCity(selectedCity, selectedUf);
+        if (cityLoc && Number.isFinite(Number(cityLoc.latitude)) && Number.isFinite(Number(cityLoc.longitude))) {
+          loc = { latitude: Number(cityLoc.latitude), longitude: Number(cityLoc.longitude) };
+        }
+      } catch (_) {}
+    }
     // O chamado nasce NORMAL. Prioridade só é ativada no banco depois de pagamento aprovado.
     const row = {
       cliente_id: data.clienteId,
       categoria: data.categoriaId,
       titulo: cat ? cat.nome : 'Serviço solicitado',
       descricao: data.descricao,
-      cidade: data.endereco.cidade || (city ? city.nome : null),
-      uf: data.endereco.uf || (city ? city.uf : null),
+      cidade: selectedCity,
+      uf: selectedUf,
       bairro: data.endereco.bairro || null,
       cep: global.QFGeo ? global.QFGeo.normalizeCep(data.endereco.cep) : String(data.endereco.cep || '').replace(/\D/g,''),
       endereco_completo: enderecoCompleto || null,
@@ -5139,6 +5150,26 @@ alt=""></noscript>
     const m = iso.match(/BR-([A-Z]{2})/); if (m) return m[1];
     return String(a.state_code || '').replace(/^BR-/,'').toUpperCase();
   }
+  async function geocodeCity(cidade, uf) {
+    const nome = String(cidade || '').trim();
+    const estado = String(uf || '').trim().toUpperCase();
+    if (!nome) return null;
+    try {
+      const q = [nome, estado, 'Brasil'].filter(Boolean).join(', ');
+      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&q=' + encodeURIComponent(q);
+      const r = await fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' }, cache: 'no-store' });
+      if (!r.ok) return null;
+      const rows = await r.json();
+      const first = Array.isArray(rows) && rows.length ? rows[0] : null;
+      const latitude = first ? Number(first.lat) : NaN;
+      const longitude = first ? Number(first.lon) : NaN;
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+      return { cidade: nome, uf: estado, latitude: latitude, longitude: longitude };
+    } catch (_) {
+      return null;
+    }
+  }
+
   async function reverseGeocode(latitude, longitude) {
     try {
       const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=' + encodeURIComponent(latitude) + '&lon=' + encodeURIComponent(longitude);
@@ -5205,7 +5236,7 @@ alt=""></noscript>
     });
   }
   function regionKey(cidade, uf) { const city=String(cidade||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); return city && uf ? 'BR|' + String(uf).toUpperCase() + '|' + city : 'all'; }
-  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, validCnpj: validCnpj, formatCnpj: formatCnpj, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
+  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, validCnpj: validCnpj, formatCnpj: formatCnpj, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, geocodeCity: geocodeCity, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
 })(window);
 
 
