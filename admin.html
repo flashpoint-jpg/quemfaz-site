@@ -3050,6 +3050,21 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   async function setBlocked(userId, bloquear) { const o = await rpcOk('qf_admin_definir_bloqueio', { p_user_id: userId, p_bloquear: !!bloquear }); await syncSnapshot(true); return o; }
   async function setVerified(userId, v) { const o = await rpcOk('qf_admin_definir_verificado', { p_user_id: userId, p_verificado: !!v }); await syncSnapshot(true); return o; }
   async function addCredits(userId, cents, desc) { const o = await rpcOk('qf_admin_adicionar_creditos', { p_user_id: userId, p_valor_centavos: Number(cents), p_descricao: desc || null }); await syncSnapshot(true); return o; }
+  async function setTemporaryPassword(userId, password) {
+    if (!client) throw new Error('Supabase indisponível.');
+    password = String(password || '');
+    if (password.length < 6) throw new Error('A senha temporária precisa ter pelo menos 6 caracteres.');
+    const res = await client.functions.invoke('quemfaz-password-control', {
+      body: { action: 'admin_set_temp', user_id: userId, password: password }
+    });
+    if (res.error) {
+      let detail = null;
+      try { if (res.error.context && typeof res.error.context.json === 'function') detail = await res.error.context.json(); } catch (_) {}
+      throw new Error((detail && detail.error) || res.error.message || 'Não foi possível alterar a senha.');
+    }
+    if (!res.data || !res.data.ok) throw new Error((res.data && res.data.error) || 'Não foi possível alterar a senha.');
+    return res.data;
+  }
   async function getAppConfig() { const res = await client.rpc('qf_app_versao'); if (res.error) throw new Error('Aplique a migration V10.2 no Supabase para controlar versões.'); return res.data || {}; }
   async function saveAppConfig(v) {
     return rpcOk('qf_admin_salvar_app_config', {
@@ -3121,7 +3136,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   }
 
   global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
-    syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, getAppConfig, saveAppConfig,
+    syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, setTemporaryPassword, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
     excluirAnuncio: async function(id){ const r = await client.rpc('qf_admin_excluir_anuncio', { p_id: id }); if (r.error) throw r.error; try { await syncAds(); } catch (_) {} },
     editarChamado: async function(id, dados){ const r = await client.rpc('qf_admin_editar_chamado', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
@@ -5199,6 +5214,7 @@ Screens.adminDashboardRender = function () {
     return (bv ? '<div style="margin-bottom:8px;">' + bv + '</div>' : '') + '<div class="qf-crud-row">' +
       (h ? '<a class="btn btn--outline btn--sm qf-wa-btn" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + ' WhatsApp</a>' : '') +
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="' + tipo + ':' + id + '">' + icon('edit') + ' Editar</button>' +
+      (tipo === 'cliente' ? '<button type="button" class="btn btn--outline btn--sm" data-cliente-senha="' + id + '">Alterar senha</button>' : '') +
       '<button type="button" class="btn btn--outline btn--sm qf-crud-del" data-crud-del="' + tipo + ':' + id + '">' + icon('trash') + ' ' + (excluirLabel || 'Excluir') + '</button>' +
     '</div>';
   }
@@ -6101,8 +6117,53 @@ Screens.adminDashboardRender = function () {
     });
   }
 
+  function abrirSenhaCliente(c) {
+    if (!c) return;
+    PU.openSheet(
+      '<div class="stack"><h3 class="sheet__title">Alterar senha do cliente</h3>' +
+      '<p class="text text--secondary">Defina uma senha temporária para <b>' + PU.escapeHtml(c.nome || 'este cliente') + '</b>. Depois de entrar com ela, o cliente será obrigado a criar uma nova senha antes de usar o QuemFaz.</p>' +
+      '<div class="card card--tight"><div class="text--sm text--secondary"><b>E-mail:</b> ' + PU.escapeHtml(c.email || 'Não informado') + '</div></div>' +
+      '<form id="qf-admin-password-form" class="stack">' +
+      '<label class="field"><span class="field__label">Senha temporária</span><input class="input" type="password" name="senha" minlength="6" autocomplete="new-password" required placeholder="Mínimo 6 caracteres"></label>' +
+      '<label class="field"><span class="field__label">Confirmar senha</span><input class="input" type="password" name="confirmar" minlength="6" autocomplete="new-password" required placeholder="Digite novamente"></label>' +
+      '<button class="btn btn--primary" type="submit">Salvar senha temporária</button>' +
+      '<button class="btn btn--ghost" type="button" data-admin-password-cancel>Cancelar</button>' +
+      '</form></div>'
+    );
+    const form = document.getElementById('qf-admin-password-form');
+    const cancel = document.querySelector('[data-admin-password-cancel]');
+    if (cancel) cancel.onclick = function () { PU.closeSheet(); };
+    if (!form) return;
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const senha = String(fd.get('senha') || '');
+      const confirmar = String(fd.get('confirmar') || '');
+      if (senha.length < 6) { PU.toast('A senha precisa ter pelo menos 6 caracteres.', 'danger'); return; }
+      if (senha !== confirmar) { PU.toast('As senhas não são iguais.', 'danger'); return; }
+      const btn = form.querySelector('button[type="submit"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+      try {
+        await global.QFAdminCloud.setTemporaryPassword(c.id, senha);
+        PU.closeSheet();
+        PU.toast('Senha temporária alterada. No próximo acesso o cliente deverá criar uma nova senha.', 'success');
+      } catch (err) {
+        PU.toast((err && err.message) || 'Não foi possível alterar a senha.', 'danger');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Salvar senha temporária'; }
+      }
+    });
+  }
+
   function bindClientes(content) {
     content.addEventListener('click', function (e) {
+      const pass = e.target.closest('[data-cliente-senha]');
+      if (pass) {
+        const cliente = DB.clienteById(pass.getAttribute('data-cliente-senha'));
+        if (!cloudOn()) { PU.toast('Disponível com o painel conectado ao Supabase.', 'danger'); return; }
+        abrirSenhaCliente(cliente);
+        return;
+      }
       const el = e.target.closest('[data-toggle-cliente]');
       if (!el) return;
       const id = el.getAttribute('data-toggle-cliente');
