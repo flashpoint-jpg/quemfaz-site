@@ -4394,20 +4394,22 @@ alt=""></noscript>
     const quickClient = role === 'cliente' && data && data.quickClient === true;
     let authPassword = String((data && data.senha) || '');
     let email = String((data && data.email) || '').trim().toLowerCase();
+    let phoneDigits = '';
+
     if (quickClient) {
-      const phoneDigits = String(data.telefone || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+      phoneDigits = String(data.telefone || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
       if (!(phoneDigits.length === 10 || phoneDigits.length === 11)) return { ok: false, error: 'Informe seu WhatsApp/celular com DDD.' };
-      const nonce = Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
-      email = 'cliente-' + nonce + '@acesso.quemfaz.app.br';
-      authPassword = 'Qf!' + nonce + Math.random().toString(36).slice(2, 14);
+      data.telefone = phoneDigits;
     } else {
       if (authPassword.length < 6) return { ok: false, error: 'A senha precisa ter pelo menos 6 caracteres.' };
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: 'O e-mail é obrigatório. Digite um e-mail válido.' };
     }
+
     if (!String(data.nome || '').trim()) return { ok: false, error: 'Informe seu nome.' };
     if (role === 'profissional' && !/^data:image\//i.test(String(data.selfieData || ''))) {
       return { ok: false, error: 'É obrigatório enviar uma selfie do profissional ou a marca oficial da empresa representada.' };
     }
+
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
@@ -4422,6 +4424,7 @@ alt=""></noscript>
       qf_raio_km: data.raioKm || 10,
       qf_quick_client: quickClient
     };
+
     if (data.cpf) { try { localStorage.setItem(pendingCpfKey(email), data.cpf); } catch (_) {} }
     if (data.cnpj) { try { localStorage.setItem(pendingCnpjKey(email), data.cnpj); } catch (_) {} }
     if (role === 'profissional') {
@@ -4431,14 +4434,38 @@ alt=""></noscript>
     if (role === 'profissional' && data.selfieData) {
       try { localStorage.setItem(pendingSelfieKey(email), data.selfieData); } catch (_) {}
     }
+
     let res = null;
-    if (quickClient && client.auth && typeof client.auth.signInAnonymously === 'function') {
+
+    if (quickClient) {
       try {
-        const anon = await client.auth.signInAnonymously({ options: { data: meta } });
-        if (!anon.error && anon.data && anon.data.session) res = anon;
-      } catch (_) {}
-    }
-    if (!res) {
+        const access = await client.functions.invoke('quemfaz-cliente-rapido', {
+          body: { nome: String(data.nome || '').trim(), telefone: phoneDigits }
+        });
+        if (access.error) {
+          let detail = null;
+          try { if (access.error.context && typeof access.error.context.json === 'function') detail = await access.error.context.json(); } catch (_) {}
+          return { ok: false, error: (detail && detail.error) || access.error.message || 'Não foi possível abrir seu acesso agora.' };
+        }
+        const payload = access.data || {};
+        if (!payload.ok || !payload.token_hash) return { ok: false, error: payload.error || 'Não foi possível abrir seu acesso agora.' };
+
+        let verified = await client.auth.verifyOtp({
+          token_hash: String(payload.token_hash),
+          type: String(payload.otp_type || 'magiclink')
+        });
+        if (verified.error && String(payload.otp_type || 'magiclink') !== 'email') {
+          verified = await client.auth.verifyOtp({ token_hash: String(payload.token_hash), type: 'email' });
+        }
+        if (verified.error || !verified.data || !verified.data.session || !verified.data.user) {
+          return { ok: false, error: 'Não foi possível validar seu acesso agora. Tente novamente.' };
+        }
+        res = verified;
+        email = String(verified.data.user.email || '').trim().toLowerCase();
+      } catch (e) {
+        return { ok: false, error: (e && e.message) || 'Não foi possível abrir seu acesso agora.' };
+      }
+    } else {
       res = await client.auth.signUp({
         email: email,
         password: authPassword,
@@ -4446,17 +4473,19 @@ alt=""></noscript>
       });
       if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     }
+
     if (!res.data.session) {
-      // Fallback para projetos sem login anônimo: tenta entrar com a credencial interna criada pelo sistema.
-      try { const li = await signIn(role, email, authPassword); if (li && li.ok) return li; } catch (_) {}
       if (quickClient) return { ok: false, error: 'Não foi possível iniciar seu acesso rápido agora. Tente novamente.' };
+      try { const li = await signIn(role, email, authPassword); if (li && li.ok) return li; } catch (_) {}
       return { ok: true, needsConfirmation: true, user: res.data.user };
     }
+
     try {
       await ensureProfile(res.data.user, role, data);
-      await applyPendingIdentity(email, role);
+      if (!quickClient) await applyPendingIdentity(email, role);
       const local = await syncLocalUser(res.data.user, role);
-      DB.setSession({ role: role, userId: res.data.user.id });      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
+      DB.setSession({ role: role, userId: res.data.user.id });
+      if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       return { ok: true, user: local, session: DB.getSession() };
     } catch (e) {
       return { ok: false, error: e.message || String(e) };
@@ -10591,7 +10620,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.35';
+  const APP_VERSION = '11.14.36';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
