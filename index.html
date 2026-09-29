@@ -6663,7 +6663,8 @@ alt=""></noscript>
                 '<select class="select" name="uf" required style="flex:1;"><option value="">UF</option>' + global.QFGeo.ufOptions(endUf) + '</select>' +
               '</div>' +
               '<div class="row" style="gap:8px;align-items:stretch;"><input class="input" name="cep" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" style="flex:1;" value="' + PU.escapeHtml(endCep) + '"><button class="btn btn--outline" type="button" data-lookup-cep>Localizar</button></div>' +
-              '<div class="text--sm text--secondary">Não precisa informar rua nem número agora. O chamado é localizado pela cidade ou pelo CEP.</div>' +
+              '<button class="btn btn--outline" type="button" data-use-location style="width:100%;">' + icon('location') + ' Usar minha localização</button>' +
+              '<div class="text--sm text--secondary">Você pode informar cidade/CEP ou usar a localização do celular. Não precisa informar rua nem número, e o endereço exato não é mostrado ao profissional.</div>' +
               '<input type="hidden" name="latitude" value=""><input type="hidden" name="longitude" value="">' +
             '</div>' +
           '</div>' +
@@ -10538,7 +10539,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.32';
+  const APP_VERSION = '11.14.33';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
