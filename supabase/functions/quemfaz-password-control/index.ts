@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || "";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
@@ -35,7 +36,7 @@ Deno.serve(async (req) => {
   if (!token) return reply({ ok: false, error: "Sua sessão expirou. Entre novamente." }, 401);
 
   // V11.14.38: valida a sessão diretamente no Supabase Auth.
-  // O wrapper anterior rejeitava sessões válidas e devolvia 401 no momento de trocar a senha.
+  // O wrapper anterior devolvia 401 mesmo com a sessão válida.
   const auth = await admin.auth.getUser(token);
   const caller = auth.data?.user || null;
   if (auth.error || !caller) {
@@ -89,9 +90,30 @@ Deno.serve(async (req) => {
   }
 
   if (action === "self_change") {
+    // A senha é alterada como o próprio usuário, preservando a sessão atual.
+    // Depois, o service role apenas remove a marca de troca obrigatória.
+    const ownChange = await fetch(SUPABASE_URL + "/auth/v1/user", {
+      method: "PUT",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "apikey": ANON_KEY || SERVICE_ROLE,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    const ownOut = await ownChange.json().catch(() => ({}));
+    if (!ownChange.ok) {
+      console.error("self_change_password", ownChange.status, ownOut);
+      const msg = ownChange.status === 401
+        ? "Sua sessão expirou. Entre novamente."
+        : "Não foi possível salvar sua nova senha.";
+      return reply({ ok: false, error: msg }, ownChange.status === 401 ? 401 : 400);
+    }
+
     const current = await admin.auth.admin.getUserById(caller.id);
     if (current.error || !current.data.user) {
-      return reply({ ok: false, error: "Usuário não encontrado." }, 404);
+      return reply({ ok: false, error: "Senha alterada, mas não foi possível concluir o acesso. Entre novamente." }, 409);
     }
 
     const appMetadata = {
@@ -100,14 +122,13 @@ Deno.serve(async (req) => {
       qf_password_changed_at: new Date().toISOString(),
     };
 
-    const changed = await admin.auth.admin.updateUserById(caller.id, {
-      password,
+    const metadataUpdate = await admin.auth.admin.updateUserById(caller.id, {
       app_metadata: appMetadata,
     });
 
-    if (changed.error) {
-      console.error("self_change", changed.error.message);
-      return reply({ ok: false, error: "Não foi possível salvar sua nova senha." }, 400);
+    if (metadataUpdate.error) {
+      console.error("self_change_metadata", metadataUpdate.error.message);
+      return reply({ ok: false, error: "Senha alterada, mas não foi possível concluir o acesso. Entre novamente." }, 409);
     }
 
     return reply({
