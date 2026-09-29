@@ -1591,6 +1591,15 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
 .qf-search-radar__stage{margin-top:2px;font-size:14px;font-weight:850;color:var(--navy-900)}
 .qf-search-radar__sub{margin-top:3px;font-size:12px;font-weight:650;color:var(--text-secondary)}
 .qf-search-radar__km{display:inline-flex;align-items:center;justify-content:center;min-width:72px;margin-top:8px;padding:6px 10px;border-radius:999px;background:var(--orange-100);color:var(--orange-700);font-size:12px;font-weight:900}
+.qf-radar-priority{width:100%;margin-top:14px;padding:12px;border:1px solid rgba(236,106,27,.24);border-radius:14px;background:linear-gradient(180deg,#fff8f2,#fff);text-align:left}
+.qf-radar-priority__top{display:flex;align-items:flex-start;gap:9px}
+.qf-radar-priority__icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--orange-100);color:var(--orange-700)}
+.qf-radar-priority__icon svg{width:18px;height:18px}
+.qf-radar-priority__copy{flex:1;min-width:0}
+.qf-radar-priority__title{font-size:13px;font-weight:900;color:var(--navy-900)}
+.qf-radar-priority__sub{margin-top:2px;font-size:11.5px;line-height:1.35;color:var(--text-secondary)}
+.qf-radar-priority .btn{width:100%;margin-top:9px;min-height:44px}
+
 @keyframes qfRadarPulse{0%{transform:scale(.72);opacity:.8}75%,100%{transform:scale(2.55);opacity:0}}
 @media (prefers-reduced-motion:reduce){.qf-search-radar__ring{animation:none;transform:scale(2);opacity:.18}}
 .qf-no-coverage{margin-top:10px;text-align:left;background:var(--warning-100);border:1px solid rgba(181,114,11,.22);border-radius:14px;padding:12px}.qf-no-coverage .btn{margin-top:9px}
@@ -2597,7 +2606,7 @@ alt=""></noscript>
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'Premium', valor: 19900, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'Premium', valor: 19900, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -2871,7 +2880,7 @@ alt=""></noscript>
       criadoEm: nowIso(), atualizadoEm: nowIso(),
       // Prioridade nunca é concedida gratuitamente. No modo offline ela fica apenas solicitada/pending.
       prioridade: false,
-      pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: state.settings.prioridadeCliente || 690, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
+      pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: 490, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
       leadUnlock: null,
       taxaVisita: 0, orcamento: null, pagamento: null, avaliacaoCliente: null, avaliacaoProfissional: null,
       recusadoPor: [], canceladoPor: null, motivoCancelamento: null,
@@ -4463,13 +4472,13 @@ alt=""></noscript>
         p_metodo: data.prioridadeMetodo || 'pix'
       });
       if (pay.error) {
-        req.pagamentoPrioridade = { status: 'erro', valor: DB.state.settings.prioridadeCliente || 690, erro: pay.error.message };
+        req.pagamentoPrioridade = { status: 'erro', valor: 490, erro: pay.error.message };
       } else {
         const out = pay.data || {};
         req.pagamentoPrioridade = {
           id: out.pagamento_id || null,
           status: out.status || 'pendente',
-          valor: Number(out.valor_centavos || DB.state.settings.prioridadeCliente || 690),
+          valor: Number(out.valor_centavos || 490),
           checkoutUrl: out.checkout_url || null,
           criadoEm: new Date().toISOString()
         };
@@ -6284,7 +6293,7 @@ alt=""></noscript>
             '<div class="row">' + icon('checkCircle', 'list-item__chevron') + '<div><div class="text--strong" style="color:var(--success-600);">Pedido normal é 100% grátis</div><div class="text--sm" style="color:var(--success-600);">Você não paga para criar o chamado.</div></div></div>' +
           '</div>' +
           '<label class="card row-between" style="cursor:pointer;align-items:flex-start;">' +
-            '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><div class="text--strong">Pacote Prioridade</div><div class="text--sm text--secondary">Opcional · pagamento obrigatório · ' + PU.formatCurrency(DB.state.settings.prioridadeCliente || 690) + '</div><div class="text--sm" style="color:var(--orange-700);margin-top:3px;">A prioridade só fica ativa depois da confirmação do pagamento.</div></div></div>' +
+            '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><div class="text--strong">Pacote Prioridade</div><div class="text--sm text--secondary">Opcional · pagamento obrigatório · ' + PU.formatCurrency(490) + '</div><div class="text--sm" style="color:var(--orange-700);margin-top:3px;">A prioridade só fica ativa depois da confirmação do pagamento.</div></div></div>' +
             '<input type="checkbox" name="prioridade" value="1" style="width:22px;height:22px;accent-color:var(--orange-600);margin-top:4px;">' +
           '</label>' +
           '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão de crédito</option><option value="boleto">Boleto</option></select></label>' +
@@ -6394,11 +6403,14 @@ alt=""></noscript>
             '<div class="qf-search-radar__km" data-search-km>Cidade</div>' +
           '</div>' +
           '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '"><span data-call-reach-copy>Avisando profissionais compatíveis…</span></div>' +
+          (!req.prioridade && !(req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente')
+            ? '<div class="qf-radar-priority"><div class="qf-radar-priority__top"><span class="qf-radar-priority__icon">' + icon('bolt') + '</span><div class="qf-radar-priority__copy"><div class="qf-radar-priority__title">Quer encontrar mais rápido?</div><div class="qf-radar-priority__sub">A busca amplia o alcance mais rápido e seu chamado ganha prioridade.</div></div></div><button class="btn btn--primary" type="button" data-action="ativar-busca-prioritaria">' + icon('bolt') + ' Acelerar busca — R$ 4,90</button></div>'
+            : '') +
           '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando alguém aceitar.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
-              ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || DB.state.settings.prioridadeCliente || 690) + '</div>'
+              ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || 490) + '</div>'
               : '<div class="badge badge--success" style="margin-top:12px;"><span class="badge__dot"></span>Chamado normal gratuito</div>')) +
           (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.checkoutUrl
             ? '<a class="btn btn--primary btn--block-auto" href="' + PU.escapeHtml(req.pagamentoPrioridade.checkoutUrl) + '" rel="noopener" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade</a>'
@@ -7177,6 +7189,7 @@ alt=""></noscript>
     return city&&city.nome?String(city.nome):'sua cidade';
   }
   function searchStage(req){
+    if(req&&req.prioridade)return{title:'Busca prioritária ativa',sub:'Ampliando o alcance mais rápido',km:'Prioridade'};
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
     const elapsed=Number.isFinite(created)?Math.max(0,Date.now()-created):0;
     const city=requestCityLabel(req);
@@ -7288,6 +7301,55 @@ alt=""></noscript>
           }));
         } catch (_) {}
         global.navigate('/cliente/novo-pedido/' + encodeURIComponent(req.categoriaId));
+      }
+      if (act === 'ativar-busca-prioritaria') {
+        if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.client)) {
+          PU.toast('Conecte-se à internet para ativar a busca prioritária.', 'danger');
+          return;
+        }
+        action.disabled = true;
+        const oldHtml = action.innerHTML;
+        action.textContent = 'Preparando prioridade...';
+        (async function () {
+          try {
+            const pay = await global.QFCloud.client.rpc('qf_solicitar_prioridade', {
+              p_chamado_id: req.id,
+              p_metodo: 'pix'
+            });
+            if (pay.error) throw pay.error;
+            const out = pay.data || {};
+            if (!out.pagamento_id) throw new Error('Não foi possível criar o pagamento da prioridade.');
+
+            req.pagamentoPrioridade = {
+              id: out.pagamento_id,
+              status: out.status || 'pendente',
+              valor: Number(out.valor_centavos || 490),
+              checkoutUrl: out.checkout_url || null,
+              criadoEm: new Date().toISOString()
+            };
+            req.prioridade = !!out.prioridade_ativa;
+            DB.persist();
+
+            if (req.prioridade) {
+              PU.toast('Busca prioritária ativada!', 'success');
+              await global.QFCloud.syncForCurrentSession(true);
+              global.navigate('/cliente/pedido/' + req.id, true);
+              return;
+            }
+
+            const checkout = await global.QFCloud.startEfiCheckout('prioridade', out.pagamento_id);
+            const checkoutUrl = checkout && checkout.checkout_url ? String(checkout.checkout_url) : '';
+            if (!checkoutUrl) throw new Error('Não foi possível abrir o pagamento agora.');
+            req.pagamentoPrioridade.checkoutUrl = checkoutUrl;
+            DB.persist();
+            location.href = checkoutUrl;
+          } catch (err) {
+            PU.toast((err && err.message) || 'Não foi possível ativar a prioridade.', 'danger');
+            action.disabled = false;
+            action.innerHTML = oldHtml;
+          }
+        })();
+        return;
       }
       if (act === 'gerar-pagamento-prioridade') {
         if (!(global.QFCloud && global.QFCloud.enabled)) return;
@@ -9748,7 +9810,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.12';
+  const APP_VERSION = '11.14.13';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
