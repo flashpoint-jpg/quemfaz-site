@@ -4859,7 +4859,7 @@ Screens.adminDashboardRender = function () {
             icon('chevronRight', 'list-item__chevron') +
           '</button>' +
           '<button class="card row-between" style="width:100%;text-align:left;margin-top:10px;" data-nav="/admin/clientes">' +
-            '<div class="row"><div class="icon-tile">' + icon('user') + '</div><div><div class="text--strong">' + s.totalClientes + ' clientes</div><div class="text--sm text--secondary">Cadastrados na plataforma</div></div></div>' +
+            '<div class="row"><div class="icon-tile">' + icon('user') + '</div><div><div class="text--strong">' + adminClientesConsolidados().length + ' clientes</div><div class="text--sm text--secondary">Cadastrados na plataforma</div></div></div>' +
             icon('chevronRight', 'list-item__chevron') +
           '</button>' +
         '</div>' +
@@ -5250,6 +5250,51 @@ Screens.adminDashboardRender = function () {
 
   // ---------------- Clientes ----------------
 
+  function adminClientePhoneKey(c) {
+    let d = String((c && (c.whatsapp || c.telefone)) || '').replace(/\D/g, '');
+    if (d.indexOf('55') === 0 && (d.length === 12 || d.length === 13)) d = d.slice(2);
+    return d;
+  }
+
+  function adminClienteEmailLabel(c) {
+    const e = String((c && c.email) || '').trim();
+    return (!e || /@acesso\.quemfaz\.app\.br$/i.test(e)) ? 'Não informado (acesso por WhatsApp)' : e;
+  }
+
+  function adminClientesConsolidados() {
+    const grupos = {};
+    (DB.state.users.clientes || []).forEach(function (c) {
+      const phone = adminClientePhoneKey(c);
+      const key = phone ? 'wa:' + phone : 'id:' + c.id;
+      (grupos[key] = grupos[key] || []).push(c);
+    });
+    const requests = DB.state.requests || [];
+    return Object.keys(grupos).map(function (key) {
+      const membros = grupos[key].slice().sort(function (a, b) { return tsCadastro(a) - tsCadastro(b); });
+      const base = membros[0];
+      const recente = membros[membros.length - 1];
+      const ids = membros.map(function (x) { return x.id; });
+      const pedidos = requests.filter(function (r) { return ids.indexOf(r.clienteId) !== -1; });
+      const realEmail = membros.map(function (x) { return String(x.email || '').trim(); }).find(function (mail) {
+        return mail && !/@acesso\.quemfaz\.app\.br$/i.test(mail);
+      });
+      const ultimoPedido = pedidos.reduce(function (mx, r) {
+        const t = Date.parse(r.criadoEm || r.atualizadoEm);
+        return isNaN(t) ? mx : Math.max(mx, t);
+      }, 0);
+      return Object.assign({}, base, {
+        nome: recente.nome || base.nome,
+        telefone: recente.telefone || recente.whatsapp || base.telefone || base.whatsapp || '',
+        whatsapp: recente.whatsapp || recente.telefone || base.whatsapp || base.telefone || '',
+        email: realEmail || base.email || '',
+        _idsCliente: ids,
+        _pedidos: pedidos.length,
+        _duplicados: Math.max(0, membros.length - 1),
+        _sortTime: Math.max(tsCadastro(recente), ultimoPedido)
+      });
+    }).sort(function (a, b) { return b._sortTime - a._sortTime; });
+  }
+
   function adminClienteDocumento(c) {
     if (c.cpfFinal) return 'CPF cadastrado · final ' + PU.escapeHtml(String(c.cpfFinal));
     if (c.cnpjFinal) return 'CNPJ cadastrado · final ' + PU.escapeHtml(String(c.cnpjFinal));
@@ -5265,20 +5310,22 @@ Screens.adminDashboardRender = function () {
   }
 
   Screens.adminClientesRender = function () {
-    const list = DB.state.users.clientes.slice().sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); });
+    const list = adminClientesConsolidados();
     const novosCli = list.filter(ehCadastroNovo).length;
     if (!list.length) return '<div class="view">' + migrationBanner() + '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('user') + '</div><p class="text text--secondary">Nenhum cliente cadastrado ainda.</p></div></div>';
     return (
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + list.length + ' clientes · <b>' + novosCli + ' novo(s) nas últimas ' + NOVO_HORAS + 'h</b> · mais recente primeiro</div></div>' +
         '<div class="stack--sm">' + list.map(function (c) {
+          const pedidosLabel = c._pedidos === 1 ? '1 pedido' : c._pedidos + ' pedidos';
           return '<div class="card stack--sm">' +
             '<div class="row-between" style="align-items:flex-start;gap:10px;">' +
               '<div class="row" style="align-items:flex-start;min-width:0;"><div class="avatar avatar--sm">' + PU.initials(c.nome) + '</div>' +
                 '<div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(c.nome) + '</div><div style="margin-top:4px;">' + cadastroTag(c) + '</div></div></div>' +
               '<button class="btn btn--sm ' + (c.bloqueado ? 'btn--primary' : 'btn--danger-ghost') + ' btn--block-auto" data-toggle-cliente="' + c.id + '">' + (c.bloqueado ? 'Desbloquear' : 'Bloquear') + '</button>' +
             '</div>' +
-            '<div class="text--sm text--secondary" style="word-break:break-word;"><b>E-mail:</b> ' + PU.escapeHtml(c.email || 'Não informado') + '</div>' +
+            '<div class="text--sm text--secondary"><b>Pedidos:</b> ' + PU.escapeHtml(pedidosLabel) + '</div>' +
+            '<div class="text--sm text--secondary" style="word-break:break-word;"><b>E-mail:</b> ' + PU.escapeHtml(adminClienteEmailLabel(c)) + '</div>' +
             '<div class="text--sm text--secondary"><b>WhatsApp:</b> ' + (c.telefone ? waLink(c.telefone) : 'Não informado') + '</div>' +
             '<div class="text--sm text--secondary"><b>Documento:</b> ' + adminClienteDocumento(c) + '</div>' +
             '<div class="text--sm text--secondary"><b>Endereço:</b> ' + PU.escapeHtml(adminClienteEndereco(c)) + '</div>' +
