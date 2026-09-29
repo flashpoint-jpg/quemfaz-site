@@ -532,6 +532,18 @@ input, select, textarea { font-size: 16px; }
 .qf-auto-service-status--checking { background:var(--navy-100); color:var(--navy-800); }
 .qf-auto-service-status--none { background:var(--warning-100); color:var(--warning-600); }
 .qf-auto-service-status__btn { margin-top:9px; width:100%; background:var(--bg-surface); }
+.qf-service-search-wrap{position:relative;z-index:12}
+.qf-service-search-wrap .category-browser-search{margin-bottom:0}
+.qf-service-suggestions{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:14px;box-shadow:0 14px 34px -16px rgba(11,29,58,.42);overflow:hidden}
+.qf-service-suggestion{width:100%;border:0;border-bottom:1px solid var(--border-subtle);background:var(--bg-surface);display:flex;align-items:center;gap:10px;padding:11px 12px;text-align:left;cursor:pointer;color:var(--text-primary)}
+.qf-service-suggestion:last-child{border-bottom:0}
+.qf-service-suggestion:active,.qf-service-suggestion.is-active{background:var(--navy-100)}
+.qf-service-suggestion__icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--navy-900);color:#fff;flex:none}
+.qf-service-suggestion__icon svg{width:18px;height:18px}
+.qf-service-suggestion__body{min-width:0;flex:1}
+.qf-service-suggestion__name{display:block;font-size:14px;font-weight:850;line-height:1.2}
+.qf-service-suggestion__group{display:block;font-size:11.5px;color:var(--text-muted);margin-top:2px}
+
 
 .category-filter-row { display:flex; gap:8px; overflow-x:auto; padding:2px 0 4px; scrollbar-width:none; }
 .category-filter-row::-webkit-scrollbar { display:none; }
@@ -6279,7 +6291,7 @@ alt=""></noscript>
     const regionCep = (savedRegion && savedRegion.cep) || '';
     const regionStatus = regionCity && regionUf ? ('Região selecionada: ' + regionCity + '/' + regionUf) : 'Escolha a cidade ou informe o CEP.';
     return '<div class="category-browser">'+
-      '<label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Digite o serviço: pintor, montador, eletricista..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+
+      '<div class="qf-service-search-wrap"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Digite o serviço: pintor, montador, eletricista..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label><div class="qf-service-suggestions" data-service-suggestions hidden></div></div>'+
       '<div class="qf-auto-service-status" data-service-match-status aria-live="polite">Digite o serviço e escolha sua cidade. O QuemFaz identifica a categoria automaticamente.</div>'+
       '<div class="card card--tight qf-service-region"><div class="field__label">Onde precisa do serviço?</div>'+
         '<div class="qf-service-region__row" style="margin-top:8px;"><input class="input" type="text" placeholder="Cidade, ex.: Santo André" data-service-city value="'+PU.escapeHtml(regionCity)+'"><select class="select" data-service-uf aria-label="Estado"><option value="">UF</option>'+global.QFGeo.ufOptions(regionUf)+'</select></div>'+
@@ -6994,6 +7006,7 @@ alt=""></noscript>
     const cepBtn = content.querySelector('[data-service-lookup-cep]');
     const regionStatus = content.querySelector('[data-service-region-status]');
     const matchStatus = content.querySelector('[data-service-match-status]');
+    const suggestionsBox = content.querySelector('[data-service-suggestions]');
     const cats = DB.categories();
     if (!input || !cats.length) return;
 
@@ -7022,22 +7035,78 @@ alt=""></noscript>
       cat_motorista: 'motorista transporte',
       cat_entregador: 'entrega entregador motoboy'
     };
+    const stopWords = { de:1, da:1, do:1, das:1, dos:1, em:1, para:1, e:1, a:1, o:1 };
+    function queryTokens(v) {
+      return norm(v).replace(/[^a-z0-9]+/g, ' ').split(/\s+/).filter(function (w) { return w.length > 1 && !stopWords[w]; });
+    }
     function categoryHaystack(cat) {
       return norm((cat.nome || '') + ' ' + (aliases[cat.id] || ''));
+    }
+    function categoryTokens(cat) {
+      return queryTokens((cat.nome || '') + ' ' + (aliases[cat.id] || ''));
+    }
+    function categoryScore(cat, raw) {
+      const q = norm(raw);
+      const qTokens = queryTokens(raw);
+      if (!qTokens.length) return 0;
+      const name = norm(cat.nome);
+      const hay = categoryHaystack(cat);
+      const tokens = categoryTokens(cat);
+      let score = 0;
+      if (name === q) score += 100;
+      if (name.indexOf(q) === 0) score += 45;
+      if (hay.indexOf(q) !== -1) score += 30;
+      let matched = 0;
+      qTokens.forEach(function (qt) {
+        const exact = tokens.indexOf(qt) !== -1;
+        const prefix = tokens.some(function (t) { return t.indexOf(qt) === 0 || qt.indexOf(t) === 0; });
+        if (exact) { score += 18; matched++; }
+        else if (prefix) { score += 10; matched++; }
+      });
+      if (matched === qTokens.length) score += 28;
+      else if (matched === 0) return 0;
+      return score;
+    }
+    function suggestedCategories(raw) {
+      const q = norm(raw);
+      if (q.length < 2) return [];
+      return cats.map(function (cat) { return { cat: cat, score: categoryScore(cat, raw) }; })
+        .filter(function (x) { return x.score > 0; })
+        .sort(function (a, b) { return b.score - a.score || String(a.cat.nome).localeCompare(String(b.cat.nome)); })
+        .slice(0, 6)
+        .map(function (x) { return x.cat; });
     }
     function bestCategory(raw) {
       const q = norm(raw);
       if (q.length < 3) return null;
-      const exact = cats.find(function (cat) {
-        const name = norm(cat.nome);
-        const words = norm(aliases[cat.id] || '').split(/\s+/).filter(Boolean);
-        return name === q || words.indexOf(q) !== -1;
-      });
+      const exact = cats.find(function (cat) { return norm(cat.nome) === q; });
       if (exact) return exact;
-      const starts = cats.filter(function (cat) { return norm(cat.nome).indexOf(q) === 0; });
-      if (starts.length === 1) return starts[0];
-      const found = cats.filter(function (cat) { return categoryHaystack(cat).indexOf(q) !== -1; });
-      return found.length === 1 ? found[0] : null;
+      const ranked = suggestedCategories(raw);
+      if (!ranked.length) return null;
+      const firstScore = categoryScore(ranked[0], raw);
+      const secondScore = ranked[1] ? categoryScore(ranked[1], raw) : 0;
+      const allTokensMatch = queryTokens(raw).every(function (qt) {
+        return categoryTokens(ranked[0]).some(function (t) { return t === qt || t.indexOf(qt) === 0 || qt.indexOf(t) === 0; });
+      });
+      if (allTokensMatch && (firstScore >= 55 || firstScore - secondScore >= 18)) return ranked[0];
+      return null;
+    }
+    function renderSuggestions() {
+      if (!suggestionsBox) return;
+      const list = suggestedCategories(input.value);
+      if (!list.length || norm(input.value).length < 2) {
+        suggestionsBox.hidden = true;
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+      suggestionsBox.innerHTML = list.map(function (cat) {
+        return '<button type="button" class="qf-service-suggestion" data-service-suggestion="' + PU.escapeHtml(cat.id) + '">' +
+          '<span class="qf-service-suggestion__icon">' + icon(cat.icon || 'briefcase') + '</span>' +
+          '<span class="qf-service-suggestion__body"><span class="qf-service-suggestion__name">' + PU.escapeHtml(cat.nome) + '</span>' +
+          '<span class="qf-service-suggestion__group">' + PU.escapeHtml(cat.grupo || 'Serviço') + '</span></span>' +
+          icon('chevronRight', 'list-item__chevron') + '</button>';
+      }).join('');
+      suggestionsBox.hidden = false;
     }
     function region() {
       const cidade = String(cityInput && cityInput.value || '').trim();
@@ -7182,7 +7251,7 @@ alt=""></noscript>
       }
     }
 
-    input.addEventListener('input', function () { scheduleAutoOpen(450); });
+    input.addEventListener('input', function () { renderSuggestions(); scheduleAutoOpen(450); });
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       e.preventDefault();
@@ -7200,12 +7269,28 @@ alt=""></noscript>
     }
     if (cepBtn) cepBtn.addEventListener('click', lookupSearchCep);
     content.addEventListener('click', function (e) {
+      const suggestion = e.target.closest && e.target.closest('[data-service-suggestion]');
+      if (suggestion) {
+        e.preventDefault();
+        const catId = suggestion.getAttribute('data-service-suggestion');
+        const cat = cats.find(function (x) { return x.id === catId; });
+        if (!cat) return;
+        input.value = cat.nome;
+        if (suggestionsBox) { suggestionsBox.hidden = true; suggestionsBox.innerHTML = ''; }
+        clearTimeout(timer);
+        tryAutoOpen();
+        return;
+      }
       const btn = e.target.closest && e.target.closest('[data-service-continue]');
       if (!btn) return;
       const catId = btn.getAttribute('data-service-continue');
       const r = saveRegion(true);
       if (!catId || !r) return;
       global.navigate('/cliente/novo-pedido/' + encodeURIComponent(catId));
+    });
+    input.addEventListener('focus', renderSuggestions);
+    input.addEventListener('blur', function () {
+      setTimeout(function () { if (suggestionsBox) suggestionsBox.hidden = true; }, 180);
     });
     saveRegion(false);
   }
@@ -10300,7 +10385,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.21';
+  const APP_VERSION = '11.14.22';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
