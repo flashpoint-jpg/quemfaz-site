@@ -527,6 +527,12 @@ input, select, textarea { font-size: 16px; }
 .qf-service-region__cep .input { min-width:0; flex:1; }
 .qf-service-region__cep .btn { width:auto; flex:none; padding-inline:14px; }
 .qf-service-region__status { margin-top:8px; font-size:12.5px; font-weight:750; color:var(--success-600); }
+.qf-auto-service-status { margin:0 0 10px; padding:11px 12px; border-radius:12px; background:var(--bg-sunken); border:1px solid var(--border-subtle); color:var(--text-secondary); font-size:13px; font-weight:700; line-height:1.4; }
+.qf-auto-service-status--found { background:var(--success-100); color:var(--success-600); }
+.qf-auto-service-status--checking { background:var(--navy-100); color:var(--navy-800); }
+.qf-auto-service-status--none { background:var(--warning-100); color:var(--warning-600); }
+.qf-auto-service-status__btn { margin-top:9px; width:100%; background:var(--bg-surface); }
+
 .category-filter-row { display:flex; gap:8px; overflow-x:auto; padding:2px 0 4px; scrollbar-width:none; }
 .category-filter-row::-webkit-scrollbar { display:none; }
 .category-filter-chip { flex:none; border:1px solid var(--border-subtle); background:var(--bg-surface); color:var(--text-secondary); border-radius:999px; padding:8px 12px; font-size:12px; font-weight:800; white-space:nowrap; }
@@ -6264,24 +6270,7 @@ alt=""></noscript>
   // ---------------- Início ----------------
 
   function renderCategoryBrowser(cats, afterPopular, user) {
-    const groupOrder = [['casa','Casa e reforma'],['limpeza','Limpeza e cuidados da casa'],['instalacoes','Elétrica, hidráulica e gás'],['tecnica','Assistência técnica'],['auto','Automotivo'],['transporte','Transporte e mudanças'],['beleza','Beleza e bem-estar'],['pets','Pets'],['aulas','Aulas e eventos'],['outros','Outros']];
-    const shortNames = {casa:'Casa',limpeza:'Limpeza',instalacoes:'Elétrica e hidráulica',tecnica:'Técnica',auto:'Automotivo',transporte:'Transporte',beleza:'Beleza',pets:'Pets',aulas:'Aulas e eventos',outros:'Outros'};
-    const filters = [['todos','Todos']].concat(groupOrder.map(function(g){return [g[0], shortNames[g[0]] || g[1]];}));
-    function norm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
-    const popularNames=['Montador de móveis','Encanador','Eletricista','Diarista','Marido de aluguel','Pintor'];
-    const popular=popularNames.map(function(name){return cats.find(function(c){return norm(c.nome)===norm(name);});}).filter(Boolean).slice(0,6);
-    const popularHtml=popular.length?'<div class="qf-popular-wrap"><div class="qf-popular-title">Mais pedidos</div><div class="qf-popular-row">'+popular.map(function(c){
-      return '<button class="category-tile" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
-    }).join('')+'</div></div>':'';
     const freeLineHtml='<div class="qf-free-line">'+icon('checkCircle')+'<span>Pedir um profissional é grátis. Você só decide contratar depois do orçamento.</span></div>';
-    const filterHtml=filters.map(function(g,i){return '<button type="button" class="category-filter-chip'+(i===0?' is-active':'')+'" data-category-filter="'+g[0]+'">'+PU.escapeHtml(g[1])+'</button>';}).join('');
-    const groupsHtml=groupOrder.map(function(g){
-      const groupCats=cats.filter(function(c){return (c.grupoId||'outros')===g[0];});
-      if(!groupCats.length)return '';
-      return '<section class="category-group" data-category-group="'+g[0]+'"><div class="category-group__title"><span>'+PU.escapeHtml(g[1])+'</span><span class="category-group__count">'+groupCats.length+'</span></div><div class="category-tiles">'+groupCats.map(function(c){
-        return '<button class="category-tile" data-cat-group="'+g[0]+'" data-cat-name="'+PU.escapeHtml(c.nome)+'" data-nav="/cliente/categoria/'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';
-      }).join('')+'</div></section>';
-    }).join('');
     let savedRegion = null;
     try { savedRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { savedRegion = null; }
     const userEnd = user && user.enderecos && user.enderecos[0] ? user.enderecos[0] : null;
@@ -6289,15 +6278,17 @@ alt=""></noscript>
     const regionCity = (savedRegion && savedRegion.cidade) || (userEnd && (userEnd.cidade || (userCityObj && userCityObj.nome))) || '';
     const regionUf = (savedRegion && savedRegion.uf) || (userEnd && (userEnd.uf || (userCityObj && userCityObj.uf))) || '';
     const regionCep = (savedRegion && savedRegion.cep) || '';
-    const regionStatus = regionCity && regionUf ? ('Buscando profissionais em ' + regionCity + '/' + regionUf) : 'Escolha a cidade ou informe o CEP.';
+    const regionStatus = regionCity && regionUf ? ('Região selecionada: ' + regionCity + '/' + regionUf) : 'Escolha a cidade ou informe o CEP.';
     return '<div class="category-browser">'+
-      '<label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Ex.: pintor, reformar, montar..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+
+      '<label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Digite o serviço: pintor, montador, eletricista..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label>'+
+      '<div class="qf-auto-service-status" data-service-match-status aria-live="polite">Digite o serviço e escolha sua cidade. O QuemFaz identifica a categoria automaticamente.</div>'+
       '<div class="card card--tight qf-service-region"><div class="field__label">Onde precisa do serviço?</div>'+
         '<div class="qf-service-region__row" style="margin-top:8px;"><input class="input" type="text" placeholder="Cidade, ex.: Santo André" data-service-city value="'+PU.escapeHtml(regionCity)+'"><select class="select" data-service-uf aria-label="Estado"><option value="">UF</option>'+global.QFGeo.ufOptions(regionUf)+'</select></div>'+
         '<div class="qf-service-region__cep"><input class="input" type="text" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" data-service-cep value="'+PU.escapeHtml(regionCep)+'"><button class="btn btn--outline" type="button" data-service-lookup-cep>Localizar</button></div>'+
         '<div class="qf-service-region__status" data-service-region-status>'+PU.escapeHtml(regionStatus)+'</div>'+
       '</div>'+
-      freeLineHtml+popularHtml+(afterPopular||'')+'<div class="category-filter-row" aria-label="Filtrar serviços">'+filterHtml+'</div><div class="category-grid">'+groupsHtml+'</div><div class="category-empty" data-category-empty>Nenhum serviço encontrado. Tente outro nome.</div></div>';
+      freeLineHtml+(afterPopular||'')+
+      '</div>';
   }
 
   function qfPendenciaDismissed(tipo) {
@@ -6318,7 +6309,7 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">'+cats.length+' serviços</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
+      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
 
@@ -6580,8 +6571,8 @@ alt=""></noscript>
     return '<div class="empty-state">' +
       '<div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div>' +
       '<h2 class="h3">Nenhum pedido ainda</h2>' +
-      '<p class="text text--secondary">Escolha uma categoria na Início para solicitar seu primeiro serviço.</p>' +
-      '<button class="btn btn--primary btn--block-auto" data-nav="/cliente/home" style="margin-top:6px;">Ver categorias</button>' +
+      '<p class="text text--secondary">Digite o serviço na tela Início para solicitar seu primeiro serviço.</p>' +
+      '<button class="btn btn--primary btn--block-auto" data-nav="/cliente/home" style="margin-top:6px;">Buscar serviço</button>' +
     '</div>';
   }
 
@@ -6998,35 +6989,57 @@ alt=""></noscript>
 
   function bindCategoryBrowser(content) {
     const input = content.querySelector('[data-category-search]');
-    const chips = Array.prototype.slice.call(content.querySelectorAll('[data-category-filter]'));
-    const groups = Array.prototype.slice.call(content.querySelectorAll('[data-category-group]'));
-    const tiles = Array.prototype.slice.call(content.querySelectorAll('.category-tile[data-cat-name]'));
-    const empty = content.querySelector('[data-category-empty]');
     const cityInput = content.querySelector('[data-service-city]');
     const ufInput = content.querySelector('[data-service-uf]');
     const cepInput = content.querySelector('[data-service-cep]');
     const cepBtn = content.querySelector('[data-service-lookup-cep]');
     const regionStatus = content.querySelector('[data-service-region-status]');
-    if (!input || !tiles.length) return;
-    let active = 'todos';
+    const matchStatus = content.querySelector('[data-service-match-status]');
+    const cats = DB.categories();
+    if (!input || !cats.length) return;
+
     function norm(v) {
       return String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     }
     const aliases = {
       cat_pintor: 'pintura pintar parede paredes pintores',
-      cat_eletricista: 'eletrica eletrico eletricidade instalacao eletrica',
-      cat_encanador: 'encanamento hidraulica hidraulico vazamento',
-      cat_montador: 'montagem moveis montar movel armario guarda roupa',
-      cat_diarista: 'faxina limpeza domestica',
-      cat_jardinagem: 'jardim jardinagem jardineiro',
-      cat_arcondicionado: 'ar condicionado climatizacao',
-      cat_chaveiro: 'chave fechadura',
-      cat_pedreiro: 'reforma reformar obra construcao construir',
-      cat_mecanico: 'mecanica carro automovel',
+      cat_eletricista: 'eletrica eletrico eletricidade instalacao eletrica tomada chuveiro',
+      cat_encanador: 'encanamento hidraulica hidraulico vazamento torneira cano',
+      cat_montador: 'montagem moveis montar movel armario guarda roupa guarda-roupa',
+      cat_diarista: 'faxina limpeza domestica casa apartamento',
+      cat_jardinagem: 'jardim jardinagem jardineiro grama',
+      cat_arcondicionado: 'ar condicionado climatizacao instalar ar',
+      cat_chaveiro: 'chave fechadura porta',
+      cat_pedreiro: 'reforma reformar obra construcao construir alvenaria',
+      cat_mecanico: 'mecanica carro automovel veículo veiculo',
       cat_borracheiro: 'pneu borracharia',
-      cat_frete: 'carreto mudanca transporte',
-      cat_informatica: 'computador notebook pc informatica'
+      cat_frete: 'carreto mudanca transporte frete',
+      cat_informatica: 'computador notebook pc informatica',
+      cat_soldador: 'solda soldagem portao portão',
+      cat_vidraceiro: 'vidro janela box espelho',
+      cat_serralheiro: 'serralheria portao portão grade',
+      cat_marceneiro: 'marcenaria madeira armario armário',
+      cat_guincho: 'reboque guincho',
+      cat_motorista: 'motorista transporte',
+      cat_entregador: 'entrega entregador motoboy'
     };
+    function categoryHaystack(cat) {
+      return norm((cat.nome || '') + ' ' + (aliases[cat.id] || ''));
+    }
+    function bestCategory(raw) {
+      const q = norm(raw);
+      if (q.length < 3) return null;
+      const exact = cats.find(function (cat) {
+        const name = norm(cat.nome);
+        const words = norm(aliases[cat.id] || '').split(/\s+/).filter(Boolean);
+        return name === q || words.indexOf(q) !== -1;
+      });
+      if (exact) return exact;
+      const starts = cats.filter(function (cat) { return norm(cat.nome).indexOf(q) === 0; });
+      if (starts.length === 1) return starts[0];
+      const found = cats.filter(function (cat) { return categoryHaystack(cat).indexOf(q) !== -1; });
+      return found.length === 1 ? found[0] : null;
+    }
     function region() {
       const cidade = String(cityInput && cityInput.value || '').trim();
       const uf = String(ufInput && ufInput.value || '').trim().toUpperCase();
@@ -7040,67 +7053,114 @@ alt=""></noscript>
         return null;
       }
       try { sessionStorage.setItem('qf_client_search_region', JSON.stringify(r)); } catch (_) {}
-      if (regionStatus) regionStatus.textContent = 'Buscando profissionais em ' + r.cidade + '/' + r.uf;
+      if (regionStatus) regionStatus.textContent = 'Região selecionada: ' + r.cidade + '/' + r.uf;
       return r;
     }
-    function tileId(tile) {
-      const nav = String(tile.getAttribute('data-nav') || '');
-      const parts = nav.split('/');
-      return parts[parts.length - 1] || '';
+    function setMatch(message, kind, actionCat) {
+      if (!matchStatus) return;
+      matchStatus.className = 'qf-auto-service-status' + (kind ? ' qf-auto-service-status--' + kind : '');
+      matchStatus.innerHTML = PU.escapeHtml(message || '');
+      if (actionCat) {
+        matchStatus.innerHTML += '<button class="btn btn--outline qf-auto-service-status__btn" type="button" data-service-continue="' + PU.escapeHtml(actionCat.id) + '">Continuar e ampliar busca</button>';
+      }
     }
-    function haystack(tile) {
-      const id = tileId(tile);
-      return norm((tile.getAttribute('data-cat-name') || '') + ' ' + (aliases[id] || ''));
-    }
-    function matches(tile, q) {
-      return !q || haystack(tile).indexOf(q) !== -1;
-    }
-    function exactTile(q) {
-      if (!q) return null;
-      return tiles.find(function (tile) {
-        const id = tileId(tile);
-        const name = norm(tile.getAttribute('data-cat-name'));
-        const aliasWords = norm(aliases[id] || '').split(/\s+/).filter(Boolean);
-        return name === q || aliasWords.indexOf(q) !== -1;
-      }) || null;
-    }
-    function visibleMatches(q) {
-      return tiles.filter(function (tile) { return matches(tile, q); });
-    }
-    function openTile(tile) {
-      if (!tile) return false;
-      const r = saveRegion(true);
-      if (!r) return false;
-      const nav = tile.getAttribute('data-nav');
-      if (!nav) return false;
-      global.navigate(nav);
-      return true;
-    }
-    function apply() {
-      const q = norm(input.value);
-      let visible = 0;
-      tiles.forEach(function (tile) {
-        const byGroup = q ? true : (active === 'todos' || tile.getAttribute('data-cat-group') === active);
-        const show = byGroup && matches(tile, q);
-        tile.style.display = show ? '' : 'none';
-        if (show) visible++;
+    function localCoverage(cat, r) {
+      const cityNorm = norm(r.cidade), uf = String(r.uf || '').toUpperCase();
+      const all = (DB.state.users && DB.state.users.profissionais ? DB.state.users.profissionais : []).filter(function (p) {
+        if (!p || p.bloqueado || p.statusAprovacao !== 'aprovado' || !Array.isArray(p.categorias) || p.categorias.indexOf(cat.id) === -1) return false;
+        const cityObj = p.cidadeId ? DB.cityById(p.cidadeId) : null;
+        const pCity = norm(p.cidade || (p.endereco && p.endereco.cidade) || (cityObj && cityObj.nome) || '');
+        const pUf = String(p.uf || (p.endereco && p.endereco.uf) || (cityObj && cityObj.uf) || '').toUpperCase();
+        return pCity === cityNorm && (!uf || !pUf || pUf === uf);
       });
-      groups.forEach(function (group) {
-        const has = Array.prototype.some.call(group.querySelectorAll('.category-tile'), function (tile) { return tile.style.display !== 'none'; });
-        group.style.display = has ? '' : 'none';
-      });
-      if (empty) empty.style.display = visible ? 'none' : 'block';
-      return visible;
+      return { total: all.length, online: all.filter(function (p) { return !!p.online; }).length, nearby: false };
     }
-    function openBestMatch() {
-      const q = norm(input.value);
-      if (!q) return false;
-      const exact = exactTile(q);
-      if (exact) return openTile(exact);
-      const found = visibleMatches(q);
-      if (found.length) return openTile(found[0]);
-      PU.toast('Não encontramos esse serviço. Tente outro nome.', 'danger');
-      return false;
+    async function cloudCoverage(cat, r, nearby) {
+      const cl = global.QFCloud && global.QFCloud.client;
+      if (!cl) return null;
+      let lat = null, lng = null;
+      if (nearby && global.QFGeo && typeof global.QFGeo.geocodeCity === 'function') {
+        try {
+          const loc = await global.QFGeo.geocodeCity(r.cidade, r.uf);
+          if (loc) {
+            lat = Number(loc.latitude);
+            lng = Number(loc.longitude);
+            if (!isFinite(lat) || !isFinite(lng)) { lat = null; lng = null; }
+          }
+        } catch (_) {}
+      }
+      const res = await cl.rpc('qf_cobertura_regiao', {
+        p_categoria: cat.id,
+        p_cidade: r.cidade,
+        p_uf: r.uf,
+        p_lat: lat,
+        p_lng: lng
+      });
+      if (res.error || !res.data || !res.data.ok) return null;
+      return {
+        total: Number(res.data.profissionais || 0),
+        online: Number(res.data.online_agora || 0),
+        nearby: !!nearby
+      };
+    }
+
+    let timer = 0;
+    let seq = 0;
+    let navigating = false;
+    async function tryAutoOpen() {
+      if (navigating) return;
+      const cat = bestCategory(input.value);
+      if (!cat) {
+        if (norm(input.value).length >= 3) setMatch('Continue digitando para identificarmos o serviço.', '', null);
+        else setMatch('Digite o serviço e escolha sua cidade. O QuemFaz identifica a categoria automaticamente.', '', null);
+        return;
+      }
+      const r = saveRegion(false);
+      if (!r) {
+        setMatch('Serviço identificado: ' + cat.nome + '. Agora escolha a cidade ou informe o CEP.', 'found', null);
+        return;
+      }
+
+      const my = ++seq;
+      setMatch('Verificando profissionais de ' + cat.nome + ' em ' + r.cidade + '/' + r.uf + '...', 'checking', null);
+      let cov = null;
+      try {
+        if (global.QFCloud && global.QFCloud.enabled && global.QFCloud.client) {
+          cov = await cloudCoverage(cat, r, false);
+          if (my !== seq) return;
+          if (cov && cov.total === 0) {
+            const near = await cloudCoverage(cat, r, true);
+            if (my !== seq) return;
+            if (near && near.total > 0) cov = near;
+          }
+        } else {
+          cov = localCoverage(cat, r);
+        }
+      } catch (_) {
+        cov = null;
+      }
+      if (my !== seq) return;
+
+      if (cov && cov.total > 0) {
+        const onlineTxt = cov.online > 0 ? (cov.online + (cov.online === 1 ? ' online agora' : ' online agora')) : (cov.total + (cov.total === 1 ? ' profissional cadastrado' : ' profissionais cadastrados'));
+        setMatch((cov.nearby ? 'Encontramos profissionais próximos. ' : 'Encontramos profissional na sua região. ') + onlineTxt + '. Abrindo o pedido...', 'found', null);
+        navigating = true;
+        setTimeout(function () {
+          global.navigate('/cliente/novo-pedido/' + encodeURIComponent(cat.id));
+        }, 350);
+        return;
+      }
+
+      if (cov && cov.total === 0) {
+        setMatch('Ainda não encontramos ' + cat.nome.toLowerCase() + ' nessa região. Você pode continuar e o radar amplia a busca automaticamente.', 'none', cat);
+        return;
+      }
+
+      setMatch('Serviço identificado: ' + cat.nome + '. Não foi possível confirmar a disponibilidade agora.', 'checking', cat);
+    }
+    function scheduleAutoOpen(delay) {
+      clearTimeout(timer);
+      timer = setTimeout(tryAutoOpen, delay == null ? 450 : delay);
     }
     async function lookupSearchCep() {
       const cep = global.QFGeo.normalizeCep(cepInput && cepInput.value || '');
@@ -7113,6 +7173,7 @@ alt=""></noscript>
         if (cepInput) cepInput.value = global.QFGeo.formatCep(cep);
         saveRegion(false);
         PU.toast('CEP localizado: ' + (d.cidade || '') + (d.uf ? '/' + d.uf : ''), 'success');
+        scheduleAutoOpen(80);
         return true;
       } catch (err) {
         PU.toast((err && err.message) || 'CEP não encontrado.', 'danger');
@@ -7121,22 +7182,17 @@ alt=""></noscript>
         if (cepBtn) cepBtn.disabled = false;
       }
     }
-    input.addEventListener('input', function () {
-      apply();
-      const exact = exactTile(norm(input.value));
-      if (exact && norm(input.value).length >= 3 && region().cidade && region().uf) openTile(exact);
-    });
+
+    input.addEventListener('input', function () { scheduleAutoOpen(450); });
     input.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter') return;
       e.preventDefault();
-      openBestMatch();
+      clearTimeout(timer);
+      tryAutoOpen();
     });
-    input.addEventListener('search', function () {
-      apply();
-      if (norm(input.value)) openBestMatch();
-    });
-    if (cityInput) cityInput.addEventListener('input', function () { saveRegion(false); });
-    if (ufInput) ufInput.addEventListener('change', function () { saveRegion(false); });
+    input.addEventListener('search', function () { scheduleAutoOpen(100); });
+    if (cityInput) cityInput.addEventListener('input', function () { saveRegion(false); scheduleAutoOpen(600); });
+    if (ufInput) ufInput.addEventListener('change', function () { saveRegion(false); scheduleAutoOpen(120); });
     if (cepInput) {
       cepInput.addEventListener('input', function () {
         cepInput.value = global.QFGeo.formatCep(cepInput.value);
@@ -7145,21 +7201,14 @@ alt=""></noscript>
     }
     if (cepBtn) cepBtn.addEventListener('click', lookupSearchCep);
     content.addEventListener('click', function (e) {
-      const tile = e.target.closest && e.target.closest('.category-browser .category-tile[data-nav]');
-      if (!tile) return;
-      e.preventDefault();
-      e.stopPropagation();
-      openTile(tile);
-    }, true);
-    chips.forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        active = chip.getAttribute('data-category-filter') || 'todos';
-        chips.forEach(function (c) { c.classList.toggle('is-active', c === chip); });
-        apply();
-      });
+      const btn = e.target.closest && e.target.closest('[data-service-continue]');
+      if (!btn) return;
+      const catId = btn.getAttribute('data-service-continue');
+      const r = saveRegion(true);
+      if (!catId || !r) return;
+      global.navigate('/cliente/novo-pedido/' + encodeURIComponent(catId));
     });
     saveRegion(false);
-    apply();
   }
 
   function renderCallMedia(src) {
@@ -10252,7 +10301,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.19';
+  const APP_VERSION = '11.14.20';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
