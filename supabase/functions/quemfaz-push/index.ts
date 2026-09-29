@@ -441,6 +441,20 @@ async function progressiveNewCallPush(callId: string) {
   }
 }
 
+async function progressivePriorityBoost(callId: string) {
+  try {
+    // Prioridade paga: amplia bem mais rápido que a busca normal.
+    await sleep(12000);
+    let stage = await sendNewCallStage(callId, 60);
+    if (stage.stopped) return;
+
+    await sleep(12000);
+    await sendNewCallStage(callId, 100);
+  } catch (err) {
+    console.error("progressivePriorityBoost", err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -458,6 +472,18 @@ Deno.serve(async (req) => {
     const event = String(body.event || "");
     const callId = String(body.call_id || "");
     if (!callId) return json({ error: "invalid_internal_event" }, 400);
+
+    if (event === "priority_boost") {
+      try {
+        // Assim que o pagamento é aprovado, já amplia para 30 km.
+        const boosted = await sendNewCallStage(callId, 30);
+        if (!boosted.stopped) EdgeRuntime.waitUntil(progressivePriorityBoost(callId));
+        return json({ ok: true, priority: true, ...boosted });
+      } catch (err) {
+        console.error("priority_boost", err);
+        return json({ error: "priority_boost_failed" }, 500);
+      }
+    }
 
     if (event === "cascade_stage2") {
       try {
