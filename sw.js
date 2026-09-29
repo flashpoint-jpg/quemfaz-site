@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.14.24';
+const SW_VERSION = '11.14.25';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
