@@ -1223,6 +1223,24 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .ad-preview { width:100%; aspect-ratio:16/9; border-radius:18px; border:1px dashed var(--border-strong); background:var(--bg-sunken); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
 .ad-preview img { width:100%; height:100%; object-fit:cover; }
 .qf-ad-builder-info{border:1px solid rgba(224,99,15,.18);background:linear-gradient(135deg,var(--navy-100),#fff);padding:14px;border-radius:18px}
+.qf-ad-placement{border:1px solid rgba(224,99,15,.22);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 26px -22px rgba(8,20,40,.55)}
+.qf-ad-placement__head{padding:14px 15px;background:linear-gradient(135deg,#081c3a,#12315c);color:#fff}
+.qf-ad-placement__head .text--sm{color:rgba(255,255,255,.78)}
+.qf-ad-placement__body{padding:14px}
+.qf-ad-placement__mock{border:1px solid var(--border-subtle);border-radius:16px;background:var(--bg-sunken);padding:10px}
+.qf-ad-placement__mock-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
+.qf-ad-placement__mock-card{position:relative;aspect-ratio:16/6;border-radius:13px;overflow:hidden;background:linear-gradient(135deg,#071a35,#153663);border:2px solid var(--orange-500)}
+.qf-ad-placement__mock-card:before{content:'';position:absolute;right:-18px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,137,25,.52),rgba(255,137,25,0) 68%)}
+.qf-ad-placement__mock-copy{position:absolute;left:13px;top:12px;right:12px;color:#fff}
+.qf-ad-placement__badge{display:inline-flex;padding:4px 7px;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:8px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
+.qf-ad-placement__name{font-size:15px;font-weight:900;margin-top:10px;max-width:72%}
+.qf-ad-placement__cta{font-size:10px;font-weight:800;color:#ffb347;margin-top:5px}
+.qf-ad-placement__facts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.qf-ad-placement__fact{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:12px;background:var(--navy-100)}
+.qf-ad-placement__fact svg{width:17px;height:17px;flex:none;color:var(--orange-600);margin-top:1px}
+.qf-ad-placement__fact strong{display:block;font-size:12px;color:var(--navy-900)}
+.qf-ad-placement__fact span{display:block;font-size:12px;color:var(--text-secondary);margin-top:1px;line-height:1.35}
+@media(min-width:700px){.qf-ad-placement__facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .qf-ad-builder-steps{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
 .qf-ad-builder-step{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text-secondary)}
 .qf-ad-builder-step b{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--orange-600);color:#fff;font-size:11px}
@@ -6381,6 +6399,18 @@ alt=""></noscript>
         '<div class="qf-ad-builder-step"><b>3</b><span>O QuemFaz monta a arte navy + laranja e mostra a prévia.</span></div>' +
         '<div class="qf-ad-builder-step"><b>4</b><span>Você pode editar, baixar a imagem e só depois publicar.</span></div>' +
       '</div><div class="text--sm" style="margin-top:9px;color:var(--orange-700);font-weight:800;">No Premium, o anúncio recebe selo Premium e maior destaque no carrossel.</div></div>' +
+      '<div class="qf-ad-placement" id="qf-ad-placement">' +
+        '<div class="qf-ad-placement__head"><div class="text--strong">Onde meu anúncio vai aparecer?</div><div class="text--sm" style="margin-top:3px;">Na tela inicial dos clientes, dentro do carrossel <strong>Empresas da região</strong>.</div></div>' +
+        '<div class="qf-ad-placement__body">' +
+          '<div class="qf-ad-placement__mock"><div class="qf-ad-placement__mock-top"><span>Tela inicial do cliente</span><span>Empresas da região</span></div><div class="qf-ad-placement__mock-card"><div class="qf-ad-placement__mock-copy"><span class="qf-ad-placement__badge" data-placement-badge>Patrocinado</span><div class="qf-ad-placement__name" data-placement-name>Sua empresa aqui</div><div class="qf-ad-placement__cta">Clique para falar conosco →</div></div></div></div>' +
+          '<div class="qf-ad-placement__facts">' +
+            '<div class="qf-ad-placement__fact">' + icon('home') + '<div><strong>Local do anúncio</strong><span>Tela inicial do cliente, no carrossel “Empresas da região”.</span></div></div>' +
+            '<div class="qf-ad-placement__fact">' + icon('mapPin') + '<div><strong>Quem vai ver</strong><span data-placement-region>Clientes de todo o Brasil.</span></div></div>' +
+            '<div class="qf-ad-placement__fact">' + icon('star') + '<div><strong>Posição no carrossel</strong><span data-placement-position>Exibição normal no carrossel.</span></div></div>' +
+            '<div class="qf-ad-placement__fact">' + icon('messageCircle') + '<div><strong>Quando a pessoa clicar</strong><span data-placement-click>Abre seu WhatsApp com uma mensagem pronta, ou seu site se você informar um link.</span></div></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
       '<form id="anuncio-form" class="stack" novalidate>' +
         '<input type="hidden" name="editingAdId" value=""><input type="hidden" name="artMode" value="auto">' +
         '<div class="qf-ad-editing-note">Você está editando um anúncio existente. Plano e região continuam os mesmos; aqui você altera a arte, textos e destino do clique.</div>' +
@@ -9051,6 +9081,36 @@ alt=""></noscript>
     const readyBox = content.querySelector('[data-art-ready]');
     const modeWrap = content.querySelector('#ad-art-mode');
     const submitBtn = form.querySelector('button[type="submit"]');
+    const placementRegion = content.querySelector('[data-placement-region]');
+    const placementPosition = content.querySelector('[data-placement-position]');
+    const placementBadge = content.querySelector('[data-placement-badge]');
+    const placementName = content.querySelector('[data-placement-name]');
+    const placementClick = content.querySelector('[data-placement-click]');
+
+    function updatePlacementInfo() {
+      const fd = new FormData(form);
+      const plano = selectedPlan();
+      const tipo = String(fd.get('regiaoTipo') || 'all');
+      const cidade = String(fd.get('cidadeAnuncio') || '').trim();
+      const uf = String(fd.get('ufAnuncio') || '').trim();
+      const empresa = String(fd.get('empresa') || '').trim();
+      const link = String(fd.get('link') || '').trim();
+      if (placementName) placementName.textContent = empresa || 'Sua empresa aqui';
+      if (placementRegion) {
+        placementRegion.textContent = tipo === 'cidade'
+          ? (cidade && uf ? 'Clientes que acessarem o QuemFaz em ' + cidade + '/' + uf + '.' : 'Clientes da cidade e UF que você escolher.')
+          : 'Clientes de todo o Brasil.';
+      }
+      if (placementPosition) {
+        placementPosition.textContent = plano === 'premium'
+          ? 'Premium: primeira posição, card maior e selo Premium.'
+          : (plano === 'destaque' ? 'Destaque: prioridade no carrossel e selo de destaque.' : 'Local: exibição normal no carrossel da região escolhida.');
+      }
+      if (placementBadge) placementBadge.textContent = plano === 'premium' ? 'Patrocinado • Premium' : (plano === 'destaque' ? 'Patrocinado • Destaque' : 'Patrocinado');
+      if (placementClick) placementClick.textContent = link
+        ? 'Abre o site ou link que você informar.'
+        : 'Abre seu WhatsApp com uma mensagem pronta para o cliente falar com você.';
+    }
 
     function selectedPlan() {
       const r = form.querySelector('input[name="plano"]:checked');
@@ -9255,8 +9315,9 @@ alt=""></noscript>
       if(f.size>1200*1024){readyInput.value='';PU.toast('A arte pronta deve ter no máximo 1,2 MB.','danger');return;}
       const r=new FileReader();r.onload=function(){imageData=String(r.result||'');showPreview(imageData);};r.readAsDataURL(f);
     });
-    ['empresa','chamada','cta'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='cta'?'change':'input',scheduleRender);});
-    Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(r){r.addEventListener('change',scheduleRender);});
+    ['empresa','chamada','cta'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='cta'?'change':'input',function(){scheduleRender();updatePlacementInfo();});});
+    Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(r){r.addEventListener('change',function(){scheduleRender();updatePlacementInfo();});});
+    ['cidadeAnuncio','ufAnuncio','link'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='ufAnuncio'?'change':'input',updatePlacementInfo);});
     if(generateBtn) generateBtn.addEventListener('click',function(){if(currentMode()==='auto')buildAutomaticArt();else if(!imageData)PU.toast('Envie sua arte pronta primeiro.','danger');});
     if(downloadBtn) downloadBtn.addEventListener('click',function(){downloadImage(imageData,form.elements.empresa.value);});
 
@@ -9264,6 +9325,7 @@ alt=""></noscript>
       radio.addEventListener('change', function () {
         Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) { r.closest('.segmented__item').classList.toggle('is-active', r.checked); });
         const cityRow=form.querySelector('[name="cidadeAnuncio"]'); if(cityRow&&radio.value==='cidade'&&radio.checked)cityRow.focus();
+        updatePlacementInfo();
       });
     });
     const pay=content.querySelector('#ad-payment');
@@ -9292,6 +9354,8 @@ alt=""></noscript>
       try{form.scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}
       PU.toast('Anúncio aberto para edição.','success');
     });
+
+    updatePlacementInfo();
 
     form.addEventListener('submit',async function(e){
       e.preventDefault();
@@ -10190,7 +10254,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.17';
+  const APP_VERSION = '11.14.18';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
