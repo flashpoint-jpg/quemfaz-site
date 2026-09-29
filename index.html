@@ -4414,15 +4414,25 @@ alt=""></noscript>
     if (role === 'profissional' && data.selfieData) {
       try { localStorage.setItem(pendingSelfieKey(email), data.selfieData); } catch (_) {}
     }
-    const res = await client.auth.signUp({
-      email: email,
-      password: authPassword,
-      options: { data: meta }
-    });
-    if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
+    let res = null;
+    if (quickClient && client.auth && typeof client.auth.signInAnonymously === 'function') {
+      try {
+        const anon = await client.auth.signInAnonymously({ options: { data: meta } });
+        if (!anon.error && anon.data && anon.data.session) res = anon;
+      } catch (_) {}
+    }
+    if (!res) {
+      res = await client.auth.signUp({
+        email: email,
+        password: authPassword,
+        options: { data: meta }
+      });
+      if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
+    }
     if (!res.data.session) {
-      // V11.11.6: o banco já confirma o e-mail no cadastro; entra direto sem pedir para abrir o e-mail.
+      // Fallback para projetos sem login anônimo: tenta entrar com a credencial interna criada pelo sistema.
       try { const li = await signIn(role, email, authPassword); if (li && li.ok) return li; } catch (_) {}
+      if (quickClient) return { ok: false, error: 'Não foi possível iniciar seu acesso rápido agora. Tente novamente.' };
       return { ok: true, needsConfirmation: true, user: res.data.user };
     }
     try {
@@ -7002,9 +7012,7 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
-        '<div class="section">' +
-          '<button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button>' +
-        '</div>' +
+        (user.email ? ('<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>') : '') +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
         '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
       '</div>'
@@ -10482,7 +10490,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.30';
+  const APP_VERSION = '11.14.31';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
