@@ -4437,7 +4437,8 @@ alt=""></noscript>
       DB.setSession({ role: p.tipo, userId: res.data.user.id });
       if (p.tipo === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
       lastSyncAt = Date.now();
-      return { ok: true, user: local, session: DB.getSession() };
+      const mustChangePassword = !!(res.data.user && res.data.user.app_metadata && res.data.user.app_metadata.qf_force_password_change);
+      return { ok: true, user: local, session: DB.getSession(), mustChangePassword: mustChangePassword };
     } catch (e) {
       return { ok: false, error: e.message || String(e) };
     }
@@ -4465,6 +4466,31 @@ alt=""></noscript>
     if (res.error) return { ok: false, error: String(res.error.message || 'Não foi possível atualizar a senha.') };
     try { sessionStorage.removeItem('qf_password_recovery'); } catch (_) {}
     return { ok: true };
+  }
+
+  async function updateForcedPassword(newPassword) {
+    if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
+    newPassword = String(newPassword || '');
+    if (newPassword.length < 6) return { ok: false, error: 'A nova senha precisa ter pelo menos 6 caracteres.' };
+    const fn = await client.functions.invoke('quemfaz-password-control', {
+      body: { action: 'self_change', password: newPassword }
+    });
+    if (fn.error) {
+      let detail = null;
+      try { if (fn.error.context && typeof fn.error.context.json === 'function') detail = await fn.error.context.json(); } catch (_) {}
+      return { ok: false, error: (detail && detail.error) || fn.error.message || 'Não foi possível atualizar a senha.' };
+    }
+    if (!fn.data || !fn.data.ok) return { ok: false, error: (fn.data && fn.data.error) || 'Não foi possível atualizar a senha.' };
+    try { await client.auth.refreshSession(); } catch (_) {}
+    try { sessionStorage.removeItem('qf_force_password_change'); } catch (_) {}
+    return { ok: true };
+  }
+
+  async function needsForcedPasswordChange() {
+    if (!enabled || !client) return false;
+    const res = await client.auth.getUser();
+    if (res.error || !res.data || !res.data.user) return false;
+    return !!(res.data.user.app_metadata && res.data.user.app_metadata.qf_force_password_change);
   }
 
   async function signOut() {
@@ -4975,6 +5001,8 @@ alt=""></noscript>
     signIn: signIn,
     requestPasswordReset: requestPasswordReset,
     updatePassword: updatePassword,
+    updateForcedPassword: updateForcedPassword,
+    needsForcedPasswordChange: needsForcedPasswordChange,
     signOut: signOut,
     startEfiCheckout: startEfiCheckout,
     createRecharge: createRecharge,
@@ -5782,13 +5810,17 @@ alt=""></noscript>
   }
 
   let newPasswordSheetOpen = false;
-  async function openNewPassword() {
+  async function openNewPassword(options) {
+    const forced = !!(options && options.forced);
     if (newPasswordSheetOpen || document.getElementById('qf-new-password-form')) return;
     if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.updatePassword)) return;
+    if (forced && !global.QFCloud.updateForcedPassword) return;
     newPasswordSheetOpen = true;
     PU.openSheet(
-      '<div class="stack"><h3 class="sheet__title">Crie uma nova senha</h3>' +
-      '<p class="text text--secondary">Digite sua nova senha para voltar a acessar o QuemFaz.</p>' +
+      '<div class="stack"><h3 class="sheet__title">' + (forced ? 'Troque sua senha' : 'Crie uma nova senha') + '</h3>' +
+      '<p class="text text--secondary">' + (forced
+        ? 'Você entrou com uma senha temporária definida pelo suporte. Crie agora uma senha nova, que só você vai saber, para continuar.'
+        : 'Digite sua nova senha para voltar a acessar o QuemFaz.') + '</p>' +
       '<form id="qf-new-password-form" class="stack">' +
       '<label class="field"><span class="field__label">Nova senha</span><input class="input" type="password" name="senha" minlength="6" autocomplete="new-password" required placeholder="Mínimo 6 caracteres"></label>' +
       '<label class="field"><span class="field__label">Confirmar nova senha</span><input class="input" type="password" name="confirmar" minlength="6" autocomplete="new-password" required placeholder="Digite novamente"></label>' +
@@ -5808,18 +5840,26 @@ alt=""></noscript>
       const btn = form.querySelector('button[type="submit"]');
       if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
       try {
-        const res = await global.QFCloud.updatePassword(senha);
+        const res = forced ? await global.QFCloud.updateForcedPassword(senha) : await global.QFCloud.updatePassword(senha);
         if (!res.ok) { PU.toast(res.error || 'Não foi possível atualizar a senha.', 'danger'); return; }
         newPasswordSheetOpen = false;
         PU.closeSheet();
         PU.toast('Senha atualizada com sucesso.', 'success');
+        if (forced) {
+          const sess = DB.getSession();
+          if (sess && sess.role) global.navigate('/' + sess.role + '/home', true);
+        }
       } finally {
         if (btn) { btn.disabled = false; btn.textContent = 'Salvar nova senha'; }
       }
     });
   }
 
-  global.QFPasswordRecovery = { openRequest: openPasswordRecovery, openNewPassword: openNewPassword };
+  global.QFPasswordRecovery = {
+    openRequest: openPasswordRecovery,
+    openNewPassword: openNewPassword,
+    openForcedPassword: function () { return openNewPassword({ forced: true }); }
+  };
   global.addEventListener('qf-password-recovery', function () { setTimeout(openNewPassword, 0); });
 
   // ---------------- Vínculo pós-render (rotas anônimas) ----------------
@@ -5850,6 +5890,12 @@ alt=""></noscript>
             ? await global.QFCloud.signIn(params.role, fd.get('email').trim(), fd.get('senha'))
             : DB.login(params.role, fd.get('email').trim(), fd.get('senha'));
           if (!res.ok) { PU.toast(res.error || 'Não foi possível entrar.', 'danger'); return; }
+          if (res.mustChangePassword && global.QFPasswordRecovery && global.QFPasswordRecovery.openForcedPassword) {
+            try { sessionStorage.setItem('qf_force_password_change', '1'); } catch (_) {}
+            PU.toast('Crie uma nova senha para continuar.', null);
+            global.QFPasswordRecovery.openForcedPassword();
+            return;
+          }
           PU.toast('Bem-vindo(a), ' + res.user.nome.split(' ')[0] + '!', 'success');
           if (sessionStorage.getItem('qf_pending_ad_draft')) {
             global.navigate('/' + params.role + '/anuncie', true);
@@ -12344,7 +12390,11 @@ alt=""></noscript>
     if (global.QFCloud && global.QFCloud.enabled) global.QFCloud.prepareLocalState();
     await route();
     try {
-      if (sessionStorage.getItem('qf_password_recovery') === '1' && global.QFPasswordRecovery) {
+      const mustChange = !!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.needsForcedPasswordChange && await global.QFCloud.needsForcedPasswordChange());
+      if (mustChange && global.QFPasswordRecovery && global.QFPasswordRecovery.openForcedPassword) {
+        try { sessionStorage.setItem('qf_force_password_change', '1'); } catch (_) {}
+        global.QFPasswordRecovery.openForcedPassword();
+      } else if (sessionStorage.getItem('qf_password_recovery') === '1' && global.QFPasswordRecovery) {
         global.QFPasswordRecovery.openNewPassword();
       }
     } catch (_) {}
