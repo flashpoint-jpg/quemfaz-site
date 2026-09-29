@@ -1230,6 +1230,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 .ad-card--empty { background:linear-gradient(135deg,var(--navy-900),var(--navy-700)); }
 .ad-card--empty .ad-card__veil { display:none; }
 .ad-dots { display:flex; gap:5px; justify-content:center; padding-top:2px; }
+#app-shell[data-route="auth-role-cadastro"] .qf-client-signup-ads{margin-top:8px}
+#app-shell[data-route="auth-role-cadastro"] .qf-client-signup-ads .ad-section__head{margin-bottom:8px}
+#app-shell[data-route="auth-role-cadastro"] .qf-client-signup-ads .ad-card{min-height:154px}
+#app-shell[data-route="auth-role-cadastro"] .qf-client-signup-ads .ad-card--premium-art{min-height:0}
 .ad-dot { width:6px; height:6px; border-radius:50%; background:var(--border-strong); }
 .ad-dot:first-child { width:18px; border-radius:999px; background:var(--orange-500); }
 .ad-plan-grid { display:grid; grid-template-columns:1fr; gap:10px; }
@@ -5555,6 +5559,39 @@ alt=""></noscript>
     return Screens.landing();
   };
 
+  function cadastroClienteAdsHtml() {
+    const ads = DB.activeAdsForCity(null).filter(function (a) {
+      return a && a.status === 'ativo' && a.pagamentoStatus === 'aprovado';
+    }).slice(0, 5);
+    if (!ads.length) return '';
+    const cards = ads.map(function (a) {
+      const raw = String(a.link || '').trim();
+      const phone = String(a.whatsapp || '').replace(/\D/g, '');
+      const href = /^https?:\/\//i.test(raw)
+        ? raw
+        : (phone ? ('https://wa.me/' + (phone.indexOf('55') === 0 ? phone : '55' + phone) + '?text=' + encodeURIComponent('Olá, vi seu anúncio no QuemFaz e quero saber mais.')) : '');
+      const premiumArt = !!(a.imagem && (a.plano === 'premium' || a.fixo || (a.arteConfig && a.arteConfig.modelo)));
+      if (premiumArt) {
+        return '<button class="ad-card ad-card--premium-art" type="button" aria-label="' + PU.escapeHtml((a.empresa || 'Anúncio') + ' · anúncio patrocinado') + '" data-ad-click="' + a.id + '" data-ad-href="' + PU.escapeHtml(href) + '">' +
+          '<img class="ad-card__media" src="' + a.imagem + '" alt="' + PU.escapeHtml(a.empresa || 'Anúncio patrocinado') + '">' +
+        '</button>';
+      }
+      return '<button class="ad-card" type="button" data-ad-click="' + a.id + '" data-ad-href="' + PU.escapeHtml(href) + '">' +
+        (a.imagem ? '<img class="ad-card__media" src="' + a.imagem + '" alt="Anúncio de ' + PU.escapeHtml(a.empresa || '') + '">' : '') +
+        '<span class="ad-card__veil"></span><span class="ad-card__body">' +
+          '<span class="ad-card__sponsor">Patrocinado' + (a.plano === 'premium' ? ' · Premium' : a.plano === 'destaque' ? ' · Destaque' : '') + '</span>' +
+          '<span class="ad-card__title">' + PU.escapeHtml(a.empresa || 'Anunciante') + '</span>' +
+          '<span class="ad-card__text">' + PU.escapeHtml(a.chamada || '') + '</span>' +
+          (href ? '<span class="ad-card__cta">Saiba mais ' + icon('arrowRight') + '</span>' : '') +
+        '</span></button>';
+    }).join('');
+    return '<div class="section ad-section qf-client-signup-ads">' +
+      '<div class="ad-section__head"><div class="ad-section__label">' + icon('briefcase') + ' Patrocinados</div><span class="text--sm text--muted">Empresas em destaque</span></div>' +
+      '<div class="ad-carousel">' + cards + '</div>' +
+      '<div class="ad-dots">' + Array.from({length: ads.length}).map(function () { return '<span class="ad-dot"></span>'; }).join('') + '</div>' +
+    '</div>';
+  }
+
   function cadastroClienteView() {
     return (
       '<div class="view stack--lg">' +
@@ -5566,6 +5603,7 @@ alt=""></noscript>
           '<button class="btn btn--primary" type="submit" style="margin-top:6px;">Continuar e pedir serviço</button>' +
         '</form>' +
         '<p class="text text--sm text--muted" style="text-align:center;">Seu WhatsApp fica protegido e só é liberado ao profissional no momento correto do fluxo.</p>' +
+        cadastroClienteAdsHtml() +
       '</div>'
     );
   }
@@ -5955,6 +5993,16 @@ alt=""></noscript>
     }
 
     if (pattern === '/auth/:role/cadastro' && params.role === 'cliente') {
+      const adCards = Array.prototype.slice.call(content.querySelectorAll('[data-ad-click]'));
+      if (adCards.length) DB.registrarImpressoesAnuncios(adCards.map(function (x) { return x.getAttribute('data-ad-click'); }));
+      content.addEventListener('click', function (e) {
+        const ad = e.target.closest('[data-ad-click]');
+        if (!ad) return;
+        const id = ad.getAttribute('data-ad-click');
+        const href = ad.getAttribute('data-ad-href');
+        DB.registrarCliqueAnuncio(id);
+        if (href && /^https?:\/\//i.test(href)) window.open(href, '_blank', 'noopener');
+      });
       const form = content.querySelector('#cadastro-cliente-form');
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -10490,7 +10538,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.31';
+  const APP_VERSION = '11.14.32';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
