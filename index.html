@@ -5534,9 +5534,9 @@ alt=""></noscript>
         }).join('') + '</div></details>';
     }).join('');
     return '<div class="qf-catpick" id="' + id + '">' +
-      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar profissão" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
+      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Digite um serviço para adicionar" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
       '<div class="qf-catpick__summary" data-catpick-summary aria-live="polite"></div>' +
-      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Não encontrou sua profissão?</div><div class="qf-catpick__empty-text">Digite o nome do serviço acima e adicione sua própria categoria.</div><button class="btn btn--outline qf-catpick__add" type="button" data-catpick-add>Adicionar categoria</button></div></div>';
+      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Não encontrou esse serviço?</div><div class="qf-catpick__empty-text">Digite o nome do serviço e toque abaixo para criar sua categoria.</div><button class="btn btn--outline qf-catpick__add" type="button" data-catpick-add>Adicionar sua categoria</button></div></div>';
   }
   function bindCatPicker(root) {
     if (!root || root.dataset.catpickBound) return;
@@ -5564,14 +5564,13 @@ alt=""></noscript>
       return Array.prototype.filter.call(root.querySelectorAll('[data-chip-cat]'), function (c) { return !c.hidden && !(c.closest('[data-catpick-group]') || {}).hidden; });
     }
     function autoPick() {
-      if (root.querySelector('[data-chip-cat].is-selected')) return true;
       const q = catNorm(search && search.value).trim();
-      if (!q) return false;
+      if (!q) return !!root.querySelector('[data-chip-cat].is-selected');
       const vis = visibleChips();
       const exact = vis.filter(function (c) { return c.getAttribute('data-cat-search') === q; });
       const pick = exact.length === 1 ? exact[0] : (vis.length === 1 ? vis[0] : null);
       if (!pick) return false;
-      pick.click();
+      if (!pick.classList.contains('is-selected')) pick.click();
       return true;
     }
     function highlight() {
@@ -5637,7 +5636,7 @@ alt=""></noscript>
       if (addBtn) {
         const typed = String(search.value || '').replace(/\s+/g, ' ').trim().slice(0, 80);
         addBtn.disabled = typed.length < 2;
-        addBtn.textContent = typed ? 'Adicionar "' + typed + '"' : 'Adicionar categoria';
+        addBtn.textContent = typed ? 'Adicionar sua categoria: “' + typed + '”' : 'Adicionar sua categoria';
       }
       update();
     }
@@ -5674,7 +5673,7 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="2" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 4</div><div class="h2">O que você faz</div><div class="text--sm text--secondary">Marque todas as profissões que você atende.</div><div class="qf-step__bar"><span style="width:50%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 4</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Você pode adicionar quantos serviços precisar. Se não encontrar um, crie sua própria categoria.</div><div class="qf-step__bar"><span style="width:50%"></span></div></div>' +
           '<div class="field"><span class="field__label">Toque no grupo, depois toque na sua profissão para marcar</span>' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
@@ -9012,7 +9011,7 @@ alt=""></noscript>
             '<div id="perfil-areas">' + renderServiceAreas(user.areasAtendimento || [{ cidade: (cidade || {}).nome || '', uf: (cidade || {}).uf || '', raioKm: user.raioKm || 10 }]) + '</div>' +
             '<button class="btn btn--outline" type="button" id="adicionar-area">' + icon('plus') + ' Adicionar outra cidade</button>' +
             '<label class="field"><span class="field__label">Taxa de visita padrão</span><input class="input" id="perfil-taxa" inputmode="decimal" value="' + (user.taxaVisitaPadrao ? (user.taxaVisitaPadrao / 100).toFixed(2).replace('.', ',') : '') + '" placeholder="R$ 0,00"></label>' +
-            '<button class="btn btn--primary" id="salvar-atendimento">Salvar cidades e raio</button>' +
+            '<button class="btn btn--primary" id="salvar-atendimento">Salvar serviços e cidades</button>' +
           '</div>' +
         '</div>' +
 
@@ -10279,7 +10278,7 @@ alt=""></noscript>
             taxaVisitaPadrao: PU.parseCurrencyInput(content.querySelector('#perfil-taxa').value)
           });
         }
-        PU.toast('Cidades e raio de atendimento atualizados!', 'success');
+        PU.toast('Serviços e áreas de atendimento atualizados!', 'success');
         global.navigate('/profissional/perfil', true);
       } catch (err) {
         PU.toast(err && err.message ? err.message : 'Não foi possível salvar a área de atendimento.', 'danger');
@@ -10301,7 +10300,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.20';
+  const APP_VERSION = '11.14.21';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
