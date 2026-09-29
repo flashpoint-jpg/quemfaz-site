@@ -198,45 +198,22 @@ async function actorUnlocked(callId: string, userId: string) {
 }
 
 async function recipientsForNewCallAtRadius(call: any, _stageRadiusKm: number | null) {
-  // Todo profissional ONLINE da categoria recebe o chamado.
-  // A distância não bloqueia mais; serve só para informar o profissional.
-  const { data: pros, error: prosErr } = await admin
-    .from("qf_profissionais")
-    .select("user_id,especialidades,online,latitude,longitude")
-    .eq("online", true);
-
-  if (prosErr) throw prosErr;
-
-  const cLat = asNumber(call.latitude);
-  const cLng = asNumber(call.longitude);
-  const out: Array<{ user_id: string; distance_km: number | null; limit_km: number; exact_city: boolean }> = [];
-
-  for (const p of pros || []) {
-    const cats = Array.isArray(p.especialidades) ? p.especialidades : [];
-    if (cats.length > 0 && !cats.includes(call.categoria)) continue;
-
-    const pLat = asNumber(p.latitude);
-    const pLng = asNumber(p.longitude);
-    const distance =
-      cLat != null && cLng != null && pLat != null && pLng != null
-        ? distanceKm(pLat, pLng, cLat, cLng)
-        : null;
-
-    out.push({
-      user_id: p.user_id,
-      distance_km: distance,
-      limit_km: 0,
-      exact_city: false,
-    });
-  }
-
-  out.sort((a, b) => {
-    if (a.distance_km == null && b.distance_km == null) return 0;
-    if (a.distance_km == null) return 1;
-    if (b.distance_km == null) return -1;
-    return a.distance_km - b.distance_km;
+  // Regra principal: o chamado só vai para profissionais da MESMA CIDADE/UF
+  // escolhida pelo cliente e da categoria pedida. Online/offline não muda o
+  // destino; quem tiver push recebe com o app fechado e quem abrir o app vê
+  // o chamado disponível. A distância é apenas informativa e é calculada
+  // individualmente para cada profissional.
+  const { data: rows, error } = await admin.rpc("qf_cascata_destinatarios", {
+    p_chamado_id: call.id,
   });
-  return out;
+  if (error) throw error;
+
+  return (Array.isArray(rows) ? rows : []).map((r: any) => ({
+    user_id: String(r.user_id),
+    distance_km: null,
+    limit_km: 0,
+    exact_city: true,
+  }));
 }
 
 // V11.13: perUser = aviso próprio de cada profissional (distância, tempo e preço dele).
