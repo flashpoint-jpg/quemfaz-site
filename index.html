@@ -3219,13 +3219,18 @@ alt=""></noscript>
   function activeAdsForCity(cityId) {
     const rank = { premium: 0, destaque: 1, local: 2 };
     const max = Number((state.settings || {}).adMaxSlots || 4);
-    return (state.ads || []).filter(function (a) {
+    const eligible = (state.ads || []).filter(function (a) {
       return isAdActive(a) && (a.cidadeId === 'all' || !cityId || a.cidadeId === cityId);
-    }).sort(function (a, b) {
+    });
+    const fixed = eligible.filter(function (a) { return !!a.fixo; }).sort(function (a, b) {
+      return new Date(b.aprovadoEm || b.criadoEm) - new Date(a.aprovadoEm || a.criadoEm);
+    });
+    const regular = eligible.filter(function (a) { return !a.fixo; }).sort(function (a, b) {
       const p = (rank[a.plano] == null ? 9 : rank[a.plano]) - (rank[b.plano] == null ? 9 : rank[b.plano]);
       if (p) return p;
       return new Date(b.aprovadoEm || b.criadoEm) - new Date(a.aprovadoEm || a.criadoEm);
     }).slice(0, max);
+    return fixed.concat(regular);
   }
 
   function criarAnuncio(dados) {
@@ -4039,7 +4044,8 @@ alt=""></noscript>
       fimEm: row.fim_em || null,
       impressoes: Number(row.visualizacoes || 0),
       cliques: Number(row.cliques || 0),
-      motivoReprovacao: row.motivo_reprovacao || ''
+      motivoReprovacao: row.motivo_reprovacao || '',
+      fixo: !!row.fixo
     };
   }
 
@@ -4062,7 +4068,7 @@ alt=""></noscript>
     if (!client) return [];
     await syncAdConfig();
     const res = await client.from('qf_anuncios')
-      .select('id,anunciante_id,anunciante_nome,contato,whatsapp,titulo,texto,imagem_path,imagem_data,destino_url,regiao,plano,valor_centavos,status,pagamento_status,motivo_reprovacao,inicio_em,fim_em,visualizacoes,cliques,criado_em,pago_em,aprovado_em')
+      .select('id,anunciante_id,anunciante_nome,contato,whatsapp,titulo,texto,imagem_path,imagem_data,destino_url,regiao,plano,valor_centavos,status,pagamento_status,motivo_reprovacao,inicio_em,fim_em,visualizacoes,cliques,criado_em,pago_em,aprovado_em,fixo')
       .order('criado_em', { ascending: false })
       .limit(40);
     if (res.error) throw res.error;
@@ -9942,7 +9948,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.14';
+  const APP_VERSION = '11.14.15';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
