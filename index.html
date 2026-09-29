@@ -3513,6 +3513,15 @@ alt=""></noscript>
   }
   function firstName(s) { return String(s || '').trim().split(/\s+/)[0] || 'Usuário'; }
 
+  function cloudCustomCatFromName(v) {
+    const nome = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (nome.length < 2) return null;
+    const key = nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    let hash = 2166136261;
+    for (let i = 0; i < key.length; i++) { hash ^= key.charCodeAt(i); hash = Math.imul(hash, 16777619); }
+    const slug = key.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 38) || 'servico';
+    return { id: 'cat_custom_' + slug + '_' + (hash >>> 0).toString(36), nome: nome };
+  }
   function mergeCloudCustomCategories(rows) {
     let changed = false;
     (rows || []).forEach(function (row) {
@@ -3539,7 +3548,7 @@ alt=""></noscript>
     if (!client || !Array.isArray(items) || !items.length) return [];
     const saved = [];
     for (const item of items) {
-      const cat = customCatFromName(item && item.nome);
+      const cat = cloudCustomCatFromName(item && item.nome);
       if (!cat) continue;
       if (item && item.id && String(item.id).indexOf('cat_custom_') === 0) cat.id = item.id;
       const found = await client.from('qf_categorias_personalizadas').select('id,nome').eq('id', cat.id).maybeSingle();
