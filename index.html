@@ -1581,7 +1581,19 @@ body:has(input:focus) .qf-support-fab,body:has(textarea:focus) .qf-support-fab,b
 .qf-landing-hero{background:var(--navy-900);color:#fff;border-radius:0 0 30px 30px;overflow:hidden}.qf-landing-photo{height:202px;position:relative;overflow:hidden}.qf-landing-photo:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,29,58,0) 38%,rgba(11,29,58,.96) 100%)}.qf-landing-copy{padding:0 18px 22px;margin-top:-24px;position:relative;z-index:1}.qf-landing-kicker{display:inline-flex;padding:7px 10px;border-radius:999px;background:var(--orange-500);color:var(--text-on-orange);font-size:11px;font-weight:950;letter-spacing:.04em}.qf-landing-title{font-size:30px;line-height:1.04;letter-spacing:-.035em;margin-top:10px;color:#fff}.qf-landing-title em{font-style:normal;color:var(--orange-400)}.qf-landing-sub{font-size:14px;line-height:1.48;color:var(--text-on-navy-muted);margin-top:9px}.qf-landing-actions{display:grid;gap:9px;margin-top:16px}.qf-landing-actions .btn{min-height:56px}.qf-landing-outline{border:1.5px solid rgba(255,255,255,.45);background:transparent;color:#fff}
 .qf-trust-row{display:flex;gap:8px;overflow-x:auto;padding:14px 18px 5px;scrollbar-width:none}.qf-trust-row::-webkit-scrollbar{display:none}.qf-trust-pill{white-space:nowrap;display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--border-subtle);border-radius:999px;background:#fff;font-size:12px;font-weight:750;color:var(--navy-800)}.qf-trust-pill svg{width:15px;height:15px;color:var(--success-600)}
 .qf-landing-body{padding:14px 18px 80px}.qf-landing-popular{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.qf-landing-popular .category-tile{min-width:0}.qf-landing-link{all:unset;display:inline-block;cursor:pointer;color:var(--orange-700);font-size:13px;font-weight:850;margin-top:11px}.qf-how{display:grid;gap:9px;margin-top:10px}.qf-how-step{display:flex;gap:10px;align-items:flex-start}.qf-landing .qf-how{grid-template-columns:1fr}.qf-landing .qf-how-step>div{min-width:0;flex:1}@media (min-width:701px){.qf-landing .qf-how{grid-template-columns:repeat(3,minmax(0,1fr))}}.qf-how-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--orange-100);color:var(--orange-700);font-weight:900;flex:none}.qf-pro-cta{background:var(--navy-900)!important;color:#fff;border:none!important}.qf-pro-cta .text--secondary{color:var(--text-on-navy-muted)}.qf-install-line{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:14px;background:#fff;border:1px solid var(--border-subtle)}.qf-install-line .btn{width:auto;margin-left:auto;padding:8px 10px;font-size:12px}.qf-landing-footer{display:grid;gap:10px;margin-top:18px}
-.qf-call-reach{margin-top:12px;width:100%;font-size:13px;line-height:1.4;color:var(--navy-800);font-weight:750}.qf-no-coverage{margin-top:10px;text-align:left;background:var(--warning-100);border:1px solid rgba(181,114,11,.22);border-radius:14px;padding:12px}.qf-no-coverage .btn{margin-top:9px}
+.qf-call-reach{margin-top:12px;width:100%;font-size:13px;line-height:1.4;color:var(--navy-800);font-weight:750}
+.qf-search-radar{width:100%;display:flex;flex-direction:column;align-items:center;margin-top:14px}
+.qf-search-radar__visual{position:relative;width:112px;height:112px;display:grid;place-items:center}
+.qf-search-radar__ring{position:absolute;inset:50%;width:36px;height:36px;margin:-18px;border:2px solid rgba(236,106,27,.34);border-radius:50%;animation:qfRadarPulse 2.4s ease-out infinite;will-change:transform,opacity}
+.qf-search-radar__ring--2{animation-delay:.8s}.qf-search-radar__ring--3{animation-delay:1.6s}
+.qf-search-radar__center{position:relative;z-index:2;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--orange-500);color:var(--text-on-orange);box-shadow:0 4px 14px rgba(11,29,58,.16)}
+.qf-search-radar__center svg{width:20px;height:20px}
+.qf-search-radar__stage{margin-top:2px;font-size:14px;font-weight:850;color:var(--navy-900)}
+.qf-search-radar__sub{margin-top:3px;font-size:12px;font-weight:650;color:var(--text-secondary)}
+.qf-search-radar__km{display:inline-flex;align-items:center;justify-content:center;min-width:72px;margin-top:8px;padding:6px 10px;border-radius:999px;background:var(--orange-100);color:var(--orange-700);font-size:12px;font-weight:900}
+@keyframes qfRadarPulse{0%{transform:scale(.72);opacity:.8}75%,100%{transform:scale(2.55);opacity:0}}
+@media (prefers-reduced-motion:reduce){.qf-search-radar__ring{animation:none;transform:scale(2);opacity:.18}}
+.qf-no-coverage{margin-top:10px;text-align:left;background:var(--warning-100);border:1px solid rgba(181,114,11,.22);border-radius:14px;padding:12px}.qf-no-coverage .btn{margin-top:9px}
 .qf-call-overlay{position:fixed;inset:0;z-index:250;background:var(--navy-950);color:#fff;display:flex;align-items:stretch;justify-content:center;padding:var(--safe-top) 16px calc(var(--safe-bottom) + 16px)}.qf-call-overlay__inner{width:min(100%,520px);display:flex;flex-direction:column;justify-content:center;min-height:100%;text-align:center}.qf-call-overlay__icon{width:86px;height:86px;border-radius:25px;display:grid;place-items:center;margin:0 auto 16px;background:var(--orange-500);color:var(--text-on-orange)}.qf-call-overlay__icon svg{width:45px;height:45px}.qf-call-overlay__eyebrow{text-transform:uppercase;letter-spacing:.11em;font-size:12px;font-weight:900;color:var(--orange-400)}.qf-call-overlay__title{font-size:30px;line-height:1.08;margin-top:6px;color:#fff}.qf-call-overlay__place{font-size:15px;color:var(--text-on-navy-muted);margin-top:7px}.qf-call-overlay__facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0}.qf-call-overlay__fact{padding:13px 10px;border-radius:16px;background:rgba(255,255,255,.08)}.qf-call-overlay__fact strong{display:block;font-size:20px;color:#fff}.qf-call-overlay__fact span{display:block;font-size:11px;color:var(--text-on-navy-muted);margin-top:2px}.qf-call-overlay__priority{display:inline-flex;align-self:center;padding:7px 11px;border-radius:999px;background:var(--orange-500);color:var(--text-on-orange);font-size:11px;font-weight:950;margin-bottom:10px}.qf-call-overlay__others{font-size:12px;color:var(--orange-400);font-weight:800;margin-bottom:10px}.qf-call-overlay__accept{height:62px;font-size:17px;font-weight:950}.qf-call-overlay__later{margin-top:8px;background:transparent;border:none;color:var(--text-on-navy-muted);font-weight:800;padding:12px;cursor:pointer}.qf-call-timer{margin-top:18px}.qf-call-timer__bar{height:7px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden}.qf-call-timer__fill{height:100%;background:var(--orange-500);width:100%;transform-origin:left center}.qf-call-timer__txt{font-size:12px;color:var(--text-on-navy-muted);margin-top:7px}
 @media (min-width:900px){#app-shell[data-route="inicio"] #app-content{display:grid;grid-template-columns:minmax(0,1.03fr) minmax(0,.97fr);align-items:start;gap:30px;padding:28px!important}#app-shell[data-route="inicio"] .qf-landing-topbar{grid-column:1/-1;border-radius:20px 20px 0 0}#app-shell[data-route="inicio"] .qf-landing-hero{grid-column:1;grid-row:2/span 4;border-radius:0 0 28px 28px;min-height:620px}#app-shell[data-route="inicio"] .qf-landing-photo{height:auto}#app-shell[data-route="inicio"] .qf-landing-copy{padding:0 32px 34px}#app-shell[data-route="inicio"] .qf-landing-title{font-size:43px}#app-shell[data-route="inicio"] .qf-trust-row{grid-column:2;padding:0;flex-wrap:wrap;overflow:visible}#app-shell[data-route="inicio"] .qf-landing-body{grid-column:2;padding:0 0 40px}#app-shell[data-route="inicio"] .qf-landing{display:contents}#app-shell[data-route="inicio"] .qf-landing .qf-how{grid-template-columns:1fr}#app-shell[data-route="inicio"] #app-content{row-gap:0}#app-shell[data-route="inicio"] .qf-trust-row{margin-bottom:18px}}
 
@@ -6372,7 +6384,16 @@ alt=""></noscript>
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
           '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos dentro da área escolhida podem visualizar o serviço. O primeiro que desbloquear o chamado será conectado a você.</p>' +
-          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '">Avisando os profissionais mais próximos…</div>' +
+          '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
+            '<div class="qf-search-radar__visual" aria-hidden="true">' +
+              '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
+              '<span class="qf-search-radar__center">' + icon('mapPin') + '</span>' +
+            '</div>' +
+            '<div class="qf-search-radar__stage" data-search-stage>Buscando profissionais na sua cidade</div>' +
+            '<div class="qf-search-radar__sub" data-search-sub>Começando pela cidade escolhida</div>' +
+            '<div class="qf-search-radar__km" data-search-km>Cidade</div>' +
+          '</div>' +
+          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '"><span data-call-reach-copy>Avisando profissionais compatíveis…</span></div>' +
           '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando alguém aceitar.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
@@ -7144,16 +7165,56 @@ alt=""></noscript>
   }
 
   let qfReachTimer=null;
-  function stopCallReachPolling(){if(qfReachTimer){clearInterval(qfReachTimer);qfReachTimer=null;}}
+  let qfSearchRadarTimer=null;
+  function stopCallReachPolling(){
+    if(qfReachTimer){clearInterval(qfReachTimer);qfReachTimer=null;}
+    if(qfSearchRadarTimer){clearInterval(qfSearchRadarTimer);qfSearchRadarTimer=null;}
+  }
+  function requestCityLabel(req){
+    const e=(req&&req.endereco)||{};
+    if(e.cidade)return String(e.cidade);
+    const city=e.cidadeId?DB.cityById(e.cidadeId):null;
+    return city&&city.nome?String(city.nome):'sua cidade';
+  }
+  function searchStage(req){
+    const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
+    const elapsed=Number.isFinite(created)?Math.max(0,Date.now()-created):0;
+    const city=requestCityLabel(req);
+    if(elapsed<30000)return{title:'Buscando em '+city,sub:'Primeiro, profissionais desta cidade',km:'Cidade'};
+    if(elapsed<60000)return{title:'Ampliando a busca',sub:'Procurando profissionais próximos',km:'até 15 km'};
+    if(elapsed<90000)return{title:'Ampliando a busca',sub:'Aumentando o alcance automaticamente',km:'até 30 km'};
+    if(elapsed<180000)return{title:'Buscando mais longe',sub:'Mantendo a mesma profissão solicitada',km:'até 60 km'};
+    if(elapsed<600000)return{title:'Busca ampliada',sub:'Ainda procurando profissionais compatíveis',km:'até 100 km'};
+    return{title:'Busca ampliada',sub:'Continuamos procurando até encontrar',km:'até 200 km'};
+  }
+  function updateSearchRadar(content,req){
+    const radar=content&&content.querySelector('[data-search-radar]');
+    if(!radar)return;
+    const s=searchStage(req);
+    const title=radar.querySelector('[data-search-stage]');
+    const sub=radar.querySelector('[data-search-sub]');
+    const km=radar.querySelector('[data-search-km]');
+    if(title)title.textContent=s.title;
+    if(sub)sub.textContent=s.sub;
+    if(km)km.textContent=s.km;
+  }
+  function startSearchRadar(content,req){
+    updateSearchRadar(content,req);
+    if(qfSearchRadarTimer)clearInterval(qfSearchRadarTimer);
+    qfSearchRadarTimer=setInterval(function(){
+      if(location.hash!=='#/cliente/pedido/'+req.id){stopCallReachPolling();return;}
+      updateSearchRadar(content,req);
+    },1000);
+  }
   function renderCallReach(el,req,data){
     if(!el||!req||!data)return;
+    const copy=el.querySelector('[data-call-reach-copy]')||el;
     const avisados=Number(data.avisados||0),online=Number(data.online_na_regiao||0);
-    if(avisados>0){el.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' perto de você '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
-    if(online>0){el.textContent='Avisando os profissionais mais próximos…';return;}
+    if(avisados>0){copy.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
+    if(online>0){copy.textContent='Avisando profissionais compatíveis…';return;}
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
-    if(!Number.isFinite(created)||Date.now()-created<120000){el.textContent='Procurando profissionais online na sua região…';return;}
-    const cat=DB.categoryById(req.categoriaId);
-    el.innerHTML='<div class="qf-no-coverage"><div class="text--strong">Nenhum profissional online agora</div><div class="text--sm text--secondary" style="margin-top:4px;">No momento não há profissionais de '+PU.escapeHtml((cat&&cat.nome)||'serviço')+' online na sua região. Seu pedido continua publicado e avisaremos assim que alguém ficar disponível.</div><button class="btn btn--outline" type="button" data-support-open>Falar com o QuemFaz</button><button class="btn btn--primary" type="button" data-action="manter-pedido">Manter pedido</button></div>';
+    if(!Number.isFinite(created)||Date.now()-created<120000){copy.textContent='Procurando profissionais compatíveis…';return;}
+    copy.textContent='Continuamos ampliando a busca automaticamente.';
   }
   function startCallReachPolling(content,req){
     stopCallReachPolling();
@@ -7187,6 +7248,7 @@ alt=""></noscript>
     if (mostrarPosPedido && global.QFPush && !global.QFPush.isActive()) {
       setTimeout(function () { mostrarNotificacaoPosPedido(req); }, 250);
     }
+    startSearchRadar(content, req);
     startCallReachPolling(content, req);
 
     if (req.status === STATUS.BUSCANDO && !(global.QFCloud && global.QFCloud.enabled)) {
