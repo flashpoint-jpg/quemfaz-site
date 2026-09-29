@@ -527,6 +527,19 @@ input, select, textarea { font-size: 16px; }
 .qf-service-region__cep .input { min-width:0; flex:1; }
 .qf-service-region__cep .btn { width:auto; flex:none; padding-inline:14px; }
 .qf-service-region__status { margin-top:8px; font-size:12.5px; font-weight:750; color:var(--success-600); }
+.qf-order-location__head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+.qf-order-location__head .field__label { margin:0; }
+.qf-location-gps { width:auto; flex:none; min-height:36px; padding:7px 11px; border:0; border-radius:999px; background:var(--orange-600); color:#fff; display:inline-flex; align-items:center; justify-content:center; gap:6px; font-size:13px; font-weight:800; line-height:1; cursor:pointer; box-shadow:0 5px 14px rgba(229,96,20,.18); }
+.qf-location-gps svg { width:16px; height:16px; stroke:currentColor; }
+.qf-location-gps:disabled { opacity:.65; cursor:wait; }
+.qf-order-location__summary { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 12px; border:1px solid var(--border-subtle); border-radius:14px; background:var(--bg-sunken); }
+.qf-order-location__summary[hidden], .qf-order-location__fields[hidden] { display:none !important; }
+.qf-order-location__place { min-width:0; display:flex; align-items:center; gap:9px; }
+.qf-order-location__place > svg { width:20px; height:20px; flex:none; color:var(--orange-600); }
+.qf-order-location__place .text--strong { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.qf-location-change { width:auto; flex:none; border:0; background:transparent; color:var(--orange-700); padding:7px 4px; font-size:13px; font-weight:800; cursor:pointer; }
+.qf-order-location__fields { margin-top:8px; }
+.qf-order-location__hint { margin-top:8px; line-height:1.4; }
 .qf-auto-service-status { margin:0 0 10px; padding:11px 12px; border-radius:12px; background:var(--bg-sunken); border:1px solid var(--border-subtle); color:var(--text-secondary); font-size:13px; font-weight:700; line-height:1.4; }
 .qf-auto-service-status--found { background:var(--success-100); color:var(--success-600); }
 .qf-auto-service-status--checking { background:var(--navy-100); color:var(--navy-800); }
@@ -6633,6 +6646,7 @@ alt=""></noscript>
     const endCidade = (searchRegion && searchRegion.cidade) || (end ? (end.cidade || (endCityObj && endCityObj.nome) || '') : '');
     const endUf = (searchRegion && searchRegion.uf) || (end ? (end.uf || (endCityObj && endCityObj.uf) || '') : '');
     const endCep = (searchRegion && searchRegion.cep) || (end ? (end.cep || '') : '');
+    const hasSavedRegion = !!(endCidade && endUf);
     return (
       '<div class="view">' +
         '<div class="row" style="margin-bottom:4px;">' +
@@ -6655,18 +6669,24 @@ alt=""></noscript>
             '<span class="field__hint">Escolha da galeria, tire uma foto ou grave um vídeo curto. Até 4 mídias no total; no máximo 1 vídeo de 3 MB.</span>' +
           '</div>' +
 
-          '<div class="field">' +
-            '<span class="field__label">Cidade do atendimento</span>' +
-            '<div class="stack--sm">' +
+          '<div class="field qf-order-location">' +
+            '<div class="qf-order-location__head">' +
+              '<span class="field__label">Local do atendimento</span>' +
+              '<button class="qf-location-gps" type="button" data-use-location>' + icon('location') + ' Usar GPS</button>' +
+            '</div>' +
+            '<div class="qf-order-location__summary" data-order-location-summary' + (hasSavedRegion ? '' : ' hidden') + '>' +
+              '<div class="qf-order-location__place">' + icon('location') + '<div><div class="text--sm text--secondary">Atendimento</div><div class="text--strong" data-order-location-label>' + PU.escapeHtml(hasSavedRegion ? (endCidade + '/' + endUf) : '') + '</div></div></div>' +
+              '<button class="qf-location-change" type="button" data-order-location-change>Alterar</button>' +
+            '</div>' +
+            '<div class="stack--sm qf-order-location__fields" data-order-location-fields' + (hasSavedRegion ? ' hidden' : '') + '>' +
               '<div class="row" style="gap:10px;">' +
                 '<input class="input" name="cidade" required placeholder="Cidade, ex.: Santo André" style="flex:2;" value="' + PU.escapeHtml(endCidade) + '">' +
                 '<select class="select" name="uf" required style="flex:1;"><option value="">UF</option>' + global.QFGeo.ufOptions(endUf) + '</select>' +
               '</div>' +
               '<div class="row" style="gap:8px;align-items:stretch;"><input class="input" name="cep" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" style="flex:1;" value="' + PU.escapeHtml(endCep) + '"><button class="btn btn--outline" type="button" data-lookup-cep>Localizar</button></div>' +
-              '<button class="btn btn--outline" type="button" data-use-location style="width:100%;">' + icon('location') + ' Usar minha localização</button>' +
-              '<div class="text--sm text--secondary">Você pode informar cidade/CEP ou usar a localização do celular. Não precisa informar rua nem número, e o endereço exato não é mostrado ao profissional.</div>' +
-              '<input type="hidden" name="latitude" value=""><input type="hidden" name="longitude" value="">' +
             '</div>' +
+            '<div class="text--sm text--secondary qf-order-location__hint">A região escolhida na tela anterior já vem preenchida. Toque em Alterar somente se precisar mudar. O endereço exato não é mostrado ao profissional.</div>' +
+            '<input type="hidden" name="latitude" value=""><input type="hidden" name="longitude" value="">' +
           '</div>' +
 
           '<div class="card card--tight" style="background:var(--success-100);border:none;">' +
@@ -7447,7 +7467,39 @@ alt=""></noscript>
       const videoInput = content.querySelector('#media-video-input');
       const uploadRow = content.querySelector('#upload-row');
       let fotos = [];
-      global.QFGeo.bindAddressForm(form);
+      const locationSummary = content.querySelector('[data-order-location-summary]');
+      const locationLabel = content.querySelector('[data-order-location-label]');
+      const locationFields = content.querySelector('[data-order-location-fields]');
+      const locationChangeBtn = content.querySelector('[data-order-location-change]');
+      function syncOrderLocation(collapse) {
+        const cityEl = form && form.querySelector('[name="cidade"]');
+        const ufEl = form && form.querySelector('[name="uf"]');
+        const cepEl = form && form.querySelector('[name="cep"]');
+        const cidade = String(cityEl && cityEl.value || '').trim();
+        const uf = String(ufEl && ufEl.value || '').trim().toUpperCase();
+        if (!cidade || !uf) return;
+        if (locationLabel) locationLabel.textContent = cidade + '/' + uf;
+        if (locationSummary) locationSummary.hidden = false;
+        if (locationFields && collapse) locationFields.hidden = true;
+        try {
+          sessionStorage.setItem('qf_client_search_region', JSON.stringify({
+            cidade: cidade,
+            uf: uf,
+            cep: String(cepEl && cepEl.value || '').trim()
+          }));
+        } catch (_) {}
+      }
+      global.QFGeo.bindAddressForm(form, {
+        onFill: function () { syncOrderLocation(true); }
+      });
+      if (locationChangeBtn) {
+        locationChangeBtn.addEventListener('click', function () {
+          if (locationFields) locationFields.hidden = false;
+          if (locationSummary) locationSummary.hidden = true;
+          const cityEl = form && form.querySelector('[name="cidade"]');
+          if (cityEl) { try { cityEl.focus(); cityEl.select(); } catch (_) {} }
+        });
+      }
 
       function rawFileToDataUrl(file) {
         return new Promise(function (resolve, reject) {
@@ -10539,7 +10591,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.34';
+  const APP_VERSION = '11.14.35';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
