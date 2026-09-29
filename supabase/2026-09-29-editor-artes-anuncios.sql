@@ -62,5 +62,6 @@ begin
 end;
 $$;
 
-grant execute on function public.qf_editar_anuncio_proprio(uuid,text,text,text,text,text,jsonb) to authenticated;
+revoke execute on function public.qf_editar_anuncio_proprio(uuid,text,text,text,text,text,jsonb) from public;
 revoke execute on function public.qf_editar_anuncio_proprio(uuid,text,text,text,text,text,jsonb) from anon;
+grant execute on function public.qf_editar_anuncio_proprio(uuid,text,text,text,text,text,jsonb) to authenticated;
