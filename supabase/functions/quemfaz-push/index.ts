@@ -579,6 +579,30 @@ Deno.serve(async (req) => {
     const callId = String(body.call_id || "");
     if (!callId) return json({ error: "invalid_internal_event" }, 400);
 
+    if (event === "professional_connected") {
+      try {
+        const { data: call } = await admin
+          .from("qf_chamados")
+          .select("id,cliente_id,titulo,status")
+          .eq("id", callId)
+          .maybeSingle();
+        if (!call) return json({ ok: true, stopped: true });
+        const participants = await participantsForCall(callId);
+        const n = participants.length;
+        const clientResult = await sendToUsers([call.cliente_id], {
+          title: "Novo profissional participando",
+          body: n + " de 5 profissionais " + (n === 1 ? "já está preparando uma proposta." : "já estão preparando propostas.") + " Você escolhe quando os orçamentos chegarem.",
+          url: "/#/cliente/pedido/" + call.id,
+          tag: "qf-participants-" + call.id,
+          strong: false,
+        });
+        return json({ ok: true, participants: n, client: clientResult });
+      } catch (err) {
+        console.error("professional_connected", err);
+        return json({ error: "professional_connected_failed" }, 500);
+      }
+    }
+
     if (event === "priority_boost") {
       try {
         // Assim que o pagamento é aprovado, já amplia para 30 km.
