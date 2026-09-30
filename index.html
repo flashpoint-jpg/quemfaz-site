@@ -2456,6 +2456,7 @@ alt=""></noscript>
     AGUARDANDO_ORCAMENTO: 'aguardando_orcamento',
     ORCAMENTO_ENVIADO: 'orcamento_enviado',
     ORCAMENTO_RECUSADO: 'orcamento_recusado',
+    NAO_SELECIONADO: 'nao_selecionado',
     APROVADO: 'aprovado',
     EM_ANDAMENTO: 'em_andamento',
     SERVICO_CONCLUIDO: 'servico_concluido',
@@ -2471,6 +2472,7 @@ alt=""></noscript>
     aguardando_orcamento: 'Profissional conectado',
     orcamento_enviado: 'Orçamento recebido',
     orcamento_recusado: 'Orçamento recusado',
+    nao_selecionado: 'Não selecionado',
     aprovado: 'Orçamento aprovado',
     em_andamento: 'Serviço em andamento',
     servico_concluido: 'Serviço concluído',
@@ -3582,6 +3584,7 @@ alt=""></noscript>
     return ({
       aberto: S.BUSCANDO,
       em_negociacao: S.AGUARDANDO_ORCAMENTO,
+      nao_selecionado: S.NAO_SELECIONADO,
       confirmado: S.APROVADO,
       em_andamento: S.EM_ANDAMENTO,
       concluido: S.SERVICO_CONCLUIDO,
@@ -3870,6 +3873,7 @@ alt=""></noscript>
       leadUnlock: professionalId ? { profissionalId: professionalId, valor: 0, status: 'pago', criadoEm: row.atualizado_em || row.criado_em } : null,
       taxaVisita: 0,
       orcamento: null,
+      orcamentos: [],
       pagamento: null,
       avaliacaoCliente: null,
       avaliacaoProfissional: null,
@@ -3881,24 +3885,81 @@ alt=""></noscript>
   }
 
 
-  function applyCloudQuote(req, row) {
-    if (!req || !row) return req;
-    req.orcamento = {
-      id: row.id,
+  function quoteFromCloud(row) {
+    if (!row) return null;
+    const rawStatus = String(row.status || '');
+    const profId = row.profissional_id || null;
+    return {
+      id: row.orcamento_id || row.id,
+      profissionalId: profId,
       maoDeObra: Number(row.mao_obra_centavos || 0),
       material: Number(row.material_centavos || 0),
+      taxaVisita: Number(row.taxa_visita_centavos || 0),
       total: Number(row.valor_centavos || 0),
       criadoEm: row.criado_em,
       atualizadoEm: row.atualizado_em || row.criado_em,
-      status: row.status === 'aceito' ? 'aprovado' : (row.status === 'recusado' ? 'recusado' : 'pendente'),
+      status: rawStatus === 'aceito' ? 'aprovado' :
+        (rawStatus === 'recusado' ? 'recusado' :
+        (rawStatus === 'nao_selecionado' ? 'nao_selecionado' : 'pendente')),
+      statusBanco: rawStatus,
       versao: 1,
-      motivoRecusa: row.motivo_recusa || ''
+      motivoRecusa: row.motivo_recusa || '',
+      distanciaKm: row.distancia_km == null ? null : Number(row.distancia_km),
+      profissional: profId ? {
+        id: profId,
+        nome: row.profissional_nome || 'Profissional',
+        telefone: row.profissional_telefone || row.profissional_whatsapp || '',
+        fotoUrl: row.profissional_foto_url || '',
+        verificado: !!row.profissional_verificado,
+        cidadeNome: row.profissional_cidade || '',
+        uf: row.profissional_uf || '',
+        avaliacaoMedia: Number(row.profissional_avaliacao || 0),
+        totalAvaliacoes: Number(row.profissional_total_avaliacoes || 0)
+      } : null
     };
-    req.taxaVisita = Number(row.taxa_visita_centavos || 0);
+  }
 
-    // O status do chamado no banco continua sendo o macrofluxo. Enquanto está
-    // em negociação, o orçamento define a etapa visual da linha do tempo.
-    if (req.status === DB.STATUS.AGUARDANDO_ORCAMENTO) {
+  function upsertQuoteProfessional(row, req) {
+    const id = row && row.profissional_id;
+    if (!id) return null;
+    let p = DB.state.users.profissionais.find(function (x) { return x.id === id; });
+    const data = {
+      id: id,
+      nome: row.profissional_nome || (p && p.nome) || 'Profissional',
+      email: '',
+      telefone: row.profissional_telefone || row.profissional_whatsapp || (p && p.telefone) || '',
+      fotoUrl: row.profissional_foto_url || (p && p.fotoUrl) || '',
+      verificado: row.profissional_verificado == null ? !!(p && p.verificado) : !!row.profissional_verificado,
+      cidadeNome: row.profissional_cidade || (p && p.cidadeNome) || '',
+      uf: row.profissional_uf || (p && p.uf) || '',
+      categorias: [req ? req.categoriaId : (p && p.categorias && p.categorias[0])].filter(Boolean),
+      cidadeId: cityIdFromCloud(row.profissional_cidade || '', row.profissional_uf || ''),
+      raioKm: 20,
+      statusAprovacao: 'aprovado',
+      online: true,
+      creditos: 0,
+      bonusDesbloqueios: 0,
+      avaliacaoMedia: Number(row.profissional_avaliacao || (p && p.avaliacaoMedia) || 0),
+      totalAvaliacoes: Number(row.profissional_total_avaliacoes || (p && p.totalAvaliacoes) || 0),
+      bloqueado: false
+    };
+    if (p) Object.assign(p, data);
+    else { p = data; DB.state.users.profissionais.push(p); }
+    return p;
+  }
+
+  function applyCloudQuote(req, row) {
+    if (!req || !row) return req;
+    const q = quoteFromCloud(row);
+    req.orcamento = q;
+    req.taxaVisita = q ? q.taxaVisita : 0;
+    if (q && q.profissionalId && !req.profissionalId && q.status === 'aprovado') req.profissionalId = q.profissionalId;
+
+    // Para o profissional, a visão sintética "não selecionado" precisa encerrar
+    // a proposta dele sem liberar o contato do cliente.
+    if (q && q.status === 'nao_selecionado') {
+      req.status = DB.STATUS.NAO_SELECIONADO;
+    } else if (req.status === DB.STATUS.AGUARDANDO_ORCAMENTO) {
       if (row.status === 'enviado') req.status = DB.STATUS.ORCAMENTO_ENVIADO;
       else if (row.status === 'recusado') req.status = DB.STATUS.ORCAMENTO_RECUSADO;
       else if (row.status === 'aceito') req.status = DB.STATUS.APROVADO;
@@ -3926,6 +3987,44 @@ alt=""></noscript>
     reqs = reqs || [];
     const ids = reqs.map(function (r) { return r.id; }).filter(Boolean);
     if (!ids.length) return reqs;
+    const sess = DB.getSession();
+
+    if (sess && sess.role === 'cliente') {
+      const qRes = await client.rpc('qf_cliente_orcamentos');
+      if (qRes.error) throw qRes.error;
+      const grouped = Object.create(null);
+      (qRes.data || []).forEach(function (row) {
+        if (ids.indexOf(row.chamado_id) === -1) return;
+        const req = reqs.find(function (r) { return r.id === row.chamado_id; });
+        if (!req) return;
+        upsertQuoteProfessional(row, req);
+        const q = quoteFromCloud(row);
+        if (!q) return;
+        (grouped[row.chamado_id] = grouped[row.chamado_id] || []).push(q);
+      });
+
+      reqs.forEach(function (req) {
+        const list = (grouped[req.id] || []).sort(function (a, b) {
+          if (a.status === 'aprovado' && b.status !== 'aprovado') return -1;
+          if (b.status === 'aprovado' && a.status !== 'aprovado') return 1;
+          return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0);
+        });
+        req.orcamentos = list;
+        const accepted = list.find(function (q) { return q.status === 'aprovado'; });
+        const sent = list.filter(function (q) { return q.status === 'pendente'; });
+        if (accepted) {
+          req.orcamento = accepted;
+          req.profissionalId = accepted.profissionalId;
+          req.taxaVisita = accepted.taxaVisita || 0;
+        } else if (sent.length) {
+          req.orcamento = sent[0];
+          req.taxaVisita = sent[0].taxaVisita || 0;
+          if (req.status === DB.STATUS.AGUARDANDO_ORCAMENTO) req.status = DB.STATUS.ORCAMENTO_ENVIADO;
+        }
+      });
+      return reqs;
+    }
+
     const qRes = await client.from('qf_orcamentos')
       .select('id,chamado_id,profissional_id,valor_centavos,mao_obra_centavos,material_centavos,taxa_visita_centavos,status,motivo_recusa,criado_em,atualizado_em')
       .in('chamado_id', ids)
@@ -3988,34 +4087,29 @@ alt=""></noscript>
     DB.state.requests = (res.data || []).map(function (r) {
       return requestFromCloud(r, r.profissional_id || null);
     });
-    await attachCallPhotos(DB.state.requests);
-    await attachLatestQuotes(DB.state.requests);
-    await attachEvaluations(DB.state.requests);
+
+    // Primeiro registra o profissional já escolhido (se houver). Em seguida,
+    // attachLatestQuotes acrescenta todos os demais profissionais que enviaram orçamento.
     DB.state.users.profissionais = [];
     (res.data || []).forEach(function (r) {
       if (!r.profissional_id) return;
-      if (DB.state.users.profissionais.some(function (p) { return p.id === r.profissional_id; })) return;
-      DB.state.users.profissionais.push({
-        id: r.profissional_id,
-        nome: r.profissional_nome || 'Profissional',
-        email: '',
-        telefone: r.profissional_telefone || '',
-        fotoUrl: r.profissional_foto_url || '',
-        verificado: !!r.profissional_verificado,
-        cidadeNome: r.profissional_cidade || '',
-        uf: r.profissional_uf || '',
-        categorias: [r.categoria],
-        cidadeId: cityIdFromCloud(r.cidade, r.uf),
-        raioKm: 20,
-        statusAprovacao: 'aprovado',
-        online: true,
-        creditos: 0,
-        bonusDesbloqueios: 0,
-        avaliacaoMedia: Number(r.profissional_avaliacao || 0),
-        totalAvaliacoes: Number(r.profissional_total_avaliacoes || 0),
-        bloqueado: false
-      });
+      upsertQuoteProfessional({
+        profissional_id: r.profissional_id,
+        profissional_nome: r.profissional_nome,
+        profissional_telefone: r.profissional_telefone,
+        profissional_foto_url: r.profissional_foto_url,
+        profissional_verificado: r.profissional_verificado,
+        profissional_cidade: r.profissional_cidade,
+        profissional_uf: r.profissional_uf,
+        profissional_avaliacao: r.profissional_avaliacao,
+        profissional_total_avaliacoes: r.profissional_total_avaliacoes
+      }, DB.requestById(r.id));
     });
+
+    await attachCallPhotos(DB.state.requests);
+    await attachLatestQuotes(DB.state.requests);
+    await attachEvaluations(DB.state.requests);
+
     const local = DB.clienteById(userId);
     if (local && res.data && res.data[0]) {
       const r = res.data[0];
@@ -4860,9 +4954,9 @@ alt=""></noscript>
     return DB.requestById(chamadoId);
   }
 
-  async function respondQuote(chamadoId, action, motivo) {
+  async function respondQuote(chamadoId, action, motivo, quoteId) {
     const req = DB.requestById(chamadoId);
-    const quoteId = req && req.orcamento && req.orcamento.id;
+    quoteId = quoteId || (req && req.orcamento && req.orcamento.id);
     if (!quoteId) throw new Error('Orçamento não encontrado. Atualize a tela e tente novamente.');
     const res = await client.rpc('qf_responder_orcamento', {
       p_orcamento_id: quoteId,
@@ -4874,7 +4968,7 @@ alt=""></noscript>
     if (!out.ok) throw new Error(out.reason || 'Não foi possível atualizar o orçamento.');
     const s = DB.getSession();
     if (s && s.role === 'cliente') await syncClientCalls(s.userId);
-    if (global.QFPush) global.QFPush.notify('quote_response', chamadoId, { response: action }).catch(function () {});
+    if (global.QFPush) global.QFPush.notify('quote_response', chamadoId, { response: action, quote_id: quoteId }).catch(function () {});
     return DB.requestById(chamadoId);
   }
 
@@ -10762,7 +10856,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.40';
+  const APP_VERSION = '11.14.41';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
