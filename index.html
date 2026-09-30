@@ -7048,7 +7048,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos dentro da área escolhida podem visualizar o serviço. O primeiro que desbloquear o chamado será conectado a você.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos podem visualizar o serviço. Até 5 profissionais podem participar e enviar orçamento; você compara e escolhe um.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -7062,7 +7062,7 @@ alt=""></noscript>
           (!req.prioridade && !(req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente')
             ? '<div class="qf-radar-priority"><div class="qf-radar-priority__top"><span class="qf-radar-priority__icon">' + icon('bolt') + '</span><div class="qf-radar-priority__copy"><div class="qf-radar-priority__title">Quer encontrar mais rápido?</div><div class="qf-radar-priority__sub">A busca amplia o alcance mais rápido e seu chamado ganha prioridade.</div></div></div><button class="btn btn--primary" type="button" data-action="ativar-busca-prioritaria">' + icon('bolt') + ' Acelerar busca — R$ 4,90</button></div>'
             : '') +
-          '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando alguém aceitar.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
+          '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando chegarem novos orçamentos.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
@@ -7141,41 +7141,83 @@ alt=""></noscript>
     if (req.status !== STATUS.AGUARDANDO_ORCAMENTO) return '';
     return (
       '<div class="section">' +
-        '<div class="section-head"><h2 class="h3">Profissional encontrado</h2></div>' +
-        profCard(prof) +
-        '<div class="card card--tight" style="margin-top:10px;background:var(--navy-100);border:none;">' +
-          '<p class="text text--sm" style="color:var(--navy-800);">' + PU.escapeHtml((prof || {}).nome || 'O profissional') + ' aceitou seu chamado e está preparando o orçamento. Você será avisado assim que ele chegar.</p>' +
+        '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
+          '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
+          '<h2 class="h3" style="margin-top:12px;">Profissionais preparando orçamento</h2>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido continua disponível para até 5 profissionais. Assim que os orçamentos chegarem, você poderá comparar e escolher.</p>' +
+          '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
+            '<div class="qf-search-radar__visual" aria-hidden="true">' +
+              '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
+              '<span class="qf-search-radar__center">' + icon('mapPin') + '</span>' +
+            '</div>' +
+            '<div class="qf-search-radar__stage" data-search-stage>Buscando mais profissionais</div>' +
+            '<div class="qf-search-radar__sub" data-search-sub>Ampliando o alcance quando necessário</div>' +
+            '<div class="qf-search-radar__km" data-search-km>Até 5 propostas</div>' +
+          '</div>' +
+          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>Aguardando orçamentos…</span></div>' +
         '</div>' +
       '</div>'
     );
   }
 
+  function quoteProfessional(req, q, fallback) {
+    return (q && q.profissionalId && DB.profissionalById(q.profissionalId)) ||
+      (q && q.profissional) || fallback || null;
+  }
+
+  function quoteValueCard(q) {
+    const taxa = Number((q && q.taxaVisita) || 0);
+    return '<div class="card stack--sm" style="margin-top:10px;">' +
+      (taxa ? rowValor('Taxa de visita', taxa) : '') +
+      rowValor('Mão de obra', Number((q && q.maoDeObra) || 0)) +
+      rowValor('Material', Number((q && q.material) || 0)) +
+      '<hr class="hairline">' +
+      rowValor('Total', Number((q && q.total) || 0) + taxa, true) +
+    '</div>';
+  }
+
   function orcamentoBlock(req, prof) {
-    if (!req.orcamento) return '';
-    if ([STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO].indexOf(req.status) === -1) return '';
-    const o = req.orcamento;
+    let list = Array.isArray(req.orcamentos) ? req.orcamentos.slice() : [];
+    if (!list.length && req.orcamento) list = [req.orcamento];
+    if (!list.length) return '';
+
+    const accepted = list.find(function (q) { return q.status === 'aprovado'; });
+    if (accepted) {
+      const escolhido = quoteProfessional(req, accepted, prof);
+      return (
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Profissional escolhido</h2><span class="badge badge--success"><span class="badge__dot"></span>Orçamento aprovado</span></div>' +
+          profCard(escolhido) +
+          quoteValueCard(accepted) +
+        '</div>'
+      );
+    }
+
+    const pendentes = list.filter(function (q) { return q.status === 'pendente'; });
+    const recusados = list.filter(function (q) { return q.status === 'recusado'; });
+    if (!pendentes.length && !recusados.length) return '';
+
     return (
       '<div class="section">' +
-        '<div class="section-head"><h2 class="h3">Orçamento</h2></div>' +
-        profCard(prof) +
-        '<div class="card stack--sm" style="margin-top:10px;">' +
-          (req.taxaVisita ? rowValor('Taxa de visita', req.taxaVisita) : '') +
-          rowValor('Mão de obra', o.maoDeObra) +
-          rowValor('Material', o.material) +
-          '<hr class="hairline">' +
-          rowValor('Total', o.total + (req.taxaVisita || 0), true) +
+        '<div class="section-head"><div><h2 class="h3">Compare os orçamentos</h2><p class="text--sm text--secondary" style="margin-top:3px;">Você pode receber até 5 propostas. Compare preço, distância e avaliação antes de escolher.</p></div>' +
+          (pendentes.length ? '<span class="badge badge--orange">' + pendentes.length + (pendentes.length === 1 ? ' proposta' : ' propostas') + '</span>' : '') +
         '</div>' +
-        (req.status === STATUS.ORCAMENTO_ENVIADO ? (
-          '<div class="btn-row" style="margin-top:12px;">' +
-            '<button class="btn btn--outline" data-action="recusar-orcamento">Recusar</button>' +
-            '<button class="btn btn--primary" data-action="aprovar-orcamento">' + icon('check') + ' Aprovar</button>' +
-          '</div>'
-        ) : '') +
-        (req.status === STATUS.ORCAMENTO_RECUSADO ? (
-          '<div class="card card--tight" style="margin-top:10px;background:var(--danger-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--danger-600);">Você recusou este orçamento' + (o.motivoRecusa ? ': "' + PU.escapeHtml(o.motivoRecusa) + '"' : '.') + ' O profissional pode enviar uma nova proposta.</p>' +
-          '</div>'
-        ) : '') +
+        '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="' + pendentes.length + '" style="margin-bottom:10px;"><span data-call-reach-copy>' + (pendentes.length ? pendentes.length + (pendentes.length === 1 ? ' orçamento recebido' : ' orçamentos recebidos') : 'Aguardando propostas…') + '</span></div>' +
+        '<div class="stack--sm">' +
+          pendentes.map(function (q) {
+            const p = quoteProfessional(req, q, null);
+            const dist = q.distanciaKm == null ? '' : '<div class="text--sm text--secondary" style="margin-top:7px;">' + icon('mapPin', 'list-item__chevron') + ' Aproximadamente ' + Number(q.distanciaKm).toFixed(1).replace('.', ',') + ' km de você</div>';
+            return '<div class="card" style="border:1px solid var(--border);">' +
+              profCard(p, dist) +
+              quoteValueCard(q) +
+              '<div class="btn-row" style="margin-top:12px;">' +
+                '<button class="btn btn--outline" data-action="recusar-orcamento" data-quote-id="' + PU.escapeHtml(q.id) + '">Não escolher</button>' +
+                '<button class="btn btn--primary" data-action="aprovar-orcamento" data-quote-id="' + PU.escapeHtml(q.id) + '">' + icon('check') + ' Escolher profissional</button>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>' +
+        (recusados.length ? '<div class="text--sm text--secondary" style="margin-top:10px;">' + recusados.length + (recusados.length === 1 ? ' proposta descartada.' : ' propostas descartadas.') + '</div>' : '') +
       '</div>'
     );
   }
@@ -8051,7 +8093,19 @@ alt=""></noscript>
   function renderCallReach(el,req,data){
     if(!el||!req||!data)return;
     const copy=el.querySelector('[data-call-reach-copy]')||el;
-    const avisados=Number(data.avisados||0),online=Number(data.online_na_regiao||0);
+    const avisados=Number(data.avisados||0);
+    const online=Number(data.online_na_regiao||0);
+    const participantes=Number(data.desbloqueados||0);
+    const orcamentos=Number(data.orcamentos||0);
+    const limite=Number(data.limite_orcamentos||5);
+    if(orcamentos>0){
+      copy.innerHTML='<strong>'+orcamentos+(orcamentos===1?' orçamento recebido':' orçamentos recebidos')+'</strong> · '+participantes+'/'+limite+' profissionais participando';
+      return;
+    }
+    if(participantes>0){
+      copy.innerHTML='<strong>'+participantes+'/'+limite+' profissionais participando</strong> · aguardando orçamento'+(participantes>1?'s':'');
+      return;
+    }
     if(avisados>0){copy.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
     if(online>0){copy.textContent='Avisando profissionais compatíveis…';return;}
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
@@ -8060,14 +8114,26 @@ alt=""></noscript>
   }
   function startCallReachPolling(content,req){
     stopCallReachPolling();
-    if(!req||(req.status!==STATUS.BUSCANDO&&req.status!==STATUS.AGUARDANDO_ACEITE))return;
+    if(!req||[STATUS.BUSCANDO,STATUS.AGUARDANDO_ACEITE,STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)===-1)return;
     const el=content.querySelector('[data-call-reach]');
     if(!el||!(global.QFCloud&&global.QFCloud.client))return;
     async function load(){
       if(location.hash!=='#/cliente/pedido/'+req.id){stopCallReachPolling();return;}
-      try{const res=await global.QFCloud.client.rpc('qf_chamado_alcance',{p_chamado_id:req.id});if(res.error)throw res.error;renderCallReach(el,req,res.data||{});}catch(err){console.warn('QuemFaz alcance do chamado',err);}
+      try{
+        const res=await global.QFCloud.client.rpc('qf_chamado_alcance',{p_chamado_id:req.id});
+        if(res.error)throw res.error;
+        const data=res.data||{};
+        const previous=Number(el.getAttribute('data-orcamentos')||0);
+        const current=Number(data.orcamentos||0);
+        renderCallReach(el,req,data);
+        el.setAttribute('data-orcamentos',String(current));
+        if(current!==previous){
+          await global.QFCloud.syncForCurrentSession(true);
+          if(location.hash==='#/cliente/pedido/'+req.id) global.navigate('/cliente/pedido/'+req.id,true);
+        }
+      }catch(err){console.warn('QuemFaz alcance do chamado',err);}
     }
-    load();qfReachTimer=setInterval(load,15000);
+    load();qfReachTimer=setInterval(load,10000);
   }
 
   function bindPedidoDetalhe(content, params, user) {
@@ -8218,25 +8284,34 @@ alt=""></noscript>
         });
       }
       if (act === 'aprovar-orcamento') {
-        (async function () {
-          try {
-            if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.respondQuote(req.id, 'aceitar', '');
-            else DB.aprovarOrcamento(req.id);
-            PU.toast('Orçamento aprovado!', 'success');
-            global.navigate('/cliente/pedido/' + req.id, true);
-          } catch (err) {
-            PU.toast('Não foi possível aprovar o orçamento. ' + (err && err.message ? err.message : ''), 'danger');
-          }
-        })();
+        const quoteId = action.getAttribute('data-quote-id') || '';
+        PU.confirmDialog({
+          title: 'Escolher este profissional?',
+          message: 'Ao confirmar, este orçamento será aprovado e os outros profissionais serão avisados de que não foram selecionados.',
+          okLabel: 'Escolher profissional'
+        }).then(function (ok) {
+          if (!ok) return;
+          (async function () {
+            try {
+              if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.respondQuote(req.id, 'aceitar', '', quoteId);
+              else DB.aprovarOrcamento(req.id);
+              PU.toast('Profissional escolhido. Contato liberado!', 'success');
+              global.navigate('/cliente/pedido/' + req.id, true);
+            } catch (err) {
+              PU.toast('Não foi possível aprovar o orçamento. ' + (err && err.message ? err.message : ''), 'danger');
+            }
+          })();
+        });
       }
       if (act === 'recusar-orcamento') {
+        const quoteId = action.getAttribute('data-quote-id') || '';
         PU.openSheet(
-          '<h3 class="sheet__title">Orçamento acima do esperado?</h3>' +
-          '<p class="text text--secondary text--sm">Você pode pedir um novo valor ao mesmo profissional ou voltar o chamado para buscar outro profissional.</p>' +
+          '<h3 class="sheet__title">O que deseja fazer com esta proposta?</h3>' +
+          '<p class="text text--secondary text--sm">Você pode pedir um novo valor a este profissional ou descartá-lo e continuar comparando os demais.</p>' +
           '<textarea class="textarea" id="motivo-recusa" placeholder="Motivo opcional. Ex: valor acima do esperado"></textarea>' +
           '<div class="stack--sm" style="margin-top:14px;">' +
             '<button class="btn btn--outline" id="pedir-novo-valor">' + icon('refresh') + ' Pedir novo valor</button>' +
-            '<button class="btn btn--primary" id="buscar-outro-profissional">' + icon('search') + ' Buscar outro profissional</button>' +
+            '<button class="btn btn--primary" id="buscar-outro-profissional">' + icon('xCircle') + ' Descartar este profissional</button>' +
           '</div>'
         );
 
@@ -8246,7 +8321,7 @@ alt=""></noscript>
           PU.closeSheet();
           try {
             if (global.QFCloud && global.QFCloud.enabled) {
-              await global.QFCloud.respondQuote(req.id, acao, motivo);
+              await global.QFCloud.respondQuote(req.id, acao, motivo, quoteId);
             } else if (acao === 'buscar_outro') {
               DB.buscarOutroProfissional(req.id, motivo);
             } else {
@@ -8254,7 +8329,7 @@ alt=""></noscript>
             }
 
             if (acao === 'buscar_outro') {
-              PU.toast('Chamado voltou para a busca de outro profissional.', 'success');
+              PU.toast('Profissional descartado. O pedido continua aberto para outras propostas.', 'success');
             } else {
               PU.toast('Pedido de novo valor enviado ao profissional.', 'success');
             }
@@ -8823,10 +8898,10 @@ alt=""></noscript>
           '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
           '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
             (primeiraGratis
-              ? 'Este é o seu primeiro desbloqueio e não usa saldo. O desbloqueio permite montar e enviar o orçamento; telefone/WhatsApp e endereço exato só aparecem após a aprovação do cliente.'
-              : 'Ao desbloquear, usamos os créditos da carteira e reservamos o chamado para você enviar o orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente aprovar.') +
+              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Você entra na disputa de até 5 profissionais e pode enviar seu orçamento; telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.'
+              : 'Ao desbloquear, usamos os créditos da carteira e você entra na disputa de até 5 profissionais para enviar seu orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês). ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês). Se o cliente escolher outro profissional, o desbloqueio não é estornado, pois a oportunidade de enviar orçamento foi utilizada. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -8943,6 +9018,7 @@ alt=""></noscript>
           '<hr class="hairline">' +
           rowValor('Total', o.total + (req.taxaVisita || 0), true) +
           (o.status === 'recusado' && o.motivoRecusa ? '<p class="text--sm" style="color:var(--danger-600);margin-top:4px;">Motivo da recusa: ' + PU.escapeHtml(o.motivoRecusa) + '</p>' : '') +
+          (o.status === 'nao_selecionado' ? '<div class="card card--tight" style="margin-top:8px;background:var(--navy-100);border:none;"><div class="text--strong" style="color:var(--navy-900);">Cliente escolheu outro profissional</div><div class="text--sm text--secondary" style="margin-top:3px;">Seu orçamento não foi selecionado desta vez. Este chamado foi encerrado para novos orçamentos.</div></div>' : '') +
         '</div>' +
       '</div>'
     );
@@ -8964,6 +9040,9 @@ alt=""></noscript>
         '<button class="btn btn--primary" data-nav="/profissional/orcamento/' + req.id + '">' + icon('edit') + ' Enviar novo orçamento</button>' +
         '<button class="btn btn--danger-ghost" data-action="cancelar-servico">Cancelar serviço</button>' +
       '</div>';
+    }
+    if (s === STATUS.NAO_SELECIONADO) {
+      return '<div class="section"><div class="card" style="background:var(--navy-100);border:none;"><div class="text--strong" style="color:var(--navy-900);">Cliente escolheu outro profissional</div><div class="text--sm text--secondary" style="margin-top:4px;">Seu orçamento não foi selecionado desta vez. Este chamado foi encerrado para novos orçamentos.</div></div></div>';
     }
     if (s === STATUS.APROVADO) {
       return '<div class="section"><button class="btn btn--primary" data-action="iniciar-servico">' + icon('checkCircle') + ' Iniciar serviço</button></div>';
@@ -12183,7 +12262,7 @@ alt=""></noscript>
     if (!fresh.length) return false;
     saveNotices(session, fresh.concat(current));
     if (alertNew) {
-      const title = fresh.length === 1 ? fresh[0].title : fresh.length + ' chamados perdidos';
+      const title = fresh.length === 1 ? fresh[0].title : fresh.length + ' novas atualizações';
       const body = fresh.length === 1 ? fresh[0].body : 'Abra Avisos para conferir.';
       const pushJustRang = PU.pushSoundRecent();
       if (!pushJustRang) PU.playNotificationSound(true);
@@ -12247,6 +12326,7 @@ alt=""></noscript>
           if (a.status === DB.STATUS.CANCELADO) pushNotice(session, 'cancelado:' + id, 'Chamado cancelado pelo cliente', detail, '/profissional/pedido/' + id, true);
           if (a.status === DB.STATUS.APROVADO) pushNotice(session, 'orc_aprovado:' + id, 'Orçamento aprovado', detail + ' · você já pode iniciar o serviço', '/profissional/pedido/' + id, true);
           if (a.status === DB.STATUS.ORCAMENTO_RECUSADO) pushNotice(session, 'orc_recusado:' + id, 'Cliente respondeu ao orçamento', detail + ' · veja o motivo e envie uma nova proposta', '/profissional/pedido/' + id, false);
+          if (a.status === DB.STATUS.NAO_SELECIONADO) pushNotice(session, 'orc_nao_selecionado:' + id, 'Cliente escolheu outro profissional', detail + ' · seu orçamento não foi selecionado desta vez', '/profissional/pedido/' + id, false);
         }
       } else if (session.role === 'cliente') {
         if (b && !b.profissionalId && a.profissionalId) {
