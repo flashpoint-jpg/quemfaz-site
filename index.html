@@ -2011,6 +2011,20 @@ t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 fbq('init','1124265238584181');
 fbq('track','PageView');
 </script>
+
+<!-- QF_GOOGLE_ADS_V1 — Google Ads / conversão de pedido publicado -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'AW-18273159663');
+window.qfGoogleLead = function () {
+  try {
+    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE' });
+  } catch (_) {}
+};
+</script>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -6198,6 +6212,7 @@ alt=""></noscript>
               });
             }
           } catch (_) {}
+          try { if (typeof global.qfGoogleLead === 'function') global.qfGoogleLead(); } catch (_) {}
 
           PU.toast('Pedido publicado grátis! Já estamos procurando profissionais.', 'success');
           global.navigate('/cliente/pedido/' + pedido.id, true);
@@ -7798,6 +7813,7 @@ alt=""></noscript>
             });
           }
         } catch (_) {}
+        try { if (typeof global.qfGoogleLead === 'function') global.qfGoogleLead(); } catch (_) {}
         if (prioridade) {
           const pp = req.pagamentoPrioridade || {};
           if (pp.status === 'aprovado') PU.toast('Pagamento confirmado. Prioridade ativada!', 'success');
@@ -10746,7 +10762,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.39';
+  const APP_VERSION = '11.14.40';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
