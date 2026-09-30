@@ -2050,6 +2050,16 @@ body:has(#cadastro-cliente-form) #app-shell > .qf-support-fab { display:none; }
 @media(min-width:768px) {
   #app-shell[data-route="auth-role-cadastro"] .view.qf-client-request { max-width:560px;padding:28px 32px 32px; }
 }
+
+/* Premium quote card — cliente antes e depois de entrar */
+.qf-request-intro{position:relative;grid-template-columns:40px minmax(0,1fr) auto;background:linear-gradient(135deg,#f4fbf8 0%,#ecfaf3 100%);overflow:hidden}
+.qf-request-intro h2{font-size:18px}.qf-request-intro__accent{color:var(--success-600)}
+.qf-request-intro__badge,.qf-home-premium-quote__badge{align-self:start;background:var(--success-600);color:#fff;border-radius:999px;padding:6px 9px;font-size:10px;font-weight:900;letter-spacing:.04em;box-shadow:0 7px 18px -10px rgba(10,145,86,.8)}
+.qf-home-premium-quote{position:relative;display:grid;grid-template-columns:40px minmax(0,1fr) auto;gap:14px;align-items:center;margin-bottom:14px;padding:17px 18px;border:1px solid #d9eee5;background:linear-gradient(135deg,#f4fbf8 0%,#ecfaf3 100%);overflow:hidden}
+.qf-home-premium-quote__icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#e3f5ed;color:var(--success-600)}
+.qf-home-premium-quote__icon svg{width:19px;height:19px}.qf-home-premium-quote__copy .h3 strong{color:var(--success-600)}
+.qf-home-premium-quote__copy .text--sm{margin-top:5px;color:var(--text-secondary);line-height:1.5}.qf-home-premium-quote__copy .text--sm strong{color:var(--navy-900)}
+@media(max-width:430px){.qf-request-intro,.qf-home-premium-quote{grid-template-columns:40px minmax(0,1fr)}.qf-request-intro__badge,.qf-home-premium-quote__badge{position:absolute;right:10px;top:10px}.qf-request-intro>div,.qf-home-premium-quote__copy{padding-right:44px}}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -5930,7 +5940,7 @@ alt=""></noscript>
         '</header>' +
         '<section class="qf-request-intro" aria-label="Pedido grátis">' +
           '<span class="qf-request-intro__icon" aria-hidden="true">' + icon('clipboard') + '</span>' +
-          '<div><h2>Seu pedido é grátis</h2><p>Sem e-mail e sem senha. Conte o que precisa e receba orçamentos na sua região.</p></div>' +
+          '<div><h2>Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2><p>Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
         '</section>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
@@ -6842,7 +6852,7 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:14px;"><div class="row" style="align-items:flex-start;">' + icon('checkCircle', 'list-item__chevron') + '<div><div class="text--strong" style="color:var(--success-600);">Receba até 5 orçamentos grátis</div><div class="text--sm" style="color:var(--success-600);margin-top:3px;">Publique seu pedido e escolha o profissional ideal.</div></div></div></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
+      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba até <strong>5 orçamentos grátis</strong></div><div class="text--sm">Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
 
