@@ -178,14 +178,45 @@ async function getUser(req: Request) {
 }
 
 async function professionalForCall(callId: string) {
+  // No fluxo com vários orçamentos, "profissional do chamado" é somente quem
+  // teve o orçamento aceito pelo cliente.
+  const { data } = await admin
+    .from("qf_orcamentos")
+    .select("profissional_id")
+    .eq("chamado_id", callId)
+    .eq("status", "aceito")
+    .order("atualizado_em", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return data?.profissional_id || null;
+}
+
+async function participantsForCall(callId: string) {
   const { data } = await admin
     .from("qf_desbloqueios")
     .select("profissional_id")
     .eq("chamado_id", callId)
-    .order("criado_em", { ascending: true })
-    .limit(1)
+    .eq("ativo", true);
+  return Array.from(new Set((data || []).map((r: any) => String(r.profissional_id || "")).filter(Boolean)));
+}
+
+async function quoteProfessional(callId: string, quoteId: string) {
+  if (!quoteId) return null;
+  const { data } = await admin
+    .from("qf_orcamentos")
+    .select("profissional_id,chamado_id")
+    .eq("id", quoteId)
+    .eq("chamado_id", callId)
     .maybeSingle();
   return data?.profissional_id || null;
+}
+
+async function callCanReceiveMore(callId: string, status?: string | null) {
+  if (status && status !== "aberto" && status !== "em_negociacao") return false;
+  const accepted = await professionalForCall(callId);
+  if (accepted) return false;
+  const participants = await participantsForCall(callId);
+  return participants.length < 5;
 }
 
 async function actorUnlocked(callId: string, userId: string) {
@@ -345,7 +376,7 @@ async function recentNormalCallCounts(userIds: string[]) {
   }
 
   const valid = new Set((calls || [])
-    .filter((c: any) => c.status === "aberto" && !c.prioridade)
+    .filter((c: any) => (c.status === "aberto" || c.status === "em_negociacao") && !c.prioridade)
     .map((c: any) => String(c.id)));
 
   const seen: Record<string, Set<string>> = {};
@@ -407,7 +438,7 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
     .eq("id", callId)
     .maybeSingle();
 
-  if (error || !call || call.status !== "aberto") {
+  if (error || !call || !(await callCanReceiveMore(callId, call.status))) {
     return {
       stopped: true,
       recipients: 0,
@@ -482,7 +513,7 @@ async function sendCascadeStage3(callId: string) {
     .select("id,categoria,titulo,cidade,uf,bairro,status")
     .eq("id", callId)
     .maybeSingle();
-  if (!call || call.status !== "aberto" || (await professionalForCall(call.id))) {
+  if (!call || !(await callCanReceiveMore(call.id, call.status))) {
     return { stopped: true };
   }
 
@@ -585,7 +616,7 @@ Deno.serve(async (req) => {
         .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status")
         .eq("id", callId)
         .maybeSingle();
-      if (!call || call.status !== "aberto" || (await professionalForCall(call.id))) {
+      if (!call || !(await callCanReceiveMore(call.id, call.status))) {
         return json({ ok: true, stopped: true });
       }
       // Última ampliação automática de segurança: até 200 km.
@@ -733,7 +764,7 @@ Deno.serve(async (req) => {
     const { data: p } = await admin.from("qf_profiles").select("nome").eq("id", user.id).maybeSingle();
     payload = {
       title: "Profissional encontrado",
-      body: (p?.nome || "Um profissional") + " assumiu seu chamado.",
+      body: (p?.nome || "Um profissional") + " entrou para preparar um orçamento para você.",
       url: "/#/cliente/pedido/" + call.id,
       tag: "qf-connected-" + call.id,
       strong: true,
@@ -750,15 +781,38 @@ Deno.serve(async (req) => {
     };
   } else if (event === "quote_response") {
     if (call.cliente_id !== user.id) return json({ error: "forbidden" }, 403);
-    const pro = await professionalForCall(call.id);
-    if (pro) recipients = [pro];
+    const quoteId = String(body.quote_id || "");
+    const pro = await quoteProfessional(call.id, quoteId);
+    if (!pro) return json({ error: "quote_not_found" }, 404);
     const accepted = String(body.response || "") === "aceitar";
+
+    if (accepted) {
+      const participants = await participantsForCall(call.id);
+      const others = participants.filter((id) => id !== pro);
+      const chosenResult = await sendToUsers([pro], {
+        title: "Orçamento aprovado",
+        body: "O cliente escolheu seu orçamento. Você já pode iniciar o serviço.",
+        url: "/#/profissional/pedido/" + call.id,
+        tag: "qf-quote-approved-" + call.id,
+        strong: true,
+      });
+      const othersResult = await sendToUsers(others, {
+        title: "Cliente escolheu outro profissional",
+        body: "Seu orçamento não foi selecionado desta vez. O chamado foi encerrado para novos orçamentos.",
+        url: "/#/profissional/pedido/" + call.id,
+        tag: "qf-quote-not-selected-" + call.id,
+        strong: false,
+      });
+      return json({ ok: true, selected: chosenResult, not_selected: othersResult });
+    }
+
+    recipients = [pro];
     payload = {
-      title: accepted ? "Orçamento aprovado" : "Cliente respondeu ao orçamento",
-      body: accepted ? "Você já pode iniciar o serviço." : "Abra o QuemFaz para ver a resposta do cliente.",
+      title: "Cliente respondeu ao seu orçamento",
+      body: "Abra o QuemFaz para ver a resposta do cliente.",
       url: "/#/profissional/pedido/" + call.id,
-      tag: "qf-quote-response-" + call.id,
-      strong: accepted,
+      tag: "qf-quote-response-" + quoteId,
+      strong: false,
     };
   } else if (event === "service_started") {
     // V11.1: antes este evento era recusado (400) e o cliente não era avisado.
@@ -776,11 +830,10 @@ Deno.serve(async (req) => {
     const place = [call.bairro, call.cidade].filter(Boolean).join(" · ");
     const detail = (call.titulo || "Serviço") + (place ? " · " + place : "");
     if (call.cliente_id === user.id) {
-      const pro = await professionalForCall(call.id);
-      if (pro) recipients = [pro];
+      recipients = await participantsForCall(call.id);
       payload = {
         title: "Chamado cancelado pelo cliente",
-        body: detail + " — não precisa ir ao local.",
+        body: detail + " — o pedido foi encerrado.",
         url: "/#/profissional/pedido/" + call.id,
         tag: "qf-cancel-" + call.id,
         strong: true,
