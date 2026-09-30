@@ -6842,7 +6842,7 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
+      '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:14px;"><div class="row" style="align-items:flex-start;">' + icon('checkCircle', 'list-item__chevron') + '<div><div class="text--strong" style="color:var(--success-600);">Receba até 5 orçamentos grátis</div><div class="text--sm" style="color:var(--success-600);margin-top:3px;">Publique seu pedido e escolha o profissional ideal.</div></div></div></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
 
