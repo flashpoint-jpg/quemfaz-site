@@ -101,6 +101,8 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
       channel,
       // V11.11: preferência do profissional ("toque" = toque + vibração, "vibrar" = só vibração).
       alerta: String(payload.alerta || "toque"),
+      grouped: payload.grouped ? "1" : "0",
+      count: String(Math.max(0, Number(payload.count || 0))),
     },
     android: {
       priority: "HIGH",
@@ -283,13 +285,78 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
 }
 
 function newCallPayload(call: any) {
+  const priority = !!call.prioridade;
   return {
-    title: call.prioridade ? "Chamado PRIORITÁRIO: " + (call.titulo || "serviço") : "Novo chamado: " + (call.titulo || "serviço"),
+    title: priority ? "Chamado PRIORITÁRIO: " + (call.titulo || "serviço") : "Novo chamado: " + (call.titulo || "serviço"),
     body: [call.bairro, call.cidade, call.uf].filter(Boolean).join(" · ") + " — toque para ver",
     url: "/#/profissional/chamada/" + call.id,
-    tag: "qf-new-call-" + call.id,
+    // Chamados normais compartilham a mesma tag: o Android/PWA substitui o aviso anterior
+    // em vez de empilhar dezenas. Prioridade paga continua individual.
+    tag: priority ? "qf-new-call-priority-" + call.id : "qf-new-calls-group",
     strong: true,
+    grouped: false,
+    count: 1,
   };
+}
+
+function groupedNormalPayload(call: any, count: number) {
+  const n = Math.max(2, Number(count || 2));
+  const place = [call.cidade, call.uf].filter(Boolean).join(" · ");
+  return {
+    title: n + " novos chamados na sua região",
+    body: "Último: " + (call.titulo || "Serviço") + (place ? " · " + place : "") + " — toque para ver todos",
+    url: "/#/profissional/home",
+    tag: "qf-new-calls-group",
+    // O primeiro chamado já tocou forte. Os seguintes atualizam o mesmo aviso sem virar outra ligação.
+    strong: false,
+    grouped: true,
+    count: n,
+  };
+}
+
+async function recentNormalCallCounts(userIds: string[]) {
+  const ids = Array.from(new Set((userIds || []).filter(Boolean)));
+  const out: Record<string, number> = {};
+  ids.forEach((id) => { out[id] = 0; });
+  if (!ids.length) return out;
+
+  const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+  const { data: deliveries, error } = await admin
+    .from("qf_push_entregas")
+    .select("user_id,chamado_id,criado_em")
+    .in("user_id", ids)
+    .eq("evento", "new_call")
+    .gte("criado_em", cutoff);
+  if (error) {
+    console.error("agrupamento chamados", error);
+    return out;
+  }
+
+  const callIds = Array.from(new Set((deliveries || []).map((r: any) => String(r.chamado_id || "")).filter(Boolean)));
+  if (!callIds.length) return out;
+
+  const { data: calls, error: callErr } = await admin
+    .from("qf_chamados")
+    .select("id,status,prioridade")
+    .in("id", callIds);
+  if (callErr) {
+    console.error("agrupamento chamados status", callErr);
+    return out;
+  }
+
+  const valid = new Set((calls || [])
+    .filter((c: any) => c.status === "aberto" && !c.prioridade)
+    .map((c: any) => String(c.id)));
+
+  const seen: Record<string, Set<string>> = {};
+  ids.forEach((id) => { seen[id] = new Set<string>(); });
+  for (const row of deliveries || []) {
+    const uid = String((row as any).user_id || "");
+    const cid = String((row as any).chamado_id || "");
+    if (seen[uid] && valid.has(cid)) seen[uid].add(cid);
+  }
+  ids.forEach((id) => { out[id] = seen[id].size; });
+  return out;
 }
 
 // V11.13: aviso de chamado já detalhado para cada profissional (só o contato do cliente fica escondido).
@@ -374,7 +441,15 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
     return { stopped: false, recipients: 0, sent: 0, total: 0 };
   }
 
-  const result = await sendToUsers(freshIds, newCallPayload(call), await newCallPayloads(call, freshIds));
+  const perUser = await newCallPayloads(call, freshIds);
+  if (!call.prioridade) {
+    const counts = await recentNormalCallCounts(freshIds);
+    for (const uid of freshIds) {
+      const n = Number(counts[String(uid)] || 0);
+      if (n >= 2) perUser[String(uid)] = groupedNormalPayload(call, n);
+    }
+  }
+  const result = await sendToUsers(freshIds, newCallPayload(call), perUser);
   return { stopped: false, recipients: freshIds.length, ...result };
 }
 
