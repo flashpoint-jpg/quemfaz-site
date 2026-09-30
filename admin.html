@@ -1132,6 +1132,59 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-cascata-lista{margin-top:12px}
 .qf-cascata-lista .qf-semresp-pro{align-items:flex-start}
 </style>
+<script>
+/* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
+(function (global) {
+  function deadline(promise, ms, stage) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () {
+        console.warn('QuemFaz: tempo de carregamento excedido (' + stage + ')');
+        reject(new Error('A conexão demorou. Tente novamente.'));
+      }, ms);
+      Promise.resolve(promise).then(function (value) {
+        clearTimeout(timer); resolve(value);
+      }, function (err) {
+        clearTimeout(timer); reject(err);
+      });
+    });
+  }
+  var nativeFetch = global.fetch.bind(global);
+  function fetchWithTimeout(input, options) {
+    options = options || {};
+    var url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    var method = String(options.method || (input && input.method) || 'GET').toUpperCase();
+    var rpc = url.pathname.split('/rpc/')[1] || '';
+    var readRpc = /^(qf_public_config_anuncios|qf_admin_snapshot|qf_admin_listar_anuncios|qf_admin_config_anuncios|qf_admin_suporte_listar)$/.test(rpc);
+    var isRead = url.pathname.indexOf('/rest/v1/') === 0 && (method === 'GET' || method === 'HEAD' || readRpc);
+    if (!isRead || typeof AbortController === 'undefined') return nativeFetch(input, options);
+    var controller = new AbortController();
+    var originalSignal = options.signal || (input && input.signal);
+    function abort() { controller.abort(); }
+    if (originalSignal) {
+      if (originalSignal.aborted) abort();
+      else originalSignal.addEventListener('abort', abort, { once: true });
+    }
+    var timer = setTimeout(abort, 12000);
+    function cleanup() {
+      clearTimeout(timer);
+      if (originalSignal) originalSignal.removeEventListener('abort', abort);
+    }
+    return nativeFetch(input, Object.assign({}, options, { signal: controller.signal })).then(async function (response) {
+      // Mantém o limite durante a leitura do JSON, inclusive em rede móvel interrompida.
+      var body = await response.arrayBuffer();
+      cleanup();
+      return new Response(response.status === 204 || response.status === 205 || response.status === 304 || method === 'HEAD' ? null : body, {
+        status: response.status, statusText: response.statusText, headers: response.headers
+      });
+    }).catch(function (err) {
+      cleanup();
+      console.warn('QuemFaz: consulta não concluída', url.pathname);
+      throw err;
+    });
+  }
+  global.QFConnection = { deadline: deadline, fetch: fetchWithTimeout };
+})(window);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -2813,7 +2866,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   const SUPABASE_KEY = 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A';
   const enabled = !!(global.supabase && global.supabase.createClient);
   const client = enabled ? global.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    db: { retry: false },
+    global: { fetch: global.QFConnection.fetch }
   }) : null;
 
   function mapAd(row) {
@@ -2867,8 +2922,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
   async function hasSession() {
     if (!client) return false;
-    const res = await client.auth.getSession();
-    return !res.error && !!(res.data && res.data.session);
+    const res = await global.QFConnection.deadline(client.auth.getSession(), 10000, 'sessão administrativa');
+    if (res.error) throw res.error;
+    return !!(res.data && res.data.session);
   }
 
   async function syncAds() {
@@ -6469,6 +6525,15 @@ Screens.adminDashboardRender = function () {
     return h;
   }
 
+  function renderConnectionError() {
+    const shell = document.getElementById('app-shell');
+    shell.innerHTML = '<div style="padding:48px 24px;text-align:center;max-width:440px;margin:0 auto;">' +
+      '<h1 class="h2">Não foi possível carregar o painel</h1>' +
+      '<p class="text text--secondary" style="margin:16px 0;">A conexão demorou. Seus cadastros continuam salvos. Tente novamente em instantes.</p>' +
+      '<button class="btn btn--primary" id="qf-admin-retry">Tentar novamente</button></div>';
+    document.getElementById('qf-admin-retry').onclick = function () { location.reload(); };
+  }
+
   async function route() {
     const path = currentPath();
     const found = matchRoute(path);
@@ -6477,10 +6542,11 @@ Screens.adminDashboardRender = function () {
     if (session && session.role === 'admin' && global.QFAdminCloud && global.QFAdminCloud.enabled) {
       try {
         if (!(await global.QFAdminCloud.hasSession())) { DB.logout(); session = null; }
-        else await Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]);
+        else await global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
       } catch (err) {
         console.warn('QuemFaz admin sync', err);
-        PU.toast('Não foi possível sincronizar o painel com o Supabase.', 'danger');
+        renderConnectionError();
+        return;
       }
     }
 
@@ -6594,7 +6660,7 @@ Screens.adminDashboardRender = function () {
   window.addEventListener('hashchange', route);
   window.addEventListener('DOMContentLoaded', function () {
     DB.load();
-    route();
+    route().catch(function (err) { console.error('QuemFaz admin: inicialização', err); renderConnectionError(); });
     registerServiceWorker();
   });
 

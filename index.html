@@ -1999,6 +1999,59 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-call-overlay__lock svg{width:14px;height:14px}
 @media (max-height:640px){.qf-call-overlay__icon{display:none}.qf-call-overlay__title{font-size:25px}}
 </style>
+<script>
+/* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
+(function (global) {
+  function deadline(promise, ms, stage) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () {
+        console.warn('QuemFaz: tempo de carregamento excedido (' + stage + ')');
+        reject(new Error('A conexão demorou. Tente novamente.'));
+      }, ms);
+      Promise.resolve(promise).then(function (value) {
+        clearTimeout(timer); resolve(value);
+      }, function (err) {
+        clearTimeout(timer); reject(err);
+      });
+    });
+  }
+  var nativeFetch = global.fetch.bind(global);
+  function fetchWithTimeout(input, options) {
+    options = options || {};
+    var url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    var method = String(options.method || (input && input.method) || 'GET').toUpperCase();
+    var rpc = url.pathname.split('/rpc/')[1] || '';
+    var readRpc = /^(qf_public_config_anuncios|qf_admin_snapshot|qf_admin_listar_anuncios|qf_admin_config_anuncios|qf_admin_suporte_listar)$/.test(rpc);
+    var isRead = url.pathname.indexOf('/rest/v1/') === 0 && (method === 'GET' || method === 'HEAD' || readRpc);
+    if (!isRead || typeof AbortController === 'undefined') return nativeFetch(input, options);
+    var controller = new AbortController();
+    var originalSignal = options.signal || (input && input.signal);
+    function abort() { controller.abort(); }
+    if (originalSignal) {
+      if (originalSignal.aborted) abort();
+      else originalSignal.addEventListener('abort', abort, { once: true });
+    }
+    var timer = setTimeout(abort, 12000);
+    function cleanup() {
+      clearTimeout(timer);
+      if (originalSignal) originalSignal.removeEventListener('abort', abort);
+    }
+    return nativeFetch(input, Object.assign({}, options, { signal: controller.signal })).then(async function (response) {
+      // Mantém o limite durante a leitura do JSON, inclusive em rede móvel interrompida.
+      var body = await response.arrayBuffer();
+      cleanup();
+      return new Response(response.status === 204 || response.status === 205 || response.status === 304 || method === 'HEAD' ? null : body, {
+        status: response.status, statusText: response.statusText, headers: response.headers
+      });
+    }).catch(function (err) {
+      cleanup();
+      console.warn('QuemFaz: consulta não concluída', url.pathname);
+      throw err;
+    });
+  }
+  global.QFConnection = { deadline: deadline, fetch: fetchWithTimeout };
+})(window);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
@@ -3479,7 +3532,9 @@ alt=""></noscript>
   const SUPABASE_KEY = 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A';
   const enabled = !!(global.supabase && global.supabase.createClient);
   const client = enabled ? global.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    db: { retry: false },
+    global: { fetch: global.QFConnection.fetch }
   }) : null;
 
   let bootPrepared = false;
@@ -4456,6 +4511,18 @@ alt=""></noscript>
     return a.join(',') + '|' + u.join(',');
   }
 
+  let publicAdsSync = null;
+  let lastPublicAdsSyncAt = 0;
+  function refreshPublicAdsInBackground() {
+    if (publicAdsSync || Date.now() - lastPublicAdsSyncAt < 60000) return;
+    lastPublicAdsSyncAt = Date.now();
+    publicAdsSync = syncPublicAds().then(function () {
+      global.dispatchEvent(new CustomEvent('qf-ads-updated'));
+    }).catch(function (err) {
+      console.warn('QuemFaz anúncios: atualização adiada', err && err.message);
+    }).finally(function () { publicAdsSync = null; });
+  }
+
   async function syncForCurrentSession(force) {
     if (!enabled) return null;
     prepareLocalState();
@@ -4463,13 +4530,14 @@ alt=""></noscript>
     if (!force && Date.now() - lastSyncAt < 1200) return DB.getSession();
     syncing = (async function () {
       try {
-        await syncPublicAds();
-        const sRes = await client.auth.getSession();
+        refreshPublicAdsInBackground();
+        const sRes = await global.QFConnection.deadline(client.auth.getSession(), 10000, 'sessão');
         if (sRes.error) throw sRes.error;
         const sbSession = sRes.data.session;
         if (!sbSession) {
           DB.setSession(null);
           clearRuntimeData();
+          lastSyncAt = Date.now();
           return null;
         }
         const user = sbSession.user;
@@ -10935,7 +11003,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.42';
+  const APP_VERSION = '11.14.47';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12454,21 +12522,22 @@ alt=""></noscript>
     const found = matchRoute(path);
     if (global.QFCloud && global.QFCloud.enabled) {
       try {
-        await global.QFCloud.syncForCurrentSession(false);
+        await global.QFConnection.deadline(global.QFCloud.syncForCurrentSession(false), 15000, 'dados da conta');
       } catch (err) {
         console.error('QuemFaz sync error', err);
-        PU.toast('Não foi possível sincronizar com o banco agora.', 'danger');
+        renderConnectionError();
+        return;
       }
     }
     const session = currentSession();
     if (session && session.role === 'profissional') {
-      try { await syncPersistentProfessionalNotices(session, false); }
+      try { await global.QFConnection.deadline(syncPersistentProfessionalNotices(session, false), 5000, 'avisos'); }
       catch (err) { console.warn('QuemFaz avisos persistentes', err); }
     }
 
     if (session && global.QFCloud && global.QFCloud.enabled && global.QFCloud.pendingFlow) {
       try {
-        const pending = await global.QFCloud.pendingFlow();
+        const pending = await global.QFConnection.deadline(global.QFCloud.pendingFlow(), 5000, 'serviço pendente');
         if (pending && pending.pending && pending.chamado_id) {
           const target = session.role === 'profissional'
             ? '/profissional/pedido/' + pending.chamado_id
@@ -12903,12 +12972,25 @@ alt=""></noscript>
     }
   }, 4000);
 
+  // Atualiza a tela após os anúncios chegarem sem apagar um formulário em edição.
+  global.addEventListener('qf-ads-updated', function () {
+    const content = document.getElementById('app-content');
+    const path = currentPath();
+    if (!content || userIsEditing()) return;
+    if (path !== '/auth/cliente/cadastro' && path !== '/cliente/home') return;
+    const found = matchRoute(path), session = currentSession(), user = currentUser();
+    const y = window.scrollY;
+    if (found && found.route.anon && !session) renderAnon(found);
+    else if (found && session && user) renderApp(found, user, session);
+    window.scrollTo(0, y);
+  });
+
   // V11.9.1: modo demonstração (dados locais de exemplo) só em ambiente local, nunca no site publicado.
   function isDemoMode() { try { return ['localhost', '127.0.0.1', '[::1]'].indexOf(location.hostname) !== -1 && new URLSearchParams(location.search).get('demo') === '1'; } catch (_) { return false; } }
   function renderConnectionError() {
     const shell = document.getElementById('app-shell');
     shell.innerHTML = '<div class="qf-conn-error"><img src="./icon.svg" alt="QuemFaz" style="width:72px;height:72px;border-radius:18px;">' +
-      '<h1 class="h2">Sem conexão com o QuemFaz</h1><p class="text text--secondary" style="max-width:340px;">Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.</p>' +
+      '<h1 class="h2">Sem conexão com o QuemFaz</h1><p class="text text--secondary" style="max-width:340px;">A conexão demorou e seus dados não puderam ser carregados. Tente novamente em instantes.</p>' +
       '<button class="btn btn--primary" style="max-width:320px;" id="qf-retry">' + icon('refresh') + ' Tentar novamente</button></div>';
     document.getElementById('qf-retry').onclick = function () { location.reload(); };
   }
