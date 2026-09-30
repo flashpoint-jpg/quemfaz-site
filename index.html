@@ -1998,6 +1998,56 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-call-overlay__lock{font-size:12px;color:var(--text-on-navy-muted);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px}
 .qf-call-overlay__lock svg{width:14px;height:14px}
 @media (max-height:640px){.qf-call-overlay__icon{display:none}.qf-call-overlay__title{font-size:25px}}
+/* V11.14.48 — pedido de serviço com alinhamento e área segura próprios. */
+.view.qf-client-request {
+  display:flex;flex-direction:column;gap:24px;
+  width:100%;min-width:0;
+  padding:calc(max(var(--safe-top),var(--qf-request-top,0px)) + 20px) 18px 28px;
+}
+.qf-client-request--installed { --qf-request-top:24px; }
+.qf-request-header { display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:12px; }
+.qf-request-header .h2 { font-size:22px;line-height:1.25;letter-spacing:-.025em;color:var(--navy-900); }
+.qf-request-header .topbar__back,.qf-request-help {
+  width:44px;height:44px;min-width:44px;padding:0;display:grid;place-items:center;
+  border:1px solid var(--border-subtle);border-radius:14px;background:var(--bg-surface);
+  color:var(--navy-900);box-shadow:none;cursor:pointer;
+}
+.qf-request-header .topbar__back svg { width:22px;height:22px; }
+.qf-request-help svg { width:20px;height:20px;color:var(--orange-600); }
+body:has(#cadastro-cliente-form) #app-shell > .qf-support-fab { display:none; }
+.qf-request-intro {
+  display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:start;
+  padding:16px;border:1px solid var(--border-subtle);border-radius:18px;background:var(--bg-surface);
+}
+.qf-request-intro__icon { width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--orange-100);color:var(--orange-700); }
+.qf-request-intro__icon svg { width:20px;height:20px; }
+.qf-request-intro h2 { font-size:17px;font-weight:800;line-height:1.35;color:var(--navy-900); }
+.qf-request-intro p { margin-top:5px;font-size:13.5px;line-height:1.5;color:var(--text-secondary); }
+#cadastro-cliente-form.qf-request-form { gap:20px;width:100%;max-width:none; }
+.qf-request-fields,.qf-request-contact { display:flex;flex-direction:column;gap:18px;min-width:0; }
+.qf-request-contact { padding-top:20px;border-top:1px solid var(--border-subtle); }
+.qf-request-location { display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:12px;align-items:start; }
+.qf-request-location > * { min-width:0; }
+.qf-client-request .field { gap:8px;min-width:0; }
+.qf-client-request .field__label { color:var(--navy-900);font-size:14px;line-height:1.35; }
+.qf-client-request .input,.qf-client-request .select,.qf-client-request .textarea { min-width:0;min-height:52px;border-radius:12px;font-size:16px; }
+.qf-client-request .textarea { min-height:106px;line-height:1.5; }
+.qf-request-submit { min-height:54px;height:auto;padding:15px 16px;font-size:16px;border-radius:14px;box-shadow:0 6px 16px -10px rgba(196,83,10,.5); }
+.qf-request-privacy { display:flex;align-items:flex-start;gap:8px;margin-top:-10px;font-size:12.5px;line-height:1.55;color:var(--text-secondary); }
+.qf-request-privacy svg { width:16px;height:16px;flex:none;margin-top:2px;color:var(--navy-700); }
+#app-shell[data-route="auth-role-cadastro"] .qf-client-request .qf-client-signup-ads { margin-top:0;padding-top:22px;border-top:1px solid var(--border-subtle); }
+.qf-client-request .ad-section__head { flex-wrap:wrap;gap:6px 12px;align-items:baseline; }
+.qf-client-request .ad-section__label { font-size:11px;color:var(--text-secondary); }
+.qf-client-request .ad-section__head > .text--sm { font-size:12px; }
+@media(max-width:359px) {
+  .view.qf-client-request { padding-left:16px;padding-right:16px; }
+  .qf-request-header { gap:10px; }
+  .qf-request-header .h2 { font-size:20px; }
+  .qf-request-location { grid-template-columns:minmax(0,1fr) 88px;gap:10px; }
+}
+@media(min-width:768px) {
+  #app-shell[data-route="auth-role-cadastro"] .view.qf-client-request { max-width:560px;padding:28px 32px 32px; }
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -5870,25 +5920,32 @@ alt=""></noscript>
     const ufInicial = pendingRegion && pendingRegion.uf ? pendingRegion.uf : '';
 
     return (
-      '<div class="view stack--lg">' +
-        backRow('/', 'Pedir serviço') +
-        '<div class="card card--tight" style="background:var(--success-100);border:none;">' +
-          '<div class="text--strong" style="color:var(--success-600);">Pedido grátis · sem e-mail · sem senha</div>' +
-          '<div class="text--sm" style="color:var(--success-600);margin-top:4px;">Preencha uma vez e o QuemFaz já publica seu pedido para os profissionais da sua região.</div>' +
-        '</div>' +
-        '<form id="cadastro-cliente-form" class="stack" novalidate>' +
+      '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
+        '<header class="qf-request-header">' +
+          '<button class="topbar__back" type="button" data-nav="/" aria-label="Voltar">' + icon('chevronLeft') + '</button>' +
+          '<h1 class="h2">Pedir serviço</h1>' +
+          '<button class="qf-request-help" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
+        '</header>' +
+        '<section class="qf-request-intro" aria-label="Pedido grátis">' +
+          '<span class="qf-request-intro__icon" aria-hidden="true">' + icon('clipboard') + '</span>' +
+          '<div><h2>Seu pedido é grátis</h2><p>Sem e-mail e sem senha. Conte o que precisa e receba orçamentos na sua região.</p></div>' +
+        '</section>' +
+        '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
+          '<div class="qf-request-fields">' +
           field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista" value="' + PU.escapeHtml(servicoInicial) + '"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>') +
-          '<div class="row" style="gap:10px;align-items:flex-start;">' +
-            '<div style="flex:2;">' + field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') + '</div>' +
-            '<div style="flex:1;">' + field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') + '</div>' +
+          '<div class="qf-request-location">' +
+            field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') +
+            field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
           '</div>' +
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea>') +
-          '<div class="hairline"></div>' +
+          '</div>' +
+          '<div class="qf-request-contact">' +
           field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-0000">') +
-          '<button class="btn btn--primary" type="submit" style="margin-top:6px;">' + icon('search') + ' Publicar pedido grátis</button>' +
+          '</div>' +
+          '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
-        '<p class="text text--sm text--muted" style="text-align:center;">Seu WhatsApp fica protegido. O contato é liberado ao profissional somente no momento correto do orçamento.</p>' +
+        '<p class="qf-request-privacy">' + icon('shieldCheck') + '<span>Seu WhatsApp é protegido e só é liberado ao profissional na etapa certa do orçamento.</span></p>' +
         cadastroClienteAdsHtml() +
       '</div>'
     );
@@ -11003,7 +11060,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.47';
+  const APP_VERSION = '11.14.48';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
