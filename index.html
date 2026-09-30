@@ -8113,7 +8113,7 @@ alt=""></noscript>
     copy.textContent='Continuamos ampliando a busca automaticamente.';
   }
   function startCallReachPolling(content,req){
-    stopCallReachPolling();
+    if(qfReachTimer){clearInterval(qfReachTimer);qfReachTimer=null;}
     if(!req||[STATUS.BUSCANDO,STATUS.AGUARDANDO_ACEITE,STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)===-1)return;
     const el=content.querySelector('[data-call-reach]');
     if(!el||!(global.QFCloud&&global.QFCloud.client))return;
@@ -10935,7 +10935,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.41';
+  const APP_VERSION = '11.14.42';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
