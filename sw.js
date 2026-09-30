@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.14.38';
+const SW_VERSION = '11.14.39';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -62,7 +62,11 @@ self.addEventListener('push', event => {
     silent: false,
     vibrate: strong ? [400, 150, 400, 150, 600, 150, 400] : [200, 100, 200],
     timestamp: Date.now(),
-    data: { url: data.url || './index.html#/' }
+    data: {
+      url: data.url || './index.html#/',
+      grouped: !!data.grouped,
+      count: Number(data.count || 0)
+    }
   };
   event.waitUntil((async () => {
     await self.registration.showNotification(data.title || 'QuemFaz', options);
