@@ -5233,7 +5233,10 @@ alt=""></noscript>
         title: data.title || (n && n.title) || '',
         body: data.body || (n && n.body) || '',
         url: data.url || '',
-        strong: data.strong === '1' || data.strong === true || data.strong === 1
+        strong: data.strong === '1' || data.strong === true || data.strong === 1,
+        tag: data.tag || '',
+        grouped: data.grouped === '1' || data.grouped === true || data.grouped === 1,
+        count: Number(data.count || 0)
       };
       if (global.QFApp && global.QFApp.onPush) global.QFApp.onPush(payload);
     });
@@ -8496,7 +8499,15 @@ alt=""></noscript>
 
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
-    const chamadas=DB.chamadasPendentes(user.id);
+    const chamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
+      const ap=a&&a.prioridade?1:0, bp=b&&b.prioridade?1:0;
+      if(ap!==bp) return bp-ap;
+      const ak=Number(a&&a.distanciaKm), bk=Number(b&&b.distanciaKm);
+      const av=Number.isFinite(ak), bv=Number.isFinite(bk);
+      if(av&&bv&&ak!==bk) return ak-bk;
+      if(av!==bv) return av?-1:1;
+      return Date.parse((b&&b.criadoEm)||0)-Date.parse((a&&a.criadoEm)||0);
+    });
     const podeFicarOnline=user.statusAprovacao==='aprovado'&&!!user.fotoUrl;
     const meusAnuncios=(DB.state.ads||[]).filter(function(a){return a.anuncianteId===user.id;}).sort(function(a,b){return new Date(b.criadoEm||0)-new Date(a.criadoEm||0);});
     const firstCat=user.categorias&&user.categorias.length?DB.categoryById(user.categorias[0]):null;
@@ -10735,7 +10746,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.38';
+  const APP_VERSION = '11.14.39';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
