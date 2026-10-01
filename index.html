@@ -5419,7 +5419,14 @@ alt=""></noscript>
     if (global.QFApp && global.QFApp.platform() !== 'android') return null;
     return (C.Plugins && C.Plugins.PushNotifications) || null;
   }
-  let nativePerm = 'default';
+  let nativePerm = 'checking';
+  let statusCheck = null, restoreTask = null, lastPushState = '';
+  function announcePushState() {
+    const state = permission() + ':' + isActive();
+    if (state === lastPushState) return;
+    lastPushState = state;
+    global.dispatchEvent(new CustomEvent('qf-push-state'));
+  }
   function mapNativePerm(p) { return p === 'granted' ? 'granted' : (p === 'denied' ? 'denied' : 'default'); }
   async function refreshNativePerm() {
     const P = nativePush();
@@ -5455,6 +5462,7 @@ alt=""></noscript>
       localStorage.setItem('qf_push_enabled', '1');
       localStorage.setItem('qf_fcm_ready', out.fcm_ready ? '1' : '0');
     } catch (_) {}
+    announcePushState();
     return out;
   }
   let nativeListenersOn = false;
@@ -5558,6 +5566,30 @@ alt=""></noscript>
     if (!('Notification' in window)) return 'unsupported';
     return Notification.permission;
   }
+  function needsPermission() {
+    const p = permission();
+    return p !== 'granted' && p !== 'checking';
+  }
+  // Consulta o aparelho antes de mostrar avisos. Não pede permissão nem depende da rede.
+  function refreshStatus() {
+    if (statusCheck) return statusCheck;
+    statusCheck = (async function () {
+      if (nativePush()) await refreshNativePerm();
+      else if (supported() && permission() === 'granted') {
+        try {
+          const reg = await navigator.serviceWorker.getRegistration();
+          const sub = reg && await reg.pushManager.getSubscription();
+          if (!sub) localStorage.removeItem('qf_push_enabled');
+        } catch (_) {} // Uma consulta indisponível não apaga uma inscrição confirmada.
+      }
+      if (permission() === 'denied') {
+        try { localStorage.removeItem('qf_push_enabled'); } catch (_) {}
+      }
+      announcePushState();
+      return isActive();
+    })().finally(function () { statusCheck = null; });
+    return statusCheck;
+  }
   function isLocalViewer() {
     return !/^https?:$/i.test(location.protocol) || !window.isSecureContext;
   }
@@ -5584,7 +5616,7 @@ alt=""></noscript>
     const NP = nativePush();
     if (NP) return activateNative(NP);
     if (!supported()) throw new Error('Abra a versão online do QuemFaz e instale o app para ativar notificações com o app fechado.');
-    const perm = await Notification.requestPermission();
+    const perm = permission() === 'granted' ? 'granted' : await Notification.requestPermission();
     if (perm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Ative nas configurações do navegador/app.');
     const reg = await getRegistration();
     let sub = await reg.pushManager.getSubscription();
@@ -5610,9 +5642,10 @@ alt=""></noscript>
     const out = await resp.json().catch(function () { return {}; });
     if (!resp.ok || !out || !out.ok) throw new Error((out && out.error) || 'Não foi possível registrar as notificações.');
     localStorage.setItem('qf_push_enabled', '1');
+    announcePushState();
     return true;
   }
-  async function restore() {
+  async function restorePush() {
     const NP = nativePush();
     if (NP) {
       // APK: se a permissão já existe, registra de novo (o token do Firebase pode ter mudado).
@@ -5622,6 +5655,14 @@ alt=""></noscript>
     }
     if (!supported() || permission() !== 'granted') return false;
     try { await activate(); return true; } catch (_) { return false; }
+  }
+  function restore() {
+    if (restoreTask) return restoreTask;
+    restoreTask = restorePush().finally(function () {
+      restoreTask = null;
+      announcePushState();
+    });
+    return restoreTask;
   }
   async function notify(event, callId, extra) {
     if (!global.QFCloud || !global.QFCloud.client || !callId) return false;
@@ -5639,7 +5680,11 @@ alt=""></noscript>
     if (!nativePush() && (isLocalViewer() || !supported())) {
       return '<div class="card notify-local"><div class="row" style="align-items:flex-start;"><div class="icon-tile">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Avisos com o app fechado</div><div class="text--sm text--secondary">Nesta visualização local os avisos funcionam apenas com a tela aberta. Depois de publicar em HTTPS e instalar o QuemFaz, ative as notificações para receber chamados mesmo com o app fechado.</div></div></div></div>';
     }
-    if (permission() === 'granted') {
+    if (permission() === 'checking') return '';
+    if (permission() === 'granted' && !isActive()) {
+      return '<div class="card notify-reconnect"><div class="text--strong">Notificações permitidas</div><div class="text--sm text--secondary">Reconectando os avisos deste aparelho. Se não concluir, tente novamente.</div><button class="btn btn--outline" type="button" data-action="ativar-notificacoes" style="margin-top:12px;">Reconectar avisos</button></div>';
+    }
+    if (isActive()) {
       return '<div class="card notify-ok"><div class="row"><div class="icon-tile">' + global.icon('bell') + '</div><div><div class="text--strong">Notificações ativadas</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Você pode receber novos chamados mesmo com o app fechado.' : 'Você será avisado quando um profissional aceitar ou enviar orçamento.') + '</div></div></div></div>';
     }
     const denied = permission() === 'denied';
@@ -5647,13 +5692,17 @@ alt=""></noscript>
       (denied ? '<div class="text--sm" style="color:var(--danger-600);margin-top:10px;">A permissão foi bloqueada. Libere Notificações nas configurações do navegador/app.</div>' : '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes" style="margin-top:12px;">' + global.icon('bell') + ' Ativar notificações</button>') + '</div>';
   }
   function batteryReady(){if(!nativePush())return true;try{return localStorage.getItem('qf_battery_asked')==='1';}catch(_){return false;}}
-  global.QFPush = { supported, permission, isLocalViewer, activate, restore, notify, card, isActive,
+  global.QFPush = { supported, permission, needsPermission, refreshStatus, isLocalViewer, activate, restore, notify, card, isActive,
     isNative:function(){return !!nativePush();},
     batteryReady:batteryReady,
     requestBattery:function(){pedirLiberarBateria(true);}
   };
   // APK: carrega a permissão atual cedo, para a tela já mostrar o estado certo.
-  setTimeout(function () { refreshNativePerm().catch(function () {}); }, 0);
+  setTimeout(function () { refreshStatus().catch(function () {}); }, 0);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    refreshStatus().then(function () { if (permission() === 'granted') return restore(); }).catch(function () {});
+  });
 })(window);
 
 /* QuemFaz — endereço nacional, CEP, GPS e CPF */
@@ -6849,7 +6898,7 @@ alt=""></noscript>
   }
   function clientePendenciaHtml() {
     let tipo='',iconName='',texto='',action='';
-    if(global.QFPush && !global.QFPush.isActive() && !qfPendenciaDismissed('notificacoes')){
+    if(global.QFPush && global.QFPush.needsPermission() && !qfPendenciaDismissed('notificacoes')){
       tipo='notificacoes';iconName='bell';texto=global.QFPush.permission()==='denied'?'Notificações estão bloqueadas neste aparelho.':'Ative as notificações para acompanhar seu pedido.';action='<button class="btn btn--primary" type="button" data-action="ativar-notificacoes">Ativar</button>';
     }
     if(!tipo)return '';
@@ -8110,7 +8159,7 @@ alt=""></noscript>
         } else {
           PU.toast('Chamado criado grátis! O sistema começou a procurar os profissionais mais próximos da categoria.', 'success');
         }
-        if (global.QFPush && !global.QFPush.isActive()) {
+        if (global.QFPush && global.QFPush.needsPermission()) {
           try { sessionStorage.setItem('qf_cli_notif_pos_pedido', String(req.id)); } catch (_) {}
         }
         global.navigate('/cliente/pedido/' + req.id, true);
@@ -8123,9 +8172,10 @@ alt=""></noscript>
   }
 
   // V11.3: cliente — oferece ativar notificações antes de publicar; se recusar, publica mesmo assim.
-  function pedirNotificacaoAntesDePublicar() {
+  async function pedirNotificacaoAntesDePublicar() {
     const P = global.QFPush;
-    if (!P || !P.supported() || P.isActive()) return Promise.resolve(true);
+    if (P) await P.refreshStatus();
+    if (!P || !P.supported() || !P.needsPermission()) return true;
     return new Promise(function (resolve) {
       const negado = P.permission() === 'denied';
       PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
@@ -8145,9 +8195,10 @@ alt=""></noscript>
     });
   }
 
-  function mostrarNotificacaoPosPedido(req) {
+  async function mostrarNotificacaoPosPedido(req) {
     const P = global.QFPush;
-    if (!P || P.isActive() || !req) return;
+    if (P) await P.refreshStatus();
+    if (!P || !P.needsPermission() || !req) return;
 
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
     const suportado = P.supported();
@@ -8292,7 +8343,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req) return;
     // V11.3: sem notificação ativa, avisa que o cliente precisa acompanhar pelo app.
-    if (global.QFPush && !global.QFPush.isActive() && ACTIVE_STATUSES.indexOf(req.status) !== -1 && !content.querySelector('.qf-no-notif-strip')) {
+    if (global.QFPush && global.QFPush.needsPermission() && ACTIVE_STATUSES.indexOf(req.status) !== -1 && !content.querySelector('.qf-no-notif-strip')) {
       const strip = document.createElement('div');
       strip.className = 'qf-no-notif-strip';
       strip.setAttribute('role', 'status');
@@ -8305,7 +8356,7 @@ alt=""></noscript>
       mostrarPosPedido = sessionStorage.getItem('qf_cli_notif_pos_pedido') === String(req.id);
       if (mostrarPosPedido) sessionStorage.removeItem('qf_cli_notif_pos_pedido');
     } catch (_) {}
-    if (mostrarPosPedido && global.QFPush && !global.QFPush.isActive()) {
+    if (mostrarPosPedido && global.QFPush && global.QFPush.needsPermission()) {
       setTimeout(function () { mostrarNotificacaoPosPedido(req); }, 250);
     }
     startSearchRadar(content, req);
@@ -8776,16 +8827,14 @@ alt=""></noscript>
   async function ativarNotificacoesPasso(btn) {
     const P = global.QFPush;
     if (!P || btn.disabled) return;
+    await P.refreshStatus();
     // Se já está ativa, apenas atualiza a tela; não abre a folha de ativação de novo.
     if (pushJaAtivo()) {
       PU.toast('Notificações já estão ativadas neste aparelho.', 'success');
       global.navigate('/profissional/home', true);
       return;
     }
-    const nativo = !!(P.isNative && P.isNative());
-    if ((ativAndroid() && !nativo) || !P.supported() || P.permission() === 'denied') {
-      // Android no navegador: registra o aviso do navegador (quando permitido) e explica que o toque com a tela apagada vem do app.
-      if (ativAndroid() && !nativo && P.supported() && P.permission() !== 'denied' && !P.isActive()) { try { await P.activate(); } catch (_) {} }
+    if (!P.supported() || P.permission() === 'denied') {
       const ok = await garantirNotificacoesParaOnline({ passo: true });
       if (ok) global.navigate('/profissional/home', true);
       return;
@@ -10284,9 +10333,10 @@ alt=""></noscript>
   };
 
   function bindNotificationActivation(content) {
-    const btn = content.querySelector('[data-action="ativar-notificacoes"]');
-    if (!btn || !global.QFPush) return;
-    btn.addEventListener('click', async function () {
+    if (!global.QFPush) return;
+    content.addEventListener('click', async function (event) {
+      const btn = event.target.closest('[data-action="ativar-notificacoes"]');
+      if (!btn || btn.disabled) return;
       btn.disabled = true;
       try {
         await global.QFPush.activate();
@@ -10324,15 +10374,23 @@ alt=""></noscript>
   }
 
   // V11.3: profissional só fica online com notificação ativa (permissão + inscrição salva no servidor).
-  function garantirNotificacoesParaOnline(opts) {
+  async function garantirNotificacoesParaOnline(opts) {
     opts = opts || {};
     const P = global.QFPush;
-    if (!P) return Promise.resolve(true);
-    if (P.supported() && pushJaAtivo()) return Promise.resolve(true);
+    if (!P) return true;
+    await P.refreshStatus();
+    if (P.supported() && pushJaAtivo()) return true;
+    if (P.permission() === 'granted') {
+      await P.restore();
+      if (pushJaAtivo()) return true;
+    }
     return new Promise(function (resolve) {
       const nativo = !!(P.isNative && P.isNative());
       const androidSemApk = /android/i.test(navigator.userAgent || '') && !nativo;
-      const intro = androidSemApk
+      const reconnect = P.permission() === 'granted';
+      const intro = reconnect
+        ? 'A permissão já está ativada. Falta reconectar este aparelho para receber os avisos. Confira sua conexão e tente novamente.'
+        : androidSemApk && !P.supported()
         ? 'Para receber chamado com a tela apagada, o profissional precisa usar o app QuemFaz para Android. No navegador/PWA o Android pode suspender os avisos.'
         : (opts.jaOnline
           ? 'Você está online, mas as notificações estão desligadas neste aparelho. Sem elas você não recebe chamados com o app fechado. Ative agora para continuar online.'
@@ -10343,7 +10401,7 @@ alt=""></noscript>
         const suportado = P.supported();
         const negado = P.permission() === 'denied';
         let corpo = '<p class="text text--secondary" style="text-align:center;">' + intro + '</p>';
-        if (androidSemApk) {
+        if (androidSemApk && !suportado) {
           corpo += '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>' + (opts.passo ? 'Instale o app QuemFaz e ative as notificações por ele.' : 'Para ficar online, instale o app QuemFaz.') + '</strong><br>Assim o chamado usa notificação nativa e pode tocar mesmo com a tela apagada.</div></div>' +
             '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar pela Google Play</button>';
         } else if (!suportado) {
@@ -10356,11 +10414,11 @@ alt=""></noscript>
                     : 'No Chrome, toque no <strong>cadeado</strong> ao lado do endereço &gt; <strong>Permissões</strong> &gt; <strong>Notificações</strong> &gt; <strong>Permitir</strong>.') +
             '</div></div><button class="btn btn--primary" id="qf-notif-ativar">' + icon('bell') + ' Já liberei, tentar de novo</button>';
         } else {
-          corpo += '<button class="btn btn--primary" id="qf-notif-ativar">' + icon('bell') + ' ' + (opts.jaOnline ? 'Ativar agora' : 'Ativar notificações') + '</button>';
+          corpo += '<button class="btn btn--primary" id="qf-notif-ativar">' + icon('bell') + ' ' + (reconnect ? 'Reconectar avisos' : (opts.jaOnline ? 'Ativar agora' : 'Ativar notificações')) + '</button>';
         }
         corpo += '<button class="btn btn--outline" id="qf-notif-offline">' + (opts.passo ? 'Agora não' : 'Ficar offline') + '</button>';
         PU.openSheet('<div class="stack" id="qf-notif-sheet"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
-          '<h3 class="sheet__title" style="text-align:center;">Ative as notificações</h3>' + corpo +
+          '<h3 class="sheet__title" style="text-align:center;">' + (reconnect ? 'Reconectar notificações' : 'Ative as notificações') + '</h3>' + corpo +
           '<div class="text--sm" id="qf-notif-erro" role="alert" style="color:var(--danger-600);text-align:center;"></div></div>', { persistent: true });
         const offline = document.getElementById('qf-notif-offline');
         const ativar = document.getElementById('qf-notif-ativar');
@@ -11114,7 +11172,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.2';
+  const APP_VERSION = '11.16.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12448,6 +12506,14 @@ alt=""></noscript>
     '.qf-competition-card{padding:14px;border-radius:16px;background:var(--navy-100);border:1px solid rgba(15,42,70,.10)}',
     '.qf-competition-card strong{display:block;color:var(--navy-900);font-size:.98rem}',
     '.qf-competition-card span{display:block;margin-top:3px;color:var(--text-secondary);font-size:.84rem}',
+    '.qf-execution-summary strong{display:flex;align-items:center;gap:8px}',
+    '.qf-execution-summary strong svg{width:20px;height:20px;flex:0 0 20px}',
+    '.qf-execution-summary{margin:12px 0}',
+    '.qf-negotiation-card{display:flex;flex-direction:column;gap:14px;margin-bottom:16px}',
+    '.qf-negotiation-card .row-between{align-items:flex-start;gap:12px;flex-wrap:wrap}',
+    '.qf-negotiation-card .row-between>div{flex:1 1 190px;min-width:0}',
+    '.qf-negotiation-card .btn{min-height:48px;margin:0;box-shadow:none;white-space:normal}',
+    '.qf-negotiation-card [data-qf-prof-competition]:empty{display:none}',
     '.qf-portfolio-tools{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px}',
     '.qf-chat-list{display:flex;flex-direction:column;gap:8px;min-height:180px;padding:8px 0}',
     '.qf-chat-bubble{max-width:84%;padding:10px 12px;border-radius:16px;background:var(--navy-100);align-self:flex-start}',
@@ -12540,7 +12606,7 @@ alt=""></noscript>
 
   function scheduleSummary(req) {
     if (!req || !req.dataPreferida) return '';
-    return '<div class="qf-competition-card" style="margin:12px 0;">' +
+    return '<div class="qf-competition-card qf-execution-summary">' +
       '<strong>' + icon('clock') + ' Execução prevista</strong>' +
       '<span>' + esc(execLabel(req.dataPreferida)) + '</span>' +
     '</div>';
@@ -12603,7 +12669,7 @@ alt=""></noscript>
     if (!req) return html;
     const blocked = req.status === 'nao_selecionado' || req.status === 'cancelado' || req.status === 'finalizado';
     const cta = blocked ? '' :
-      '<div class="section"><div class="card stack--sm" style="border:2px solid var(--orange-500);">' +
+      '<div class="section"><div class="card qf-negotiation-card" style="border:2px solid var(--orange-500);">' +
         '<div class="row-between"><div><div class="text--strong">Negociação pelo chat</div><div class="text--sm text--secondary">Combine valor, data e detalhes diretamente com o cliente.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
         '<button class="btn btn--primary" data-nav="/profissional/chat/' + esc(req.id) + '">' + icon('message') + ' Conversar com o cliente</button>' +
         '<button class="btn btn--outline" data-nav="/profissional/orcamento/' + esc(req.id) + '">' + icon('document') + ' Enviar proposta (opcional)</button>' +
@@ -12731,16 +12797,27 @@ alt=""></noscript>
       '</div>';
   }
 
+  const conversationCache = new Map();
   async function fillClientConversations(content, params) {
     const slot = content.querySelector('[data-qf-client-conversations]');
     const req = DB.requestById(params.id);
     if (!slot || !req || !Cloud || !Cloud.clientConversations) return;
+    const key = req.clienteId + ':' + req.id;
+    function paint(rows) {
+      const html = renderConversationCards(rows, DB.requestById(params.id) || req);
+      if (slot.qfMarkup !== html) { slot.innerHTML = html; slot.qfMarkup = html; }
+    }
+    if (conversationCache.has(key)) paint(conversationCache.get(key));
+    if (slot.qfLoading) return;
+    slot.qfLoading = true;
     try {
       const rows = await Cloud.clientConversations(req.id);
-      slot.innerHTML = renderConversationCards(rows, req);
+      if (!document.body.contains(slot)) return;
+      conversationCache.set(key, rows);
+      paint(rows);
     } catch (e) {
-      slot.innerHTML = '<div class="card text--sm text--secondary">Não foi possível carregar as conversas agora.</div>';
-    }
+      if (!conversationCache.has(key) && !slot.innerHTML) slot.innerHTML = '<div class="card text--sm text--secondary">Não foi possível carregar as conversas agora.</div>';
+    } finally { slot.qfLoading = false; }
   }
 
   function openAddressSheet(req, profId, profName) {
@@ -12786,6 +12863,10 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req) return;
     fillClientConversations(content, params);
+    const conversationTimer = setInterval(function () {
+      if (!document.body.contains(content)) { clearInterval(conversationTimer); return; }
+      if (!document.hidden) fillClientConversations(content, params);
+    }, 5000);
     content.addEventListener('click', function (e) {
       const cont = e.target.closest('[data-qf-continue-search]');
       if (!cont) return;
@@ -12904,6 +12985,10 @@ alt=""></noscript>
   }
 
   const prevAfter = Screens.afterRender;
+  Screens.refreshDetail = function (pattern, content, params) {
+    if (pattern === '/cliente/pedido/:id') fillClientConversations(content, params);
+    if (pattern === '/profissional/pedido/:id') fillProfCompetition(content, params);
+  };
   Screens.afterRender = function (pattern,content,params,user) {
     if (prevAfter) prevAfter(pattern,content,params,user);
     if (pattern==='/cliente/novo-pedido/:catId') bindSchedule(content);
@@ -13215,6 +13300,9 @@ alt=""></noscript>
         return;
       }
     }
+    if (global.QFPush) {
+      try { await global.QFConnection.deadline(global.QFPush.refreshStatus(), 3000, 'permissão de notificações'); } catch (_) {}
+    }
     const session = currentSession();
     if (session && session.role === 'profissional') {
       try { await global.QFConnection.deadline(syncPersistentProfessionalNotices(session, false), 5000, 'avisos'); }
@@ -13303,7 +13391,31 @@ alt=""></noscript>
     window.scrollTo(0, 0);
   }
 
-  function renderApp(found, user, session) {
+  function renderApp(found, user, session, options) {
+    const previous = document.getElementById('app-content');
+    const detail = found.route.pattern === '/cliente/pedido/:id' || found.route.pattern === '/profissional/pedido/:id';
+    const keepDetail = options && options.background && detail && previous && previous.qfPath === currentPath() && previous.qfUserId === user.id;
+    const html = keepDetail ? found.route.render(found.params, user) : null;
+    if (keepDetail && previous.qfRenderedHtml === html) {
+      if (Screens.refreshDetail) Screens.refreshDetail(found.route.pattern, previous, found.params);
+      return;
+    }
+    if (keepDetail) {
+      const y = window.scrollY;
+      const content = previous.cloneNode(false);
+      content.innerHTML = html;
+      content.qfRenderedHtml = html;
+      content.qfPath = currentPath();
+      content.qfUserId = user.id;
+      const view = content.querySelector('.view');
+      if (view) view.style.animation = 'none';
+      previous.replaceWith(content);
+      bindGlobalDelegation(content);
+      if (Screens.afterRender) Screens.afterRender(found.route.pattern, content, found.params, user);
+      if (global.QFApp) { global.QFApp.fillInstallSlots(content); global.QFApp.afterRender(); }
+      window.scrollTo(0, y);
+      return;
+    }
     if (found.route.tab === 'avisos') markNoticesRead(session);
     const shell = document.getElementById('app-shell');
     const tabs = TABS[session.role] || [];
@@ -13341,7 +13453,7 @@ alt=""></noscript>
     if (global.QFApp && global.QFApp.apkStripHtml) pushBannerHtml += global.QFApp.apkStripHtml(session.role);
     // V11.5.0: cliente sem notificação ativa vê a faixa em toda abertura do app (o X esconde só até fechar o app).
     let clientNotifHtml = '';
-    if (session.role === 'cliente' && global.QFPush && !global.QFPush.isActive()) {
+    if (session.role === 'cliente' && global.QFPush && global.QFPush.needsPermission()) {
       let hidden = false;
       try { hidden = sessionStorage.getItem('qf_cli_notif_x') === '1'; } catch (_) {}
       if (!hidden) clientNotifHtml = '<div class="qf-cli-notif" role="status">' + icon('bell') + '<span class="qf-cli-notif__txt">Ative as notificações para saber na hora quando um profissional responder</span>' +
@@ -13373,7 +13485,11 @@ alt=""></noscript>
     });
 
     const content = document.getElementById('app-content');
-    content.innerHTML = found.route.render(found.params, user);
+    const renderedHtml = found.route.render(found.params, user);
+    content.innerHTML = renderedHtml;
+    content.qfRenderedHtml = renderedHtml;
+    content.qfPath = currentPath();
+    content.qfUserId = user.id;
     bindGlobalDelegation(content);
     if (Screens.afterRender) Screens.afterRender(found.route.pattern, content, found.params, user);
     if (global.QFApp) { global.QFApp.fillInstallSlots(content); global.QFApp.afterRender(); }
@@ -13648,7 +13764,7 @@ alt=""></noscript>
       const freshSession = currentSession();
       const freshUser = currentUser();
       if (found && freshSession && freshUser) {
-        renderApp(found, freshUser, freshSession);
+        renderApp(found, freshUser, freshSession, { background: true });
         requestAnimationFrame(function () { window.scrollTo(0, y); });
       }
     } catch (err) {
@@ -13659,6 +13775,20 @@ alt=""></noscript>
   }, 4000);
 
   // Atualiza a tela após os anúncios chegarem sem apagar um formulário em edição.
+  global.addEventListener('qf-push-state', function () {
+    const P = global.QFPush;
+    if (!P) return;
+    if (!P.needsPermission()) {
+      document.querySelectorAll('.qf-cli-notif,.qf-no-notif-strip,[data-pendencia="notificacoes"]').forEach(function (el) { el.remove(); });
+    }
+    if (P.isActive()) document.querySelectorAll('.qf-push-banner').forEach(function (el) { el.remove(); });
+    const session = currentSession();
+    if (session) document.querySelectorAll('.notify-required,.notify-reconnect,.notify-ok').forEach(function (el) {
+      const html = P.card(session.role);
+      if (el.outerHTML !== html) el.outerHTML = html;
+    });
+  });
+
   global.addEventListener('qf-ads-updated', function () {
     const content = document.getElementById('app-content');
     const path = currentPath();
@@ -13719,7 +13849,7 @@ alt=""></noscript>
       if (before !== after) detectNotices(session, beforeMap, requestStateMap());
       if (before !== after && currentPath() === path && !userIsEditing()) {
         const found = matchRoute(path); const u = currentUser(); const s2 = currentSession();
-        if (found && u && s2 && found.route.role) renderApp(found, u, s2);
+        if (found && u && s2 && found.route.role) renderApp(found, u, s2, { background: true });
       }
     } catch (err) { console.warn('QuemFaz atualização', err); }
     finally { liveCallsBusy = false; }
