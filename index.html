@@ -11261,7 +11261,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.6';
+  const APP_VERSION = '11.16.7';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13490,12 +13490,55 @@ alt=""></noscript>
     window.scrollTo(0, 0);
   }
 
+  // V11.16.7 — atualização em segundo plano sem remontar a tela inteira.
+  // O servidor pode renovar timestamps a cada sincronização. Esses campos não mudam
+  // o que o usuário está vendo e não podem provocar um novo DOM a cada 4 segundos.
+  function detailRefreshSignature(found) {
+    if (!found || !found.params || !found.params.id) return '';
+    const req = DB.requestById(found.params.id);
+    if (!req) return '';
+    function quoteSig(q) {
+      if (!q) return null;
+      return [
+        q.id || '', q.profissionalId || q.profissional_id || '', q.status || '',
+        Number(q.maoDeObra || q.mao_de_obra || 0), Number(q.material || 0),
+        Number(q.taxaVisita || q.taxa_visita || 0), Number(q.total || 0),
+        q.mensagem || q.observacao || ''
+      ];
+    }
+    const quotes = Array.isArray(req.orcamentos) ? req.orcamentos.map(quoteSig) : (req.orcamento ? [quoteSig(req.orcamento)] : []);
+    const end = req.endereco || {};
+    const pay = req.pagamentoPrioridade || {};
+    const avCli = req.avaliacaoCliente || {};
+    const avPro = req.avaliacaoProfissional || {};
+    return JSON.stringify([
+      req.id || '', req.status || '', req.categoriaId || '', req.profissionalId || '',
+      !!req.prioridade, req.dataPreferida || '', req.descricao || '',
+      Number(req.distanciaKm || 0), Number(req.valorDesbloqueio || req.leadValor || 0),
+      end.cep || '', end.rua || '', end.numero || '', end.bairro || '', end.cidade || '', end.uf || '',
+      pay.id || '', pay.status || '', Number(pay.valor || 0), pay.checkoutUrl || '',
+      req.motivoCancelamento || '',
+      avCli.nota || '', avCli.comentario || '', avPro.nota || '', avPro.comentario || '',
+      quotes
+    ]);
+  }
+
   function renderApp(found, user, session, options) {
     const previous = document.getElementById('app-content');
     const detail = found.route.pattern === '/cliente/pedido/:id' || found.route.pattern === '/profissional/pedido/:id';
     const keepDetail = options && options.background && detail && previous && previous.qfPath === currentPath() && previous.qfUserId === user.id;
+    const detailSig = detail ? detailRefreshSignature(found) : '';
+
+    // Enquanto o pedido continua no mesmo estado visual, atualiza somente os blocos
+    // dinâmicos (chat/concorrência). Mantém o DOM principal intacto e elimina o pisca-pisca.
+    if (keepDetail && previous.qfDetailSig === detailSig) {
+      if (Screens.refreshDetail) Screens.refreshDetail(found.route.pattern, previous, found.params);
+      return;
+    }
+
     const html = keepDetail ? found.route.render(found.params, user) : null;
     if (keepDetail && previous.qfRenderedHtml === html) {
+      previous.qfDetailSig = detailSig;
       if (Screens.refreshDetail) Screens.refreshDetail(found.route.pattern, previous, found.params);
       return;
     }
@@ -13504,6 +13547,7 @@ alt=""></noscript>
       const content = previous.cloneNode(false);
       content.innerHTML = html;
       content.qfRenderedHtml = html;
+      content.qfDetailSig = detailSig;
       content.qfPath = currentPath();
       content.qfUserId = user.id;
       const view = content.querySelector('.view');
@@ -13587,6 +13631,7 @@ alt=""></noscript>
     const renderedHtml = found.route.render(found.params, user);
     content.innerHTML = renderedHtml;
     content.qfRenderedHtml = renderedHtml;
+    content.qfDetailSig = detail ? detailSig : '';
     content.qfPath = currentPath();
     content.qfUserId = user.id;
     bindGlobalDelegation(content);
