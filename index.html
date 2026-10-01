@@ -8776,6 +8776,12 @@ alt=""></noscript>
   async function ativarNotificacoesPasso(btn) {
     const P = global.QFPush;
     if (!P || btn.disabled) return;
+    // Se já está ativa, apenas atualiza a tela; não abre a folha de ativação de novo.
+    if (pushJaAtivo()) {
+      PU.toast('Notificações já estão ativadas neste aparelho.', 'success');
+      global.navigate('/profissional/home', true);
+      return;
+    }
     const nativo = !!(P.isNative && P.isNative());
     if ((ativAndroid() && !nativo) || !P.supported() || P.permission() === 'denied') {
       // Android no navegador: registra o aviso do navegador (quando permitido) e explica que o toque com a tela apagada vem do app.
@@ -10309,12 +10315,11 @@ alt=""></noscript>
     try {
       const P = global.QFPush;
       if (!P) return false;
-      const android = /android/i.test(navigator.userAgent || '');
-      const nativo = !!(P.isNative && P.isNative());
-      // Android: só consideramos "apto" quando está no APK com FCM nativo.
-      // Web Push/PWA pode ser suspenso pelo sistema com a tela apagada.
-      if (android && !nativo) return false;
-      return P.isActive();
+      // Se a permissão e a inscrição já foram confirmadas, não peça novamente.
+      // Isso vale também para Android no navegador/PWA. O APK nativo continua
+      // sendo recomendado para maior confiabilidade com a tela apagada, mas
+      // não deve transformar uma notificação já ativa em "pendente".
+      return !!(P.isActive && P.isActive());
     } catch (_) { return false; }
   }
 
@@ -11109,7 +11114,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.1';
+  const APP_VERSION = '11.16.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
