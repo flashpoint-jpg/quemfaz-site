@@ -5974,7 +5974,7 @@ alt=""></noscript>
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span>Quem<span style="color:var(--orange-400);">Faz</span></span></div><button class="qf-landing-help" type="button" data-support-open aria-label="Ajuda" title="Ajuda">?</button>' + (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') + '<button class="btn btn--outline qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div><div class="qf-landing-copy"><span class="qf-landing-kicker">PRECISOU? TEM QUEM FAÇA.</span><h1 class="qf-landing-title">Encontre o <em>profissional certo</em> perto de você</h1><p class="qf-landing-sub">Descreva o serviço, receba orçamentos e combine direto com o profissional.</p><div class="qf-landing-actions"><button class="btn btn--primary" data-nav="/auth/cliente/cadastro">Pedir um serviço grátis</button><button class="btn qf-landing-outline" data-nav="/auth/profissional/login">Sou profissional, quero chamados</button></div></div></section>' +
       '<ul class="qf-trust-row" aria-label="Benefícios do Quem Faz"><li class="qf-trust-pill">' + icon('camera') + '<span>Perfil com selfie</span></li><li class="qf-trust-pill">' + icon('document') + '<span>Sem compromisso</span></li><li class="qf-trust-pill">' + icon('checkCircle') + '<span>Pagamento direto</span></li></ul>' +
-      '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary">Escolha um serviço para começar.</div></div></div><div class="qf-landing-popular">' + popular.map(function(c){return '<button class="category-tile" type="button" data-landing-cat="'+c.id+'"><span class="category-tile__icon">'+icon(c.icon)+'</span><span class="category-tile__label">'+PU.escapeHtml(c.nome)+'</span></button>';}).join('') + '</div><button class="qf-landing-link" type="button" data-action="landing-all-services">Ver os ' + cats.length + ' serviços →</button></section>' +
+      '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary">Digite a profissão ou o serviço.</div></div></div><form class="qf-landing-service-search" data-landing-service-form style="position:relative;"><div class="row" style="gap:8px;align-items:stretch;"><label class="category-browser-search spacer" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" data-landing-service-search placeholder="Ex.: eletricista, diarista, pintor..." autocomplete="off" enterkeyhint="search" aria-label="Buscar serviço"></label><button class="btn btn--primary" type="submit" style="width:auto;padding:0 18px;">Buscar</button></div><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form></section>' +
       '<section class="section"><div class="card qf-ad-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3">Tem uma empresa?</div><div class="text--sm text--secondary" style="margin-top:3px;">Apareça para clientes da sua região — a partir de R$ 79 por 30 dias.</div></div></div><button class="btn btn--primary" type="button" data-nav="/anuncie" style="margin-top:13px;">Anunciar minha empresa</button></div></section>' +
       '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div><button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:10px;">' + icon('info') + ' Preços, planos e dúvidas</button></section>' +
       '<section class="section"><div class="card qf-pro-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3" style="color:#fff;">É profissional?</div><div class="text--sm text--secondary" style="margin-top:3px;">Receba chamados de clientes perto de você. Comece com R$ 25 em créditos grátis.</div></div></div><button class="btn btn--primary" data-nav="/auth/profissional/login" style="margin-top:13px;">Quero receber chamados</button></div></section>' +
@@ -6084,10 +6084,11 @@ alt=""></noscript>
           '<div class="spacer"><div class="text--sm text--secondary">Serviço escolhido</div><div class="text--strong" data-servico-escolhido-nome>' + PU.escapeHtml(servicoInicial) + '</div></div>' +
           '<button class="btn btn--ghost btn--sm btn--block-auto" type="button" data-action="alterar-servico-cliente" style="padding:8px 10px;">Alterar</button>' +
         '</div>' +
-        '<div data-servico-editar hidden>' +
-          field('Escolha outro serviço', '<input class="input" data-servico-edit-input list="qf-servicos-cliente" autocomplete="off" placeholder="Ex.: pintor, eletricista, diarista" value="' + PU.escapeHtml(servicoInicial) + '"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>') +
+        '<div data-servico-editar hidden style="position:relative;">' +
+          field('Escolha outro serviço', '<input class="input" data-servico-edit-input autocomplete="off" placeholder="Digite a profissão ou serviço" value="' + PU.escapeHtml(servicoInicial) + '">') +
+          '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div>' +
         '</div>'
-      : field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>');
+      : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
     const regionField = cidadeInicial && ufInicial
       ? '<input type="hidden" name="cidade" value="' + PU.escapeHtml(cidadeInicial) + '"><input type="hidden" name="uf" value="' + PU.escapeHtml(ufInicial) + '"><div class="text--sm text--secondary" style="display:flex;align-items:center;gap:6px;padding:0 2px;">' + icon('mapPin') + '<span>Atendimento em <strong>' + PU.escapeHtml(cidadeInicial) + '/' + PU.escapeHtml(ufInicial) + '</strong></span></div>'
       : '<div class="qf-request-location">' +
@@ -6461,6 +6462,39 @@ alt=""></noscript>
 
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/') {
+      const landingSearchForm=content.querySelector('[data-landing-service-form]');
+      const landingSearch=content.querySelector('[data-landing-service-search]');
+      const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
+      function landingNorm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+      function landingMatches(raw){
+        const q=landingNorm(raw); if(q.length<2)return [];
+        return DB.categories().filter(function(cat){return cat && cat.id!=='cat_outros' && landingNorm(cat.nome).indexOf(q)!==-1;}).slice(0,6);
+      }
+      function landingGo(cat){
+        if(!cat)return;
+        try{sessionStorage.setItem('qf_pending_category',cat.id);}catch(_){}
+        global.navigate('/auth/cliente/cadastro',true);
+      }
+      function renderLandingSuggestions(){
+        if(!landingSearch||!landingSuggestions)return;
+        const list=landingMatches(landingSearch.value);
+        if(!list.length){landingSuggestions.hidden=true;landingSuggestions.innerHTML='';return;}
+        landingSuggestions.innerHTML=list.map(function(cat){
+          return '<button type="button" class="qf-service-suggestion" data-landing-search-cat="'+PU.escapeHtml(cat.id)+'"><span class="qf-service-suggestion__icon">'+icon(cat.icon||'briefcase')+'</span><span class="qf-service-suggestion__body"><span class="qf-service-suggestion__name">'+PU.escapeHtml(cat.nome)+'</span><span class="qf-service-suggestion__group">'+PU.escapeHtml(cat.grupo||'Serviço')+'</span></span>'+icon('chevronRight')+'</button>';
+        }).join('');
+        landingSuggestions.hidden=false;
+      }
+      if(landingSearch)landingSearch.addEventListener('input',renderLandingSuggestions);
+      if(landingSuggestions)landingSuggestions.addEventListener('click',function(e){
+        const btn=e.target.closest('[data-landing-search-cat]');if(!btn)return;
+        landingGo(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
+      });
+      if(landingSearchForm)landingSearchForm.addEventListener('submit',function(e){
+        e.preventDefault();
+        const list=landingMatches(landingSearch&&landingSearch.value);
+        if(list.length){landingGo(list[0]);return;}
+        PU.toast('Digite uma profissão ou serviço da lista.', 'danger');
+      });
       content.addEventListener('click', function (e) {
         const cat=e.target.closest('[data-landing-cat]');
         if(cat){try{sessionStorage.setItem('qf_pending_category',cat.getAttribute('data-landing-cat'));}catch(_){} global.navigate('/auth/cliente/cadastro',true);return;}
@@ -6533,18 +6567,42 @@ alt=""></noscript>
       const servicoEditar = content.querySelector('[data-servico-editar]');
       const servicoEditInput = content.querySelector('[data-servico-edit-input]');
       const servicoHidden = content.querySelector('[data-servico-hidden]');
-      if (alterarServicoBtn && servicoEditar && servicoEditInput && servicoHidden) {
+      const servicoSuggestions = content.querySelector('[data-servico-edit-suggestions]');
+      function normServico(v){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+      function renderServicoSuggestions(){
+        if(!servicoEditInput || !servicoSuggestions) return;
+        const q=normServico(servicoEditInput.value);
+        if(q.length<2){servicoSuggestions.hidden=true;servicoSuggestions.innerHTML='';return;}
+        const list=DB.categories().filter(function(cat){return cat && cat.id!=='cat_outros' && normServico(cat.nome).indexOf(q)!==-1;}).slice(0,6);
+        if(!list.length){servicoSuggestions.hidden=true;servicoSuggestions.innerHTML='';return;}
+        servicoSuggestions.innerHTML=list.map(function(cat){
+          return '<button type="button" class="qf-service-suggestion" data-servico-edit-cat="'+PU.escapeHtml(cat.id)+'"><span class="qf-service-suggestion__icon">'+icon(cat.icon||'briefcase')+'</span><span class="qf-service-suggestion__body"><span class="qf-service-suggestion__name">'+PU.escapeHtml(cat.nome)+'</span></span></button>';
+        }).join('');
+        servicoSuggestions.hidden=false;
+      }
+      if (alterarServicoBtn && servicoEditar && servicoEditInput) {
         alterarServicoBtn.addEventListener('click', function () {
           servicoEscolhido.hidden = true;
           servicoEditar.hidden = false;
           servicoEditInput.focus();
           try { servicoEditInput.select(); } catch (_) {}
+          renderServicoSuggestions();
         });
-        servicoEditInput.addEventListener('input', function () {
-          servicoHidden.value = String(servicoEditInput.value || '').replace(/\s+/g, ' ').trim();
+      }
+      if(servicoEditInput){
+        servicoEditInput.addEventListener('input',function(){
+          if(servicoHidden) servicoHidden.value=String(servicoEditInput.value||'').replace(/\s+/g,' ').trim();
+          renderServicoSuggestions();
         });
-        servicoEditInput.addEventListener('change', function () {
-          servicoHidden.value = String(servicoEditInput.value || '').replace(/\s+/g, ' ').trim();
+      }
+      if(servicoSuggestions){
+        servicoSuggestions.addEventListener('click',function(e){
+          const btn=e.target.closest('[data-servico-edit-cat]'); if(!btn)return;
+          const cat=DB.categoryById(btn.getAttribute('data-servico-edit-cat')); if(!cat)return;
+          servicoEditInput.value=cat.nome;
+          if(servicoHidden) servicoHidden.value=cat.nome;
+          servicoSuggestions.hidden=true;
+          servicoSuggestions.innerHTML='';
         });
       }
 
@@ -11386,7 +11444,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.13';
+  const APP_VERSION = '11.16.14';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
