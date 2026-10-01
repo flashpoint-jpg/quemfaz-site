@@ -9103,9 +9103,9 @@ alt=""></noscript>
       pendingGate(user)+
       avisoAtualizacaoCadastral(user)+
       ativ.html+
-      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">Verificando pedidos na sua região…</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
+      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">'+(chamadas.length ? (chamadas.length+(chamadas.length===1?' pedido disponível perto de você':' pedidos disponíveis perto de você')) : 'Nenhum pedido agora. Avisaremos você quando chegar um novo.')+'</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Chamados disponíveis'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Você está visível! Assim que alguém da sua região pedir '+PU.escapeHtml((firstCat?firstCat.nome:'o seu serviço').toLowerCase())+', o chamado aparece aqui e seu celular toca.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos perto de você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       '<div class="section"><div class="card" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Crédito disponível automaticamente na sua conta.</div></div></div></div>'+
       '<div class="section qf-prof-divulgar"><div class="card row-between"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '</div>';
@@ -10674,13 +10674,8 @@ alt=""></noscript>
   function bindHome(content, user) {
     const radarMsg=content.querySelector('#qf-radar-msg');
     if(radarMsg){
-      const frases=['Buscando clientes perto de você…','Verificando pedidos na sua região…','Fique atento, pode chegar a qualquer momento…','Seu perfil está visível para clientes…'];
-      let fraseAtual=0;
-      const radarTimer=setInterval(function(){
-        if(!document.body.contains(radarMsg)){clearInterval(radarTimer);return;}
-        radarMsg.classList.add('is-fading');
-        setTimeout(function(){if(!document.body.contains(radarMsg))return;fraseAtual=(fraseAtual+1)%frases.length;radarMsg.textContent=frases[fraseAtual];radarMsg.classList.remove('is-fading');},350);
-      },2800);
+      // V11.16.12: mantém o status estável para não parecer carregamento infinito.
+      radarMsg.classList.remove('is-fading');
     }
     bindNotificationActivation(content);
     exigirNotificacaoSeOnline(user);
@@ -11361,7 +11356,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.11';
+  const APP_VERSION = '11.16.12';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12248,7 +12243,7 @@ alt=""></noscript>
   function qfServiceTabs(active){
     return '<div class="qf-services-tabs">' +
       '<button class="btn btn--outline ' + (active==='meus'?'is-active':'') + '" data-nav="/profissional/servicos">Meus serviços</button>' +
-      '<button class="btn btn--outline ' + (active==='disponiveis'?'is-active':'') + '" data-nav="/profissional/servicos/disponiveis">Serviços disponíveis</button>' +
+      '<button class="btn btn--outline ' + (active==='disponiveis'?'is-active':'') + '" data-nav="/profissional/servicos/disponiveis">Pedidos perto de você</button>' +
     '</div>';
   }
 
@@ -12262,14 +12257,14 @@ alt=""></noscript>
     return '<div class="view">' +
       qfServiceTabs('disponiveis') +
       '<div class="section" id="chamados-disponiveis">' +
-        '<div class="section-head"><div><h2 class="h3">Serviços disponíveis</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. Quem desbloquear primeiro reserva a conversa com o cliente.</p></div>' +
+        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. Quem desbloquear primeiro reserva a conversa com o cliente.</p></div>' +
         (calls.length?'<span class="badge badge--orange">'+calls.length+'</span>':'')+'</div>' +
         '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
-          '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os serviços</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
+          '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
           '<input class="input" type="search" data-qf-portfolio-search placeholder="Filtrar por serviço, bairro ou cidade">' +
         '</div>' +
         (calls.length?'<div class="stack--sm">'+calls.map(function(r){return global.QFChamadaCard?global.QFChamadaCard(r,user):'';}).join('')+'</div>':
-          '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhum serviço disponível neste momento.</p></div>') +
+          '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.</p></div>') +
       '</div>' +
     '</div>';
   };
@@ -12801,11 +12796,11 @@ alt=""></noscript>
 
   const oldProfHome = Screens.profHomeRender;
   if (oldProfHome) Screens.profHomeRender = function (params,user) {
-    let html = oldProfHome(params,user).replace('Chamados disponíveis','Portfólio de serviços disponíveis');
+    let html = oldProfHome(params,user).replace('Chamados disponíveis','Pedidos perto de você');
     const tools =
       '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
         '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data">' +
-          '<option value="all">Todos os serviços</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option>' +
+          '<option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option>' +
         '</select>' +
         '<input class="input" type="search" data-qf-portfolio-search placeholder="Filtrar por serviço, bairro ou cidade">' +
       '</div>' +
