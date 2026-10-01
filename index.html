@@ -5974,7 +5974,7 @@ alt=""></noscript>
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span>Quem<span style="color:var(--orange-400);">Faz</span></span></div><button class="qf-landing-help" type="button" data-support-open aria-label="Ajuda" title="Ajuda">?</button>' + (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') + '<button class="btn btn--outline qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div><div class="qf-landing-copy"><span class="qf-landing-kicker">PRECISOU? TEM QUEM FAÇA.</span><h1 class="qf-landing-title">Encontre o <em>profissional certo</em> perto de você</h1><p class="qf-landing-sub">Descreva o serviço, receba orçamentos e combine direto com o profissional.</p><div class="qf-landing-actions"><button class="btn btn--primary" data-nav="/auth/cliente/cadastro">Pedir um serviço grátis</button><button class="btn qf-landing-outline" data-nav="/auth/profissional/login">Sou profissional, quero chamados</button></div></div></section>' +
       '<ul class="qf-trust-row" aria-label="Benefícios do Quem Faz"><li class="qf-trust-pill">' + icon('camera') + '<span>Perfil com selfie</span></li><li class="qf-trust-pill">' + icon('document') + '<span>Sem compromisso</span></li><li class="qf-trust-pill">' + icon('checkCircle') + '<span>Pagamento direto</span></li></ul>' +
-      '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary">Digite a profissão ou o serviço.</div></div></div><form class="qf-landing-service-search" data-landing-service-form style="position:relative;"><div class="row" style="gap:8px;align-items:stretch;"><label class="category-browser-search spacer" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" data-landing-service-search placeholder="Ex.: eletricista, diarista, pintor..." autocomplete="off" enterkeyhint="search" aria-label="Buscar serviço"></label><button class="btn btn--primary" type="submit" style="width:auto;padding:0 18px;">Buscar</button></div><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form></section>' +
+      '<div class="qf-landing-body"><section class="section" style="margin-top:4px;"><div class="section-head"><div><h2 class="h2">Do que você precisa?</h2><div class="text--sm text--secondary"><strong>Digite a profissão ou conte o problema.</strong><br>Ex.: “chuveiro não esquenta”, “torneira vazando” ou “montar guarda-roupa”.</div></div></div><form class="qf-landing-service-search" data-landing-service-form style="position:relative;"><div class="row" style="gap:8px;align-items:stretch;"><label class="category-browser-search spacer" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" data-landing-service-search placeholder="Ex.: chuveiro não esquenta..." autocomplete="off" enterkeyhint="search" aria-label="Buscar serviço"></label><button class="btn btn--primary" type="submit" style="width:auto;padding:0 18px;">Buscar</button></div><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form></section>' +
       '<section class="section"><div class="card qf-ad-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3">Tem uma empresa?</div><div class="text--sm text--secondary" style="margin-top:3px;">Apareça para clientes da sua região — a partir de R$ 79 por 30 dias.</div></div></div><button class="btn btn--primary" type="button" data-nav="/anuncie" style="margin-top:13px;">Anunciar minha empresa</button></div></section>' +
       '<section class="section"><div class="section-head"><h2 class="h2">Como funciona</h2></div><div class="card qf-how"><div class="qf-how-step"><span class="qf-how-num">1</span><div><div class="text--strong">Conte o que precisa</div><div class="text--sm text--secondary">Descreva o serviço e informe sua região.</div></div></div><div class="qf-how-step"><span class="qf-how-num">2</span><div><div class="text--strong">Profissionais perto são avisados</div><div class="text--sm text--secondary">Quem atende sua categoria e região recebe o chamado.</div></div></div><div class="qf-how-step"><span class="qf-how-num">3</span><div><div class="text--strong">Receba o orçamento e combine</div><div class="text--sm text--secondary">Você analisa a proposta e acerta direto com o profissional.</div></div></div></div><button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:10px;">' + icon('info') + ' Preços, planos e dúvidas</button></section>' +
       '<section class="section"><div class="card qf-pro-cta"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('briefcase') + '</div><div class="spacer"><div class="h3" style="color:#fff;">É profissional?</div><div class="text--sm text--secondary" style="margin-top:3px;">Receba chamados de clientes perto de você. Comece com R$ 25 em créditos grátis.</div></div></div><button class="btn btn--primary" data-nav="/auth/profissional/login" style="margin-top:13px;">Quero receber chamados</button></div></section>' +
@@ -6466,9 +6466,37 @@ alt=""></noscript>
       const landingSearch=content.querySelector('[data-landing-service-search]');
       const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
       function landingNorm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
+      const landingAliases={
+        cat_eletricista:'eletrica eletrico eletricidade tomada chuveiro nao esquenta sem energia curto luz lampada disjuntor fiacao fio instalar ventilador',
+        cat_encanador:'encanamento hidraulica vazamento vazando torneira cano pia entupida entupido vaso descarga agua',
+        cat_montador:'montagem montar moveis movel guarda roupa guarda-roupa armario cama mesa desmontar',
+        cat_diarista:'faxina limpeza limpar casa apartamento sujeira diarista domestica',
+        cat_pintor:'pintura pintar parede teto tinta descascando mofo',
+        cat_pedreiro:'reforma obra construcao construir alvenaria piso azulejo reboco quebrar parede',
+        cat_jardinagem:'jardim jardinagem jardineiro grama cortar grama poda podar arvore',
+        cat_arcondicionado:'ar condicionado ar-condicionado climatizacao gelar nao gela limpeza instalar',
+        cat_chaveiro:'chave fechadura porta trancada perdi chave abrir porta trocar fechadura',
+        cat_mecanico:'mecanica carro automovel veiculo nao pega motor barulho pane',
+        cat_borracheiro:'pneu furado pneu murcho borracharia trocar pneu',
+        cat_frete:'frete carreto mudanca transporte levar sofa geladeira',
+        cat_informatica:'computador notebook pc informatica formatar lento nao liga internet',
+        cat_soldador:'solda soldagem portao quebrado ferro',
+        cat_vidraceiro:'vidro janela box espelho vidro quebrado',
+        cat_serralheiro:'serralheria portao grade ferro portao travado',
+        cat_marceneiro:'marcenaria madeira armario planejado movel madeira',
+        cat_guincho:'reboque guincho carro parado pane rebocar',
+        cat_entregador:'entrega entregador motoboy levar pacote documento'
+      };
       function landingMatches(raw){
         const q=landingNorm(raw); if(q.length<2)return [];
-        return DB.categories().filter(function(cat){return cat && cat.id!=='cat_outros' && landingNorm(cat.nome).indexOf(q)!==-1;}).slice(0,6);
+        const tokens=q.replace(/[^a-z0-9]+/g,' ').split(/\s+/).filter(function(x){return x.length>1 && ['de','da','do','das','dos','em','para','que','nao','uma','um','meu','minha'].indexOf(x)===-1;});
+        return DB.categories().filter(function(cat){return cat && cat.id!=='cat_outros';}).map(function(cat){
+          const hay=landingNorm((cat.nome||'')+' '+(landingAliases[cat.id]||''));
+          let score=landingNorm(cat.nome)===q?100:0;
+          tokens.forEach(function(t){if(hay.indexOf(t)!==-1)score+=20;});
+          if(hay.indexOf(q)!==-1)score+=35;
+          return {cat:cat,score:score};
+        }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;}).slice(0,6).map(function(x){return x.cat;});
       }
       function landingGo(cat){
         if(!cat)return;
@@ -6493,7 +6521,7 @@ alt=""></noscript>
         e.preventDefault();
         const list=landingMatches(landingSearch&&landingSearch.value);
         if(list.length){landingGo(list[0]);return;}
-        PU.toast('Digite uma profissão ou serviço da lista.', 'danger');
+        PU.toast('Digite a profissão ou conte o problema. Vou sugerir o profissional certo.', 'danger');
       });
       content.addEventListener('click', function (e) {
         const cat=e.target.closest('[data-landing-cat]');
@@ -11444,7 +11472,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.14';
+  const APP_VERSION = '11.16.15';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
