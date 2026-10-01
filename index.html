@@ -6077,6 +6077,15 @@ alt=""></noscript>
     }).join('');
     const cidadeInicial = pendingRegion && pendingRegion.cidade ? pendingRegion.cidade : '';
     const ufInicial = pendingRegion && pendingRegion.uf ? pendingRegion.uf : '';
+    const servicoField = selectedCat
+      ? '<input type="hidden" name="servico" value="' + PU.escapeHtml(servicoInicial) + '"><div class="card card--tight" style="display:flex;align-items:center;gap:10px;background:var(--navy-100);border:0;"><span class="icon-tile icon-tile--orange">' + icon(selectedCat.icon || 'briefcase') + '</span><div class="spacer"><div class="text--sm text--secondary">Serviço escolhido</div><div class="text--strong">' + PU.escapeHtml(servicoInicial) + '</div></div></div>'
+      : field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>');
+    const regionField = cidadeInicial && ufInicial
+      ? '<input type="hidden" name="cidade" value="' + PU.escapeHtml(cidadeInicial) + '"><input type="hidden" name="uf" value="' + PU.escapeHtml(ufInicial) + '"><div class="text--sm text--secondary" style="display:flex;align-items:center;gap:6px;padding:0 2px;">' + icon('mapPin') + '<span>Atendimento em <strong>' + PU.escapeHtml(cidadeInicial) + '/' + PU.escapeHtml(ufInicial) + '</strong></span></div>'
+      : '<div class="qf-request-location">' +
+          field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') +
+          field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
+        '</div>';
 
     return (
       '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
@@ -6085,22 +6094,19 @@ alt=""></noscript>
           '<h1 class="h2">Pedir serviço</h1>' +
           '<button class="qf-request-help" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
         '</header>' +
-        '<section class="qf-request-intro" aria-label="Pedido grátis">' +
-          '<span class="qf-request-intro__icon" aria-hidden="true">' + icon('clipboard') + '</span>' +
-          '<div><h2>Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2><p>Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
+        '<section class="qf-request-intro" aria-label="Pedido grátis" style="grid-template-columns:32px minmax(0,1fr) auto;padding:10px 12px;gap:10px;border-radius:14px;margin:0;">' +
+          '<span class="qf-request-intro__icon" aria-hidden="true" style="width:32px;height:32px;border-radius:10px;">' + icon('clipboard') + '</span>' +
+          '<div><h2 style="font-size:14px;line-height:1.25;margin:0;">Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2></div><span class="qf-request-intro__badge" style="position:static;align-self:center;">GRÁTIS</span>' +
         '</section>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
-          field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista" value="' + PU.escapeHtml(servicoInicial) + '"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>') +
-          '<div class="qf-request-location">' +
-            field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') +
-            field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
-          '</div>' +
+          servicoField +
+          regionField +
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea>') +
           '</div>' +
           '<div class="qf-request-contact">' +
-          field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-0000">') +
+          field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
           '</div>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
@@ -11355,7 +11361,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.10';
+  const APP_VERSION = '11.16.11';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
