@@ -7327,11 +7327,16 @@ alt=""></noscript>
     const accepted = list.find(function (q) { return q.status === 'aprovado'; });
     if (accepted) {
       const escolhido = quoteProfessional(req, accepted, prof);
+      const combinadoNoChat = Number(accepted.total || 0) === 0 &&
+        Number(accepted.maoDeObra || 0) === 0 && Number(accepted.material || 0) === 0 &&
+        Number(accepted.taxaVisita || 0) === 0;
       return (
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Profissional escolhido</h2><span class="badge badge--success"><span class="badge__dot"></span>Orçamento aprovado</span></div>' +
+          '<div class="section-head"><h2 class="h3">Profissional escolhido</h2><span class="badge badge--success"><span class="badge__dot"></span>' + (combinadoNoChat ? 'Combinado no chat' : 'Proposta aprovada') + '</span></div>' +
           profCard(escolhido) +
-          quoteValueCard(accepted) +
+          (combinadoNoChat
+            ? '<div class="card card--tight" style="margin-top:10px;background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">Serviço combinado pelo chat</div><div class="text--sm text--secondary" style="margin-top:4px;">Valor, horário e detalhes podem ser consultados na conversa com o profissional.</div></div>'
+            : quoteValueCard(accepted)) +
         '</div>'
       );
     }
@@ -9153,9 +9158,18 @@ alt=""></noscript>
 
   function orcamentoResumo(req) {
     const o = req.orcamento;
+    const combinadoNoChat = o && o.status === 'aprovado' &&
+      Number(o.total || 0) === 0 && Number(o.maoDeObra || 0) === 0 &&
+      Number(o.material || 0) === 0 && Number(req.taxaVisita || 0) === 0;
+    if (combinadoNoChat) {
+      return '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;">' +
+        '<div class="text--strong" style="color:var(--success-600);">Acordo combinado pelo chat</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">O cliente escolheu você. O valor e os detalhes continuam registrados na conversa.</div>' +
+      '</div></div>';
+    }
     return (
       '<div class="section">' +
-        '<div class="section-head"><h2 class="h3">Orçamento enviado</h2></div>' +
+        '<div class="section-head"><h2 class="h3">Proposta enviada</h2></div>' +
         '<div class="card stack--sm">' +
           (req.taxaVisita ? rowValor('Taxa de visita', req.taxaVisita) : '') +
           rowValor('Mão de obra', o.maoDeObra) +
@@ -11080,7 +11094,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.15.0';
+  const APP_VERSION = '11.15.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
