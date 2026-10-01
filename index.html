@@ -9222,7 +9222,7 @@ alt=""></noscript>
       '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">'+(chamadas.length ? (chamadas.length+(chamadas.length===1?' pedido disponível perto de você':' pedidos disponíveis perto de você')) : 'Nenhum pedido agora. Avisaremos você quando chegar um novo.')+'</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos perto de você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
-      '<div class="section"><div class="card" style="background:var(--navy-100);border:none;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Crédito disponível automaticamente na sua conta.</div></div></div></div>'+
+      '<div class="section"><button class="card qf-wallet-summary" type="button" data-nav="/profissional/carteira" style="width:100%;text-align:left;background:var(--navy-100);border:none;"><div class="row-between" style="align-items:center;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Use o saldo para desbloquear conversas com clientes.</div></div>'+icon('chevronRight','list-item__chevron')+'</div></button></div>'+
       '<div class="section qf-prof-divulgar"><div class="card row-between"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '</div>';
   };
@@ -9362,8 +9362,8 @@ alt=""></noscript>
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
               (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
             '</div>' +
-            '<div class="text--sm text--strong" style="margin-top:7px;color:' + (primeiraGratis || CallInfo.usaPlano(user) ? 'var(--success-600)' : 'var(--orange-700)') + ';">' +
-              (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por ' + PU.formatCurrency(valor))) +
+            '<div class="qf-unlock-price' + (CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
+              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
             (function () { if (primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
@@ -11473,7 +11473,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.19';
+  const APP_VERSION = '11.16.20';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12338,6 +12338,29 @@ alt=""></noscript>
     '.qf-client-decision{border:2px solid var(--orange-500);background:var(--orange-100)}'
   ].join('');
   document.head.appendChild(qf116style);
+
+  // V11.16.20 — acabamento visual consistente e mais compacto.
+  const qfVisual1620=document.createElement('style');
+  qfVisual1620.textContent=[
+    '.view{padding-left:16px;padding-right:16px}',
+    '.section{margin-top:20px}',
+    '.section-head{margin-bottom:10px}',
+    '.card{box-shadow:0 8px 24px -20px rgba(11,29,58,.38)}',
+    '.card--pressable{padding:14px 15px}',
+    '.card--pressable:active{transform:scale(.992)}',
+    '.topbar{min-height:calc(var(--safe-top) + 58px)}',
+    '.tabbar__item{min-width:0}',
+    '[data-role="profissional"] .tabbar__item span{font-size:11px}',
+    '.qf-wallet-summary .list-item__chevron{width:18px;height:18px}',
+    '.qf-unlock-price{display:inline-flex;align-items:center;gap:6px;margin-top:9px;padding:7px 10px;border-radius:10px;background:var(--orange-100);color:var(--orange-700);font-size:13px;font-weight:700}',
+    '.qf-unlock-price svg{width:16px;height:16px;flex:none}',
+    '.qf-unlock-price.is-plan{background:var(--success-100);color:var(--success-600)}',
+    '.qf-card-snippet{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:7px}',
+    '.qf-card-meta{margin-top:8px}',
+    '.qf-competition-mini{font-size:11.5px;line-height:1.3}',
+    '@media(max-width:380px){.view{padding-left:14px;padding-right:14px}.card--pressable{padding:13px}.section{margin-top:18px}}'
+  ].join('');
+  document.head.appendChild(qfVisual1620);
 
   function qfUrgent(req){
     if(!req || !req.dataPreferida) return true;
@@ -13326,14 +13349,10 @@ alt=""></noscript>
       { id: 'perfil', label: 'Perfil', icon: 'user', route: '/cliente/perfil' },
     ],
     profissional: [
-      // V11.13: Planos e Configurações direto na barra (antes ficavam escondidos dentro do Perfil).
-      // No celular, Avisos vira o sininho no topo para caber tudo sem apertar; no computador fica na barra.
-      { id: 'home', label: 'Chamadas', icon: 'phoneCall', route: '/profissional/home' },
-      { id: 'servicos', label: 'Serviços', icon: 'clipboard', route: '/profissional/servicos' },
-      { id: 'avisos', label: 'Avisos', icon: 'bell', route: '/profissional/avisos', deskOnly: true },
-      { id: 'carteira', label: 'Créditos', icon: 'wallet', route: '/profissional/carteira' },
-      { id: 'planos', label: 'Planos', icon: 'crown', route: '/profissional/planos' },
-      { id: 'config', label: 'Config.', labelLong: 'Configurações', icon: 'settings', route: '/profissional/configuracoes' },
+      // V11.16.20: quatro destinos principais no celular. Avisos ficam no sino do topo.
+      { id: 'home', label: 'Início', icon: 'home', route: '/profissional/home' },
+      { id: 'servicos', label: 'Pedidos', icon: 'clipboard', route: '/profissional/servicos' },
+      { id: 'carteira', label: 'Carteira', icon: 'wallet', route: '/profissional/carteira' },
       { id: 'perfil', label: 'Perfil', icon: 'user', route: '/profissional/perfil' },
     ],
   };
