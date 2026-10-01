@@ -5999,7 +5999,7 @@ alt=""></noscript>
         '</header>' +
         '<section class="qf-request-intro" aria-label="Pedido grátis">' +
           '<span class="qf-request-intro__icon" aria-hidden="true">' + icon('clipboard') + '</span>' +
-          '<div><h2>Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2><p>Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
+          '<div><h2>Receba <strong class="qf-request-intro__accent">orçamento grátis</strong></h2><p>Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
         '</section>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
@@ -6911,7 +6911,7 @@ alt=""></noscript>
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
       (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba até <strong>5 orçamentos grátis</strong></div><div class="text--sm">Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
+      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
 
@@ -7244,7 +7244,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais compatíveis e mais próximos podem visualizar o serviço. Até 5 profissionais podem participar e enviar orçamento; você compara e escolhe um.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais próximos podem visualizar seu pedido. Quem desbloqueia primeiro reserva o serviço e conversa com você pelo chat.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -7339,18 +7339,18 @@ alt=""></noscript>
       '<div class="section">' +
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
-          '<h2 class="h3" style="margin-top:12px;">Profissionais preparando orçamento</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido continua disponível para até 5 profissionais. Assim que os orçamentos chegarem, você poderá comparar e escolher.</p>' +
+          '<h2 class="h3" style="margin-top:12px;">Profissional em conversa</h2>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Converse pelo chat e combine os detalhes. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
               '<span class="qf-search-radar__center">' + icon('mapPin') + '</span>' +
             '</div>' +
-            '<div class="qf-search-radar__stage" data-search-stage>Buscando mais profissionais</div>' +
-            '<div class="qf-search-radar__sub" data-search-sub>Ampliando o alcance quando necessário</div>' +
-            '<div class="qf-search-radar__km" data-search-km>Até 5 propostas</div>' +
+            '<div class="qf-search-radar__stage" data-search-stage>Conversa reservada</div>' +
+            '<div class="qf-search-radar__sub" data-search-sub>Seu pedido fica fora do portfólio durante a negociação</div>' +
+            '<div class="qf-search-radar__km" data-search-km>Reserva exclusiva</div>' +
           '</div>' +
-          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>Aguardando orçamentos…</span></div>' +
+          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>Combine os detalhes pelo chat.</span></div>' +
         '</div>' +
       '</div>'
     );
@@ -7400,7 +7400,7 @@ alt=""></noscript>
 
     return (
       '<div class="section">' +
-        '<div class="section-head"><div><h2 class="h3">Compare os orçamentos</h2><p class="text--sm text--secondary" style="margin-top:3px;">Você pode receber até 5 propostas. Compare preço, distância e avaliação antes de escolher.</p></div>' +
+        '<div class="section-head"><div><h2 class="h3">Propostas recebidas (opcional)</h2><p class="text--sm text--secondary" style="margin-top:3px;">A proposta é opcional. Você pode conversar pelo chat, combinar os detalhes e confirmar o profissional.</p></div>' +
           (pendentes.length ? '<span class="badge badge--orange">' + pendentes.length + (pendentes.length === 1 ? ' proposta' : ' propostas') + '</span>' : '') +
         '</div>' +
         '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="' + pendentes.length + '" style="margin-bottom:10px;"><span data-call-reach-copy>' + (pendentes.length ? pendentes.length + (pendentes.length === 1 ? ' orçamento recebido' : ' orçamentos recebidos') : 'Aguardando propostas…') + '</span></div>' +
@@ -8263,6 +8263,7 @@ alt=""></noscript>
     return city&&city.nome?String(city.nome):'sua cidade';
   }
   function searchStage(req){
+    if(req&&[STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)!==-1)return{title:'Conversa reservada',sub:'Seu pedido fica fora do portfólio durante a negociação',km:'Reserva exclusiva'};
     if(req&&req.prioridade)return{title:'Busca prioritária ativa',sub:'Ampliando o alcance mais rápido',km:'Prioridade'};
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
     const elapsed=Number.isFinite(created)?Math.max(0,Date.now()-created):0;
@@ -8300,13 +8301,12 @@ alt=""></noscript>
     const online=Number(data.online_na_regiao||0);
     const participantes=Number(data.desbloqueados||0);
     const orcamentos=Number(data.orcamentos||0);
-    const limite=Number(data.limite_orcamentos||5);
     if(orcamentos>0){
-      copy.innerHTML='<strong>'+orcamentos+(orcamentos===1?' orçamento recebido':' orçamentos recebidos')+'</strong> · '+participantes+'/'+limite+' profissionais participando';
+      copy.innerHTML='<strong>'+orcamentos+(orcamentos===1?' proposta recebida':' propostas recebidas')+'</strong> · combine os detalhes pelo chat';
       return;
     }
     if(participantes>0){
-      copy.innerHTML='<strong>'+participantes+'/'+limite+' profissionais participando</strong> · aguardando orçamento'+(participantes>1?'s':'');
+      copy.innerHTML='<strong>Conversa reservada com um profissional</strong> · combine os detalhes pelo chat';
       return;
     }
     if(avisados>0){copy.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
@@ -9115,8 +9115,8 @@ alt=""></noscript>
           '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
           '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
             (primeiraGratis
-              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Você entra na disputa de até 5 profissionais e pode enviar seu orçamento; telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.'
-              : 'Ao desbloquear, usamos os créditos da carteira e você entra na disputa de até 5 profissionais para enviar seu orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.') +
+              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e conversa com o cliente pelo chat. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.'
+              : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.') +
           '</p>' +
           (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês). Se o cliente escolher outro profissional, o desbloqueio não é estornado, pois a oportunidade de enviar orçamento foi utilizada. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
@@ -11172,7 +11172,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.3';
+  const APP_VERSION = '11.16.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12632,14 +12632,12 @@ alt=""></noscript>
     let html = oldProfCall(params,user);
     if (!req) return html;
     if (req.status !== 'buscando' || req.profissionalId) {
-      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','Este pedido já está em negociação ou atingiu o limite de profissionais.');
+      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','Este pedido já foi reservado por outro profissional. Confira os demais serviços disponíveis no portfólio.');
     }
     const n = Number(req.participantes || 0), c = competitionCopy(n);
     const comp = '<div class="section"><div class="qf-competition-card"><strong>' + esc(c.title) + '</strong><span>' + esc(c.sub) + '</span></div></div>';
     html = html.replace('<div class="section qf-call-facts">', comp + scheduleSummary(req) + '<div class="section qf-call-facts">');
     html = html.replaceAll('Telefone/WhatsApp e endereço exato só aparecem depois que o cliente aprovar seu orçamento','Telefone/WhatsApp e endereço exato só aparecem depois que o cliente escolher você');
-    html = html.replaceAll('Você entra na disputa de até 5 profissionais e pode enviar seu orçamento; telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.','O chat é liberado imediatamente. Você pode conversar e combinar o serviço; até 5 profissionais podem participar, e contato/endereço exato só aparecem se o cliente escolher você.');
-    html = html.replaceAll('Ao desbloquear, usamos os créditos da carteira e você entra na disputa de até 5 profissionais para enviar seu orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.','Ao desbloquear, usamos os créditos da carteira e liberamos o chat imediatamente. Até 5 profissionais podem conversar com o cliente; telefone/WhatsApp e endereço exato só aparecem se ele escolher você.');
     html = html.replaceAll('antes de aprovar um orçamento','antes de fechar o serviço');
     html = html.replaceAll('oportunidade de enviar orçamento foi utilizada','oportunidade de conversar com o cliente foi utilizada');
     return html;
@@ -12653,12 +12651,6 @@ alt=""></noscript>
     const opening = '<div class="view" data-request-id="' + req.id + '">';
     const slot = scheduleSummary(req) + '<div class="section qf-client-conversations" data-qf-client-conversations data-call-id="' + esc(req.id) + '"></div>';
     html = html.replace(opening, opening + slot);
-    html = html.replaceAll('Profissionais preparando orçamento','Profissionais disponíveis para conversar');
-    html = html.replaceAll('Seu pedido continua disponível para até 5 profissionais. Assim que os orçamentos chegarem, você poderá comparar e escolher.','Seu pedido pode receber até 5 profissionais. Converse pelo chat, combine os detalhes e escolha com quem deseja fechar.');
-    html = html.replaceAll('Até 5 propostas','Até 5 profissionais');
-    html = html.replaceAll('Aguardando orçamentos…','Aguardando profissionais…');
-    html = html.replaceAll('Compare os orçamentos','Propostas recebidas (opcional)');
-    html = html.replaceAll('Você pode receber até 5 propostas. Compare preço, distância e avaliação antes de escolher.','A proposta é opcional. Você também pode conversar no chat e fechar diretamente com o profissional.');
     return html;
   };
 
@@ -12779,8 +12771,8 @@ alt=""></noscript>
     const photo = r.profissional_foto_url ? '<img class="avatar avatar--sm" src="' + esc(r.profissional_foto_url) + '" alt="">' : '<div class="avatar avatar--sm">' + PU.initials(r.profissional_nome || '?') + '</div>';
     const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
     return '<div class="card qf-client-decision">' +
-        '<div class="text--strong">Um profissional desbloqueou seu pedido</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">Converse com ele. Depois escolha uma das opções abaixo.</div>' +
+        '<div class="text--strong">' + (selected ? 'Serviço confirmado' : 'Um profissional reservou seu pedido') + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio.') + '</div>' +
         (!selected ? '<div class="btn-row" style="margin-top:12px;">' +
           '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechou negócio</button>' +
           '<button class="btn btn--outline" type="button" data-qf-continue-search> Ainda não </button>' +
