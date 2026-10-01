@@ -11261,7 +11261,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.8';
+  const APP_VERSION = '11.16.9';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13862,8 +13862,17 @@ alt=""></noscript>
     if (f) f.dataset.dirty = '1';
   }, true);
   function requestStateSignature() {
+    // V11.16.9: não usa timestamps na assinatura visual.
+    // O servidor pode atualizar "atualizadoEm" sem mudar nada que o cliente vê;
+    // comparar esse campo fazia todas as telas do cliente serem remontadas a cada sincronização.
     return JSON.stringify((DB.state.requests || []).map(function (r) {
-      return [r.id, r.status, r.atualizadoEm, r.orcamento && r.orcamento.id, r.orcamento && r.orcamento.status, r.orcamento && r.orcamento.atualizadoEm];
+      return [
+        r.id,
+        r.status,
+        r.profissionalId || null,
+        r.orcamento && r.orcamento.id,
+        r.orcamento && r.orcamento.status
+      ];
     }));
   }
   setInterval(async function () {
