@@ -6957,6 +6957,93 @@ alt=""></noscript>
     );
   }
 
+  // V11.16.10 — destaque do próximo passo do cliente na home.
+  function clienteAgoraPriority(status) {
+    const p = {};
+    p[STATUS.SERVICO_CONCLUIDO] = 100;
+    p[STATUS.PAGO] = 95;
+    p[STATUS.ORCAMENTO_ENVIADO] = 90;
+    p[STATUS.AGUARDANDO_ORCAMENTO] = 85;
+    p[STATUS.ORCAMENTO_RECUSADO] = 80;
+    p[STATUS.APROVADO] = 75;
+    p[STATUS.EM_ANDAMENTO] = 70;
+    p[STATUS.SEM_PROFISSIONAL] = 60;
+    p[STATUS.AGUARDANDO_ACEITE] = 55;
+    p[STATUS.BUSCANDO] = 50;
+    return p[status] || 0;
+  }
+
+  function clienteAgoraCard(req) {
+    if (!req) return '';
+    const cat = DB.categoryById(req.categoriaId);
+    const nomeServico = cat ? cat.nome : 'Seu serviço';
+    let titulo = 'Aguardando profissional';
+    let texto = 'Seu pedido está ativo. Avisaremos quando um profissional entrar em contato.';
+    let botao = 'Acompanhar pedido';
+    let rota = '/cliente/pedido/' + req.id;
+    let ic = 'search';
+    let destaque = 'Aguardando';
+
+    if (req.status === STATUS.AGUARDANDO_ORCAMENTO) {
+      titulo = 'Responda no chat';
+      texto = 'Um profissional reservou seu pedido. Converse pelo chat para manter a negociação ativa.';
+      botao = 'Abrir conversa';
+      rota = req.profissionalId ? '/cliente/chat/' + req.id + '/' + req.profissionalId : rota;
+      ic = 'message';
+      destaque = 'Ação necessária';
+    } else if (req.status === STATUS.ORCAMENTO_ENVIADO) {
+      titulo = 'Você recebeu um orçamento';
+      texto = 'Abra o pedido para ver a proposta e decidir como quer continuar.';
+      botao = 'Ver orçamento';
+      ic = 'document';
+      destaque = 'Novo';
+    } else if (req.status === STATUS.ORCAMENTO_RECUSADO) {
+      titulo = 'Continue a negociação';
+      texto = 'O orçamento foi recusado, mas a conversa ainda pode continuar pelo app.';
+      botao = 'Ver pedido';
+      ic = 'message';
+      destaque = 'Em negociação';
+    } else if (req.status === STATUS.APROVADO) {
+      titulo = 'Profissional escolhido';
+      texto = 'Combine horário, valor e os últimos detalhes do serviço pelo chat.';
+      botao = 'Continuar';
+      rota = req.profissionalId ? '/cliente/chat/' + req.id + '/' + req.profissionalId : rota;
+      ic = 'checkCircle';
+      destaque = 'Confirmado';
+    } else if (req.status === STATUS.EM_ANDAMENTO) {
+      titulo = 'Serviço em andamento';
+      texto = 'Acompanhe o atendimento e mantenha os detalhes registrados no app.';
+      botao = 'Acompanhar';
+      ic = 'checkCircle';
+      destaque = 'Em andamento';
+    } else if (req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) {
+      titulo = 'Falta finalizar e avaliar';
+      texto = 'Conclua esta etapa para encerrar o pedido e continuar usando o app normalmente.';
+      botao = 'Finalizar agora';
+      ic = 'checkCircle';
+      destaque = 'Falta concluir';
+    } else if (req.status === STATUS.SEM_PROFISSIONAL) {
+      titulo = 'Ainda buscando profissional';
+      texto = 'Seu pedido continua ativo e a busca segue automaticamente.';
+      botao = 'Ver busca';
+      ic = 'search';
+      destaque = 'Buscando';
+    }
+
+    return '<div class="section qf-client-now">' +
+      '<div class="section-head"><h2 class="h3">Seu pedido agora</h2><span class="badge badge--orange">' + PU.escapeHtml(destaque) + '</span></div>' +
+      '<div class="card" style="border:1px solid rgba(245,124,32,.28);background:linear-gradient(135deg,#fff7ed 0%,#fff 72%);box-shadow:0 10px 26px -20px rgba(8,20,40,.45);">' +
+        '<div class="row" style="align-items:flex-start;gap:12px;">' +
+          '<div class="icon-tile icon-tile--orange">' + icon(ic) + '</div>' +
+          '<div class="spacer"><div class="text--sm text--secondary">' + PU.escapeHtml(nomeServico) + '</div>' +
+          '<div class="h3" style="margin-top:2px;">' + PU.escapeHtml(titulo) + '</div>' +
+          '<div class="text--sm text--secondary" style="margin-top:5px;line-height:1.45;">' + PU.escapeHtml(texto) + '</div></div>' +
+        '</div>' +
+        '<button class="btn btn--primary" type="button" data-nav="' + PU.escapeHtml(rota) + '" style="width:100%;margin-top:12px;">' + PU.escapeHtml(botao) + ' ' + icon('arrowRight') + '</button>' +
+      '</div>' +
+    '</div>';
+  }
+
   // ---------------- Início ----------------
 
   function renderCategoryBrowser(cats, afterPopular, user) {
@@ -6994,11 +7081,18 @@ alt=""></noscript>
   }
 
   Screens.clienteHomeRender = function (params, user) {
-    const ativos=DB.requestsByCliente(user.id).filter(function(r){return ACTIVE_STATUSES.indexOf(r.status)!==-1;});
+    const ativos=DB.requestsByCliente(user.id).filter(function(r){return ACTIVE_STATUSES.indexOf(r.status)!==-1;}).slice().sort(function(a,b){
+      const d=clienteAgoraPriority(b.status)-clienteAgoraPriority(a.status);
+      if(d)return d;
+      return Date.parse((b&&b.criadoEm)||0)-Date.parse((a&&a.criadoEm)||0);
+    });
+    const principal=ativos[0]||null;
+    const outros=ativos.slice(1,3);
     const cats=DB.categories();
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
-      (ativos.length?'<div class="section"><div class="section-head"><h2 class="h3">Acompanhar agora</h2></div><div class="stack--sm">'+ativos.slice(0,2).map(pedidoCard).join('')+'</div></div>':'')+
+      clienteAgoraCard(principal)+
+      (outros.length?'<div class="section"><div class="section-head"><h2 class="h3">Outros pedidos ativos</h2></div><div class="stack--sm">'+outros.map(pedidoCard).join('')+'</div></div>':'')+
       '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
       '</div>';
   };
@@ -11261,7 +11355,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.9';
+  const APP_VERSION = '11.16.10';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
