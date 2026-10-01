@@ -400,6 +400,18 @@ function fmtBRL(c: number) { return "R$ " + (c / 100).toFixed(2).replace(".", ",
 
 function newCallBody(call: any, d: any) {
   const parts: string[] = [];
+  if (call?.data_preferida) {
+    try {
+      const when = new Date(call.data_preferida);
+      if (!Number.isNaN(when.getTime())) {
+        const label = when.toLocaleString("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
+        });
+        parts.push("Execução " + label);
+      }
+    } catch (_) {}
+  }
   const km = d.distancia_km == null ? null : Number(d.distancia_km);
   const min = d.tempo_min == null ? null : Number(d.tempo_min);
   if (km != null && Number.isFinite(km)) parts.push(fmtKm(km) + (min != null && Number.isFinite(min) ? " (" + fmtMin(min) + ")" : ""));
@@ -434,7 +446,7 @@ async function newCallPayloads(call: any, userIds: string[]) {
 async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
   const { data: call, error } = await admin
     .from("qf_chamados")
-    .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em")
+    .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em,data_preferida")
     .eq("id", callId)
     .maybeSingle();
 
@@ -451,6 +463,15 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
         call_id: callId
       }
     };
+  }
+
+  // Serviço programado fica visível no portfólio, mas o alerta forte só começa
+  // quando faltarem no máximo 24 horas para a execução.
+  if (call.data_preferida) {
+    const scheduledAt = Date.parse(String(call.data_preferida));
+    if (Number.isFinite(scheduledAt) && scheduledAt > Date.now() + 24 * 60 * 60 * 1000) {
+      return { stopped: true, scheduled: true, recipients: 0, sent: 0, total: 0, call_id: callId };
+    }
   }
 
   const candidates = await recipientsForNewCallAtRadius(call, stageRadiusKm);
@@ -591,7 +612,7 @@ Deno.serve(async (req) => {
         const n = participants.length;
         const clientResult = await sendToUsers([call.cliente_id], {
           title: "Novo profissional participando",
-          body: n + " de 5 profissionais " + (n === 1 ? "já está preparando uma proposta." : "já estão preparando propostas.") + " Você escolhe quando os orçamentos chegarem.",
+          body: n + " de 5 profissionais " + (n === 1 ? "já entrou na conversa." : "já entraram na conversa.") + " Você pode conversar e escolher com quem fechar.",
           url: "/#/cliente/pedido/" + call.id,
           tag: "qf-participants-" + call.id,
           strong: false,
@@ -600,6 +621,82 @@ Deno.serve(async (req) => {
       } catch (err) {
         console.error("professional_connected", err);
         return json({ error: "professional_connected_failed" }, 500);
+      }
+    }
+
+    if (event === "chat_message") {
+      try {
+        const { data: call } = await admin
+          .from("qf_chamados")
+          .select("id,cliente_id,titulo,status")
+          .eq("id", callId)
+          .maybeSingle();
+        const { data: msg } = await admin
+          .from("qf_chat_mensagens")
+          .select("id,profissional_id,remetente_id,mensagem,criado_em")
+          .eq("chamado_id", callId)
+          .order("criado_em", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!call || !msg) return json({ ok: true, stopped: true });
+
+        const recipient = String(msg.remetente_id) === String(call.cliente_id)
+          ? String(msg.profissional_id)
+          : String(call.cliente_id);
+        const { data: sender } = await admin
+          .from("qf_profiles")
+          .select("nome")
+          .eq("id", msg.remetente_id)
+          .maybeSingle();
+        const raw = String(msg.mensagem || "").replace(/\s+/g, " ").trim();
+        const preview = raw.length > 120 ? raw.slice(0, 117).trimEnd() + "…" : raw;
+        const toClient = recipient === String(call.cliente_id);
+        const result = await sendToUsers([recipient], {
+          title: "Nova mensagem de " + (sender?.nome || (toClient ? "profissional" : "cliente")),
+          body: preview || "Abra o QuemFaz para continuar a conversa.",
+          url: toClient
+            ? "/#/cliente/chat/" + call.id + "/" + msg.profissional_id
+            : "/#/profissional/chat/" + call.id,
+          tag: "qf-chat-" + call.id + "-" + msg.profissional_id,
+          strong: false,
+        });
+        return json({ ok: true, chat: result });
+      } catch (err) {
+        console.error("chat_message", err);
+        return json({ error: "chat_message_failed" }, 500);
+      }
+    }
+
+    if (event === "professional_selected") {
+      try {
+        const { data: call } = await admin
+          .from("qf_chamados")
+          .select("id,cliente_id,titulo,status")
+          .eq("id", callId)
+          .maybeSingle();
+        const chosen = await professionalForCall(callId);
+        if (!call || !chosen) return json({ ok: true, stopped: true });
+
+        const participants = await participantsForCall(callId);
+        const others = participants.filter((id) => id !== chosen);
+        const selectedResult = await sendToUsers([chosen], {
+          title: "Serviço confirmado",
+          body: "O cliente escolheu você. Endereço e contato foram liberados para combinar a execução.",
+          url: "/#/profissional/pedido/" + call.id,
+          tag: "qf-selected-" + call.id,
+          strong: true,
+        });
+        const othersResult = await sendToUsers(others, {
+          title: "Cliente escolheu outro profissional",
+          body: "Este serviço foi fechado com outro profissional. Continue de olho no portfólio.",
+          url: "/#/profissional/pedido/" + call.id,
+          tag: "qf-not-selected-" + call.id,
+          strong: false,
+        });
+        return json({ ok: true, selected: selectedResult, not_selected: othersResult });
+      } catch (err) {
+        console.error("professional_selected", err);
+        return json({ error: "professional_selected_failed" }, 500);
       }
     }
 
@@ -753,7 +850,7 @@ Deno.serve(async (req) => {
 
   const { data: call, error: callErr } = await admin
     .from("qf_chamados")
-    .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em")
+    .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em,data_preferida")
     .eq("id", callId)
     .maybeSingle();
   if (callErr || !call) return json({ error: "call_not_found" }, 404);
@@ -763,6 +860,12 @@ Deno.serve(async (req) => {
 
   if (event === "new_call") {
     if (call.cliente_id !== user.id) return json({ error: "forbidden" }, 403);
+    if (call.data_preferida) {
+      const scheduledAt = Date.parse(String(call.data_preferida));
+      if (Number.isFinite(scheduledAt) && scheduledAt > Date.now() + 24 * 60 * 60 * 1000) {
+        return json({ ok: true, scheduled: true, queued: false });
+      }
+    }
     // V11.1: o gatilho do banco (qf_push_novo_chamado_after_insert) já dispara o aviso.
     // Mantido só por compatibilidade com versões antigas do app; a reserva evita aviso repetido.
     // Responde na hora (o cliente não fica esperando) e segue a entrega em segundo plano.
@@ -788,7 +891,7 @@ Deno.serve(async (req) => {
     const { data: p } = await admin.from("qf_profiles").select("nome").eq("id", user.id).maybeSingle();
     payload = {
       title: "Profissional encontrado",
-      body: (p?.nome || "Um profissional") + " entrou para preparar um orçamento para você.",
+      body: (p?.nome || "Um profissional") + " desbloqueou seu pedido e já pode conversar com você pelo chat.",
       url: "/#/cliente/pedido/" + call.id,
       tag: "qf-connected-" + call.id,
       strong: true,
