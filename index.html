@@ -7428,7 +7428,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
           '<h2 class="h3" style="margin-top:12px;">Profissional em conversa</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Converse pelo chat e combine os detalhes. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Converse pelo chat e combine os detalhes. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -9206,7 +9206,7 @@ alt=""></noscript>
               ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e conversa com o cliente pelo chat. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.'
               : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor volta sozinho para a sua carteira. Se ele não responder nada em 24 horas, você também pode pedir a devolução antes (até 2 pedidos por mês). Se o cliente escolher outro profissional, o desbloqueio não é estornado, pois a oportunidade de enviar orçamento foi utilizada. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente não responder nenhuma mensagem em até 48 horas, o pedido é cancelado e o valor volta automaticamente. Se o cliente responder, a negociação é considerada iniciada e o valor do desbloqueio fica para a plataforma. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -9459,7 +9459,7 @@ alt=""></noscript>
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
             '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos, preços e devolução.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
-            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente cancelar o pedido antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a carteira. Se ele não responder nada em 24 horas e você não quiser esperar, abra o serviço em Meus serviços e toque em "Pedir devolução" (até 2 pedidos a cada 30 dias).') +
+            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente não responder nenhuma mensagem em até 48 horas, o pedido é cancelado e o valor do desbloqueio volta automaticamente. Se o cliente responder, a negociação foi iniciada e o valor fica para a plataforma.') +
           '</div>' +
         '</div>' +
 
@@ -11261,7 +11261,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.7';
+  const APP_VERSION = '11.16.8';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -11968,21 +11968,18 @@ alt=""></noscript>
   function openRefundRules() {
     function item(ic, t, d) { return '<div class="qf-rules__item">' + icon(ic) + '<div><div class="text--strong">' + t + '</div><div class="text--sm text--secondary">' + d + '</div></div></div>'; }
     PU.openSheet('<div class="stack qf-rules">' +
-      '<div><h3 class="sheet__title">Regras de devolução do lead</h3><div class="text text--secondary text--sm">Você paga para desbloquear o contato do cliente. Se o pedido não andar, o valor do desbloqueio pode voltar para a sua carteira.</div></div>' +
-      '<div class="qf-rules__box qf-rules__box--auto"><div class="qf-rules__title">1. Volta sozinho (automático)</div>' +
-        item('xCircle', 'O cliente cancelou', 'Se ele cancelar o pedido antes de aprovar um orçamento, o valor volta na hora.') +
-        item('clock', 'O pedido ficou 3 dias parado', 'Sem nenhuma resposta do cliente por 3 dias, o pedido expira e o valor volta em até 1 hora.') +
-        '<div class="text--sm qf-rules__note">Você recebe o aviso "Crédito devolvido". Não precisa fazer nada e não conta no limite.</div></div>' +
-      '<div class="qf-rules__box"><div class="qf-rules__title">2. Você pede: "o cliente não respondeu"</div>' +
-        item('clock', 'Espere 24 horas', 'O pedido de devolução libera 24 horas depois do desbloqueio.') +
-        item('document', 'O cliente não respondeu no app', 'Ele não aprovou nem recusou o seu orçamento.') +
-        item('refresh', 'Onde pedir', 'Meus serviços › abra o serviço › "Pedir devolução do lead". O valor volta na hora e o pedido fica aberto para outros profissionais.') +
-        item('alertTriangle', 'Limite: 2 pedidos a cada 30 dias', 'Conta os seus pedidos dos últimos 30 dias. Ex.: pediu dia 1 e dia 10; no dia 20 o 3º é recusado; no dia 1 do mês seguinte o pedido do dia 1 sai da conta e você pode pedir de novo.') +
+      '<div><h3 class="sheet__title">Regras de devolução do lead</h3><div class="text text--secondary text--sm">Regra simples: o valor do desbloqueio só é devolvido quando o cliente não responde. Se houve resposta, a negociação foi iniciada.</div></div>' +
+      '<div class="qf-rules__box qf-rules__box--auto"><div class="qf-rules__title">1. Sem resposta do cliente</div>' +
+        item('clock', 'Prazo de 48 horas', 'Se o cliente não responder nenhuma mensagem em até 48 horas após o desbloqueio, o pedido é cancelado automaticamente.') +
+        item('refresh', 'Devolução automática', 'Quando o lead foi pago ou usado pelo plano, o valor ou chamado volta automaticamente para o profissional.') +
+        '<div class="text--sm qf-rules__note">O profissional não precisa pedir a devolução.</div></div>' +
+      '<div class="qf-rules__box qf-rules__box--no"><div class="qf-rules__title">2. Quando não há devolução</div>' +
+        '<ul class="qf-rules__list"><li>o cliente respondeu no chat e a negociação começou;</li><li>o cliente aprovou, recusou ou tomou uma decisão sobre a proposta;</li><li>o serviço já foi confirmado, iniciado ou concluído;</li><li>o desbloqueio foi grátis e não houve valor cobrado.</li></ul></div>' +
+      '<div class="qf-rules__box"><div class="qf-rules__title">3. Cliente cancelou</div>' +
+        item('xCircle', 'Antes de responder', 'Se o cliente cancelar sem ter respondido ao profissional, o lead pode ser devolvido.') +
+        item('message', 'Depois de responder', 'Se o cliente já respondeu, a oportunidade virou negociação e o valor do desbloqueio fica para a plataforma.') +
       '</div>' +
-      '<div class="qf-rules__box qf-rules__box--no"><div class="qf-rules__title">3. Não tem devolução quando</div>' +
-        '<ul class="qf-rules__list"><li>o cliente aprovou ou recusou o seu orçamento;</li><li>o serviço já foi iniciado ou concluído;</li><li>o desbloqueio foi grátis (não saiu da sua carteira);</li><li>o mesmo lead já foi devolvido uma vez.</li></ul></div>' +
-      '<div class="qf-rules__box"><div class="qf-rules__title">Onde conferir</div><div class="text--sm text--secondary">Carteira › "Devoluções de lead" mostra quantos pedidos você usou no mês e as últimas devoluções. Em Movimentações, a devolução aparece como "+R$" em verde.</div></div>' +
-      '<div class="text--sm text--secondary qf-rules__note">Use com honestidade: se você combinou o serviço com o cliente pelo WhatsApp, não peça devolução.</div>' +
+      '<div class="qf-rules__box"><div class="qf-rules__title">Onde conferir</div><div class="text--sm text--secondary">Carteira › “Devoluções de lead” mostra as últimas devoluções. Em Movimentações, o estorno aparece em verde.</div></div>' +
       '<button class="btn btn--primary" type="button" id="qf-rules-ok">Entendi</button></div>');
     const ok = document.getElementById('qf-rules-ok');
     if (ok) ok.onclick = function () { PU.closeSheet(); };
@@ -12061,7 +12058,7 @@ alt=""></noscript>
     });
   })();
   const REFUND_MSG = {
-    aguarde_24h: 'A devolução por falta de resposta fica disponível 24 horas depois do desbloqueio.',
+    aguarde_48h: 'A devolução por falta de resposta só se aplica após 48 horas sem nenhuma resposta do cliente.',
     cliente_respondeu: 'O cliente já respondeu o seu orçamento, então este lead não pode ser devolvido.',
     limite_mensal: 'Você já usou os 2 pedidos de devolução dos últimos 30 dias.',
     ja_devolvido: 'Este lead já foi devolvido para a sua carteira.',
@@ -12072,10 +12069,11 @@ alt=""></noscript>
   function refundCardHtml(reqId) {
     return '<div class="section" data-refund-card><div class="card qf-refund">' +
       '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon('refresh') + '</div><div class="spacer">' +
-      '<div class="text--strong">O cliente não respondeu?</div>' +
-      '<div class="text--sm text--secondary" style="margin-top:3px;">Se passaram 24 horas do desbloqueio e o cliente não respondeu nada no app, você pode pedir o valor do lead de volta. O pedido volta a ficar aberto para outros profissionais. Limite: 2 pedidos a cada 30 dias.</div>' +
-      '<div class="text--sm text--secondary" style="margin-top:6px;">Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, a devolução é automática: você não precisa fazer nada e não conta no limite.</div>' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' +
-      '</div></div><button class="btn btn--outline" type="button" data-action="pedir-devolucao" data-req="' + PU.escapeHtml(reqId) + '" style="margin-top:12px;">' + icon('refresh') + ' Pedir devolução do lead</button></div></div>';
+      '<div class="text--strong">Regra de devolução</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:3px;">Se o cliente não responder nenhuma mensagem em até 48 horas após o desbloqueio, o pedido é cancelado e o lead pago é devolvido automaticamente.</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;"><strong>Se o cliente responder, a negociação foi iniciada e o valor fica para a plataforma.</strong></div>' +
+      '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' +
+      '</div></div></div></div>';
   }
   document.addEventListener('click', async function (e) {
     const b = e.target.closest && e.target.closest('[data-action="pedir-devolucao"]');
@@ -12091,7 +12089,7 @@ alt=""></noscript>
       const d = r.data || {};
       if (!d.ok) {
         let msg = REFUND_MSG[d.reason] || 'Não foi possível pedir a devolução agora.';
-        if (d.reason === 'aguarde_24h' && d.liberado_em) msg += ' Liberado em ' + PU.formatDateTime(d.liberado_em) + '.';
+        if (d.reason === 'aguarde_48h' && d.liberado_em) msg += ' Liberado em ' + PU.formatDateTime(d.liberado_em) + '.';
         PU.toast(msg, 'danger'); b.disabled = false; return;
       }
       PU.toast(money(d.valor_centavos) + ' voltaram para a sua carteira.', 'success');
@@ -12109,9 +12107,9 @@ alt=""></noscript>
     const el = document.createElement('div');
     el.className = 'section';
     el.setAttribute('data-refund-summary', '');
-    el.innerHTML = '<div class="card qf-refund"><div class="row-between"><div class="text--strong">' + icon('refresh') + ' Devoluções de lead</div><span class="badge badge--muted">' + Number(d.usados_30d || 0) + ' de ' + Number(d.limite || 2) + ' pedidos no mês</span></div>' +
+    el.innerHTML = '<div class="card qf-refund"><div class="row-between"><div class="text--strong">' + icon('refresh') + ' Devoluções de lead</div></div>' +
       (itens.length ? '<div class="stack--sm" style="margin-top:10px;">' + itens.slice(0, 5).map(function (i) { return '<div class="row-between text--sm"><span>' + PU.formatDateTime(i.criado_em) + ' · ' + (motivo[i.motivo] || '') + '</span><strong style="color:var(--success-600);">+' + money(i.valor_centavos) + '</strong></div>'; }).join('') + '</div>'
-        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Automática quando o cliente cancela antes de aprovar um orçamento ou o pedido fica 3 dias parado; por pedido quando ele não responde em 24 horas.</div>') + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</div>';
+        : '<div class="text--sm text--secondary" style="margin-top:6px;">Nenhuma devolução ainda. Quando o cliente não responde em até 48 horas, o cancelamento e a devolução do lead pago são automáticos.</div>') + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</div>';
     const anchor = content.querySelector('[data-indicacao]') || content.querySelector('.view > .card');
     if (anchor) anchor.insertAdjacentElement('afterend', el);
   }
@@ -12770,7 +12768,7 @@ alt=""></noscript>
     if (!req || req.profissionalId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     const cliente = DB.clienteById(req.clienteId);
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="profissional" data-call-id="' + esc(req.id) + '">' +
-      '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Agora envie uma mensagem ao cliente. Combine preço, horário e os detalhes do serviço por aqui.</span></div></div>' +
+      '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. As respostas chegam por notificação mesmo se você estiver offline. Fique online para também receber novos chamados.</span></div></div>' +
       '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">Este é o próximo passo: converse com o cliente pelo chat.</div></div></div>' +
       scheduleSummary(req) +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
@@ -12786,7 +12784,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req || req.clienteId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="cliente" data-call-id="' + esc(req.id) + '" data-prof-id="' + esc(params.profId) + '">' +
-      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div></div>' +
+      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
         '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
@@ -12862,7 +12860,7 @@ alt=""></noscript>
     const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
     return '<div class="card qf-client-decision">' +
         '<div class="text--strong">' + (selected ? 'Serviço confirmado' : 'Um profissional reservou seu pedido') + '</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio.') + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.') + '</div>' +
         (!selected ? '<div class="btn-row" style="margin-top:12px;">' +
           '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechou negócio</button>' +
           '<button class="btn btn--outline" type="button" data-qf-continue-search> Ainda não </button>' +
