@@ -3975,6 +3975,9 @@ alt=""></noscript>
       precoDesbloqueio: row.preco_centavos == null ? null : Number(row.preco_centavos),
       tempoMin: row.tempo_min == null ? null : Number(row.tempo_min), // V11.13: tempo estimado até o cliente
       raioAtualKm: row.raio_atual_km == null ? null : Number(row.raio_atual_km),
+      dataPreferida: row.data_preferida || null,
+      participantes: row.participantes == null ? null : Number(row.participantes),
+      limiteParticipantes: row.limite == null ? 5 : Number(row.limite),
       status: localStatus(row.status),
       profissionalId: professionalId || null,
       criadoEm: row.criado_em,
@@ -4245,7 +4248,7 @@ alt=""></noscript>
     if (localProf && localProf.online) {
       try { await refreshProfessionalLocation(false); } catch (err) { console.warn('QuemFaz localização', err); }
     }
-    const available = await client.rpc('qf_listar_chamados_disponiveis');
+    const available = await client.rpc('qf_portfolio_servicos');
     if (available.error) throw available.error;
     const unlocked = await client.from('qf_chamados_desbloqueados').select('*').order('criado_em', { ascending: false });
     if (unlocked.error) throw unlocked.error;
@@ -4985,6 +4988,7 @@ alt=""></noscript>
       longitude: loc ? loc.longitude : null,
       fotos: Array.isArray(data.fotos) ? data.fotos.slice(0, 4) : [],
       status: 'aberto',
+      data_preferida: data.dataPreferida || null,
       prioridade: false
     };
     const res = await client.from('qf_chamados').insert(row).select('*').single();
@@ -5063,6 +5067,8 @@ alt=""></noscript>
       usouBonus: out.usou_bonus === true || out.origem === 'bonus',
       origem: out.origem || 'saldo',
       planoRestantes: out.plano_restantes == null ? null : Number(out.plano_restantes),
+      participantes: out.participantes == null ? null : Number(out.participantes),
+      limite: out.limite == null ? 5 : Number(out.limite),
       saldo: prof ? Number(prof.creditos || 0) : Number(out.saldo_centavos || 0),
       bonusDesbloqueios: 0
     };
@@ -8074,7 +8080,7 @@ alt=""></noscript>
       const btnHtml = btn ? btn.innerHTML : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Publicando chamado…'; }
       try {
-        const dados = { clienteId: user.id, categoriaId: params.catId, descricao: fd.get('descricao').trim(), fotos: fotos, endereco: endereco, prioridade: prioridade, prioridadeMetodo: prioridadeMetodo };
+        const dados = { clienteId: user.id, categoriaId: params.catId, descricao: fd.get('descricao').trim(), fotos: fotos, endereco: endereco, dataPreferida: fd.get('dataPreferida') || null, prioridade: prioridade, prioridadeMetodo: prioridadeMetodo };
         const req = (global.QFCloud && global.QFCloud.enabled)
           ? await global.QFCloud.createCall(dados)
           : DB.criarPedido(dados);
@@ -8968,13 +8974,15 @@ alt=""></noscript>
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     return (
-      '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + '" style="width:100%;text-align:left;" data-nav="/profissional/chamada/' + req.id + '">' +
+      '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card data-qf-execucao="' + PU.escapeHtml(String(req.dataPreferida || '')) + '" data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
+            (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '') +
+            (req.participantes != null ? '<div class="qf-competition-mini">' + icon('users') + '<span>' + Number(req.participantes) + ' de 5 profissionais participando</span></div>' : '') +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
@@ -10468,10 +10476,10 @@ alt=""></noscript>
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: primeiraGratis
-            ? 'Nenhum crédito será usado neste primeiro chamado. Você poderá preparar e enviar o orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente aprovar.'
+            ? 'Nenhum crédito será usado neste primeiro chamado. O chat com o cliente será liberado na hora. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.'
             : (usaPlano
-              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). Você poderá enviar o orçamento; o contato do cliente só será liberado depois da aprovação.'
-              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. Você poderá enviar o orçamento; o contato do cliente só será liberado depois da aprovação.'),
+              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). O chat com o cliente será liberado na hora; o contato e o endereço exato só aparecem se o cliente escolher você.'
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. O chat com o cliente será liberado na hora; o contato e o endereço exato só aparecem se o cliente escolher você.'),
           okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
@@ -10479,13 +10487,13 @@ alt=""></noscript>
             ? await global.QFCloud.unlockCall(params.id, user.id)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
-            let msgOk = result.origem === 'plano' ? 'Chamado reservado pelo seu plano. Envie o orçamento para o cliente.' : 'Chamado desbloqueado. Agora envie o orçamento para o cliente.';
+            let msgOk = result.origem === 'plano' ? 'Chat liberado pelo seu plano. Converse com o cliente e combine o serviço.' : 'Chamado desbloqueado. O chat com o cliente está liberado.';
             if (!result.usouBonus && result.origem !== 'plano' && global.QFPlanoIncentivo) {
               const b = global.QFPlanoIncentivo.porChamado(result.valor || valor);
               if (b) msgOk += ' No plano ' + b.plano.nome + ' teria saído ' + PU.formatCurrency(b.unit) + '.';
             }
             PU.toast(msgOk, 'success');
-            global.navigate('/profissional/pedido/' + params.id, true);
+            global.navigate('/profissional/chat/' + params.id, true);
             return;
           }
           if (result && result.reason === 'avaliacao_pendente' && result.chamadoId) {
@@ -11072,7 +11080,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.14.49';
+  const APP_VERSION = '11.15.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12302,6 +12310,489 @@ alt=""></noscript>
   global.QFCallAlert={offer:offer,close:function(){close(true);},isOpen:function(){return !!document.getElementById('qf-call-overlay');}};
 })(window);
 
+
+/* QuemFaz 11.15 — Portfólio programado + chat após desbloqueio */
+(function (global) {
+  const DB = global.DB, PU = global.PU, icon = global.icon, Screens = global.Screens;
+  if (!DB || !PU || !Screens) return;
+
+  function esc(v) { return PU.escapeHtml(String(v == null ? '' : v)); }
+  function firstName(v) { return String(v || '').trim().split(/\s+/)[0] || ''; }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function localInputValue(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
+  function execLabel(value) {
+    if (!value) return 'Assim que possível';
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return 'Data a combinar';
+    const now = new Date(), tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+    const hm = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    if (sameDay(d, now)) return 'Hoje' + (hm !== '00:00' ? ' às ' + hm : '');
+    if (sameDay(d, tomorrow)) return 'Amanhã' + (hm !== '00:00' ? ' às ' + hm : '');
+    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' }) + ' às ' + hm;
+  }
+  global.QFExecLabel = execLabel;
+
+  function competitionCopy(n) {
+    n = Math.max(0, Math.min(5, Number(n || 0)));
+    if (n === 0) return { title:'Você pode ser o primeiro profissional', sub:'Nenhum profissional desbloqueou este serviço ainda.' };
+    if (n === 1) return { title:'Você está disputando com mais 1 profissional', sub:'1 de 5 profissionais já entrou nesta oportunidade.' };
+    if (n === 4) return { title:'Última vaga disponível', sub:'4 profissionais já estão negociando. Você será o 5º.' };
+    return { title:'Você está disputando com mais ' + n + ' profissionais', sub:n + ' de 5 profissionais já entraram nesta oportunidade.' };
+  }
+  global.QFCompetitionCopy = competitionCopy;
+
+  const css = document.createElement('style');
+  css.textContent = [
+    '.qf-schedule-card{border:1px solid var(--border);background:var(--surface);padding:14px;border-radius:16px}',
+    '.qf-schedule-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}',
+    '.qf-schedule-options button{min-height:44px;border:1px solid var(--border);background:var(--surface);border-radius:12px;font-weight:700;color:var(--navy-900)}',
+    '.qf-schedule-options button.is-active{border-color:var(--orange-500);background:var(--orange-100);color:var(--orange-800)}',
+    '.qf-exec-line,.qf-competition-mini{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.82rem;color:var(--text-secondary)}',
+    '.qf-exec-line svg,.qf-competition-mini svg{width:16px;height:16px}',
+    '.qf-competition-card{padding:14px;border-radius:16px;background:var(--navy-100);border:1px solid rgba(15,42,70,.10)}',
+    '.qf-competition-card strong{display:block;color:var(--navy-900);font-size:.98rem}',
+    '.qf-competition-card span{display:block;margin-top:3px;color:var(--text-secondary);font-size:.84rem}',
+    '.qf-portfolio-tools{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px}',
+    '.qf-chat-list{display:flex;flex-direction:column;gap:8px;min-height:180px;padding:8px 0}',
+    '.qf-chat-bubble{max-width:84%;padding:10px 12px;border-radius:16px;background:var(--navy-100);align-self:flex-start}',
+    '.qf-chat-bubble.is-me{align-self:flex-end;background:var(--orange-100)}',
+    '.qf-chat-bubble.is-system{align-self:center;max-width:96%;text-align:center;background:var(--surface-2);font-size:.82rem;color:var(--text-secondary)}',
+    '.qf-chat-bubble small{display:block;margin-top:4px;color:var(--text-muted);font-size:.7rem}',
+    '.qf-chat-composer{position:sticky;bottom:0;background:var(--surface);padding:10px 0 4px}',
+    '.qf-chat-composer textarea{min-height:76px}',
+    '.qf-conversation-card{border:1px solid var(--border)}',
+    '.qf-client-conversations:empty{display:none}',
+    '.qf-address-grid{display:grid;grid-template-columns:1fr 110px;gap:8px}',
+    '@media(min-width:640px){.qf-portfolio-tools{grid-template-columns:180px 1fr}.qf-schedule-options{grid-template-columns:repeat(4,minmax(0,1fr))}}'
+  ].join('');
+  document.head.appendChild(css);
+
+  // Métodos do Supabase usados pelo chat e seleção.
+  const Cloud = global.QFCloud;
+  if (Cloud && Cloud.client) {
+    Cloud.clientConversations = async function (callId) {
+      const r = await Cloud.client.rpc('qf_cliente_conversas', { p_chamado_id: callId });
+      if (r.error) throw r.error;
+      return r.data || [];
+    };
+    Cloud.chatConversation = async function (callId, profId) {
+      const r = await Cloud.client.rpc('qf_chat_conversa', {
+        p_chamado_id: callId,
+        p_profissional_id: profId || null
+      });
+      if (r.error) throw r.error;
+      return r.data || [];
+    };
+    Cloud.sendChatMessage = async function (callId, profId, message) {
+      const r = await Cloud.client.rpc('qf_enviar_mensagem_chat', {
+        p_chamado_id: callId,
+        p_profissional_id: profId || null,
+        p_mensagem: message
+      });
+      if (r.error) throw r.error;
+      const out = r.data || {};
+      if (!out.ok) throw new Error(out.reason || 'Não foi possível enviar a mensagem.');
+      return out;
+    };
+    Cloud.confirmProfessional = async function (callId, profId, address) {
+      const r = await Cloud.client.rpc('qf_confirmar_profissional', {
+        p_chamado_id: callId,
+        p_profissional_id: profId,
+        p_endereco: address
+      });
+      if (r.error) throw r.error;
+      const out = r.data || {};
+      if (!out.ok) throw new Error(out.reason || 'Não foi possível confirmar o profissional.');
+      if (Cloud.syncForCurrentSession) await Cloud.syncForCurrentSession();
+      return out;
+    };
+    Cloud.participantCount = async function (callId) {
+      const r = await Cloud.client.rpc('qf_contagem_participantes', { p_chamado_id: callId });
+      if (r.error) throw r.error;
+      return r.data || { ok:false, participantes:0, limite:5 };
+    };
+  }
+
+  function scheduleHtml() {
+    return '<div class="qf-schedule-card" data-qf-schedule>' +
+      '<div class="field__label">Quando pretende executar o serviço?</div>' +
+      '<div class="text--sm text--secondary">Serviços futuros ficam no portfólio. O alerta forte aos profissionais só dispara quando faltarem 24 horas.</div>' +
+      '<div class="qf-schedule-options">' +
+        '<button type="button" class="is-active" data-qf-exec="today">Hoje</button>' +
+        '<button type="button" data-qf-exec="tomorrow">Amanhã</button>' +
+        '<button type="button" data-qf-exec="week">Esta semana</button>' +
+        '<button type="button" data-qf-exec="custom">Escolher data</button>' +
+      '</div>' +
+      '<div data-qf-custom-wrap hidden style="margin-top:10px;"><input class="input" type="datetime-local" data-qf-custom-exec></div>' +
+      '<input type="hidden" name="dataPreferida" data-qf-data-preferida value="">' +
+    '</div>';
+  }
+
+  const oldNovo = Screens.clienteNovoPedidoRender;
+  if (oldNovo) Screens.clienteNovoPedidoRender = function (params,user) {
+    let html = oldNovo(params,user);
+    return html.replace('<div class="field qf-order-location">', scheduleHtml() + '<div class="field qf-order-location">');
+  };
+
+  function scheduleSummary(req) {
+    if (!req || !req.dataPreferida) return '';
+    return '<div class="qf-competition-card" style="margin:12px 0;">' +
+      '<strong>' + icon('clock') + ' Execução prevista</strong>' +
+      '<span>' + esc(execLabel(req.dataPreferida)) + '</span>' +
+    '</div>';
+  }
+
+  const oldProfHome = Screens.profHomeRender;
+  if (oldProfHome) Screens.profHomeRender = function (params,user) {
+    let html = oldProfHome(params,user).replace('Chamados disponíveis','Portfólio de serviços disponíveis');
+    const tools =
+      '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
+        '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data">' +
+          '<option value="all">Todos os serviços</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option>' +
+        '</select>' +
+        '<input class="input" type="search" data-qf-portfolio-search placeholder="Filtrar por serviço, bairro ou cidade">' +
+      '</div>' +
+      '<div class="text--sm text--secondary" style="margin-bottom:10px;">Veja os detalhes e planeje sua agenda sem pagar. Você só paga quando decidir desbloquear o chat.</div>';
+    return html.replace('<div class="section" id="chamados-disponiveis">','<div class="section" id="chamados-disponiveis">' + tools);
+  };
+
+  const oldProfCall = Screens.profChamadaRender;
+  if (oldProfCall) Screens.profChamadaRender = function (params,user) {
+    const req = DB.requestById(params.id);
+    let html = oldProfCall(params,user);
+    if (!req) return html;
+    if (req.status !== 'buscando' || req.profissionalId) {
+      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','Este pedido já está em negociação ou atingiu o limite de profissionais.');
+    }
+    const n = Number(req.participantes || 0), c = competitionCopy(n);
+    const comp = '<div class="section"><div class="qf-competition-card"><strong>' + esc(c.title) + '</strong><span>' + esc(c.sub) + '</span></div></div>';
+    html = html.replace('<div class="section qf-call-facts">', comp + scheduleSummary(req) + '<div class="section qf-call-facts">');
+    html = html.replaceAll('Telefone/WhatsApp e endereço exato só aparecem depois que o cliente aprovar seu orçamento','Telefone/WhatsApp e endereço exato só aparecem depois que o cliente escolher você');
+    html = html.replaceAll('Você entra na disputa de até 5 profissionais e pode enviar seu orçamento; telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.','O chat é liberado imediatamente. Você pode conversar e combinar o serviço; até 5 profissionais podem participar, e contato/endereço exato só aparecem se o cliente escolher você.');
+    html = html.replaceAll('Ao desbloquear, usamos os créditos da carteira e você entra na disputa de até 5 profissionais para enviar seu orçamento. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.','Ao desbloquear, usamos os créditos da carteira e liberamos o chat imediatamente. Até 5 profissionais podem conversar com o cliente; telefone/WhatsApp e endereço exato só aparecem se ele escolher você.');
+    html = html.replaceAll('antes de aprovar um orçamento','antes de fechar o serviço');
+    html = html.replaceAll('oportunidade de enviar orçamento foi utilizada','oportunidade de conversar com o cliente foi utilizada');
+    return html;
+  };
+
+  const oldClientDetail = Screens.clientePedidoDetalheRender;
+  if (oldClientDetail) Screens.clientePedidoDetalheRender = function (params,user) {
+    const req = DB.requestById(params.id);
+    let html = oldClientDetail(params,user);
+    if (!req) return html;
+    const opening = '<div class="view" data-request-id="' + req.id + '">';
+    const slot = scheduleSummary(req) + '<div class="section qf-client-conversations" data-qf-client-conversations data-call-id="' + esc(req.id) + '"></div>';
+    html = html.replace(opening, opening + slot);
+    html = html.replaceAll('Profissionais preparando orçamento','Profissionais disponíveis para conversar');
+    html = html.replaceAll('Seu pedido continua disponível para até 5 profissionais. Assim que os orçamentos chegarem, você poderá comparar e escolher.','Seu pedido pode receber até 5 profissionais. Converse pelo chat, combine os detalhes e escolha com quem deseja fechar.');
+    html = html.replaceAll('Até 5 propostas','Até 5 profissionais');
+    html = html.replaceAll('Aguardando orçamentos…','Aguardando profissionais…');
+    html = html.replaceAll('Compare os orçamentos','Propostas recebidas (opcional)');
+    html = html.replaceAll('Você pode receber até 5 propostas. Compare preço, distância e avaliação antes de escolher.','A proposta é opcional. Você também pode conversar no chat e fechar diretamente com o profissional.');
+    return html;
+  };
+
+  const oldProfDetail = Screens.profPedidoDetalheRender;
+  if (oldProfDetail) Screens.profPedidoDetalheRender = function (params,user) {
+    const req = DB.requestById(params.id);
+    let html = oldProfDetail(params,user);
+    if (!req) return html;
+    const blocked = req.status === 'nao_selecionado' || req.status === 'cancelado' || req.status === 'finalizado';
+    const cta = blocked ? '' :
+      '<div class="section"><div class="card stack--sm" style="border:2px solid var(--orange-500);">' +
+        '<div class="row-between"><div><div class="text--strong">Negociação pelo chat</div><div class="text--sm text--secondary">Combine valor, data e detalhes diretamente com o cliente.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
+        '<button class="btn btn--primary" data-nav="/profissional/chat/' + esc(req.id) + '">' + icon('message') + ' Conversar com o cliente</button>' +
+        '<button class="btn btn--outline" data-nav="/profissional/orcamento/' + esc(req.id) + '">' + icon('document') + ' Enviar proposta (opcional)</button>' +
+        '<div data-qf-prof-competition class="text--sm text--secondary"></div>' +
+      '</div></div>';
+    html = html.replace('<div class="view">','<div class="view">' + scheduleSummary(req) + cta);
+    html = html.replaceAll('Aguardando aprovação do orçamento','Converse com o cliente pelo chat');
+    html = html.replaceAll('Telefone e WhatsApp serão liberados quando o cliente aprovar seu orçamento.','Telefone e WhatsApp serão liberados quando o cliente escolher você.');
+    html = html.replaceAll('endereço exato liberado após aprovação','endereço exato liberado quando o cliente escolher você');
+    html = html.replaceAll(' Criar orçamento</button>',' Enviar proposta (opcional)</button>');
+    html = html.replaceAll('Aguardando aprovação do cliente.','Proposta enviada. Continue a conversa pelo chat enquanto o cliente decide.');
+    return html;
+  };
+
+  Screens.profChatRender = function (params,user) {
+    const req = DB.requestById(params.id);
+    if (!req || req.profissionalId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
+    const cliente = DB.clienteById(req.clienteId);
+    return '<div class="view qf-chat-view" data-qf-chat-root data-role="profissional" data-call-id="' + esc(req.id) + '">' +
+      '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">Combine valor, horário e detalhes por aqui.</div></div></div>' +
+      scheduleSummary(req) +
+      '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
+      '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
+        '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
+        '<button class="btn btn--primary" type="submit">' + icon('message') + ' Enviar mensagem</button>' +
+        '<button class="btn btn--outline" type="button" data-nav="/profissional/orcamento/' + esc(req.id) + '">' + icon('document') + ' Enviar proposta (opcional)</button>' +
+      '</form>' +
+    '</div>';
+  };
+
+  Screens.clienteChatRender = function (params,user) {
+    const req = DB.requestById(params.id);
+    if (!req || req.clienteId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
+    return '<div class="view qf-chat-view" data-qf-chat-root data-role="cliente" data-call-id="' + esc(req.id) + '" data-prof-id="' + esc(params.profId) + '">' +
+      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div></div>' +
+      '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
+      '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
+        '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
+        '<button class="btn btn--primary" type="submit">' + icon('message') + ' Enviar mensagem</button>' +
+      '</form>' +
+    '</div>';
+  };
+
+  function bindSchedule(content) {
+    const box = content.querySelector('[data-qf-schedule]');
+    if (!box) return;
+    const hidden = box.querySelector('[data-qf-data-preferida]');
+    const customWrap = box.querySelector('[data-qf-custom-wrap]');
+    const custom = box.querySelector('[data-qf-custom-exec]');
+    const buttons = Array.prototype.slice.call(box.querySelectorAll('[data-qf-exec]'));
+    function set(mode) {
+      buttons.forEach(function (b) { b.classList.toggle('is-active', b.getAttribute('data-qf-exec')===mode); });
+      let d = new Date();
+      if (mode==='today') {
+        hidden.value = d.toISOString();
+        customWrap.hidden = true;
+      } else if (mode==='tomorrow') {
+        d.setDate(d.getDate()+1); d.setHours(9,0,0,0);
+        hidden.value = d.toISOString(); customWrap.hidden = true;
+      } else {
+        d.setDate(d.getDate()+(mode==='week'?3:2)); d.setHours(9,0,0,0);
+        if (!custom.value) custom.value = localInputValue(d);
+        customWrap.hidden = false;
+        const x = new Date(custom.value);
+        hidden.value = isNaN(x.getTime()) ? '' : x.toISOString();
+      }
+    }
+    buttons.forEach(function (b) { b.addEventListener('click', function () { set(b.getAttribute('data-qf-exec')); }); });
+    custom.addEventListener('change', function () {
+      const d = new Date(custom.value);
+      hidden.value = isNaN(d.getTime()) ? '' : d.toISOString();
+    });
+    set('today');
+  }
+
+  function bindPortfolio(content) {
+    const root = content.querySelector('#chamados-disponiveis');
+    if (!root) return;
+    const period = root.querySelector('[data-qf-portfolio-period]');
+    const search = root.querySelector('[data-qf-portfolio-search]');
+    const cards = Array.prototype.slice.call(root.querySelectorAll('[data-qf-portfolio-card]'));
+    function apply() {
+      const q = String(search && search.value || '').trim().toLowerCase();
+      const p = period ? period.value : 'all';
+      const now = new Date();
+      const tomorrow = new Date(now); tomorrow.setDate(now.getDate()+1);
+      const limit7 = new Date(now); limit7.setDate(now.getDate()+7);
+      cards.forEach(function (card) {
+        const txt = (card.textContent || '').toLowerCase();
+        const raw = card.getAttribute('data-qf-execucao') || '';
+        const d = raw ? new Date(raw) : null;
+        let dateOk = true;
+        if (p==='today') dateOk = d ? sameDay(d,now) : true;
+        else if (p==='tomorrow') dateOk = !!d && sameDay(d,tomorrow);
+        else if (p==='7d') dateOk = !d || (d>=now && d<=limit7);
+        card.style.display = ((!q || txt.indexOf(q)!==-1) && dateOk) ? '' : 'none';
+      });
+    }
+    if (period) period.addEventListener('change',apply);
+    if (search) search.addEventListener('input',apply);
+  }
+
+  function renderConversationCards(rows, req) {
+    if (!rows.length) return '<div class="card text--sm text--secondary">Assim que um profissional desbloquear o pedido, a conversa aparecerá aqui.</div>';
+    return '<div class="section-head"><h2 class="h3">Profissionais na conversa</h2><span class="badge badge--orange">' + rows.length + ' de 5</span></div>' +
+      '<div class="stack--sm">' + rows.map(function (r) {
+        const selected = !!r.selecionado;
+        const photo = r.profissional_foto_url ? '<img class="avatar avatar--sm" src="' + esc(r.profissional_foto_url) + '" alt="">' : '<div class="avatar avatar--sm">' + PU.initials(r.profissional_nome || '?') + '</div>';
+        const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">Chat liberado. Aguarde a apresentação do profissional.</div>';
+        return '<div class="card qf-conversation-card">' +
+          '<div class="row-between"><div class="row">' + photo + '<div><div class="text--strong">' + esc(r.profissional_nome || 'Profissional') + '</div>' +
+          '<div class="text--sm text--secondary">' + (r.profissional_cidade ? esc(r.profissional_cidade + (r.profissional_uf ? '/' + r.profissional_uf : '')) : 'Profissional verificado') + '</div></div></div>' +
+          (selected ? '<span class="badge badge--success">Escolhido</span>' : (r.nao_lidas ? '<span class="badge badge--orange">' + Number(r.nao_lidas) + ' nova</span>' : '')) + '</div>' +
+          last +
+          (r.tem_proposta ? '<div class="text--sm" style="color:var(--orange-700);margin-top:6px;font-weight:700;">Proposta disponível (opcional)</div>' : '') +
+          '<div class="btn-row" style="margin-top:10px;">' +
+            '<button class="btn btn--outline" data-nav="/cliente/chat/' + esc(req.id) + '/' + esc(r.profissional_id) + '">' + icon('message') + ' Conversar</button>' +
+            (!selected && ['buscando','aguardando_orcamento','orcamento_enviado','orcamento_recusado'].indexOf(req.status)!==-1
+              ? '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechar serviço</button>'
+              : '') +
+          '</div>' +
+        '</div>';
+      }).join('') + '</div>';
+  }
+
+  async function fillClientConversations(content, params) {
+    const slot = content.querySelector('[data-qf-client-conversations]');
+    const req = DB.requestById(params.id);
+    if (!slot || !req || !Cloud || !Cloud.clientConversations) return;
+    try {
+      const rows = await Cloud.clientConversations(req.id);
+      slot.innerHTML = renderConversationCards(rows, req);
+    } catch (e) {
+      slot.innerHTML = '<div class="card text--sm text--secondary">Não foi possível carregar as conversas agora.</div>';
+    }
+  }
+
+  function openAddressSheet(req, profId, profName) {
+    const end = req.endereco || {};
+    PU.openSheet(
+      '<form id="qf-confirm-address-form" class="stack">' +
+        '<div><h3 class="sheet__title">Fechar serviço com ' + esc(profName || 'este profissional') + '</h3><p class="text text--secondary text--sm">Agora informe o endereço exato. Ele só será liberado para o profissional escolhido.</p></div>' +
+        '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" placeholder="CEP" value="' + esc(end.cep || '') + '"><button class="btn btn--outline" type="button" data-lookup-cep>Localizar</button></div>' +
+        '<input class="input" name="rua" required placeholder="Rua / Avenida" value="' + esc(end.rua || '') + '">' +
+        '<div class="qf-address-grid"><input class="input" name="numero" required placeholder="Número"><input class="input" name="complemento" placeholder="Compl."></div>' +
+        '<input class="input" name="bairro" required placeholder="Bairro" value="' + esc(end.bairro || '') + '">' +
+        '<div class="qf-address-grid"><input class="input" name="cidade" required placeholder="Cidade" value="' + esc(end.cidade || '') + '"><select class="select" name="uf" required><option value="">UF</option>' + (global.QFGeo ? global.QFGeo.ufOptions(end.uf || '') : '') + '</select></div>' +
+        '<input type="hidden" name="latitude" value="' + esc(end.latitude == null ? '' : end.latitude) + '"><input type="hidden" name="longitude" value="' + esc(end.longitude == null ? '' : end.longitude) + '">' +
+        '<button class="btn btn--primary" type="submit">Confirmar profissional e liberar endereço</button>' +
+      '</form>'
+    );
+    const form = document.getElementById('qf-confirm-address-form');
+    if (global.QFGeo && global.QFGeo.bindAddressForm) global.QFGeo.bindAddressForm(form, { buscarAoCompletar:true });
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Confirmando…';
+      try {
+        const address = {
+          cep:String(fd.get('cep')||''), rua:String(fd.get('rua')||''), numero:String(fd.get('numero')||''),
+          complemento:String(fd.get('complemento')||''), bairro:String(fd.get('bairro')||''),
+          cidade:String(fd.get('cidade')||''), uf:String(fd.get('uf')||''),
+          latitude:String(fd.get('latitude')||''), longitude:String(fd.get('longitude')||'')
+        };
+        await Cloud.confirmProfessional(req.id, profId, address);
+        PU.closeSheet();
+        PU.toast('Serviço confirmado. Endereço e contato liberados para o profissional.', 'success');
+        global.navigate('/cliente/pedido/' + req.id, true);
+      } catch (err) {
+        PU.toast('Não foi possível confirmar. ' + ((err && err.message) || ''), 'danger');
+        btn.disabled = false; btn.textContent = 'Confirmar profissional e liberar endereço';
+      }
+    });
+  }
+
+  function bindClientDetailFeature(content, params) {
+    const req = DB.requestById(params.id);
+    if (!req) return;
+    fillClientConversations(content, params);
+    content.addEventListener('click', function (e) {
+      const choose = e.target.closest('[data-qf-choose-prof]');
+      if (!choose) return;
+      e.preventDefault();
+      openAddressSheet(req, choose.getAttribute('data-qf-choose-prof'), choose.getAttribute('data-qf-prof-name'));
+    });
+    // Propostas continuam existindo, mas escolher também exige endereço.
+    content.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-action="aprovar-orcamento"]');
+      if (!b) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const quoteId = b.getAttribute('data-quote-id') || '';
+      let list = Array.isArray(req.orcamentos) ? req.orcamentos : [];
+      const q = list.find(function (x) { return String(x.id)===String(quoteId); }) || req.orcamento;
+      if (!q || !q.profissionalId) { PU.toast('Profissional não encontrado.', 'danger'); return; }
+      const p = DB.profissionalById(q.profissionalId);
+      openAddressSheet(req, q.profissionalId, p && p.nome);
+    }, true);
+  }
+
+  function renderChatRows(rows,userId) {
+    if (!rows.length) return '<div class="text--sm text--secondary" style="text-align:center;padding:24px 8px;">A conversa começa aqui.</div>';
+    return rows.map(function (r) {
+      if (r.tipo==='sistema') return '<div class="qf-chat-bubble is-system">' + esc(r.mensagem) + '</div>';
+      const mine = String(r.remetente_id)===String(userId);
+      return '<div class="qf-chat-bubble' + (mine?' is-me':'') + '"><div>' + esc(r.mensagem).replace(/\n/g,'<br>') + '</div><small>' + new Date(r.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) + '</small></div>';
+    }).join('');
+  }
+
+  function bindChat(content, params, user, role) {
+    const root = content.querySelector('[data-qf-chat-root]');
+    if (!root || !Cloud || !Cloud.chatConversation) return;
+    const list = root.querySelector('[data-qf-chat-list]');
+    const form = root.querySelector('[data-qf-chat-form]');
+    const input = root.querySelector('[data-qf-chat-input]');
+    const profId = role==='profissional' ? user.id : params.profId;
+    const req = DB.requestById(params.id);
+    let loading = false;
+
+    async function load(first) {
+      if (loading || !document.body.contains(root)) return;
+      loading = true;
+      try {
+        const rows = await Cloud.chatConversation(params.id, role==='profissional' ? null : profId);
+        list.innerHTML = renderChatRows(rows,user.id);
+        list.scrollTop = list.scrollHeight;
+        if (first && role==='profissional' && !rows.length && input && !input.value) {
+          const cli = req ? DB.clienteById(req.clienteId) : null;
+          input.value = 'Olá' + (cli && cli.nome ? ', ' + firstName(cli.nome) : '') + '! Sou ' + (user.nome || 'profissional') + ', profissional pelo QuemFaz. Vi seu pedido e estou disponível. Podemos conversar por aqui para combinar valor, horário e os detalhes do serviço.';
+        }
+        if (role==='cliente') {
+          try {
+            const rowsP = await Cloud.clientConversations(params.id);
+            const p = rowsP.find(function (x) { return String(x.profissional_id)===String(profId); });
+            const title = root.querySelector('[data-qf-chat-title]');
+            if (title && p) title.textContent = 'Conversa com ' + (p.profissional_nome || 'profissional');
+          } catch (_) {}
+        }
+      } catch (err) {
+        list.innerHTML = '<div class="text--sm text--secondary" style="text-align:center;padding:20px;">Não foi possível carregar a conversa.</div>';
+      } finally { loading = false; }
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const msg = String(input.value || '').trim();
+      if (!msg) return;
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        await Cloud.sendChatMessage(params.id, role==='profissional' ? null : profId, msg);
+        input.value = '';
+        await load(false);
+      } catch (err) {
+        PU.toast('Não foi possível enviar. ' + ((err && err.message) || ''), 'danger');
+      } finally { btn.disabled = false; }
+    });
+    load(true);
+    const timer = setInterval(function () {
+      if (!document.body.contains(root)) { clearInterval(timer); return; }
+      load(false);
+    },5000);
+  }
+
+  async function fillProfCompetition(content, params) {
+    const el = content.querySelector('[data-qf-prof-competition]');
+    if (!el || !Cloud || !Cloud.participantCount) return;
+    try {
+      const d = await Cloud.participantCount(params.id);
+      if (!d.ok) return;
+      const n = Number(d.participantes || 0);
+      if (n <= 1) el.textContent = 'Você é o primeiro profissional nesta negociação.';
+      else el.textContent = 'Você está disputando este serviço com mais ' + (n-1) + (n-1===1 ? ' profissional.' : ' profissionais.');
+    } catch (_) {}
+  }
+
+  const prevAfter = Screens.afterRender;
+  Screens.afterRender = function (pattern,content,params,user) {
+    if (prevAfter) prevAfter(pattern,content,params,user);
+    if (pattern==='/cliente/novo-pedido/:catId') bindSchedule(content);
+    if (pattern==='/profissional/home') bindPortfolio(content);
+    if (pattern==='/cliente/pedido/:id') bindClientDetailFeature(content,params);
+    if (pattern==='/profissional/pedido/:id') fillProfCompetition(content,params);
+    if (pattern==='/profissional/chat/:id') bindChat(content,params,user,'profissional');
+    if (pattern==='/cliente/chat/:id/:profId') bindChat(content,params,user,'cliente');
+  };
+})(window);
+
+
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
 (function (global) {
@@ -12537,6 +13028,7 @@ alt=""></noscript>
     { pattern: '/cliente/pedidos', role: 'cliente', tab: 'pedidos', title: 'Meus pedidos', render: Screens.clientePedidosRender },
     { pattern: '/cliente/avisos', role: 'cliente', tab: 'avisos', title: 'Avisos', render: Screens.notificacoesRender },
     { pattern: '/cliente/pedido/:id', role: 'cliente', title: 'Acompanhar pedido', back: '/cliente/pedidos', render: Screens.clientePedidoDetalheRender },
+    { pattern: '/cliente/chat/:id/:profId', role: 'cliente', title: 'Conversa com profissional', back: '/cliente/pedidos', render: Screens.clienteChatRender },
     { pattern: '/cliente/perfil', role: 'cliente', tab: 'perfil', title: 'Perfil', render: Screens.clientePerfilRender },
     { pattern: '/cliente/endereco', role: 'cliente', title: 'Meu endereço', back: '/cliente/perfil', render: Screens.clienteEnderecoRender },
 
@@ -12548,7 +13040,8 @@ alt=""></noscript>
     { pattern: '/profissional/servicos', role: 'profissional', tab: 'servicos', title: 'Meus serviços', render: Screens.profServicosRender },
     { pattern: '/profissional/avisos', role: 'profissional', tab: 'avisos', title: 'Avisos', render: Screens.notificacoesRender },
     { pattern: '/profissional/pedido/:id', role: 'profissional', title: 'Detalhes do serviço', back: '/profissional/servicos', render: Screens.profPedidoDetalheRender },
-    { pattern: '/profissional/orcamento/:id', role: 'profissional', title: 'Criar orçamento', back: '/profissional/servicos', render: Screens.profOrcamentoFormRender },
+    { pattern: '/profissional/chat/:id', role: 'profissional', title: 'Conversa com cliente', back: '/profissional/servicos', render: Screens.profChatRender },
+    { pattern: '/profissional/orcamento/:id', role: 'profissional', title: 'Enviar proposta', back: '/profissional/servicos', render: Screens.profOrcamentoFormRender },
     { pattern: '/profissional/carteira', role: 'profissional', tab: 'carteira', title: 'Carteira', render: Screens.profCarteiraRender },
     { pattern: '/profissional/planos', role: 'profissional', tab: 'planos', title: 'Planos', render: Screens.profPlanosRender },
     { pattern: '/profissional/configuracoes', role: 'profissional', tab: 'config', title: 'Configurações', render: Screens.profConfigRender },
