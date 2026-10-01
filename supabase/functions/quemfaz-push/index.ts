@@ -320,7 +320,7 @@ function newCallPayload(call: any) {
   return {
     title: priority ? "Chamado PRIORITÁRIO: " + (call.titulo || "serviço") : "Novo chamado: " + (call.titulo || "serviço"),
     body: [call.bairro, call.cidade, call.uf].filter(Boolean).join(" · ") + " — toque para ver",
-    url: "/#/profissional/chamada/" + call.id,
+    url: "/#/profissional/servicos/disponiveis",
     // Chamados normais compartilham a mesma tag: o Android/PWA substitui o aviso anterior
     // em vez de empilhar dezenas. Prioridade paga continua individual.
     tag: priority ? "qf-new-call-priority-" + call.id : "qf-new-calls-group",
@@ -336,7 +336,7 @@ function groupedNormalPayload(call: any, count: number) {
   return {
     title: n + " novos chamados na sua região",
     body: "Último: " + (call.titulo || "Serviço") + (place ? " · " + place : "") + " — toque para ver todos",
-    url: "/#/profissional/home",
+    url: "/#/profissional/servicos/disponiveis",
     tag: "qf-new-calls-group",
     // O primeiro chamado já tocou forte. Os seguintes atualizam o mesmo aviso sem virar outra ligação.
     strong: false,
@@ -611,11 +611,11 @@ Deno.serve(async (req) => {
         const participants = await participantsForCall(callId);
         const n = participants.length;
         const clientResult = await sendToUsers([call.cliente_id], {
-          title: "Novo profissional participando",
-          body: n + " de 5 profissionais " + (n === 1 ? "já entrou na conversa." : "já entraram na conversa.") + " Você pode conversar e escolher com quem fechar.",
+          title: "Um profissional desbloqueou seu pedido",
+          body: "Converse com ele. Depois escolha: Fechou negócio ou Ainda não. Se ainda não, o pedido volta ao portfólio.",
           url: "/#/cliente/pedido/" + call.id,
-          tag: "qf-participants-" + call.id,
-          strong: false,
+          tag: "qf-professional-connected-" + call.id,
+          strong: true,
         });
         return json({ ok: true, participants: n, client: clientResult });
       } catch (err) {
