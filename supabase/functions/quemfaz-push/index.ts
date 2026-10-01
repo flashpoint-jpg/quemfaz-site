@@ -612,7 +612,7 @@ Deno.serve(async (req) => {
         const n = participants.length;
         const clientResult = await sendToUsers([call.cliente_id], {
           title: "Um profissional desbloqueou seu pedido",
-          body: "Converse com ele. Depois escolha: Fechou negócio ou Ainda não. Se ainda não, o pedido volta ao portfólio.",
+          body: "Converse com ele pelo chat. Se você não responder em até 48h, seu pedido será cancelado automaticamente.",
           url: "/#/cliente/pedido/" + call.id,
           tag: "qf-professional-connected-" + call.id,
           strong: true,
@@ -897,7 +897,7 @@ Deno.serve(async (req) => {
     const { data: p } = await admin.from("qf_profiles").select("nome").eq("id", user.id).maybeSingle();
     payload = {
       title: "Profissional encontrado",
-      body: (p?.nome || "Um profissional") + " desbloqueou seu pedido e já pode conversar com você pelo chat.",
+      body: (p?.nome || "Um profissional") + " desbloqueou seu pedido. Responda pelo chat em até 48h para manter o pedido ativo.",
       url: "/#/cliente/pedido/" + call.id,
       tag: "qf-connected-" + call.id,
       strong: true,
