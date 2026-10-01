@@ -6078,7 +6078,15 @@ alt=""></noscript>
     const cidadeInicial = pendingRegion && pendingRegion.cidade ? pendingRegion.cidade : '';
     const ufInicial = pendingRegion && pendingRegion.uf ? pendingRegion.uf : '';
     const servicoField = selectedCat
-      ? '<input type="hidden" name="servico" value="' + PU.escapeHtml(servicoInicial) + '"><div class="card card--tight" style="display:flex;align-items:center;gap:10px;background:var(--navy-100);border:0;"><span class="icon-tile icon-tile--orange">' + icon(selectedCat.icon || 'briefcase') + '</span><div class="spacer"><div class="text--sm text--secondary">Serviço escolhido</div><div class="text--strong">' + PU.escapeHtml(servicoInicial) + '</div></div></div>'
+      ? '<input type="hidden" name="servico" data-servico-hidden value="' + PU.escapeHtml(servicoInicial) + '">' +
+        '<div class="card card--tight" data-servico-escolhido style="display:flex;align-items:center;gap:10px;background:var(--navy-100);border:0;">' +
+          '<span class="icon-tile icon-tile--orange">' + icon(selectedCat.icon || 'briefcase') + '</span>' +
+          '<div class="spacer"><div class="text--sm text--secondary">Serviço escolhido</div><div class="text--strong" data-servico-escolhido-nome>' + PU.escapeHtml(servicoInicial) + '</div></div>' +
+          '<button class="btn btn--ghost btn--sm btn--block-auto" type="button" data-action="alterar-servico-cliente" style="padding:8px 10px;">Alterar</button>' +
+        '</div>' +
+        '<div data-servico-editar hidden>' +
+          field('Escolha outro serviço', '<input class="input" data-servico-edit-input list="qf-servicos-cliente" autocomplete="off" placeholder="Ex.: pintor, eletricista, diarista" value="' + PU.escapeHtml(servicoInicial) + '"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>') +
+        '</div>'
       : field('Qual serviço você precisa?', '<input class="input" name="servico" list="qf-servicos-cliente" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista"><datalist id="qf-servicos-cliente">' + listaServicos + '</datalist>');
     const regionField = cidadeInicial && ufInicial
       ? '<input type="hidden" name="cidade" value="' + PU.escapeHtml(cidadeInicial) + '"><input type="hidden" name="uf" value="' + PU.escapeHtml(ufInicial) + '"><div class="text--sm text--secondary" style="display:flex;align-items:center;gap:6px;padding:0 2px;">' + icon('mapPin') + '<span>Atendimento em <strong>' + PU.escapeHtml(cidadeInicial) + '/' + PU.escapeHtml(ufInicial) + '</strong></span></div>'
@@ -6518,6 +6526,28 @@ alt=""></noscript>
       });
 
       const form = content.querySelector('#cadastro-cliente-form');
+
+      // V11.16.13: serviço vindo da Home continua pré-selecionado, mas o cliente pode trocar sem voltar.
+      const alterarServicoBtn = content.querySelector('[data-action="alterar-servico-cliente"]');
+      const servicoEscolhido = content.querySelector('[data-servico-escolhido]');
+      const servicoEditar = content.querySelector('[data-servico-editar]');
+      const servicoEditInput = content.querySelector('[data-servico-edit-input]');
+      const servicoHidden = content.querySelector('[data-servico-hidden]');
+      if (alterarServicoBtn && servicoEditar && servicoEditInput && servicoHidden) {
+        alterarServicoBtn.addEventListener('click', function () {
+          servicoEscolhido.hidden = true;
+          servicoEditar.hidden = false;
+          servicoEditInput.focus();
+          try { servicoEditInput.select(); } catch (_) {}
+        });
+        servicoEditInput.addEventListener('input', function () {
+          servicoHidden.value = String(servicoEditInput.value || '').replace(/\s+/g, ' ').trim();
+        });
+        servicoEditInput.addEventListener('change', function () {
+          servicoHidden.value = String(servicoEditInput.value || '').replace(/\s+/g, ' ').trim();
+        });
+      }
+
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         const fd = new FormData(form);
@@ -11356,7 +11386,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.12';
+  const APP_VERSION = '11.16.13';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
