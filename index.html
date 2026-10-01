@@ -2060,6 +2060,83 @@ body:has(#cadastro-cliente-form) #app-shell > .qf-support-fab { display:none; }
 .qf-home-premium-quote__icon svg{width:19px;height:19px}.qf-home-premium-quote__copy .h3 strong{color:var(--success-600)}
 .qf-home-premium-quote__copy .text--sm{margin-top:5px;color:var(--text-secondary);line-height:1.5}.qf-home-premium-quote__copy .text--sm strong{color:var(--navy-900)}
 @media(max-width:430px){.qf-request-intro,.qf-home-premium-quote{grid-template-columns:40px minmax(0,1fr)}.qf-request-intro__badge,.qf-home-premium-quote__badge{position:absolute;right:10px;top:10px}.qf-request-intro>div,.qf-home-premium-quote__copy{padding-right:44px}}
+
+/* V11.16.5 — Pedido de serviço no padrão visual da página principal:
+   cabeçalho navy fixo e cartão de orçamentos premium. */
+.view.qf-client-request{
+  padding:18px 18px 28px;
+}
+.qf-client-request--installed{--qf-request-top:0px}
+.qf-request-header{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 44px;
+  align-items:center;
+  gap:12px;
+  padding:calc(var(--safe-top) + 12px) 18px 12px;
+  background:var(--navy-900);
+  color:#fff;
+  box-shadow:none;
+}
+.qf-request-header.qf-fixed-bar{
+  background:var(--navy-900)!important;
+}
+html.qf-scrolled .qf-request-header.qf-fixed-bar{
+  box-shadow:0 3px 14px rgba(8,20,40,.24);
+}
+.qf-request-header .h2{
+  margin:0;
+  color:#fff;
+  font-size:22px;
+  line-height:1.25;
+  letter-spacing:-.025em;
+}
+.qf-request-header .topbar__back,
+.qf-request-header .qf-request-help{
+  width:44px;
+  height:44px;
+  min-width:44px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:14px;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  box-shadow:none;
+}
+.qf-request-header .topbar__back svg{width:22px;height:22px}
+.qf-request-header .qf-request-help svg{width:20px;height:20px;color:var(--orange-500)}
+.qf-request-intro{
+  position:relative;
+  grid-template-columns:40px minmax(0,1fr) auto;
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(135deg,var(--navy-950) 0%,var(--navy-900) 100%);
+  box-shadow:0 12px 28px -18px rgba(8,20,40,.62);
+  overflow:hidden;
+}
+.qf-request-intro__icon{
+  background:rgba(255,255,255,.08);
+  color:var(--orange-500);
+  border:1px solid rgba(255,255,255,.12);
+}
+.qf-request-intro h2{color:#fff;font-size:18px}
+.qf-request-intro__accent{color:var(--orange-500)}
+.qf-request-intro p{color:rgba(255,255,255,.82)}
+.qf-request-intro p strong{color:#fff}
+.qf-request-intro__badge{
+  background:var(--orange-500);
+  color:#fff;
+  box-shadow:0 8px 20px -10px rgba(245,124,32,.8);
+}
+@media(max-width:430px){
+  .qf-request-intro{grid-template-columns:40px minmax(0,1fr)}
+  .qf-request-intro__badge{position:absolute;right:10px;top:10px}
+  .qf-request-intro>div{padding-right:52px}
+}
+@media(max-width:359px){
+  .view.qf-client-request{padding-left:16px;padding-right:16px}
+  .qf-request-header{padding-left:16px;padding-right:16px;gap:10px}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -5992,14 +6069,14 @@ alt=""></noscript>
 
     return (
       '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
-        '<header class="qf-request-header">' +
+        '<header class="topbar topbar--navy qf-request-header">' +
           '<button class="topbar__back" type="button" data-nav="/" aria-label="Voltar">' + icon('chevronLeft') + '</button>' +
           '<h1 class="h2">Pedir serviço</h1>' +
           '<button class="qf-request-help" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
         '</header>' +
         '<section class="qf-request-intro" aria-label="Pedido grátis">' +
           '<span class="qf-request-intro__icon" aria-hidden="true">' + icon('clipboard') + '</span>' +
-          '<div><h2>Receba <strong class="qf-request-intro__accent">orçamento grátis</strong></h2><p>Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
+          '<div><h2>Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2><p>Descreva o que precisa e compare propostas de profissionais da sua região. <strong>Você escolhe quem contratar.</strong></p></div><span class="qf-request-intro__badge">GRÁTIS</span>' +
         '</section>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
@@ -11172,7 +11249,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.4';
+  const APP_VERSION = '11.16.5';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13635,7 +13712,7 @@ alt=""></noscript>
   const barRO = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(function () { scheduleBarSync(); }) : null;
   function pickTopBar(shell) {
     const desk = window.innerWidth >= 768;
-    const list = [shell.querySelector('.qf-landing-topbar'), desk ? shell.querySelector('.tabbar') : shell.querySelector('.topbar')];
+    const list = [shell.querySelector('.qf-request-header'), shell.querySelector('.qf-landing-topbar'), desk ? shell.querySelector('.tabbar') : shell.querySelector('.topbar')];
     for (let i = 0; i < list.length; i++) {
       const el = list[i];
       if (el && getComputedStyle(el).display !== 'none') return el;
