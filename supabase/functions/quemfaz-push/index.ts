@@ -734,11 +734,17 @@ Deno.serve(async (req) => {
       // V11.6: chamado aberto há 10 min sem ninguém aceitar.
       const { data: call } = await admin
         .from("qf_chamados")
-        .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status")
+        .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,data_preferida")
         .eq("id", callId)
         .maybeSingle();
       if (!call || !(await callCanReceiveMore(call.id, call.status))) {
         return json({ ok: true, stopped: true });
+      }
+      if (call.data_preferida) {
+        const scheduledAt = Date.parse(String(call.data_preferida));
+        if (Number.isFinite(scheduledAt) && scheduledAt > Date.now() + 24 * 60 * 60 * 1000) {
+          return json({ ok: true, stopped: true, scheduled: true });
+        }
       }
       // Última ampliação automática de segurança: até 200 km.
       const retry = await sendNewCallStage(call.id, 200);
