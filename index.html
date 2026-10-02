@@ -11575,7 +11575,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.32';
+  const APP_VERSION = '11.16.33';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -11640,6 +11640,12 @@ alt=""></noscript>
     payload = payload || {};
     const strong = !!payload.strong;
     const rawUrl=String(payload.url||(payload.data&&payload.data.url)||'');
+    // V11.16.33: mensagem da conversa que já está aberta na tela — sem aviso por cima, o próprio chat mostra e toca.
+    const chatHash=(rawUrl.split('#')[1]||'').split('?')[0];
+    if(/^\/(cliente|profissional)\/chat\//.test(chatHash)&&!document.hidden&&String(location.hash||'').replace(/^#/,'').split('?')[0]===chatHash){
+      try{global.dispatchEvent(new CustomEvent('qf-chat-refresh'));}catch(_){}
+      return;
+    }
     const callMatch=rawUrl.match(/\/profissional\/chamada\/([^?#/]+)/);
     let overlayHandled=false;
     if(strong&&callMatch&&global.QFCallAlert)overlayHandled=global.QFCallAlert.offer(decodeURIComponent(callMatch[1]));
@@ -12986,6 +12992,13 @@ alt=""></noscript>
       if (!out.ok) throw new Error(out.reason || 'Não foi possível enviar a mensagem.');
       return out;
     };
+    // V11.16.33: avisa o servidor que saiu da conversa (a próxima mensagem volta a gerar push).
+    Cloud.chatLeave = function (callId, profId) {
+      try {
+        const q = Cloud.client.rpc('qf_chat_sair', { p_chamado_id: callId, p_profissional_id: profId || null });
+        if (q && q.then) q.then(function () {}, function () {});
+      } catch (_) {}
+    };
     Cloud.confirmProfessional = async function (callId, profId, address) {
       const r = await Cloud.client.rpc('qf_confirmar_profissional', {
         p_chamado_id: callId,
@@ -13111,7 +13124,7 @@ alt=""></noscript>
     if (!req || req.profissionalId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     const cliente = DB.clienteById(req.clienteId);
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="profissional" data-call-id="' + esc(req.id) + '">' +
-      '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. As respostas chegam por notificação mesmo se você estiver offline. Fique online para também receber novos chamados.</span></div></div>' +
+      '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. Com esta tela aberta a conversa é ao vivo: a resposta aparece aqui na hora, com um toque. Se você sair, o QuemFaz avisa uma vez quando chegar mensagem.</span></div></div>' +
       '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">Este é o próximo passo: converse com o cliente pelo chat.</div></div></div>' +
       scheduleSummary(req) +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
@@ -13127,7 +13140,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req || req.clienteId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="cliente" data-call-id="' + esc(req.id) + '" data-prof-id="' + esc(params.profId) + '">' +
-      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
+      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Conversa ao vivo: a resposta aparece aqui na hora, com um toque. Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
         '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
@@ -13341,6 +13354,20 @@ alt=""></noscript>
     }).join('');
   }
 
+  // V11.16.33: chat ao vivo — só redesenha quando muda e toca quando chega mensagem do outro.
+  function chatRowsKey(rows) { return rows.length + ':' + (rows.length ? rows[rows.length - 1].id : ''); }
+  function chatIncoming(seen, rows, userId) {
+    let n = 0;
+    rows.forEach(function (r) {
+      const id = String(r.id);
+      if (seen.has(id)) return;
+      seen.add(id);
+      if (String(r.remetente_id) !== String(userId)) n++;
+    });
+    return n;
+  }
+  global.QFChatLive = { rowsKey: chatRowsKey, incoming: chatIncoming };
+
   function bindChat(content, params, user, role) {
     const root = content.querySelector('[data-qf-chat-root]');
     if (!root || !Cloud || !Cloud.chatConversation) return;
@@ -13349,7 +13376,28 @@ alt=""></noscript>
     const input = root.querySelector('[data-qf-chat-input]');
     const profId = role==='profissional' ? user.id : params.profId;
     const req = DB.requestById(params.id);
-    let loading = false;
+    let loading = false, again = false, ready = false, titled = false, lastKey = null, closed = false;
+    const seen = new Set();
+
+    // A caixa de digitar fica presa embaixo: a última mensagem tem que parar logo acima dela.
+    function nearEnd() {
+      try {
+        const last = list.lastElementChild;
+        return !last || last.getBoundingClientRect().bottom <= form.getBoundingClientRect().top + 140;
+      } catch (_) { return true; }
+    }
+    function scrollToEnd() {
+      try {
+        const last = list.lastElementChild;
+        if (!last) return;
+        last.style.scrollMarginBottom = (form.offsetHeight + 12) + 'px';
+        last.scrollIntoView({ block:'end' });
+      } catch (_) {}
+    }
+    function chime() {
+      try { PU.playNotificationSound(false); } catch (_) {}
+      try { if (navigator.vibrate) navigator.vibrate(70); } catch (_) {}
+    }
 
     if (role === 'profissional') {
       let justUnlocked = false;
@@ -13369,27 +13417,75 @@ alt=""></noscript>
     }
 
     async function load(first) {
-      if (loading || !document.body.contains(root)) return;
+      if (closed || !document.body.contains(root)) return;
+      if (loading) { again = true; return; }
       loading = true;
       try {
         const rows = await Cloud.chatConversation(params.id, role==='profissional' ? null : profId);
-        list.innerHTML = renderChatRows(rows,user.id);
-        list.scrollTop = list.scrollHeight;
+        if (closed) return;
+        const key = chatRowsKey(rows);
+        if (key !== lastKey) {
+          const stick = !ready || nearEnd();
+          const incoming = chatIncoming(seen, rows, user.id);
+          list.innerHTML = renderChatRows(rows,user.id);
+          lastKey = key;
+          if (stick || !incoming) scrollToEnd();
+          if (ready && incoming && !document.hidden) chime();
+        }
+        ready = true;
         if (first && role==='profissional' && !rows.length && input && !input.value) {
           const cli = req ? DB.clienteById(req.clienteId) : null;
           input.value = 'Olá' + (cli && cli.nome ? ', ' + firstName(cli.nome) : '') + '! Sou ' + (user.nome || 'profissional') + ', profissional pelo QuemFaz. Vi seu pedido e estou disponível. Podemos conversar por aqui para combinar valor, horário e os detalhes do serviço.';
         }
-        if (role==='cliente') {
+        if (role==='cliente' && !titled) {
           try {
             const rowsP = await Cloud.clientConversations(params.id);
             const p = rowsP.find(function (x) { return String(x.profissional_id)===String(profId); });
             const title = root.querySelector('[data-qf-chat-title]');
-            if (title && p) title.textContent = 'Conversa com ' + (p.profissional_nome || 'profissional');
+            if (title && p) { title.textContent = 'Conversa com ' + (p.profissional_nome || 'profissional'); titled = true; }
           } catch (_) {}
         }
       } catch (err) {
-        list.innerHTML = '<div class="text--sm text--secondary" style="text-align:center;padding:20px;">Não foi possível carregar a conversa.</div>';
-      } finally { loading = false; }
+        // Falha passageira não apaga a conversa que já está na tela.
+        if (!ready) list.innerHTML = '<div class="text--sm text--secondary" style="text-align:center;padding:20px;">Não foi possível carregar a conversa.</div>';
+      } finally {
+        loading = false;
+        if (again) { again = false; load(false); }
+      }
+    }
+
+    // Canal ao vivo: quem envia dá um sinal e o outro lado atualiza na hora (a conferência a cada 2 s fica de reserva).
+    let channel = null;
+    try {
+      if (Cloud.client && Cloud.client.channel) {
+        channel = Cloud.client.channel('qf-chat-' + params.id + '-' + profId, { config: { broadcast: { self: false } } });
+        channel.on('broadcast', { event: 'msg' }, function () { load(false); }).subscribe();
+      }
+    } catch (_) { channel = null; }
+    function signal() {
+      try {
+        if (!channel) return;
+        const q = channel.send({ type:'broadcast', event:'msg', payload:{} });
+        if (q && q.catch) q.catch(function () {});
+      } catch (_) {}
+    }
+    function leave() {
+      if (Cloud.chatLeave) Cloud.chatLeave(params.id, profId);
+    }
+    function onVisibility() {
+      if (document.hidden) leave(); else load(false);
+    }
+    function onRefresh() { load(false); }
+    document.addEventListener('visibilitychange', onVisibility);
+    global.addEventListener('qf-chat-refresh', onRefresh);
+    function close() {
+      if (closed) return;
+      closed = true;
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+      global.removeEventListener('qf-chat-refresh', onRefresh);
+      try { if (channel && Cloud.client.removeChannel) Cloud.client.removeChannel(channel); } catch (_) {}
+      leave();
     }
 
     form.addEventListener('submit', async function (e) {
@@ -13401,16 +13497,18 @@ alt=""></noscript>
       try {
         await Cloud.sendChatMessage(params.id, role==='profissional' ? null : profId, msg);
         input.value = '';
+        signal();
         await load(false);
+        scrollToEnd();
       } catch (err) {
         PU.toast('Não foi possível enviar. ' + ((err && err.message) || ''), 'danger');
       } finally { btn.disabled = false; }
     });
-    load(true);
     const timer = setInterval(function () {
-      if (!document.body.contains(root)) { clearInterval(timer); return; }
-      load(false);
-    },5000);
+      if (!document.body.contains(root)) { close(); return; }
+      if (!document.hidden) load(false);
+    },2000);
+    load(true);
   }
 
   async function fillProfCompetition(content, params) {
