@@ -2872,12 +2872,14 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 /* QuemFaz V11.17.0 — admin: aviso geral na tela do app (mensagem pronta + mensagem digitada na hora) */
 (function (global) {
   const PU = global.PU, Screens = global.Screens;
-  const PRONTO_TITULO = 'Uma palavra para você, profissional';
-  const PRONTO_MSG = 'Você acreditou no QuemFaz logo no começo, e isso a gente não esquece.\n\n' +
-    'O aplicativo é novo. Acabou de nascer e ainda está formando a sua base de clientes. Por isso os chamados ainda são poucos. Não é nada com o seu cadastro: é o começo de tudo.\n\n' +
-    'A boa notícia é que a campanha para trazer clientes está começando agora. A cada dia mais gente vai conhecer o QuemFaz e pedir serviço na sua região.\n\n' +
-    'Pedimos a sua paciência e a sua colaboração: deixe o app instalado, mantenha as notificações ligadas e responda rápido quando o chamado tocar. Quem está aqui desde o início vai estar na frente quando os pedidos chegarem.\n\n' +
-    'Obrigado por construir o QuemFaz com a gente.';
+  const PRONTO_TITULO = 'De coração: obrigado por estar aqui';
+  const PRONTO_MSG = 'A gente sabe o que é depender do próprio trabalho: acordar cedo, sair de casa e torcer para o telefone tocar. Foi pensando em você que o QuemFaz nasceu.\n\n' +
+    'O aplicativo é novo. Está dando os primeiros passos, e é por isso que os chamados ainda são poucos. Não é nada com você nem com o seu cadastro. Todo começo é assim, devagar.\n\n' +
+    'E você chegou antes de todo mundo. Acreditou quando ainda não tinha nada para mostrar. Isso tem um valor enorme para nós, e a gente não vai esquecer.\n\n' +
+    'Agora começa a parte que faltava: a campanha para trazer clientes está entrando no ar. A cada dia, mais famílias vão conhecer o QuemFaz e procurar alguém de confiança perto de casa. Esse alguém pode ser você.\n\n' +
+    'Só pedimos uma coisa: não desista da gente agora. Deixe o app instalado, as notificações ligadas, e responda rápido quando o chamado tocar.\n\n' +
+    'Estamos trabalhando todos os dias para o seu telefone tocar mais. Vamos crescer juntos.\n\n' +
+    'Obrigado, de coração.\nEquipe QuemFaz';
   const PUBLICOS = { profissionais: 'Só profissionais', clientes: 'Só clientes', todos: 'Todo mundo (profissionais, clientes e visitantes)' };
   let lista = null;
   function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
