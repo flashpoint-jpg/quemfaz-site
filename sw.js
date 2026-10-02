@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.16.32';
+const SW_VERSION = '11.16.33';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -69,9 +69,12 @@ self.addEventListener('push', event => {
     }
   };
   event.waitUntil((async () => {
-    await self.registration.showNotification(data.title || 'QuemFaz', options);
-    // Avisa janelas abertas para atualizarem a tela e tocarem o som do app.
     const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // V11.16.33: mensagem da conversa que já está aberta e visível não vira notificação — o chat mostra na hora.
+    const chatHash = String(data.tag || '').indexOf('qf-chat-') === 0 ? (String(data.url || '').split('#')[1] || '').split('?')[0] : '';
+    const inChat = !!chatHash && list.some(c => c.visibilityState === 'visible' && (String(c.url || '').split('#')[1] || '').split('?')[0] === chatHash);
+    if (!inChat) await self.registration.showNotification(data.title || 'QuemFaz', options);
+    // Avisa janelas abertas para atualizarem a tela e tocarem o som do app.
     list.forEach(c => c.postMessage({ type: 'QF_PUSH', payload: data }));
   })());
 });
