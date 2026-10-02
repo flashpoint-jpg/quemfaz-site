@@ -2176,8 +2176,9 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-client-request .ad-section__head > .text--muted{color:var(--text-secondary)}
 .qf-client-request [data-servico-escolhido] .text--secondary{color:#3d4759;font-weight:600}
 @media (min-width:768px){
-  .qf-request-header.qf-fixed-bar{max-width:none!important;padding-left:max(18px,calc((100% - 600px) / 2))!important;padding-right:max(18px,calc((100% - 600px) / 2))!important}
-  #app-shell .view.qf-client-request{max-width:600px!important}
+  .qf-request-header.qf-fixed-bar{max-width:none!important;padding-left:max(18px,calc((100% - 560px) / 2))!important;padding-right:max(18px,calc((100% - 560px) / 2))!important}
+  /* V11.16.25 — todas as telas de entrada (login, cadastro de cliente, cadastro de profissional, pedido) com a mesma largura */
+  #app-shell[data-route^="auth"] .view,#app-shell .view.qf-client-request{max-width:560px!important;width:100%!important;margin-left:auto!important;margin-right:auto!important}
 }
 
 /* ================= V11.16.24 — anúncio pago no topo da tela inicial do cliente e em tamanho de banner no computador ================= */
@@ -2295,7 +2296,7 @@ alt=""></noscript>
 (function (global) {
   function svg(inner, extra) {
     return (
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
       'stroke-linecap="round" stroke-linejoin="round" ' + (extra || '') + '>' + inner + '</svg>'
     );
   }
@@ -11515,7 +11516,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.24';
+  const APP_VERSION = '11.16.25';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
