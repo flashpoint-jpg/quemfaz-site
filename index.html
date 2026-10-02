@@ -2179,6 +2179,15 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   .qf-request-header.qf-fixed-bar{max-width:none!important;padding-left:max(18px,calc((100% - 600px) / 2))!important;padding-right:max(18px,calc((100% - 600px) / 2))!important}
   #app-shell .view.qf-client-request{max-width:600px!important}
 }
+
+/* ================= V11.16.24 — anúncio pago no topo da tela inicial do cliente e em tamanho de banner no computador ================= */
+.qf-home-ads-top .ad-section{margin-top:14px}
+.qf-home-ads-top:empty{display:none}
+@media (min-width:768px){
+  .ad-carousel{justify-content:safe center}
+  .qf-home-ads-top .ad-carousel{justify-content:flex-start}
+  .ad-card--premium-art{flex:0 0 min(100%,460px)!important;max-width:460px}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -7243,9 +7252,10 @@ alt=""></noscript>
     const cats=DB.categories();
     return '<div class="view">'+
       '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
+      '<div class="qf-home-ads-top">'+anunciosCarousel(user)+'</div>'+
       clienteAgoraCard(principal)+
       (outros.length?'<div class="section"><div class="section-head"><h2 class="h3">Outros pedidos ativos</h2></div><div class="stack--sm">'+outros.map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, anunciosCarousel(user), user)+'</div>'+
+      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, '', user)+'</div>'+
       '</div>';
   };
 
@@ -11505,7 +11515,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.23';
+  const APP_VERSION = '11.16.24';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
