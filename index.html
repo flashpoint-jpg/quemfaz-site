@@ -2189,6 +2189,15 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   .qf-home-ads-top .ad-carousel{justify-content:flex-start}
   .ad-card--premium-art{flex:0 0 min(100%,460px)!important;max-width:460px}
 }
+
+/* ================= V11.16.26 — início do profissional no computador: sem botão de instalar repetido e cartões na largura inteira ================= */
+@media (min-width:768px){
+  #app-shell:has(.tabbar .qf-top-dl) > .topbar .qf-top-slot{display:none!important}
+  #app-shell[data-route="profissional-home"] .view > .card:not(.qf-prof-status),
+  #app-shell[data-route="profissional-home"] .view > .section{grid-column:1 / -1}
+  #app-shell[data-route="profissional-home"] .qf-wallet-summary{display:block;width:100%}
+  #app-shell[data-route="profissional-home"] .qf-prof-rating{justify-content:center;font-size:17px}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -11516,7 +11525,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.25';
+  const APP_VERSION = '11.16.26';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
