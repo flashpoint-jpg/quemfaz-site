@@ -2246,6 +2246,14 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   #app-shell[data-route$="perfil"] .view > :empty{display:none}
   #app-shell[data-route="cliente-perfil"] .view{column-count:1;max-width:820px}
 }
+/* ================= V11.17.0 — aviso geral na tela (comunicado do QuemFaz) ================= */
+.qf-aviso-overlay{position:fixed;inset:0;z-index:200;background:rgba(8,20,40,.72);display:flex;align-items:center;justify-content:center;padding:calc(var(--safe-top) + 16px) 16px calc(var(--safe-bottom) + 16px)}
+.qf-aviso{width:100%;max-width:440px;max-height:100%;display:flex;flex-direction:column;background:var(--bg-surface);border-radius:22px;overflow:hidden;box-shadow:0 24px 60px rgba(8,20,40,.45)}
+.qf-aviso__head{background:var(--navy-900);color:var(--text-on-navy);padding:20px 20px 18px;border-bottom:4px solid var(--orange-500)}
+.qf-aviso__tag{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--orange-400)}
+.qf-aviso__title{margin:6px 0 0;font-size:21px;font-weight:800;line-height:1.25;color:#fff}
+.qf-aviso__body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;font-size:16px;line-height:1.55;color:var(--text-primary);white-space:pre-line;overflow-wrap:anywhere}
+.qf-aviso__foot{padding:12px 20px 20px;border-top:1px solid var(--border-subtle)}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -11575,7 +11583,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.33';
+  const APP_VERSION = '11.17.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14458,6 +14466,59 @@ alt=""></noscript>
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshNow(); });
 
   global.PROAKI_APP = { navigate, currentSession, currentUser, route, TABS, refreshNow, userIsEditing };
+})(window);
+
+/* QuemFaz V11.17.0 — aviso geral na tela: comunicado que o admin publica e aparece uma vez para cada pessoa. */
+(function (global) {
+  const SEEN_KEY = 'qf_aviso_geral_visto';
+  let lastCheck = 0, busy = false, retry = null;
+  function client() { return global.QFCloud && global.QFCloud.enabled ? global.QFCloud.client : null; }
+  function seen() { try { return localStorage.getItem(SEEN_KEY) || ''; } catch (_) { return ''; } }
+  function markSeen(id) { try { localStorage.setItem(SEEN_KEY, String(id)); } catch (_) {} }
+  function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  // Não cobre chamada tocando, conversa aberta nem formulário que a pessoa está preenchendo.
+  function busyScreen() {
+    const path = String(location.hash || '').replace(/^#/, '').split('?')[0];
+    if (/\/(chamada|chat)\//.test(path)) return true;
+    if (document.querySelector('.qf-call-overlay')) return true;
+    try { if (global.PROAKI_APP && global.PROAKI_APP.userIsEditing()) return true; } catch (_) {}
+    return false;
+  }
+  function close() { const el = document.getElementById('qf-aviso-overlay'); if (el) el.remove(); }
+  function show(aviso) {
+    if (!aviso || !aviso.id || document.getElementById('qf-aviso-overlay')) return;
+    const el = document.createElement('div');
+    el.id = 'qf-aviso-overlay';
+    el.className = 'qf-aviso-overlay';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.setAttribute('aria-labelledby', 'qf-aviso-title');
+    el.innerHTML = '<div class="qf-aviso"><div class="qf-aviso__head"><div class="qf-aviso__tag">Aviso do QuemFaz</div><h2 class="qf-aviso__title" id="qf-aviso-title">' + esc(aviso.titulo) + '</h2></div>' +
+      '<div class="qf-aviso__body">' + esc(aviso.mensagem) + '</div>' +
+      '<div class="qf-aviso__foot"><button type="button" class="btn btn--primary" data-aviso-ok>Entendi</button></div></div>';
+    el.querySelector('[data-aviso-ok]').addEventListener('click', function () { markSeen(aviso.id); close(); });
+    document.body.appendChild(el);
+  }
+  async function check(force) {
+    const c = client();
+    if (!c || busy) return;
+    if (!force && Date.now() - lastCheck < 120000) return;
+    busy = true; lastCheck = Date.now();
+    try {
+      const r = await c.rpc('qf_aviso_geral_atual');
+      const aviso = r && !r.error && r.data ? r.data.aviso : null;
+      if (!aviso || !aviso.id) { close(); return; }
+      if (String(aviso.id) === seen()) return;
+      if (busyScreen()) { clearTimeout(retry); retry = setTimeout(function () { check(true); }, 20000); return; }
+      show(aviso);
+    } catch (_) {}
+    finally { busy = false; }
+  }
+  global.addEventListener('DOMContentLoaded', function () { setTimeout(function () { check(true); }, 2500); });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(false); });
+  global.addEventListener('hashchange', function () { setTimeout(function () { check(false); }, 800); });
+  setInterval(function () { if (!document.hidden) check(false); }, 300000);
+  global.QFAvisoGeral = { check: check, show: show, close: close };
 })(window);
 
 </script>

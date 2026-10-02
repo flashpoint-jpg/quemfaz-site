@@ -1,0 +1,17 @@
+QuemFaz V11.17.0 — aviso geral na tela
+
+O QUE MUDOU
+- Painel admin (início): bloco "Aviso geral na tela". Título + mensagem + quem recebe
+  (só profissionais, só clientes ou todo mundo). Botão "Usar mensagem pronta" preenche
+  o comunicado de lançamento. Publicar pede dois toques. "Tirar do ar" encerra o aviso.
+- App: o aviso abre na tela uma vez para cada pessoa, com o botão "Entendi".
+  Não cobre chamada tocando, conversa aberta nem formulário em preenchimento.
+- Só um aviso fica no ar por vez; publicar outro encerra o anterior.
+
+SERVIDOR
+- supabase/2026-10-02-aviso-geral.sql (tabela qf_avisos_gerais + 4 funções). Já aplicado.
+
+COMO TESTAR
+1. Painel admin > início > "Aviso geral na tela" > "Usar mensagem pronta" > Publicar (2 toques).
+2. Abra o app como profissional: o aviso aparece. Toque em "Entendi" e reabra: não volta.
+3. No painel, "Tirar do ar": quem ainda não viu deixa de receber.

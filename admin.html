@@ -1134,6 +1134,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-cascata-stats .h2{line-height:1.1}
 .qf-cascata-lista{margin-top:12px}
 .qf-cascata-lista .qf-semresp-pro{align-items:flex-start}
+/* V11.17.0 — aviso geral na tela do app */
+.qf-aviso-admin{margin-bottom:14px;scroll-margin-top:80px}
+.qf-aviso-admin form{display:flex;flex-direction:column;gap:10px}
+.qf-aviso-admin label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
+.qf-aviso-admin textarea{min-height:190px;resize:vertical;line-height:1.5}
+.qf-aviso-noar{border:2px solid #128c4a;background:#f1fff6}
+.qf-aviso-noar__msg{white-space:pre-line;overflow-wrap:anywhere;margin:6px 0 10px}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -2859,6 +2866,98 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (go) setTimeout(function () { const el = document.getElementById('sem-resposta'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
   };
   global.QFAdminCascata = { html: html, refresh: refresh, _set: function (a, b, c) { semResp = a; cfg = b; resumo = c; paint(); } };
+})(window);
+
+
+/* QuemFaz V11.17.0 — admin: aviso geral na tela do app (mensagem pronta + mensagem digitada na hora) */
+(function (global) {
+  const PU = global.PU, Screens = global.Screens;
+  const PRONTO_TITULO = 'Uma palavra para você, profissional';
+  const PRONTO_MSG = 'Você acreditou no QuemFaz logo no começo, e isso a gente não esquece.\n\n' +
+    'O aplicativo é novo. Acabou de nascer e ainda está formando a sua base de clientes. Por isso os chamados ainda são poucos. Não é nada com o seu cadastro: é o começo de tudo.\n\n' +
+    'A boa notícia é que a campanha para trazer clientes está começando agora. A cada dia mais gente vai conhecer o QuemFaz e pedir serviço na sua região.\n\n' +
+    'Pedimos a sua paciência e a sua colaboração: deixe o app instalado, mantenha as notificações ligadas e responda rápido quando o chamado tocar. Quem está aqui desde o início vai estar na frente quando os pedidos chegarem.\n\n' +
+    'Obrigado por construir o QuemFaz com a gente.';
+  const PUBLICOS = { profissionais: 'Só profissionais', clientes: 'Só clientes', todos: 'Todo mundo (profissionais, clientes e visitantes)' };
+  let lista = null;
+  function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
+  function esc(v) { return PU.escapeHtml(v == null ? '' : String(v)); }
+  async function rpc(name, args) {
+    const r = await client().rpc(name, args || {});
+    if (r.error) throw r.error;
+    const d = r.data || {};
+    if (d.ok === false) throw new Error(d.reason === 'sem_permissao' ? 'Sem permissão de administrador.' : (d.reason || 'Não foi possível concluir.'));
+    return d;
+  }
+  function noArHtml() {
+    if (!lista) return '<div class="text--sm text--secondary">Carregando…</div>';
+    if (lista.error) return '<div class="text--sm" style="color:var(--danger-600);">' + esc(lista.error) + '</div>';
+    const a = lista.itens.filter(function (x) { return x.ativo; })[0];
+    if (!a) return '<div class="card card--tight text--sm text--secondary">Nenhum aviso no ar agora.</div>';
+    return '<div class="card qf-aviso-noar"><div class="row-between" style="gap:8px;align-items:flex-start;"><div class="text--strong">' + esc(a.titulo) + '</div><span class="badge badge--success">no ar</span></div>' +
+      '<div class="text--sm qf-aviso-noar__msg">' + esc(a.mensagem) + '</div>' +
+      '<div class="text--sm text--muted" style="margin-bottom:10px;">' + esc(PUBLICOS[a.publico] || a.publico) + ' · publicado ' + esc(PU.formatDateTime(a.criado_em)) + '</div>' +
+      '<button type="button" class="btn btn--outline btn--sm btn--block-auto" data-aviso-encerrar="' + esc(a.id) + '">Tirar do ar</button></div>';
+  }
+  function html() {
+    if (!client()) return '';
+    return '<section class="section qf-aviso-admin" id="aviso-geral"><div class="section-head"><h2 class="h3">Aviso geral na tela</h2><span class="text--sm text--muted">aparece ao abrir o app</span></div>' +
+      '<div data-aviso-noar>' + noArHtml() + '</div>' +
+      '<div class="card" style="margin-top:10px;"><p class="text--sm text--secondary" style="margin:0 0 10px;">Escreva o aviso (ou use a mensagem pronta) e publique. Ele abre na tela de cada pessoa uma vez, com o botão "Entendi". Publicar um aviso novo tira o anterior do ar.</p>' +
+      '<form data-aviso-form>' +
+      '<label>Título<input class="input" type="text" name="titulo" maxlength="80" placeholder="Ex.: Instabilidade no aplicativo" required></label>' +
+      '<label>Mensagem<textarea class="input" name="mensagem" maxlength="1500" placeholder="Escreva aqui o que você quer avisar." required></textarea></label>' +
+      '<label>Quem recebe<select class="input" name="publico">' + Object.keys(PUBLICOS).map(function (k) { return '<option value="' + k + '">' + esc(PUBLICOS[k]) + '</option>'; }).join('') + '</select></label>' +
+      '<div class="btn-row"><button class="btn btn--outline btn--sm" type="button" data-aviso-pronto>Usar mensagem pronta</button><button class="btn btn--primary btn--sm" type="submit">Publicar aviso</button></div>' +
+      '</form></div></section>';
+  }
+  function paint() { const el = document.querySelector('#aviso-geral [data-aviso-noar]'); if (el) el.innerHTML = noArHtml(); }
+  async function refresh() {
+    if (!client()) return;
+    try { const d = await rpc('qf_admin_avisos_gerais'); lista = { itens: Array.isArray(d.itens) ? d.itens : [] }; }
+    catch (err) { lista = { itens: [], error: (err && err.message) || 'Não foi possível carregar.' }; }
+    paint();
+  }
+  document.addEventListener('click', async function (e) {
+    const pr = e.target.closest && e.target.closest('[data-aviso-pronto]');
+    if (pr) {
+      const f = pr.closest('form');
+      f.titulo.value = PRONTO_TITULO; f.mensagem.value = PRONTO_MSG; f.publico.value = 'profissionais';
+      return;
+    }
+    const en = e.target.closest && e.target.closest('[data-aviso-encerrar]');
+    if (!en) return;
+    en.disabled = true;
+    try { await rpc('qf_admin_encerrar_aviso_geral', { p_id: en.getAttribute('data-aviso-encerrar') }); PU.toast('Aviso tirado do ar.', 'success'); await refresh(); }
+    catch (err) { PU.toast((err && err.message) || 'Não foi possível tirar do ar.', 'danger'); en.disabled = false; }
+  });
+  document.addEventListener('submit', async function (e) {
+    const f = e.target.closest && e.target.closest('[data-aviso-form]');
+    if (!f) return;
+    e.preventDefault();
+    const btn = f.querySelector('button[type="submit"]');
+    // Dois toques para publicar: o aviso vai para a tela de todo mundo.
+    if (btn.dataset.confirm !== '1') {
+      btn.dataset.confirm = '1'; btn.textContent = 'Toque de novo para publicar';
+      setTimeout(function () { if (btn.isConnected) { btn.dataset.confirm = ''; btn.textContent = 'Publicar aviso'; } }, 5000);
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await rpc('qf_admin_publicar_aviso_geral', { p_titulo: f.titulo.value, p_mensagem: f.mensagem.value, p_publico: f.publico.value });
+      f.reset();
+      PU.toast('Aviso publicado. Ele aparece quando cada pessoa abrir o app.', 'success');
+      await refresh();
+    } catch (err) {
+      PU.toast((err && err.message) || 'Não foi possível publicar.', 'danger');
+    } finally { btn.disabled = false; btn.dataset.confirm = ''; btn.textContent = 'Publicar aviso'; }
+  });
+  const prevAfter = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (prevAfter) prevAfter(pattern, content, params, user);
+    if (pattern === '/admin/dashboard') refresh();
+  };
+  global.QFAdminAviso = { html: html, refresh: refresh, _set: function (itens) { lista = { itens: itens }; paint(); } };
 })(window);
 
 
@@ -4883,6 +4982,7 @@ Screens.adminDashboardRender = function () {
           '<div class="row-between" style="gap:10px;align-items:flex-start;"><div><div class="h3">Profissionais sem notificação</div><div class="text--sm text--secondary">Abra a lista de quem está sem push e chame no WhatsApp com a mensagem pronta.</div></div><span class="badge badge--warning">' + (cloudOn() ? semPushListaAtual().length : 0) + ' sem push</span></div>' +
           '<button class="btn btn--primary" type="button" data-nav="/admin/sem-push">' + icon('whatsapp') + ' Chamar no WhatsApp</button>' +
         '</div>' +
+        (global.QFAdminAviso ? global.QFAdminAviso.html() : '') +
         (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
