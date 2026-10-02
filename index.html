@@ -2168,6 +2168,9 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 [data-cf-pane][hidden]{display:none}
 @media (max-width:767px){#app-shell[data-role="anon"] .qf-support-fab{width:48px;padding:0;justify-content:center}#app-shell[data-role="anon"] .qf-support-fab span{display:none}}
 @media (min-width:900px){#app-shell[data-route="inicio"] .qf-landing-hero{grid-row:1;position:sticky;top:calc(var(--qf-bar-h, 58px) + 18px)}#app-shell[data-route="inicio"] .qf-landing-body{grid-row:1;padding-top:18px}}
+
+/* ================= V11.16.22 — anúncio patrocinado no topo do pedido (antes do formulário) ================= */
+#app-shell[data-route="auth-role-cadastro"] .qf-client-request .qf-client-signup-ads{margin:12px 0 4px;padding-top:0;border-top:0}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -6126,6 +6129,7 @@ alt=""></noscript>
           '<span class="qf-request-intro__icon" aria-hidden="true" style="width:32px;height:32px;border-radius:10px;">' + icon('clipboard') + '</span>' +
           '<div><h2 style="font-size:14px;line-height:1.25;margin:0;">Receba até <strong class="qf-request-intro__accent">5 orçamentos grátis</strong></h2></div><span class="qf-request-intro__badge" style="position:static;align-self:center;">GRÁTIS</span>' +
         '</section>' +
+        cadastroClienteAdsHtml() +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
           servicoField +
@@ -6139,7 +6143,6 @@ alt=""></noscript>
           '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
         '<p class="qf-request-privacy">' + icon('shieldCheck') + '<span>Seu WhatsApp é protegido e só é liberado ao profissional na etapa certa do orçamento.</span></p>' +
-        cadastroClienteAdsHtml() +
       '</div>'
     );
   }
@@ -11494,7 +11497,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.21';
+  const APP_VERSION = '11.16.22';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
