@@ -2196,8 +2196,20 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   #app-shell[data-route="profissional-home"] .view > .card:not(.qf-prof-status),
   #app-shell[data-route="profissional-home"] .view > .section{grid-column:1 / -1}
   #app-shell[data-route="profissional-home"] .qf-wallet-summary{display:block;width:100%}
-  #app-shell[data-route="profissional-home"] .qf-prof-rating{justify-content:center;font-size:17px}
 }
+
+/* ================= V11.16.27 — profissional: cartão "Sua nota" com estilo e "Divulgar" no topo da tela ================= */
+.qf-prof-rating{flex-wrap:nowrap;gap:14px;align-items:center;padding:16px 18px;border-radius:18px;box-shadow:var(--shadow-card)}
+.qf-prof-rating__icon{flex:0 0 46px;width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:#fff1e3;color:var(--orange-500);font-size:24px;line-height:1}
+.qf-prof-rating__body{min-width:0}
+.qf-prof-rating__label{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
+.qf-prof-rating__value{margin-top:2px;font-size:24px;font-weight:800;line-height:1.2;color:var(--navy-900)}
+.qf-prof-rating__value span{font-size:14px;font-weight:600;color:var(--text-secondary)}
+.qf-prof-rating__value--new{font-size:18px}
+.qf-prof-rating__hint{margin-top:3px;font-size:13px;line-height:1.4;color:var(--text-secondary)}
+.qf-prof-divulgar{margin-top:0;margin-bottom:12px}
+.qf-prof-divulgar__card{gap:12px;border:1.5px solid var(--orange-500)!important;background:#fff7ef!important}
+.qf-prof-divulgar__card .text--strong{font-size:16px}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -9269,11 +9281,11 @@ alt=""></noscript>
       pendingGate(user)+
       avisoAtualizacaoCadastral(user)+
       ativ.html+
+      '<div class="section qf-prof-divulgar"><div class="card row-between qf-prof-divulgar__card"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar meu serviço</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">'+(chamadas.length ? (chamadas.length+(chamadas.length===1?' pedido disponível perto de você':' pedidos disponíveis perto de você')) : 'Nenhum pedido agora. Avisaremos você quando chegar um novo.')+'</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos perto de você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
       '<div class="section"><button class="card qf-wallet-summary" type="button" data-nav="/profissional/carteira" style="width:100%;text-align:left;background:var(--navy-100);border:none;"><div class="row-between" style="align-items:center;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Use o saldo para desbloquear conversas com clientes.</div></div>'+icon('chevronRight','list-item__chevron')+'</div></button></div>'+
-      '<div class="section qf-prof-divulgar"><div class="card row-between"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--outline btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '</div>';
   };
 
@@ -11525,7 +11537,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.26';
+  const APP_VERSION = '11.16.27';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12223,7 +12235,13 @@ alt=""></noscript>
     if (!status || content.querySelector('.qf-prof-rating')) return;
     const el = document.createElement('div');
     el.className = 'qf-prof-rating qf-rating';
-    el.innerHTML = '<span class="text--sm text--secondary">Sua nota</span>' + global.QFRating(user && user.avaliacaoMedia, user && user.totalAvaliacoes);
+    const media = Number((user && user.avaliacaoMedia) || 0), total = Number((user && user.totalAvaliacoes) || 0);
+    // V11.16.27: cartão de nota com título, valor em destaque e explicação (antes era uma linha solta numa caixa vazia).
+    el.innerHTML = '<span class="qf-prof-rating__icon" aria-hidden="true">★</span><div class="qf-prof-rating__body"><div class="qf-prof-rating__label">Sua nota</div>' +
+      (media && total
+        ? '<div class="qf-prof-rating__value">' + media.toFixed(1).replace('.', ',') + ' <span>de 5</span></div><div class="qf-prof-rating__hint">' + total + (total === 1 ? ' avaliação de cliente' : ' avaliações de clientes') + '</div>'
+        : '<div class="qf-prof-rating__value qf-prof-rating__value--new">Novo no QuemFaz</div><div class="qf-prof-rating__hint">Sua nota aparece aqui depois da primeira avaliação de um cliente.</div>') +
+      '</div>';
     status.insertAdjacentElement('afterend', el);
   }
 
