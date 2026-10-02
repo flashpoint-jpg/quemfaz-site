@@ -2210,6 +2210,14 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-prof-divulgar{margin-top:0;margin-bottom:12px}
 .qf-prof-divulgar__card{gap:12px;border:1.5px solid var(--orange-500)!important;background:#fff7ef!important}
 .qf-prof-divulgar__card .text--strong{font-size:16px}
+
+/* ================= V11.16.28 — Carteira no computador: duas colunas equilibradas (antes tudo empilhava na direita e a esquerda ficava vazia) ================= */
+@media (min-width:1024px){
+  #app-shell[data-route="profissional-carteira"] .view{display:block!important;column-count:2;column-gap:28px}
+  #app-shell[data-route="profissional-carteira"] .view > *{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 22px!important;grid-column:auto;grid-row:auto}
+  #app-shell[data-route="profissional-carteira"] .view > :first-child{column-span:all}
+  #app-shell[data-route="profissional-carteira"] .view > :empty{display:none}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -11537,7 +11545,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.27';
+  const APP_VERSION = '11.16.28';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
