@@ -2171,6 +2171,14 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 
 /* ================= V11.16.22 — anúncio patrocinado no topo do pedido (antes do formulário) ================= */
 #app-shell[data-route="auth-role-cadastro"] .qf-client-request .qf-client-signup-ads{margin:12px 0 4px;padding-top:0;border-top:0}
+
+/* ================= V11.16.23 — pedido no computador: cabeçalho de ponta a ponta, formulário mais largo, textos legíveis ================= */
+.qf-client-request .ad-section__head > .text--muted{color:var(--text-secondary)}
+.qf-client-request [data-servico-escolhido] .text--secondary{color:#3d4759;font-weight:600}
+@media (min-width:768px){
+  .qf-request-header.qf-fixed-bar{max-width:none!important;padding-left:max(18px,calc((100% - 600px) / 2))!important;padding-right:max(18px,calc((100% - 600px) / 2))!important}
+  #app-shell .view.qf-client-request{max-width:600px!important}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -11497,7 +11505,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.22';
+  const APP_VERSION = '11.16.23';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
