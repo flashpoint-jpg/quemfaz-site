@@ -3004,6 +3004,114 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 })(window);
 
 
+/* QuemFaz V11.19.0 — admin: bônus em massa só para quem ainda não recebeu */
+(function (global) {
+  const PU = global.PU, Screens = global.Screens;
+  let tipo = 'lancamento', nome = '', valor = '25', resumo = null, carregando = false;
+  function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
+  function esc(v) { return PU.escapeHtml(v == null ? '' : String(v)); }
+  async function rpc(name, args) {
+    const r = await client().rpc(name, args || {});
+    if (r.error) throw r.error;
+    const d = r.data || {};
+    if (d.ok === false) throw new Error(d.reason === 'sem_permissao' ? 'Sem permissão de administrador.' : (d.reason || 'Não foi possível concluir.'));
+    return d;
+  }
+  function rodada() { return tipo === 'lancamento' ? 'lancamento' : nome.trim(); }
+  function centavos() { return tipo === 'lancamento' ? 2500 : Math.round(Number(String(valor).replace(',', '.')) * 100); }
+  function resumoHtml() {
+    if (carregando) return '<div class="text--sm text--secondary">Conferindo quem já recebeu…</div>';
+    if (!resumo) return '';
+    if (resumo.error) return '<div class="text--sm" style="color:var(--danger-600);">' + esc(resumo.error) + '</div>';
+    const f = Number(resumo.faltam || 0), t = Number(resumo.total || 0), j = Number(resumo.ja_receberam || 0);
+    const v = PU.formatCurrency(centavos());
+    let h = '<div class="card qf-aviso-noar"><div class="qf-aviso-contagem"><span class="h3">' + f + ' de ' + t + '</span> <span class="text--sm text--secondary">' + (f === 1 ? 'profissional ainda não recebeu' : 'profissionais ainda não receberam') + ' este bônus</span></div>' +
+      '<div class="text--sm text--muted" style="margin-bottom:10px;">' + j + ' já ' + (j === 1 ? 'recebeu e fica' : 'receberam e ficam') + ' de fora da lista.</div>';
+    if (!f) return h + '<div class="text--sm text--strong">Ninguém faltando: todos já receberam.</div></div>';
+    h += '<div class="btn-row"><button type="button" class="btn btn--primary btn--sm" data-bonus-enviar>Enviar ' + esc(v) + ' para ' + (f === 1 ? 'esse 1 profissional' : 'esses ' + f + ' profissionais') + '</button></div>' +
+      '<div class="text--sm text--muted" style="margin-top:6px;">Total em créditos: ' + esc(PU.formatCurrency(centavos() * f)) + '. São créditos do app, não dinheiro.</div>' +
+      '<div class="qf-aviso-leituras"><div class="qf-aviso-leituras__titulo">Vão receber (' + f + ')</div>' +
+      (resumo.lista || []).map(function (x) {
+        const lugar = [x.cidade, x.uf].filter(Boolean).join('/');
+        return '<div class="qf-aviso-pessoa"><div style="min-width:0;"><div class="text--strong">' + esc(x.nome || 'Sem nome') + '</div>' + (lugar ? '<div class="text--sm text--secondary">' + esc(lugar) + '</div>' : '') + '</div><span class="badge">não recebeu</span></div>';
+      }).join('') + '</div>';
+    return h + '</div>';
+  }
+  function html() {
+    if (!client()) return '';
+    const outro = tipo !== 'lancamento';
+    return '<section class="section qf-aviso-admin" id="bonus-massa"><div class="section-head"><h2 class="h3">Bônus para todos</h2><span class="text--sm text--muted">só quem ainda não recebeu</span></div>' +
+      '<div class="card"><p class="text--sm text--secondary" style="margin:0 0 10px;">Envia créditos de uma vez para todos os profissionais que ainda não receberam aquele bônus. Quem já recebeu não entra na lista, então não tem como mandar em dobro.</p>' +
+      '<form data-bonus-form>' +
+      '<label>Qual bônus<select class="input" name="tipo"><option value="lancamento"' + (outro ? '' : ' selected') + '>R$ 25 do cadastro (bônus de lançamento)</option><option value="outro"' + (outro ? ' selected' : '') + '>Outro bônus (nova rodada)</option></select></label>' +
+      '<div data-bonus-outro' + (outro ? '' : ' hidden') + ' style="display:' + (outro ? 'flex' : 'none') + ';flex-direction:column;gap:10px;">' +
+      '<label>Nome do bônus<input class="input" type="text" name="nome" maxlength="60" placeholder="Ex.: Presente de outubro" value="' + esc(nome) + '"></label>' +
+      '<label>Valor para cada um (R$)<input class="input" type="number" name="valor" min="1" max="100" step="1" value="' + esc(valor) + '"></label></div>' +
+      '<div class="btn-row"><button class="btn btn--outline btn--sm" type="submit">Ver quem falta receber</button></div>' +
+      '</form></div><div data-bonus-resumo style="margin-top:10px;">' + resumoHtml() + '</div></section>';
+  }
+  function paint() { const el = document.querySelector('#bonus-massa [data-bonus-resumo]'); if (el) el.innerHTML = resumoHtml(); }
+  function ler(f) { tipo = f.tipo.value; nome = f.nome.value; valor = f.valor.value; }
+  function validar() {
+    if (tipo === 'lancamento') return '';
+    if (!nome.trim()) return 'Escreva o nome do bônus.';
+    const c = centavos();
+    if (!(c >= 100 && c <= 10000)) return 'O valor precisa ficar entre R$ 1 e R$ 100.';
+    return '';
+  }
+  async function conferir() {
+    const erro = validar();
+    if (erro) { resumo = null; paint(); PU.toast(erro, 'danger'); return; }
+    carregando = true; paint();
+    try { resumo = await rpc('qf_admin_bonus_massa_resumo', { p_rodada: rodada() }); }
+    catch (err) { resumo = { error: (err && err.message) || 'Não foi possível conferir.' }; }
+    carregando = false; paint();
+  }
+  document.addEventListener('change', function (e) {
+    const f = e.target.closest && e.target.closest('[data-bonus-form]');
+    if (!f) return;
+    ler(f);
+    const box = f.querySelector('[data-bonus-outro]');
+    if (box) { box.hidden = tipo === 'lancamento'; box.style.display = tipo === 'lancamento' ? 'none' : 'flex'; }
+    resumo = null; paint(); // mudou o bônus: a lista antiga não vale mais
+  });
+  document.addEventListener('input', function (e) {
+    const f = e.target.closest && e.target.closest('[data-bonus-form]');
+    if (!f) return;
+    ler(f);
+    if (resumo) { resumo = null; paint(); }
+  });
+  document.addEventListener('submit', function (e) {
+    const f = e.target.closest && e.target.closest('[data-bonus-form]');
+    if (!f) return;
+    e.preventDefault(); ler(f); conferir();
+  });
+  document.addEventListener('click', async function (e) {
+    const btn = e.target.closest && e.target.closest('[data-bonus-enviar]');
+    if (!btn) return;
+    // Dois toques para enviar: mexe na carteira de todo mundo da lista.
+    if (btn.dataset.confirm !== '1') {
+      const txt = btn.textContent;
+      btn.dataset.confirm = '1'; btn.textContent = 'Toque de novo para confirmar o envio';
+      setTimeout(function () { if (btn.isConnected && btn.dataset.confirm === '1') { btn.dataset.confirm = ''; btn.textContent = txt; } }, 5000);
+      return;
+    }
+    btn.disabled = true;
+    try {
+      const d = await rpc('qf_admin_bonus_massa_enviar', { p_rodada: rodada(), p_valor_centavos: centavos() });
+      const n = Number(d.enviados || 0);
+      PU.toast(n ? 'Bônus enviado para ' + n + (n === 1 ? ' profissional.' : ' profissionais.') : 'Ninguém faltando: todos já tinham recebido.', 'success');
+      await conferir();
+      if (n && global.QFAdminCloud && typeof global.QFAdminCloud.syncSnapshot === 'function') { try { await global.QFAdminCloud.syncSnapshot(true); } catch (_) {} }
+    } catch (err) {
+      PU.toast((err && err.message) || 'Não foi possível enviar o bônus.', 'danger');
+      btn.disabled = false; btn.dataset.confirm = '';
+    }
+  });
+  global.QFAdminBonus = { html: html, _set: function (r, t, n, v) { resumo = r; if (t) tipo = t; if (n != null) nome = n; if (v != null) valor = v; paint(); } };
+})(window);
+
+
 /* QuemFaz — administração conectada ao Supabase (V9.7 + V10.2) */
 (function (global) {
   const DB = global.DB, PU = global.PU;
@@ -5026,6 +5134,7 @@ Screens.adminDashboardRender = function () {
           '<button class="btn btn--primary" type="button" data-nav="/admin/sem-push">' + icon('whatsapp') + ' Chamar no WhatsApp</button>' +
         '</div>' +
         (global.QFAdminAviso ? global.QFAdminAviso.html() : '') +
+        (global.QFAdminBonus ? global.QFAdminBonus.html() : '') +
         (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
