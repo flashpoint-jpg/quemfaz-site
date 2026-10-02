@@ -2218,6 +2218,19 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   #app-shell[data-route="profissional-carteira"] .view > :first-child{column-span:all}
   #app-shell[data-route="profissional-carteira"] .view > :empty{display:none}
 }
+
+/* ================= V11.16.29 — Perfil no computador: colunas equilibradas, sem buracos entre os blocos ================= */
+@media (min-width:1024px){
+  #app-shell[data-route$="perfil"] .view{display:block!important;column-count:2;column-gap:24px}
+  #app-shell[data-route$="perfil"] .view > *{break-inside:avoid;-webkit-column-break-inside:avoid;margin:0 0 20px!important}
+  #app-shell[data-route$="perfil"] .view > .card.row:first-child,
+  #app-shell[data-route$="perfil"] .view > p,
+  #app-shell[data-route$="perfil"] .view > .section:has(> [data-logout]),
+  #app-shell[data-route="profissional-perfil"] .view > .section:has(#perfil-cats),
+  #app-shell[data-route="profissional-perfil"] .view > .section:has(.status-track){column-span:all}
+  #app-shell[data-route$="perfil"] .view > :empty{display:none}
+  #app-shell[data-route="cliente-perfil"] .view{column-count:1;max-width:820px}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -11545,7 +11558,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.28';
+  const APP_VERSION = '11.16.29';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
