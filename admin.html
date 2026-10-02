@@ -606,6 +606,9 @@ input, select, textarea { font-size: 16px; }
 .kpi-card { background: var(--bg-surface); border-radius: var(--radius-md); padding: 14px; border: 1px solid var(--border-subtle); }
 .kpi-card__value { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
 .kpi-card__label { font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-top: 2px; }
+.kpi-card--link { display: block; width: 100%; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.kpi-card--link:active { transform: scale(0.985); }
+.kpi-card--link:focus-visible { outline: 2px solid var(--orange-500); outline-offset: 2px; }
 
 /* ---------- Segmented control ---------- */
 
@@ -4883,10 +4886,10 @@ Screens.adminDashboardRender = function () {
         (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
-          kpi(s.pedidosAbertos, 'Pedidos abertos') +
-          kpi(s.emAndamento, 'Em andamento') +
-          kpi(s.concluidos, 'Concluídos') +
-          kpi(s.cancelados, 'Cancelados') +
+          kpi(s.pedidosAbertos, 'Pedidos abertos', 'solicitados') +
+          kpi(s.emAndamento, 'Em andamento', 'andamento') +
+          kpi(s.concluidos, 'Concluídos', 'concluidos') +
+          kpi(s.cancelados, 'Cancelados', 'cancelados') +
         '</div>' +
 
         adminPedidosRecentesHtml() +
@@ -4941,8 +4944,12 @@ Screens.adminDashboardRender = function () {
     );
   };
 
-  function kpi(value, label) {
-    return '<div class="kpi-card"><div class="kpi-card__value">' + value + '</div><div class="kpi-card__label">' + label + '</div></div>';
+  // V11.16.32: quadros do resumo abrem a lista de serviços já na aba certa.
+  function kpi(value, label, tab) {
+    if (!tab) return '<div class="kpi-card"><div class="kpi-card__value">' + value + '</div><div class="kpi-card__label">' + label + '</div></div>';
+    return '<button type="button" class="kpi-card kpi-card--link" data-nav="/admin/servicos" data-servicos-tab="' + tab + '" aria-label="Ver ' + label + '">' +
+      '<div class="row-between" style="gap:6px;"><div class="kpi-card__value">' + value + '</div>' + icon('chevronRight', 'list-item__chevron') + '</div>' +
+      '<div class="kpi-card__label">' + label + ' · toque para ver</div></button>';
   }
 
   // ---------------- Profissionais ----------------
@@ -5402,8 +5409,17 @@ Screens.adminDashboardRender = function () {
     { id: 'cancelados', label: 'Cancelados', filter: function (r) { return r.status === STATUS.CANCELADO; } },
   ];
 
+  // Aba atual da lista de serviços: definida pelos quadros do resumo e mantida ao voltar do detalhe.
+  let servicosTabAtual = 'todos';
+  document.addEventListener('click', function (e) {
+    const el = e.target.closest('[data-servicos-tab]');
+    if (el) { servicosTabAtual = el.getAttribute('data-servicos-tab'); return; }
+    const nav = e.target.closest('.tabbar [data-nav], .topbar [data-nav]');
+    if (nav && nav.getAttribute('data-nav') === '/admin/servicos') servicosTabAtual = 'todos';
+  }, true);
+
   Screens.adminServicosRender = function (params) {
-    const activeTab = (params && params.tab) || 'todos';
+    const activeTab = (params && params.tab) || servicosTabAtual || 'todos';
     const all = DB.allRequests();
     return (
       '<div class="view">' +
@@ -6287,6 +6303,7 @@ Screens.adminDashboardRender = function () {
       if (!btn) return;
       Array.prototype.forEach.call(seg.querySelectorAll('.segmented__item'), function (b) { b.classList.remove('is-active'); });
       btn.classList.add('is-active');
+      servicosTabAtual = btn.getAttribute('data-tab');
       lista.innerHTML = renderServicosLista(DB.allRequests(), btn.getAttribute('data-tab'));
     });
   }
