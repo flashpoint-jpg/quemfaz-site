@@ -2219,6 +2219,11 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   #app-shell[data-route="profissional-carteira"] .view > :empty{display:none}
 }
 
+/* ================= V11.16.30 — Carteira: só as 5 últimas movimentações, com botão para ver mais ================= */
+.qf-tx-list:not([data-show]) > :nth-child(n+6){display:none}
+.qf-tx-list:not([data-show]) > :nth-child(5){border-bottom:0}
+.qf-tx-more{display:flex;width:100%;margin-top:10px}
+
 /* ================= V11.16.29 — Perfil no computador: colunas equilibradas, sem buracos entre os blocos ================= */
 @media (min-width:1024px){
   #app-shell[data-route$="perfil"] .view{display:block!important;column-count:2;column-gap:24px}
@@ -9765,7 +9770,7 @@ alt=""></noscript>
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Movimentações</h2></div>' +
           (txs.length
-            ? '<div class="card" style="padding:4px 16px;">' + txs.map(function (t) {
+            ? '<div class="card qf-tx-list" style="padding:4px 16px;">' + txs.map(function (t) {
                 const debit = t.tipo === 'debito';
                 const bonusTx = t.tipo === 'bonus';
                 const pending = t.tipo === 'recarga_pendente' || t.status === 'pendente';
@@ -9777,7 +9782,9 @@ alt=""></noscript>
                 return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon(debit || bonusTx ? 'unlock' : (t.metodo === 'Cartão' ? 'creditCard' : t.metodo === 'Boleto' ? 'document' : 'money')) + '</div>' +
                   '<div class="list-item__body"><div class="list-item__title">' + PU.escapeHtml(t.descricao) + '</div><div class="list-item__sub">' + PU.formatDateTime(t.criadoEm) + statusText + '</div></div>' +
                   '<div class="text--strong" style="color:' + valueColor + ';">' + valueText + '</div></div>';
-              }).join('') + '</div>'
+              }).join('') + '</div>' +
+              // V11.16.30: mostra só as 5 últimas; o botão libera mais 20 por vez.
+              (txs.length > 5 ? '<button class="btn btn--outline btn--sm qf-tx-more" type="button" data-tx-more>Ver mais movimentações (' + (txs.length - 5) + ')</button>' : '')
             : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('wallet') + '</div><p class="text text--secondary">Nenhuma movimentação ainda.</p></div>') +
         '</div>' +
       '</div>'
@@ -11558,7 +11565,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.16.29';
+  const APP_VERSION = '11.16.30';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14260,6 +14267,19 @@ alt=""></noscript>
       const html = P.card(session.role);
       if (el.outerHTML !== html) el.outerHTML = html;
     });
+  });
+
+  // V11.16.30: "Ver mais movimentações" na Carteira — libera mais 20 linhas por clique.
+  document.addEventListener('click', function (ev) {
+    const btn = ev.target && ev.target.closest ? ev.target.closest('[data-tx-more]') : null;
+    if (!btn) return;
+    const list = btn.previousElementSibling;
+    if (!list || !list.classList.contains('qf-tx-list')) return;
+    const total = list.children.length;
+    const show = Math.min(total, (Number(list.getAttribute('data-show')) || 5) + 20);
+    list.setAttribute('data-show', String(show));
+    Array.prototype.forEach.call(list.children, function (row, i) { row.style.display = i < show ? '' : 'none'; });
+    if (show >= total) btn.remove(); else btn.textContent = 'Ver mais movimentações (' + (total - show) + ')';
   });
 
   global.addEventListener('qf-ads-updated', function () {
