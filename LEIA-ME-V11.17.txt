@@ -15,3 +15,11 @@ COMO TESTAR
 1. Painel admin > início > "Aviso geral na tela" > "Usar mensagem pronta" > Publicar (2 toques).
 2. Abra o app como profissional: o aviso aparece. Toque em "Entendi" e reabra: não volta.
 3. No painel, "Tirar do ar": quem ainda não viu deixa de receber.
+
+V11.18.0 — quem leu e quem não leu
+- App: ao tocar em "Entendi", quem está logado fica registrado como leu (vale em qualquer aparelho).
+- Painel: o aviso mostra "X de Y leram" e o botão "Ver quem leu e quem não leu".
+  Sem aviso no ar, o painel mostra o último publicado para continuar acompanhando.
+- Visitante sem conta não entra na contagem (não tem cadastro para marcar).
+- Mensagem pronta assinada "QuemFaz".
+- Servidor: supabase/2026-10-02-aviso-geral-leituras.sql (já aplicado).

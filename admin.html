@@ -1140,7 +1140,14 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-aviso-admin label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700}
 .qf-aviso-admin textarea{min-height:190px;resize:vertical;line-height:1.5}
 .qf-aviso-noar{border:2px solid #128c4a;background:#f1fff6}
-.qf-aviso-noar__msg{white-space:pre-line;overflow-wrap:anywhere;margin:6px 0 10px}
+.qf-aviso-noar__msg{white-space:pre-line;overflow-wrap:anywhere;margin:6px 0 10px;max-height:150px;overflow-y:auto}
+.qf-aviso-noar--fim{border-color:var(--border-strong);background:var(--bg-surface)}
+.qf-aviso-contagem{margin-bottom:10px}
+.qf-aviso-leituras{margin-top:12px;max-height:420px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.qf-aviso-leituras__titulo{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary);margin:12px 0 4px}
+.qf-aviso-pessoa{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
+.qf-aviso-pessoa:last-child{border-bottom:0}
+.qf-aviso-pessoa .badge{flex:0 0 auto}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -2879,9 +2886,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     'Agora começa a parte que faltava: a campanha para trazer clientes está entrando no ar. A cada dia, mais famílias vão conhecer o QuemFaz e procurar alguém de confiança perto de casa. Esse alguém pode ser você.\n\n' +
     'Só pedimos uma coisa: não desista da gente agora. Deixe o app instalado, as notificações ligadas, e responda rápido quando o chamado tocar.\n\n' +
     'Estamos trabalhando todos os dias para o seu telefone tocar mais. Vamos crescer juntos.\n\n' +
-    'Obrigado, de coração.\nFelipe Costa';
+    'Obrigado, de coração.\nQuemFaz';
   const PUBLICOS = { profissionais: 'Só profissionais', clientes: 'Só clientes', todos: 'Todo mundo (profissionais, clientes e visitantes)' };
-  let lista = null;
+  let lista = null, leituras = null, leiturasAberto = false;
   function client() { return global.QFAdminCloud && global.QFAdminCloud.enabled ? global.QFAdminCloud.client : null; }
   function esc(v) { return PU.escapeHtml(v == null ? '' : String(v)); }
   async function rpc(name, args) {
@@ -2891,21 +2898,48 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (d.ok === false) throw new Error(d.reason === 'sem_permissao' ? 'Sem permissão de administrador.' : (d.reason || 'Não foi possível concluir.'));
     return d;
   }
+  // V11.18.0: quem leu (tocou em "Entendi") e quem não leu.
+  function pessoaHtml(x, leu) {
+    const lugar = [x.cidade, x.uf].filter(Boolean).join('/');
+    return '<div class="qf-aviso-pessoa"><div style="min-width:0;"><div class="text--strong">' + esc(x.nome || 'Sem nome') + '</div>' +
+      '<div class="text--sm text--secondary">' + esc(x.tipo === 'cliente' ? 'Cliente' : 'Profissional') + (lugar ? ' · ' + esc(lugar) : '') + '</div></div>' +
+      (leu ? '<span class="badge badge--success">leu ' + esc(PU.formatDateTime(x.lido_em)) + '</span>' : '<span class="badge">não leu</span>') + '</div>';
+  }
+  function leiturasHtml(a) {
+    if (!leiturasAberto) return '';
+    if (!leituras || leituras.id !== a.id) return '<div class="text--sm text--secondary" style="margin-top:10px;">Carregando…</div>';
+    if (leituras.error) return '<div class="text--sm" style="color:var(--danger-600);margin-top:10px;">' + esc(leituras.error) + '</div>';
+    const l = leituras.leram, n = leituras.nao_leram;
+    return '<div class="qf-aviso-leituras"><div class="qf-aviso-leituras__titulo">Leram (' + l.length + ')</div>' +
+      (l.length ? l.map(function (x) { return pessoaHtml(x, true); }).join('') : '<div class="text--sm text--muted">Ninguém tocou em "Entendi" ainda.</div>') +
+      '<div class="qf-aviso-leituras__titulo">Não leram (' + n.length + ')</div>' +
+      (n.length ? n.map(function (x) { return pessoaHtml(x, false); }).join('') : '<div class="text--sm text--muted">Todo mundo já leu.</div>') + '</div>';
+  }
   function noArHtml() {
     if (!lista) return '<div class="text--sm text--secondary">Carregando…</div>';
     if (lista.error) return '<div class="text--sm" style="color:var(--danger-600);">' + esc(lista.error) + '</div>';
-    const a = lista.itens.filter(function (x) { return x.ativo; })[0];
-    if (!a) return '<div class="card card--tight text--sm text--secondary">Nenhum aviso no ar agora.</div>';
-    return '<div class="card qf-aviso-noar"><div class="row-between" style="gap:8px;align-items:flex-start;"><div class="text--strong">' + esc(a.titulo) + '</div><span class="badge badge--success">no ar</span></div>' +
+    // Mostra o aviso no ar; se não houver, o último publicado (para continuar vendo quem leu).
+    const a = lista.itens.filter(function (x) { return x.ativo; })[0] || lista.itens[0];
+    if (!a) return '<div class="card card--tight text--sm text--secondary">Nenhum aviso publicado ainda.</div>';
+    const leram = Number(a.leram || 0), total = Number(a.total || 0);
+    return '<div class="card qf-aviso-noar' + (a.ativo ? '' : ' qf-aviso-noar--fim') + '"><div class="row-between" style="gap:8px;align-items:flex-start;"><div class="text--strong">' + esc(a.titulo) + '</div>' + (a.ativo ? '<span class="badge badge--success">no ar</span>' : '<span class="badge">fora do ar</span>') + '</div>' +
       '<div class="text--sm qf-aviso-noar__msg">' + esc(a.mensagem) + '</div>' +
       '<div class="text--sm text--muted" style="margin-bottom:10px;">' + esc(PUBLICOS[a.publico] || a.publico) + ' · publicado ' + esc(PU.formatDateTime(a.criado_em)) + '</div>' +
-      '<button type="button" class="btn btn--outline btn--sm btn--block-auto" data-aviso-encerrar="' + esc(a.id) + '">Tirar do ar</button></div>';
+      '<div class="qf-aviso-contagem"><span class="h3">' + leram + ' de ' + total + '</span> <span class="text--sm text--secondary">' + (leram === 1 ? 'leu' : 'leram') + ' e tocaram em "Entendi"</span></div>' +
+      '<div class="btn-row"><button type="button" class="btn btn--primary btn--sm" data-aviso-leituras="' + esc(a.id) + '">' + (leiturasAberto ? 'Esconder lista' : 'Ver quem leu e quem não leu') + '</button>' +
+      (a.ativo ? '<button type="button" class="btn btn--outline btn--sm" data-aviso-encerrar="' + esc(a.id) + '">Tirar do ar</button>' : '') + '</div>' +
+      leiturasHtml(a) + '</div>';
+  }
+  async function carregarLeituras(id) {
+    try { const d = await rpc('qf_admin_aviso_leituras', { p_id: id }); leituras = { id: id, leram: Array.isArray(d.leram) ? d.leram : [], nao_leram: Array.isArray(d.nao_leram) ? d.nao_leram : [] }; }
+    catch (err) { leituras = { id: id, leram: [], nao_leram: [], error: (err && err.message) || 'Não foi possível carregar.' }; }
+    paint();
   }
   function html() {
     if (!client()) return '';
     return '<section class="section qf-aviso-admin" id="aviso-geral"><div class="section-head"><h2 class="h3">Aviso geral na tela</h2><span class="text--sm text--muted">aparece ao abrir o app</span></div>' +
       '<div data-aviso-noar>' + noArHtml() + '</div>' +
-      '<div class="card" style="margin-top:10px;"><p class="text--sm text--secondary" style="margin:0 0 10px;">Escreva o aviso (ou use a mensagem pronta) e publique. Ele abre na tela de cada pessoa uma vez, com o botão "Entendi". Publicar um aviso novo tira o anterior do ar.</p>' +
+      '<div class="card" style="margin-top:10px;"><p class="text--sm text--secondary" style="margin:0 0 10px;">Escreva o aviso (ou use a mensagem pronta) e publique. Ele abre na tela de cada pessoa uma vez, com o botão "Entendi", e quem tocar fica marcado como leu. Publicar um aviso novo tira o anterior do ar.</p>' +
       '<form data-aviso-form>' +
       '<label>Título<input class="input" type="text" name="titulo" maxlength="80" placeholder="Ex.: Instabilidade no aplicativo" required></label>' +
       '<label>Mensagem<textarea class="input" name="mensagem" maxlength="1500" placeholder="Escreva aqui o que você quer avisar." required></textarea></label>' +
@@ -2925,6 +2959,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (pr) {
       const f = pr.closest('form');
       f.titulo.value = PRONTO_TITULO; f.mensagem.value = PRONTO_MSG; f.publico.value = 'profissionais';
+      return;
+    }
+    const le = e.target.closest && e.target.closest('[data-aviso-leituras]');
+    if (le) {
+      leiturasAberto = !leiturasAberto;
+      paint();
+      if (leiturasAberto) { await refresh(); await carregarLeituras(le.getAttribute('data-aviso-leituras')); }
       return;
     }
     const en = e.target.closest && e.target.closest('[data-aviso-encerrar]');
@@ -2947,7 +2988,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     btn.disabled = true;
     try {
       await rpc('qf_admin_publicar_aviso_geral', { p_titulo: f.titulo.value, p_mensagem: f.mensagem.value, p_publico: f.publico.value });
-      f.reset();
+      f.reset(); leiturasAberto = false; leituras = null;
       PU.toast('Aviso publicado. Ele aparece quando cada pessoa abrir o app.', 'success');
       await refresh();
     } catch (err) {
@@ -2959,7 +3000,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (prevAfter) prevAfter(pattern, content, params, user);
     if (pattern === '/admin/dashboard') refresh();
   };
-  global.QFAdminAviso = { html: html, refresh: refresh, _set: function (itens) { lista = { itens: itens }; paint(); } };
+  global.QFAdminAviso = { html: html, refresh: refresh, _set: function (itens, l) { lista = { itens: itens }; if (l) { leituras = l; leiturasAberto = true; } paint(); } };
 })(window);
 
 
