@@ -11583,7 +11583,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.17.2';
+  const APP_VERSION = '11.18.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14473,8 +14473,16 @@ alt=""></noscript>
   const SEEN_KEY = 'qf_aviso_geral_visto';
   let lastCheck = 0, busy = false, retry = null;
   function client() { return global.QFCloud && global.QFCloud.enabled ? global.QFCloud.client : null; }
+  // V11.18.0: "já vi" vale por pessoa (aparelho compartilhado) e o "Entendi" de quem está logado é registrado no servidor.
+  function uid() { try { const se = global.PROAKI_APP && global.PROAKI_APP.currentSession(); return se && se.userId ? String(se.userId) : ''; } catch (_) { return ''; } }
+  function seenKey(id) { return String(id) + ':' + (uid() || 'visitante'); }
   function seen() { try { return localStorage.getItem(SEEN_KEY) || ''; } catch (_) { return ''; } }
-  function markSeen(id) { try { localStorage.setItem(SEEN_KEY, String(id)); } catch (_) {} }
+  function markSeen(id) { try { localStorage.setItem(SEEN_KEY, seenKey(id)); } catch (_) {} }
+  function markRead(id) {
+    const c = client();
+    if (!c || !uid()) return;
+    try { Promise.resolve(c.rpc('qf_aviso_geral_marcar_lido', { p_id: id })).catch(function () {}); } catch (_) {}
+  }
   function esc(v) { return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
   // Não cobre chamada tocando, conversa aberta nem formulário que a pessoa está preenchendo.
   function busyScreen() {
@@ -14496,7 +14504,7 @@ alt=""></noscript>
     el.innerHTML = '<div class="qf-aviso"><div class="qf-aviso__head"><div class="qf-aviso__tag">Aviso do QuemFaz</div><h2 class="qf-aviso__title" id="qf-aviso-title">' + esc(aviso.titulo) + '</h2></div>' +
       '<div class="qf-aviso__body">' + esc(aviso.mensagem) + '</div>' +
       '<div class="qf-aviso__foot"><button type="button" class="btn btn--primary" data-aviso-ok>Entendi</button></div></div>';
-    el.querySelector('[data-aviso-ok]').addEventListener('click', function () { markSeen(aviso.id); close(); });
+    el.querySelector('[data-aviso-ok]').addEventListener('click', function () { markSeen(aviso.id); markRead(aviso.id); close(); });
     document.body.appendChild(el);
   }
   async function check(force) {
@@ -14508,7 +14516,8 @@ alt=""></noscript>
       const r = await c.rpc('qf_aviso_geral_atual');
       const aviso = r && !r.error && r.data ? r.data.aviso : null;
       if (!aviso || !aviso.id) { close(); return; }
-      if (String(aviso.id) === seen()) return;
+      // Já tocou em "Entendi" neste aparelho, mas o servidor ainda não sabe (estava sem internet): registra agora, sem abrir de novo.
+      if (seenKey(aviso.id) === seen()) { markRead(aviso.id); return; }
       if (busyScreen()) { clearTimeout(retry); retry = setTimeout(function () { check(true); }, 20000); return; }
       show(aviso);
     } catch (_) {}
