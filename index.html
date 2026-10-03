@@ -9670,7 +9670,7 @@ alt=""></noscript>
           statusBadge(req.status) +
         '</div>' +
 
-        '<div class="section card stack--sm">' +
+        '<div class="section card stack">' +
           '<div class="row-between"><div class="row"><div class="avatar avatar--sm">' + PU.initials((cliente || {}).nome || '?') + '</div><div><div class="text--strong">' + PU.escapeHtml((cliente || {}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (contatoAprovado ? 'Contato liberado após aprovação' : (contatoLiberado ? 'WhatsApp liberado: chame o cliente agora' : 'Aguardando aprovação do orçamento')) + '</div></div></div>' +
             (contatoAprovado ? '<span class="badge badge--success"><span class="badge__dot"></span>Aprovado</span>' : (contatoLiberado ? '<span class="badge badge--success"><span class="badge__dot"></span>WhatsApp liberado</span>' : '<span class="badge badge--warning"><span class="badge__dot"></span>Contato protegido</span>')) + '</div>' +
           (contatoLiberado
@@ -9725,7 +9725,7 @@ alt=""></noscript>
     const s = req.status;
     // V11.22: sem orçamento, iniciar e concluir. O profissional só conta como terminou.
     if (DB.STATUS_DESBLOQUEADO.indexOf(s) !== -1) {
-      return '<div class="section"><div class="card stack--sm" data-qf-fechamento style="border:2px solid var(--orange-500);">' +
+      return '<div class="section"><div class="card stack" data-qf-fechamento style="border:2px solid var(--orange-500);gap:14px;">' +
         '<div><div class="text--strong">Deu certo com este cliente?</div>' +
         '<div class="text--sm text--secondary">Depois de combinar pelo WhatsApp e fazer o serviço, conte aqui como terminou. Ao fechar, o cliente é convidado a avaliar você.</div></div>' +
         '<button class="btn btn--primary" data-action="fechei-servico">' + icon('checkCircle') + ' Fechei o serviço</button>' +
@@ -11651,7 +11651,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.22.0';
+  const APP_VERSION = '11.22.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
