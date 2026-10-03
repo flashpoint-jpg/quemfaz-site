@@ -4457,7 +4457,7 @@ alt=""></noscript>
           id: r.cliente_id,
           nome: r.cliente_nome || 'Cliente',
           email: '',
-          telefone: r.cliente_telefone || r.cliente_whatsapp || '',
+          telefone: r.cliente_whatsapp || r.cliente_telefone || '',
           bloqueado: false,
           criadoEm: r.criado_em,
           enderecos: []
@@ -6225,7 +6225,7 @@ alt=""></noscript>
           '</div>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
-        '<p class="qf-request-privacy">' + icon('shieldCheck') + '<span>Seu WhatsApp é protegido e só é liberado ao profissional na etapa certa do orçamento.</span></p>' +
+        '<p class="qf-request-privacy">' + icon('shieldCheck') + '<span>O profissional que aceitar seu pedido vai chamar você neste WhatsApp. Seu número só é mostrado a ele, e seu endereço exato continua protegido.</span></p>' +
       '</div>'
     );
   }
@@ -6819,7 +6819,7 @@ alt=""></noscript>
           } catch (_) {}
           try { if (typeof global.qfGoogleLead === 'function') global.qfGoogleLead(); } catch (_) {}
 
-          PU.toast('Pedido publicado grátis! Já estamos procurando profissionais.', 'success');
+          PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
           PU.toast('Não foi possível publicar o pedido. ' + (err && err.message ? err.message : ''), 'danger');
@@ -7706,6 +7706,12 @@ alt=""></noscript>
   }
   global.QFUI = global.QFUI || {};
   global.QFUI.whatsappHref = whatsappHref;
+  // V11.20: mensagem pronta que o profissional envia ao cliente pelo WhatsApp logo após desbloquear.
+  global.QFUI.primeiroContatoMsg = function (cliente, user, cat) {
+    const nome = String((cliente && cliente.nome) || '').trim().split(/\s+/)[0] || '';
+    const servico = cat && cat.nome ? ' de ' + cat.nome : '';
+    return 'Olá' + (nome ? ', ' + nome : '') + '! Sou ' + ((user && user.nome) || 'profissional') + ', profissional pelo QuemFaz. Vi seu pedido' + servico + ' e estou disponível. Podemos combinar por aqui o valor, o horário e os detalhes do serviço?';
+  };
   global.QFUI.telHref = telHref;
   global.QFUI.personAvatar = personAvatar;
   function telHref(phone) {
@@ -7750,7 +7756,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
           '<h2 class="h3" style="margin-top:12px;">Profissional em conversa</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Converse pelo chat e combine os detalhes. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Ele vai chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -7760,7 +7766,7 @@ alt=""></noscript>
             '<div class="qf-search-radar__sub" data-search-sub>Seu pedido fica fora do portfólio durante a negociação</div>' +
             '<div class="qf-search-radar__km" data-search-km>Reserva exclusiva</div>' +
           '</div>' +
-          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>Combine os detalhes pelo chat.</span></div>' +
+          '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>O profissional vai chamar você no WhatsApp.</span></div>' +
         '</div>' +
       '</div>'
     );
@@ -8630,7 +8636,7 @@ alt=""></noscript>
       '<div class="stack">' +
         '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('bell') + '</div>' +
         '<h3 class="sheet__title" style="text-align:center;">Pedido publicado! Não perca a resposta</h3>' +
-        '<p class="text text--secondary" style="text-align:center;">Quando um profissional aceitar seu pedido, o QuemFaz pode avisar você no celular.</p>' +
+        '<p class="text text--secondary" style="text-align:center;">O profissional que aceitar seu pedido vai chamar você no WhatsApp. Ative também o aviso do QuemFaz para não perder nada.</p>' +
         ajuda + acao +
         '<button class="btn btn--outline" id="qf-cli-pos-continuar">Continuar acompanhando</button>' +
         '<div class="text--sm" id="qf-cli-pos-erro" role="alert" style="color:var(--danger-600);text-align:center;"></div>' +
@@ -8716,7 +8722,7 @@ alt=""></noscript>
       return;
     }
     if(participantes>0){
-      copy.innerHTML='<strong>Conversa reservada com um profissional</strong> · combine os detalhes pelo chat';
+      copy.innerHTML='<strong>Um profissional aceitou seu pedido</strong> · ele vai chamar você no WhatsApp';
       return;
     }
     if(avisados>0){copy.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
@@ -9518,15 +9524,15 @@ alt=""></noscript>
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</span></div>' +
           distanceHighlight(req) +
           '<hr class="hairline">' +
-          '<div class="row"><div class="avatar avatar--sm">' + icon('lock') + '</div><div><div class="text--strong">Contato do cliente protegido</div><div class="text--sm text--muted">Telefone/WhatsApp e endereço exato só aparecem depois que o cliente aprovar seu orçamento</div></div></div>' +
+          '<div class="row"><div class="avatar avatar--sm">' + icon('whatsapp') + '</div><div><div class="text--strong">WhatsApp do cliente liberado ao desbloquear</div><div class="text--sm text--muted">Você chama o cliente no WhatsApp na hora, com a mensagem pronta. O endereço exato aparece quando o cliente escolher você.</div></div></div>' +
         '</div>' +
 
         '<div class="section card stack--sm" style="background:var(--navy-900);border:none;">' +
           '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
           '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
             (primeiraGratis
-              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e conversa com o cliente pelo chat. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.'
-              : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. Telefone/WhatsApp e endereço exato só aparecem se o cliente escolher você.') +
+              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e chama o cliente no WhatsApp na hora. O endereço exato só aparece se o cliente escolher você.'
+              : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o WhatsApp do cliente e o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. O endereço exato só aparece se o cliente escolher você.') +
           '</p>' +
           (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente não responder nenhuma mensagem em até 48 horas, o pedido é cancelado e o valor volta automaticamente. Se o cliente responder, a negociação é considerada iniciada e o valor do desbloqueio fica para a plataforma. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
@@ -9605,6 +9611,11 @@ alt=""></noscript>
     const cat = DB.categoryById(req.categoriaId);
     const cliente = DB.clienteById(req.clienteId);
     const contatoAprovado = !!(req.orcamento && req.orcamento.status === 'aprovado');
+    // V11.20: o WhatsApp do cliente chega já no desbloqueio (o servidor só envia enquanto a negociação está aberta).
+    const contatoLiberado = contatoAprovado || !!((cliente || {}).telefone);
+    const waMsg = contatoAprovado
+      ? 'Olá ' + ((cliente || {}).nome || '') + ', sou ' + user.nome + ' do QuemFaz. Seu orçamento foi aprovado e estou entrando em contato para combinar o serviço.'
+      : global.QFUI.primeiroContatoMsg(cliente, user, cat);
     return (
       '<div class="view">' +
         '<div class="row-between">' +
@@ -9613,12 +9624,12 @@ alt=""></noscript>
         '</div>' +
 
         '<div class="section card stack--sm">' +
-          '<div class="row-between"><div class="row"><div class="avatar avatar--sm">' + PU.initials((cliente || {}).nome || '?') + '</div><div><div class="text--strong">' + PU.escapeHtml((cliente || {}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (contatoAprovado ? 'Contato liberado após aprovação' : 'Aguardando aprovação do orçamento') + '</div></div></div>' +
-            (contatoAprovado ? '<span class="badge badge--success"><span class="badge__dot"></span>Aprovado</span>' : '<span class="badge badge--warning"><span class="badge__dot"></span>Contato protegido</span>') + '</div>' +
-          (contatoAprovado
+          '<div class="row-between"><div class="row"><div class="avatar avatar--sm">' + PU.initials((cliente || {}).nome || '?') + '</div><div><div class="text--strong">' + PU.escapeHtml((cliente || {}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (contatoAprovado ? 'Contato liberado após aprovação' : (contatoLiberado ? 'WhatsApp liberado: chame o cliente agora' : 'Aguardando aprovação do orçamento')) + '</div></div></div>' +
+            (contatoAprovado ? '<span class="badge badge--success"><span class="badge__dot"></span>Aprovado</span>' : (contatoLiberado ? '<span class="badge badge--success"><span class="badge__dot"></span>WhatsApp liberado</span>' : '<span class="badge badge--warning"><span class="badge__dot"></span>Contato protegido</span>')) + '</div>' +
+          (contatoLiberado
             ? '<div class="row text--sm text--secondary">' + icon('phoneCall', 'list-item__chevron') + ((cliente || {}).telefone ? '<a href="' + telHref(cliente.telefone) + '">' + PU.escapeHtml(cliente.telefone) + '</a>' : '<span>Telefone não informado</span>') + '</div>'
             : '<div class="row text--sm text--secondary">' + icon('lock', 'list-item__chevron') + '<span>Telefone e WhatsApp serão liberados quando o cliente aprovar seu orçamento.</span></div>') +
-          (contatoAprovado && (cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + whatsappHref(cliente.telefone, 'Olá ' + (cliente.nome || '') + ', sou ' + user.nome + ' do QuemFaz. Seu orçamento foi aprovado e estou entrando em contato para combinar o serviço.') + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
+          (contatoLiberado && (cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + PU.escapeHtml(whatsappHref(cliente.telefone, waMsg)) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
           (req.fotos && req.fotos.length ? '<div class="qf-call-media">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
@@ -10975,10 +10986,10 @@ alt=""></noscript>
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: primeiraGratis
-            ? 'Nenhum crédito será usado neste primeiro chamado. O chat com o cliente será liberado na hora. Telefone/WhatsApp e endereço exato só serão liberados se o cliente escolher você.'
+            ? 'Nenhum crédito será usado neste primeiro chamado. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
             : (usaPlano
-              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). O chat com o cliente será liberado na hora; o contato e o endereço exato só aparecem se o cliente escolher você.'
-              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. O chat com o cliente será liberado na hora; o contato e o endereço exato só aparecem se o cliente escolher você.'),
+              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'),
           okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
@@ -10992,7 +11003,7 @@ alt=""></noscript>
               if (b) msgOk += ' No plano ' + b.plano.nome + ' teria saído ' + PU.formatCurrency(b.unit) + '.';
             }
             try { sessionStorage.setItem('qf_chat_unlocked_notice', String(params.id)); } catch (_) {}
-            PU.toast('Chat liberado para negociação. Agora envie uma mensagem ao cliente.', 'success', 5000);
+            PU.toast('Chamado desbloqueado. Agora chame o cliente no WhatsApp.', 'success', 5000);
             global.navigate('/profissional/chat/' + params.id, true);
             return;
           }
@@ -11583,7 +11594,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.19.0';
+  const APP_VERSION = '11.20.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13131,9 +13142,20 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req || req.profissionalId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     const cliente = DB.clienteById(req.clienteId);
+    // V11.20: com o WhatsApp do cliente liberado no desbloqueio, o botão verde é o primeiro passo.
+    const waHref = (cliente && cliente.telefone) ? global.QFUI.whatsappHref(cliente.telefone, global.QFUI.primeiroContatoMsg(cliente, user, DB.categoryById(req.categoriaId))) : '';
+    const primeiroNome = esc(String((cliente||{}).nome || 'o cliente').trim().split(/\s+/)[0]);
+    const waCard = waHref
+      ? '<div class="card stack--sm" data-qf-wa-card style="border:2px solid #128c4a;">' +
+          '<div><div class="text--strong">Chame ' + primeiroNome + ' no WhatsApp agora</div><div class="text--sm text--secondary">É por lá que o cliente responde mais rápido. A mensagem já vai pronta: é só tocar em enviar.</div></div>' +
+          '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + esc(waHref) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar ' + primeiroNome + ' no WhatsApp</a>' +
+        '</div>'
+      : '';
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="profissional" data-call-id="' + esc(req.id) + '">' +
-      '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. Com esta tela aberta a conversa é ao vivo: a resposta aparece aqui na hora, com um toque. Se você sair, o QuemFaz avisa uma vez quando chegar mensagem.</span></div></div>' +
-      '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">Este é o próximo passo: converse com o cliente pelo chat.</div></div></div>' +
+      (waHref
+        ? '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chamado desbloqueado</strong><span>Toque no botão verde para chamar o cliente no WhatsApp. O chat daqui também continua liberado.</span></div></div>' + waCard
+        : '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. Com esta tela aberta a conversa é ao vivo: a resposta aparece aqui na hora, com um toque. Se você sair, o QuemFaz avisa uma vez quando chegar mensagem.</span></div></div>') +
+      '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (waHref ? 'Se preferir, converse também pelo chat abaixo.' : 'Este é o próximo passo: converse com o cliente pelo chat.') + '</div></div></div>' +
       scheduleSummary(req) +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
@@ -13148,7 +13170,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req || req.clienteId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="cliente" data-call-id="' + esc(req.id) + '" data-prof-id="' + esc(params.profId) + '">' +
-      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Conversa ao vivo: a resposta aparece aqui na hora, com um toque. Combine preço, data e detalhes. Telefone e endereço exato continuam protegidos até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
+      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Conversa ao vivo: a resposta aparece aqui na hora, com um toque. Combine preço, data e detalhes. O profissional também pode chamar você no WhatsApp que você informou no pedido. Seu endereço exato continua protegido até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
         '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
@@ -13415,6 +13437,12 @@ alt=""></noscript>
       } catch (_) {}
       if (justUnlocked) {
         setTimeout(function () {
+          const waCard = root.querySelector('[data-qf-wa-card]');
+          if (waCard) {
+            PU.toast('Chamado desbloqueado. Toque no botão verde para chamar o cliente no WhatsApp.', 'success', 6000);
+            try { waCard.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
+            return;
+          }
           PU.toast('Chat liberado para negociação. Envie sua primeira mensagem ao cliente.', 'success', 5000);
           if (input) {
             try { input.scrollIntoView({ behavior:'smooth', block:'center' }); } catch (_) {}
