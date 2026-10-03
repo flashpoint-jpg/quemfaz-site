@@ -1,0 +1,34 @@
+QuemFaz V11.22.0 — Fluxo simples: Aberto → Desbloqueado → Concluído / Cancelado
+
+O QUE MUDOU
+- Saíram as etapas de orçamento, "orçamento aprovado", "iniciar serviço" e "em andamento".
+  A conversa acontece no WhatsApp; o app só registra como terminou.
+- Profissional, no pedido desbloqueado: "Fechei o serviço" ou "Não fechei".
+  Fechei  → pedido Concluído e o cliente é convidado a avaliar.
+  Não fechei → pedido Cancelado (o crédito do desbloqueio não volta).
+- Sem resposta do profissional em 7 dias: o pedido é encerrado sozinho como "Sem retorno".
+- "Profissional conectado" agora se chama "Desbloqueado"
+  (para o cliente aparece "Profissional em contato").
+- Botões "Criar orçamento" / "Enviar proposta (opcional)" removidos. O chat continua.
+- Orçamentos antigos não foram apagados: continuam aparecendo nos pedidos que já tinham.
+
+PAINEL ADMIN
+- Quadro "Está dando certo?": pedidos recebidos, desbloqueados, fechados, não fechados,
+  sem retorno e aguardando, com a taxa de fechamento e a lista por profissional (7 dias, 30 dias, tudo).
+- Abas de Serviços: Todos, Abertos, Desbloqueados, Concluídos, Cancelados.
+- Pedido cancelado mostra "Não fechou" ou "Sem retorno" quando for o caso.
+
+BANCO (aplicar ANTES de publicar o site)
+- supabase/2026-10-03-fluxo-simples-fechamento.sql
+  - colunas desfecho / desfecho_em em qf_chamados;
+  - função qf_profissional_fechar_chamado;
+  - agendamento qf-fechar-sem-retorno (de hora em hora);
+  - a expiração de 3 dias passa a valer só para pedido aberto, sem profissional.
+- Nenhum pedido antigo é alterado. 'confirmado' e 'em_andamento' aparecem como Desbloqueado.
+
+COMO TESTAR
+1. Profissional desbloqueia um pedido → status "Desbloqueado", botão do WhatsApp e o cartão
+   "Deu certo com este cliente?".
+2. "Fechei o serviço" → Concluído; pede a avaliação do cliente.
+3. Em outro pedido, "Não fechei" → Cancelado; no painel aparece "Não fechou".
+4. Painel → "Está dando certo?" mostra os números.
