@@ -1,0 +1,11 @@
+QuemFaz V11.21.0 — Telefone válido no pedido e desbloqueio sem devolução
+
+- Pedido do cliente só aceita celular de verdade: DDD válido + 9 + 8 dígitos.
+  Números de exemplo como (11) 99999-0000 são barrados no site e no servidor.
+- Desbloqueio sem devolução: o crédito (ou o chamado do plano) não volta em nenhum caso.
+  Textos do app trocados para "Sem devolução"; cartão e resumo de devoluções removidos.
+- O cancelamento automático em 48h sem resposta no chat foi desativado (a conversa agora
+  acontece no WhatsApp). Pedidos parados continuam expirando em 3 dias.
+- Banco: supabase/2026-10-03-sem-devolucao-de-lead.sql. Para religar a devolução,
+  trocar a chave devolucao_lead em qf_config para {"ativo": true} e reativar o agendamento.
+- Servidor: função quemfaz-cliente-rapido atualizada.
