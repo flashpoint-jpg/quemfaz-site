@@ -5302,10 +5302,14 @@ Screens.adminDashboardRender = function () {
     function filtrar() {
       profBusca = busca.value;
       const q = catNormAdmin(busca.value);
+      // Telefone digitado com espaço, traço, parênteses ou +55/0 na frente: compara só os números.
+      const soTel = /^[\d\s()+.\-]+$/.test(busca.value);
+      const qTel = soTel ? busca.value.replace(/\D/g, '').replace(/^0+/, '').replace(/^55(?=\d{10,11}$)/, '') : '';
       Array.prototype.forEach.call(content.querySelectorAll('.qf-prof-city'), function (sec) {
         let n = 0;
         Array.prototype.forEach.call(sec.querySelectorAll('[data-prof-search]'), function (c) {
-          const ok = !q || c.getAttribute('data-prof-search').indexOf(q) !== -1;
+          const hay = c.getAttribute('data-prof-search');
+          const ok = !q || hay.indexOf(q) !== -1 || (qTel && hay.indexOf(qTel) !== -1);
           c.style.display = ok ? '' : 'none'; if (ok) n++;
         });
         sec.style.display = n ? '' : 'none';
