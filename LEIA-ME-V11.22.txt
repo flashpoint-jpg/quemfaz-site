@@ -25,6 +25,9 @@ BANCO (aplicar ANTES de publicar o site)
   - agendamento qf-fechar-sem-retorno (de hora em hora);
   - a expiração de 3 dias passa a valer só para pedido aberto, sem profissional.
 - Nenhum pedido antigo é alterado. 'confirmado' e 'em_andamento' aparecem como Desbloqueado.
+- Cliente não fica mais travado para abrir pedido novo quando foi o profissional que marcou
+  "Fechei"; a avaliação continua sendo pedida. O profissional segue avaliando o cliente.
+- "Não fechei" encerra a reserva: o pedido sai da lista do profissional.
 
 COMO TESTAR
 1. Profissional desbloqueia um pedido → status "Desbloqueado", botão do WhatsApp e o cartão

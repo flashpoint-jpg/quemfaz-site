@@ -68,3 +68,6 @@ assert.match(sql, /cron\.schedule\('qf-fechar-sem-retorno'/);
 assert.match(sql, /where c\.status = 'aberto'\s+and c\.criado_em < now\(\) - interval '3 days'/);
 assert.match(sql, /revoke execute on function public\.qf_profissional_fechar_chamado\(uuid, boolean\) from public, anon/);
 console.log('fluxo-simples-fechamento: ok');
+assert.match(sql, /p_tipo = 'cliente' and c\.cliente_id = p_uid and c\.desfecho is distinct from 'fechado'/);
+assert.ok(html.includes("global.navigate(fechou ? '/profissional/pedido/' + params.id : '/profissional/servicos', true);"));
+console.log('fluxo-simples-fechamento: banco real ok');

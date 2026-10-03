@@ -190,3 +190,38 @@ begin
   return v_n;
 end;
 $function$;
+
+-- 5) Cliente não fica travado quando foi o profissional que informou o fechamento ---------
+-- Antes, pedido concluído sem avaliação do cliente bloqueava o cliente de abrir um
+-- pedido novo. Como agora é o profissional que marca "Fechei o serviço" sozinho, a
+-- avaliação do cliente continua sendo pedida, mas não impede um novo pedido.
+-- O profissional continua precisando avaliar o cliente depois de marcar "Fechei".
+create or replace function private.qf_pendencia_finalizacao(p_uid uuid, p_tipo text)
+returns uuid
+language sql
+stable security definer
+set search_path to ''
+as $function$
+  select c.id
+  from public.qf_chamados c
+  where c.status in ('concluido','finalizado')
+    and (
+      (p_tipo = 'cliente' and c.cliente_id = p_uid and c.desfecho is distinct from 'fechado')
+      or
+      (p_tipo = 'profissional' and exists (
+        select 1
+        from public.qf_orcamentos o
+        where o.chamado_id = c.id
+          and o.profissional_id = p_uid
+          and o.status = 'aceito'
+      ))
+    )
+    and not exists (
+      select 1
+      from public.qf_avaliacoes a
+      where a.chamado_id = c.id
+        and a.autor_tipo = p_tipo
+    )
+  order by c.atualizado_em asc, c.criado_em asc
+  limit 1;
+$function$;

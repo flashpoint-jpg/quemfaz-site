@@ -7294,7 +7294,7 @@ alt=""></noscript>
       destaque = 'Em andamento';
     } else if (req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) {
       titulo = 'Falta finalizar e avaliar';
-      texto = 'Conclua esta etapa para encerrar o pedido e continuar usando o app normalmente.';
+      texto = 'O profissional informou que o serviço foi feito. Avalie para ajudar outros clientes.';
       botao = 'Finalizar agora';
       ic = 'checkCircle';
       destaque = 'Falta concluir';
@@ -7912,8 +7912,8 @@ alt=""></noscript>
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Finalizar e avaliar serviço</h2></div>' +
           '<div class="card stack" id="avaliacao-form" style="border:2px solid var(--orange-500);">' +
-            '<div class="text--strong">Etapa obrigatória</div>' +
-            '<div class="text--sm text--secondary">Confirme que o serviço terminou e avalie ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '. Depois disso, sua parte do fluxo estará concluída.</div>' +
+            '<div class="text--strong">Como foi o serviço?</div>' +
+            '<div class="text--sm text--secondary">Confirme que o serviço terminou e avalie ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '. Sua avaliação ajuda outros clientes a escolher.</div>' +
             '<div class="star-picker" id="cliente-star-picker">' +
               [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-star="' + n + '" aria-label="' + n + ' estrelas">' + icon('starFilled') + '</button>'; }).join('') +
             '</div>' +
@@ -11120,7 +11120,8 @@ alt=""></noscript>
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.closeProfessionalCall(params.id, fechou);
             else DB.fecharChamadoProfissional(params.id, fechou);
             PU.toast(fechou ? 'Serviço fechado. Agora avalie o cliente.' : 'Pedido encerrado como não fechado.', fechou ? 'success' : null);
-            global.navigate('/profissional/pedido/' + params.id, true);
+            // "Não fechei" encerra a reserva: o pedido sai da lista do profissional.
+            global.navigate(fechou ? '/profissional/pedido/' + params.id : '/profissional/servicos', true);
           } catch (err) {
             PU.toast('Não foi possível registrar. ' + (err && err.message ? err.message : ''), 'danger');
           }
