@@ -2778,13 +2778,15 @@ alt=""></noscript>
     buscando: 'Chamado aberto',
     sem_profissional: 'Nenhum profissional disponível',
     aguardando_aceite: 'Disponível para profissionais',
-    aguardando_orcamento: 'Profissional conectado',
-    orcamento_enviado: 'Orçamento recebido',
-    orcamento_recusado: 'Orçamento recusado',
+    // V11.22: fluxo simples — Aberto → Desbloqueado → Concluído/Cancelado.
+    // As etapas de orçamento saíram do app (a conversa acontece no WhatsApp).
+    aguardando_orcamento: 'Desbloqueado',
+    orcamento_enviado: 'Desbloqueado',
+    orcamento_recusado: 'Desbloqueado',
     nao_selecionado: 'Não selecionado',
-    aprovado: 'Orçamento aprovado',
-    em_andamento: 'Serviço em andamento',
-    servico_concluido: 'Serviço concluído',
+    aprovado: 'Desbloqueado',
+    em_andamento: 'Desbloqueado',
+    servico_concluido: 'Concluído',
     pago: 'Concluído — aguardando avaliação',
     finalizado: 'Concluído e avaliado',
     cancelado: 'Cancelado',
@@ -3572,6 +3574,26 @@ alt=""></noscript>
     return req;
   }
 
+  // V11.22: o profissional informa como terminou o chamado desbloqueado.
+  const STATUS_DESBLOQUEADO = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO];
+  function fecharChamadoProfissional(requestId, fechou) {
+    const req = requestById(requestId);
+    if (!req || STATUS_DESBLOQUEADO.indexOf(req.status) === -1) return null;
+    req.desfecho = fechou ? 'fechado' : 'nao_fechado';
+    req.atualizadoEm = nowIso();
+    if (fechou) {
+      req.status = STATUS.SERVICO_CONCLUIDO;
+      req.historico.push(historicoItem('Profissional informou que fechou o serviço'));
+    } else {
+      req.status = STATUS.CANCELADO;
+      req.canceladoPor = 'profissional';
+      req.motivoCancelamento = 'O profissional informou que não fechou o serviço.';
+      req.historico.push(historicoItem('Profissional informou que não fechou o serviço'));
+    }
+    persist();
+    return req;
+  }
+
   function setOnlineStatus(profissionalId, online) {
     const p = profissionalById(profissionalId);
     if (!p) return null;
@@ -3767,7 +3789,7 @@ alt=""></noscript>
     cadastrarCliente, cadastrarProfissional, login, logout,
     criarPedido, buscarProfissional, cancelarPedido,
     aprovarOrcamento, recusarOrcamento, buscarOutroProfissional, pagarPedido, avaliarComoCliente, avaliarComoProfissional,
-    aceitarChamada, recusarChamada, desbloquearChamado, recarregarCreditos, criarRecargaPendente, confirmarRecargaPendente, enviarOrcamento, iniciarServico, finalizarServico,
+    aceitarChamada, recusarChamada, desbloquearChamado, recarregarCreditos, criarRecargaPendente, confirmarRecargaPendente, enviarOrcamento, iniciarServico, finalizarServico, fecharChamadoProfissional, STATUS_DESBLOQUEADO,
     setOnlineStatus, atualizarPerfilProfissional, enviarDocumento,
     aprovarProfissional, reprovarProfissional, bloquearUsuario,
     criarCategoria, removerCategoria, criarCidade, removerCidade, setLeadFees,
@@ -5320,6 +5342,21 @@ alt=""></noscript>
     return DB.requestById(chamadoId);
   }
 
+  // V11.22: "Fechei o serviço" / "Não fechei" — substitui orçamento, iniciar e concluir.
+  async function closeProfessionalCall(chamadoId, fechou) {
+    const res = await client.rpc('qf_profissional_fechar_chamado', { p_chamado_id: chamadoId, p_fechou: !!fechou });
+    if (res.error) {
+      if (/function|does not exist|not find/i.test(res.error.message || '')) throw new Error('Atualize o banco (migration V11.22) para registrar o fechamento.');
+      throw res.error;
+    }
+    const out = res.data || {};
+    if (!out.ok) throw new Error(out.reason || 'Não foi possível registrar o fechamento.');
+    const s = DB.getSession();
+    if (s && s.role === 'profissional') await syncProfessionalCalls(s.userId);
+    if (global.QFPush) global.QFPush.notify(fechou ? 'service_complete' : 'call_cancelled', chamadoId).catch(function () {});
+    return DB.requestById(chamadoId);
+  }
+
   async function submitEvaluation(chamadoId, nota, comentario) {
     const res = await client.rpc('qf_enviar_avaliacao', {
       p_chamado_id: chamadoId,
@@ -5576,6 +5613,7 @@ alt=""></noscript>
     sendQuote: sendQuote,
     respondQuote: respondQuote,
     updateProfessionalCallStatus: updateProfessionalCallStatus,
+    closeProfessionalCall: closeProfessionalCall,
     submitEvaluation: submitEvaluation,
     setOnline: setOnline,
     onlineSemGps: function () { return onlineSemGps; },
@@ -7163,10 +7201,11 @@ alt=""></noscript>
   }
 
   function statusBadge(status) {
-    const label = DB.STATUS_LABEL[status] || status;
+    // V11.22: para o cliente, "Desbloqueado" aparece como "Profissional em contato".
+    const label = DB.STATUS_DESBLOQUEADO.indexOf(status) !== -1 ? 'Profissional em contato' : (DB.STATUS_LABEL[status] || status);
     const map = {
       buscando: 'orange', sem_profissional: 'danger', aguardando_aceite: 'orange', aguardando_orcamento: 'orange',
-      orcamento_enviado: 'navy', orcamento_recusado: 'danger', aprovado: 'success', em_andamento: 'success',
+      orcamento_enviado: 'orange', orcamento_recusado: 'orange', aprovado: 'orange', em_andamento: 'orange',
       servico_concluido: 'warning', pago: 'navy', finalizado: 'success', cancelado: 'danger',
     };
     return '<span class="badge badge--' + (map[status] || 'muted') + '"><span class="badge__dot"></span>' + label + '</span>';
@@ -7223,12 +7262,11 @@ alt=""></noscript>
     let destaque = 'Aguardando';
 
     if (req.status === STATUS.AGUARDANDO_ORCAMENTO) {
-      titulo = 'Responda no chat';
-      texto = 'Um profissional reservou seu pedido. Converse pelo chat para manter a negociação ativa.';
-      botao = 'Abrir conversa';
-      rota = req.profissionalId ? '/cliente/chat/' + req.id + '/' + req.profissionalId : rota;
+      titulo = 'Um profissional vai chamar você';
+      texto = 'Ele reservou seu pedido e vai chamar você no WhatsApp. Fique de olho nas mensagens.';
+      botao = 'Ver pedido';
       ic = 'message';
-      destaque = 'Ação necessária';
+      destaque = 'Profissional em contato';
     } else if (req.status === STATUS.ORCAMENTO_ENVIADO) {
       titulo = 'Você recebeu um orçamento';
       texto = 'Abra o pedido para ver a proposta e decidir como quer continuar.';
@@ -7256,7 +7294,7 @@ alt=""></noscript>
       destaque = 'Em andamento';
     } else if (req.status === STATUS.SERVICO_CONCLUIDO || req.status === STATUS.PAGO) {
       titulo = 'Falta finalizar e avaliar';
-      texto = 'Conclua esta etapa para encerrar o pedido e continuar usando o app normalmente.';
+      texto = 'O profissional informou que o serviço foi feito. Avalie para ajudar outros clientes.';
       botao = 'Finalizar agora';
       ic = 'checkCircle';
       destaque = 'Falta concluir';
@@ -7874,8 +7912,8 @@ alt=""></noscript>
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Finalizar e avaliar serviço</h2></div>' +
           '<div class="card stack" id="avaliacao-form" style="border:2px solid var(--orange-500);">' +
-            '<div class="text--strong">Etapa obrigatória</div>' +
-            '<div class="text--sm text--secondary">Confirme que o serviço terminou e avalie ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '. Depois disso, sua parte do fluxo estará concluída.</div>' +
+            '<div class="text--strong">Como foi o serviço?</div>' +
+            '<div class="text--sm text--secondary">Confirme que o serviço terminou e avalie ' + PU.escapeHtml((prof || {}).nome || 'o profissional') + '. Sua avaliação ajuda outros clientes a escolher.</div>' +
             '<div class="star-picker" id="cliente-star-picker">' +
               [1, 2, 3, 4, 5].map(function (n) { return '<button type="button" data-star="' + n + '" aria-label="' + n + ' estrelas">' + icon('starFilled') + '</button>'; }).join('') +
             '</div>' +
@@ -7954,24 +7992,22 @@ alt=""></noscript>
         { title: 'Cancelado', sub: PU.formatDateTime(req.atualizadoEm), state: 'current' },
       ];
     }
-    const order = [STATUS.BUSCANDO, STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.FINALIZADO];
+    // V11.22: fluxo simples, sem as etapas de orçamento.
+    const order = [STATUS.BUSCANDO, STATUS.AGUARDANDO_ORCAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.FINALIZADO];
     const titles = {
-      buscando: 'Chamado publicado', aguardando_orcamento: 'Profissional conectado', orcamento_enviado: 'Orçamento enviado',
-      aprovado: 'Orçamento aprovado', em_andamento: 'Serviço em andamento', servico_concluido: 'Serviço concluído',
-      finalizado: 'Avaliação concluída',
+      buscando: 'Pedido publicado', aguardando_orcamento: 'Profissional em contato',
+      servico_concluido: 'Serviço concluído', finalizado: 'Avaliação concluída',
     };
     const activity = {
       buscando: 'Buscando profissionais próximos',
-      aguardando_orcamento: 'Profissional analisando sua solicitação',
-      orcamento_enviado: 'Aguardando sua aprovação do orçamento',
-      aprovado: 'Aprovado — aguardando início do serviço',
-      em_andamento: 'Serviço em execução',
+      aguardando_orcamento: 'O profissional vai chamar você no WhatsApp',
       servico_concluido: 'Aguardando sua avaliação',
       finalizado: 'Processo finalizado'
     };
     let effectiveStatus = req.status;
     if ([STATUS.AGUARDANDO_ACEITE, STATUS.SEM_PROFISSIONAL].indexOf(req.status) !== -1) effectiveStatus = STATUS.BUSCANDO;
-    if (req.status === STATUS.ORCAMENTO_RECUSADO) effectiveStatus = STATUS.AGUARDANDO_ORCAMENTO;
+    if (DB.STATUS_DESBLOQUEADO.indexOf(req.status) !== -1) effectiveStatus = STATUS.AGUARDANDO_ORCAMENTO;
+    if (req.status === STATUS.PAGO) effectiveStatus = STATUS.SERVICO_CONCLUIDO;
     const idx = order.indexOf(effectiveStatus);
     const fluxoFinalizado = effectiveStatus === STATUS.FINALIZADO;
     return order.map(function (st, i) {
@@ -9662,8 +9698,8 @@ alt=""></noscript>
       Number(o.material || 0) === 0 && Number(req.taxaVisita || 0) === 0;
     if (combinadoNoChat) {
       return '<div class="section"><div class="card card--tight" style="background:var(--success-100);border:none;">' +
-        '<div class="text--strong" style="color:var(--success-600);">Acordo combinado pelo chat</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">O cliente escolheu você. O valor e os detalhes continuam registrados na conversa.</div>' +
+        '<div class="text--strong" style="color:var(--success-600);">Serviço combinado direto com o cliente</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">O valor e os detalhes foram acertados na conversa de vocês.</div>' +
       '</div></div>';
     }
     return (
@@ -9687,26 +9723,18 @@ alt=""></noscript>
 
   function acoesPorStatus(req) {
     const s = req.status;
-    if (s === STATUS.AGUARDANDO_ORCAMENTO) {
-      return '<div class="section"><button class="btn btn--primary" data-nav="/profissional/orcamento/' + req.id + '">' + icon('document') + ' Criar orçamento</button></div>';
-    }
-    if (s === STATUS.ORCAMENTO_ENVIADO) {
-      return '<div class="section"><div class="card card--tight" style="background:var(--navy-100);border:none;"><p class="text text--sm" style="color:var(--navy-800);">Aguardando aprovação do cliente.</p></div></div>';
-    }
-    if (s === STATUS.ORCAMENTO_RECUSADO) {
-      return '<div class="section stack--sm">' +
-        '<button class="btn btn--primary" data-nav="/profissional/orcamento/' + req.id + '">' + icon('edit') + ' Enviar novo orçamento</button>' +
-        '<button class="btn btn--danger-ghost" data-action="cancelar-servico">Cancelar serviço</button>' +
-      '</div>';
+    // V11.22: sem orçamento, iniciar e concluir. O profissional só conta como terminou.
+    if (DB.STATUS_DESBLOQUEADO.indexOf(s) !== -1) {
+      return '<div class="section"><div class="card stack--sm" data-qf-fechamento style="border:2px solid var(--orange-500);">' +
+        '<div><div class="text--strong">Deu certo com este cliente?</div>' +
+        '<div class="text--sm text--secondary">Depois de combinar pelo WhatsApp e fazer o serviço, conte aqui como terminou. Ao fechar, o cliente é convidado a avaliar você.</div></div>' +
+        '<button class="btn btn--primary" data-action="fechei-servico">' + icon('checkCircle') + ' Fechei o serviço</button>' +
+        '<button class="btn btn--outline" data-action="nao-fechei-servico">' + icon('xCircle') + ' Não fechei</button>' +
+        '<div class="text--sm text--muted">Sem resposta em 7 dias, o pedido é encerrado sozinho como “Sem retorno”.</div>' +
+      '</div></div>';
     }
     if (s === STATUS.NAO_SELECIONADO) {
       return '<div class="section"><div class="card" style="background:var(--navy-100);border:none;"><div class="text--strong" style="color:var(--navy-900);">Cliente escolheu outro profissional</div><div class="text--sm text--secondary" style="margin-top:4px;">Seu orçamento não foi selecionado desta vez. Este chamado foi encerrado para novos orçamentos.</div></div></div>';
-    }
-    if (s === STATUS.APROVADO) {
-      return '<div class="section"><button class="btn btn--primary" data-action="iniciar-servico">' + icon('checkCircle') + ' Iniciar serviço</button></div>';
-    }
-    if (s === STATUS.EM_ANDAMENTO) {
-      return '<div class="section"><button class="btn btn--primary" data-action="finalizar-servico">' + icon('check') + ' Concluir serviço</button></div>';
     }
     if (s === STATUS.SERVICO_CONCLUIDO || s === STATUS.PAGO) {
       if (req.avaliacaoProfissional) {
@@ -9800,7 +9828,7 @@ alt=""></noscript>
           '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
-            walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
+            walletInfoRow('phoneCall', 'Contato liberado', 'Depois do desbloqueio, você recebe o WhatsApp do cliente e combina o serviço direto com ele.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
             '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda. Por isso, chame o cliente no WhatsApp assim que desbloquear.') +
@@ -9907,7 +9935,7 @@ alt=""></noscript>
         '<div class="card" style="padding:4px 16px;">' +
           cfStep(1, 'O chamado chega no seu celular', 'Receber é grátis. Você vê o serviço, a cidade e o bairro antes de decidir.') +
           cfStep(2, 'Você desbloqueia o chamado', 'Paga um valor pequeno com os créditos da carteira e vê o contato do cliente.') +
-          cfStep(3, 'Manda o orçamento', 'Combine o serviço, o preço e o dia direto com o cliente.') +
+          cfStep(3, 'Combina pelo WhatsApp', 'Acerte o serviço, o preço e o dia direto com o cliente. Depois conte no app se fechou.') +
           cfStep(4, 'Fecha o serviço', 'O valor do serviço é todo seu. O QuemFaz não cobra comissão.') +
         '</div>' +
       '</section>' +
@@ -9972,7 +10000,7 @@ alt=""></noscript>
         '<div class="card" style="padding:4px 16px;">' +
           cfStep(1, 'Conte o que precisa', 'Escolha o serviço, descreva o que precisa e informe sua região.') +
           cfStep(2, 'Profissionais perto de você são avisados', 'Quem atende sua região recebe o chamado na hora.') +
-          cfStep(3, 'Receba o orçamento', 'Veja a proposta, a foto e as avaliações do profissional.') +
+          cfStep(3, 'Combine pelo WhatsApp', 'O profissional chama você e vocês acertam preço e dia.') +
           cfStep(4, 'Combine e avalie', 'Acerte o pagamento direto com o profissional e, no fim, avalie o serviço.') +
         '</div>' +
         '<div class="card" style="padding:4px 16px;margin-top:10px;">' +
@@ -11081,6 +11109,24 @@ alt=""></noscript>
           }
         });
       }
+      if (act === 'fechei-servico' || act === 'nao-fechei-servico') {
+        const fechou = act === 'fechei-servico';
+        PU.confirmDialog(fechou
+          ? { title: 'Fechei o serviço', message: 'Confirma que você combinou e fez este serviço? O cliente será convidado a avaliar você.', okLabel: 'Sim, fechei' }
+          : { title: 'Não fechei', message: 'Confirma que este serviço não foi fechado? O pedido será encerrado. O crédito do desbloqueio não volta.', okLabel: 'Não fechei', danger: true }
+        ).then(async function (ok) {
+          if (!ok) return;
+          try {
+            if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.closeProfessionalCall(params.id, fechou);
+            else DB.fecharChamadoProfissional(params.id, fechou);
+            PU.toast(fechou ? 'Serviço fechado. Agora avalie o cliente.' : 'Pedido encerrado como não fechado.', fechou ? 'success' : null);
+            // "Não fechei" encerra a reserva: o pedido sai da lista do profissional.
+            global.navigate(fechou ? '/profissional/pedido/' + params.id : '/profissional/servicos', true);
+          } catch (err) {
+            PU.toast('Não foi possível registrar. ' + (err && err.message ? err.message : ''), 'danger');
+          }
+        });
+      }
       if (act === 'cancelar-servico') {
         PU.confirmDialog({ title: 'Cancelar serviço', message: 'Tem certeza que deseja cancelar este serviço?', okLabel: 'Cancelar', danger: true }).then(function (ok) {
           if (!ok) return;
@@ -11605,7 +11651,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.21.0';
+  const APP_VERSION = '11.22.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13130,9 +13176,8 @@ alt=""></noscript>
     const blocked = req.status === 'nao_selecionado' || req.status === 'cancelado' || req.status === 'finalizado';
     const cta = blocked ? '' :
       '<div class="section"><div class="card qf-negotiation-card" style="border:2px solid var(--orange-500);">' +
-        '<div class="row-between"><div><div class="text--strong">Negociação pelo chat</div><div class="text--sm text--secondary">Combine valor, data e detalhes diretamente com o cliente.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
+        '<div class="row-between"><div><div class="text--strong">Conversa com o cliente</div><div class="text--sm text--secondary">Combine valor, data e detalhes pelo WhatsApp ou pelo chat.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
         '<button class="btn btn--primary" data-nav="/profissional/chat/' + esc(req.id) + '">' + icon('message') + ' Conversar com o cliente</button>' +
-        '<button class="btn btn--outline" data-nav="/profissional/orcamento/' + esc(req.id) + '">' + icon('document') + ' Enviar proposta (opcional)</button>' +
         '<div data-qf-prof-competition class="text--sm text--secondary"></div>' +
       '</div></div>';
     html = html.replace('<div class="view">','<div class="view">' + scheduleSummary(req) + cta);
@@ -13167,7 +13212,6 @@ alt=""></noscript>
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
         '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
         '<button class="btn btn--primary" type="submit">' + icon('message') + ' Enviar mensagem</button>' +
-        '<button class="btn btn--outline" type="button" data-nav="/profissional/orcamento/' + esc(req.id) + '">' + icon('document') + ' Enviar proposta (opcional)</button>' +
       '</form>' +
     '</div>';
   };
@@ -13736,13 +13780,13 @@ alt=""></noscript>
         }
         if (b && b.status !== a.status && a.profissionalId === session.userId) {
           if (a.status === DB.STATUS.CANCELADO) pushNotice(session, 'cancelado:' + id, 'Chamado cancelado pelo cliente', detail, '/profissional/pedido/' + id, true);
-          if (a.status === DB.STATUS.APROVADO) pushNotice(session, 'orc_aprovado:' + id, 'Orçamento aprovado', detail + ' · você já pode iniciar o serviço', '/profissional/pedido/' + id, true);
+          if (a.status === DB.STATUS.APROVADO) pushNotice(session, 'orc_aprovado:' + id, 'Cliente escolheu você', detail + ' · combine o serviço e conte depois se fechou', '/profissional/pedido/' + id, true);
           if (a.status === DB.STATUS.ORCAMENTO_RECUSADO) pushNotice(session, 'orc_recusado:' + id, 'Cliente respondeu ao orçamento', detail + ' · veja o motivo e envie uma nova proposta', '/profissional/pedido/' + id, false);
           if (a.status === DB.STATUS.NAO_SELECIONADO) pushNotice(session, 'orc_nao_selecionado:' + id, 'Cliente escolheu outro profissional', detail + ' · seu orçamento não foi selecionado desta vez', '/profissional/pedido/' + id, false);
         }
       } else if (session.role === 'cliente') {
         if (b && !b.profissionalId && a.profissionalId) {
-          pushNotice(session, 'prof_encontrado:' + id, 'Profissional encontrado', detail + ' · o profissional está preparando seu orçamento', '/cliente/pedido/' + id, true);
+          pushNotice(session, 'prof_encontrado:' + id, 'Profissional encontrado', detail + ' · ele vai chamar você no WhatsApp', '/cliente/pedido/' + id, true);
         }
         if (b && b.status !== a.status) {
           if (a.status === DB.STATUS.ORCAMENTO_ENVIADO) pushNotice(session, 'orc_recebido:' + id, 'Novo orçamento recebido', detail + ' · abra para aprovar ou recusar', '/cliente/pedido/' + id, true);

@@ -1515,12 +1515,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     buscando: 'Chamado aberto',
     sem_profissional: 'Nenhum profissional disponível',
     aguardando_aceite: 'Disponível para profissionais',
-    aguardando_orcamento: 'Profissional conectado',
-    orcamento_enviado: 'Orçamento recebido',
-    orcamento_recusado: 'Orçamento recusado',
-    aprovado: 'Orçamento aprovado',
-    em_andamento: 'Serviço em andamento',
-    servico_concluido: 'Serviço concluído',
+    // V11.22: fluxo simples — Aberto → Desbloqueado → Concluído/Cancelado.
+    aguardando_orcamento: 'Desbloqueado',
+    orcamento_enviado: 'Desbloqueado',
+    orcamento_recusado: 'Desbloqueado',
+    aprovado: 'Desbloqueado',
+    em_andamento: 'Desbloqueado',
+    servico_concluido: 'Concluído',
     pago: 'Concluído — aguardando avaliação',
     finalizado: 'Concluído e avaliado',
     cancelado: 'Cancelado',
@@ -2471,7 +2472,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
   function dashboardStats() {
     const reqs = state.requests;
-    const emAndamento = reqs.filter(function (r) { return [STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(r.status) !== -1; }).length;
+    const emAndamento = reqs.filter(function (r) { return [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(r.status) !== -1; }).length; // V11.22: desbloqueados
     const concluidos = reqs.filter(function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; }).length;
     const cancelados = reqs.filter(function (r) { return r.status === STATUS.CANCELADO; }).length;
     // V10.2: só entra como receita o que foi efetivamente cobrado (valor > 0 e pagamento aprovado).
@@ -2486,7 +2487,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       totalClientes: state.users.clientes.length,
       totalProfissionais: state.users.profissionais.length,
       profissionaisPendentes: state.users.profissionais.filter(function (p) { return p.statusAprovacao === 'pendente'; }).length,
-      pedidosAbertos: reqs.filter(function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO].indexOf(r.status) !== -1; }).length,
+      pedidosAbertos: reqs.filter(function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE].indexOf(r.status) !== -1; }).length,
       emAndamento: emAndamento, concluidos: concluidos, cancelados: cancelados,
       faturamento: receitaProfissionais + receitaPrioridade + receitaAnuncios,
       receitaProfissionais: receitaProfissionais,
@@ -3308,9 +3309,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       if (revCli && st === DB.STATUS.SERVICO_CONCLUIDO) st = DB.STATUS.FINALIZADO;
       const deb = debitos[c.id];
       const hist = [{ texto: 'Chamado criado', quando: c.criado_em }];
-      if (c.profissional_id) hist.push({ texto: deb && deb.valor > 0 ? 'Profissional desbloqueou por ' + PU.formatCurrency(deb.valor) : 'Profissional conectado (sem cobrança registrada)', quando: deb ? deb.criadoEm : c.atualizado_em });
+      if (c.profissional_id) hist.push({ texto: deb && deb.valor > 0 ? 'Profissional desbloqueou por ' + PU.formatCurrency(deb.valor) : 'Profissional desbloqueou (sem cobrança registrada)', quando: deb ? deb.criadoEm : c.atualizado_em });
       if (q) hist.push({ texto: 'Orçamento ' + (q.status === 'aceito' ? 'aprovado' : q.status === 'recusado' ? 'recusado' : 'enviado') + ' · ' + PU.formatCurrency(Number(q.valor_centavos || 0) + Number(q.taxa_visita_centavos || 0)), quando: q.atualizado_em || q.criado_em });
-      if (c.status === 'cancelado') hist.push({ texto: 'Chamado cancelado', quando: c.atualizado_em });
+      // V11.22: desfecho informado pelo profissional (ou fechamento automático em 7 dias).
+      if (c.desfecho === 'fechado') hist.push({ texto: 'Profissional informou que fechou o serviço', quando: c.desfecho_em || c.atualizado_em });
+      else if (c.desfecho === 'nao_fechado') hist.push({ texto: 'Profissional informou que não fechou o serviço', quando: c.desfecho_em || c.atualizado_em });
+      else if (c.desfecho === 'sem_retorno') hist.push({ texto: 'Encerrado sozinho: 7 dias sem resposta do profissional', quando: c.desfecho_em || c.atualizado_em });
+      else if (c.status === 'cancelado') hist.push({ texto: 'Chamado cancelado', quando: c.atualizado_em });
       if (revCli) hist.push({ texto: 'Cliente avaliou com ' + revCli.nota + ' estrela(s)', quando: revCli.criado_em });
       return {
         id: c.id, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
@@ -3323,7 +3328,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         taxaVisita: q ? Number(q.taxa_visita_centavos || 0) : 0,
         orcamento: q ? { maoDeObra: Number(q.mao_obra_centavos || 0), material: Number(q.material_centavos || 0), total: Number(q.valor_centavos || 0), status: q.status } : null,
         avaliacaoCliente: revCli ? { nota: revCli.nota, comentario: revCli.comentario || '' } : null,
-        canceladoPor: c.status === 'cancelado' ? '—' : null, motivoCancelamento: null, historico: hist
+        desfecho: c.desfecho || null,
+        canceladoPor: c.desfecho === 'nao_fechado' ? 'Profissional' : c.desfecho === 'sem_retorno' ? 'Sistema (7 dias sem resposta)' : (c.status === 'cancelado' ? '—' : null),
+        motivoCancelamento: c.desfecho === 'nao_fechado' ? 'Profissional informou que não fechou o serviço.' : c.desfecho === 'sem_retorno' ? 'Profissional não informou o resultado em 7 dias.' : null, historico: hist
       };
     });
     DB.state.users.clientes = clientes;
@@ -5100,17 +5107,90 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
           '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
           '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente && cliente.nome) || 'Não identificado') + '</div>' +
-          '<div class="text--sm text--secondary"><b>Aceitou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
+          '<div class="text--sm text--secondary"><b>Desbloqueou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
         '</div></div>' +
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
       '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
-        '<div>' + statusBadge(r.status) + '</div>' +
+        '<div>' + adminStatusBadge(r) + '</div>' +
         '<div class="text--sm text--muted text-right">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
       '</div>' +
     '</button>';
   }
+
+  // ---------------- V11.22: fluxo simples + quadro de fechamento ----------------
+  const ST_DESBLOQUEADO = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO];
+  const ST_CONCLUIDO = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO];
+  function adminStatusBadge(r) {
+    if (r && r.status === STATUS.CANCELADO && r.desfecho === 'nao_fechado') return '<span class="badge badge--danger"><span class="badge__dot"></span>Não fechou</span>';
+    if (r && r.status === STATUS.CANCELADO && r.desfecho === 'sem_retorno') return '<span class="badge badge--muted"><span class="badge__dot"></span>Sem retorno</span>';
+    return statusBadge(r.status);
+  }
+  let fechDias = 30;
+  function fechamentoStats(dias) {
+    const lim = dias ? Date.now() - dias * 86400000 : 0;
+    const reqs = DB.allRequests().filter(function (r) { return !lim || (Date.parse(r.criadoEm) || 0) >= lim; });
+    const desbl = reqs.filter(function (r) { return !!r.profissionalId; });
+    const out = { pedidos: reqs.length, desbloqueados: desbl.length, fechados: 0, naoFechados: 0, semRetorno: 0, aguardando: 0, outros: 0, porProf: [] };
+    const porProf = {};
+    desbl.forEach(function (r) {
+      const pp = porProf[r.profissionalId] || (porProf[r.profissionalId] = { id: r.profissionalId, desbloqueou: 0, fechou: 0, aguardando: 0 });
+      pp.desbloqueou++;
+      if (ST_CONCLUIDO.indexOf(r.status) !== -1) { out.fechados++; pp.fechou++; }
+      else if (r.desfecho === 'nao_fechado') out.naoFechados++;
+      else if (r.desfecho === 'sem_retorno') out.semRetorno++;
+      else if (ST_DESBLOQUEADO.indexOf(r.status) !== -1) { out.aguardando++; pp.aguardando++; }
+      else out.outros++;
+    });
+    out.taxa = out.desbloqueados ? Math.round(out.fechados / out.desbloqueados * 100) : null;
+    out.porProf = Object.keys(porProf).map(function (k) { return porProf[k]; }).sort(function (a, b) { return b.desbloqueou - a.desbloqueou || b.fechou - a.fechou; });
+    return out;
+  }
+  function fechKpi(value, label, cor) {
+    return '<div class="kpi-card"><div class="kpi-card__value"' + (cor ? ' style="color:' + cor + ';"' : '') + '>' + value + '</div><div class="kpi-card__label">' + label + '</div></div>';
+  }
+  function fechamentoBody(dias) {
+    const f = fechamentoStats(dias);
+    if (!f.pedidos) return '<div class="card card--tight"><div class="text--sm text--secondary">Nenhum pedido neste período.</div></div>';
+    const resumo = f.desbloqueados
+      ? '<div class="h2" style="color:var(--success-600);">' + f.fechados + ' de ' + f.desbloqueados + '</div><div class="text--sm text--secondary">desbloqueios viraram serviço fechado (' + f.taxa + '%)</div>'
+      : '<div class="h3">Nenhum desbloqueio ainda</div><div class="text--sm text--secondary">Os pedidos deste período ainda não foram desbloqueados por profissionais.</div>';
+    const linhas = f.porProf.slice(0, 8).map(function (pp) {
+      const prof = DB.profissionalById(pp.id);
+      return '<div class="row-between" style="gap:10px;"><span class="text--sm" style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + PU.escapeHtml((prof && prof.nome) || 'Profissional') + '</span>' +
+        '<span class="text--sm text--secondary" style="white-space:nowrap;">' + 'fechou ' + pp.fechou + ' de ' + pp.desbloqueou + (pp.aguardando ? ' · ' + pp.aguardando + ' aguardando' : '') + '</span></div>';
+    }).join('');
+    return '<div class="card stack--sm" data-fech-resumo>' + resumo +
+        '<hr class="hairline">' +
+        '<div class="row-between"><span class="text--sm text--secondary">Pedidos recebidos</span><span class="text--strong">' + f.pedidos + '</span></div>' +
+        '<div class="row-between"><span class="text--sm text--secondary">Desbloqueados por profissional</span><span class="text--strong">' + f.desbloqueados + '</span></div>' +
+      '</div>' +
+      '<div class="kpi-grid" style="margin-top:10px;">' +
+        fechKpi(f.fechados, 'Fechados', 'var(--success-600)') +
+        fechKpi(f.naoFechados, 'Não fechados', 'var(--danger-600)') +
+        fechKpi(f.semRetorno, 'Sem retorno (7 dias)') +
+        fechKpi(f.aguardando, 'Aguardando o profissional dizer') +
+      '</div>' +
+      (f.outros ? '<div class="text--sm text--muted" style="margin-top:8px;">' + f.outros + ' pedido(s) desbloqueado(s) foram cancelados de outra forma (pelo cliente ou pelo painel).</div>' : '') +
+      (linhas ? '<div class="card stack--sm" style="margin-top:10px;"><div class="text--strong">Por profissional</div>' + linhas + '</div>' : '');
+  }
+  function fechamentoHtml() {
+    return '<div class="section" id="admin-fechamento">' +
+      '<div class="section-head"><div><h2 class="h3">Está dando certo?</h2><div class="text--sm text--secondary">Quantos pedidos desbloqueados viraram serviço.</div></div>' +
+        '<select class="select" id="admin-fech-dias" style="width:auto;min-width:124px;" aria-label="Período">' +
+          [[7, '7 dias'], [30, '30 dias'], [0, 'Tudo']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === fechDias ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+        '</select></div>' +
+      '<div id="admin-fech-body">' + fechamentoBody(fechDias) + '</div>' +
+    '</div>';
+  }
+  document.addEventListener('change', function (e) {
+    if (!e.target || e.target.id !== 'admin-fech-dias') return;
+    fechDias = Number(e.target.value) || 0;
+    const body = document.getElementById('admin-fech-body');
+    if (body) body.innerHTML = fechamentoBody(fechDias);
+  });
+  global.QFAdminFechamento = { stats: fechamentoStats };
 
   function adminPedidosRecentesHtml() {
     const list = DB.allRequests().slice().sort(function (a, b) {
@@ -5118,7 +5198,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     }).slice(0, 5);
     if (!list.length) return '';
     return '<div class="section">' +
-      '<div class="section-head"><div><h2 class="h3">Últimos pedidos</h2><div class="text--sm text--secondary">Veja rapidamente quem pediu e quem aceitou.</div></div></div>' +
+      '<div class="section-head"><div><h2 class="h3">Últimos pedidos</h2><div class="text--sm text--secondary">Veja rapidamente quem pediu e quem desbloqueou.</div></div></div>' +
       '<div class="stack--sm">' + list.map(adminPedidoResumoCard).join('') + '</div>' +
       '<button type="button" class="btn btn--outline" data-nav="/admin/servicos" style="margin-top:10px;">Ver todos os serviços</button>' +
     '</div>';
@@ -5139,10 +5219,12 @@ Screens.adminDashboardRender = function () {
         (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         '<div class="kpi-grid">' +
           kpi(s.pedidosAbertos, 'Pedidos abertos', 'solicitados') +
-          kpi(s.emAndamento, 'Em andamento', 'andamento') +
+          kpi(s.emAndamento, 'Desbloqueados', 'andamento') +
           kpi(s.concluidos, 'Concluídos', 'concluidos') +
           kpi(s.cancelados, 'Cancelados', 'cancelados') +
         '</div>' +
+
+        fechamentoHtml() +
 
         adminPedidosRecentesHtml() +
 
@@ -5432,7 +5514,7 @@ Screens.adminDashboardRender = function () {
 
   // ---------------- V11.11.9: editar e excluir tudo ----------------
   const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
-  const STATUS_DB = [['aberto','Aberto (buscando profissional)'],['em_negociacao','Em negociação / orçamento'],['confirmado','Confirmado'],['em_andamento','Em andamento'],['concluido','Concluído'],['cancelado','Cancelado'],['expirado','Expirado']];
+  const STATUS_DB = [['aberto','Aberto (buscando profissional)'],['em_negociacao','Desbloqueado'],['confirmado','Desbloqueado (antigo: confirmado)'],['em_andamento','Desbloqueado (antigo: em andamento)'],['concluido','Concluído'],['cancelado','Cancelado'],['expirado','Expirado']];
   function confirm2(btn, fn) {
     if (btn.dataset.confirm !== '1') {
       btn.dataset.confirm = '1'; btn.dataset.label = btn.innerHTML;
@@ -5659,8 +5741,8 @@ Screens.adminDashboardRender = function () {
 
   const TABS_SERVICOS = [
     { id: 'todos', label: 'Todos', filter: function () { return true; } },
-    { id: 'solicitados', label: 'Solicitados', filter: function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE, STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO].indexOf(r.status) !== -1; } },
-    { id: 'andamento', label: 'Em andamento', filter: function (r) { return [STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(r.status) !== -1; } },
+    { id: 'solicitados', label: 'Abertos', filter: function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE].indexOf(r.status) !== -1; } },
+    { id: 'andamento', label: 'Desbloqueados', filter: function (r) { return ST_DESBLOQUEADO.indexOf(r.status) !== -1; } },
     { id: 'concluidos', label: 'Concluídos', filter: function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; } },
     { id: 'cancelados', label: 'Cancelados', filter: function (r) { return r.status === STATUS.CANCELADO; } },
   ];
@@ -5705,13 +5787,13 @@ Screens.adminDashboardRender = function () {
             '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
               '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
               '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</div>' +
-              '<div class="text--sm text--secondary"><b>Quem aceitou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
+              '<div class="text--sm text--secondary"><b>Quem desbloqueou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
             '</div></div>' +
             icon('chevronRight', 'list-item__chevron') +
           '</div>' +
           '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
           '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
-            '<div>' + statusBadge(r.status) + '</div>' +
+            '<div>' + adminStatusBadge(r) + '</div>' +
             '<div class="text--sm text--muted text-right">' + (lugar ? PU.escapeHtml(lugar) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
           '</div>' +
         '</button>' + (cloudOn() ? '<div style="padding:0 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') +
@@ -5735,7 +5817,7 @@ Screens.adminDashboardRender = function () {
       '<div class="view">' +
         '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
           '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--muted" style="margin-top:2px;">Pedido ' + PU.escapeHtml(r.id) + '</div></div></div>' +
-          statusBadge(r.status) +
+          adminStatusBadge(r) +
         '</div>' +
 
         '<div class="section">' +
