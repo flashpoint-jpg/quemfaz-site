@@ -27,6 +27,15 @@ function normalizePhone(value: unknown) {
   return d;
 }
 
+// V11.21: só celular brasileiro de verdade (DDD válido + 9 + 8 dígitos); barra números de exemplo.
+const DDDS = new Set("11 12 13 14 15 16 17 18 19 21 22 24 27 28 31 32 33 34 35 37 38 41 42 43 44 45 46 47 48 49 51 53 54 55 61 62 63 64 65 66 67 68 69 71 73 74 75 77 79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96 97 98 99".split(" "));
+function validMobile(d: string) {
+  if (d.length !== 11 || !DDDS.has(d.slice(0, 2)) || d[2] !== "9") return false;
+  const resto = d.slice(3);
+  if (resto === "12345678" || resto === "87654321") return false;
+  return new Set(resto.split("")).size >= 3;
+}
+
 function isInternalEmail(email: string) {
   return /@acesso\.quemfaz\.app\.br$/i.test(email);
 }
@@ -40,8 +49,8 @@ Deno.serve(async (req) => {
   const telefone = normalizePhone(body.telefone);
 
   if (nome.length < 2) return reply({ ok: false, error: "Informe seu nome." }, 400);
-  if (!(telefone.length === 10 || telefone.length === 11)) {
-    return reply({ ok: false, error: "Informe seu WhatsApp/celular com DDD." }, 400);
+  if (!validMobile(telefone)) {
+    return reply({ ok: false, error: "Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente." }, 400);
   }
 
   const canonical = await admin.rpc("qf_cliente_canonico_por_whatsapp", { p_whatsapp: telefone });

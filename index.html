@@ -4833,7 +4833,7 @@ alt=""></noscript>
 
     if (quickClient) {
       phoneDigits = String(data.telefone || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
-      if (!(phoneDigits.length === 10 || phoneDigits.length === 11)) return { ok: false, error: 'Informe seu WhatsApp/celular com DDD.' };
+      if (!(global.QFUI && global.QFUI.validPhone ? global.QFUI.validPhone(phoneDigits) : phoneDigits.length === 11)) return { ok: false, error: 'Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente.' };
       data.telefone = phoneDigits;
     } else {
       if (authPassword.length < 6) return { ok: false, error: 'A senha precisa ter pelo menos 6 caracteres.' };
@@ -6220,7 +6220,7 @@ alt=""></noscript>
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea>') +
           '</div>' +
           '<div class="qf-request-contact">' +
-          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-0000">') +
+          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
           field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
           '</div>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
@@ -6401,7 +6401,7 @@ alt=""></noscript>
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 4</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:25%"></span></div></div>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
           field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
-          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 99999-0000">') +
+          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 91234-5678">') +
           field('Tipo de cadastro', '<select class="select" name="tipoPessoa" required><option value="cpf">Pessoa Física (CPF)</option><option value="cnpj">Empresa / Pessoa Jurídica (CNPJ)</option></select>') +
           '<label class="field"><span class="field__label" data-documento-label>CPF</span><input class="input" name="documento" inputmode="numeric" required maxlength="14" placeholder="000.000.000-00" autocomplete="off"></label>' +
           '<label class="field"><span class="field__label" data-fantasia-label>Nome fantasia (opcional)</span><input class="input" name="nomeFantasia" maxlength="120" placeholder="Nome profissional ou da sua marca"></label>' +
@@ -6452,7 +6452,18 @@ alt=""></noscript>
     );
   }
 
-  function validPhone(v) { const d = String(v || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, ''); return d.length === 10 || d.length === 11; }
+  // V11.21: só aceita celular brasileiro de verdade (DDD válido + 9 + 8 dígitos) e barra números de exemplo.
+  const QF_DDDS = '11 12 13 14 15 16 17 18 19 21 22 24 27 28 31 32 33 34 35 37 38 41 42 43 44 45 46 47 48 49 51 53 54 55 61 62 63 64 65 66 67 68 69 71 73 74 75 77 79 81 82 83 84 85 86 87 88 89 91 92 93 94 95 96 97 98 99'.split(' ');
+  function validPhone(v) {
+    const d = String(v || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    if (d.length !== 11 || QF_DDDS.indexOf(d.slice(0, 2)) === -1 || d.charAt(2) !== '9') return false;
+    const resto = d.slice(3);
+    if (resto === '12345678' || resto === '87654321') return false;
+    const distintos = {}; resto.split('').forEach(function (c) { distintos[c] = 1; });
+    return Object.keys(distintos).length >= 3;
+  }
+  global.QFUI = global.QFUI || {};
+  global.QFUI.validPhone = validPhone;
   function field(label, controlHtml) {
     return '<label class="field"><span class="field__label">' + label + '</span>' + controlHtml + '</label>';
   }
@@ -6753,7 +6764,7 @@ alt=""></noscript>
         if (!cidade || !uf) { PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
         if (descricao.length < 8) { PU.toast('Explique rapidamente o que precisa ser feito.', 'danger'); return; }
         if (!nome) { PU.toast('Informe seu nome.', 'danger'); return; }
-        if (!validPhone(telefone)) { PU.toast('Informe seu WhatsApp/celular com DDD.', 'danger'); return; }
+        if (!validPhone(telefone)) { PU.toast('Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente.', 'danger', 6000); return; }
 
         let cat = DB.categories().find(function (x) {
           return x.id !== 'cat_outros' && catNorm(x.nome).trim() === catNorm(servico).trim();
@@ -6994,7 +7005,7 @@ alt=""></noscript>
         if (n === 1) {
           if (!String(fd.get('nome') || '').trim()) { PU.toast('Digite seu nome completo.', 'danger'); marcarErro('nome'); return false; }
           if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(fd.get('email') || '').trim())) { PU.toast('Digite um e-mail válido. Exemplo: nome@gmail.com', 'danger'); marcarErro('email'); return false; }
-          if (!validPhone(fd.get('telefone'))) { PU.toast('Digite seu WhatsApp com DDD. Exemplo: (11) 99999-0000', 'danger'); marcarErro('telefone'); return false; }
+          if (!validPhone(fd.get('telefone'))) { PU.toast('Digite um celular válido: o seu WhatsApp com DDD e o 9 na frente.', 'danger'); marcarErro('telefone'); return false; }
           const tipoPessoa = String(fd.get('tipoPessoa') || 'cpf');
           const documento = String(fd.get('documento') || '').trim();
           if (tipoPessoa === 'cnpj') {
@@ -7756,7 +7767,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
           '<h2 class="h3" style="margin-top:12px;">Profissional em conversa</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Ele vai chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Ele vai chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -9534,7 +9545,7 @@ alt=""></noscript>
               ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e chama o cliente no WhatsApp na hora. O endereço exato só aparece se o cliente escolher você.'
               : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o WhatsApp do cliente e o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. O endereço exato só aparece se o cliente escolher você.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('refresh') + '<span><strong>Devolução do lead:</strong> se o cliente não responder nenhuma mensagem em até 48 horas, o pedido é cancelado e o valor volta automaticamente. Se o cliente responder, a negociação é considerada iniciada e o valor do desbloqueio fica para a plataforma. ' + '<button class="qf-rules-link" type="button" data-action="regras-devolucao">Ver regras de devolução</button>' + '</span></p>') +
+          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('info') + '<span><strong>Sem devolução:</strong> o crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda.</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
@@ -9791,8 +9802,8 @@ alt=""></noscript>
             walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
             walletInfoRow('phoneCall', 'Contato e orçamento liberados', 'Depois do desbloqueio, você visualiza os dados do cliente e pode enviar o orçamento do serviço.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
-            '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos, preços e devolução.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
-            walletInfoRow('refresh', 'Devolução do lead', 'Se o cliente não responder nenhuma mensagem em até 48 horas, o pedido é cancelado e o valor do desbloqueio volta automaticamente. Se o cliente responder, a negociação foi iniciada e o valor fica para a plataforma.') +
+            '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
+            walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda. Por isso, chame o cliente no WhatsApp assim que desbloquear.') +
           '</div>' +
         '</div>' +
 
@@ -9932,7 +9943,7 @@ alt=""></noscript>
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente fica só com você', 'Em muitos apps, o mesmo pedido vai para 3 ou 4 profissionais e ganha quem cobra menos. No QuemFaz, quem desbloqueia primeiro fica com o cliente. Ninguém mais pega o mesmo chamado.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
-          walletInfoRow('refresh', 'Seu dinheiro volta se não der certo', 'Se o cliente cancelar antes de aprovar um orçamento, ou o pedido ficar 3 dias parado sem resposta, o valor do desbloqueio volta sozinho para a sua carteira. Se foi pelo plano, o chamado volta para o plano.') +
+          walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não. Você escolhe o horário: fora dele, estando offline, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
           walletInfoRow('creditCard', 'Pagamento seguro', 'Recargas por Pix, cartão ou boleto pelo Efí Bank. O saldo entra assim que o pagamento é confirmado.') +
@@ -9945,7 +9956,7 @@ alt=""></noscript>
           cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline, dentro do horário que você escolheu.') +
           cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Na aba Config. (barra de baixo), em Quando receber chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
           cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Na aba Config. (barra de baixo), escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
-          cfFaq('E se o cliente sumir depois que eu desbloquear?', 'Se o pedido ficar 3 dias parado sem resposta, ou o cliente cancelar antes de aprovar um orçamento, o valor volta sozinho para a sua carteira.') +
+          cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
           cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
           cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
@@ -10054,7 +10065,7 @@ alt=""></noscript>
       '</div>' +
       '<div class="section stack--sm"><div class="section-head"><h2 class="h3">Ajuda</h2></div>' +
         linha('/profissional/como-funciona', 'info', 'Como funciona', 'Passo a passo, preços, planos e dúvidas') +
-        linha('', 'refresh', 'Regras de devolução do lead', 'Quando o valor do desbloqueio volta para a sua carteira', 'regras-devolucao') +
+        linha('', 'info', 'Regra do desbloqueio', 'O crédito é usado ao desbloquear e não tem devolução', 'regras-devolucao') +
       '</div>' +
       '<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>' +
     '</div>';
@@ -10268,8 +10279,8 @@ alt=""></noscript>
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Créditos e leads</h2></div>' +
           '<button class="card row" type="button" style="width:100%;text-align:left;" data-action="regras-devolucao">' +
-            '<div class="icon-tile">' + icon('refresh') + '</div>' +
-            '<div class="spacer"><div class="text--strong">Regras de devolução do lead</div><div class="text--sm text--secondary">Quando o valor do desbloqueio volta para a sua carteira</div></div>' +
+            '<div class="icon-tile">' + icon('info') + '</div>' +
+            '<div class="spacer"><div class="text--strong">Regra do desbloqueio</div><div class="text--sm text--secondary">O crédito é usado ao desbloquear e não tem devolução</div></div>' +
             icon('chevronRight', 'list-item__chevron') +
           '</button>' +
         '</div>' +
@@ -10988,8 +10999,8 @@ alt=""></noscript>
           message: primeiraGratis
             ? 'Nenhum crédito será usado neste primeiro chamado. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
             : (usaPlano
-              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '). O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'
-              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'),
+              ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '), sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'),
           okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
@@ -11594,7 +11605,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.20.0';
+  const APP_VERSION = '11.21.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12313,18 +12324,13 @@ alt=""></noscript>
   function openRefundRules() {
     function item(ic, t, d) { return '<div class="qf-rules__item">' + icon(ic) + '<div><div class="text--strong">' + t + '</div><div class="text--sm text--secondary">' + d + '</div></div></div>'; }
     PU.openSheet('<div class="stack qf-rules">' +
-      '<div><h3 class="sheet__title">Regras de devolução do lead</h3><div class="text text--secondary text--sm">Regra simples: o valor do desbloqueio só é devolvido quando o cliente não responde. Se houve resposta, a negociação foi iniciada.</div></div>' +
-      '<div class="qf-rules__box qf-rules__box--auto"><div class="qf-rules__title">1. Sem resposta do cliente</div>' +
-        item('clock', 'Prazo de 48 horas', 'Se o cliente não responder nenhuma mensagem em até 48 horas após o desbloqueio, o pedido é cancelado automaticamente.') +
-        item('refresh', 'Devolução automática', 'Quando o lead foi pago ou usado pelo plano, o valor ou chamado volta automaticamente para o profissional.') +
-        '<div class="text--sm qf-rules__note">O profissional não precisa pedir a devolução.</div></div>' +
-      '<div class="qf-rules__box qf-rules__box--no"><div class="qf-rules__title">2. Quando não há devolução</div>' +
-        '<ul class="qf-rules__list"><li>o cliente respondeu no chat e a negociação começou;</li><li>o cliente aprovou, recusou ou tomou uma decisão sobre a proposta;</li><li>o serviço já foi confirmado, iniciado ou concluído;</li><li>o desbloqueio foi grátis e não houve valor cobrado.</li></ul></div>' +
-      '<div class="qf-rules__box"><div class="qf-rules__title">3. Cliente cancelou</div>' +
-        item('xCircle', 'Antes de responder', 'Se o cliente cancelar sem ter respondido ao profissional, o lead pode ser devolvido.') +
-        item('message', 'Depois de responder', 'Se o cliente já respondeu, a oportunidade virou negociação e o valor do desbloqueio fica para a plataforma.') +
+      '<div><h3 class="sheet__title">Regra do desbloqueio</h3><div class="text text--secondary text--sm">Regra simples: desbloqueou, o crédito foi usado. Não há devolução.</div></div>' +
+      '<div class="qf-rules__box qf-rules__box--auto"><div class="qf-rules__title">O que você recebe</div>' +
+        item('whatsapp', 'WhatsApp do cliente na hora', 'Ao desbloquear, aparece o botão verde para chamar o cliente no WhatsApp com a mensagem pronta.') +
+        item('message', 'Chat liberado', 'Você também pode conversar pelo chat do QuemFaz e enviar proposta.') +
       '</div>' +
-      '<div class="qf-rules__box"><div class="qf-rules__title">Onde conferir</div><div class="text--sm text--secondary">Carteira › “Devoluções de lead” mostra as últimas devoluções. Em Movimentações, o estorno aparece em verde.</div></div>' +
+      '<div class="qf-rules__box qf-rules__box--no"><div class="qf-rules__title">Sem devolução</div>' +
+        '<div class="text--sm text--secondary">O crédito ou o chamado do plano não volta, mesmo que o cliente não responda, cancele ou o pedido expire. Chame o cliente assim que desbloquear.</div></div>' +
       '<button class="btn btn--primary" type="button" id="qf-rules-ok">Entendi</button></div>');
     const ok = document.getElementById('qf-rules-ok');
     if (ok) ok.onclick = function () { PU.closeSheet(); };
@@ -12548,12 +12554,12 @@ alt=""></noscript>
     try {
       if (pattern === '/profissional/pedido/:id' && cloud()) {
         const req = DB.requestById(params.id);
-        if (req && (req.status === STATUS.AGUARDANDO_ORCAMENTO || req.status === STATUS.ORCAMENTO_ENVIADO) && !content.querySelector('[data-refund-card]')) {
+        // V11.21: devolução de lead desativada — o cartão de devolução não aparece mais.
+        if (false && req && (req.status === STATUS.AGUARDANDO_ORCAMENTO || req.status === STATUS.ORCAMENTO_ENVIADO) && !content.querySelector('[data-refund-card]')) {
           const view = content.querySelector('.view');
           if (view) view.insertAdjacentHTML('beforeend', refundCardHtml(req.id));
         }
       }
-      if (pattern === '/profissional/carteira') fillRefundSummary(content);
       if (pattern === '/cliente/novo-pedido/:catId') bindCoverage(content, params);
       if (pattern === '/cliente/pedido/:id') bindStillSearching(content);
       if (pattern === '/profissional/home') { profRating(content, user); Indicacao.registerPending(); }
@@ -13170,7 +13176,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     if (!req || req.clienteId !== user.id) return '<div class="view"><p class="text">Conversa não encontrada.</p></div>';
     return '<div class="view qf-chat-view" data-qf-chat-root data-role="cliente" data-call-id="' + esc(req.id) + '" data-prof-id="' + esc(params.profId) + '">' +
-      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Conversa ao vivo: a resposta aparece aqui na hora, com um toque. Combine preço, data e detalhes. O profissional também pode chamar você no WhatsApp que você informou no pedido. Seu endereço exato continua protegido até você escolher o profissional.</div><div class="text--sm" style="margin-top:8px;color:var(--orange-700);font-weight:800;">Se você não responder ao profissional em até 48h, seu pedido será cancelado automaticamente.</div></div>' +
+      '<div class="card"><div class="text--strong" data-qf-chat-title>Conversa com profissional</div><div class="text--sm text--secondary">Conversa ao vivo: a resposta aparece aqui na hora, com um toque. Combine preço, data e detalhes. O profissional também pode chamar você no WhatsApp que você informou no pedido. Seu endereço exato continua protegido até você escolher o profissional.</div></div>' +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
         '<textarea class="textarea" maxlength="1500" data-qf-chat-input placeholder="Digite sua mensagem"></textarea>' +
@@ -13246,7 +13252,7 @@ alt=""></noscript>
     const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
     return '<div class="card qf-client-decision">' +
         '<div class="text--strong">' + (selected ? 'Serviço confirmado' : 'Um profissional reservou seu pedido') + '</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio. Se você não responder ao profissional em até 48h, seu pedido será cancelado.') + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio.') + '</div>' +
         (!selected ? '<div class="btn-row" style="margin-top:12px;">' +
           '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechou negócio</button>' +
           '<button class="btn btn--outline" type="button" data-qf-continue-search> Ainda não </button>' +
