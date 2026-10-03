@@ -2334,6 +2334,102 @@ window.qfGoogleLead = function () {
   } catch (_) {}
 };
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap">
+<style id="qf-skin-comanda">
+/* QuemFaz V11.23 — visual "comanda": títulos grandes, faixa de trena e cartão com picote.
+   Vale para o app inteiro, MENOS a tela inicial (data-route="inicio"), que fica como sempre foi.
+   Se a fonte dos títulos não carregar, o app usa a fonte do aparelho. */
+#app-shell:not([data-route="inicio"]) {
+  --qf-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --qf-tape-yellow: #ffc533;
+  --qf-notch: var(--bg-page);
+}
+#app-shell:not([data-route="inicio"]) .h1,
+#app-shell:not([data-route="inicio"]) .h2,
+#app-shell:not([data-route="inicio"]) .h3,
+#app-shell:not([data-route="inicio"]) .topbar__title { font-family: var(--qf-display); letter-spacing: -0.02em; }
+#app-shell:not([data-route="inicio"]) .h1 { font-size: 30px; line-height: 1.05; }
+#app-shell:not([data-route="inicio"]) .h2 { font-size: 22px; }
+#app-shell:not([data-route="inicio"]) .h3 { font-size: 17.5px; }
+
+/* Cabeçalho azul-marinho com a trena embaixo */
+#app-shell:not([data-route="inicio"]) .topbar {
+  color: #fff; padding-bottom: 22px;
+  background:
+    repeating-linear-gradient(90deg, #0b1d3a 0 2px, transparent 2px 39px) left bottom / 100% 12px no-repeat,
+    repeating-linear-gradient(90deg, rgba(11,29,58,.55) 0 1px, transparent 1px 7.8px) left bottom 7px / 100% 5px no-repeat,
+    linear-gradient(#ffc533, #ffc533) left bottom / 100% 12px no-repeat,
+    var(--navy-900);
+}
+#app-shell:not([data-route="inicio"]) .topbar .topbar__title { color: #fff; font-size: 20px; }
+#app-shell:not([data-route="inicio"]) .topbar .topbar__back { background: rgba(255,255,255,.12); color: #fff; }
+#app-shell:not([data-route="inicio"]) .topbar > .topbar__action { color: #fff; }
+#app-shell:not([data-route="inicio"]) .topbar .topbar__title--brand > span:last-child span { color: var(--orange-400); }
+.qf-tape {
+  display: block; height: 12px;
+  background:
+    repeating-linear-gradient(90deg, #0b1d3a 0 2px, transparent 2px 39px) 0 0 / 100% 100% no-repeat,
+    repeating-linear-gradient(90deg, rgba(11,29,58,.55) 0 1px, transparent 1px 7.8px) 0 0 / 100% 5px no-repeat,
+    #ffc533;
+}
+#app-shell[data-route="cliente-home"] .topbar { background: var(--navy-900); padding-bottom: 10px; }
+
+/* Barra de baixo clara, item ativo laranja (só no celular; no computador ela é a barra de cima) */
+@media (max-width: 767px) {
+  #app-shell:not([data-route="inicio"]) .tabbar { background: #fff; box-shadow: 0 -1px 0 var(--border-subtle), 0 -10px 24px -18px rgba(8,20,40,.35); }
+  #app-shell:not([data-route="inicio"]) .tabbar__item { color: var(--text-secondary); font-size: 11.5px; }
+  #app-shell:not([data-route="inicio"]) .tabbar__item.is-active { color: var(--orange-600); font-weight: 800; }
+  #app-shell:not([data-route="inicio"]) .tabbar__item.is-active::before { background: var(--orange-600); }
+}
+
+/* Picote da comanda */
+.qf-perf { position: relative; height: 0; border-top: 2px dashed var(--border-strong); margin: 14px 0; }
+.qf-perf::before, .qf-perf::after { content: ""; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--qf-notch, #f3f5f9); }
+.qf-perf::before { left: -28px; }
+.qf-perf::after { right: -28px; }
+.qf-ticket { overflow: visible; }
+
+/* Início do cliente: pergunta grande em azul, trena no pé */
+.qf-hero { margin: -16px -18px 0; background: var(--navy-900); color: #fff; }
+.qf-hero__in { padding: 14px 20px 20px; }
+.qf-hero__hi { font-size: 14.5px; font-weight: 600; color: var(--text-on-navy-muted); }
+.qf-hero__title { margin: 4px 0 0; font-family: var(--qf-display); font-weight: 800; font-size: 36px; line-height: 1.03; letter-spacing: -0.03em; color: #fff; }
+.qf-hero + * { margin-top: 16px; }
+
+/* Passos do pedido (cliente) */
+.qf-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.qf-step { display: flex; flex-direction: column; gap: 7px; font-size: 12px; font-weight: 500; line-height: 1.2; color: var(--text-secondary); }
+.qf-step::before { content: ""; height: 6px; border-radius: 3px; background: #dfe4ec; }
+.qf-step.is-done { color: var(--text-primary); font-weight: 600; }
+.qf-step.is-done::before { background: var(--navy-900); }
+.qf-step.is-now { color: var(--orange-700); font-weight: 800; }
+.qf-step.is-now::before { background: var(--orange-500); }
+.qf-now-title { font-family: var(--qf-display); font-weight: 700; font-size: 22px; letter-spacing: -0.02em; line-height: 1.1; }
+
+/* Pedido desbloqueado (profissional) */
+#app-shell:not([data-route="inicio"]) .qf-title-row .h3 { font-size: 26px; font-weight: 800; }
+
+/* Chamado novo: tela escura para o profissional perceber na hora */
+#app-shell[data-route="profissional-chamada"] { --qf-notch: var(--navy-900); }
+#app-shell[data-route="profissional-chamada"] #app-content { background: var(--navy-900); }
+#app-shell[data-route="profissional-chamada"] .view > .row-between:first-child .h2 { color: #fff; font-size: 38px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+#app-shell[data-route="profissional-chamada"] .view > .row-between:first-child .text--secondary { color: var(--text-on-navy-muted); }
+#app-shell[data-route="profissional-chamada"] .view > .row-between:first-child .icon-tile { background: var(--qf-tape-yellow); color: var(--navy-900); }
+#app-shell[data-route="profissional-chamada"] .qf-call-fact { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
+#app-shell[data-route="profissional-chamada"] .qf-call-fact strong { color: #fff; font-family: var(--qf-display); font-size: 19px; }
+#app-shell[data-route="profissional-chamada"] .qf-call-fact span { color: var(--text-on-navy-muted); }
+#app-shell[data-route="profissional-chamada"] .view > .section.card[style*="navy-900"] { background: var(--navy-800) !important; border: 1px solid var(--navy-600) !important; }
+#app-shell[data-route="profissional-chamada"] .btn-row .btn--outline { background: transparent; color: #fff; border-color: var(--navy-600); }
+#app-shell[data-route="profissional-chamada"] .empty-state .h3 { color: #fff; }
+#app-shell[data-route="profissional-chamada"] .empty-state .text--secondary { color: var(--text-on-navy-muted); }
+
+@media (min-width: 900px) {
+  .qf-hero { margin: 0; border-radius: 22px; overflow: hidden; }
+  .qf-hero__title { font-size: 44px; }
+}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -7226,7 +7322,8 @@ alt=""></noscript>
           '</div>' +
           icon('chevronRight', 'list-item__chevron') +
         '</div>' +
-        '<div class="row-between" style="margin-top:12px;">' +
+        '<div class="qf-perf" aria-hidden="true"></div>' +
+        '<div class="row-between">' +
           statusBadge(req.status) +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
         '</div>' +
@@ -7306,16 +7403,20 @@ alt=""></noscript>
       destaque = 'Buscando';
     }
 
+    // V11.23: comanda com picote e os 4 passos do pedido.
+    const fase = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO].indexOf(req.status) !== -1 ? 2 : (req.status === STATUS.FINALIZADO ? 3 : (DB.STATUS_DESBLOQUEADO.indexOf(req.status) !== -1 ? 1 : 0));
+    const passos = ['Pedido publicado', 'Em contato', 'Serviço feito', 'Avaliação'].map(function (t, i) {
+      return '<div class="qf-step' + (i < fase ? ' is-done' : i === fase ? ' is-now' : '') + '">' + t + '</div>';
+    }).join('');
     return '<div class="section qf-client-now">' +
       '<div class="section-head"><h2 class="h3">Seu pedido agora</h2><span class="badge badge--orange">' + PU.escapeHtml(destaque) + '</span></div>' +
-      '<div class="card" style="border:1px solid rgba(245,124,32,.28);background:linear-gradient(135deg,#fff7ed 0%,#fff 72%);box-shadow:0 10px 26px -20px rgba(8,20,40,.45);">' +
-        '<div class="row" style="align-items:flex-start;gap:12px;">' +
-          '<div class="icon-tile icon-tile--orange">' + icon(ic) + '</div>' +
-          '<div class="spacer"><div class="text--sm text--secondary">' + PU.escapeHtml(nomeServico) + '</div>' +
-          '<div class="h3" style="margin-top:2px;">' + PU.escapeHtml(titulo) + '</div>' +
-          '<div class="text--sm text--secondary" style="margin-top:5px;line-height:1.45;">' + PU.escapeHtml(texto) + '</div></div>' +
-        '</div>' +
-        '<button class="btn btn--primary" type="button" data-nav="' + PU.escapeHtml(rota) + '" style="width:100%;margin-top:12px;">' + PU.escapeHtml(botao) + ' ' + icon('arrowRight') + '</button>' +
+      '<div class="card qf-ticket">' +
+        '<div class="qf-now-title">' + PU.escapeHtml(nomeServico) + '</div>' +
+        '<div class="text--strong" style="margin-top:6px;">' + PU.escapeHtml(titulo) + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;line-height:1.45;">' + PU.escapeHtml(texto) + '</div>' +
+        '<div class="qf-perf" aria-hidden="true"></div>' +
+        '<div class="qf-steps" aria-label="Etapas do pedido">' + passos + '</div>' +
+        '<button class="btn btn--primary" type="button" data-nav="' + PU.escapeHtml(rota) + '" style="width:100%;margin-top:16px;">' + PU.escapeHtml(botao) + ' ' + icon('arrowRight') + '</button>' +
       '</div>' +
     '</div>';
   }
@@ -7323,7 +7424,7 @@ alt=""></noscript>
   // ---------------- Início ----------------
 
   function renderCategoryBrowser(cats, afterPopular, user) {
-    const freeLineHtml='<div class="qf-free-line">'+icon('checkCircle')+'<span>Pedir um profissional é grátis. Você só decide contratar depois do orçamento.</span></div>';
+    const freeLineHtml='<div class="qf-free-line">'+icon('checkCircle')+'<span>Pedir um profissional é grátis. Você só decide contratar depois de conversar com ele.</span></div>';
     let savedRegion = null;
     try { savedRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { savedRegion = null; }
     const userEnd = user && user.enderecos && user.enderecos[0] ? user.enderecos[0] : null;
@@ -7366,7 +7467,7 @@ alt=""></noscript>
     const outros=ativos.slice(1,3);
     const cats=DB.categories();
     return '<div class="view">'+
-      '<div class="row"><div class="avatar avatar--orange">'+PU.initials(user.nome)+'</div><div><div class="text--sm text--secondary">Olá,</div><div class="h2">'+PU.escapeHtml(user.nome.split(' ')[0])+'</div></div></div>'+
+      '<div class="qf-hero"><div class="qf-hero__in"><div class="qf-hero__hi">Olá, '+PU.escapeHtml(user.nome.split(' ')[0])+'</div><h1 class="qf-hero__title">O que você precisa hoje?</h1></div><div class="qf-tape" aria-hidden="true"></div></div>'+
       '<div class="qf-home-ads-top">'+anunciosCarousel(user)+'</div>'+
       clienteAgoraCard(principal)+
       (outros.length?'<div class="section"><div class="section-head"><h2 class="h3">Outros pedidos ativos</h2></div><div class="stack--sm">'+outros.map(pedidoCard).join('')+'</div></div>':'')+
@@ -9567,7 +9668,7 @@ alt=""></noscript>
           '<div class="text--sm text--strong" style="color:var(--orange-700);text-transform:uppercase;letter-spacing:.06em;">O que o cliente precisa</div>' +
           '<div class="qf-call-desc">' + (req.descricao ? PU.escapeHtml(req.descricao) : '<span class="text--secondary">O cliente não escreveu detalhes.</span>') + '</div>' +
           (CallInfo.midias(req).list.length ? '<div class="text--sm text--secondary">' + CallInfo.midiasTxt(req) + ' do cliente · toque na foto para ampliar</div><div class="qf-call-media">' + CallInfo.midias(req).list.map(renderCallMedia).join('') + '</div>' : '') +
-          '<hr class="hairline">' +
+          '<div class="qf-perf" aria-hidden="true" style="margin:6px 0;"></div>' +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</span></div>' +
           distanceHighlight(req) +
           '<hr class="hairline">' +
@@ -9647,7 +9748,8 @@ alt=""></noscript>
           '<div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cliente || {}).nome || '') + '</div></div></div>' +
           icon('chevronRight', 'list-item__chevron') +
         '</div>' +
-        '<div class="row-between" style="margin-top:12px;">' + statusBadge(req.status) + '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span></div>' +
+        '<div class="qf-perf" aria-hidden="true"></div>' +
+        '<div class="row-between">' + statusBadge(req.status) + '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span></div>' +
       '</button>'
     );
   }
@@ -9665,7 +9767,7 @@ alt=""></noscript>
       : global.QFUI.primeiroContatoMsg(cliente, user, cat);
     return (
       '<div class="view">' +
-        '<div class="row-between">' +
+        '<div class="row-between qf-title-row">' +
           '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div></div>' +
           statusBadge(req.status) +
         '</div>' +
@@ -9685,6 +9787,7 @@ alt=""></noscript>
             : '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro informado') + ' · endereço exato liberado após aprovação</span></div>') +
         '</div>' +
 
+        '<!--qf-chat-->' +
         (req.orcamento ? orcamentoResumo(req) : '') +
         acoesPorStatus(req) +
       '</div>'
@@ -9725,9 +9828,10 @@ alt=""></noscript>
     const s = req.status;
     // V11.22: sem orçamento, iniciar e concluir. O profissional só conta como terminou.
     if (DB.STATUS_DESBLOQUEADO.indexOf(s) !== -1) {
-      return '<div class="section"><div class="card stack" data-qf-fechamento style="border:2px solid var(--orange-500);gap:14px;">' +
+      return '<div class="section"><div class="card stack qf-ticket" data-qf-fechamento style="gap:14px;">' +
         '<div><div class="text--strong">Deu certo com este cliente?</div>' +
         '<div class="text--sm text--secondary">Depois de combinar pelo WhatsApp e fazer o serviço, conte aqui como terminou. Ao fechar, o cliente é convidado a avaliar você.</div></div>' +
+        '<div class="qf-perf" aria-hidden="true" style="margin:2px 0;"></div>' +
         '<button class="btn btn--primary" data-action="fechei-servico">' + icon('checkCircle') + ' Fechei o serviço</button>' +
         '<button class="btn btn--outline" data-action="nao-fechei-servico">' + icon('xCircle') + ' Não fechei</button>' +
         '<div class="text--sm text--muted">Sem resposta em 7 dias, o pedido é encerrado sozinho como “Sem retorno”.</div>' +
@@ -11651,7 +11755,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.22.1';
+  const APP_VERSION = '11.23.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13175,12 +13279,13 @@ alt=""></noscript>
     if (!req) return html;
     const blocked = req.status === 'nao_selecionado' || req.status === 'cancelado' || req.status === 'finalizado';
     const cta = blocked ? '' :
-      '<div class="section"><div class="card qf-negotiation-card" style="border:2px solid var(--orange-500);">' +
-        '<div class="row-between"><div><div class="text--strong">Conversa com o cliente</div><div class="text--sm text--secondary">Combine valor, data e detalhes pelo WhatsApp ou pelo chat.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
-        '<button class="btn btn--primary" data-nav="/profissional/chat/' + esc(req.id) + '">' + icon('message') + ' Conversar com o cliente</button>' +
+      '<div class="section"><div class="card qf-negotiation-card">' +
+        '<div class="row-between"><div><div class="text--strong">Chat do QuemFaz</div><div class="text--sm text--secondary">Se preferir, converse por aqui em vez do WhatsApp.</div></div><span class="badge badge--orange">Chat liberado</span></div>' +
+        '<button class="btn btn--outline" data-nav="/profissional/chat/' + esc(req.id) + '">' + icon('message') + ' Abrir o chat</button>' +
         '<div data-qf-prof-competition class="text--sm text--secondary"></div>' +
       '</div></div>';
-    html = html.replace('<div class="view">','<div class="view">' + scheduleSummary(req) + cta);
+    // V11.23: o WhatsApp vem primeiro; o chat fica logo abaixo do cartão do cliente.
+    html = html.replace('<div class="view">','<div class="view">' + scheduleSummary(req)).replace('<!--qf-chat-->', cta);
     html = html.replaceAll('Aguardando aprovação do orçamento','Converse com o cliente pelo chat');
     html = html.replaceAll('Telefone e WhatsApp serão liberados quando o cliente aprovar seu orçamento.','Telefone e WhatsApp serão liberados quando o cliente escolher você.');
     html = html.replaceAll('endereço exato liberado após aprovação','endereço exato liberado quando o cliente escolher você');

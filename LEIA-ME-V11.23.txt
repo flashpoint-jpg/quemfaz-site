@@ -1,0 +1,20 @@
+QuemFaz V11.23.0 — Visual novo ("comanda"), sem mexer na tela inicial
+
+O QUE MUDOU (só aparência; nenhuma função saiu)
+- Tela inicial (a da foto "Precisou? Encontre quem faz.") NÃO mudou. Conferido ponto a ponto
+  no celular, no tablet e no computador: só o número da versão no rodapé é diferente.
+- Cabeçalho azul-marinho com a faixa de trena amarela embaixo, em todas as outras telas.
+- Títulos maiores, com a fonte Bricolage Grotesque (se não carregar, usa a fonte do aparelho).
+- Cartão em forma de comanda, com picote: pedido do cliente, lista de pedidos/serviços,
+  chamado novo e "Deu certo com este cliente?".
+- Início do cliente: "O que você precisa hoje?" em destaque e os 4 passos do pedido
+  (Pedido publicado, Em contato, Serviço feito, Avaliação). Anúncios continuam no topo.
+- Chamado novo: tela escura, para o profissional perceber na hora.
+- Pedido desbloqueado: WhatsApp vem primeiro; o chat do QuemFaz fica logo abaixo.
+- Barra de baixo clara no celular, com o item ativo em laranja.
+
+COMO VOLTAR ATRÁS
+- Apagar o bloco <style id="qf-skin-comanda"> do index.html desfaz cores, trena e títulos.
+
+BANCO
+- Nada a aplicar.
