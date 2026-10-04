@@ -24,10 +24,12 @@ seletores.forEach((sel) => {
   assert.ok(novo || preso, 'regra solta que poderia mudar a tela inicial: ' + sel);
 });
 
-// V11.25: busca automática preservada; imagem promocional substituída por categorias.
+// V11.24: a tela inicial ganhou trena, etiqueta e botões grandes, mas a FOTO e a BUSCA
+// automática continuam exatamente como eram.
 const a = html.indexOf("'<section class=\"qf-landing-hero\">");
 assert.ok(a > 0);
 const landing = html.slice(a, html.indexOf('};', a));
+assert.ok(landing.includes('<div class="qf-landing-photo"><img src="\' + heroBanner + \'" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div>'));
 assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Do que você precisa?</label>'));
 assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search">'));
 assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form>'));
@@ -38,12 +40,11 @@ assert.ok(!/qf-landing-photo|qf-hero-search \.|qf-hero-search\{|\.qf-landing-pho
 ['data-action="landing-login"', 'data-support-open>Ajuda', 'data-nav="/auth/profissional/login"', 'data-nav="/anuncie"', 'data-nav="/como-funciona"'].forEach((x) => assert.ok(landing.includes(x) || html.includes(x), x));
 assert.ok(landing.includes('Ele chama você no WhatsApp'));
 
-// Pedir serviço: campos preservados; anúncios apenas após publicação.
+// Pedir serviço: mesmos campos, anúncio depois do botão.
 const r = html.indexOf('<div class="qf-req-steps"');
 const pedir = html.slice(r, html.indexOf("'</div>'\n    );\n  }", r));
 ['servicoField', 'regionField', 'name="descricao" required minlength="8"', 'name="telefone" type="tel"', 'name="nome" autocomplete="name" required', 'qf-request-submit'].forEach((x) => assert.ok(pedir.includes(x), x));
-assert.ok(!pedir.includes('cadastroClienteAdsHtml()'), 'anúncios não interrompem o preenchimento');
-assert.ok(html.includes('statusTrackSection(req) +\n        anunciosCarousel(user)'), 'anúncios após publicação');
+assert.ok(pedir.indexOf('qf-request-submit') < pedir.indexOf('cadastroClienteAdsHtml()'));
 
 // Peças do visual novo no lugar.
 assert.ok(html.includes('<h1 class="qf-hero__title">O que você precisa hoje?</h1>'));
