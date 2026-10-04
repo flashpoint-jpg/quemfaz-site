@@ -48,7 +48,7 @@ assert.ok(pedir.indexOf('qf-request-submit') < pedir.indexOf('cadastroClienteAds
 
 // Peças do visual novo no lugar.
 assert.ok(html.includes('<h1 class="qf-hero__title">O que você precisa hoje?</h1>'));
-assert.ok(html.includes("['Pedido publicado', 'Em contato', 'Serviço feito', 'Avaliação']"));
+assert.ok(html.includes("['Publicado', 'Em contato', 'Serviço feito', 'Avaliação']"));
 assert.ok(html.includes('class="card stack qf-ticket" data-qf-fechamento'));
 assert.ok(html.includes(".replace('<!--qf-chat-->', cta)"));
 assert.ok(html.includes('data-action="fechei-servico"') && html.includes('data-action="nao-fechei-servico"'));
