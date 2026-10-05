@@ -1,0 +1,30 @@
+QuemFaz V11.27.0 — Painel administrativo organizado
+
+O painel (admin.html) mostrava uns 12 blocos empilhados, com três seletores de período.
+Agora a tela tem cinco partes, nesta ordem, e nenhuma função saiu:
+
+1. RECEITA TOTAL — o número grande no topo e, embaixo, de onde veio: desbloqueios,
+   prioridades e anúncios. "Recargas vendidas" fica numa faixa separada.
+   A conta é a mesma de antes (nada mudou no cálculo).
+2. PRECISA DE VOCÊ — só o que pede ação, com contador: profissionais sem notificação,
+   chamados parados, chamados sem resposta, suporte. Cadastros para aprovar e
+   profissionais sem selfie aparecem só quando existem.
+   "Chamados parados" e "Chamados sem resposta" abrem ali mesmo, com um toque.
+3. COMO ESTÁ INDO — Pedidos > Desbloqueados > Fechados e os alertas de chamado, com um
+   período só (7 dias, 30 dias ou Tudo). "Ver detalhes" abre o quadro "Está dando certo?",
+   todas as métricas de alerta e a situação dos pedidos (abertos, desbloqueados,
+   concluídos, cancelados).
+   Em "Tudo", os alertas mostram os últimos 90 dias (limite do banco).
+4. ÚLTIMOS PEDIDOS — em linhas (serviço, cliente → profissional, cidade e hora).
+   No celular aparecem 3; no computador, 5.
+5. ATALHOS — Aviso geral, Bônus para todos e Cascata abrem com um toque (antes ficavam
+   abertos na tela). Profissionais, Clientes e Receitas levam para as telas de sempre.
+
+No computador a tela fica em duas colunas.
+O aviso de celular "chamado sem resposta" continua abrindo direto na lista certa.
+
+BANCO
+- Nenhuma alteração.
+
+TESTE
+- tests/painel-organizado.test.cjs

@@ -1054,6 +1054,90 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
   }
 }
 
+/* ---------- V11.27: painel reorganizado ---------- */
+.qf-painel__topo{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.qf-painel__grid{display:flex;flex-direction:column;gap:22px}
+.qf-painel__col{display:contents}
+.qf-painel .section{margin-top:0}
+.qf-painel .section-head{align-items:center;margin-bottom:10px}
+.qf-p-receita{order:1}.qf-p-precisa{order:2}.qf-p-indo{order:3}.qf-p-pedidos{order:4}.qf-p-atalhos{order:5}
+
+.qf-receita{background:var(--navy-900);color:var(--text-on-navy);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-card)}
+.qf-receita__topo{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.qf-receita__rotulo{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-on-navy-muted)}
+.qf-receita__sub{font-size:12px;color:#c5cfe0}
+.qf-receita__total{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+.qf-receita__sep{height:1px;background:rgba(255,255,255,.14)}
+.qf-receita__itens{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.qf-receita__item{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--text-on-navy-muted)}
+.qf-receita__item--tem{color:var(--text-on-navy)}
+.qf-receita__item span{display:flex;align-items:center;gap:8px;min-width:0}
+.qf-receita__item span::before{content:"";width:8px;height:8px;border-radius:50%;background:#6f86ad;flex:none}
+.qf-receita__item--tem span::before{background:var(--orange-400)}
+.qf-receita__item b,.qf-receita__recargas b{font-weight:700;white-space:nowrap}
+.qf-receita__recargas{background:var(--navy-700);border-radius:14px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.qf-receita__recargas b{font-size:16px}
+.qf-receita__recargas-titulo{font-size:14px;font-weight:700}
+.qf-receita__link{align-self:flex-start;min-height:36px;padding:0;border:0;background:none;color:var(--orange-400);font:inherit;font-size:14px;font-weight:700;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.qf-receita__link svg{width:16px;height:16px}
+
+.qf-lista{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:var(--radius-md);box-shadow:var(--shadow-card);overflow:hidden}
+.qf-linha{width:100%;min-height:62px;padding:10px 14px;margin:0;background:none;border:0;border-bottom:1px solid var(--border-subtle);border-radius:0;display:flex;align-items:center;gap:12px;text-align:left;color:var(--text-primary);font:inherit;cursor:pointer}
+.qf-linha:last-child{border-bottom:0}
+.qf-linha:active{background:var(--bg-sunken)}
+.qf-linha:focus-visible,.qf-atalho:focus-visible,.qf-receita__link:focus-visible{outline:2px solid var(--orange-500);outline-offset:-2px}
+.qf-linha__icone{width:38px;height:38px}
+.qf-linha__icone svg{width:20px;height:20px}
+.qf-linha__corpo{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.qf-linha__titulo{font-size:14.5px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qf-linha__sub{font-size:12.5px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qf-linha .list-item__chevron{transition:transform 120ms ease}
+.qf-linha[aria-expanded="true"] .list-item__chevron{transform:rotate(180deg)}
+.qf-conta{flex:none;min-width:30px;padding:3px 9px;border-radius:999px;background:var(--bg-sunken);color:var(--text-secondary);font-size:13px;font-weight:800;text-align:center}
+.qf-conta--tem{background:var(--warning-100);color:#8a5607}
+.qf-pedido{min-height:72px;padding-top:12px;padding-bottom:12px}
+.qf-pedido__topo{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.qf-pedido .badge{padding:3px 9px;font-size:11.5px;flex:none}
+
+.qf-gaveta{margin-top:12px;padding:12px;background:var(--bg-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-md)}
+.qf-gaveta[hidden]{display:none!important}
+.qf-gaveta__fechar{width:100%;margin-top:12px}
+.qf-gaveta .section-head{flex-wrap:wrap;gap:2px 10px}
+.qf-gaveta .section-head>span{white-space:nowrap}
+
+.qf-indo{display:flex;flex-direction:column;gap:14px}
+.qf-indo .hairline{margin:0;width:100%}
+.qf-indo__linha{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;margin-bottom:6px}
+.qf-indo__linha b{font-weight:700;white-space:nowrap}
+.qf-funil{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.qf-funil__passo{flex:0 1 auto;min-width:0}
+.qf-funil__n{font-size:26px;font-weight:800;line-height:1.1;letter-spacing:-.01em}
+.qf-funil__n--ok{color:var(--success-600)}
+.qf-funil__rot{font-size:12.5px;font-weight:600;color:var(--text-secondary);margin-top:2px}
+.qf-funil>svg{width:18px;height:18px;flex:none;color:var(--text-muted)}
+.qf-rotulo{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-secondary)}
+.qf-barra{height:8px;border-radius:999px;background:var(--navy-100);overflow:hidden}
+.qf-barra>i{display:block;height:100%;border-radius:999px;background:var(--navy-900)}
+
+.qf-atalhos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.qf-atalho{min-height:80px;padding:10px 6px;margin:0;border:1px solid var(--border-subtle);border-radius:14px;background:var(--bg-surface);color:var(--navy-900);font:inherit;font-size:13px;font-weight:700;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;cursor:pointer}
+.qf-atalho svg{width:22px;height:22px;flex:none}
+.qf-atalho small{font-size:11.5px;font-weight:600;color:var(--text-secondary)}
+.qf-atalho:active{background:var(--bg-sunken)}
+.qf-atalho[aria-expanded="true"]{border-color:var(--navy-900);background:var(--navy-100)}
+
+@media (max-width:899px){
+  .qf-lista--pedidos .qf-pedido:nth-child(n+4){display:none}
+  .qf-lista--pedidos .qf-pedido:nth-child(3){border-bottom:0}
+}
+@media (min-width:900px){
+  .qf-painel__grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
+  .qf-painel__col{display:flex;flex-direction:column;gap:24px;min-width:0}
+  .qf-receita{padding:26px}
+  .qf-receita__total{font-size:48px}
+  .qf-gaveta .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 /* Central administrativa de suporte */
 .qf-admin-support-list{display:flex;flex-direction:column;gap:10px}
 #servicos-segmented{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
@@ -1304,6 +1388,11 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     info: svg('<circle cx="12" cy="12" r="8.4"/><path d="M12 11v5.2"/><circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none"/>'),
     location: svg('<circle cx="12" cy="12" r="2.4"/><path d="M12 3v2.3M12 18.7V21M3 12h2.3M18.7 12H21"/>'),
     arrowRight: svg('<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>'),
+    megaphone: svg('<path d="M4 10v4h3l7 4V6l-7 4Z"/><path d="M17.5 9.2a4 4 0 0 1 0 5.6"/>'),
+    gift: svg('<rect x="4" y="9.5" width="16" height="10.5" rx="1.5"/><path d="M4 13.5h16M12 9.5V20"/><path d="M12 9.5C10.5 6 7 6.2 7.6 9.5M12 9.5c1.5-3.5 5-3.3 4.4 0"/>'),
+    layers: svg('<path d="m12 4 8 4-8 4-8-4Z"/><path d="m4 12 8 4 8-4"/><path d="m4 16 8 4 8-4"/>'),
+    bellOff: svg('<path d="M6.5 16v-5a5.5 5.5 0 0 1 8.3-4.7"/><path d="M17.5 11v5l1.5 2H8.5"/><path d="M10 21h4"/><path d="m4 4 16 16"/>'),
+    chat: svg('<path d="M4.5 5.5h15v10.5H9.5l-5 4Z"/>'),
   };
 
   global.ICONS = ICONS;
@@ -2591,14 +2680,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (on || !client()) return '';
     return '<div class="qf-admin-push" data-admin-push>' + icon('bell') + '<span>Ative as notificações para ser avisado de novos pedidos e mudanças importantes</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">Ativar</button></div>';
   }
-  function html() {
-    return '<div data-admin-install-slot>' + installBanner() + '</div>' + pushBanner() + '<section class="section qf-parados" id="parados"><div class="section-head"><h2 class="h3">Chamados parados ' + countHtml() + '</h2><span class="text--sm text--muted">atualiza a cada 60 s</span></div><div data-parados-body>' + bodyHtml() + '</div></section>';
+  function bannersHtml() { return '<div data-admin-install-slot>' + installBanner() + '</div>' + pushBanner(); }
+  function html() { return bannersHtml() + secaoHtml(); }
+  function secaoHtml() {
+    return '<section class="section qf-parados" id="parados"><div class="section-head"><h2 class="h3">Chamados parados ' + countHtml() + '</h2><span class="text--sm text--muted">atualiza a cada 60 s</span></div><div data-parados-body>' + bodyHtml() + '</div></section>';
   }
   function paint() {
     const sec = document.getElementById('parados');
     if (!sec) return;
     sec.querySelector('h2').innerHTML = 'Chamados parados ' + countHtml();
     sec.querySelector('[data-parados-body]').innerHTML = bodyHtml();
+    if (global.QFPainel) global.QFPainel.contas();
   }
   async function refresh() {
     const cl = client();
@@ -2692,9 +2784,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (pattern !== '/admin/dashboard') return;
     timer = null; start();
     let go = false; try { go = sessionStorage.getItem('qf_goto_parados') === '1'; sessionStorage.removeItem('qf_goto_parados'); } catch (_) {}
-    if (go) setTimeout(function () { const el = document.getElementById('parados'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
+    if (go) setTimeout(function () { if (global.QFPainel) { global.QFPainel.abrir('parados'); return; } const el = document.getElementById('parados'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
   };
-  global.QFAdminParados = { html: html, refresh: refresh, _set: function (itens) { cache = { itens: itens }; paint(); } };
+  global.QFAdminParados = { html: html, banners: bannersHtml, secao: secaoHtml, count: function () { return !client() ? 0 : (cache && cache.itens ? cache.itens.length : null); }, refresh: refresh, _set: function (itens) { cache = { itens: itens }; paint(); } };
 })(window);
 
 
@@ -2782,15 +2874,19 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     }
     return out;
   }
-  function html() {
-    return '<section class="section qf-semresp" id="sem-resposta"><div class="section-head"><h2 class="h3">Chamados sem resposta ' + countHtml() + '</h2><span class="text--sm text--muted">avisar por WhatsApp</span></div><div data-semresp-body>' + semRespBody() + '</div></section>' +
-      '<section class="section qf-cascata" id="cascata"><div class="section-head"><h2 class="h3">Cascata do chamado</h2><span class="text--sm text--muted">sem novo deploy</span></div><div data-cascata-body>' + cascataBody() + '</div></section>';
+  function html() { return semRespSecao() + cascataSecao(); }
+  function semRespSecao() {
+    return '<section class="section qf-semresp" id="sem-resposta"><div class="section-head"><h2 class="h3">Chamados sem resposta ' + countHtml() + '</h2><span class="text--sm text--muted">avisar por WhatsApp</span></div><div data-semresp-body>' + semRespBody() + '</div></section>';
+  }
+  function cascataSecao() {
+    return '<section class="section qf-cascata" id="cascata"><div class="section-head"><h2 class="h3">Cascata do chamado</h2><span class="text--sm text--muted">sem novo deploy</span></div><div data-cascata-body>' + cascataBody() + '</div></section>';
   }
   function paint(which) {
     const a = document.getElementById('sem-resposta');
     if (a && which !== 'cascata') {
       a.querySelector('h2').innerHTML = 'Chamados sem resposta ' + countHtml();
       a.querySelector('[data-semresp-body]').innerHTML = semRespBody();
+      if (global.QFPainel) global.QFPainel.contas();
     }
     const b = document.getElementById('cascata');
     if (b && which !== 'semresp') {
@@ -2871,9 +2967,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (pattern !== '/admin/dashboard') return;
     timer = null; start();
     let go = false; try { go = sessionStorage.getItem('qf_goto_semresp') === '1'; sessionStorage.removeItem('qf_goto_semresp'); } catch (_) {}
-    if (go) setTimeout(function () { const el = document.getElementById('sem-resposta'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
+    if (go) setTimeout(function () { if (global.QFPainel) { global.QFPainel.abrir('sem-resposta'); return; } const el = document.getElementById('sem-resposta'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
   };
-  global.QFAdminCascata = { html: html, refresh: refresh, _set: function (a, b, c) { semResp = a; cfg = b; resumo = c; paint(); } };
+  global.QFAdminCascata = { html: html, semResp: semRespSecao, cascata: cascataSecao, count: function () { return !client() ? 0 : (semResp && semResp.itens ? semResp.itens.length : null); }, refresh: refresh, _set: function (a, b, c) { semResp = a; cfg = b; resumo = c; paint(); } };
 })(window);
 
 
@@ -5094,28 +5190,21 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div class="card card--tight" style="background:var(--warning-100);border:none;margin-bottom:12px;"><div class="text--strong" style="color:var(--warning-600);">Não foi possível carregar os dados do painel</div><div class="text--sm" style="color:var(--warning-600);">Atualize a página. Se continuar, verifique a conexão com o banco de dados.</div></div>';
   }
   
-  // V12.4 — resumo operacional: quem pediu e quem aceitou.
-  function adminPedidoResumoCard(r) {
+  // V11.27 — últimos pedidos em linha compacta: serviço, quem pediu, quem desbloqueou, onde e quando.
+  function adminPedidoLinha(r) {
     const cat = DB.categoryById(r.categoriaId);
     const cliente = DB.clienteById(r.clienteId);
     const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
-    const pedido = String(r.titulo || r.descricao || 'Sem descrição').trim();
-    const resumo = pedido.length > 110 ? pedido.slice(0, 107) + '...' : pedido;
     const cidade = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
-    return '<button type="button" class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/servicos/' + r.id + '">' +
-      '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
-        '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
-          '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
-          '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente && cliente.nome) || 'Não identificado') + '</div>' +
-          '<div class="text--sm text--secondary"><b>Desbloqueou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
-        '</div></div>' +
-        icon('chevronRight', 'list-item__chevron') +
-      '</div>' +
-      '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
-      '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
-        '<div>' + adminStatusBadge(r) + '</div>' +
-        '<div class="text--sm text--muted text-right">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
-      '</div>' +
+    const quem = PU.escapeHtml((cliente && cliente.nome) || 'Cliente não identificado') +
+      (prof ? ' → ' + PU.escapeHtml(prof.nome || 'Profissional') : ' · ainda ninguém desbloqueou');
+    return '<button type="button" class="qf-linha qf-pedido" data-nav="/admin/servicos/' + r.id + '">' +
+      '<span class="icon-tile qf-linha__icone">' + icon(cat ? cat.icon : 'tag') + '</span>' +
+      '<span class="qf-linha__corpo">' +
+        '<span class="qf-pedido__topo"><span class="qf-linha__titulo">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</span>' + adminStatusBadge(r) + '</span>' +
+        '<span class="qf-linha__sub">' + quem + '</span>' +
+        '<span class="qf-linha__sub">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</span>' +
+      '</span>' +
     '</button>';
   }
 
@@ -5127,7 +5216,6 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     if (r && r.status === STATUS.CANCELADO && r.desfecho === 'sem_retorno') return '<span class="badge badge--muted"><span class="badge__dot"></span>Sem retorno</span>';
     return statusBadge(r.status);
   }
-  let fechDias = 30;
   function fechamentoStats(dias) {
     const lim = dias ? Date.now() - dias * 86400000 : 0;
     const reqs = DB.allRequests().filter(function (r) { return !lim || (Date.parse(r.criadoEm) || 0) >= lim; });
@@ -5175,105 +5263,219 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       (f.outros ? '<div class="text--sm text--muted" style="margin-top:8px;">' + f.outros + ' pedido(s) desbloqueado(s) foram cancelados de outra forma (pelo cliente ou pelo painel).</div>' : '') +
       (linhas ? '<div class="card stack--sm" style="margin-top:10px;"><div class="text--strong">Por profissional</div>' + linhas + '</div>' : '');
   }
-  function fechamentoHtml() {
-    return '<div class="section" id="admin-fechamento">' +
-      '<div class="section-head"><div><h2 class="h3">Está dando certo?</h2><div class="text--sm text--secondary">Quantos pedidos desbloqueados viraram serviço.</div></div>' +
-        '<select class="select" id="admin-fech-dias" style="width:auto;min-width:124px;" aria-label="Período">' +
-          [[7, '7 dias'], [30, '30 dias'], [0, 'Tudo']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === fechDias ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+  // ---------------- V11.27: painel reorganizado ----------------
+  // Ordem da tela: receita, o que precisa de ação, como está indo, últimos pedidos e atalhos.
+  // Nada saiu do painel: o que não é do dia a dia fica numa gaveta que abre com um toque.
+  let painelDias = 7;      // período único do quadro "Como está indo" (0 = tudo)
+  let gavetaAberta = null; // gaveta aberta no momento (sobrevive ao "Atualizar")
+
+  function gaveta(nome, conteudo) {
+    if (!conteudo) return '';
+    return '<div class="qf-gaveta" data-gaveta="' + nome + '"' + (gavetaAberta === nome ? '' : ' hidden') + '>' + conteudo +
+      '<button type="button" class="btn btn--ghost btn--sm qf-gaveta__fechar" data-gaveta-fechar="' + nome + '">Fechar</button></div>';
+  }
+  function marcarGavetas() {
+    document.querySelectorAll('[data-gaveta-abrir]').forEach(function (b) {
+      b.setAttribute('aria-expanded', String(b.getAttribute('data-gaveta-abrir') === gavetaAberta));
+    });
+  }
+  function abrirGaveta(nome, forcar) {
+    const alvo = document.querySelector('[data-gaveta="' + nome + '"]');
+    if (!alvo) return;
+    const abrir = !!forcar || alvo.hidden;
+    document.querySelectorAll('[data-gaveta]').forEach(function (g) { g.hidden = true; });
+    alvo.hidden = !abrir;
+    gavetaAberta = abrir ? nome : null;
+    marcarGavetas();
+    const foco = abrir ? alvo : document.querySelector('[data-gaveta-abrir="' + nome + '"]');
+    if (foco) setTimeout(function () {
+      try { foco.scrollIntoView({ block: abrir ? 'start' : 'center', behavior: 'smooth' }); } catch (_) { foco.scrollIntoView(); }
+    }, 30);
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-gaveta-abrir], [data-gaveta-fechar]');
+    if (!b) return;
+    const nome = b.getAttribute('data-gaveta-abrir') || b.getAttribute('data-gaveta-fechar');
+    if (b.hasAttribute('data-gaveta-fechar')) {
+      const g = document.querySelector('[data-gaveta="' + nome + '"]');
+      if (g && g.hidden) return;
+    }
+    abrirGaveta(nome, false);
+  });
+
+  function contaPill(n, nome) {
+    const vazio = n == null;
+    return '<span class="qf-conta' + (!vazio && Number(n) > 0 ? ' qf-conta--tem' : '') + '"' + (nome ? ' data-conta="' + nome + '"' : '') + '>' + (vazio ? '…' : Number(n)) + '</span>';
+  }
+  function atualizarContas() {
+    [['parados', global.QFAdminParados], ['sem-resposta', global.QFAdminCascata]].forEach(function (x) {
+      const el = document.querySelector('[data-conta="' + x[0] + '"]');
+      if (!el || !x[1] || typeof x[1].count !== 'function') return;
+      const n = x[1].count();
+      el.textContent = n == null ? '…' : n;
+      el.classList.toggle('qf-conta--tem', Number(n) > 0);
+    });
+  }
+  global.QFPainel = { abrir: function (nome) { abrirGaveta(nome, true); }, contas: atualizarContas };
+
+  function attrGaveta(nome) { return 'data-gaveta-abrir="' + nome + '" aria-expanded="' + (gavetaAberta === nome) + '"'; }
+  function precisaLinha(ic, titulo, sub, pill, attrs, seta) {
+    return '<button type="button" class="qf-linha" ' + attrs + '>' +
+      '<span class="icon-tile icon-tile--ghost qf-linha__icone">' + icon(ic) + '</span>' +
+      '<span class="qf-linha__corpo"><span class="qf-linha__titulo">' + titulo + '</span><span class="qf-linha__sub">' + sub + '</span></span>' +
+      pill + icon(seta || 'chevronRight', 'list-item__chevron') + '</button>';
+  }
+
+  // 1. Receita: o total em destaque e de onde ele veio.
+  function receitaHtml(s) {
+    function item(rotulo, valor) {
+      return '<div class="qf-receita__item' + (Number(valor) > 0 ? ' qf-receita__item--tem' : '') + '"><span>' + rotulo + '</span><b>' + PU.formatCurrency(valor) + '</b></div>';
+    }
+    return '<section class="section qf-receita qf-p-receita" aria-label="Receita do QuemFaz">' +
+      '<div>' +
+        '<div class="qf-receita__topo"><span class="qf-receita__rotulo">Receita total</span><span class="qf-receita__sub">desde o lançamento</span></div>' +
+        '<div class="qf-receita__total">' + PU.formatCurrency(s.faturamento) + '</div>' +
+      '</div>' +
+      '<div class="qf-receita__sep"></div>' +
+      '<div class="qf-receita__itens">' +
+        item('Desbloqueios de profissionais', s.receitaProfissionais) +
+        item('Prioridades de clientes', s.receitaPrioridade) +
+        item('Anúncios' + (cloudOn() ? ' (modo teste)' : ' patrocinados'), s.receitaAnuncios) +
+      '</div>' +
+      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Recargas vendidas</div><div class="qf-receita__sub">créditos comprados pelos profissionais</div></div><b>' + PU.formatCurrency(s.recargas) + '</b></div>' +
+      (s.desbloqueiosSemCobranca ? '<div class="qf-receita__sub">' + s.desbloqueiosSemCobranca + ' desbloqueio(s) sem cobrança (antigos/grátis) não entram na receita.</div>' : '') +
+      '<button type="button" class="qf-receita__link" data-nav="/admin/pagamentos">Ver todas as receitas' + icon('chevronRight') + '</button>' +
+    '</section>';
+  }
+
+  // 2. Precisa de você: só o que pede ação, com contador.
+  function precisaHtml(s) {
+    const par = global.QFAdminParados, cas = global.QFAdminCascata;
+    const semPush = cloudOn() ? semPushListaAtual().length : 0;
+    const suporte = ((global.QFAdminCloud && global.QFAdminCloud.supportTickets) || []).filter(function (t) { return t.status !== 'resolvido'; }).length;
+    let linhas = precisaLinha('bellOff', 'Profissionais sem notificação', 'chamar no WhatsApp', contaPill(semPush), 'data-nav="/admin/sem-push"');
+    if (par) linhas += precisaLinha('clock', 'Chamados parados', 'ninguém desbloqueou ainda', contaPill(par.count(), 'parados'), attrGaveta('parados'), 'chevronDown');
+    if (cas) linhas += precisaLinha('chat', 'Chamados sem resposta', 'avisar por WhatsApp', contaPill(cas.count(), 'sem-resposta'), attrGaveta('sem-resposta'), 'chevronDown');
+    linhas += precisaLinha('info', 'Central de suporte', 'atendimentos aguardando', contaPill(suporte), 'data-nav="/admin/suporte"');
+    if (s.profissionaisPendentes) linhas += precisaLinha('id', 'Cadastros para aprovar', 'profissionais aguardando análise', contaPill(s.profissionaisPendentes), 'data-nav="/admin/profissionais"');
+    if (cloudOn() && s.profissionaisSemSelfie) linhas += precisaLinha('camera', 'Profissionais sem selfie', 'ver os cadastros', contaPill(s.profissionaisSemSelfie), 'data-nav="/admin/profissionais"');
+    return '<section class="section qf-p-precisa">' +
+      '<div class="section-head"><h2 class="h3">Precisa de você</h2></div>' +
+      '<div class="qf-lista">' + linhas + '</div>' +
+      (par ? gaveta('parados', par.secao()) : '') +
+      (cas ? gaveta('sem-resposta', cas.semResp()) : '') +
+    '</section>';
+  }
+
+  // 3. Como está indo: pedidos → desbloqueados → fechados e os alertas, com um período só.
+  function funilHtml(dias) {
+    const f = fechamentoStats(dias);
+    function passo(n, rotulo, ok) {
+      return '<div class="qf-funil__passo"><div class="qf-funil__n' + (ok ? ' qf-funil__n--ok' : '') + '">' + n + '</div><div class="qf-funil__rot">' + rotulo + '</div></div>';
+    }
+    return '<div class="qf-funil">' + passo(f.pedidos, 'Pedidos') + icon('chevronRight') + passo(f.desbloqueados, 'Desbloqueados') + icon('chevronRight') + passo(f.fechados, 'Fechados', true) + '</div>';
+  }
+  function minutosTxt(v) { return Number(v || 0).toFixed(1).replace('.', ',') + ' min'; }
+  function alertResumoHtml(d) {
+    d = d || {};
+    const chamados = Number(d.chamados || 0), aceitos = Number(d.aceitos || 0);
+    if (!chamados) return '<div class="text--sm text--secondary">Nenhum chamado neste período.</div>';
+    const pct = Math.round(aceitos / chamados * 100);
+    return '<div class="qf-indo__linha"><span>Aceitos</span><b>' + aceitos + ' de ' + chamados + ' · ' + pct + '%</b></div>' +
+      '<div class="qf-barra" role="img" aria-label="' + pct + '% dos chamados aceitos"><i style="width:' + pct + '%;"></i></div>' +
+      '<div class="qf-indo__linha" style="margin-top:10px;"><span>Tempo até aceitar</span><b>' + (aceitos ? 'média ' + minutosTxt(d.minutos_ate_aceite_media) : '—') + '</b></div>';
+  }
+  function alertRotulo(dias) { return 'Alertas de chamado' + (dias ? '' : ' · últimos 90 dias'); }
+  function comoEstaIndoHtml(s) {
+    const carregando = '<div class="text--sm text--secondary">Carregando…</div>';
+    return '<section class="section qf-p-indo" id="admin-fechamento">' +
+      '<div class="section-head"><h2 class="h3">Como está indo</h2>' +
+        '<select class="select" id="admin-periodo" style="width:auto;min-width:112px;" aria-label="Período">' +
+          [[7, '7 dias'], [30, '30 dias'], [0, 'Tudo']].map(function (o) { return '<option value="' + o[0] + '"' + (o[0] === painelDias ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
         '</select></div>' +
-      '<div id="admin-fech-body">' + fechamentoBody(fechDias) + '</div>' +
-    '</div>';
+      '<div class="card qf-indo">' +
+        '<div id="admin-funil">' + funilHtml(painelDias) + '</div>' +
+        '<hr class="hairline">' +
+        '<div><div class="qf-rotulo" id="admin-alert-rotulo">' + alertRotulo(painelDias) + '</div><div id="admin-alert-resumo" style="margin-top:10px;">' + carregando + '</div></div>' +
+        '<button type="button" class="btn btn--outline btn--sm" ' + attrGaveta('detalhes') + '>Ver detalhes</button>' +
+      '</div>' +
+      gaveta('detalhes',
+        '<div class="section"><div class="section-head"><div><h2 class="h3">Está dando certo?</h2><div class="text--sm text--secondary">Quantos pedidos desbloqueados viraram serviço.</div></div></div>' +
+          '<div id="admin-fech-body">' + fechamentoBody(painelDias) + '</div></div>' +
+        '<div class="section" id="admin-alertas-chamado" style="margin-top:20px;"><div class="section-head"><div><h2 class="h3">Alertas de chamado</h2><div class="text--sm text--secondary">Entrega dos alertas e tempo até aceite.</div></div></div>' +
+          '<div id="admin-alert-metrics"><div class="card card--tight"><div class="text--sm text--secondary">Carregando métricas de alerta…</div></div></div></div>' +
+        '<div class="section" style="margin-top:20px;"><div class="section-head"><div><h2 class="h3">Situação dos pedidos</h2><div class="text--sm text--secondary">Todos os pedidos, desde o lançamento.</div></div></div>' +
+          '<div class="kpi-grid">' +
+            kpi(s.pedidosAbertos, 'Pedidos abertos', 'solicitados') +
+            kpi(s.emAndamento, 'Desbloqueados', 'andamento') +
+            kpi(s.concluidos, 'Concluídos', 'concluidos') +
+            kpi(s.cancelados, 'Cancelados', 'cancelados') +
+          '</div></div>'
+      ) +
+    '</section>';
   }
   document.addEventListener('change', function (e) {
-    if (!e.target || e.target.id !== 'admin-fech-dias') return;
-    fechDias = Number(e.target.value) || 0;
+    if (!e.target || e.target.id !== 'admin-periodo') return;
+    painelDias = Number(e.target.value) || 0;
+    const funil = document.getElementById('admin-funil');
+    if (funil) funil.innerHTML = funilHtml(painelDias);
     const body = document.getElementById('admin-fech-body');
-    if (body) body.innerHTML = fechamentoBody(fechDias);
+    if (body) body.innerHTML = fechamentoBody(painelDias);
+    const rot = document.getElementById('admin-alert-rotulo');
+    if (rot) rot.textContent = alertRotulo(painelDias);
+    const resumo = document.getElementById('admin-alert-resumo');
+    if (resumo) resumo.innerHTML = '<div class="text--sm text--secondary">Carregando…</div>';
+    const content = document.getElementById('app-content');
+    if (content) loadAlertMetrics(content, painelDias || 90);
   });
   global.QFAdminFechamento = { stats: fechamentoStats };
 
+  // 4. Últimos pedidos, em linhas.
   function adminPedidosRecentesHtml() {
     const list = DB.allRequests().slice().sort(function (a, b) {
       return (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0);
     }).slice(0, 5);
     if (!list.length) return '';
-    return '<div class="section">' +
-      '<div class="section-head"><div><h2 class="h3">Últimos pedidos</h2><div class="text--sm text--secondary">Veja rapidamente quem pediu e quem desbloqueou.</div></div></div>' +
-      '<div class="stack--sm">' + list.map(adminPedidoResumoCard).join('') + '</div>' +
+    return '<section class="section qf-p-pedidos">' +
+      '<div class="section-head"><h2 class="h3">Últimos pedidos</h2></div>' +
+      '<div class="qf-lista qf-lista--pedidos">' + list.map(adminPedidoLinha).join('') + '</div>' +
       '<button type="button" class="btn btn--outline" data-nav="/admin/servicos" style="margin-top:10px;">Ver todos os serviços</button>' +
-    '</div>';
+    '</section>';
+  }
+
+  // 5. Atalhos: ferramentas e listas que antes ficavam abertas na tela.
+  function atalho(ic, rotulo, sub, attrs) {
+    return '<button type="button" class="qf-atalho" ' + attrs + '>' + icon(ic) + '<span>' + rotulo + '</span>' + (sub ? '<small>' + sub + '</small>' : '') + '</button>';
+  }
+  function atalhosHtml(s) {
+    const aviso = global.QFAdminAviso ? global.QFAdminAviso.html() : '';
+    const bonus = global.QFAdminBonus ? global.QFAdminBonus.html() : '';
+    const cascata = global.QFAdminCascata ? global.QFAdminCascata.cascata() : '';
+    return '<section class="section qf-p-atalhos">' +
+      '<div class="section-head"><h2 class="h3">Atalhos</h2></div>' +
+      '<div class="qf-atalhos">' +
+        (aviso ? atalho('megaphone', 'Aviso geral', '', attrGaveta('aviso')) : '') +
+        (bonus ? atalho('gift', 'Bônus para todos', '', attrGaveta('bonus')) : '') +
+        (cascata ? atalho('layers', 'Cascata', '', attrGaveta('cascata')) : '') +
+        atalho('users', 'Profissionais', s.totalProfissionais + (cloudOn() ? ' · ' + s.profissionaisOnline + ' online' : ''), 'data-nav="/admin/profissionais"') +
+        atalho('user', 'Clientes', adminClientesConsolidados().length + ' cadastrados', 'data-nav="/admin/clientes"') +
+        atalho('wallet', 'Receitas', '', 'data-nav="/admin/pagamentos"') +
+      '</div>' +
+      gaveta('aviso', aviso) + gaveta('bonus', bonus) + gaveta('cascata', cascata) +
+    '</section>';
   }
 
 Screens.adminDashboardRender = function () {
     const s = DB.dashboardStats();
     const meta = DB.state.meta || {};
     return (
-      '<div class="view">' + migrationBanner() +
-        '<div class="card stack--sm" style="border:2px solid #128c4a;margin-bottom:14px;background:#f1fff6;">' +
-          '<div class="row-between" style="gap:10px;align-items:flex-start;"><div><div class="h3">Profissionais sem notificação</div><div class="text--sm text--secondary">Abra a lista de quem está sem push e chame no WhatsApp com a mensagem pronta.</div></div><span class="badge badge--warning">' + (cloudOn() ? semPushListaAtual().length : 0) + ' sem push</span></div>' +
-          '<button class="btn btn--primary" type="button" data-nav="/admin/sem-push">' + icon('whatsapp') + ' Chamar no WhatsApp</button>' +
+      '<div class="view qf-painel">' + migrationBanner() +
+        (global.QFAdminParados ? global.QFAdminParados.banners() : '') +
+        (cloudOn() && meta.snapshotEm ? '<div class="qf-painel__topo"><span class="text--sm text--secondary">Atualizado em ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
+        '<div class="qf-painel__grid">' +
+          '<div class="qf-painel__col">' + receitaHtml(s) + comoEstaIndoHtml(s) + atalhosHtml(s) + '</div>' +
+          '<div class="qf-painel__col">' + precisaHtml(s) + adminPedidosRecentesHtml() + '</div>' +
         '</div>' +
-        (global.QFAdminAviso ? global.QFAdminAviso.html() : '') +
-        (global.QFAdminBonus ? global.QFAdminBonus.html() : '') +
-        (global.QFAdminParados ? global.QFAdminParados.html() : '') + (global.QFAdminCascata ? global.QFAdminCascata.html() : '') +
-        (cloudOn() && meta.snapshotEm ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--muted">Dados reais do Supabase · atualizado ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
-        '<div class="kpi-grid">' +
-          kpi(s.pedidosAbertos, 'Pedidos abertos', 'solicitados') +
-          kpi(s.emAndamento, 'Desbloqueados', 'andamento') +
-          kpi(s.concluidos, 'Concluídos', 'concluidos') +
-          kpi(s.cancelados, 'Cancelados', 'cancelados') +
-        '</div>' +
-
-        fechamentoHtml() +
-
-        adminPedidosRecentesHtml() +
-
-        '<div class="section">' +
-          '<div class="card stack--sm">' +
-            '<div class="row-between"><span class="text--sm text--secondary">Receita do QuemFaz</span><span class="h3">' + PU.formatCurrency(s.faturamento) + '</span></div>' +
-            '<div class="row-between"><span class="text--sm text--secondary">Desbloqueios pagos por profissionais</span><span class="text--strong">' + PU.formatCurrency(s.receitaProfissionais) + '</span></div>' +
-            '<div class="row-between"><span class="text--sm text--secondary">Prioridades pagas por clientes</span><span class="text--strong">' + PU.formatCurrency(s.receitaPrioridade) + '</span></div>' +
-            '<div class="row-between"><span class="text--sm text--secondary">Anúncios patrocinados' + (cloudOn() ? ' (modo teste)' : '') + '</span><span class="text--strong">' + PU.formatCurrency(s.receitaAnuncios) + '</span></div>' +
-            '<hr class="hairline">' +
-            '<div class="row-between"><span class="text--sm text--secondary">Créditos vendidos (recargas)</span><span class="text--strong">' + PU.formatCurrency(s.recargas) + '</span></div>' +
-            (s.desbloqueiosSemCobranca ? '<div class="text--sm text--muted">' + s.desbloqueiosSemCobranca + ' desbloqueio(s) sem cobrança (antigos/grátis) não entram na receita.</div>' : '') +
-          '</div>' +
-        '</div>' +
-
-        '<div class="section" id="admin-alertas-chamado">' +
-          '<div class="section-head"><div><h2 class="h3">Alertas de chamado</h2><div class="text--sm text--secondary">Entrega dos alertas e tempo até aceite.</div></div><select class="select" id="admin-alert-days" style="width:auto;min-width:104px;"><option value="7">7 dias</option><option value="30">30 dias</option></select></div>' +
-          '<div id="admin-alert-metrics"><div class="card card--tight"><div class="text--sm text--secondary">Carregando métricas de alerta…</div></div></div>' +
-        '</div>' +
-
-        '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Pessoas</h2></div>' +
-          '<button class="card row-between" style="width:100%;text-align:left;" data-nav="/admin/profissionais">' +
-            '<div class="row"><div class="icon-tile">' + icon('users') + '</div><div><div class="text--strong">' + s.totalProfissionais + ' profissionais</div><div class="text--sm text--secondary">' + (cloudOn() ? s.profissionaisOnline + ' online agora · ' + s.profissionaisSemSelfie + ' sem selfie' : s.profissionaisPendentes + ' aguardando aprovação') + '</div></div></div>' +
-            icon('chevronRight', 'list-item__chevron') +
-          '</button>' +
-          '<button class="card row-between" style="width:100%;text-align:left;margin-top:10px;" data-nav="/admin/clientes">' +
-            '<div class="row"><div class="icon-tile">' + icon('user') + '</div><div><div class="text--strong">' + adminClientesConsolidados().length + ' clientes</div><div class="text--sm text--secondary">Cadastrados na plataforma</div></div></div>' +
-            icon('chevronRight', 'list-item__chevron') +
-          '</button>' +
-        '</div>' +
-
-
-        '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Atendimento</h2></div>' +
-          '<button class="card row-between" style="width:100%;text-align:left;" data-nav="/admin/suporte">' +
-            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('info') + '</div><div><div class="text--strong">Central de suporte</div><div class="text--sm text--secondary">' + (((global.QFAdminCloud && global.QFAdminCloud.supportTickets) || []).filter(function(t){return t.status !== 'resolvido';}).length) + ' atendimento(s) aguardando</div></div></div>' +
-            icon('chevronRight', 'list-item__chevron') +
-          '</button>' +
-        '</div>' +
-
-        (s.profissionaisPendentes ? (
-          '<div class="section">' +
-            '<div class="card card--tight" style="background:var(--warning-100);border:none;">' +
-              '<p class="text text--sm" style="color:var(--warning-600);">Você tem ' + s.profissionaisPendentes + ' profissional(is) aguardando aprovação de cadastro.</p>' +
-              '<button class="btn btn--sm btn--outline btn--block-auto" data-nav="/admin/profissionais" style="margin-top:8px;">Analisar agora</button>' +
-            '</div>' +
-          '</div>'
-        ) : '') +
       '</div>'
     );
   };
@@ -6463,12 +6665,13 @@ Screens.adminDashboardRender = function () {
     const chamados=Number(d.chamados||0),aceitos=Number(d.aceitos||0);
     const pct=chamados?Math.round(aceitos/chamados*100):0;
     const regions=Array.isArray(d.regioes_sem_cobertura)?d.regioes_sem_cobertura:[];
+    const rs=document.getElementById('admin-alert-resumo'); if(rs)rs.innerHTML=alertResumoHtml(d);
     box.innerHTML=
       '<div class="kpi-grid">'+
         alertKpi(chamados,'Chamados')+
         alertKpi(aceitos+' · '+pct+'%','Aceitos')+
-        alertKpi(Number(d.minutos_ate_aceite_media||0).toFixed(1)+' min','Média até aceitar')+
-        alertKpi(Number(d.minutos_ate_aceite_mediana||0).toFixed(1)+' min','Mediana até aceitar')+
+        alertKpi(minutosTxt(d.minutos_ate_aceite_media),'Média até aceitar')+
+        alertKpi(minutosTxt(d.minutos_ate_aceite_mediana),'Mediana até aceitar')+
         alertKpi(Number(d.perdidos||0),'Perdidos')+
         alertKpi(Number(d.abertos_agora||0),'Abertos agora')+
         alertKpi(Number(d.sem_ninguem_avisado||0),'Sem ninguém avisado')+
@@ -6485,7 +6688,7 @@ Screens.adminDashboardRender = function () {
     if(!box||!(global.QFAdminCloud&&global.QFAdminCloud.alertMetrics))return;
     box.innerHTML='<div class="card card--tight"><div class="text--sm text--secondary">Carregando métricas de alerta…</div></div>';
     try{const d=await global.QFAdminCloud.alertMetrics(days);renderAlertMetrics(box,d);}
-    catch(err){box.innerHTML='<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Não foi possível carregar as métricas de alerta.</div></div>';console.warn('QuemFaz métricas de alerta',err);}
+    catch(err){const rs=document.getElementById('admin-alert-resumo'); if(rs)rs.innerHTML='<div class="text--sm text--secondary">Não foi possível carregar os alertas.</div>';box.innerHTML='<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);">Não foi possível carregar as métricas de alerta.</div></div>';console.warn('QuemFaz métricas de alerta',err);}
   }
 
   // ---------------- Interações pós-render ----------------
@@ -6509,9 +6712,8 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/sem-push') bindSemPush(content);
     if (pattern === '/admin/suporte/:id') bindSuporteDetalhe(content, params);
     if (pattern === '/admin/dashboard') {
-      const days=content.querySelector('#admin-alert-days');
-      loadAlertMetrics(content, days ? Number(days.value) : 7);
-      if(days)days.addEventListener('change',function(){loadAlertMetrics(content,Number(days.value)||7);});
+      loadAlertMetrics(content, painelDias || 90);
+      atualizarContas();
       const rb = content.querySelector('[data-action="admin-refresh"]');
       if (rb) rb.addEventListener('click', async function () {
         rb.disabled = true;
