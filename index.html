@@ -542,6 +542,7 @@ input, select, textarea { font-size: 16px; }
 .qf-order-location__fields { margin-top:8px; }
 .qf-order-location__hint { margin-top:8px; line-height:1.4; }
 .qf-auto-service-status { margin:0 0 10px; padding:11px 12px; border-radius:12px; background:var(--bg-sunken); border:1px solid var(--border-subtle); color:var(--text-secondary); font-size:13px; font-weight:700; line-height:1.4; }
+.qf-auto-service-status--idle { margin:8px 0 12px; padding:0 2px; background:none; border:0; font-weight:500; }
 .qf-auto-service-status--found { background:var(--success-100); color:var(--success-600); }
 .qf-auto-service-status--checking { background:var(--navy-100); color:var(--navy-800); }
 .qf-auto-service-status--none { background:var(--warning-100); color:var(--warning-600); }
@@ -2061,6 +2062,8 @@ body:has(#cadastro-cliente-form) #app-shell > .qf-support-fab { display:none; }
 .qf-home-premium-quote__icon{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:#e3f5ed;color:var(--success-600)}
 .qf-home-premium-quote__icon svg{width:19px;height:19px}.qf-home-premium-quote__copy .h3 strong{color:var(--success-600)}
 .qf-home-premium-quote__copy .text--sm{margin-top:5px;color:var(--text-secondary);line-height:1.5}.qf-home-premium-quote__copy .text--sm strong{color:var(--navy-900)}
+.qf-home-premium-quote{align-items:start}
+@media(max-width:430px){.qf-home-premium-quote .qf-home-premium-quote__copy{padding-right:0}}
 @media(max-width:430px){.qf-request-intro,.qf-home-premium-quote{grid-template-columns:40px minmax(0,1fr)}.qf-request-intro__badge,.qf-home-premium-quote__badge{position:absolute;right:10px;top:10px}.qf-request-intro>div,.qf-home-premium-quote__copy{padding-right:44px}}
 
 /* V11.16.5 — Pedido de serviço no padrão visual da página principal:
@@ -7487,7 +7490,7 @@ alt=""></noscript>
 
     // V11.23: comanda com picote e os 4 passos do pedido.
     const fase = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO].indexOf(req.status) !== -1 ? 2 : (req.status === STATUS.FINALIZADO ? 3 : (DB.STATUS_DESBLOQUEADO.indexOf(req.status) !== -1 ? 1 : 0));
-    const passos = ['Pedido publicado', 'Em contato', 'Serviço feito', 'Avaliação'].map(function (t, i) {
+    const passos = ['Publicado', 'Em contato', 'Serviço feito', 'Avaliação'].map(function (t, i) {
       return '<div class="qf-step' + (i < fase ? ' is-done' : i === fase ? ' is-now' : '') + '">' + t + '</div>';
     }).join('');
     return '<div class="section qf-client-now">' +
@@ -7516,8 +7519,8 @@ alt=""></noscript>
     const regionCep = (savedRegion && savedRegion.cep) || '';
     const regionStatus = regionCity && regionUf ? ('Região selecionada: ' + regionCity + '/' + regionUf) : 'Escolha a cidade ou informe o CEP.';
     return '<div class="category-browser">'+
-      '<div class="qf-service-search-wrap"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Digite o serviço: pintor, montador, eletricista..." autocomplete="off" data-category-search aria-label="Buscar serviço"></label><div class="qf-service-suggestions" data-service-suggestions hidden></div></div>'+
-      '<div class="qf-auto-service-status" data-service-match-status aria-live="polite">Digite o serviço e escolha sua cidade. O QuemFaz identifica a categoria automaticamente.</div>'+
+      '<div class="qf-service-search-wrap"><label class="category-browser-search"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" type="search" placeholder="Ex.: pintor, eletricista" autocomplete="off" data-category-search aria-label="Buscar serviço"></label><div class="qf-service-suggestions" data-service-suggestions hidden></div></div>'+
+      '<div class="qf-auto-service-status qf-auto-service-status--idle" data-service-match-status aria-live="polite">Digite o serviço e a cidade. O QuemFaz acha a categoria sozinho.</div>'+
       '<div class="card card--tight qf-service-region"><div class="field__label">Onde precisa do serviço?</div>'+
         '<div class="qf-service-region__row" style="margin-top:8px;"><input class="input" type="text" placeholder="Cidade, ex.: Santo André" data-service-city value="'+PU.escapeHtml(regionCity)+'"><select class="select" data-service-uf aria-label="Estado"><option value="">UF</option>'+global.QFGeo.ufOptions(regionUf)+'</select></div>'+
         '<div class="qf-service-region__cep"><input class="input" type="text" inputmode="numeric" maxlength="9" placeholder="Ou digite o CEP" data-service-cep value="'+PU.escapeHtml(regionCep)+'"><button class="btn btn--outline" type="button" data-service-lookup-cep>Localizar</button></div>'+
@@ -7553,7 +7556,7 @@ alt=""></noscript>
       '<div class="qf-home-ads-top">'+anunciosCarousel(user)+'</div>'+
       clienteAgoraCard(principal)+
       (outros.length?'<div class="section"><div class="section-head"><h2 class="h3">Outros pedidos ativos</h2></div><div class="stack--sm">'+outros.map(pedidoCard).join('')+'</div></div>':'')+
-      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e combine os detalhes pelo chat com um profissional da sua região. <strong>Você decide se quer contratar.</strong></div></div><span class="qf-home-premium-quote__badge">GRÁTIS</span></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2><span class="text--sm text--muted">Busca automática</span></div>'+renderCategoryBrowser(cats, '', user)+'</div>'+
+      '<div class="section"><div class="card qf-home-premium-quote"><div class="qf-home-premium-quote__icon">' + icon('clipboard') + '</div><div class="qf-home-premium-quote__copy"><div class="h3">Receba <strong>orçamento grátis</strong></div><div class="text--sm">Descreva o que precisa e um profissional da sua região chama você no WhatsApp. <strong>Você decide se quer contratar.</strong></div></div></div><div class="section-head"><h2 class="h3">Do que você precisa?</h2></div>'+renderCategoryBrowser(cats, '', user)+'</div>'+
       '</div>';
   };
 
@@ -11837,7 +11840,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.25.2';
+  const APP_VERSION = '11.25.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
