@@ -1,0 +1,17 @@
+QuemFaz V11.30.1 — Foto grande na tela inicial do cliente
+
+O QUE MUDOU NA TELA INICIAL (celular)
+- A foto dos profissionais deixou de ser miniatura: agora ocupa a largura toda, logo abaixo
+  da barra do logo, com o título "Precisou? Até 3 profissionais chamam você no WhatsApp."
+  escrito por cima da parte de baixo da foto. Nada cobre os rostos.
+- Saíram os atalhos de categoria (Eletricista, Encanador... e "Ver todos"): o cliente
+  escreve o que precisa no campo.
+- "Grátis", "Até 3 profissionais" e "No WhatsApp" ficaram em três colunas, com o ícone
+  em cima e o texto embaixo.
+
+O QUE NÃO MUDOU
+- A arte da foto, a busca automática, o botão "Pedir grátis", o computador (foto inteira),
+  o cadastro, o pedido, o app do profissional, o painel e o banco de dados.
+
+TESTE
+- tests/visual-comanda.test.cjs (atualizado).
