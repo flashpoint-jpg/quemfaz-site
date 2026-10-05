@@ -22,7 +22,7 @@ assert.ok(admin.includes('.qf-p-receita{order:1}.qf-p-precisa{order:2}.qf-p-indo
 // V11.27.1: o número grande é só dinheiro que entrou; desbloqueio com crédito fica numa linha à parte.
 assert.ok(admin.includes('dinheiroEntrou: recargas + receitaPrioridade + receitaAnuncios,'));
 assert.ok(admin.includes("PU.formatCurrency(s.dinheiroEntrou)") && !admin.includes("PU.formatCurrency(s.faturamento)"));
-assert.ok(admin.includes('Desbloqueios com créditos') && admin.includes("item('Recargas de profissionais', s.recargas)"));
+assert.ok(admin.includes('Desbloqueios com créditos') && admin.includes("item('Recargas e planos', s.recargas)"));
 assert.ok(admin.includes("origem: m.referencia_tipo || null"));
 {
   const i = admin.indexOf('  function isRecargaPaga(t) {');
@@ -53,5 +53,22 @@ const h = scope.r({ chamados: 5, aceitos: 3, minutos_ate_aceite_media: 26.5 });
 assert.ok(h.includes('3 de 5 · 60%') && h.includes('width:60%') && h.includes('média 26,5 min'));
 assert.ok(scope.r({ chamados: 0 }).includes('Nenhum chamado neste período.'));
 assert.ok(scope.r({ chamados: 2, aceitos: 0 }).includes('0 de 2 · 0%'));
+
+// V11.27.2: recargas e planos pagos vêm da tabela de pagamentos (plano pago não vira crédito na carteira).
+assert.ok(admin.includes('d.recargas_aprovadas') && admin.includes('recargasPagas().reduce('));
+{
+  const i = admin.indexOf('  function recargasPagas() {');
+  const j = admin.indexOf('  function isPaidUnlock(r) {');
+  assert.ok(i > 0 && j > i);
+  const run = (state) => { const sc = { state, Array, Number }; vm.runInNewContext(admin.slice(i, j) + '\nthis.f = recargasPagas;', sc); return sc.f(); };
+  // painel conectado: usa a lista do banco (inclui plano), ignora as movimentações
+  const banco = run({ recargasPagas: [{ valor: 5000, plano: null }, { valor: 10000, plano: 'mensal' }], transactions: [{ tipo: 'credito', origem: 'recarga', valor: 5000 }] });
+  assert.equal(banco.reduce((s, p) => s + p.valor, 0), 15000);
+  // sem a lista (banco antigo ou modo offline): cai nas movimentações de recarga
+  const antigo = run({ recargasPagas: null, transactions: [{ tipo: 'credito', origem: 'recarga', valor: 5000 }, { tipo: 'credito', origem: 'admin', valor: 1500 }, { tipo: 'bonus', valor: 2500 }] });
+  assert.equal(antigo.reduce((s, p) => s + p.valor, 0), 5000);
+}
+const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-05-snapshot-recargas-aprovadas.sql'), 'utf8');
+assert.ok(sql.includes("'recargas_aprovadas'") && sql.includes("r.status = 'aprovado'"));
 
 console.log('painel-organizado: ok');

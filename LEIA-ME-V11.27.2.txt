@@ -1,0 +1,19 @@
+QuemFaz V11.27.2 — Confirmação de cartão e boleto + planos na receita
+
+PAGAMENTOS (função quemfaz-efi-pix-sync, já publicada)
+- A checagem que roda de um em um minuto para o Pix agora também consulta na Efí as
+  cobranças de cartão e boleto. Paga: vira "aprovado" e o crédito (ou plano) entra.
+  Vencida ou recusada: sai de "pendente" (vira "expirado" ou "cancelado").
+- Antes só o Pix era conferido. O aviso da Efí para cartão/boleto era recusado (401)
+  e a função que o recebia está desligada, então um boleto pago nunca virava crédito.
+- Só credita se o valor e a identificação da cobrança baterem com o pedido.
+- O tempo de espera da chamada do cron passou de 5 s para 25 s.
+
+PAINEL
+- "Recargas e planos": o total de dinheiro que entrou passa a contar
+  também os planos pagos (plano pago não gera crédito na carteira, por isso ficava de fora).
+- "Receitas do app" mostra recargas e planos pagos, com a forma de pagamento.
+
+BANCO
+- supabase/2026-10-05-snapshot-recargas-aprovadas.sql (já aplicado): qf_admin_snapshot
+  devolve também "recargas_aprovadas".
