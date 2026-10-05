@@ -19,8 +19,21 @@ assert.ok(admin.includes('.qf-p-receita{order:1}.qf-p-precisa{order:2}.qf-p-indo
 ['data-nav="/admin/sem-push"', 'data-nav="/admin/suporte"', 'data-nav="/admin/profissionais"', 'data-nav="/admin/clientes"', 'data-nav="/admin/pagamentos"', 'data-nav="/admin/servicos"']
   .forEach((t) => assert.ok(admin.includes(t), t));
 
-// A conta da receita não mudou.
-assert.ok(admin.includes('faturamento: receitaProfissionais + receitaPrioridade + receitaAnuncios,'));
+// V11.27.1: o número grande é só dinheiro que entrou; desbloqueio com crédito fica numa linha à parte.
+assert.ok(admin.includes('dinheiroEntrou: recargas + receitaPrioridade + receitaAnuncios,'));
+assert.ok(admin.includes("PU.formatCurrency(s.dinheiroEntrou)") && !admin.includes("PU.formatCurrency(s.faturamento)"));
+assert.ok(admin.includes('Desbloqueios com créditos') && admin.includes("item('Recargas de profissionais', s.recargas)"));
+assert.ok(admin.includes("origem: m.referencia_tipo || null"));
+{
+  const i = admin.indexOf('  function isRecargaPaga(t) {');
+  const sc = {};
+  vm.runInNewContext(admin.slice(i, admin.indexOf('\n', i)) + '\nthis.f = isRecargaPaga;', sc);
+  assert.equal(sc.f({ tipo: 'credito', origem: 'recarga' }), true);   // recarga paga (Pix/cartão/boleto)
+  assert.equal(sc.f({ tipo: 'recarga' }), true);                      // modo offline
+  assert.equal(sc.f({ tipo: 'credito', origem: 'admin' }), false);    // crédito dado pelo admin
+  assert.equal(sc.f({ tipo: 'bonus', origem: 'bonus_lancamento' }), false);
+  assert.equal(sc.f({ tipo: 'debito', origem: 'chamado' }), false);
+}
 
 // Um período só; "Tudo" pede 90 dias de alertas (limite da função do banco).
 assert.ok(admin.includes('id="admin-periodo"') && !admin.includes('admin-alert-days') && !admin.includes('admin-fech-dias'));

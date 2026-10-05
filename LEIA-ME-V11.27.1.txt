@@ -1,0 +1,14 @@
+QuemFaz V11.27.1 — Receita do painel mostra só o dinheiro que entrou
+
+- O número grande "Receita total" agora soma só dinheiro de verdade: recargas pagas
+  pelos profissionais (Pix, cartão, boleto), prioridades pagas por clientes e anúncios.
+- Os desbloqueios pagos com créditos (inclusive o bônus de R$ 25 do cadastro) saíram
+  do total e ficam numa faixa separada: "Desbloqueios com créditos".
+- Correção: "Recargas" ficava sempre em R$ 0,00 no painel, mesmo se alguém pagasse,
+  porque a recarga paga é gravada na carteira como crédito com origem "recarga".
+  Agora ela é contada. Crédito dado pelo admin e bônus não entram como dinheiro.
+- Tela "Receitas do app": recarga paga aparece na lista; desbloqueio aparece como
+  "Créditos usados".
+
+BANCO
+- Nenhuma alteração.

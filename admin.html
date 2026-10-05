@@ -2550,8 +2550,11 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   function pagamentos() {
     const eventos = [];
     state.requests.forEach(function (r) {
-      if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
+      if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
       if (isPaidPriority(r)) eventos.push({ tipo: 'Prioridade do cliente', valor: r.pagamentoPrioridade.valor, criadoEm: r.pagamentoPrioridade.criadoEm, request: r, profissionalId: null });
+    });
+    (state.transactions || []).forEach(function (t) {
+      if (isRecargaPaga(t)) eventos.push({ tipo: 'Recarga de créditos', valor: t.valor, criadoEm: t.criadoEm, request: null, profissionalId: t.profissionalId });
     });
     (state.ads || []).forEach(function (a) {
       if (a.pagamentoStatus === 'aprovado') eventos.push({ tipo: 'Anúncio patrocinado · ' + ((adPlan(a.plano) || {}).nome || a.plano), valor: a.valorPago || 0, criadoEm: a.pagoEm || a.criadoEm, ad: a, profissionalId: null });
@@ -2567,7 +2570,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     // V10.2: só entra como receita o que foi efetivamente cobrado (valor > 0 e pagamento aprovado).
     const receitaProfissionais = reqs.reduce(function (sum, r) { return sum + (isPaidUnlock(r) ? Number(r.leadUnlock.valor || 0) : 0); }, 0);
     const receitaPrioridade = reqs.reduce(function (sum, r) { return sum + (isPaidPriority(r) ? Number(r.pagamentoPrioridade.valor || 0) : 0); }, 0);
-    const recargas = (state.transactions || []).reduce(function (sum, t) { return sum + (t.tipo === 'recarga' ? Number(t.valor || 0) : 0); }, 0);
+    // V11.27.1: recarga paga entra na carteira como crédito com origem "recarga"; crédito do admin e bônus não são dinheiro.
+    const recargas = (state.transactions || []).reduce(function (sum, t) { return sum + (isRecargaPaga(t) ? Number(t.valor || 0) : 0); }, 0);
     const desbloqueiosSemCobranca = reqs.filter(function (r) { return r.leadUnlock && !isPaidUnlock(r); }).length;
     const receitaAnuncios = (state.ads || []).reduce(function (sum, a) { return sum + (a.pagamentoStatus === 'aprovado' ? Number(a.valorPago || 0) : 0); }, 0);
     const anunciosAtivos = (state.ads || []).filter(isAdActive).length;
@@ -2579,6 +2583,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       pedidosAbertos: reqs.filter(function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE].indexOf(r.status) !== -1; }).length,
       emAndamento: emAndamento, concluidos: concluidos, cancelados: cancelados,
       faturamento: receitaProfissionais + receitaPrioridade + receitaAnuncios,
+      dinheiroEntrou: recargas + receitaPrioridade + receitaAnuncios,
       receitaProfissionais: receitaProfissionais,
       receitaPrioridade: receitaPrioridade,
       receitaAnuncios: receitaAnuncios, anunciosAtivos: anunciosAtivos, anunciosPendentes: anunciosPendentes,
@@ -2587,6 +2592,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       profissionaisSemSelfie: state.users.profissionais.filter(function (p) { return p.temFoto === false; }).length,
     };
   }
+  function isRecargaPaga(t) { return !!t && (t.tipo === 'recarga' || (t.tipo === 'credito' && t.origem === 'recarga')); }
   function isPaidUnlock(r) { return !!(r.leadUnlock && r.leadUnlock.status === 'pago' && Number(r.leadUnlock.valor || 0) > 0); }
   function isPaidPriority(r) { return !!(r.pagamentoPrioridade && ['aprovado', 'pago', 'confirmado', 'pago_simulado'].indexOf(String(r.pagamentoPrioridade.status)) !== -1 && Number(r.pagamentoPrioridade.valor || 0) > 0); }
 
@@ -3392,7 +3398,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       if (m.tipo === 'debito' && m.referencia_tipo === 'chamado' && m.referencia_id) {
         debitos[m.referencia_id] = { profissionalId: m.profissional_id, valor: Math.abs(valor), criadoEm: m.criado_em };
       }
-      txs.push({ id: m.id, profissionalId: m.profissional_id, requestId: m.referencia_tipo === 'chamado' ? m.referencia_id : null, tipo: m.tipo, valor: Math.abs(valor), status: 'pago', criadoEm: m.criado_em, descricao: m.descricao || m.tipo });
+      txs.push({ id: m.id, profissionalId: m.profissional_id, requestId: m.referencia_tipo === 'chamado' ? m.referencia_id : null, tipo: m.tipo, origem: m.referencia_tipo || null, valor: Math.abs(valor), status: 'pago', criadoEm: m.criado_em, descricao: m.descricao || m.tipo });
     });
     const quotes = {}; (d.orcamentos || []).forEach(function (o) { if (!quotes[o.chamado_id]) quotes[o.chamado_id] = o; });
     const reviews = {}; (d.avaliacoes || []).forEach(function (a) { (reviews[a.chamado_id] = reviews[a.chamado_id] || []).push(a); });
@@ -5326,7 +5332,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       pill + icon(seta || 'chevronRight', 'list-item__chevron') + '</button>';
   }
 
-  // 1. Receita: o total em destaque e de onde ele veio.
+  // 1. Receita: só o dinheiro que entrou, de onde veio e, separado, os créditos gastos em desbloqueio.
   function receitaHtml(s) {
     function item(rotulo, valor) {
       return '<div class="qf-receita__item' + (Number(valor) > 0 ? ' qf-receita__item--tem' : '') + '"><span>' + rotulo + '</span><b>' + PU.formatCurrency(valor) + '</b></div>';
@@ -5334,16 +5340,17 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<section class="section qf-receita qf-p-receita" aria-label="Receita do QuemFaz">' +
       '<div>' +
         '<div class="qf-receita__topo"><span class="qf-receita__rotulo">Receita total</span><span class="qf-receita__sub">desde o lançamento</span></div>' +
-        '<div class="qf-receita__total">' + PU.formatCurrency(s.faturamento) + '</div>' +
+        '<div class="qf-receita__total">' + PU.formatCurrency(s.dinheiroEntrou) + '</div>' +
+        '<div class="qf-receita__sub">Só o dinheiro que entrou de verdade (Pix, cartão e boleto).</div>' +
       '</div>' +
       '<div class="qf-receita__sep"></div>' +
       '<div class="qf-receita__itens">' +
-        item('Desbloqueios de profissionais', s.receitaProfissionais) +
+        item('Recargas de profissionais', s.recargas) +
         item('Prioridades de clientes', s.receitaPrioridade) +
         item('Anúncios' + (cloudOn() ? ' (modo teste)' : ' patrocinados'), s.receitaAnuncios) +
       '</div>' +
-      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Recargas vendidas</div><div class="qf-receita__sub">créditos comprados pelos profissionais</div></div><b>' + PU.formatCurrency(s.recargas) + '</b></div>' +
-      (s.desbloqueiosSemCobranca ? '<div class="qf-receita__sub">' + s.desbloqueiosSemCobranca + ' desbloqueio(s) sem cobrança (antigos/grátis) não entram na receita.</div>' : '') +
+      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Desbloqueios com créditos</div><div class="qf-receita__sub">inclui o bônus de R$ 25 · não é dinheiro novo</div></div><b>' + PU.formatCurrency(s.receitaProfissionais) + '</b></div>' +
+      (s.desbloqueiosSemCobranca ? '<div class="qf-receita__sub">' + s.desbloqueiosSemCobranca + ' desbloqueio(s) sem cobrança (antigos/grátis) ficam de fora dessa conta.</div>' : '') +
       '<button type="button" class="qf-receita__link" data-nav="/admin/pagamentos">Ver todas as receitas' + icon('chevronRight') + '</button>' +
     '</section>';
   }
@@ -6201,9 +6208,9 @@ Screens.adminDashboardRender = function () {
         const prof = e.profissionalId ? DB.profissionalById(e.profissionalId) : null;
         return '<div class="card stack--sm">' +
           rowInfo('Origem', e.tipo) +
-          (e.ad ? rowInfo('Anunciante', e.ad.empresa) : rowInfo('Cliente', (cliente || {}).nome || '—')) +
+          (e.ad ? rowInfo('Anunciante', e.ad.empresa) : (r ? rowInfo('Cliente', (cliente || {}).nome || '—') : '')) +
           (prof ? rowInfo('Profissional', prof.nome) : '') +
-          rowInfo('Receita', PU.formatCurrency(e.valor)) +
+          rowInfo(e.creditos ? 'Créditos usados' : 'Dinheiro que entrou', PU.formatCurrency(e.valor)) +
           rowInfo('Data', PU.formatDateTime(e.criadoEm)) +
         '</div>';
       }).join('') + '</div>'
