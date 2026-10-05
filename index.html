@@ -10574,13 +10574,13 @@ alt=""></noscript>
             ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'O menor preço por chamado do QuemFaz', 'Sem renovação automática e sem fidelidade'],
             assinar('Pro')) +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo.</p>' +
       '</section>' +
 
       '<section class="section">' +
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
-          walletInfoRow('lock', 'O cliente fica só com você', 'Em muitos apps, o mesmo pedido vai para 3 ou 4 profissionais e ganha quem cobra menos. No QuemFaz, quem desbloqueia primeiro fica com o cliente. Ninguém mais pega o mesmo chamado.') +
+          walletInfoRow('lock', 'No máximo 3 profissionais por pedido', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, só até 3 profissionais desbloqueiam o mesmo pedido, e você vê quantas vagas ainda tem antes de desbloquear.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não. Você escolhe o horário: fora dele, estando offline, ninguém te incomoda.') +
@@ -10784,7 +10784,7 @@ alt=""></noscript>
             '<button type="button" class="qf-pay-method" data-plano-metodo="cartao">' + icon('creditCard') + ' Cartão</button>' +
             '<button type="button" class="qf-pay-method" data-plano-metodo="boleto">' + icon('document') + ' Boleto</button>' +
           '</div></div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo. Se o lead for devolvido, o chamado volta para o plano.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
       '</section>' +
 
       '<section class="section" id="planos-divulgacao">' +
@@ -12264,7 +12264,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.30.1';
+  const APP_VERSION = '11.30.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
