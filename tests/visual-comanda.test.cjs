@@ -32,12 +32,13 @@ const landing = html.slice(a, html.indexOf('};', a));
 assert.ok(landing.includes('<div class="qf-landing-photo"><img src="\' + heroBanner + \'" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div>'));
 assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte o que precisa e veja quem chama você.</label>'));
 assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search">'));
-// V11.30: a foto virou miniatura ao lado do título (no computador segue inteira), o campo e o botão
+// V11.30.1: no celular a foto ocupa a largura toda com o título por cima (no computador segue inteira), o campo e o botão
 // ficaram em largura total e a lista de sugestões abre logo abaixo do campo. A arte da foto e a busca
 // automática (mesmo campo, mesmo exemplo, mesmas sugestões) continuam as mesmas.
 assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit">'));
 assert.ok(landing.includes('<h1 class="qf-hero2-title">Precisou? Até <em>3 profissionais</em> chamam você no WhatsApp.</h1>'));
-assert.ok(landing.includes('data-landing-cat="') && landing.includes('data-action="landing-all-services">Ver todos</button>'));
+// V11.30.1: os atalhos de categoria saíram do início (o cliente escreve no campo).
+assert.ok(!landing.includes('qf-hero2-chip'), 'os atalhos de categoria não voltam para o início');
 assert.ok(landing.includes('<ul class="qf-hero2-trust">') && landing.includes('data-landing-sticky hidden'));
 assert.ok(landing.includes('<div class="qf-landing-install">'), 'instalar app continua na tela inicial');
 const css2 = (html.match(/<style id="qf-skin-inicio">([\s\S]*?)<\/style>/) || [])[1] || '';
