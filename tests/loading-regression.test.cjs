@@ -85,6 +85,19 @@ async function run() {
   vm.createContext(routeScope); vm.runInContext(routeSource, routeScope);
   await routeScope.route();
   assert.equal(errorShown, true); assert.equal(rendered, false); assert.equal(loggedOut, false);
+  // V11.29.1: depois da primeira carga, trocar de aba desenha na hora, sem esperar a internet.
+  let solta; const presa = new Promise((r) => { solta = r; });
+  Object.assign(routeScope, { currentUser: () => ({ id: 'a' }), window: { scrollY: 0, scrollTo() {} }, Date });
+  routeScope.global.QFAdminCloud.syncSnapshot = async () => {};
+  errorShown = false; rendered = false;
+  await routeScope.route();
+  assert.equal(rendered, true, 'Primeira carga sincroniza e desenha');
+  rendered = false;
+  routeScope.global.QFAdminCloud.syncSnapshot = () => presa;
+  vm.runInContext('painelSincronizadoEm = Date.now() - 60000;', routeScope);
+  await routeScope.route();
+  assert.equal(rendered, true, 'Com a internet presa, a aba abre do mesmo jeito'); assert.equal(errorShown, false);
+  solta();
   console.log('PASS: timeout, abort, respostas JSON/204, preservação de mutações, anúncios lentos, sessão, chamados e erro do painel.');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });

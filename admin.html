@@ -2549,25 +2549,64 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   }
   function pagamentos() {
     const eventos = [];
+    // V11.29.1: com o painel conectado, o desbloqueio vem do extrato da carteira — assim entram TODOS,
+    // inclusive os de pedidos que já foram excluídos do painel. Devolução antiga entra descontando.
+    const daCarteira = !!(state.meta && state.meta.cloud) && (state.transactions || []).some(function (t) { return t.origem === 'chamado'; });
+    const porId = {};
+    state.requests.forEach(function (r) { porId[r.id] = r; });
+    if (daCarteira) state.transactions.forEach(function (t) {
+      if (t.origem !== 'chamado' || !(Number(t.valor || 0) > 0)) return;
+      const r = porId[t.requestId] || null;
+      if (t.tipo === 'debito') eventos.push({ tipo: 'Desbloqueio de chamado' + (r ? '' : ' (pedido excluído)'), grupo: 'desbloqueio', creditos: true, valor: Number(t.valor), criadoEm: t.criadoEm, request: r, profissionalId: t.profissionalId });
+      else if (t.tipo === 'estorno' || t.tipo === 'bonus' || t.tipo === 'credito') eventos.push({ tipo: 'Devolução de desbloqueio', grupo: 'desbloqueio', devolucao: true, creditos: true, valor: -Number(t.valor), criadoEm: t.criadoEm, request: r, profissionalId: t.profissionalId });
+    });
     state.requests.forEach(function (r) {
-      if (Array.isArray(r.desbloqueios)) r.desbloqueios.forEach(function (x) {
-        if (Number(x.valor || 0) > 0) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: x.valor, criadoEm: x.criadoEm, request: r, profissionalId: x.profissionalId });
+      if (daCarteira) { /* já veio do extrato */ }
+      else if (Array.isArray(r.desbloqueios)) r.desbloqueios.forEach(function (x) {
+        if (Number(x.valor || 0) > 0) eventos.push({ tipo: 'Desbloqueio de chamado', grupo: 'desbloqueio', creditos: true, valor: x.valor, criadoEm: x.criadoEm, request: r, profissionalId: x.profissionalId });
       });
-      else if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
-      if (isPaidPriority(r)) eventos.push({ tipo: 'Prioridade do cliente', valor: r.pagamentoPrioridade.valor, criadoEm: r.pagamentoPrioridade.criadoEm, request: r, profissionalId: null });
+      else if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', grupo: 'desbloqueio', creditos: true, valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
+      if (isPaidPriority(r)) eventos.push({ tipo: 'Prioridade do cliente', grupo: 'prioridade', valor: r.pagamentoPrioridade.valor, criadoEm: r.pagamentoPrioridade.criadoEm, request: r, profissionalId: null });
     });
     recargasPagas().forEach(function (p) {
       const forma = p.metodo === 'pix' ? ' · Pix' : (p.metodo === 'cartao' ? ' · Cartão' : (p.metodo === 'boleto' ? ' · Boleto' : ''));
-      eventos.push({ tipo: (p.plano ? 'Plano ' + (p.plano === 'pro' ? 'Pro' : 'Mensal') : 'Recarga de créditos') + forma, valor: p.valor, criadoEm: p.criadoEm, request: null, profissionalId: p.profissionalId });
+      eventos.push({ tipo: (p.plano ? 'Plano ' + (p.plano === 'pro' ? 'Pro' : 'Mensal') : 'Recarga de créditos') + forma, grupo: p.plano ? 'plano' : 'recarga', valor: p.valor, criadoEm: p.criadoEm, request: null, profissionalId: p.profissionalId });
     });
     (state.ads || []).forEach(function (a) {
-      if (a.pagamentoStatus === 'aprovado') eventos.push({ tipo: 'Anúncio patrocinado · ' + ((adPlan(a.plano) || {}).nome || a.plano), valor: a.valorPago || 0, criadoEm: a.pagoEm || a.criadoEm, ad: a, profissionalId: null });
+      if (a.pagamentoStatus === 'aprovado') eventos.push({ tipo: 'Anúncio patrocinado · ' + ((adPlan(a.plano) || {}).nome || a.plano), grupo: 'anuncio', valor: a.valorPago || 0, criadoEm: a.pagoEm || a.criadoEm, ad: a, profissionalId: null });
     });
     return eventos.sort(function (a, b) { return new Date(b.criadoEm) - new Date(a.criadoEm); });
   }
 
+  // V11.29.1: dia no horário de Brasília — a "entrada de hoje" zera à meia-noite.
+  function diaSP(d) {
+    const t = d ? new Date(d) : new Date();
+    if (isNaN(t)) return '';
+    try { return t.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' }); }
+    catch (_) { return t.getFullYear() + '-' + (t.getMonth() + 1) + '-' + t.getDate(); }
+  }
+  // Entrada geral: tudo que foi usado/pago no app, em dinheiro, crédito ou bônus (desbloqueios, prioridades,
+  // anúncios e planos). Recarga de crédito fica de fora daqui para não contar duas vezes: ela entra quando
+  // o crédito é gasto num desbloqueio. O dinheiro real (Pix, cartão, boleto) vai numa conta à parte.
+  function entradaResumo(eventos, hoje) {
+    const o = { geral: 0, hoje: 0, desbloqueiosHoje: 0, desbloqueiosHojeQtd: 0, prioridadeHoje: 0, anunciosPlanosHoje: 0, dinheiroHoje: 0 };
+    (eventos || []).forEach(function (e) {
+      const v = Number(e.valor || 0), ehHoje = diaSP(e.criadoEm) === hoje;
+      if (!e.creditos && ehHoje) o.dinheiroHoje += v;
+      if (e.grupo === 'recarga') return;
+      o.geral += v;
+      if (!ehHoje) return;
+      o.hoje += v;
+      if (e.grupo === 'desbloqueio') { o.desbloqueiosHoje += v; if (!e.devolucao) o.desbloqueiosHojeQtd += 1; }
+      else if (e.grupo === 'prioridade') o.prioridadeHoje += v;
+      else o.anunciosPlanosHoje += v;
+    });
+    return o;
+  }
+
   function dashboardStats() {
     const reqs = state.requests;
+    const entrada = entradaResumo(pagamentos(), diaSP());
     const emAndamento = reqs.filter(function (r) { return [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(r.status) !== -1; }).length; // V11.22: desbloqueados
     const concluidos = reqs.filter(function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; }).length;
     const cancelados = reqs.filter(function (r) { return r.status === STATUS.CANCELADO; }).length;
@@ -2599,6 +2638,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       receitaPrioridade: receitaPrioridade,
       receitaAnuncios: receitaAnuncios, anunciosAtivos: anunciosAtivos, anunciosPendentes: anunciosPendentes,
       recargas: recargas, desbloqueiosSemCobranca: desbloqueiosSemCobranca,
+      entrada: entrada,
       profissionaisOnline: state.users.profissionais.filter(function (p) { return p.online && !p.bloqueado; }).length,
       profissionaisSemSelfie: state.users.profissionais.filter(function (p) { return p.temFoto === false; }).length,
     };
@@ -5379,25 +5419,26 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       pill + icon(seta || 'chevronRight', 'list-item__chevron') + '</button>';
   }
 
-  // 1. Receita: só o dinheiro que entrou, de onde veio e, separado, os créditos gastos em desbloqueio.
+  // 1. Entrada: o número grande é o de hoje (zera à meia-noite) e soma tudo — dinheiro, crédito ou bônus.
   function receitaHtml(s) {
+    const en = s.entrada || {};
     function item(rotulo, valor) {
       return '<div class="qf-receita__item' + (Number(valor) > 0 ? ' qf-receita__item--tem' : '') + '"><span>' + rotulo + '</span><b>' + PU.formatCurrency(valor) + '</b></div>';
     }
-    return '<section class="section qf-receita qf-p-receita" aria-label="Receita do QuemFaz">' +
+    return '<section class="section qf-receita qf-p-receita" aria-label="Entrada do QuemFaz">' +
       '<div>' +
-        '<div class="qf-receita__topo"><span class="qf-receita__rotulo">Receita total</span><span class="qf-receita__sub">desde o lançamento</span></div>' +
-        '<div class="qf-receita__total">' + PU.formatCurrency(s.dinheiroEntrou) + '</div>' +
-        '<div class="qf-receita__sub">Só o dinheiro que entrou de verdade (Pix, cartão e boleto).</div>' +
+        '<div class="qf-receita__topo"><span class="qf-receita__rotulo">Entrada de hoje</span><span class="qf-receita__sub">zera à meia-noite</span></div>' +
+        '<div class="qf-receita__total">' + PU.formatCurrency(en.hoje) + '</div>' +
+        '<div class="qf-receita__sub">Soma tudo de hoje: dinheiro, créditos e bônus.</div>' +
       '</div>' +
       '<div class="qf-receita__sep"></div>' +
       '<div class="qf-receita__itens">' +
-        item('Recargas e planos', s.recargas) +
-        item('Prioridades de clientes', s.receitaPrioridade) +
-        item('Anúncios' + (cloudOn() ? ' (modo teste)' : ' patrocinados'), s.receitaAnuncios) +
+        item('Desbloqueios' + (en.desbloqueiosHojeQtd ? ' (' + en.desbloqueiosHojeQtd + ')' : ''), en.desbloqueiosHoje) +
+        item('Prioridades de clientes', en.prioridadeHoje) +
+        item('Anúncios e planos', en.anunciosPlanosHoje) +
       '</div>' +
-      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Desbloqueios com créditos</div><div class="qf-receita__sub">inclui o bônus de R$ 25 · não é dinheiro novo</div></div><b>' + PU.formatCurrency(s.receitaProfissionais) + '</b></div>' +
-      (s.desbloqueiosSemCobranca ? '<div class="qf-receita__sub">' + s.desbloqueiosSemCobranca + ' desbloqueio(s) sem cobrança (antigos/grátis) ficam de fora dessa conta.</div>' : '') +
+      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Total geral</div><div class="qf-receita__sub">desde o lançamento · dinheiro, créditos e bônus</div></div><b>' + PU.formatCurrency(en.geral) + '</b></div>' +
+      '<div class="qf-receita__sub">Dinheiro real (Pix, cartão e boleto): hoje ' + PU.formatCurrency(en.dinheiroHoje) + ' · total ' + PU.formatCurrency(s.dinheiroEntrou) + '</div>' +
       '<button type="button" class="qf-receita__link" data-nav="/admin/pagamentos">Ver todas as receitas' + icon('chevronRight') + '</button>' +
     '</section>';
   }
@@ -7159,7 +7200,10 @@ Screens.adminDashboardRender = function () {
     if (session && session.role === 'admin' && global.QFAdminCloud && global.QFAdminCloud.enabled) {
       try {
         if (!(await global.QFAdminCloud.hasSession())) { DB.logout(); session = null; }
-        else await global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
+        // V11.29.1: depois da primeira carga, a tela abre na hora com o que já está no aparelho
+        // e os dados novos chegam por trás — o menu de baixo não espera mais a internet.
+        else if (painelSincronizadoEm) atualizarPainelPorTras(path);
+        else { await sincronizarPainel(); painelSincronizadoEm = Date.now(); }
       } catch (err) {
         console.warn('QuemFaz admin sync', err);
         renderConnectionError();
@@ -7195,8 +7239,34 @@ Screens.adminDashboardRender = function () {
       navigate('/', true);
       return;
     }
+    telaMexida = false;
     renderApp(found, user, session);
   }
+
+  var painelSincronizadoEm = 0, painelSincronizando = false, telaMexida = false;
+  function sincronizarPainel() {
+    return global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
+  }
+  function atualizarPainelPorTras(path) {
+    if (painelSincronizando || Date.now() - painelSincronizadoEm < 20000) return;
+    painelSincronizando = true;
+    sincronizarPainel().then(function () {
+      painelSincronizadoEm = Date.now();
+      // Só redesenha se a pessoa continua na mesma tela e ainda não tocou em nada dela.
+      if (telaMexida || currentPath() !== path) return;
+      const f = matchRoute(path), s = currentSession(), u = currentUser();
+      if (!f || f.route.anon || !s || !u || s.role !== f.route.role) return;
+      const y = window.scrollY || 0;
+      renderApp(f, u, s);
+      window.scrollTo(0, y);
+    }).catch(function (err) { console.warn('QuemFaz admin sync', err); })
+      .then(function () { painelSincronizando = false; });
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) ['pointerdown', 'keydown', 'input'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      if (e.target && e.target.closest && e.target.closest('#app-content')) telaMexida = true;
+    }, true);
+  });
 
   function renderAnon(found) {
     const shell = document.getElementById('app-shell');

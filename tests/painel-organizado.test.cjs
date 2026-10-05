@@ -8,7 +8,7 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // As cinco partes do painel, na ordem combinada (a ordem no celular vem do CSS).
-['Receita total', 'Precisa de você', 'Como está indo', 'Últimos pedidos', 'Atalhos'].forEach((t) => assert.ok(admin.includes(t), t));
+['Entrada de hoje', 'Precisa de você', 'Como está indo', 'Últimos pedidos', 'Atalhos'].forEach((t) => assert.ok(admin.includes(t), t));
 assert.ok(admin.includes('.qf-p-receita{order:1}.qf-p-precisa{order:2}.qf-p-indo{order:3}.qf-p-pedidos{order:4}.qf-p-atalhos{order:5}'));
 
 // Nada saiu do painel: os blocos antigos continuam existindo (agora em gavetas).
@@ -19,10 +19,35 @@ assert.ok(admin.includes('.qf-p-receita{order:1}.qf-p-precisa{order:2}.qf-p-indo
 ['data-nav="/admin/sem-push"', 'data-nav="/admin/suporte"', 'data-nav="/admin/profissionais"', 'data-nav="/admin/clientes"', 'data-nav="/admin/pagamentos"', 'data-nav="/admin/servicos"']
   .forEach((t) => assert.ok(admin.includes(t), t));
 
-// V11.27.1: o número grande é só dinheiro que entrou; desbloqueio com crédito fica numa linha à parte.
+// V11.29.1: o número grande é a entrada de HOJE (zera à meia-noite) e soma dinheiro, crédito e bônus;
+// o total geral e o dinheiro real ficam logo abaixo.
 assert.ok(admin.includes('dinheiroEntrou: recargas + receitaPrioridade + receitaAnuncios,'));
-assert.ok(admin.includes("PU.formatCurrency(s.dinheiroEntrou)") && !admin.includes("PU.formatCurrency(s.faturamento)"));
-assert.ok(admin.includes('Desbloqueios com créditos') && admin.includes("item('Recargas e planos', s.recargas)"));
+assert.ok(admin.includes('PU.formatCurrency(en.hoje)') && admin.includes('PU.formatCurrency(en.geral)') && admin.includes('zera à meia-noite'));
+assert.ok(admin.includes('Total geral') && admin.includes('Dinheiro real (Pix, cartão e boleto): hoje '));
+{
+  const i = admin.indexOf('  function diaSP(d) {');
+  const j = admin.indexOf('  function dashboardStats() {');
+  const sc = { Date, Number, isNaN };
+  vm.runInNewContext(admin.slice(i, j) + '\nthis.dia = diaSP; this.res = entradaResumo;', sc);
+  assert.equal(sc.dia('2026-10-05T02:59:00Z'), '2026-10-04'); // 23h59 em Brasília ainda é o dia anterior
+  assert.equal(sc.dia('2026-10-05T03:00:00Z'), '2026-10-05'); // meia-noite: vira o dia
+  const ev = [
+    { grupo: 'desbloqueio', creditos: true, valor: 490, criadoEm: '2026-10-05T12:00:00Z' },
+    { grupo: 'desbloqueio', creditos: true, valor: 490, criadoEm: '2026-10-05T13:00:00Z' },
+    { grupo: 'desbloqueio', creditos: true, valor: 990, criadoEm: '2026-10-04T12:00:00Z' },  // ontem
+    { grupo: 'prioridade', valor: 490, criadoEm: '2026-10-05T14:00:00Z' },
+    { grupo: 'plano', valor: 10000, criadoEm: '2026-10-05T15:00:00Z' },
+    { grupo: 'recarga', valor: 5000, criadoEm: '2026-10-05T16:00:00Z' },                    // não conta duas vezes
+    { grupo: 'anuncio', valor: 19900, criadoEm: '2026-10-03T12:00:00Z' },
+  ];
+  const r = sc.res(ev, '2026-10-05');
+  assert.equal(r.hoje, 490 + 490 + 490 + 10000);
+  assert.equal(r.desbloqueiosHoje, 980); assert.equal(r.desbloqueiosHojeQtd, 2);
+  assert.equal(r.prioridadeHoje, 490); assert.equal(r.anunciosPlanosHoje, 10000);
+  assert.equal(r.geral, 490 + 490 + 990 + 490 + 10000 + 19900);
+  assert.equal(r.dinheiroHoje, 490 + 10000 + 5000);
+  assert.equal(sc.res(ev, '2026-10-06').hoje, 0); // no dia seguinte, zera
+}
 assert.ok(admin.includes("origem: m.referencia_tipo || null"));
 {
   const i = admin.indexOf('  function isRecargaPaga(t) {');
