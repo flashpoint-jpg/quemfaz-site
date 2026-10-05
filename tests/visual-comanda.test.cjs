@@ -32,13 +32,20 @@ const landing = html.slice(a, html.indexOf('};', a));
 assert.ok(landing.includes('<div class="qf-landing-photo"><img src="\' + heroBanner + \'" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div>'));
 assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte o que precisa e veja quem chama você.</label>'));
 assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search">'));
-assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form>'));
+// V11.30: a foto virou miniatura ao lado do título (no computador segue inteira), o campo e o botão
+// ficaram em largura total e a lista de sugestões abre logo abaixo do campo. A arte da foto e a busca
+// automática (mesmo campo, mesmo exemplo, mesmas sugestões) continuam as mesmas.
+assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit">'));
+assert.ok(landing.includes('<h1 class="qf-hero2-title">Precisou? Até <em>3 profissionais</em> chamam você no WhatsApp.</h1>'));
+assert.ok(landing.includes('data-landing-cat="') && landing.includes('data-action="landing-all-services">Ver todos</button>'));
+assert.ok(landing.includes('<ul class="qf-hero2-trust">') && landing.includes('data-landing-sticky hidden'));
+assert.ok(landing.includes('<div class="qf-landing-install">'), 'instalar app continua na tela inicial');
 const css2 = (html.match(/<style id="qf-skin-inicio">([\s\S]*?)<\/style>/) || [])[1] || '';
 assert.ok(css2.length > 500);
 assert.ok(!/qf-landing-photo|qf-hero-search \.|qf-hero-search\{|\.qf-landing-photo img/.test(css2.replace(/\/\*[\s\S]*?\*\//g, '')), 'o visual novo não pode mexer na foto nem no campo de busca');
 // Nada de função perdida no início: entrar, instalar, ajuda, profissional, anúncio e preços.
 ['data-action="landing-login"', 'data-support-open>Ajuda', 'data-nav="/auth/profissional/login"', 'data-nav="/anuncie"', 'data-nav="/como-funciona"'].forEach((x) => assert.ok(landing.includes(x) || html.includes(x), x));
-assert.ok(landing.includes('Ele chama você no WhatsApp'));
+assert.ok(landing.includes('Eles chamam você no WhatsApp'));
 
 // Pedir serviço: mesmos campos, anúncio depois do botão.
 const r = html.indexOf('<div class="qf-req-steps"');
