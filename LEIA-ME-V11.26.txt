@@ -1,0 +1,11 @@
+QuemFaz V11.26.0 — Cliente entra só com o WhatsApp
+
+- Tela "Entrar como cliente": saiu e-mail, senha e "Esqueci minha senha". Agora pede só o
+  WhatsApp usado no pedido e abre a conta desse número.
+- Número sem pedido: avisa "Não achamos pedido com esse WhatsApp" e não cria conta.
+- O botão de baixo virou "Pedir serviço grátis" (antes "Criar conta de cliente").
+- Login do profissional e do admin continuam com e-mail e senha, sem mudança.
+
+BANCO
+- Função quemfaz-cliente-rapido (versão 3) já publicada: ganhou o modo "entrar".
+  O pedido sem cadastro continua igual.

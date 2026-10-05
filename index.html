@@ -5142,6 +5142,46 @@ alt=""></noscript>
     }
   }
 
+  // V11.26: cliente entra só com o WhatsApp do pedido (não tem e-mail nem senha).
+  async function signInClienteWhatsapp(telefone) {
+    if (!enabled) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
+    const d = String(telefone || '').replace(/\D/g, '').replace(/^55(?=\d{10,11}$)/, '');
+    if (!(global.QFUI && global.QFUI.validPhone ? global.QFUI.validPhone(d) : d.length === 11)) {
+      return { ok: false, error: 'Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente.' };
+    }
+    try {
+      const access = await client.functions.invoke('quemfaz-cliente-rapido', { body: { modo: 'entrar', telefone: d } });
+      if (access.error) {
+        let detail = null;
+        try { if (access.error.context && typeof access.error.context.json === 'function') detail = await access.error.context.json(); } catch (_) {}
+        return { ok: false, notFound: !!(detail && detail.nao_encontrado), error: (detail && detail.error) || 'Não foi possível abrir seu acesso agora.' };
+      }
+      const payload = access.data || {};
+      if (!payload.ok || !payload.token_hash) return { ok: false, notFound: !!payload.nao_encontrado, error: payload.error || 'Não foi possível abrir seu acesso agora.' };
+      let verified = await client.auth.verifyOtp({ token_hash: String(payload.token_hash), type: String(payload.otp_type || 'magiclink') });
+      if (verified.error && String(payload.otp_type || 'magiclink') !== 'email') {
+        verified = await client.auth.verifyOtp({ token_hash: String(payload.token_hash), type: 'email' });
+      }
+      if (verified.error || !verified.data || !verified.data.session || !verified.data.user) {
+        return { ok: false, error: 'Não foi possível validar seu acesso agora. Tente novamente.' };
+      }
+      const user = verified.data.user;
+      const pf = await ensureProfile(user, 'cliente', null);
+      if (pf.tipo !== 'cliente') {
+        await client.auth.signOut();
+        DB.setSession(null);
+        return { ok: false, error: 'Este número está cadastrado como profissional.' };
+      }
+      const local = await syncLocalUser(user, 'cliente');
+      DB.setSession({ role: 'cliente', userId: user.id });
+      await syncClientCalls(user.id);
+      lastSyncAt = Date.now();
+      return { ok: true, user: local, session: DB.getSession() };
+    } catch (e) {
+      return { ok: false, error: (e && e.message) || 'Não foi possível abrir seu acesso agora.' };
+    }
+  }
+
   async function requestPasswordReset(email) {
     if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     email = String(email || '').trim();
@@ -5770,6 +5810,7 @@ alt=""></noscript>
     heartbeat: heartbeat,
     signUp: signUp,
     signIn: signIn,
+    signInClienteWhatsapp: signInClienteWhatsapp,
     requestPasswordReset: requestPasswordReset,
     updatePassword: updatePassword,
     updateForcedPassword: updateForcedPassword,
@@ -6328,8 +6369,17 @@ alt=""></noscript>
         '<div class="stack--sm" style="text-align:center;">' +
           '<div class="icon-tile icon-tile--lg' + (role === 'profissional' ? ' icon-tile--orange' : '') + '" style="margin:6px auto 0;">' + icon(m.iconName) + '</div>' +
           '<h1 class="h1" style="text-align:center;">' + m.titulo + '</h1>' +
-          '<p class="text text--secondary" style="text-align:center;">Entre com o e-mail e a senha da sua conta.</p>' +
+          '<p class="text text--secondary" style="text-align:center;">' + (role === 'cliente' ? 'Digite o WhatsApp que você usou no pedido.' : 'Entre com o e-mail e a senha da sua conta.') + '</p>' +
         '</div>' +
+        (role === 'cliente'
+          ? '<form id="login-form" class="stack" novalidate data-login-whatsapp>' +
+              field('WhatsApp / celular', '<input class="input" type="tel" name="telefone" autocomplete="tel" inputmode="tel" required placeholder="(11) 91234-5678">') +
+              '<button class="btn btn--primary" type="submit">Entrar</button>' +
+            '</form>' +
+            '<div class="divider-label">ou</div><button class="btn btn--outline" data-nav="/auth/cliente/cadastro">Pedir serviço grátis</button>' +
+          '</div>'
+          : '') +
+        (role === 'cliente' ? '' :
         '<form id="login-form" class="stack" novalidate>' +
           field('E-mail', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('Senha', '<input class="input" type="password" name="senha" autocomplete="current-password" required placeholder="Sua senha">') +
@@ -6337,9 +6387,9 @@ alt=""></noscript>
           '<button class="btn btn--primary" type="submit">Entrar</button>' +
         '</form>' +
         (role !== 'admin'
-          ? '<div class="divider-label">ou</div><button class="btn btn--outline" data-nav="/auth/' + role + '/cadastro">Criar conta de ' + (role === 'cliente' ? 'cliente' : 'profissional') + '</button>'
+          ? '<div class="divider-label">ou</div><button class="btn btn--outline" data-nav="/auth/' + role + '/cadastro">Criar conta de profissional</button>'
           : '<p class="text text--sm text--muted" style="text-align:center;">Acesso restrito à equipe QuemFaz.</p>') +
-      '</div>'
+      '</div>')
     );
   };
 
@@ -6878,10 +6928,15 @@ alt=""></noscript>
         const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
         try {
-          const res = (global.QFCloud && global.QFCloud.enabled)
-            ? await global.QFCloud.signIn(params.role, fd.get('email').trim(), fd.get('senha'))
-            : DB.login(params.role, fd.get('email').trim(), fd.get('senha'));
-          if (!res.ok) { PU.toast(res.error || 'Não foi possível entrar.', 'danger'); return; }
+          const porWhatsapp = params.role === 'cliente' && form.hasAttribute('data-login-whatsapp');
+          const res = porWhatsapp
+            ? ((global.QFCloud && global.QFCloud.enabled)
+                ? await global.QFCloud.signInClienteWhatsapp(String(fd.get('telefone') || ''))
+                : { ok: false, error: 'Não foi possível carregar a conexão com o banco.' })
+            : (global.QFCloud && global.QFCloud.enabled)
+              ? await global.QFCloud.signIn(params.role, fd.get('email').trim(), fd.get('senha'))
+              : DB.login(params.role, fd.get('email').trim(), fd.get('senha'));
+          if (!res.ok) { PU.toast(res.error || 'Não foi possível entrar.', 'danger', res.notFound ? 7000 : undefined); return; }
           if (res.mustChangePassword && global.QFPasswordRecovery && global.QFPasswordRecovery.openForcedPassword) {
             try { sessionStorage.setItem('qf_force_password_change', '1'); } catch (_) {}
             PU.toast('Crie uma nova senha para continuar.', null);
@@ -11840,7 +11895,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.25.3';
+  const APP_VERSION = '11.26.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

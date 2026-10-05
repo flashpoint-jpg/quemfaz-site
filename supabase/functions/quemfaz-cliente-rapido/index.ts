@@ -48,7 +48,10 @@ Deno.serve(async (req) => {
   const nome = String(body.nome || "").replace(/\s+/g, " ").trim().slice(0, 120);
   const telefone = normalizePhone(body.telefone);
 
-  if (nome.length < 2) return reply({ ok: false, error: "Informe seu nome." }, 400);
+  // V11.26: modo "entrar" — o cliente volta só com o WhatsApp. Não cria conta e não mexe no cadastro.
+  const entrar = String(body.modo || "") === "entrar";
+
+  if (!entrar && nome.length < 2) return reply({ ok: false, error: "Informe seu nome." }, 400);
   if (!validMobile(telefone)) {
     return reply({ ok: false, error: "Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente." }, 400);
   }
@@ -63,7 +66,29 @@ Deno.serve(async (req) => {
   let userId = found ? String(found.id) : "";
   let authUser: any = null;
 
-  if (userId) {
+  if (entrar && !userId) {
+    return reply({ ok: false, nao_encontrado: true, error: "Não achamos pedido com esse WhatsApp. Confira o número ou faça um pedido novo." }, 404);
+  }
+
+  if (entrar) {
+    const current = await admin.auth.admin.getUserById(userId);
+    if (current.error || !current.data.user) {
+      console.error("auth_usuario_existente", current.error?.message || "sem usuário");
+      return reply({ ok: false, error: "Não foi possível recuperar seu acesso agora." }, 500);
+    }
+    authUser = current.data.user;
+    if (!String(authUser.email || "").trim()) {
+      const changed = await admin.auth.admin.updateUserById(userId, {
+        email: `cliente-${telefone}@acesso.quemfaz.app.br`,
+        email_confirm: true,
+      });
+      if (changed.error || !changed.data.user) {
+        console.error("auth_atualizar", changed.error?.message || "sem usuário");
+        return reply({ ok: false, error: "Não foi possível atualizar seu acesso agora." }, 500);
+      }
+      authUser = changed.data.user;
+    }
+  } else if (userId) {
     const current = await admin.auth.admin.getUserById(userId);
     if (current.error || !current.data.user) {
       console.error("auth_usuario_existente", current.error?.message || "sem usuário");
