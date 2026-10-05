@@ -1,0 +1,24 @@
+QuemFaz V11.29.1 — Entrada de hoje no painel e menu de baixo rápido
+
+PAINEL (cartão azul do topo)
+- O número grande agora é a ENTRADA DE HOJE e zera sozinho à meia-noite (horário de Brasília).
+- Soma tudo: desbloqueios (pagos com crédito comprado ou com o bônus de R$ 25), prioridades,
+  anúncios e planos. Não importa se foi dinheiro real ou bônus.
+- Embaixo: os três tipos de hoje, o TOTAL GERAL desde o lançamento e, numa linha,
+  o dinheiro real (Pix, cartão e boleto) de hoje e do total.
+- Os desbloqueios agora vêm do extrato da carteira: entram TODOS, inclusive os de pedidos que
+  já foram excluídos do painel (antes esses sumiam da conta). Devolução antiga entra descontando.
+- Recarga de crédito não entra duas vezes: ela aparece no dinheiro real quando é paga e
+  na entrada quando o crédito é gasto num desbloqueio.
+
+MENU DE BAIXO (Painel, Prof., Serviços, Mais)
+- Antes, cada toque esperava o painel baixar tudo de novo da internet para só então abrir a tela.
+- Agora a tela abre na hora com o que já está no aparelho e os dados novos chegam por trás
+  (no máximo a cada 20 segundos). Se você já tocou em algo na tela, ela não é redesenhada.
+- A primeira abertura e o botão Atualizar continuam buscando tudo.
+
+O QUE NÃO MUDOU
+- Banco de dados, app do cliente e do profissional, notificações.
+
+TESTE
+- tests/painel-organizado.test.cjs e tests/loading-regression.test.cjs
