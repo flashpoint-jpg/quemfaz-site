@@ -4367,7 +4367,7 @@ alt=""></noscript>
       raioAtualKm: row.raio_atual_km == null ? null : Number(row.raio_atual_km),
       dataPreferida: row.data_preferida || null,
       participantes: row.participantes == null ? null : Number(row.participantes),
-      limiteParticipantes: row.limite == null ? 5 : Number(row.limite),
+      limiteParticipantes: row.limite == null ? 3 : Number(row.limite),
       status: localStatus(row.status),
       profissionalId: professionalId || null,
       criadoEm: row.criado_em,
@@ -5519,7 +5519,7 @@ alt=""></noscript>
       origem: out.origem || 'saldo',
       planoRestantes: out.plano_restantes == null ? null : Number(out.plano_restantes),
       participantes: out.participantes == null ? null : Number(out.participantes),
-      limite: out.limite == null ? 5 : Number(out.limite),
+      limite: out.limite == null ? 3 : Number(out.limite),
       saldo: prof ? Number(prof.creditos || 0) : Number(out.saldo_centavos || 0),
       bonusDesbloqueios: 0
     };
@@ -7524,7 +7524,7 @@ alt=""></noscript>
 
     if (req.status === STATUS.AGUARDANDO_ORCAMENTO) {
       titulo = 'Um profissional vai chamar você';
-      texto = 'Ele reservou seu pedido e vai chamar você no WhatsApp. Fique de olho nas mensagens.';
+      texto = 'Ele desbloqueou seu pedido e vai chamar você no WhatsApp. Até 3 profissionais podem chamar: fique de olho nas mensagens.';
       botao = 'Ver pedido';
       ic = 'message';
       destaque = 'Profissional em contato';
@@ -7968,7 +7968,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais próximos podem visualizar seu pedido. Quem desbloqueia primeiro reserva o serviço e conversa com você pelo chat.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais próximos podem visualizar seu pedido. Até 3 podem desbloquear e chamar você no WhatsApp ou pelo chat.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -8069,16 +8069,16 @@ alt=""></noscript>
       '<div class="section">' +
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
-          '<h2 class="h3" style="margin-top:12px;">Profissional em conversa</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Seu pedido está reservado para um profissional por vez. Ele vai chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui. Se não fechar negócio, toque em “Ainda não” para voltar ao portfólio.</p>' +
+          '<h2 class="h3" style="margin-top:12px;">Profissional em contato</h2>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Até 3 profissionais podem desbloquear seu pedido e chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui e fechar com quem preferir.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
               '<span class="qf-search-radar__center">' + icon('mapPin') + '</span>' +
             '</div>' +
-            '<div class="qf-search-radar__stage" data-search-stage>Conversa reservada</div>' +
-            '<div class="qf-search-radar__sub" data-search-sub>Seu pedido fica fora do portfólio durante a negociação</div>' +
-            '<div class="qf-search-radar__km" data-search-km>Reserva exclusiva</div>' +
+            '<div class="qf-search-radar__stage" data-search-stage>Profissional em contato</div>' +
+            '<div class="qf-search-radar__sub" data-search-sub>Até 3 profissionais podem chamar você no WhatsApp</div>' +
+            '<div class="qf-search-radar__km" data-search-km>Até 3 profissionais</div>' +
           '</div>' +
           '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>O profissional vai chamar você no WhatsApp.</span></div>' +
         '</div>' +
@@ -8991,7 +8991,7 @@ alt=""></noscript>
     return city&&city.nome?String(city.nome):'sua cidade';
   }
   function searchStage(req){
-    if(req&&[STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)!==-1)return{title:'Conversa reservada',sub:'Seu pedido fica fora do portfólio durante a negociação',km:'Reserva exclusiva'};
+    if(req&&[STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)!==-1)return{title:'Profissional em contato',sub:'Até 3 profissionais podem chamar você no WhatsApp',km:'Até 3 profissionais'};
     if(req&&req.prioridade)return{title:'Busca prioritária ativa',sub:'Ampliando o alcance mais rápido',km:'Prioridade'};
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
     const elapsed=Number.isFinite(created)?Math.max(0,Date.now()-created):0;
@@ -9034,7 +9034,7 @@ alt=""></noscript>
       return;
     }
     if(participantes>0){
-      copy.innerHTML='<strong>Um profissional aceitou seu pedido</strong> · ele vai chamar você no WhatsApp';
+      copy.innerHTML=participantes===1?'<strong>Um profissional desbloqueou seu pedido</strong> · ele vai chamar você no WhatsApp':'<strong>'+participantes+' profissionais desbloquearam seu pedido</strong> · eles vão chamar você no WhatsApp';
       return;
     }
     if(avisados>0){copy.innerHTML='<strong>'+avisados+(avisados===1?' profissional':' profissionais')+' '+(avisados===1?'já foi avisado':'já foram avisados')+'</strong>';return;}
@@ -9654,6 +9654,25 @@ alt=""></noscript>
   // V11.13: informações do chamado para o profissional decidir ANTES de pagar
   // (distância, tempo estimado, valor do desbloqueio, fotos e vídeos). O contato só aparece depois.
   const CallInfo = global.QFCallInfo = {
+    // V11.28: até 3 profissionais podem desbloquear o mesmo pedido. As vagas ocupadas ficam sempre à vista ANTES do desbloqueio.
+    vagas: function (req) {
+      const limite = Number((req && req.limiteParticipantes) || 3) || 3;
+      const ocupadas = Math.max(0, Math.min(limite, Number((req && req.participantes) || 0) || 0));
+      return { limite: limite, ocupadas: ocupadas, livres: limite - ocupadas };
+    },
+    vagasTitulo: function (req) {
+      const v = CallInfo.vagas(req);
+      return v.ocupadas + ' de ' + v.limite + ' vagas ocupadas';
+    },
+    vagasHtml: function (req, grande) {
+      const v = CallInfo.vagas(req);
+      let pontos = '';
+      for (let i = 0; i < v.limite; i++) pontos += '<i' + (i < v.ocupadas ? ' class="is-on"' : '') + '></i>';
+      const sub = 'Até ' + v.limite + ' profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.';
+      return '<div class="qf-vagas' + (grande ? ' qf-vagas--grande' : '') + '" data-qf-vagas="' + v.ocupadas + '/' + v.limite + '">' +
+        '<span class="qf-vagas__pontos" aria-hidden="true">' + pontos + '</span>' +
+        '<span class="qf-vagas__txt"><strong>' + CallInfo.vagasTitulo(req) + '</strong>' + (grande ? '<small>' + sub + '</small>' : '') + '</span></div>';
+    },
     km: function (req) { const k = Number(req && req.distanciaKm); return req && req.distanciaKm != null && Number.isFinite(k) ? k : null; },
     kmTxt: function (req) { const k = CallInfo.km(req); return k == null ? '' : k.toFixed(1).replace('.', ',') + ' km'; },
     // Mesmo cálculo do banco (qf_tempo_estimado_min): trajeto ≈ 1,3 × linha reta; cidade ~27 km/h, estrada ~50 km/h.
@@ -9780,7 +9799,7 @@ alt=""></noscript>
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '') +
-            '<div class="qf-competition-mini">' + icon('unlock') + '<span>Quem desbloquear primeiro reserva a conversa com o cliente</span></div>' +
+            CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
@@ -9843,8 +9862,8 @@ alt=""></noscript>
           '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
           '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
             (primeiraGratis
-              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Quem desbloqueia primeiro reserva o serviço e chama o cliente no WhatsApp na hora. O endereço exato só aparece se o cliente escolher você.'
-              : 'Ao desbloquear, usamos os créditos da carteira para reservar o serviço e liberar o WhatsApp do cliente e o chat. Durante a negociação, o pedido fica fora do portfólio para os outros profissionais. O endereço exato só aparece se o cliente escolher você.') +
+              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Você chama o cliente no WhatsApp na hora. Até 3 profissionais podem desbloquear o mesmo pedido. O endereço exato só aparece se o cliente escolher você.'
+              : 'Ao desbloquear, usamos os créditos da carteira para liberar o WhatsApp do cliente e o chat. Até 3 profissionais podem desbloquear o mesmo pedido, e o cliente fecha com quem preferir. O endereço exato só aparece se o cliente escolher você.') +
           '</p>' +
           (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('info') + '<span><strong>Sem devolução:</strong> o crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda.</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
@@ -11290,13 +11309,15 @@ alt=""></noscript>
         const valor = req ? DB.leadFeeForRequest(req) : 0;
         const primeiraGratis = false;
         const usaPlano = !!(user && user.plano && user.plano.restantes > 0);
+        const vg = CallInfo.vagas(req || {});
+        const vagasFrase = 'Este pedido aceita até ' + vg.limite + ' profissionais' + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' já desbloqueou' : ' já desbloquearam') : ' e ninguém desbloqueou ainda') + '. ';
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
-          message: primeiraGratis
+          message: vagasFrase + (primeiraGratis
             ? 'Nenhum crédito será usado neste primeiro chamado. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
             : (usaPlano
               ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '), sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'
-              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'),
+              : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.')),
           okLabel: primeiraGratis ? 'Desbloquear grátis' : (usaPlano ? 'Usar 1 chamado do plano' : 'Pagar e desbloquear')
         }).then(async function (ok) {
           if (!ok) return;
@@ -11318,7 +11339,7 @@ alt=""></noscript>
             PU.toast('Finalize e avalie o serviço pendente antes de aceitar outro chamado.', 'danger');
             global.navigate('/profissional/pedido/' + result.chamadoId, true);
           } else if (result && result.reason === 'reservado') {
-            PU.toast('Outro profissional desbloqueou primeiro. Veja os outros serviços disponíveis.', 'danger');
+            PU.toast('As 3 vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.', 'danger');
             global.navigate('/profissional/servicos/disponiveis', true);
           } else if (result && result.reason === 'saldo') {
             PU.openSheet(
@@ -11919,7 +11940,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.27.2';
+  const APP_VERSION = '11.28.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12850,7 +12871,7 @@ alt=""></noscript>
     return '<div class="view">' +
       qfServiceTabs('disponiveis') +
       '<div class="section" id="chamados-disponiveis">' +
-        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. Quem desbloquear primeiro reserva a conversa com o cliente.</p></div>' +
+        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. Até 3 profissionais podem desbloquear cada pedido: veja as vagas em cada cartão.</p></div>' +
         (calls.length?'<span class="badge badge--orange">'+calls.length+'</span>':'')+'</div>' +
         '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
           '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
@@ -13264,8 +13285,8 @@ alt=""></noscript>
 
   function competitionCopy(n) {
     return {
-      title:'Disponível para desbloqueio',
-      sub:'Quem desbloquear primeiro reserva este serviço e fala com o cliente. Os demais continuam vendo outros serviços no portfólio.'
+      title:(Number(n) || 0) + ' de 3 vagas ocupadas',
+      sub:'Até 3 profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.'
     };
   }
   global.QFCompetitionCopy = competitionCopy;
@@ -13279,6 +13300,18 @@ alt=""></noscript>
     '.qf-exec-line,.qf-competition-mini{display:flex;align-items:center;gap:6px;margin-top:7px;font-size:.82rem;color:var(--text-secondary)}',
     '.qf-exec-line svg,.qf-competition-mini svg{width:16px;height:16px}',
     '.qf-competition-card{padding:14px;border-radius:16px;background:var(--navy-100);border:1px solid rgba(15,42,70,.10)}',
+    '.qf-vagas{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 9px;border-radius:12px;background:var(--orange-100);border:1.5px solid var(--orange-700);color:var(--text-primary);text-align:left}',
+    '.qf-vagas__pontos{display:inline-flex;gap:5px;flex:none}',
+    '.qf-vagas__pontos i{display:block;width:12px;height:12px;border-radius:50%;border:2px solid var(--orange-700);background:#fff}',
+    '.qf-vagas__pontos i.is-on{background:var(--orange-700)}',
+    '.qf-vagas__txt{display:flex;flex-direction:column;min-width:0;line-height:1.25}',
+    '.qf-vagas__txt strong{font-size:.86rem;font-weight:800;color:var(--orange-700)}',
+    '.qf-vagas__txt small{font-size:.78rem;color:var(--text-secondary)}',
+    '.qf-vagas--grande{margin-top:0;padding:14px;border-radius:16px;gap:14px}',
+    '.qf-vagas--grande .qf-vagas__pontos i{width:22px;height:22px;border-width:2.5px}',
+    '.qf-vagas--grande .qf-vagas__txt strong{font-size:1.1rem}',
+    '.qf-vagas--grande .qf-vagas__txt small{font-size:.86rem;margin-top:2px}',
+    '.qf-conversation-card + .qf-conversation-card{margin-top:10px}',
     '.qf-competition-card strong{display:block;color:var(--navy-900);font-size:.98rem}',
     '.qf-competition-card span{display:block;margin-top:3px;color:var(--text-secondary);font-size:.84rem}',
     '.qf-execution-summary strong{display:flex;align-items:center;gap:8px}',
@@ -13414,10 +13447,9 @@ alt=""></noscript>
     let html = oldProfCall(params,user);
     if (!req) return html;
     if (req.status !== 'buscando' || req.profissionalId) {
-      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','Este pedido já foi reservado por outro profissional. Confira os demais serviços disponíveis no portfólio.');
+      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','As 3 vagas deste pedido já foram preenchidas. Confira os demais serviços disponíveis.');
     }
-    const n = Number(req.participantes || 0), c = competitionCopy(n);
-    const comp = '<div class="section"><div class="qf-competition-card"><strong>' + esc(c.title) + '</strong><span>' + esc(c.sub) + '</span></div></div>';
+    const comp = '<div class="section">' + global.QFCallInfo.vagasHtml(req, true) + '</div>';
     html = html.replace('<div class="section qf-call-facts">', comp + scheduleSummary(req) + '<div class="section qf-call-facts">');
     html = html.replaceAll('Telefone/WhatsApp e endereço exato só aparecem depois que o cliente aprovar seu orçamento','Telefone/WhatsApp e endereço exato só aparecem depois que o cliente escolher você');
     html = html.replaceAll('antes de aprovar um orçamento','antes de fechar o serviço');
@@ -13557,29 +13589,31 @@ alt=""></noscript>
     if (search) search.addEventListener('input',apply);
   }
 
+  // V11.28: até 3 profissionais podem desbloquear o pedido; o cliente vê um cartão para cada um.
   function renderConversationCards(rows, req) {
     if (!rows.length) return '<div class="card text--sm text--secondary">Seu pedido está no portfólio aguardando um profissional desbloquear.</div>';
-    const r = rows[0];
-    const selected = !!r.selecionado;
-    const photo = r.profissional_foto_url ? '<img class="avatar avatar--sm" src="' + esc(r.profissional_foto_url) + '" alt="">' : '<div class="avatar avatar--sm">' + PU.initials(r.profissional_nome || '?') + '</div>';
-    const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
-    return '<div class="card qf-client-decision">' +
-        '<div class="text--strong">' + (selected ? 'Serviço confirmado' : 'Um profissional reservou seu pedido') + '</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (selected ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Converse pelo chat. Se fechar, confirme em “Fechou negócio”. Se não fechar, toque em “Ainda não” para voltar ao portfólio.') + '</div>' +
-        (!selected ? '<div class="btn-row" style="margin-top:12px;">' +
-          '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechou negócio</button>' +
-          '<button class="btn btn--outline" type="button" data-qf-continue-search> Ainda não </button>' +
-        '</div>' : '') +
-      '</div>' +
-      '<div class="section-head" style="margin-top:14px;"><h2 class="h3">Profissional em conversa</h2>' + (selected ? '<span class="badge badge--success">Escolhido</span>' : '<span class="badge badge--orange">Reservado</span>') + '</div>' +
-      '<div class="card qf-conversation-card">' +
+    const escolhido = rows.filter(function (r) { return !!r.selecionado; })[0] || null;
+    const n = rows.length;
+    function cartao(r) {
+      const photo = r.profissional_foto_url ? '<img class="avatar avatar--sm" src="' + esc(r.profissional_foto_url) + '" alt="">' : '<div class="avatar avatar--sm">' + PU.initials(r.profissional_nome || '?') + '</div>';
+      const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
+      return '<div class="card qf-conversation-card">' +
         '<div class="row-between"><div class="row">' + photo + '<div><div class="text--strong">' + esc(r.profissional_nome || 'Profissional') + '</div>' +
         '<div class="text--sm text--secondary">' + (r.profissional_cidade ? esc(r.profissional_cidade + (r.profissional_uf ? '/' + r.profissional_uf : '')) : 'Profissional verificado') + '</div></div></div>' +
         (r.nao_lidas ? '<span class="badge badge--orange">' + Number(r.nao_lidas) + ' nova</span>' : '') + '</div>' +
         last +
         (r.tem_proposta ? '<div class="text--sm" style="color:var(--orange-700);margin-top:6px;font-weight:700;">Proposta disponível (opcional)</div>' : '') +
-        '<div class="btn-row" style="margin-top:10px;"><button class="btn btn--outline" data-nav="/cliente/chat/' + esc(req.id) + '/' + esc(r.profissional_id) + '">' + icon('message') + ' Conversar</button></div>' +
+        '<div class="btn-row" style="margin-top:10px;"><button class="btn btn--outline" data-nav="/cliente/chat/' + esc(req.id) + '/' + esc(r.profissional_id) + '">' + icon('message') + ' Conversar</button>' +
+        (escolhido ? '' : '<button class="btn btn--primary" type="button" data-qf-choose-prof="' + esc(r.profissional_id) + '" data-qf-prof-name="' + esc(r.profissional_nome || 'profissional') + '">Fechei com este</button>') +
+        '</div>' +
       '</div>';
+    }
+    return '<div class="card qf-client-decision">' +
+        '<div class="text--strong">' + (escolhido ? 'Serviço confirmado' : (n === 1 ? 'Um profissional desbloqueou seu pedido' : n + ' profissionais desbloquearam seu pedido')) + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (escolhido ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Até 3 profissionais podem desbloquear seu pedido e chamar você no WhatsApp. Converse, compare e toque em “Fechei com este” no profissional que você escolher.') + '</div>' +
+      '</div>' +
+      '<div class="section-head" style="margin-top:14px;"><h2 class="h3">' + (escolhido || n === 1 ? 'Profissional em conversa' : 'Profissionais em conversa') + '</h2>' + (escolhido ? '<span class="badge badge--success">Escolhido</span>' : '<span class="badge badge--orange">' + n + ' de 3</span>') + '</div>' +
+      (escolhido ? [escolhido] : rows).map(cartao).join('');
   }
 
   const conversationCache = new Map();
@@ -13873,7 +13907,9 @@ alt=""></noscript>
       const d = await Cloud.participantCount(params.id);
       if (!d.ok) return;
       const n = Number(d.participantes || 0);
-      if (n >= 1) el.textContent = 'Você reservou este serviço. Enquanto conversa com o cliente, ele fica fora do portfólio para os outros profissionais.';
+      const lim = Number(d.limite || 3) || 3;
+      if (n >= 2) el.textContent = n + ' de ' + lim + ' profissionais desbloquearam este pedido. O cliente fecha com quem preferir: chame logo no WhatsApp.';
+      else if (n === 1) el.textContent = 'Só você desbloqueou este pedido até agora. Até ' + lim + ' profissionais podem desbloquear.';
     } catch (_) {}
   }
 
