@@ -81,4 +81,11 @@ assert.ok(admin.includes('desbloqueios: temDesb ? (desbs[c.id] || []) : null,') 
   assert.deepEqual(pp, { p1: [2, 0, 0], p2: [2, 1, 1], p3: [1, 0, 1] });
 }
 
+// V11.28.1: aviso no app para os outros profissionais quando alguém fecha o pedido.
+const sqlAviso = fs.readFileSync(path.join(root, 'supabase', '2026-10-05-aviso-pedido-fechado-com-outro.sql'), 'utf8');
+assert.ok(sqlAviso.includes("'pedido_fechado_outro'") && sqlAviso.includes("new.desfecho = 'fechado'") && sqlAviso.includes('d.desfecho is null'));
+// "Não fechei" só avisa o cliente de cancelamento quando o pedido realmente encerra.
+assert.ok(html.includes("const evento = fechou ? 'service_complete' : (out.pedido_encerrado === false ? null : 'call_cancelled');"));
+assert.ok(!html.includes('O pedido será encerrado. O crédito do desbloqueio não volta.'));
+
 console.log('ate-3-por-pedido: ok');

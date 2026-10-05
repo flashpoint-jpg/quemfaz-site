@@ -5584,7 +5584,10 @@ alt=""></noscript>
     if (!out.ok) throw new Error(out.reason || 'Não foi possível registrar o fechamento.');
     const s = DB.getSession();
     if (s && s.role === 'profissional') await syncProfessionalCalls(s.userId);
-    if (global.QFPush) global.QFPush.notify(fechou ? 'service_complete' : 'call_cancelled', chamadoId).catch(function () {});
+    // V11.28.1: com até 3 profissionais por pedido, "Não fechei" só encerra o pedido quando não sobra ninguém em conversa.
+    // O cliente só é avisado de cancelamento nesse caso (o banco responde pedido_encerrado).
+    const evento = fechou ? 'service_complete' : (out.pedido_encerrado === false ? null : 'call_cancelled');
+    if (evento && global.QFPush) global.QFPush.notify(evento, chamadoId).catch(function () {});
     return DB.requestById(chamadoId);
   }
 
@@ -11402,14 +11405,14 @@ alt=""></noscript>
         const fechou = act === 'fechei-servico';
         PU.confirmDialog(fechou
           ? { title: 'Fechei o serviço', message: 'Confirma que você combinou e fez este serviço? O cliente será convidado a avaliar você.', okLabel: 'Sim, fechei' }
-          : { title: 'Não fechei', message: 'Confirma que este serviço não foi fechado? O pedido será encerrado. O crédito do desbloqueio não volta.', okLabel: 'Não fechei', danger: true }
+          : { title: 'Não fechei', message: 'Confirma que você não fechou este serviço? Ele sai da sua lista e o crédito do desbloqueio não volta.', okLabel: 'Não fechei', danger: true }
         ).then(async function (ok) {
           if (!ok) return;
           try {
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.closeProfessionalCall(params.id, fechou);
             else DB.fecharChamadoProfissional(params.id, fechou);
-            PU.toast(fechou ? 'Serviço fechado. Agora avalie o cliente.' : 'Pedido encerrado como não fechado.', fechou ? 'success' : null);
-            // "Não fechei" encerra a reserva: o pedido sai da lista do profissional.
+            PU.toast(fechou ? 'Serviço fechado. Agora avalie o cliente.' : 'Registrado: você não fechou este pedido.', fechou ? 'success' : null);
+            // "Não fechei": o pedido sai da lista deste profissional (os outros que desbloquearam seguem em conversa).
             global.navigate(fechou ? '/profissional/pedido/' + params.id : '/profissional/servicos', true);
           } catch (err) {
             PU.toast('Não foi possível registrar. ' + (err && err.message ? err.message : ''), 'danger');
@@ -11940,7 +11943,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.28.0';
+  const APP_VERSION = '11.28.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
