@@ -1,0 +1,15 @@
+QuemFaz V11.28.1 — Aviso quando outro profissional fecha o pedido
+
+- Quando um profissional toca em "Fechei o serviço", os outros que desbloquearam o mesmo
+  pedido e ainda estavam em conversa recebem o aviso "Pedido fechado com outro profissional"
+  na aba Avisos (com som e mensagem na tela se o app estiver aberto).
+  Quem já tinha respondido "Não fechei" não recebe.
+- O aviso é dentro do app. Notificação no celular com o app fechado ainda não é enviada
+  nesse caso (precisa mudar o serviço de notificações).
+- "Não fechei": o cliente só recebe "O profissional cancelou o atendimento" quando o pedido
+  realmente encerra. Antes, com até 3 por pedido, ele receberia esse aviso mesmo com outros
+  profissionais ainda em conversa.
+- Texto da confirmação do "Não fechei" ajustado: o pedido sai da lista de quem respondeu.
+
+BANCO
+- supabase/2026-10-05-aviso-pedido-fechado-com-outro.sql (já aplicado).
