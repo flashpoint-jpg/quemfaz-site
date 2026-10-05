@@ -1,4 +1,4 @@
-QuemFaz V11.24.1 — Ajustes na tela inicial do cliente
+QuemFaz V11.25.3 — Ajustes na tela inicial do cliente
 
 - Cartão "Receba orçamento grátis": saiu o selo GRÁTIS que cobria o título; ícone alinhado ao título;
   texto atualizado (o profissional chama no WhatsApp).

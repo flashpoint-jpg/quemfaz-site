@@ -30,7 +30,7 @@ const a = html.indexOf("'<section class=\"qf-landing-hero\">");
 assert.ok(a > 0);
 const landing = html.slice(a, html.indexOf('};', a));
 assert.ok(landing.includes('<div class="qf-landing-photo"><img src="\' + heroBanner + \'" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div>'));
-assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Do que você precisa?</label>'));
+assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte o que precisa e veja quem chama você.</label>'));
 assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search">'));
 assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></form>'));
 const css2 = (html.match(/<style id="qf-skin-inicio">([\s\S]*?)<\/style>/) || [])[1] || '';
