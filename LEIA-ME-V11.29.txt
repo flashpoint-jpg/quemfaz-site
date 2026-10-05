@@ -25,7 +25,7 @@ O QUE NÃO MUDOU
 - A função quemfaz-push não foi alterada.
 
 BANCO
-- supabase/2026-10-05-prazo-do-pedido.sql
+- supabase/2026-10-05-prazo-do-pedido.sql (já aplicado).
   Guarda o dia real do prazo (não a palavra "hoje"). Pedido com dia marcado só vence
   3 dias depois do dia, e o fechamento automático conta 7 dias depois do dia.
 - Se o banco ainda não tiver os campos, o pedido é publicado normalmente, só que sem o prazo.

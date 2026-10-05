@@ -71,8 +71,7 @@ exception when others then
 end;
 $function$;
 
-drop trigger if exists qf_chamado_normalizar_prazo_before_write on public.qf_chamados;
-create trigger qf_chamado_normalizar_prazo_before_write
+create or replace trigger qf_chamado_normalizar_prazo_before_write
   before insert or update of prazo, prazo_dia, periodo on public.qf_chamados
   for each row execute function private.qf_chamado_normalizar_prazo();
 
