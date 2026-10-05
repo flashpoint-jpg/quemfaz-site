@@ -2507,6 +2507,33 @@ window.qfGoogleLead = function () {
 #app-shell:not([data-route="inicio"]) .qf-request-submit { min-height: 62px; font-size: 18px; border-radius: 18px; }
 @media (max-width: 430px) { .qf-req-steps { margin-left: -16px; margin-right: -16px; } }
 @media (min-width: 768px) { .qf-req-steps { margin: 0; border-radius: 16px; overflow: hidden; } .qf-req-steps__in { padding-top: 14px; } }
+
+/* V11.29 — "Pra quando você precisa?" (pedido do cliente) e selo de prazo (profissional) */
+.qf-client-request .qf-prazo { margin-top: 18px; gap: 10px; }
+.qf-prazo__opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.qf-prazo__opt {
+  flex: 1 1 auto; min-height: 46px; padding: 10px 10px; border: 1.5px solid #dfe4ec; border-radius: 12px;
+  background: var(--bg-surface); color: var(--navy-900); font: inherit; font-size: 14.5px; font-weight: 700; line-height: 1.2;
+  white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.qf-prazo__opt[aria-checked="true"], .qf-prazo__opt[aria-pressed="true"] { background: var(--navy-900); border-color: var(--navy-900); color: #fff; }
+.qf-prazo__opt:disabled { opacity: .4; cursor: default; }
+.qf-prazo__opt:focus-visible { outline: 3px solid var(--orange-400); outline-offset: 2px; }
+.qf-prazo__periodo { display: flex; flex-direction: column; gap: 8px; }
+.qf-prazo__periodo > span { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+.qf-prazo__periodo .qf-prazo__opt { min-height: 42px; font-size: 14.5px; font-weight: 600; }
+.qf-prazo__nota { margin: 0; min-height: 19px; font-size: 13.5px; line-height: 1.4; color: var(--text-secondary); }
+.qf-prazo__nota.is-urgente { color: var(--orange-700); font-weight: 700; }
+.qf-prazo [hidden] { display: none !important; }
+.qf-prazo-selo { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; font-size: .70rem; font-weight: 900; letter-spacing: .06em; white-space: nowrap; }
+.qf-prazo-selo--amanha { background: var(--orange-100); color: var(--orange-800); }
+.qf-prazo-selo--data { background: var(--navy-100); color: var(--navy-900); }
+.qf-prazo-selo--sem { background: #eef1f6; color: #55607a; }
+.qf-prazo-selo--atrasado { background: #fff; color: #b91c1c; box-shadow: inset 0 0 0 1.5px #dc2626; }
+.qf-exec-line svg { flex: none; }
+.qf-call-overlay__prazo { margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 700; color: #fff; }
+.qf-call-overlay__prazo .qf-urgent-badge { animation: none; }
+.qf-call-overlay__prazo .qf-prazo-selo, .qf-call-overlay__prazo .qf-urgent-badge { font-size: .8rem; padding: 6px 12px; }
 </style>
 </head>
 <body>
@@ -2917,6 +2944,122 @@ alt=""></noscript>
     uid, formatCurrency, parseCurrencyInput, formatDate, formatDateTime, timeAgo,
     escapeHtml, initials, clamp, fileToCompressedDataUrl,
     toast, playNotificationSound, browserNotification, unlockNotificationAudio, notePushSound, pushSoundRecent, openSheet, closeSheet, confirmDialog,
+  };
+})(window);
+
+
+/* QuemFaz V11.29 — prazo do pedido ("Pra quando você precisa?").
+   O banco guarda o DIA real (prazoDia, AAAA-MM-DD), nunca a palavra "hoje": um pedido feito ontem
+   para "hoje" aparece hoje como atrasado. Aqui ficam as contas e os textos, usados pelo formulário
+   do cliente e pelas telas do profissional. Pedido antigo (sem prazo) continua com a regra de antes. */
+(function (global) {
+  const TIPOS = ['hoje', 'amanha', 'semana', 'data', 'sem_pressa'];
+  const PERIODOS = { manha: 'de manhã', tarde: 'à tarde', noite: 'à noite' };
+  const DIAS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(v) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || ''));
+    if (!m) return null;
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
+    return (d.getFullYear() === Number(m[1]) && d.getMonth() === Number(m[2]) - 1 && d.getDate() === Number(m[3])) ? d : null;
+  }
+  function hoje(now) {
+    const d = now == null ? new Date() : new Date(now);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0, 0);
+  }
+  function somar(base, n) { const d = new Date(base); d.setDate(d.getDate() + n); return d; }
+  function dias(a, b) { return Math.round((a.getTime() - b.getTime()) / 86400000); }
+  function dm(d) { return pad(d.getDate()) + '/' + pad(d.getMonth() + 1); }
+  function curto(d) { return DIAS[d.getDay()] + ', ' + dm(d); }
+  function maiuscula(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+
+  // Monta o que vai para o banco a partir do que o cliente escolheu.
+  function montar(prazo, periodo, dia, now) {
+    const h = hoje(now);
+    const p = TIPOS.indexOf(prazo) !== -1 ? prazo : 'sem_pressa';
+    if (p === 'sem_pressa') return { ok: true, prazo: p, prazoDia: null, periodo: null };
+    let d;
+    if (p === 'hoje') d = h;
+    else if (p === 'amanha') d = somar(h, 1);
+    else if (p === 'semana') d = somar(h, 6);
+    else {
+      d = parse(dia);
+      if (!d) return { ok: false, erro: 'Escolha o dia em que você precisa do serviço.' };
+      if (dias(d, h) < 0) return { ok: false, erro: 'Esse dia já passou. Escolha de hoje em diante.' };
+      if (dias(d, h) > 365) return { ok: false, erro: 'Escolha um dia mais próximo.' };
+    }
+    return { ok: true, prazo: p, prazoDia: ymd(d), periodo: (p !== 'semana' && PERIODOS[periodo]) ? periodo : null };
+  }
+
+  // Períodos de hoje que já passaram (não dá para pedir "hoje de manhã" às 15h).
+  function periodosPassados(now) {
+    const hora = (now == null ? new Date() : new Date(now)).getHours();
+    return { manha: hora >= 12, tarde: hora >= 18, noite: false };
+  }
+
+  // Como o prazo aparece HOJE para quem está olhando. Devolve null em pedido antigo.
+  function info(req, now) {
+    const prazo = req && req.prazo;
+    if (!prazo || TIPOS.indexOf(prazo) === -1) return null;
+    if (prazo === 'sem_pressa') return { tom: 'sem', urgente: false, selo: 'SEM PRESSA', texto: 'Sem pressa', dia: null };
+    const d = parse(req.prazoDia);
+    if (!d) return null;
+    const n = dias(d, hoje(now));
+    const t = d.getTime();
+    if (prazo === 'semana') {
+      if (n < 0) return { tom: 'atrasado', urgente: false, selo: 'ERA ATÉ ' + dm(d), texto: 'Era até ' + curto(d), dia: t };
+      if (n === 0) return { tom: 'hoje', urgente: true, selo: 'ATÉ HOJE', texto: 'Até hoje', dia: t };
+      if (n === 1) return { tom: 'amanha', urgente: false, selo: 'ATÉ AMANHÃ', texto: 'Até amanhã (' + curto(d) + ')', dia: t };
+      return { tom: 'data', urgente: false, selo: 'ATÉ ' + dm(d), texto: 'Até ' + curto(d), dia: t };
+    }
+    const per = PERIODOS[req.periodo] ? ', ' + PERIODOS[req.periodo] : '';
+    if (n < 0) return { tom: 'atrasado', urgente: false, selo: 'ERA PRA ' + dm(d), texto: 'Era pra ' + curto(d) + per, dia: t };
+    if (n === 0) return { tom: 'hoje', urgente: true, selo: 'PRA HOJE', texto: 'Hoje' + per, dia: t };
+    if (n === 1) return { tom: 'amanha', urgente: false, selo: 'PRA AMANHÃ', texto: 'Amanhã (' + curto(d) + ')' + per, dia: t };
+    return { tom: 'data', urgente: false, selo: 'DIA ' + dm(d), texto: maiuscula(curto(d)) + per, dia: t };
+  }
+
+  // Pedido antigo: sem data, ou com data nas próximas 24 horas, conta como urgente (regra de antes).
+  function urgente(req, now) {
+    const i = info(req, now);
+    if (i) return i.urgente;
+    if (!req || !req.dataPreferida) return true;
+    const t = Date.parse(req.dataPreferida);
+    return Number.isFinite(t) && t <= (now == null ? Date.now() : new Date(now).getTime()) + 86400000;
+  }
+
+  // Ordem da lista do profissional: urgentes, depois os que têm dia (o mais próximo primeiro), depois "sem pressa".
+  function comparar(a, b, now) {
+    function chave(r) {
+      const i = info(r, now);
+      if (urgente(r, now)) return [0, 0];
+      if (i) return i.dia == null ? [2, 0] : [1, i.dia];
+      const t = r && r.dataPreferida ? Date.parse(r.dataPreferida) : NaN;
+      return Number.isFinite(t) ? [1, t] : [2, 0];
+    }
+    const ka = chave(a), kb = chave(b);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    return ka[1] - kb[1];
+  }
+
+  function esc(v) { return global.PU && global.PU.escapeHtml ? global.PU.escapeHtml(String(v == null ? '' : v)) : String(v == null ? '' : v); }
+  function seloHtml(i) {
+    if (!i) return '';
+    return i.tom === 'hoje'
+      ? '<span class="qf-urgent-badge">' + esc(i.selo) + '</span>'
+      : '<span class="qf-prazo-selo qf-prazo-selo--' + i.tom + '">' + esc(i.selo) + '</span>';
+  }
+  function linhaHtml(i) {
+    if (!i) return '';
+    return '<div class="qf-exec-line">' + (global.icon ? global.icon('clock') : '') + '<span><strong>Quando:</strong> ' + esc(i.texto) + '</span></div>';
+  }
+
+  global.QFPrazo = {
+    TIPOS: TIPOS, PERIODOS: PERIODOS,
+    ymd: ymd, parse: parse, hoje: hoje, somar: somar, curto: curto,
+    montar: montar, periodosPassados: periodosPassados, info: info, urgente: urgente, comparar: comparar,
+    seloHtml: seloHtml, linhaHtml: linhaHtml
   };
 })(window);
 
@@ -3456,6 +3599,7 @@ alt=""></noscript>
       descricao: data.descricao, fotos: data.fotos || [], endereco: data.endereco, cidadeId: data.endereco.cidadeId,
       status: STATUS.BUSCANDO, profissionalId: null,
       criadoEm: nowIso(), atualizadoEm: nowIso(),
+      prazo: data.prazo || null, prazoDia: data.prazoDia || null, periodo: data.periodo || null,
       // Prioridade nunca é concedida gratuitamente. No modo offline ela fica apenas solicitada/pending.
       prioridade: false,
       pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: 490, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
@@ -4338,6 +4482,23 @@ alt=""></noscript>
     return local;
   }
 
+  // V11.29: as funções que listam pedidos não trazem o prazo; ele vem por uma consulta curta à parte.
+  // Se a consulta falhar, os pedidos aparecem como antes (sem o prazo) e nada mais é afetado.
+  async function attachPrazos(rows) {
+    const list = (rows || []).filter(function (r) { return r && r.id && r.prazo === undefined; });
+    if (!client || !list.length) return;
+    try {
+      const res = await client.rpc('qf_chamados_prazos', { p_ids: list.map(function (r) { return r.id; }).slice(0, 500) });
+      if (res.error) throw res.error;
+      const map = {};
+      (res.data || []).forEach(function (p) { map[p.id] = p; });
+      list.forEach(function (r) {
+        const p = map[r.id];
+        if (p) { r.prazo = p.prazo; r.prazo_dia = p.prazo_dia; r.periodo = p.periodo; }
+      });
+    } catch (err) { console.warn('QuemFaz prazo dos pedidos', err); }
+  }
+
   function requestFromCloud(row, professionalId) {
     const cidadeId = cityIdFromCloud(row.cidade, row.uf);
     return {
@@ -4366,6 +4527,10 @@ alt=""></noscript>
       tempoMin: row.tempo_min == null ? null : Number(row.tempo_min), // V11.13: tempo estimado até o cliente
       raioAtualKm: row.raio_atual_km == null ? null : Number(row.raio_atual_km),
       dataPreferida: row.data_preferida || null,
+      // V11.29: prazo escolhido pelo cliente (dia real em prazoDia, AAAA-MM-DD).
+      prazo: row.prazo || null,
+      prazoDia: row.prazo_dia || null,
+      periodo: row.periodo || null,
       participantes: row.participantes == null ? null : Number(row.participantes),
       limiteParticipantes: row.limite == null ? 3 : Number(row.limite),
       status: localStatus(row.status),
@@ -4594,6 +4759,7 @@ alt=""></noscript>
   async function syncClientCalls(userId) {
     const res = await client.rpc('qf_cliente_chamados');
     if (res.error) throw res.error;
+    await attachPrazos(res.data);
     DB.state.requests = (res.data || []).map(function (r) {
       return requestFromCloud(r, r.profissional_id || null);
     });
@@ -4642,6 +4808,7 @@ alt=""></noscript>
     if (available.error) throw available.error;
     const unlocked = await client.from('qf_chamados_desbloqueados').select('*').order('criado_em', { ascending: false });
     if (unlocked.error) throw unlocked.error;
+    await attachPrazos((available.data || []).concat(unlocked.data || []));
 
     const reqs = [];
     (available.data || []).forEach(function (r) { reqs.push(requestFromCloud(r, null)); });
@@ -5438,7 +5605,15 @@ alt=""></noscript>
       data_preferida: data.dataPreferida || null,
       prioridade: false
     };
-    const res = await client.from('qf_chamados').insert(row).select('*').single();
+    // V11.29: prazo do pedido. Se o banco recusar por causa desses campos, publica sem eles: o pedido nunca se perde.
+    const comPrazo = !!data.prazo;
+    if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }
+    let res = await client.from('qf_chamados').insert(row).select('*').single();
+    if (res.error && comPrazo && /prazo|periodo/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz prazo não gravado', res.error);
+      delete row.prazo; delete row.prazo_dia; delete row.periodo;
+      res = await client.from('qf_chamados').insert(row).select('*').single();
+    }
     if (res.error) throw res.error;
     await client.from('qf_profiles').update({ cidade: row.cidade, uf: row.uf, atualizado_em: new Date().toISOString() }).eq('id', data.clienteId);
     try { await saveClientAddress(Object.assign({}, data.endereco, { latitude: row.latitude, longitude: row.longitude })); } catch (_) {}
@@ -6460,6 +6635,85 @@ alt=""></noscript>
     '</div>';
   }
 
+  // V11.29: "Pra quando você precisa?" — um toque. "Sem pressa" já vem marcado para ninguém travar aqui.
+  function prazoFieldHtml() {
+    const P = global.QFPrazo;
+    if (!P) return '';
+    const h = P.hoje();
+    function opt(id, txt, on) {
+      return '<button type="button" class="qf-prazo__opt" role="radio" aria-checked="' + (on ? 'true' : 'false') + '" data-qf-prazo-opt="' + id + '">' + txt + '</button>';
+    }
+    function per(id, txt) {
+      return '<button type="button" class="qf-prazo__opt" aria-pressed="false" data-qf-periodo-opt="' + id + '">' + txt + '</button>';
+    }
+    return '<div class="field qf-prazo" data-qf-prazo>' +
+      '<span class="field__label" id="qf-prazo-label">Pra quando você precisa?</span>' +
+      '<div class="qf-prazo__opts" role="radiogroup" aria-labelledby="qf-prazo-label">' +
+        opt('hoje', 'Hoje') + opt('amanha', 'Amanhã') + opt('semana', 'Esta semana') + opt('data', 'Escolher data') + opt('sem_pressa', 'Sem pressa', true) +
+      '</div>' +
+      '<input class="input" type="date" name="prazoDia" data-qf-prazo-dia hidden aria-label="Dia em que você precisa do serviço" min="' + P.ymd(h) + '" max="' + P.ymd(P.somar(h, 365)) + '">' +
+      '<div class="qf-prazo__periodo" data-qf-prazo-periodo hidden><span>Melhor horário (se quiser)</span><div class="qf-prazo__opts">' +
+        per('manha', 'Manhã') + per('tarde', 'Tarde') + per('noite', 'Noite') +
+      '</div></div>' +
+      '<p class="qf-prazo__nota" data-qf-prazo-nota aria-live="polite">O profissional combina o dia com você.</p>' +
+      '<input type="hidden" name="prazo" value="sem_pressa"><input type="hidden" name="periodo" value="">' +
+    '</div>';
+  }
+  function bindPrazoField(form) {
+    const P = global.QFPrazo;
+    const box = form && form.querySelector('[data-qf-prazo]');
+    if (!P || !box) return;
+    const opts = Array.prototype.slice.call(box.querySelectorAll('[data-qf-prazo-opt]'));
+    const pers = Array.prototype.slice.call(box.querySelectorAll('[data-qf-periodo-opt]'));
+    const dia = box.querySelector('[data-qf-prazo-dia]');
+    const perWrap = box.querySelector('[data-qf-prazo-periodo]');
+    const nota = box.querySelector('[data-qf-prazo-nota]');
+    const hPrazo = box.querySelector('[name="prazo"]');
+    const hPer = box.querySelector('[name="periodo"]');
+    function setPeriodo(v) {
+      hPer.value = v || '';
+      pers.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-qf-periodo-opt') === hPer.value ? 'true' : 'false'); });
+    }
+    function atualizar() {
+      const modo = hPrazo.value;
+      const h = P.hoje();
+      opts.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-prazo-opt') === modo ? 'true' : 'false'); });
+      dia.hidden = modo !== 'data';
+      const comPeriodo = modo === 'hoje' || modo === 'amanha' || modo === 'data';
+      perWrap.hidden = !comPeriodo;
+      const escolhido = modo === 'data' ? P.parse(dia.value) : null;
+      const ehHoje = modo === 'hoje' || (escolhido && P.ymd(escolhido) === P.ymd(h));
+      const passou = ehHoje ? P.periodosPassados() : {};
+      pers.forEach(function (b) { b.disabled = !!passou[b.getAttribute('data-qf-periodo-opt')]; });
+      if (!comPeriodo || passou[hPer.value]) setPeriodo('');
+      let txt = 'O profissional combina o dia com você.';
+      if (modo === 'hoje') txt = 'Vai como urgente para os profissionais.';
+      else if (modo === 'amanha') txt = 'Para ' + P.curto(P.somar(h, 1)) + '.';
+      else if (modo === 'semana') txt = 'Até ' + P.curto(P.somar(h, 6)) + '.';
+      else if (modo === 'data') txt = escolhido ? 'Para ' + P.curto(escolhido) + '.' : 'Escolha o dia acima.';
+      nota.textContent = txt;
+      nota.classList.toggle('is-urgente', modo === 'hoje');
+    }
+    opts.forEach(function (b) {
+      b.addEventListener('click', function () {
+        hPrazo.value = b.getAttribute('data-qf-prazo-opt');
+        atualizar();
+        if (hPrazo.value === 'data' && !dia.value) {
+          try { dia.focus(); if (typeof dia.showPicker === 'function') dia.showPicker(); } catch (_) {}
+        }
+      });
+    });
+    pers.forEach(function (b) {
+      b.addEventListener('click', function () {
+        const v = b.getAttribute('data-qf-periodo-opt');
+        setPeriodo(hPer.value === v ? '' : v);
+      });
+    });
+    dia.addEventListener('change', atualizar);
+    dia.addEventListener('input', atualizar);
+    atualizar();
+  }
+
   function cadastroClienteView() {
     let pendingCat = '';
     let pendingRegion = null;
@@ -6511,6 +6765,7 @@ alt=""></noscript>
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea>') +
+          prazoFieldHtml() +
           '</div>' +
           regionField +
           '</div>' +
@@ -7005,6 +7260,7 @@ alt=""></noscript>
       });
 
       const form = content.querySelector('#cadastro-cliente-form');
+      bindPrazoField(form);
 
       // V11.16.13: serviço vindo da Home continua pré-selecionado, mas o cliente pode trocar sem voltar.
       const alterarServicoBtn = content.querySelector('[data-action="alterar-servico-cliente"]');
@@ -7064,6 +7320,15 @@ alt=""></noscript>
         if (!servico) { PU.toast('Digite o serviço que você precisa.', 'danger'); return; }
         if (!cidade || !uf) { PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
         if (descricao.length < 8) { PU.toast('Explique rapidamente o que precisa ser feito.', 'danger'); return; }
+        // V11.29: prazo do pedido. Sem o campo na tela (versão antiga em cache), o pedido segue sem prazo.
+        const prazoSel = (global.QFPrazo && fd.get('prazo')) ? global.QFPrazo.montar(String(fd.get('prazo')), String(fd.get('periodo') || ''), String(fd.get('prazoDia') || '')) : null;
+        if (prazoSel && !prazoSel.ok) {
+          PU.toast(prazoSel.erro, 'danger');
+          const campoDia = form.querySelector('[data-qf-prazo-dia]');
+          if (campoDia) { try { campoDia.scrollIntoView({ block: 'center' }); campoDia.focus(); } catch (_) {} }
+          return;
+        }
+        const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
         if (!nome) { PU.toast('Informe seu nome.', 'danger'); return; }
         if (!validPhone(telefone)) { PU.toast('Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente.', 'danger', 6000); return; }
 
@@ -7102,7 +7367,7 @@ alt=""></noscript>
             cidade: cidade, uf: uf, cidadeId: null, latitude: null, longitude: null
           };
           const pedido = (global.QFCloud && global.QFCloud.enabled)
-            ? await global.QFCloud.createCall({
+            ? await global.QFCloud.createCall(Object.assign({
                 clienteId: user.id,
                 categoriaId: cat.id,
                 descricao: descricao,
@@ -7110,8 +7375,8 @@ alt=""></noscript>
                 endereco: endereco,
                 prioridade: false,
                 prioridadeMetodo: 'pix'
-              })
-            : DB.criarPedido({
+              }, prazoDados))
+            : DB.criarPedido(Object.assign({
                 clienteId: user.id,
                 categoriaId: cat.id,
                 descricao: descricao,
@@ -7119,7 +7384,7 @@ alt=""></noscript>
                 endereco: endereco,
                 prioridade: false,
                 prioridadeMetodo: 'pix'
-              });
+              }, prazoDados));
 
           try {
             if (typeof global.fbq === 'function') {
@@ -9623,10 +9888,9 @@ alt=""></noscript>
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
     const chamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
-      const now=Date.now(), limit=now+86400000;
-      const at=a&&a.dataPreferida?Date.parse(a.dataPreferida):NaN, bt=b&&b.dataPreferida?Date.parse(b.dataPreferida):NaN;
-      const au=!a||!a.dataPreferida||(!isNaN(at)&&at<=limit), bu=!b||!b.dataPreferida||(!isNaN(bt)&&bt<=limit);
-      if(au!==bu) return au?-1:1;
+      // V11.29: urgentes primeiro, depois os com dia marcado (o mais próximo antes), por último "sem pressa".
+      const pz=global.QFPrazo?global.QFPrazo.comparar(a,b):0;
+      if(pz!==0) return pz;
       const ap=a&&a.prioridade?1:0, bp=b&&b.prioridade?1:0;
       if(ap!==bp) return bp-ap;
       const ak=Number(a&&a.distanciaKm), bk=Number(b&&b.distanciaKm);
@@ -9792,16 +10056,19 @@ alt=""></noscript>
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     const execMs = req.dataPreferida ? Date.parse(req.dataPreferida) : NaN;
-    const urgente = !req.dataPreferida || (Number.isFinite(execMs) && execMs <= Date.now() + 86400000);
+    // V11.29: pedido com prazo escolhido pelo cliente mostra o selo do prazo; pedido antigo segue a regra de antes.
+    const prazoInfo = global.QFPrazo ? global.QFPrazo.info(req) : null;
+    const urgente = prazoInfo ? prazoInfo.urgente : (!req.dataPreferida || (Number.isFinite(execMs) && execMs <= Date.now() + 86400000));
+    const execAttr = prazoInfo ? (req.prazoDia ? String(req.prazoDia).slice(0, 10) + 'T12:00:00' : '') : String(req.dataPreferida || '');
     return (
-      '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + (urgente ? ' qf-urgent-card' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card data-qf-execucao="' + PU.escapeHtml(String(req.dataPreferida || '')) + '" data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
+      '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + (urgente ? ' qf-urgent-card' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card' + (prazoInfo && prazoInfo.tom === 'sem' ? ' data-qf-sem-pressa' : '') + ' data-qf-execucao="' + PU.escapeHtml(execAttr) + '" data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
-            '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (urgente ? '<span class="qf-urgent-badge">URGENTE</span>' : '') + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
+            '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (prazoInfo ? global.QFPrazo.seloHtml(prazoInfo) : (urgente ? '<span class="qf-urgent-badge">URGENTE</span>' : '')) + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
-            (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '') +
+            (prazoInfo ? global.QFPrazo.linhaHtml(prazoInfo) : (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '')) +
             CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
@@ -9967,6 +10234,7 @@ alt=""></noscript>
           (contatoLiberado && (cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + PU.escapeHtml(whatsappHref(cliente.telefone, waMsg)) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
+          (function () { const pz = global.QFPrazo ? global.QFPrazo.info(req) : null; return pz ? '<div class="row text--sm text--secondary">' + icon('clock', 'list-item__chevron') + '<span><strong>Quando:</strong> ' + PU.escapeHtml(pz.texto) + '</span></div>' : ''; })() +
           (req.fotos && req.fotos.length ? '<div class="qf-call-media">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           (contatoAprovado
             ? '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + (req.endereco.rua ? PU.escapeHtml(req.endereco.rua) + ', ' : '') + PU.escapeHtml(req.endereco.bairro || '') + (req.endereco.complemento ? ' · ' + PU.escapeHtml(req.endereco.complemento) : '') + '</span></div>'
@@ -11943,7 +12211,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.28.1';
+  const APP_VERSION = '11.29.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -12840,12 +13108,15 @@ alt=""></noscript>
   document.head.appendChild(qfVisual1620);
 
   function qfUrgent(req){
+    if(global.QFPrazo) return global.QFPrazo.urgente(req);
     if(!req || !req.dataPreferida) return true;
     const t=Date.parse(req.dataPreferida);
     return Number.isFinite(t) && t<=Date.now()+86400000;
   }
   function qfSortPortfolio(list){
     return (list||[]).slice().sort(function(a,b){
+      // V11.29: mesma ordem do Início (urgentes, com dia marcado, sem pressa).
+      if(global.QFPrazo){ const pz=global.QFPrazo.comparar(a,b); if(pz!==0) return pz; }
       const au=qfUrgent(a),bu=qfUrgent(b);
       if(au!==bu) return au?-1:1;
       const at=a&&a.dataPreferida?Date.parse(a.dataPreferida):NaN,bt=b&&b.dataPreferida?Date.parse(b.dataPreferida):NaN;
@@ -13236,6 +13507,7 @@ alt=""></noscript>
       '<div class="qf-call-overlay__icon">'+icon(cat?cat.icon:'phoneCall')+'</div><div class="qf-call-overlay__eyebrow">Novo chamado</div>'+
       '<h2 class="qf-call-overlay__title" id="qf-new-call-title">'+PU.escapeHtml(cat?cat.nome:'Serviço')+'</h2>'+
       '<div class="qf-call-overlay__place">'+PU.escapeHtml([bairro,cidade].filter(Boolean).join(' · '))+'</div>'+
+      (function(){const pz=global.QFPrazo?global.QFPrazo.info(req):null;return pz?'<div class="qf-call-overlay__prazo">'+global.QFPrazo.seloHtml(pz)+(global.QFPrazo.PERIODOS[req.periodo]&&pz.tom!=='sem'?'<span>'+global.QFPrazo.PERIODOS[req.periodo]+'</span>':'')+'</div>':'';})()+
       (req.prioridade?'<div class="qf-call-overlay__priority">PRIORITÁRIO</div>':'')+
       '<div class="qf-call-overlay__facts qf-call-overlay__facts--3"><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(dist)+'</strong><span>de você</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(tempo)+'</strong><span>de carro</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(priceTxt)+'</strong><span>'+(planoOk?'usa 1 do plano':'desbloqueio')+'</span></div></div>'+
       (desc?'<div class="qf-call-overlay__desc"><small>O que o cliente precisa</small>'+PU.escapeHtml(desc)+'</div>':'')+
@@ -13422,7 +13694,15 @@ alt=""></noscript>
     return html.replace('<div class="field qf-order-location">', scheduleHtml() + '<div class="field qf-order-location">');
   };
 
-  function scheduleSummary(req) {
+  function scheduleSummary(req, paraCliente) {
+    // V11.29: prazo escolhido no pedido rápido ("Pra quando você precisa?").
+    const pz = req && global.QFPrazo ? global.QFPrazo.info(req) : null;
+    if (pz) {
+      return '<div class="qf-competition-card qf-execution-summary">' +
+        '<strong>' + icon('clock') + ' ' + (paraCliente ? 'Para quando você pediu' : 'Quando o cliente precisa') + '</strong>' +
+        '<span>' + esc(pz.texto) + (!paraCliente && pz.tom === 'sem' ? ': combine o dia com o cliente' : '') + '</span>' +
+      '</div>';
+    }
     if (!req || !req.dataPreferida) return '';
     return '<div class="qf-competition-card qf-execution-summary">' +
       '<strong>' + icon('clock') + ' Execução prevista</strong>' +
@@ -13466,7 +13746,7 @@ alt=""></noscript>
     let html = oldClientDetail(params,user);
     if (!req) return html;
     const opening = '<div class="view" data-request-id="' + req.id + '">';
-    const slot = scheduleSummary(req) + '<div class="section qf-client-conversations" data-qf-client-conversations data-call-id="' + esc(req.id) + '"></div>';
+    const slot = scheduleSummary(req, true) + '<div class="section qf-client-conversations" data-qf-client-conversations data-call-id="' + esc(req.id) + '"></div>';
     html = html.replace(opening, opening + slot);
     return html;
   };
@@ -13581,10 +13861,13 @@ alt=""></noscript>
         const txt = (card.textContent || '').toLowerCase();
         const raw = card.getAttribute('data-qf-execucao') || '';
         const d = raw ? new Date(raw) : null;
+        // V11.29: "sem pressa" não entra em Hoje; pedido com o dia já vencido continua aparecendo em Hoje e em 7 dias.
+        const semPressa = card.hasAttribute('data-qf-sem-pressa');
+        const vencido = !!d && d < now && !sameDay(d,now);
         let dateOk = true;
-        if (p==='today') dateOk = d ? sameDay(d,now) : true;
+        if (p==='today') dateOk = d ? (sameDay(d,now) || vencido) : !semPressa;
         else if (p==='tomorrow') dateOk = !!d && sameDay(d,tomorrow);
-        else if (p==='7d') dateOk = !d || (d>=now && d<=limit7);
+        else if (p==='7d') dateOk = !d || vencido || (d>=now && d<=limit7) || sameDay(d,now);
         card.style.display = ((!q || txt.indexOf(q)!==-1) && dateOk) ? '' : 'none';
       });
     }
@@ -14101,7 +14384,8 @@ alt=""></noscript>
           let detalheNovo = detail;
           try {
             const CI = global.QFCallInfo, r = DB.requestById(id);
-            if (CI && r) detalheNovo = [detail, CI.kmTxt(r), CI.tempoTxt(r), CI.precoTxt(r, currentUser())].filter(Boolean).join(' · ');
+            const pz = r && global.QFPrazo ? global.QFPrazo.info(r) : null;
+            if (CI && r) detalheNovo = [detail, pz ? pz.texto : '', CI.kmTxt(r), CI.tempoTxt(r), CI.precoTxt(r, currentUser())].filter(Boolean).join(' · ');
           } catch (_) {}
           pushNotice(session, 'novo_chamado:' + id, 'Novo chamado perto de você', detalheNovo, '/profissional/chamada/' + id, true);
           if (global.QFCallAlert) global.QFCallAlert.offer(id);
@@ -14362,7 +14646,7 @@ alt=""></noscript>
     const avPro = req.avaliacaoProfissional || {};
     return JSON.stringify([
       req.id || '', req.status || '', req.categoriaId || '', req.profissionalId || '',
-      !!req.prioridade, req.dataPreferida || '', req.descricao || '',
+      !!req.prioridade, req.dataPreferida || '', req.prazo || '', req.prazoDia || '', req.periodo || '', req.descricao || '',
       Number(req.distanciaKm || 0), Number(req.valorDesbloqueio || req.leadValor || 0),
       end.cep || '', end.rua || '', end.numero || '', end.bairro || '', end.cidade || '', end.uf || '',
       pay.id || '', pay.status || '', Number(pay.valor || 0), pay.checkoutUrl || '',

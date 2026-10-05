@@ -1,0 +1,34 @@
+QuemFaz V11.29.0 — "Pra quando você precisa?" no pedido
+
+CLIENTE (tela "Pedir serviço")
+- Campo novo logo abaixo de "O que precisa ser feito?": Pra quando você precisa?
+  Botões de um toque: Hoje · Amanhã · Esta semana · Escolher data · Sem pressa.
+- "Sem pressa" já vem marcado, então ninguém trava nessa etapa.
+- Hoje, Amanhã e Escolher data abrem o "Melhor horário (se quiser)": Manhã, Tarde ou Noite.
+  Em "Hoje", o período que já passou fica desligado.
+- "Escolher data" sem escolher o dia não deixa publicar e mostra o aviso.
+- No pedido do cliente aparece "Para quando você pediu".
+
+PROFISSIONAL
+- Selo no cartão do pedido: PRA HOJE (vermelho), PRA AMANHÃ, DIA 10/10, ATÉ 11/10, SEM PRESSA.
+  Se o dia passou e o pedido continua aberto: ERA PRA 04/10.
+- Linha "Quando: Amanhã (ter, 06/10), à tarde" no cartão, na tela do pedido (antes de
+  desbloquear), no pedido já desbloqueado, na tela cheia de chamado novo e no aviso.
+- Lista: urgentes primeiro, depois os que têm dia marcado (o mais próximo antes) e por
+  último os "sem pressa". O filtro Hoje / Amanhã / Próximos 7 dias usa o prazo.
+- Notificação no celular: o prazo vai na frente do texto do cliente, por exemplo
+  “PRA HOJE (à tarde): preciso trocar o chuveiro”.
+
+O QUE NÃO MUDOU
+- O aviso continua saindo NA HORA para todo pedido, com qualquer prazo.
+- Pedidos antigos (feitos antes do campo existir) continuam aparecendo como antes.
+- A função quemfaz-push não foi alterada.
+
+BANCO
+- supabase/2026-10-05-prazo-do-pedido.sql (já aplicado).
+  Guarda o dia real do prazo (não a palavra "hoje"). Pedido com dia marcado só vence
+  3 dias depois do dia, e o fechamento automático conta 7 dias depois do dia.
+- Se o banco ainda não tiver os campos, o pedido é publicado normalmente, só que sem o prazo.
+
+TESTE
+- tests/prazo-pedido.test.cjs
