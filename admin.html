@@ -2550,7 +2550,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   function pagamentos() {
     const eventos = [];
     state.requests.forEach(function (r) {
-      if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
+      if (Array.isArray(r.desbloqueios)) r.desbloqueios.forEach(function (x) {
+        if (Number(x.valor || 0) > 0) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: x.valor, criadoEm: x.criadoEm, request: r, profissionalId: x.profissionalId });
+      });
+      else if (isPaidUnlock(r)) eventos.push({ tipo: 'Desbloqueio de chamado', creditos: true, valor: r.leadUnlock.valor, criadoEm: r.leadUnlock.criadoEm, request: r, profissionalId: r.leadUnlock.profissionalId });
       if (isPaidPriority(r)) eventos.push({ tipo: 'Prioridade do cliente', valor: r.pagamentoPrioridade.valor, criadoEm: r.pagamentoPrioridade.criadoEm, request: r, profissionalId: null });
     });
     recargasPagas().forEach(function (p) {
@@ -2569,11 +2572,18 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const concluidos = reqs.filter(function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; }).length;
     const cancelados = reqs.filter(function (r) { return r.status === STATUS.CANCELADO; }).length;
     // V10.2: só entra como receita o que foi efetivamente cobrado (valor > 0 e pagamento aprovado).
-    const receitaProfissionais = reqs.reduce(function (sum, r) { return sum + (isPaidUnlock(r) ? Number(r.leadUnlock.valor || 0) : 0); }, 0);
+    // V11.28: um pedido pode ter até 3 desbloqueios; com a lista do banco, soma todos.
+    const receitaProfissionais = reqs.reduce(function (sum, r) {
+      if (Array.isArray(r.desbloqueios)) return sum + r.desbloqueios.reduce(function (t, x) { return t + Number(x.valor || 0); }, 0);
+      return sum + (isPaidUnlock(r) ? Number(r.leadUnlock.valor || 0) : 0);
+    }, 0);
     const receitaPrioridade = reqs.reduce(function (sum, r) { return sum + (isPaidPriority(r) ? Number(r.pagamentoPrioridade.valor || 0) : 0); }, 0);
     // V11.27.1: recarga paga entra na carteira como crédito com origem "recarga"; crédito do admin e bônus não são dinheiro.
     const recargas = recargasPagas().reduce(function (sum, p) { return sum + Number(p.valor || 0); }, 0);
-    const desbloqueiosSemCobranca = reqs.filter(function (r) { return r.leadUnlock && !isPaidUnlock(r); }).length;
+    const desbloqueiosSemCobranca = reqs.reduce(function (n, r) {
+      if (Array.isArray(r.desbloqueios)) return n + r.desbloqueios.filter(function (x) { return !(Number(x.valor || 0) > 0) && x.origem !== 'plano'; }).length;
+      return n + (r.leadUnlock && !isPaidUnlock(r) ? 1 : 0);
+    }, 0);
     const receitaAnuncios = (state.ads || []).reduce(function (sum, a) { return sum + (a.pagamentoStatus === 'aprovado' ? Number(a.valorPago || 0) : 0); }, 0);
     const anunciosAtivos = (state.ads || []).filter(isAdActive).length;
     const anunciosPendentes = (state.ads || []).filter(function (a) { return a.status === 'aguardando_aprovacao'; }).length;
@@ -3409,6 +3419,12 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     });
     const quotes = {}; (d.orcamentos || []).forEach(function (o) { if (!quotes[o.chamado_id]) quotes[o.chamado_id] = o; });
     const reviews = {}; (d.avaliacoes || []).forEach(function (a) { (reviews[a.chamado_id] = reviews[a.chamado_id] || []).push(a); });
+    // V11.28: até 3 profissionais por pedido — quem desbloqueou cada um, com valor e resultado.
+    const temDesb = Array.isArray(d.desbloqueios);
+    const desbs = {};
+    (d.desbloqueios || []).forEach(function (x) {
+      (desbs[x.chamado_id] = desbs[x.chamado_id] || []).push({ profissionalId: x.profissional_id, valor: Number(x.valor_centavos || 0), origem: x.origem || 'saldo', ativo: x.ativo !== false, desfecho: x.desfecho || null, criadoEm: x.criado_em });
+    });
     const requests = (d.chamados || []).map(function (c) {
       let st = statusLocal(c.status);
       const q = quotes[c.id];
@@ -3438,6 +3454,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         orcamento: q ? { maoDeObra: Number(q.mao_obra_centavos || 0), material: Number(q.material_centavos || 0), total: Number(q.valor_centavos || 0), status: q.status } : null,
         avaliacaoCliente: revCli ? { nota: revCli.nota, comentario: revCli.comentario || '' } : null,
         desfecho: c.desfecho || null,
+        desbloqueios: temDesb ? (desbs[c.id] || []) : null,
         canceladoPor: c.desfecho === 'nao_fechado' ? 'Profissional' : c.desfecho === 'sem_retorno' ? 'Sistema (7 dias sem resposta)' : (c.status === 'cancelado' ? '—' : null),
         motivoCancelamento: c.desfecho === 'nao_fechado' ? 'Profissional informou que não fechou o serviço.' : c.desfecho === 'sem_retorno' ? 'Profissional não informou o resultado em 7 dias.' : null, historico: hist
       };
@@ -5206,14 +5223,20 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div class="card card--tight" style="background:var(--warning-100);border:none;margin-bottom:12px;"><div class="text--strong" style="color:var(--warning-600);">Não foi possível carregar os dados do painel</div><div class="text--sm" style="color:var(--warning-600);">Atualize a página. Se continuar, verifique a conexão com o banco de dados.</div></div>';
   }
   
+  // V11.28 — quem desbloqueou o pedido (até 3). Sem a lista do banco, usa o profissional único de antes.
+  function desbloqueiosAtivos(r) {
+    if (r && Array.isArray(r.desbloqueios)) return r.desbloqueios.filter(function (x) { return x.ativo !== false; });
+    return r && r.profissionalId ? [{ profissionalId: r.profissionalId, valor: r.leadUnlock ? r.leadUnlock.valor : 0, origem: 'saldo', desfecho: null, criadoEm: r.leadUnlock ? r.leadUnlock.criadoEm : null, unico: true }] : [];
+  }
+
   // V11.27 — últimos pedidos em linha compacta: serviço, quem pediu, quem desbloqueou, onde e quando.
   function adminPedidoLinha(r) {
     const cat = DB.categoryById(r.categoriaId);
     const cliente = DB.clienteById(r.clienteId);
-    const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
+    const nomes = desbloqueiosAtivos(r).map(function (x) { const p = DB.profissionalById(x.profissionalId); return PU.escapeHtml((p && p.nome) || 'Profissional'); });
     const cidade = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
     const quem = PU.escapeHtml((cliente && cliente.nome) || 'Cliente não identificado') +
-      (prof ? ' → ' + PU.escapeHtml(prof.nome || 'Profissional') : ' · ainda ninguém desbloqueou');
+      (nomes.length ? ' → ' + nomes.join(', ') + (nomes.length > 1 ? ' (' + nomes.length + ' de 3)' : '') : ' · ainda ninguém desbloqueou');
     return '<button type="button" class="qf-linha qf-pedido" data-nav="/admin/servicos/' + r.id + '">' +
       '<span class="icon-tile qf-linha__icone">' + icon(cat ? cat.icon : 'tag') + '</span>' +
       '<span class="qf-linha__corpo">' +
@@ -5235,17 +5258,30 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   function fechamentoStats(dias) {
     const lim = dias ? Date.now() - dias * 86400000 : 0;
     const reqs = DB.allRequests().filter(function (r) { return !lim || (Date.parse(r.criadoEm) || 0) >= lim; });
-    const desbl = reqs.filter(function (r) { return !!r.profissionalId; });
-    const out = { pedidos: reqs.length, desbloqueados: desbl.length, fechados: 0, naoFechados: 0, semRetorno: 0, aguardando: 0, outros: 0, porProf: [] };
+    // V11.28: um pedido pode ter até 3 desbloqueios. Os totais continuam por pedido; a conta por profissional olha cada desbloqueio.
+    function desbsDe(r) {
+      if (Array.isArray(r.desbloqueios)) return r.desbloqueios.filter(function (x) { return x.ativo !== false; });
+      return r.profissionalId ? [{ profissionalId: r.profissionalId, unico: true }] : [];
+    }
+    const desbl = reqs.filter(function (r) { return desbsDe(r).length > 0; });
+    const out = { pedidos: reqs.length, desbloqueados: desbl.length, desbloqueios: 0, fechados: 0, naoFechados: 0, semRetorno: 0, aguardando: 0, outros: 0, porProf: [] };
     const porProf = {};
     desbl.forEach(function (r) {
-      const pp = porProf[r.profissionalId] || (porProf[r.profissionalId] = { id: r.profissionalId, desbloqueou: 0, fechou: 0, aguardando: 0 });
-      pp.desbloqueou++;
-      if (ST_CONCLUIDO.indexOf(r.status) !== -1) { out.fechados++; pp.fechou++; }
+      const lista = desbsDe(r);
+      const concluido = ST_CONCLUIDO.indexOf(r.status) !== -1;
+      const emConversa = ST_DESBLOQUEADO.indexOf(r.status) !== -1;
+      if (concluido) out.fechados++;
       else if (r.desfecho === 'nao_fechado') out.naoFechados++;
       else if (r.desfecho === 'sem_retorno') out.semRetorno++;
-      else if (ST_DESBLOQUEADO.indexOf(r.status) !== -1) { out.aguardando++; pp.aguardando++; }
+      else if (emConversa) out.aguardando++;
       else out.outros++;
+      lista.forEach(function (x) {
+        out.desbloqueios++;
+        const pp = porProf[x.profissionalId] || (porProf[x.profissionalId] = { id: x.profissionalId, desbloqueou: 0, fechou: 0, aguardando: 0 });
+        pp.desbloqueou++;
+        if (x.desfecho === 'fechado' || (concluido && lista.length === 1)) pp.fechou++;
+        else if (!x.desfecho && emConversa) pp.aguardando++;
+      });
     });
     out.taxa = out.desbloqueados ? Math.round(out.fechados / out.desbloqueados * 100) : null;
     out.porProf = Object.keys(porProf).map(function (k) { return porProf[k]; }).sort(function (a, b) { return b.desbloqueou - a.desbloqueou || b.fechou - a.fechou; });
@@ -5258,7 +5294,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const f = fechamentoStats(dias);
     if (!f.pedidos) return '<div class="card card--tight"><div class="text--sm text--secondary">Nenhum pedido neste período.</div></div>';
     const resumo = f.desbloqueados
-      ? '<div class="h2" style="color:var(--success-600);">' + f.fechados + ' de ' + f.desbloqueados + '</div><div class="text--sm text--secondary">desbloqueios viraram serviço fechado (' + f.taxa + '%)</div>'
+      ? '<div class="h2" style="color:var(--success-600);">' + f.fechados + ' de ' + f.desbloqueados + '</div><div class="text--sm text--secondary">pedidos desbloqueados viraram serviço fechado (' + f.taxa + '%)</div>'
       : '<div class="h3">Nenhum desbloqueio ainda</div><div class="text--sm text--secondary">Os pedidos deste período ainda não foram desbloqueados por profissionais.</div>';
     const linhas = f.porProf.slice(0, 8).map(function (pp) {
       const prof = DB.profissionalById(pp.id);
@@ -5268,7 +5304,8 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return '<div class="card stack--sm" data-fech-resumo>' + resumo +
         '<hr class="hairline">' +
         '<div class="row-between"><span class="text--sm text--secondary">Pedidos recebidos</span><span class="text--strong">' + f.pedidos + '</span></div>' +
-        '<div class="row-between"><span class="text--sm text--secondary">Desbloqueados por profissional</span><span class="text--strong">' + f.desbloqueados + '</span></div>' +
+        '<div class="row-between"><span class="text--sm text--secondary">Pedidos desbloqueados</span><span class="text--strong">' + f.desbloqueados + '</span></div>' +
+        '<div class="row-between"><span class="text--sm text--secondary">Desbloqueios no total (até 3 por pedido)</span><span class="text--strong">' + f.desbloqueios + '</span></div>' +
       '</div>' +
       '<div class="kpi-grid" style="margin-top:10px;">' +
         fechKpi(f.fechados, 'Fechados', 'var(--success-600)') +
@@ -6030,6 +6067,7 @@ Screens.adminDashboardRender = function () {
     const cidadeUf = [end.cidade || '', end.uf || ''].filter(Boolean).join('/');
     const endereco = [end.rua || '', end.bairro || '', cidadeUf].filter(Boolean).join(' · ') || 'Não informado';
     const aceitoEm = r.leadUnlock && r.leadUnlock.criadoEm ? PU.formatDateTime(r.leadUnlock.criadoEm) : (prof ? PU.formatDateTime(r.atualizadoEm || r.criadoEm) : '—');
+    const desb = desbloqueiosAtivos(r);
     const pedidoTitulo = r.titulo || (cat ? cat.nome : 'Serviço');
 
     return (
@@ -6050,14 +6088,19 @@ Screens.adminDashboardRender = function () {
         '</div>' +
 
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Quem aceitou</h2></div>' +
-          '<div class="card stack--sm" style="' + (prof ? 'border-left:4px solid var(--success-600,#16a34a);' : 'border-left:4px solid var(--orange-500,#f97316);') + '">' +
-            rowInfo('Profissional', prof ? prof.nome : 'Ainda nenhum profissional aceitou') +
-            (prof && prof.email ? rowInfo('E-mail do profissional', prof.email) : '') +
-            (prof && prof.telefone ? rowInfoHtml('WhatsApp do profissional', waLink(prof.telefone)) : '') +
-            (prof ? rowInfo('Profissional ID', prof.id || r.profissionalId || '—') : '') +
-            rowInfo('Aceito / conectado em', aceitoEm) +
-          '</div>' +
+          '<div class="section-head"><h2 class="h3">Quem desbloqueou' + (desb.length ? ' (' + desb.length + ' de 3)' : '') + '</h2></div>' +
+          (desb.length ? desb.map(function (x) {
+            const p = DB.profissionalById(x.profissionalId);
+            return '<div class="card stack--sm" style="border-left:4px solid var(--success-600,#16a34a);">' +
+              rowInfo('Profissional', p ? p.nome : 'Profissional') +
+              (p && p.email ? rowInfo('E-mail do profissional', p.email) : '') +
+              (p && p.telefone ? rowInfoHtml('WhatsApp do profissional', waLink(p.telefone)) : '') +
+              rowInfo('Profissional ID', x.profissionalId || '—') +
+              rowInfo('Desbloqueou em', x.criadoEm ? PU.formatDateTime(x.criadoEm) : aceitoEm) +
+              (x.unico ? '' : rowInfo('Créditos usados', x.origem === 'plano' ? 'Chamado do plano' : PU.formatCurrency(x.valor))) +
+              (x.unico ? '' : rowInfo('Resultado', x.desfecho === 'fechado' ? 'Fechou o serviço' : (x.desfecho === 'nao_fechado' ? 'Não fechou' : 'Ainda não informou'))) +
+            '</div>';
+          }).join('') : '<div class="card stack--sm" style="border-left:4px solid var(--orange-500,#f97316);">' + rowInfo('Profissional', 'Ainda nenhum profissional desbloqueou') + '</div>') +
         '</div>' +
 
         '<div class="section">' +
