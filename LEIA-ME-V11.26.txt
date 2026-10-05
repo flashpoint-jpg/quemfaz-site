@@ -1,0 +1,16 @@
+QuemFaz V11.26.0 — Cliente entra com WhatsApp + código de acesso
+
+- Tela "Entrar como cliente": saiu e-mail, senha e "Esqueci minha senha". Agora pede o
+  WhatsApp e o código de acesso (6 números).
+- O código aparece no topo da tela do pedido, logo depois de publicar, com o aviso
+  "Anote este código". Fica sempre ali para consultar.
+- No mesmo celular nada muda: o cliente continua logado e pede sem digitar código.
+- 5 códigos errados seguidos bloqueiam a entrada daquele número por 15 minutos.
+- O botão de baixo virou "Pedir serviço grátis" (antes "Criar conta de cliente").
+- Login do profissional e do admin continuam com e-mail e senha, sem mudança.
+
+BANCO
+- supabase/2026-10-04-codigo-acesso-cliente.sql (já aplicado): tabela qf_cliente_codigos e
+  funções qf_meu_codigo_acesso / qf_conferir_codigo_acesso.
+- Função quemfaz-cliente-rapido: modo "entrar" com conferência do código.
+  O pedido sem cadastro continua igual.

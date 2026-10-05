@@ -48,7 +48,14 @@ Deno.serve(async (req) => {
   const nome = String(body.nome || "").replace(/\s+/g, " ").trim().slice(0, 120);
   const telefone = normalizePhone(body.telefone);
 
-  if (nome.length < 2) return reply({ ok: false, error: "Informe seu nome." }, 400);
+  // V11.26: modo "entrar" — o cliente volta com WhatsApp + código de acesso (6 dígitos, mostrado
+  // depois do pedido). Não cria conta e não mexe no cadastro. Sem o código certo não há sessão.
+  const entrar = String(body.modo || "") === "entrar";
+  const codigo = String(body.codigo || "").replace(/\D/g, "");
+  const ERRO_ENTRAR = "WhatsApp ou código incorreto. Confira os dois e tente de novo.";
+
+  if (!entrar && nome.length < 2) return reply({ ok: false, error: "Informe seu nome." }, 400);
+  if (entrar && codigo.length !== 6) return reply({ ok: false, error: "Digite o código de acesso de 6 números." }, 400);
   if (!validMobile(telefone)) {
     return reply({ ok: false, error: "Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente." }, 400);
   }
@@ -63,7 +70,38 @@ Deno.serve(async (req) => {
   let userId = found ? String(found.id) : "";
   let authUser: any = null;
 
-  if (userId) {
+  // Mesma resposta para número sem conta e para código errado: não revela quem é cliente.
+  if (entrar && !userId) return reply({ ok: false, error: ERRO_ENTRAR }, 401);
+
+  if (entrar) {
+    const conf = await admin.rpc("qf_conferir_codigo_acesso", { p_cliente: userId, p_codigo: codigo });
+    if (conf.error) {
+      console.error("conferir_codigo", conf.error.message);
+      return reply({ ok: false, error: "Não foi possível conferir seu código agora." }, 500);
+    }
+    if (conf.data === "bloqueado") {
+      return reply({ ok: false, error: "Muitas tentativas. Espere 15 minutos e tente de novo." }, 429);
+    }
+    if (conf.data !== "ok") return reply({ ok: false, error: ERRO_ENTRAR }, 401);
+
+    const current = await admin.auth.admin.getUserById(userId);
+    if (current.error || !current.data.user) {
+      console.error("auth_usuario_existente", current.error?.message || "sem usuário");
+      return reply({ ok: false, error: "Não foi possível recuperar seu acesso agora." }, 500);
+    }
+    authUser = current.data.user;
+    if (!String(authUser.email || "").trim()) {
+      const changed = await admin.auth.admin.updateUserById(userId, {
+        email: `cliente-${telefone}@acesso.quemfaz.app.br`,
+        email_confirm: true,
+      });
+      if (changed.error || !changed.data.user) {
+        console.error("auth_atualizar", changed.error?.message || "sem usuário");
+        return reply({ ok: false, error: "Não foi possível atualizar seu acesso agora." }, 500);
+      }
+      authUser = changed.data.user;
+    }
+  } else if (userId) {
     const current = await admin.auth.admin.getUserById(userId);
     if (current.error || !current.data.user) {
       console.error("auth_usuario_existente", current.error?.message || "sem usuário");
