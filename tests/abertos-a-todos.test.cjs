@@ -62,3 +62,10 @@ g.QFMovimento = null;
 assert.equal(Q.movimentoHtml(), '');
 
 console.log('abertos-a-todos: ok');
+
+// V11.32.1 — pedido aberto a todos nunca dispara aviso, toque nem a tela cheia de chamado.
+assert.ok(sql.includes('where private.qf_pro_recebe_chamado(auth.uid(), d.id)'));           // lista normal sem os abertos
+assert.ok(html.includes("client.rpc('qf_portfolio_abertos_todos')"));                         // seção busca à parte
+assert.ok(html.includes('a.status === DB.STATUS.BUSCANDO && !abertoTodos) {'));               // sem alerta no app
+assert.ok(!html.includes('attachAbertos'));
+console.log('abertos-a-todos 11.32.1: ok');

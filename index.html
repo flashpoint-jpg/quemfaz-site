@@ -4855,24 +4855,17 @@ alt=""></noscript>
     DB.persist();
   }
 
-  // V11.32: marca na lista os pedidos "abertos a todos" e busca os números da faixa de movimento.
-  // Se a consulta falhar, a lista aparece como antes (só os pedidos da categoria do profissional).
-  async function attachAbertos(rows) {
-    if (!client) return;
+  // V11.32.1: os pedidos "abertos a todos" vêm por uma consulta própria (a lista normal não os traz,
+  // para que nenhum deles dispare o alerta de chamado). Junto vêm os números da faixa de movimento.
+  // Se a consulta falhar, a tela aparece como antes (só os pedidos da categoria do profissional).
+  async function fetchAbertos() {
+    if (!client) return [];
     try {
-      const res = await Promise.all([client.rpc('qf_pedidos_abertos_todos'), client.rpc('qf_movimento_pedidos')]);
+      const res = await Promise.all([client.rpc('qf_portfolio_abertos_todos'), client.rpc('qf_movimento_pedidos')]);
       if (!res[1].error && res[1].data && res[1].data.ok) global.QFMovimento = res[1].data;
       if (res[0].error) throw res[0].error;
-      const map = {};
-      (res[0].data || []).forEach(function (a) { map[a.id] = a; });
-      (rows || []).forEach(function (r) {
-        const a = r && map[r.id];
-        if (!a) return;
-        r.aberto_todos = a.motivo || 'sem_desbloqueio';
-        r.mesma_cidade = !!a.mesma_cidade;
-        if (r.distancia_km == null && a.distancia_km != null) { r.distancia_km = a.distancia_km; r.distancia_aprox = true; }
-      });
-    } catch (err) { console.warn('QuemFaz pedidos abertos a todos', err); }
+      return (res[0].data || []).filter(function (r) { return r && r.id && r.aberto_todos; });
+    } catch (err) { console.warn('QuemFaz pedidos abertos a todos', err); return []; }
   }
 
   async function syncProfessionalCalls(userId) {
@@ -4884,11 +4877,14 @@ alt=""></noscript>
     if (available.error) throw available.error;
     const unlocked = await client.from('qf_chamados_desbloqueados').select('*').order('criado_em', { ascending: false });
     if (unlocked.error) throw unlocked.error;
-    await attachPrazos((available.data || []).concat(unlocked.data || []));
-    await attachAbertos(available.data || []);
+    const abertosRows = await fetchAbertos();
+    await attachPrazos((available.data || []).concat(abertosRows).concat(unlocked.data || []));
 
     const reqs = [];
     (available.data || []).forEach(function (r) { reqs.push(requestFromCloud(r, null)); });
+    abertosRows.forEach(function (r) {
+      if (!reqs.some(function (x) { return x.id === r.id; })) reqs.push(requestFromCloud(r, null));
+    });
     (unlocked.data || []).forEach(function (r) {
       reqs.push(requestFromCloud(r, userId));
       if (r.cliente_id) {
@@ -12345,7 +12341,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.32.0';
+  const APP_VERSION = '11.32.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14772,7 +14768,9 @@ alt=""></noscript>
       const a = after[id], b = before[id];
       const detail = describeRequest(a);
       if (session.role === 'profissional') {
-        if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO) {
+        // V11.32.1: pedido aberto a todos entra só na lista, sem aviso, sem toque e sem a tela cheia de chamado.
+        const abertoTodos = !!(a.abertoTodos || ((DB.requestById(id) || {}).abertoTodos));
+        if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO && !abertoTodos) {
           // V11.13: aviso já com distância, tempo e valor do desbloqueio.
           let detalheNovo = detail;
           try {
