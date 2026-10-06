@@ -7244,6 +7244,9 @@ Screens.adminDashboardRender = function () {
   }
 
   var painelSincronizadoEm = 0, painelSincronizando = false, telaMexida = false;
+  // V11.30.3: guarda o que está desenhado para não redesenhar a tela quando nada mudou.
+  var ultimoDesenho = { path: null, html: '' };
+  function semHorario(html) { return String(html == null ? '' : html).replace(/Atualizado em [^<]*/g, ''); }
   function sincronizarPainel() {
     return global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
   }
@@ -7256,6 +7259,16 @@ Screens.adminDashboardRender = function () {
       if (telaMexida || currentPath() !== path) return;
       const f = matchRoute(path), s = currentSession(), u = currentUser();
       if (!f || f.route.anon || !s || !u || s.role !== f.route.role) return;
+      // V11.30.3: se os dados novos dão a mesma tela, não redesenha (era o "pisca" de tela antiga -> nova).
+      let novo = null;
+      try { novo = typeof f.route.render === 'function' ? f.route.render(f.params, u) : null; } catch (_) { novo = null; }
+      if (novo != null && ultimoDesenho.path === path && semHorario(novo) === semHorario(ultimoDesenho.html)) {
+        const hora = /Atualizado em [^<]*/.exec(novo);
+        const rotulo = typeof document !== 'undefined' && document.querySelector ? document.querySelector('.qf-painel__topo span') : null;
+        if (hora && rotulo) rotulo.textContent = hora[0];
+        ultimoDesenho.html = novo;
+        return;
+      }
       const y = window.scrollY || 0;
       renderApp(f, u, s);
       window.scrollTo(0, y);
@@ -7306,7 +7319,9 @@ Screens.adminDashboardRender = function () {
       renderTabbar(tabs, found.route.tab);
 
     const content = document.getElementById('app-content');
-    content.innerHTML = found.route.render(found.params, user);
+    const telaHtml = found.route.render(found.params, user);
+    ultimoDesenho = { path: currentPath(), html: telaHtml };
+    content.innerHTML = telaHtml;
     bindGlobalDelegation(content);
     if (Screens.afterRender) Screens.afterRender(found.route.pattern, content, found.params, user);
     window.scrollTo(0, 0);
