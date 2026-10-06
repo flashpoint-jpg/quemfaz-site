@@ -874,6 +874,10 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 }
 @keyframes sheet-in { from { transform: translateY(16px); opacity: 0.6; } to { transform: translateY(0); opacity: 1; } }
 .sheet__handle { width: 40px; height: 4px; border-radius: var(--radius-pill); background: var(--border-strong); margin: 6px auto 16px; }
+.sheet__toolbar { position: sticky; top: -10px; z-index: 2; display: flex; justify-content: flex-end; background: var(--bg-surface); padding: 8px 0; margin-bottom: 8px; }
+.sheet__close { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 12px; background: #edf2f8; color: #14263f; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.sheet__close span { font-size: 24px; line-height: 1; }
+.sheet__close:focus-visible { outline: 3px solid #ef7c25; outline-offset: 2px; }
 .sheet__title { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
 
 /* ---------- Toast ---------- */
@@ -2587,7 +2591,7 @@ window.qfGoogleLead = function () {
   .qf-landing-sticky { display: none; }
 }
 </style>
-<link rel="stylesheet" href="qf-recrutamento.css?v=11.33.0">
+<link rel="stylesheet" href="qf-recrutamento.css?v=11.33.1">
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -2961,11 +2965,15 @@ alt=""></noscript>
       overlay.className = 'overlay is-hidden';
       document.body.appendChild(overlay);
       overlay.addEventListener('click', function (e) {
-        if (e.target === overlay && !opts.persistent) closeSheet();
+        if (e.target === overlay && overlay.dataset.persistent !== 'true') closeSheet();
       });
     }
+    overlay.dataset.persistent = opts.persistent ? 'true' : 'false';
     overlay.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' +
-      '<div class="sheet__handle"></div>' + innerHtml + '</div>';
+      (opts.persistent ? '<div class="sheet__handle"></div>' :
+        '<div class="sheet__toolbar"><button type="button" class="sheet__close" aria-label="Fechar janela">Fechar <span aria-hidden="true">×</span></button></div>') + innerHtml + '</div>';
+    const closeButton = overlay.querySelector('.sheet__close');
+    if (closeButton) closeButton.onclick = closeSheet;
     overlay.classList.remove('is-hidden');
   }
 
@@ -12342,7 +12350,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.33.0';
+  const APP_VERSION = '11.33.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14628,7 +14636,7 @@ alt=""></noscript>
 
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 </script>
-<script src="qf-recrutamento.js?v=11.33.0"></script>
+<script src="qf-recrutamento.js?v=11.33.1"></script>
 <script>
 
 (function (global) {
