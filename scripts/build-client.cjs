@@ -37,6 +37,7 @@ const iconEnd=main[1].indexOf('})(window);',iconStart)+'})(window);'.length;
 const scope={window:{},Screens:{},DB:{categories:()=>[]}};
 vm.createContext(scope);vm.runInContext(main[1].slice(iconStart,iconEnd),scope);
 scope.icon=scope.window.icon;scope.global=scope.window;
+scope.window.QFApp={VERSION:version,topInstallHtml:()=>'<span class="qf-top-slot" data-top-install></span>'};
 const brand=/const QF_BRAND_MARK = global.QF_BRAND_MARK = ([^\n]+);/.exec(shell[1]);
 if (brand) scope.window.QF_BRAND_MARK=vm.runInNewContext(brand[1]);
 const landingStart=main[1].indexOf('  Screens.landing = function () {');
@@ -44,7 +45,7 @@ const landingEnd=main[1].indexOf('  function roleCard(',landingStart);
 vm.runInContext(main[1].slice(landingStart,landingEnd),scope);
 const opening=html.indexOf('<div id="app-shell">'),closing=html.indexOf('<script defer src="app-main-',opening);
 const placeholder=html.slice(opening,closing);
-const landing='<div id="app-shell" data-route="inicio" data-role="anon"><main id="app-content">'+scope.Screens.landing()+'</main></div>';
+const landing='<div id="app-shell" data-route="inicio" data-role="anon" data-qf-prerender="home"><main id="app-content">'+scope.Screens.landing()+'</main></div>';
 const early=`(function(w){
   var saved='',pending=null,loading=${JSON.stringify(placeholder)},ready=false;
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search]');if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};

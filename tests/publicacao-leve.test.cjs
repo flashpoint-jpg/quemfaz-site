@@ -3,11 +3,11 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
 const sw=fs.readFileSync(path.join(root,'dist/sw.js'),'utf8');
 const names=[...html.matchAll(/<script defer src="([^"]+)"/g)].map(x=>x[1]);
-assert.ok(names.indexOf('vendor/supabase-2.117.2.js')<names.indexOf('app-main-11.34.1.js'));
-assert.ok(names.indexOf('app-main-11.34.1.js')<names.indexOf('qf-recrutamento.js?v=11.33.1'));
-assert.ok(names.indexOf('qf-recrutamento.js?v=11.33.1')<names.indexOf('app-shell-11.34.1.js'));
+assert.ok(names.indexOf('vendor/supabase-2.117.2.js')<names.indexOf('app-main-11.34.2.js'));
+assert.ok(names.indexOf('app-main-11.34.2.js')<names.indexOf('qf-recrutamento.js?v=11.33.1'));
+assert.ok(names.indexOf('qf-recrutamento.js?v=11.33.1')<names.indexOf('app-shell-11.34.2.js'));
 for(const name of names)assert.ok(fs.existsSync(path.join(root,'dist',name.split('?')[0])),name);
-assert.ok(sw.includes('./app-main-11.34.1.js')&&sw.includes('./app-shell-11.34.1.js'));
+assert.ok(sw.includes('./app-main-11.34.2.js')&&sw.includes('./app-shell-11.34.2.js'));
 assert.ok(html.includes('Precisou? Até <em>3 profissionais</em>'));
 assert.ok(!fs.existsSync(path.join(root,'dist/node_modules')));
 assert.ok(Buffer.byteLength(html)<200000);
@@ -21,3 +21,12 @@ field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(fi
 window.QFEarly.finish();assert.equal(form.sent,1);
 field.value='Novo serviço';window.QFEarly.capture();field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(field.value,'');
 console.log('publicacao-leve: ordem de scripts, cache offline, conteúdo inicial e preservação de pedido antes do carregamento: ok');
+// A primeira ativação da home mantém os nós já visíveis, sem trocar o candidato LCP.
+const source=fs.readFileSync('index.html','utf8');
+const render=source.slice(source.indexOf('  function renderAnon(found) {'),source.indexOf('  // V11.16.7 — atualização',source.indexOf('  function renderAnon(found) {')));
+let rewrites=0,bound=0;
+const content={style:{},set innerHTML(v){rewrites++;}};
+const shell={setAttribute(){},getAttribute(){return 'home';},querySelector(){return {};},removeAttribute(){},set innerHTML(v){rewrites++;}};
+const ctx={document:{getElementById:id=>id==='app-shell'?shell:content},global:{},Screens:{},window:{scrollTo(){}},routeKey:()=> 'inicio',bindGlobalDelegation(){bound++;}};
+vm.createContext(ctx);vm.runInContext(render+'\nrenderAnon({route:{pattern:"/",render(){throw Error("Home já renderizada");}},params:{}});',ctx);
+assert.equal(rewrites,0);assert.equal(bound,1);assert.ok(html.includes('data-qf-prerender="home"'));

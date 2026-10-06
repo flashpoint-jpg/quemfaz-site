@@ -2334,7 +2334,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.34.1"></script>
+<script src="qf-client-acquisition.js?v=11.34.2"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -12348,7 +12348,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.1';
+  const APP_VERSION = '11.34.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15027,10 +15027,12 @@ alt=""></noscript>
     shell.setAttribute('data-role', 'anon');
     const isLanding = found.route.pattern === '/';
     if (global.QFEarly) global.QFEarly.capture();
-    shell.innerHTML = '<div id="app-content"></div>' + (!isLanding && global.QFSupport ? global.QFSupport.buttonHtml() : '');
+    const reuseHome = isLanding && shell.getAttribute('data-qf-prerender') === 'home' && !!shell.querySelector('[data-landing-service-form]');
+    shell.removeAttribute('data-qf-prerender');
+    if (!reuseHome) shell.innerHTML = '<div id="app-content"></div>' + (!isLanding && global.QFSupport ? global.QFSupport.buttonHtml() : '');
     const content = document.getElementById('app-content');
     content.style.paddingBottom = isLanding ? '0' : 'calc(env(safe-area-inset-bottom, 0px) + 96px)';
-    content.innerHTML = found.route.render(found.params);
+    if (!reuseHome) content.innerHTML = found.route.render(found.params);
     bindGlobalDelegation(content);
     if (Screens.afterRenderAnon) Screens.afterRenderAnon(found.route.pattern, content, found.params);
     if (global.QFEarly) global.QFEarly.restore(content);
