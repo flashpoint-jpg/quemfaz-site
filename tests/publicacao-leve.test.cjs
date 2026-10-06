@@ -2,12 +2,13 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
 const sw=fs.readFileSync(path.join(root,'dist/sw.js'),'utf8');
+const version=/const SW_VERSION = '([^']+)'/.exec(sw)[1];
 const names=[...html.matchAll(/<script defer src="([^"]+)"/g)].map(x=>x[1]);
-assert.ok(names.indexOf('vendor/supabase-2.117.2.js')<names.indexOf('app-main-11.34.3.js'));
-assert.ok(names.indexOf('app-main-11.34.3.js')<names.indexOf('qf-recrutamento.js?v=11.33.1'));
-assert.ok(names.indexOf('qf-recrutamento.js?v=11.33.1')<names.indexOf('app-shell-11.34.3.js'));
+assert.ok(names.indexOf('vendor/supabase-2.117.2.js')<names.indexOf('app-main-'+version+'.js'));
+assert.ok(names.indexOf('app-main-'+version+'.js')<names.indexOf('qf-recrutamento.js?v=11.33.1'));
+assert.ok(names.indexOf('qf-recrutamento.js?v=11.33.1')<names.indexOf('app-shell-'+version+'.js'));
 for(const name of names)assert.ok(fs.existsSync(path.join(root,'dist',name.split('?')[0])),name);
-assert.ok(sw.includes('./app-main-11.34.3.js')&&sw.includes('./app-shell-11.34.3.js'));
+assert.ok(sw.includes('./app-main-'+version+'.js')&&sw.includes('./app-shell-'+version+'.js'));
 assert.ok(html.includes('Encontre o <em>profissional certo</em>'));
 assert.ok(!fs.existsSync(path.join(root,'dist/node_modules')));
 assert.ok(Buffer.byteLength(html)<200000);

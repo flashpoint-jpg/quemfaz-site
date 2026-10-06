@@ -1580,13 +1580,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 })(window);
 
 
-/* QuemFaz — camada de dados 100% offline.
-   Tudo é persistido em localStorage (com fallback em memória caso o
-   armazenamento esteja indisponível). Nenhuma chamada de rede é feita
-   por este arquivo: é a única fonte da verdade do app nesta etapa,
-   e foi desenhada para ser trocada por um backend real depois sem
-   mudar a forma como as telas consomem os dados (métodos com o
-   mesmo contrato poderiam futuramente virar chamadas de API).
+/* QuemFaz — dados do Supabase, estado de tela apenas em memória.
+   Cadastros, chamados, carteira e anúncios não são copiados para localStorage.
+   A sessão de acesso é independente dos dados carregados para desenhar as telas.
 */
 
 (function (global) {
@@ -1625,23 +1621,26 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     cancelado: 'Cancelado',
   };
 
-  let mem = null; // fallback em memória se localStorage não estiver disponível
+  const mem = Object.create(null);
   let storageOk = true;
-  try {
-    const t = '__proaki_test__';
-    window.localStorage.setItem(t, '1');
-    window.localStorage.removeItem(t);
-  } catch (e) {
-    storageOk = false;
-  }
 
   function readRaw(key) {
-    if (!storageOk) return mem && mem[key] !== undefined ? mem[key] : null;
-    return window.localStorage.getItem(key);
+    // Nunca recupera a antiga cópia do banco do aparelho.
+    if (key === DB_KEY) return null;
+    if (Object.prototype.hasOwnProperty.call(mem, key)) return mem[key] || null;
+    try { return window.localStorage.getItem(key) || null; }
+    catch (_) { storageOk = false; return mem[key] || null; }
   }
   function writeRaw(key, value) {
-    if (!storageOk) { mem = mem || {}; mem[key] = value; return; }
-    window.localStorage.setItem(key, value);
+    if (key === DB_KEY) return;
+    mem[key] = value;
+    try { window.localStorage.setItem(key, value); }
+    catch (_) { storageOk = false; }
+  }
+  function clearLegacyDataCache() {
+    // Esta chave era um espelho da nuvem, não uma fila de operações pendentes.
+    // Não toca na sessão, nos rascunhos nem em envios ainda não confirmados.
+    try { window.localStorage.removeItem(DB_KEY); } catch (_) {}
   }
 
   function nowIso() { return new Date().toISOString(); }
@@ -1964,19 +1963,16 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   }
 
   function load() {
-    const raw = readRaw(DB_KEY);
-    if (raw) {
-      try { state = JSON.parse(raw); } catch (e) { state = buildDemoData(); persist(); }
-    } else {
-      state = buildDemoData();
-      persist();
-    }
+    clearLegacyDataCache();
+    if (!state) state = buildDemoData();
     ensureSchema();
     return state;
   }
 
   function persist() {
-    writeRaw(DB_KEY, JSON.stringify(state));
+    // Compatibilidade com as telas: o objeto state já está em memória.
+    // Operações reais são confirmadas pelas chamadas ao Supabase.
+    // Não serializar state: além da quota, continha fotos e dados pessoais.
   }
 
   function resetDemoData() {

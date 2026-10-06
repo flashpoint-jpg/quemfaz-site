@@ -16,7 +16,7 @@ assert.equal(appV, swV);
 
 // Módulo QFPrazo, rodado isolado.
 const a = html.indexOf('/* QuemFaz V11.29 — prazo do pedido');
-const b = html.indexOf('/* QuemFaz — camada local de interface.');
+const b = html.indexOf('/* QuemFaz — dados do Supabase');
 assert.ok(a > 0 && b > a);
 const win = { PU: { escapeHtml: (v) => String(v).replace(/</g, '&lt;') }, icon: () => '<svg></svg>' };
 vm.runInNewContext(html.slice(html.indexOf('(function (global) {', a), b), { window: win, Date, Math, Number, String, Array });
