@@ -1,0 +1,22 @@
+
+QuemFaz V11.31 — Calculadora de preço ("Quanto custa?")
+
+O QUE É
+- Um botão novo na home, logo abaixo do "Pedir grátis": "Quanto custa? Veja o preço".
+- Ele abre 3 perguntas de toque, uma por tela (serviço, o que precisa, um detalhe).
+- No fim o cliente cai no formulário "Pedir serviço" de sempre, já com o serviço e a
+  descrição preenchidos, com o aviso "Seu resultado está pronto" e o preço travado.
+- Quando ele publica o pedido, aparece a faixa de preço e a confirmação do pedido.
+
+O QUE NÃO MUDOU
+- Foto, título, busca e botão "Pedir grátis" da home.
+- Formulário de pedido: mesmas regras de telefone, cidade, prazo e código de acesso.
+- Banco de dados, app do profissional, desbloqueio, notificações e painel.
+
+IMPORTANTE
+- As faixas de preço são estimativas de mercado (mão de obra), largas de propósito.
+  Ficam na tabela TABELA, no bloco "QuemFaz V11.31 — calculadora de preço" do index.html.
+- Link direto para anúncio: https://quemfaz-site.vercel.app/#/calculadora
+
+TESTE
+- tests/calculadora-preco.test.cjs
