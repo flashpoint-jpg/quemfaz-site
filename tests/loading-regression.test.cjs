@@ -98,6 +98,22 @@ async function run() {
   await routeScope.route();
   assert.equal(rendered, true, 'Com a internet presa, a aba abre do mesmo jeito'); assert.equal(errorShown, false);
   solta();
+  // V11.30.3: dados novos que dão a mesma tela não redesenham (só o horário muda); se mudou, redesenha.
+  {
+    let tela = '<span>Atualizado em 05/10 21:00</span><b>3 pedidos</b>', desenhos = 0;
+    const rota = { role: 'admin', render: () => tela };
+    Object.assign(routeScope, { matchRoute: () => ({ route: rota, params: {} }), renderApp() { desenhos++; } });
+    routeScope.global.QFAdminCloud.syncSnapshot = async () => {};
+    const espera = () => new Promise((r) => setTimeout(r, 5));
+    vm.runInContext("painelSincronizando = false; telaMexida = false; painelSincronizadoEm = Date.now() - 60000; ultimoDesenho = { path: '/admin/dashboard', html: '<span>Atualizado em 05/10 21:00</span><b>3 pedidos</b>' };", routeScope);
+    tela = '<span>Atualizado em 05/10 21:05</span><b>3 pedidos</b>';
+    await routeScope.route(); await espera();
+    assert.equal(desenhos, 1, 'Mesma tela: desenha uma vez só, sem redesenhar depois');
+    vm.runInContext('painelSincronizadoEm = Date.now() - 60000;', routeScope);
+    tela = '<span>Atualizado em 05/10 21:06</span><b>4 pedidos</b>';
+    await routeScope.route(); await espera();
+    assert.equal(desenhos, 3, 'Dado novo: redesenha para mostrar');
+  }
   console.log('PASS: timeout, abort, respostas JSON/204, preservação de mutações, anúncios lentos, sessão, chamados e erro do painel.');
 }
 run().catch(err => { console.error(err); process.exitCode = 1; });

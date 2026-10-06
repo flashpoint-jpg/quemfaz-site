@@ -1,0 +1,17 @@
+QuemFaz V11.30.3 — Painel sem "piscar" (tela antiga e depois a nova)
+
+O QUE ESTAVA ACONTECENDO
+- Desde a V11.29.1, ao tocar no menu de baixo o painel abria na hora com o que já estava
+  no aparelho e, alguns segundos depois, redesenhava a tela inteira com os dados da internet.
+  Isso acontecia mesmo quando nada tinha mudado: a tela aparecia, sumia e aparecia de novo.
+
+O QUE MUDOU
+- Os dados novos continuam chegando por trás, mas a tela só é redesenhada se alguma
+  informação realmente mudou. Se está tudo igual, só o "Atualizado em ..." é corrigido.
+- O menu de baixo continua abrindo na hora.
+
+O QUE NÃO MUDOU
+- Banco de dados, app do cliente e do profissional, notificações, visual do painel.
+
+TESTE
+- tests/loading-regression.test.cjs
