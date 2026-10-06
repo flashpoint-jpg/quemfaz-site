@@ -2334,7 +2334,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.34.2"></script>
+<script src="qf-client-acquisition.js?v=11.34.3"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -6617,7 +6617,7 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span>Quem<span style="color:var(--orange-400);">Faz</span></span></div>' + '<button class="btn btn--outline qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisou? Até <em>3 profissionais</em> chamam você no WhatsApp.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte o que precisa e veja quem chama você.</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div></form>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte qual serviço você procura e receba orçamentos de profissionais da sua região.</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir orçamento grátis</span>' + icon('arrowRight') + '</button></div></form>' +
         '<ul class="qf-hero2-trust"><li>' + icon('check') + '<span>Grátis</span></li><li>' + icon('users') + '<span>Até 3 profissionais</span></li><li>' + icon('whatsapp') + '<span>No WhatsApp</span></li></ul></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       '<section class="section"><h2 class="h2">Como funciona</h2><div class="qf-how3">' +
@@ -6632,7 +6632,7 @@ alt=""></noscript>
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
       '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div>' +
-      '<div class="qf-landing-sticky" data-landing-sticky hidden><button class="btn btn--primary" type="button" data-action="landing-all-services">Pedir grátis</button></div></div>';
+      '<div class="qf-landing-sticky" data-landing-sticky hidden><button class="btn btn--primary" type="button" data-action="landing-all-services">Pedir orçamento grátis</button></div></div>';
   };
 
   function roleCard(role) {
@@ -12348,7 +12348,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.2';
+  const APP_VERSION = '11.34.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
