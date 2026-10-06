@@ -1287,6 +1287,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 })(window);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="qf-recrutamento.css?v=11.33.0">
 </head>
 <body>
 <div id="app-shell">
@@ -7064,6 +7065,9 @@ Screens.adminDashboardRender = function () {
 })(window);
 
 
+</script>
+<script src="qf-recrutamento.js?v=11.33.0"></script>
+<script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
 (function (global) {
@@ -7115,6 +7119,8 @@ Screens.adminDashboardRender = function () {
   // ---------------- Rotas ----------------
 
   const routes = [
+    { pattern: '/admin/recrutamento', role: 'admin', title: 'Recrutamento', back: '/admin/dashboard', render: Screens.recrutAdminRender },
+
     { pattern: '/', anon: true, render: function () { return Screens.landing(); } },
     { pattern: '/auth/:role/login', anon: true, render: function (p) { return Screens.authLogin(p); } },
     { pattern: '/auth/:role/cadastro', anon: true, render: function (p) { return Screens.authCadastro(p); } },
