@@ -2587,6 +2587,7 @@ window.qfGoogleLead = function () {
   .qf-landing-sticky { display: none; }
 }
 </style>
+<link rel="stylesheet" href="qf-recrutamento.css?v=11.33.0">
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -12341,7 +12342,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.32.1';
+  const APP_VERSION = '11.33.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14626,6 +14627,9 @@ alt=""></noscript>
 
 
 /* QuemFaz — casca do app, roteador por hash e navegação. */
+</script>
+<script src="qf-recrutamento.js?v=11.33.0"></script>
+<script>
 
 (function (global) {
   const DB = global.DB, PU = global.PU, icon = global.icon;
@@ -14846,6 +14850,10 @@ alt=""></noscript>
   // ---------------- Rotas ----------------
 
   const routes = [
+    { pattern: '/profissional/recrutamento', role: 'profissional', title: 'Recrutamento', back: '/profissional/home', render: Screens.recrutamentoRender },
+    { pattern: '/profissional/recrutamento/vaga/:id', role: 'profissional', title: 'Vaga e candidatos', back: '/profissional/recrutamento', render: Screens.recrutVagaRender },
+    { pattern: '/recrutamento/vaga/:id', anon: true, publicPage: true, title: 'Vaga de emprego', render: Screens.recrutPublicaRender },
+
     { pattern: '/', anon: true, render: function () { return Screens.landing(); } },
     { pattern: '/auth/:role/login', anon: true, render: function (p) { return Screens.authLogin(p); } },
     { pattern: '/auth/:role/cadastro', anon: true, render: function (p) { return Screens.authCadastro(p); } },
@@ -14915,6 +14923,7 @@ alt=""></noscript>
   async function route() {
     const path = currentPath();
     const found = matchRoute(path);
+    if (found && found.route.publicPage) { renderAnon(found); return; }
     if (global.QFCloud && global.QFCloud.enabled) {
       try {
         await global.QFConnection.deadline(global.QFCloud.syncForCurrentSession(false), 15000, 'dados da conta');

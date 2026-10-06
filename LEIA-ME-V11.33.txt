@@ -1,0 +1,36 @@
+QuemFaz 11.33.0 — Recrutamento
+
+Inclusão separada dos chamados, sem substituir pagamentos ou alterar suas regras.
+
+Profissional/empresa: Início, Perfil ou Planos > Recrutar funcionários.
+Pacotes avulsos: Essencial R$199 (1 vaga, R$100 mídia, até 7 dias),
+Destaque R$399 (3 vagas, R$200 mídia, até 14 dias),
+Premium R$699 (5 vagas, R$400 mídia, até 21 dias).
+A mídia e o período pertencem ao pacote; a verba é compartilhada entre suas vagas.
+Recebimento de candidaturas durante 30 dias após a compra. Sem renovação automática.
+
+Pagamento: usa saldo confirmado da carteira. Saldo insuficiente permite recarga
+pelo checkout Efí existente (Pix/cartão/boleto conforme disponibilidade do provedor).
+Após pagar, "Já paguei · ativar pacote" consulta a confirmação no servidor.
+Compras são atômicas e têm chave de idempotência para impedir débito duplicado.
+Contatos e currículos das candidaturas da empresa ficam liberados sem taxa individual.
+
+Empresa: cadastrar/editar/pausar/encerrar vagas, copiar link, acompanhar métricas,
+ver candidatos, chamar pelo WhatsApp e mover etapas da seleção.
+Candidato: página própria da vaga dentro do mesmo app; sem conta e sem cobrança.
+Currículo opcional PDF até 5 MB, armazenamento privado e links temporários.
+
+Admin: Painel ou Mais > Recrutamento. Recebe vagas a preparar, consulta verba,
+copia links e registra status, referência, período, gasto real e impressões.
+As campanhas precisam ser criadas e operadas pelo QuemFaz na plataforma de mídia.
+Marcar "ativa" no painel NÃO cria anúncios nem gasta verba automaticamente.
+
+Banco: supabase/2026-10-06-recrutamento.sql (aplicado no projeto QuemFaz).
+Tabelas novas com RLS; funções privadas e wrapper invoker; nenhuma substituição
+de funções existentes. Outra empresa não vê candidaturas nem currículos.
+
+Validação: node --test tests/*.test.cjs (12 testes existentes).
+tests/recrutamento-db.sql testa o banco com rollback (não deixa dados nem débitos).
+tests/recrutamento-browser.cjs testa UI e respostas controladas com Playwright:
+390px e 1440px, navegação, vagas, candidatura, contatos, etapas, pagamento e admin.
+Não foi realizada cobrança real nem campanha real nos testes.
