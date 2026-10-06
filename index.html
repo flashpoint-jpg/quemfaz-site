@@ -2334,7 +2334,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.34.0"></script>
+<script src="qf-client-acquisition.js?v=11.34.1"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -12348,7 +12348,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.0';
+  const APP_VERSION = '11.34.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15026,12 +15026,14 @@ alt=""></noscript>
     shell.setAttribute('data-route', routeKey(found.route.pattern));
     shell.setAttribute('data-role', 'anon');
     const isLanding = found.route.pattern === '/';
+    if (global.QFEarly) global.QFEarly.capture();
     shell.innerHTML = '<div id="app-content"></div>' + (!isLanding && global.QFSupport ? global.QFSupport.buttonHtml() : '');
     const content = document.getElementById('app-content');
     content.style.paddingBottom = isLanding ? '0' : 'calc(env(safe-area-inset-bottom, 0px) + 96px)';
     content.innerHTML = found.route.render(found.params);
     bindGlobalDelegation(content);
     if (Screens.afterRenderAnon) Screens.afterRenderAnon(found.route.pattern, content, found.params);
+    if (global.QFEarly) global.QFEarly.restore(content);
     if (global.QFApp) { global.QFApp.fillInstallSlots(content); global.QFApp.afterRender(); }
     window.scrollTo(0, 0);
   }
@@ -15535,6 +15537,7 @@ alt=""></noscript>
     }
     if (global.QFCloud && global.QFCloud.enabled) global.QFCloud.prepareLocalState();
     await route();
+    if (global.QFEarly) global.QFEarly.finish();
     try {
       const mustChange = !!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.needsForcedPasswordChange && await global.QFCloud.needsForcedPasswordChange());
       if (mustChange && global.QFPasswordRecovery && global.QFPasswordRecovery.openForcedPassword) {

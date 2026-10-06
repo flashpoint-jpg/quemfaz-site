@@ -1,0 +1,9 @@
+{
+  "name": "quemfaz-site",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build-client.cjs",
+    "test": "npm run build && node --test tests/*.test.cjs"
+  },
+  "devDependencies": { "esbuild": "0.28.2" }
+}
