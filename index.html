@@ -12264,7 +12264,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.30.3';
+  const APP_VERSION = '11.31.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14289,6 +14289,262 @@ alt=""></noscript>
 })(window);
 
 
+/* QuemFaz V11.31 — calculadora de preço ("Quanto custa?").
+   Porta de entrada nova para o cliente: um botão na home abre 3 perguntas de toque (uma por tela).
+   No fim, o cliente cai no MESMO formulário "Pedir serviço" (mesmas validações de telefone, cidade e prazo),
+   já com serviço e descrição preenchidos. A faixa de preço só aparece depois que o pedido é publicado.
+   As faixas são estimativas de mercado (mão de obra), largas de propósito: o valor exato quem passa é o profissional.
+   Nada aqui muda banco, pedido, desbloqueio ou a foto/busca da home. */
+(function (global) {
+  const PU = global.PU, icon = global.icon;
+  const Screens = (global.Screens = global.Screens || {});
+  const KEY = 'qf_calc';
+  const VALIDADE_MS = 60 * 60 * 1000;
+  const QTD = { titulo: 'Quantos pontos são?', ops: [['Só 1', 1], ['2 ou 3', 1.8], ['4 ou mais', 3]] };
+
+  // [texto da opção, mínimo, máximo] em reais; a 2ª pergunta multiplica a faixa.
+  const TABELA = [
+    { cat: 'cat_eletricista', nome: 'Eletricista', ic: 'bolt',
+      p1: { titulo: 'O que você precisa?', ops: [['Trocar ou instalar chuveiro', 80, 180], ['Tomada ou interruptor', 60, 150], ['Instalar ventilador ou luminária', 100, 250], ['Sem energia ou curto', 120, 350], ['Outro serviço elétrico', 100, 400]] },
+      p2: QTD },
+    { cat: 'cat_encanador', nome: 'Encanador', ic: 'droplet',
+      p1: { titulo: 'O que você precisa?', ops: [['Consertar vazamento', 100, 300], ['Desentupir pia ou vaso', 120, 350], ['Trocar torneira ou registro', 80, 200], ['Consertar ou instalar descarga', 100, 250], ['Outro serviço de encanamento', 100, 400]] },
+      p2: QTD },
+    { cat: 'cat_montador', nome: 'Montador de móveis', ic: 'wrench',
+      p1: { titulo: 'Qual móvel?', ops: [['Guarda-roupa', 150, 400], ['Cama ou beliche', 80, 200], ['Rack, painel ou estante', 80, 220], ['Armário de cozinha', 150, 450], ['Outro móvel', 80, 300]] },
+      p2: { titulo: 'Como está o móvel?', ops: [['Novo, na caixa', 1], ['Desmontar e montar de novo', 1.5], ['Só desmontar', 0.6]] } },
+    { cat: 'cat_diarista', nome: 'Diarista', ic: 'broom',
+      p1: { titulo: 'Que tipo de limpeza?', ops: [['Limpeza do dia a dia', 150, 250], ['Limpeza pesada', 220, 400], ['Pós-obra', 300, 700], ['Pós-mudança', 250, 500]] },
+      p2: { titulo: 'Qual o tamanho do imóvel?', ops: [['Até 2 quartos', 1], ['3 quartos', 1.3], ['4 quartos ou mais', 1.7]] } },
+    { cat: 'cat_pintor', nome: 'Pintor', ic: 'paintRoller',
+      p1: { titulo: 'O que vai pintar?', ops: [['1 cômodo', 300, 700], ['2 ou 3 cômodos', 700, 1800], ['Casa ou apartamento inteiro', 1800, 5000], ['Fachada ou muro', 600, 2500]] },
+      p2: { titulo: 'Com tinta e material?', ops: [['Só a mão de obra', 1], ['Com tinta e material', 1.6]] } },
+    { cat: 'cat_arcondicionado', nome: 'Ar-condicionado', ic: 'snowflake',
+      p1: { titulo: 'O que você precisa?', ops: [['Instalar', 400, 900], ['Limpeza e higienização', 150, 300], ['Não gela ou está com defeito', 200, 600], ['Carga de gás', 250, 500]] },
+      p2: { titulo: 'Quantos aparelhos?', ops: [['Só 1', 1], ['2', 1.9], ['3 ou mais', 2.7]] } },
+    { cat: 'cat_informatica', nome: 'Informática', ic: 'laptop',
+      p1: { titulo: 'Qual o problema?', ops: [['Não liga', 100, 350], ['Está lento', 80, 200], ['Formatar', 80, 180], ['Internet ou Wi-Fi', 80, 200], ['Outro problema', 80, 300]] },
+      p2: { titulo: 'Qual aparelho?', ops: [['Notebook', 1.1], ['Computador de mesa', 1], ['Impressora', 1], ['Outro aparelho', 1]] } },
+    { cat: 'cat_chaveiro', nome: 'Chaveiro', ic: 'key',
+      p1: { titulo: 'O que você precisa?', ops: [['Abrir porta trancada', 100, 250], ['Trocar fechadura', 120, 350], ['Cópia de chave', 20, 60], ['Chave de carro', 150, 600]] },
+      p2: { titulo: 'Para qual horário?', ops: [['Horário comercial', 1], ['Noite, domingo ou feriado', 1.6]] } }
+  ];
+
+  function arred(v) { const passo = v >= 1000 ? 50 : 10; return Math.max(10, Math.round(v / passo) * passo); }
+  function faixa(serv, i1, i2) {
+    const a = serv && serv.p1.ops[i1], b = serv && serv.p2.ops[i2];
+    if (!a || !b) return null;
+    return { min: arred(a[1] * b[1]), max: arred(a[2] * b[1]) };
+  }
+  function brl(v) { return 'R$ ' + String(Math.round(Number(v) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function resultado(serv, i1, i2) {
+    const f = faixa(serv, i1, i2);
+    if (!f) return null;
+    const o1 = serv.p1.ops[i1][0], o2 = serv.p2.ops[i2][0];
+    return { cat: serv.cat, min: f.min, max: f.max, resumo: serv.nome + ' · ' + o1 + ' · ' + o2, descricao: serv.nome + ': ' + o1 + ' (' + o2 + ').' };
+  }
+  global.QFCalc = { tabela: TABELA, faixa: faixa, brl: brl, resultado: resultado };
+
+  function salvar(r) { try { sessionStorage.setItem(KEY, JSON.stringify(Object.assign({ ts: Date.now() }, r))); } catch (_) {} }
+  function limpar() { try { sessionStorage.removeItem(KEY); } catch (_) {} }
+  function ler() {
+    try {
+      const c = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+      if (!c || !c.cat || !(c.max > c.min) || Date.now() - Number(c.ts || 0) > VALIDADE_MS) { if (c) limpar(); return null; }
+      return c;
+    } catch (_) { return null; }
+  }
+  const esc = function (v) { return PU.escapeHtml(v); };
+  const CADEADO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+  const CERTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>';
+  const SETA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>';
+
+  if (global.document && !document.getElementById('qf-calc-css')) {
+    const st = document.createElement('style');
+    st.id = 'qf-calc-css';
+    st.textContent =
+      '.qf-calc-entry{margin-top:10px;width:100%;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;border-radius:16px;border:2px solid rgba(255,255,255,.6);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-weight:800;font-size:16px;cursor:pointer;padding:8px 14px}' +
+      '.qf-calc-entry:hover,.qf-calc-entry:focus-visible{border-color:#fff;background:rgba(255,255,255,.14)}' +
+      '.qf-calc-entry svg{width:18px;height:18px;flex:none}' +
+      '.qf-calc-entry__tag{background:var(--qf-tape-yellow,#ffc533);color:#2a1200;font-size:12px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.3px}' +
+      '.qf-calc{padding:0}' +
+      '.qf-calc__body{padding:20px 16px 28px;max-width:560px;margin:0 auto;display:grid;gap:16px}' +
+      '.qf-calc__bars{display:flex;gap:6px}.qf-calc__bars span{flex:1;height:6px;border-radius:3px;background:var(--border-strong)}.qf-calc__bars span.is-on{background:var(--orange-500)}' +
+      '.qf-calc__passo{font-size:13px;font-weight:700;color:var(--text-secondary);margin:8px 0 0}' +
+      '.qf-calc__titulo{font-family:var(--qf-display,inherit);font-size:28px;line-height:1.15;font-weight:800;color:var(--navy-900);margin:0}' +
+      '.qf-calc__ops{display:grid;gap:10px}.qf-calc__ops--grid{grid-template-columns:repeat(2,minmax(0,1fr))}' +
+      '.qf-calc__op{min-height:60px;padding:10px 16px;border-radius:16px;border:2px solid var(--border-strong);background:var(--bg-surface);color:var(--text-primary);font:inherit;font-size:16px;font-weight:700;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}' +
+      '.qf-calc__op:hover,.qf-calc__op:focus-visible{border-color:var(--orange-500)}' +
+      '.qf-calc__op svg{width:20px;height:20px;flex:none;color:var(--text-secondary)}' +
+      '.qf-calc__op--serv{flex-direction:column;justify-content:center;text-align:center;gap:6px;min-height:88px;font-size:15px}.qf-calc__op--serv svg{width:26px;height:26px;color:var(--orange-600)}' +
+      '.qf-calc__outro{min-height:48px;border:0;background:none;color:var(--orange-700);font:inherit;font-size:15px;font-weight:800;text-decoration:underline;cursor:pointer}' +
+      '.qf-calc__nota{font-size:13px;line-height:1.45;color:var(--text-secondary);text-align:center;margin:0}' +
+      '.qf-calc-lock{background:var(--navy-900);color:var(--text-on-navy,#f4f7fc);border-radius:16px;padding:16px;display:grid;gap:8px}' +
+      '.qf-calc-lock__t{font-family:var(--qf-display,inherit);font-size:20px;font-weight:800;margin:0;color:#fff}' +
+      '.qf-calc-lock__p{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;letter-spacing:1px;color:#fff}.qf-calc-lock__p svg{width:22px;height:22px;color:var(--orange-400)}' +
+      '.qf-calc-lock__s{font-size:13px;line-height:1.45;margin:0;color:var(--text-on-navy-muted,#aab6cc)}.qf-calc-lock__s strong{color:#fff}' +
+      '.qf-calc-result{position:fixed;inset:0;z-index:9990;background:rgba(8,20,40,.78);display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto}' +
+      '.qf-calc-result__card{width:100%;max-width:420px;background:var(--bg-surface,#fff);border-radius:22px;padding:22px;display:grid;gap:14px;box-shadow:0 30px 60px -20px rgba(0,0,0,.5)}' +
+      '.qf-calc-result__resumo{font-size:13px;font-weight:700;color:var(--text-secondary);margin:0}' +
+      '.qf-calc-result__lbl{font-size:15px;font-weight:600;color:var(--text-primary);margin:0}' +
+      '.qf-calc-result__preco{font-family:var(--qf-display,inherit);font-size:34px;line-height:1.1;font-weight:800;color:var(--navy-900);margin:0}' +
+      '.qf-calc-result__obs{font-size:13px;line-height:1.45;color:var(--text-secondary);margin:0}' +
+      '.qf-calc-result__ok{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--success-600);border-radius:16px;padding:14px}' +
+      '.qf-calc-result__ok i{width:32px;height:32px;flex:none;border-radius:16px;background:var(--success-600);color:#fff;display:flex;align-items:center;justify-content:center}.qf-calc-result__ok i svg{width:18px;height:18px}' +
+      '.qf-calc-result__ok strong{display:block;font-size:16px;color:var(--text-primary)}.qf-calc-result__ok span{font-size:14px;line-height:1.45;color:var(--text-secondary)}';
+    document.head.appendChild(st);
+  }
+
+  // ---------- Tela da calculadora (rota anônima /calculadora) ----------
+  Screens.calculadora = function () {
+    return '<div class="view qf-calc">' +
+      '<header class="topbar topbar--navy qf-request-header">' +
+        '<button class="topbar__back" type="button" data-qf-calc-voltar aria-label="Voltar">' + icon('chevronLeft') + '</button>' +
+        '<h1 class="h2">Quanto custa?</h1><span></span>' +
+      '</header>' +
+      '<div class="qf-calc__body" data-qf-calc-body></div>' +
+    '</div>';
+  };
+
+  function bindCalculadora(content) {
+    const body = content.querySelector('[data-qf-calc-body]');
+    const voltar = content.querySelector('[data-qf-calc-voltar]');
+    if (!body) return;
+    const st = { serv: null, i1: null };
+    function passo() { return st.serv === null ? 1 : (st.i1 === null ? 2 : 3); }
+    function desenhar() {
+      const n = passo();
+      const serv = st.serv === null ? null : TABELA[st.serv];
+      let titulo, ops, rodape;
+      if (n === 1) {
+        titulo = 'Qual serviço você precisa?';
+        ops = '<div class="qf-calc__ops qf-calc__ops--grid">' + TABELA.map(function (s, i) {
+          return '<button type="button" class="qf-calc__op qf-calc__op--serv" data-qf-calc-op="' + i + '">' + icon(s.ic) + '<span>' + esc(s.nome) + '</span></button>';
+        }).join('') + '</div>';
+        rodape = '<button type="button" class="qf-calc__outro" data-qf-calc-outro>É outro serviço? Peça grátis aqui</button>';
+      } else {
+        const p = n === 2 ? serv.p1 : serv.p2;
+        titulo = p.titulo;
+        ops = '<div class="qf-calc__ops">' + p.ops.map(function (o, i) {
+          return '<button type="button" class="qf-calc__op" data-qf-calc-op="' + i + '"><span>' + esc(o[0]) + '</span>' + SETA + '</button>';
+        }).join('') + '</div>';
+        rodape = '<p class="qf-calc__nota">' + (n === 2 ? 'Toque numa opção para continuar.' : 'Última pergunta. Depois dela o seu resultado fica pronto.') + '</p>';
+      }
+      body.innerHTML =
+        '<div><div class="qf-calc__bars" aria-hidden="true">' + [1, 2, 3].map(function (k) { return '<span' + (k <= n ? ' class="is-on"' : '') + '></span>'; }).join('') + '</div>' +
+        '<p class="qf-calc__passo">Pergunta ' + n + ' de 3' + (serv ? ' · ' + esc(serv.nome) : '') + '</p></div>' +
+        '<h2 class="qf-calc__titulo">' + esc(titulo) + '</h2>' + ops + rodape;
+      try { global.scrollTo(0, 0); } catch (_) {}
+    }
+    body.addEventListener('click', function (e) {
+      if (e.target.closest('[data-qf-calc-outro]')) { limpar(); global.navigate('/auth/cliente/cadastro'); return; }
+      const b = e.target.closest('[data-qf-calc-op]');
+      if (!b) return;
+      const i = Number(b.getAttribute('data-qf-calc-op'));
+      const n = passo();
+      if (n === 1) { st.serv = i; desenhar(); return; }
+      if (n === 2) { st.i1 = i; desenhar(); return; }
+      const r = resultado(TABELA[st.serv], st.i1, i);
+      if (!r) return;
+      salvar(r);
+      try { sessionStorage.setItem('qf_pending_category', r.cat); } catch (_) {}
+      global.navigate('/auth/cliente/cadastro');
+    });
+    if (voltar) voltar.addEventListener('click', function () {
+      if (st.i1 !== null) { st.i1 = null; desenhar(); return; }
+      if (st.serv !== null) { st.serv = null; desenhar(); return; }
+      global.navigate('/');
+    });
+    desenhar();
+  }
+
+  // ---------- Home: botão visível logo abaixo do "Pedir grátis" (foto e busca não mudam) ----------
+  function botaoNaHome(content) {
+    const form = content.querySelector('[data-landing-service-form]');
+    if (!form || content.querySelector('.qf-calc-entry')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'qf-calc-entry';
+    b.innerHTML = '<span class="qf-calc-entry__tag">NOVO</span><span>Quanto custa? Veja o preço</span>' + SETA;
+    b.addEventListener('click', function () { global.navigate('/calculadora'); });
+    form.insertAdjacentElement('afterend', b);
+  }
+
+  // ---------- Formulário "Pedir serviço": resultado travado até publicar ----------
+  function travarNoFormulario(content) {
+    const c = ler();
+    const form = content.querySelector('#cadastro-cliente-form');
+    if (!c || !form) return;
+    let pend = '';
+    try { pend = sessionStorage.getItem('qf_pending_category') || ''; } catch (_) {}
+    if (pend !== c.cat) { limpar(); return; }
+    const desc = form.querySelector('[name="descricao"]');
+    if (desc && !desc.value.trim()) desc.value = c.descricao;
+    const box = document.createElement('div');
+    box.className = 'qf-calc-lock';
+    box.setAttribute('data-qf-calc-lock', '');
+    box.innerHTML = '<p class="qf-calc-lock__t">Seu resultado está pronto</p>' +
+      '<div class="qf-calc-lock__p">' + CADEADO + '<span aria-label="Preço escondido">R$ ••• a R$ •••</span></div>' +
+      '<p class="qf-calc-lock__s">' + esc(c.resumo) + '</p>' +
+      '<p class="qf-calc-lock__s">Preencha abaixo para ver. <strong>Ao ver o resultado, seu pedido é publicado grátis</strong> e até 3 profissionais podem chamar você no WhatsApp com o valor exato.</p>';
+    form.insertBefore(box, form.firstChild);
+    const btn = form.querySelector('button[type="submit"]');
+    const antes = btn ? btn.innerHTML : '';
+    if (btn) btn.innerHTML = 'Ver meu resultado ' + icon('arrowRight');
+    // Trocou de serviço: a faixa calculada não vale mais; o formulário volta ao normal.
+    form.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-action="alterar-servico-cliente"]')) return;
+      limpar();
+      if (box.parentNode) box.parentNode.removeChild(box);
+      if (btn && antes) btn.innerHTML = antes;
+    });
+  }
+
+  // ---------- Depois de publicar: mostra a faixa de preço uma única vez ----------
+  function mostrarResultado(params) {
+    const c = ler();
+    if (!c || document.querySelector('.qf-calc-result')) return;
+    const req = global.DB && global.DB.requestById ? global.DB.requestById(params && params.id) : null;
+    if (!req || req.categoriaId !== c.cat) return;
+    limpar();
+    const wrap = document.createElement('div');
+    wrap.className = 'qf-calc-result';
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'qf-calc-result-preco');
+    wrap.innerHTML = '<div class="qf-calc-result__card">' +
+      '<p class="qf-calc-result__resumo">' + esc(c.resumo) + '</p>' +
+      '<div><p class="qf-calc-result__lbl">Costuma ficar entre</p>' +
+      '<p class="qf-calc-result__preco" id="qf-calc-result-preco">' + brl(c.min) + ' e ' + brl(c.max) + '</p></div>' +
+      '<p class="qf-calc-result__obs">É uma estimativa de mercado. O valor exato depende do serviço e quem passa é o profissional.</p>' +
+      '<div class="qf-calc-result__ok"><i>' + CERTO + '</i><div><strong>Seu pedido foi publicado grátis</strong><span>Até 3 profissionais podem chamar você no WhatsApp com o valor exato.</span></div></div>' +
+      '<button type="button" class="btn btn--primary" data-qf-calc-fechar>Acompanhar meu pedido</button>' +
+    '</div>';
+    function fechar() { document.removeEventListener('keydown', tecla); if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }
+    function tecla(e) { if (e.key === 'Escape') fechar(); }
+    wrap.querySelector('[data-qf-calc-fechar]').addEventListener('click', fechar);
+    document.addEventListener('keydown', tecla);
+    document.body.appendChild(wrap);
+    try { wrap.querySelector('[data-qf-calc-fechar]').focus(); } catch (_) {}
+  }
+
+  const anonAntes = Screens.afterRenderAnon;
+  Screens.afterRenderAnon = function (pattern, content, params) {
+    if (anonAntes) anonAntes(pattern, content, params);
+    try {
+      if (pattern === '/') { limpar(); botaoNaHome(content); }
+      if (pattern === '/calculadora') bindCalculadora(content);
+      if (pattern === '/auth/:role/cadastro' && params && params.role === 'cliente') travarNoFormulario(content);
+    } catch (err) { console.warn('QuemFaz calculadora', err); }
+  };
+  const logadoAntes = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (logadoAntes) logadoAntes(pattern, content, params, user);
+    try { if (pattern === '/cliente/pedido/:id') mostrarResultado(params); } catch (err) { console.warn('QuemFaz calculadora', err); }
+  };
+})(window);
+
+
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
 (function (global) {
@@ -14514,6 +14770,7 @@ alt=""></noscript>
 
     { pattern: '/anuncie', anon: true, title: 'Anuncie no QuemFaz', render: Screens.anuncieRender },
     { pattern: '/como-funciona', anon: true, title: 'Como funciona', render: Screens.comoFuncionaRender },
+    { pattern: '/calculadora', anon: true, title: 'Quanto custa?', render: function () { return Screens.calculadora(); } },
 
     { pattern: '/cliente/home', role: 'cliente', tab: 'home', title: 'QuemFaz', render: Screens.clienteHomeRender },
     { pattern: '/cliente/categoria/:catId', role: 'cliente', title: 'Categoria', back: '/cliente/home', render: Screens.clienteCategoriaRender },
