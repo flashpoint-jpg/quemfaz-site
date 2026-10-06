@@ -3130,10 +3130,9 @@ alt=""></noscript>
 })(window);
 
 
-/* QuemFaz — camada local de interface.
-   Na V9.6, autenticação, chamados, carteira, desbloqueios pagos, orçamentos, avaliações, prioridade paga e áreas de atendimento usam Supabase.
-   O estado local funciona como cache para manter a interface rápida e
-   preservar o contrato das telas da V8.
+/* QuemFaz — dados do Supabase, estado de tela apenas em memória.
+   Cadastros, chamados, carteira e anúncios não são copiados para localStorage.
+   A sessão de acesso é independente dos dados carregados para desenhar as telas.
 */
 
 (function (global) {
@@ -3175,23 +3174,26 @@ alt=""></noscript>
     cancelado: 'Cancelado',
   };
 
-  let mem = null; // fallback em memória se localStorage não estiver disponível
+  const mem = Object.create(null);
   let storageOk = true;
-  try {
-    const t = '__proaki_test__';
-    window.localStorage.setItem(t, '1');
-    window.localStorage.removeItem(t);
-  } catch (e) {
-    storageOk = false;
-  }
 
   function readRaw(key) {
-    if (!storageOk) return mem && mem[key] !== undefined ? mem[key] : null;
-    return window.localStorage.getItem(key);
+    // Nunca recupera a antiga cópia do banco do aparelho.
+    if (key === DB_KEY) return null;
+    if (Object.prototype.hasOwnProperty.call(mem, key)) return mem[key] || null;
+    try { return window.localStorage.getItem(key) || null; }
+    catch (_) { storageOk = false; return mem[key] || null; }
   }
   function writeRaw(key, value) {
-    if (!storageOk) { mem = mem || {}; mem[key] = value; return; }
-    window.localStorage.setItem(key, value);
+    if (key === DB_KEY) return;
+    mem[key] = value;
+    try { window.localStorage.setItem(key, value); }
+    catch (_) { storageOk = false; }
+  }
+  function clearLegacyDataCache() {
+    // Esta chave era um espelho da nuvem, não uma fila de operações pendentes.
+    // Não toca na sessão, nos rascunhos nem em envios ainda não confirmados.
+    try { window.localStorage.removeItem(DB_KEY); } catch (_) {}
   }
 
   function nowIso() { return new Date().toISOString(); }
@@ -3518,19 +3520,16 @@ alt=""></noscript>
   }
 
   function load() {
-    const raw = readRaw(DB_KEY);
-    if (raw) {
-      try { state = JSON.parse(raw); } catch (e) { state = buildDemoData(); persist(); }
-    } else {
-      state = buildDemoData();
-      persist();
-    }
+    clearLegacyDataCache();
+    if (!state) state = buildDemoData();
     ensureSchema();
     return state;
   }
 
   function persist() {
-    writeRaw(DB_KEY, JSON.stringify(state));
+    // Compatibilidade com as telas: o objeto state já está em memória.
+    // Operações reais são confirmadas pelas chamadas ao Supabase.
+    // Não serializar state: além da quota, continha fotos e dados pessoais.
   }
 
   function resetDemoData() {
@@ -12348,7 +12347,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.3';
+  const APP_VERSION = '11.34.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
