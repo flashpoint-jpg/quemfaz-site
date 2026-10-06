@@ -1,0 +1,30 @@
+QuemFaz V11.32 — Pedidos "Abertos a todos"
+
+O QUE É
+- Pedido que passou pelas etapas da cascata e ninguém da categoria desbloqueou é liberado
+  na hora para todos os profissionais do app.
+- Pedido de um serviço sem profissional da categoria na cidade é liberado direto.
+- Vale para qualquer profissional, de qualquer região, sempre com a distância até o pedido.
+- Aparece numa seção própria, "Abertos a todos", na home do profissional e em
+  "Serviços disponíveis", com a etiqueta laranja, o motivo, as vagas e o aviso
+  "Só pegue se você faz esse serviço. O crédito não volta."
+- Lista do mais perto para o mais longe.
+- No topo da home, faixa de movimento com os pedidos do dia (ou dos últimos 7 dias,
+  quando o dia tem menos de 3) e quantos ainda estão sem profissional.
+
+O QUE NÃO MUDOU
+- Pedido normal: quem é da categoria e da região continua recebendo e ouvindo o toque.
+- Pedido aberto a todos NÃO toca o alerta de chamado e não manda aviso: só entra na lista.
+- Preço do desbloqueio, limite de 3 vagas e regra de não devolver o crédito.
+- Assim que alguém desbloqueia, o pedido sai de "Abertos a todos".
+
+DISTÂNCIA
+- Com localização salva: distância exata (ex.: 4,2 km).
+- Sem localização salva e em outra cidade: distância aproximada entre as cidades (ex.: ~16 km).
+- Sem localização salva e na mesma cidade do pedido: "Na sua cidade".
+
+BANCO
+- supabase/2026-10-06-pedidos-abertos-a-todos.sql (já aplicado).
+
+TESTE
+- tests/abertos-a-todos.test.cjs

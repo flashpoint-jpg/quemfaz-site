@@ -2216,6 +2216,15 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-prof-rating__value--new{font-size:18px}
 .qf-prof-rating__hint{margin-top:3px;font-size:13px;line-height:1.4;color:var(--text-secondary)}
 .qf-prof-divulgar{margin-top:0;margin-bottom:12px}
+/* V11.32 — pedidos abertos a todos e faixa de movimento */
+.qf-movimento{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:12px 14px;border-radius:14px;background:var(--navy-900);color:#fff}
+.qf-movimento svg{width:22px;height:22px;flex:none;color:var(--orange-400)}
+.qf-movimento strong{display:block;font-size:.95rem;line-height:1.25}
+.qf-movimento small{display:block;font-size:.8rem;color:#d5ddec}
+.qf-aberto-tag{display:inline-block;margin-bottom:5px;padding:3px 9px;border-radius:6px;background:var(--orange-100);color:var(--orange-700);font-size:.72rem;font-weight:800}
+.qf-aberto-motivo{margin-top:6px;font-size:.8rem;font-weight:700;color:var(--orange-700)}
+.qf-abertos .card{border-color:#f0c8a8}
+.qf-abertos__aviso{margin:10px 0 0;text-align:center;font-size:.8rem;color:var(--text-secondary)}
 .qf-prof-divulgar__card{gap:12px;border:1.5px solid var(--orange-500)!important;background:#fff7ef!important}
 .qf-prof-divulgar__card .text--strong{font-size:16px}
 
@@ -3564,7 +3573,7 @@ alt=""></noscript>
     return state.requests.filter(function (r) {
       const recusados = r.recusadoPor || [];
       return r.status === STATUS.BUSCANDO && !r.profissionalId &&
-        prof.categorias.indexOf(r.categoriaId) !== -1 &&
+        (prof.categorias.indexOf(r.categoriaId) !== -1 || !!r.abertoTodos) &&
         recusados.indexOf(profissionalId) === -1 && ignorados.indexOf(r.id) === -1;
     }).sort(function (a, b) {
       if (!!a.prioridade !== !!b.prioridade) return a.prioridade ? -1 : 1;
@@ -4576,6 +4585,10 @@ alt=""></noscript>
       periodo: row.periodo || null,
       participantes: row.participantes == null ? null : Number(row.participantes),
       limiteParticipantes: row.limite == null ? 3 : Number(row.limite),
+      // V11.32: pedido aberto a todos (motivo) e distância aproximada quando o profissional não tem localização salva.
+      abertoTodos: row.aberto_todos || null,
+      distanciaAprox: !!row.distancia_aprox,
+      mesmaCidade: !!row.mesma_cidade,
       status: localStatus(row.status),
       profissionalId: professionalId || null,
       criadoEm: row.criado_em,
@@ -4842,6 +4855,26 @@ alt=""></noscript>
     DB.persist();
   }
 
+  // V11.32: marca na lista os pedidos "abertos a todos" e busca os números da faixa de movimento.
+  // Se a consulta falhar, a lista aparece como antes (só os pedidos da categoria do profissional).
+  async function attachAbertos(rows) {
+    if (!client) return;
+    try {
+      const res = await Promise.all([client.rpc('qf_pedidos_abertos_todos'), client.rpc('qf_movimento_pedidos')]);
+      if (!res[1].error && res[1].data && res[1].data.ok) global.QFMovimento = res[1].data;
+      if (res[0].error) throw res[0].error;
+      const map = {};
+      (res[0].data || []).forEach(function (a) { map[a.id] = a; });
+      (rows || []).forEach(function (r) {
+        const a = r && map[r.id];
+        if (!a) return;
+        r.aberto_todos = a.motivo || 'sem_desbloqueio';
+        r.mesma_cidade = !!a.mesma_cidade;
+        if (r.distancia_km == null && a.distancia_km != null) { r.distancia_km = a.distancia_km; r.distancia_aprox = true; }
+      });
+    } catch (err) { console.warn('QuemFaz pedidos abertos a todos', err); }
+  }
+
   async function syncProfessionalCalls(userId) {
     const localProf = DB.profissionalById(userId);
     if (localProf && localProf.online) {
@@ -4852,6 +4885,7 @@ alt=""></noscript>
     const unlocked = await client.from('qf_chamados_desbloqueados').select('*').order('criado_em', { ascending: false });
     if (unlocked.error) throw unlocked.error;
     await attachPrazos((available.data || []).concat(unlocked.data || []));
+    await attachAbertos(available.data || []);
 
     const reqs = [];
     (available.data || []).forEach(function (r) { reqs.push(requestFromCloud(r, null)); });
@@ -9940,7 +9974,7 @@ alt=""></noscript>
 
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
-    const chamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
+    const todasChamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
       // V11.29: urgentes primeiro, depois os com dia marcado (o mais próximo antes), por último "sem pressa".
       const pz=global.QFPrazo?global.QFPrazo.comparar(a,b):0;
       if(pz!==0) return pz;
@@ -9952,6 +9986,9 @@ alt=""></noscript>
       if(av!==bv) return av?-1:1;
       return Date.parse((b&&b.criadoEm)||0)-Date.parse((a&&a.criadoEm)||0);
     });
+    // V11.32: os pedidos abertos a todos ficam numa seção própria, do mais perto para o mais longe.
+    const chamadas=todasChamadas.filter(function(r){return !r.abertoTodos;});
+    const abertos=global.QFAbertos.ordenar(todasChamadas.filter(function(r){return !!r.abertoTodos;}));
     const podeFicarOnline=user.statusAprovacao==='aprovado'&&!!user.fotoUrl;
     const meusAnuncios=(DB.state.ads||[]).filter(function(a){return a.anuncianteId===user.id;}).sort(function(a,b){return new Date(b.criadoEm||0)-new Date(a.criadoEm||0);});
     const firstCat=user.categorias&&user.categorias.length?DB.categoryById(user.categorias[0]):null;
@@ -9966,7 +10003,9 @@ alt=""></noscript>
       '<div class="section qf-prof-divulgar"><div class="card row-between qf-prof-divulgar__card"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar meu serviço</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">'+(chamadas.length ? (chamadas.length+(chamadas.length===1?' pedido disponível perto de você':' pedidos disponíveis perto de você')) : 'Nenhum pedido agora. Avisaremos você quando chegar um novo.')+'</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
+      global.QFAbertos.movimentoHtml()+
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos perto de você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
+      global.QFAbertos.secaoHtml(abertos,user)+
       '<div class="section"><button class="card qf-wallet-summary" type="button" data-nav="/profissional/carteira" style="width:100%;text-align:left;background:var(--navy-100);border:none;"><div class="row-between" style="align-items:center;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Use o saldo para desbloquear conversas com clientes.</div></div>'+icon('chevronRight','list-item__chevron')+'</div></button></div>'+
       '</div>';
   };
@@ -9994,7 +10033,7 @@ alt=""></noscript>
         '<span class="qf-vagas__txt"><strong>' + CallInfo.vagasTitulo(req) + '</strong>' + (grande ? '<small>' + sub + '</small>' : '') + '</span></div>';
     },
     km: function (req) { const k = Number(req && req.distanciaKm); return req && req.distanciaKm != null && Number.isFinite(k) ? k : null; },
-    kmTxt: function (req) { const k = CallInfo.km(req); return k == null ? '' : k.toFixed(1).replace('.', ',') + ' km'; },
+    kmTxt: function (req) { const k = CallInfo.km(req); return k == null ? '' : (req.distanciaAprox ? '~' + Math.round(k) : k.toFixed(1).replace('.', ',')) + ' km'; },
     // Mesmo cálculo do banco (qf_tempo_estimado_min): trajeto ≈ 1,3 × linha reta; cidade ~27 km/h, estrada ~50 km/h.
     minutos: function (req) {
       if (req && req.tempoMin != null && Number.isFinite(Number(req.tempoMin))) return Number(req.tempoMin);
@@ -10107,7 +10146,7 @@ alt=""></noscript>
     const valor = DB.leadFeeForRequest(req);
     const primeiraGratis = false;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
-    const novoChamado = Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
+    const novoChamado = !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     const execMs = req.dataPreferida ? Date.parse(req.dataPreferida) : NaN;
     // V11.29: pedido com prazo escolhido pelo cliente mostra o selo do prazo; pedido antigo segue a regra de antes.
     const prazoInfo = global.QFPrazo ? global.QFPrazo.info(req) : null;
@@ -10118,13 +10157,16 @@ alt=""></noscript>
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
+            (req.abertoTodos ? '<div class="qf-aberto-tag">Aberto a todos</div>' : '') +
             '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (prazoInfo ? global.QFPrazo.seloHtml(prazoInfo) : (urgente ? '<span class="qf-urgent-badge">URGENTE</span>' : '')) + (req.prioridade ? '<span class="badge badge--orange">Prioridade</span>' : '') + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Região informada') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (prazoInfo ? global.QFPrazo.linhaHtml(prazoInfo) : (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '')) +
+            (req.abertoTodos ? '<div class="qf-aberto-motivo">' + (req.abertoTodos === 'sem_profissional' ? 'Sem profissional da categoria na região' : 'Ninguém desbloqueou ainda') + '</div>' : '') +
             CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
+              (req.abertoTodos && !CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + (req.mesmaCidade ? 'Na sua cidade' : 'Ative a localização para ver a distância') + '</span>' : '') +
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
               (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
             '</div>' +
@@ -10142,11 +10184,50 @@ alt=""></noscript>
 
   global.QFChamadaCard = chamadaCard;
 
+  // V11.32: pedidos "Abertos a todos" (ninguém da categoria desbloqueou depois da cascata, ou não há profissional
+  // da categoria na região) e a faixa de movimento do topo. Sem toque de chamado: só aparecem na lista.
+  global.QFAbertos = {
+    ordenar: function (list) {
+      return (list || []).slice().sort(function (a, b) {
+        const ak = Number(a && a.distanciaKm), bk = Number(b && b.distanciaKm);
+        const av = a && a.distanciaKm != null && Number.isFinite(ak), bv = b && b.distanciaKm != null && Number.isFinite(bk);
+        if (av && bv && ak !== bk) return ak - bk;
+        if (av !== bv) return av ? -1 : 1;
+        if (!!a.mesmaCidade !== !!b.mesmaCidade) return a.mesmaCidade ? -1 : 1;
+        return Date.parse((b && b.criadoEm) || 0) - Date.parse((a && a.criadoEm) || 0);
+      });
+    },
+    secaoHtml: function (abertos, user) {
+      if (!abertos || !abertos.length) return '';
+      return '<div class="section qf-abertos" id="pedidos-abertos-a-todos">' +
+        '<div class="section-head"><div><h2 class="h3">Abertos a todos <span class="badge badge--orange">' + abertos.length + '</span></h2>' +
+        '<p class="text--sm text--secondary">Pedidos que ninguém pegou ainda. Qualquer profissional pode desbloquear.</p></div></div>' +
+        '<div class="stack--sm">' + abertos.map(function (req) { return chamadaCard(req, user); }).join('') + '</div>' +
+        '<p class="qf-abertos__aviso">Só pegue se você faz esse serviço. O crédito não volta.</p>' +
+      '</div>';
+    },
+    movimentoTexto: function (m) {
+      if (!m) return null;
+      const hoje = Number(m.hoje) || 0, semana = Number(m.semana) || 0, sem = Number(m.sem_profissional) || 0;
+      const n = hoje >= 3 ? hoje : semana;
+      if (n < 1) return null;
+      return {
+        titulo: n + (n === 1 ? ' pedido' : ' pedidos') + (hoje >= 3 ? ' hoje no QuemFaz' : ' nos últimos 7 dias'),
+        sub: sem > 0 ? sem + ' ainda sem profissional' : 'Todos já têm profissional'
+      };
+    },
+    movimentoHtml: function () {
+      const t = global.QFAbertos.movimentoTexto(global.QFMovimento);
+      if (!t) return '';
+      return '<div class="qf-movimento">' + icon('phoneCall') + '<div><strong>' + PU.escapeHtml(t.titulo) + '</strong><small>' + PU.escapeHtml(t.sub) + '</small></div></div>';
+    }
+  };
+
   Screens.profChamadaRender = function (params, user) {
     const req = DB.requestById(params.id);
     const disponivel = req && req.status === STATUS.BUSCANDO && !req.profissionalId &&
       (user.online || !!(global.QFCloud && global.QFCloud.enabled)) && user.statusAprovacao === 'aprovado' && !user.bloqueado &&
-      user.categorias.indexOf(req.categoriaId) !== -1 &&
+      (user.categorias.indexOf(req.categoriaId) !== -1 || !!req.abertoTodos) &&
       (req.recusadoPor || []).indexOf(user.id) === -1;
     if (!disponivel) {
       const emNegociacao = req && [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(req.status) !== -1;
@@ -12264,7 +12345,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.31.0';
+  const APP_VERSION = '11.32.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13194,7 +13275,9 @@ alt=""></noscript>
     return html.replace('<div class="view">','<div class="view">'+qfServiceTabs('meus'));
   };
   Screens.profServicosDisponiveisRender=function(params,user){
-    const calls=qfSortPortfolio(DB.chamadasPendentes(user.id));
+    const todas=qfSortPortfolio(DB.chamadasPendentes(user.id));
+    const calls=todas.filter(function(r){return !r.abertoTodos;});
+    const abertos=global.QFAbertos.ordenar(todas.filter(function(r){return !!r.abertoTodos;}));
     return '<div class="view">' +
       qfServiceTabs('disponiveis') +
       '<div class="section" id="chamados-disponiveis">' +
@@ -13207,6 +13290,7 @@ alt=""></noscript>
         (calls.length?'<div class="stack--sm">'+calls.map(function(r){return global.QFChamadaCard?global.QFChamadaCard(r,user):'';}).join('')+'</div>':
           '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.</p></div>') +
       '</div>' +
+      global.QFAbertos.secaoHtml(abertos,user) +
     '</div>';
   };
 
