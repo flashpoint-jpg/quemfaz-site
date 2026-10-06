@@ -201,3 +201,45 @@ revoke all on function public.qf_pedidos_abertos_todos() from public, anon;
 revoke all on function public.qf_movimento_pedidos() from public, anon;
 grant execute on function public.qf_pedidos_abertos_todos() to authenticated;
 grant execute on function public.qf_movimento_pedidos() to authenticated;
+
+-- 7) V11.32.1 — nenhum alerta de chamado em pedido aberto a todos.
+--    A lista padrão (qf_portfolio_servicos) volta a trazer só os pedidos da regra normal; os abertos a todos
+--    vêm por qf_portfolio_abertos_todos, usada apenas pela seção "Abertos a todos".
+do $do$
+declare
+  def text := pg_get_functiondef('public.qf_portfolio_servicos()'::regprocedure);
+  novo text;
+begin
+  if position('qf_pro_recebe_chamado' in def) > 0 then return; end if;
+  novo := regexp_replace(def, 'from public\.qf_listar_chamados_disponiveis\(\) d\s+order by',
+    'from public.qf_listar_chamados_disponiveis() d
+  where private.qf_pro_recebe_chamado(auth.uid(), d.id)
+  order by');
+  if novo = def then raise exception 'qf_portfolio_servicos: trecho não encontrado'; end if;
+  execute novo;
+end
+$do$;
+
+create or replace function public.qf_portfolio_abertos_todos()
+returns table(id uuid, categoria text, titulo text, descricao text, cidade text, uf character, bairro text, endereco_completo text, latitude numeric, longitude numeric, data_preferida timestamp with time zone, prioridade boolean, criado_em timestamp with time zone, status text, distancia_km numeric, raio_atual_km integer, preco_centavos integer, tempo_min integer, participantes integer, limite integer, aberto_todos text, distancia_aprox boolean, mesma_cidade boolean)
+language sql
+stable security definer
+set search_path to ''
+as $$
+  select
+    d.id,d.categoria,d.titulo,d.descricao,d.cidade,d.uf,d.bairro,d.endereco_completo,
+    d.latitude,d.longitude,d.data_preferida,d.prioridade,d.criado_em,d.status,
+    coalesce(d.distancia_km, a.distancia_km) as distancia_km,
+    d.raio_atual_km,d.preco_centavos,d.tempo_min,
+    (select count(*)::integer from public.qf_desbloqueios x where x.chamado_id=d.id and coalesce(x.ativo,true)) as participantes,
+    3::integer as limite,
+    coalesce(a.motivo,'sem_desbloqueio') as aberto_todos,
+    (d.distancia_km is null and a.distancia_km is not null) as distancia_aprox,
+    coalesce(a.mesma_cidade,false) as mesma_cidade
+  from public.qf_pedidos_abertos_todos() a
+  join public.qf_listar_chamados_disponiveis() d on d.id = a.id
+  order by coalesce(d.distancia_km, a.distancia_km) asc nulls last, d.criado_em desc;
+$$;
+
+revoke all on function public.qf_portfolio_abertos_todos() from public, anon;
+grant execute on function public.qf_portfolio_abertos_todos() to authenticated;

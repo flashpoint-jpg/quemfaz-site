@@ -14,7 +14,8 @@ O QUE É
 
 O QUE NÃO MUDOU
 - Pedido normal: quem é da categoria e da região continua recebendo e ouvindo o toque.
-- Pedido aberto a todos NÃO toca o alerta de chamado e não manda aviso: só entra na lista.
+- Pedido aberto a todos NÃO toca o alerta de chamado, não abre a tela cheia e não manda aviso:
+  só entra na lista (corrigido na V11.32.1; a V11.32.0 abria a tela cheia de chamado).
 - Preço do desbloqueio, limite de 3 vagas e regra de não devolver o crédito.
 - Assim que alguém desbloqueia, o pedido sai de "Abertos a todos".
 
