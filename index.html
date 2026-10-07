@@ -6484,8 +6484,18 @@ alt=""></noscript>
     batteryReady:batteryReady,
     requestBattery:function(){pedirLiberarBateria(true);}
   };
-  // APK: carrega a permissão atual cedo, para a tela já mostrar o estado certo.
-  setTimeout(function () { refreshStatus().catch(function () {}); }, 0);
+  // Confere o push ao abrir o app. Se a permissão já foi concedida, renova
+  // automaticamente a inscrição/token no servidor para não deixar o profissional sem avisos.
+  function autoRestorePush() {
+    refreshStatus().then(function () {
+      if (permission() === 'granted') return restore();
+      return false;
+    }).catch(function () {});
+  }
+  setTimeout(autoRestorePush, 1200);
+  setTimeout(function () {
+    if (permission() === 'granted' && !isActive()) autoRestorePush();
+  }, 5000);
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
     refreshStatus().then(function () { if (permission() === 'granted') return restore(); }).catch(function () {});
