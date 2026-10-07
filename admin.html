@@ -915,6 +915,15 @@ input, select, textarea { font-size: 16px; }
 .divider-label::before, .divider-label::after { content: ""; height: 1px; background: var(--border-subtle); flex: 1; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .text-right { text-align: right; }
+.admin-prof-info { min-width: 0; }
+.admin-prof-info .admin-info-row { align-items: flex-start; }
+.admin-prof-info .admin-info-row > span { min-width: 0; overflow-wrap: anywhere; }
+.admin-prof-info .admin-info-row > span:first-child { flex: 0 1 40%; }
+.admin-prof-info .admin-info-row > span:last-child { flex: 1 1 60%; }
+@media (max-width: 600px) {
+  .admin-prof-info .admin-info-row--long { flex-direction: column; align-items: stretch; gap: 4px; }
+  .admin-prof-info .admin-info-row--long > span:last-child { text-align: left; line-height: 1.5; }
+}
 .mt-0 { margin-top: 0 !important; }
 
 .skip-link {
@@ -3412,12 +3421,28 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const found = DB.cities().find(function (c) { return String(c.nome).toLowerCase() === nome.toLowerCase() && String(c.uf || '').toUpperCase() === u; });
     return found ? found.id : DB.criarCidade(nome, u || 'BR').id;
   }
+  async function syncAdminCategories() {
+    const res = await client.from('qf_categorias_personalizadas').select('id,nome');
+    if (res.error) throw res.error;
+    (res.data || []).forEach(function (row) {
+      if (!row || !row.id || !row.nome) return;
+      const existing = DB.categoryById(row.id);
+      if (existing) existing.nome = row.nome;
+      else DB.state.categories.push({ id: row.id, nome: row.nome, icon: 'briefcase', custom: true });
+    });
+  }
   let lastSnap = 0;
   async function syncSnapshot(force) {
     if (!client) return null;
     if (!force && snapshotOk && Date.now() - lastSnap < 10000) return null;
     lastSnap = Date.now();
-    const res = await client.rpc('qf_admin_snapshot');
+    const results = await Promise.all([
+      client.rpc('qf_admin_snapshot'),
+      global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas').catch(function (err) {
+        console.warn('[QuemFaz] Não foi possível carregar categorias personalizadas:', err.message);
+      })
+    ]);
+    const res = results[0];
     if (res.error) {
       if (/function|does not exist|not find|schema cache/i.test(res.error.message || '')) { snapshotOk = false; clearLocalData(); return null; }
       throw res.error;
@@ -5631,11 +5656,18 @@ Screens.adminDashboardRender = function () {
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
     '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
+  function adminCategoryName(id) {
+    const c = DB.categoryById(id);
+    if (c && c.nome) return c.nome;
+    if (/^cat_custom_/.test(String(id || ''))) return 'Categoria personalizada indisponível';
+    if (/^cat_/.test(String(id || ''))) return 'Categoria indisponível';
+    return String(id || 'Categoria não informada');
+  }
   function topCats(list) {
     const cnt = {};
     list.forEach(function (p) { (p.categorias || []).forEach(function (id) { cnt[id] = (cnt[id] || 0) + 1; }); });
     return Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 5).map(function (id) {
-      const c = DB.categoryById(id); return ((c && c.nome) || String(id).replace(/^cat_/, '').replace(/_/g, ' ')) + ' (' + cnt[id] + ')';
+      return adminCategoryName(id) + ' (' + cnt[id] + ')';
     }).join(' · ');
   }
   Screens.adminProfissionaisRender = function () {
@@ -5707,7 +5739,7 @@ Screens.adminDashboardRender = function () {
     if (!p) return '<div class="view"><p class="text">Profissional não encontrado.</p></div>';
     if (cloudOn()) return adminProfCloud(p);
     const cidade = DB.cityById(p.cidadeId);
-    const cats = p.categorias.map(function (id) { const c = DB.categoryById(id); return c ? c.nome : id; }).join(', ');
+    const cats = (p.categorias || []).map(adminCategoryName).join(', ');
     const docs = p.documentos || {};
     return (
       '<div class="view">' +
@@ -5720,10 +5752,10 @@ Screens.adminDashboardRender = function () {
           '</div>' +
         '</div>' +
 
-        '<div class="section card stack--sm">' +
+        '<div class="section card stack--sm admin-prof-info">' +
           rowInfoHtml('Telefone', waLink(p.telefone)) +
-          rowInfo('Categorias', cats || '—') +
-          rowInfo('Cidade / região', (cidade ? cidade.nome + ' - ' + cidade.uf : '—') + ' · raio ' + p.raioKm + ' km') +
+          rowInfoLong('Categorias', cats || '—') +
+          rowInfoLong('Cidade / região', (cidade ? cidade.nome + ' - ' + cidade.uf : '—') + ' · raio ' + p.raioKm + ' km') +
           rowInfo('Avaliação', p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) + ' (' + p.totalAvaliacoes + ' avaliações)' : 'Sem avaliações') +
           rowInfo('Saldo em carteira', PU.formatCurrency(p.saldo || 0)) +
         '</div>' +
@@ -5752,7 +5784,7 @@ Screens.adminDashboardRender = function () {
   };
 
   function adminProfCloud(p) {
-    const cats = (p.categorias || []).map(function (id) { const c = DB.categoryById(id); return c ? c.nome : id; }).join(', ');
+    const cats = (p.categorias || []).map(adminCategoryName).join(', ');
     const txs = (DB.state.transactions || []).filter(function (t) { return t.profissionalId === p.id; }).slice(0, 8);
     const documento = p.cpfFinal ? ('CPF cadastrado · final ' + String(p.cpfFinal)) : (p.cnpjFinal ? ('CNPJ cadastrado · final ' + String(p.cnpjFinal)) : 'Não informado');
     const e = p.enderecoAdmin || null;
@@ -5767,12 +5799,12 @@ Screens.adminDashboardRender = function () {
           '<div class="spacer"><div class="text--strong">' + (p.fotoUrl ? 'Selfie cadastrada' : 'Selfie pendente') + '</div>' +
           '<div class="text--sm text--secondary" style="margin-top:5px;">Imagem visível no painel administrativo para conferência de segurança.</div></div>' +
         '</div></div>' +
-      '<div class="section card stack--sm">' +
+      '<div class="section card stack--sm admin-prof-info">' +
         rowInfoHtml('WhatsApp', waLink(p.telefone)) + rowInfo('E-mail', p.email || '—') +
         rowInfo('Documento', documento) +
-        rowInfo('Endereço', endereco) +
-        rowInfo('Categorias', cats || '—') +
-        rowInfo('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
+        rowInfoLong('Endereço', endereco) +
+        rowInfoLong('Categorias', cats || '—') +
+        rowInfoLong('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
         rowInfo('Selfie', p.temFoto ? 'Cadastrada' : 'Não cadastrada') +
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
         rowInfo('Avaliação', p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) + ' (' + p.totalAvaliacoes + ' avaliações)' : 'Sem avaliações') +
@@ -5802,10 +5834,13 @@ Screens.adminDashboardRender = function () {
     return '<a class="qf-wa-link" href="' + h + '" target="_blank" rel="noopener" data-wa-link>' + icon('whatsapp') + (compact ? 'WhatsApp' : PU.escapeHtml(tel)) + '</a>';
   }
   function rowInfoHtml(label, html) {
-    return '<div class="row-between"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + html + '</span></div>';
+    return '<div class="row-between admin-info-row"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + html + '</span></div>';
   }
   function rowInfo(label, value) {
-    return '<div class="row-between"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + PU.escapeHtml(value) + '</span></div>';
+    return '<div class="row-between admin-info-row"><span class="text--sm text--secondary">' + label + '</span><span class="text--sm text--strong text-right">' + PU.escapeHtml(value) + '</span></div>';
+  }
+  function rowInfoLong(label, value) {
+    return rowInfo(label, value).replace('admin-info-row"', 'admin-info-row admin-info-row--long"');
   }
   function docRow(label, enviado) {
     return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon('id') + '</div>' +
