@@ -7434,15 +7434,20 @@ alt=""></noscript>
         if (!descricaoInput || !descricaoAjuda) return;
         const qtd = String(descricaoInput.value || '').trim().length;
         const faltam = Math.max(0, 8 - qtd);
+        descricaoAjuda.style.display = 'block';
+        descricaoAjuda.style.marginTop = '7px';
+        descricaoAjuda.style.fontSize = '13px';
+        descricaoAjuda.style.fontWeight = '700';
+        descricaoAjuda.style.lineHeight = '1.35';
         if (faltam > 0) {
           descricaoAjuda.textContent = qtd === 0 && !forcarErro
-            ? 'Descreva o que você precisa em pelo menos 8 caracteres.'
+            ? 'Mínimo de 8 caracteres.'
             : 'Faltam ' + faltam + ' ' + (faltam === 1 ? 'caractere' : 'caracteres') + ' para continuar.';
-          descricaoAjuda.className = forcarErro ? 'field__error' : 'field__hint';
+          descricaoAjuda.style.color = forcarErro ? '#b42318' : '#667085';
           descricaoInput.setAttribute('aria-invalid', forcarErro ? 'true' : 'false');
         } else {
           descricaoAjuda.textContent = 'Descrição pronta.';
-          descricaoAjuda.className = 'field__hint';
+          descricaoAjuda.style.color = '#087443';
           descricaoInput.setAttribute('aria-invalid', 'false');
         }
       }
@@ -9998,26 +10003,3 @@ alt=""></noscript>
   }
   // Qual etapa o aviso aponta: a mais importante que dá para fazer agora neste aparelho.
   function ativacaoPrimeiro(st) {
-    if (!st.push && ativPushPossivelAqui()) return 'push';
-    if (!st.app) return 'app';
-    if (!st.push) return 'push';
-    return 'online';
-  }
-  function ativacaoMensagem(st) {
-    const P = global.QFPush;
-    const alvo = ativacaoPrimeiro(st);
-    if (alvo === 'app') return ativIos() ? 'Falta criar o atalho do QuemFaz na Tela de Início do iPhone.' : 'Falta instalar o app para receber chamados mesmo quando o site estiver fechado.';
-    if (alvo === 'push') {
-      const motivo = ativCelular() ? 'receber chamados com o celular bloqueado.' : 'ser avisado dos chamados mesmo com o site fechado.';
-      if (P && P.permission && P.permission() === 'denied') return 'As notificações estão bloqueadas neste aparelho. Libere para ' + motivo;
-      return 'Falta ativar as notificações para você ' + motivo;
-    }
-    return 'Você está offline. Fique online para receber oportunidades.';
-  }
-  function ativacaoPasso(n, id, feito, titulo, texto, botao) {
-    return '<li class="qf-ativ-step' + (feito ? ' is-done' : '') + '" data-ativ-step="' + id + '" data-ativ-feito="' + (feito ? '1' : '0') + '">' +
-      '<span class="qf-ativ-step__mark" aria-hidden="true">' + (feito ? icon('check') : n) + '</span>' +
-      '<div class="qf-ativ-step__body">' +
-        '<div class="qf-ativ-step__top"><span class="qf-ativ-step__title">' + titulo + '</span>' +
-        '<span class="qf-ativ-step__state' + (feito ? ' is-done' : '') + '">' + (feito ? 'Concluído' : 'Pendente') + '</span></div>' +
-        (feito ? '' : '<p class="qf-ativ-step__text">' + texto + '</p>' + botao) +
