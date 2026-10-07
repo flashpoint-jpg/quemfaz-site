@@ -2617,6 +2617,40 @@ window.qfGoogleLead = function (requestId) {
 @media(max-width:899px){#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo{aspect-ratio:39/32}.qf-home-intro{margin-bottom:0}.qf-home-prof-menu svg{width:22px;height:22px}}
 @media(min-width:900px){.qf-home-nav{display:none}.qf-landing{padding-bottom:0}#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo{position:relative;aspect-ratio:39/26;overflow:hidden}#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo img{position:absolute;top:0;right:0;width:177%;max-width:none;height:auto}}
 </style>
+
+<style id="qf-prof-home-approved">
+#app-shell[data-route="profissional-home"] .topbar{background:var(--navy-900);padding-bottom:12px}
+#app-shell[data-route="profissional-home"] .view{padding-bottom:calc(90px + env(safe-area-inset-bottom));}
+#app-shell[data-route="profissional-home"] .qf-prof-status{background:#fff!important;color:var(--navy-900);border:1px solid #e1e5ed!important;box-shadow:none!important;padding:16px!important}
+.qf-prof-status__top>.btn{width:auto;flex-shrink:0;padding:8px 12px}
+.qf-prof-status__top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#app-shell[data-route="profissional-home"] .qf-prof-status .btn{margin-top:0;height:auto;min-height:44px;white-space:normal;font-size:13px}
+#app-shell[data-route="profissional-home"] .qf-prof-status__title{font-size:17px}
+#app-shell[data-route="profissional-home"] .qf-radar-meta{color:#526078;margin-top:10px;font-size:14px;line-height:1.5}
+.qf-prof-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #e1e5ed}
+.qf-prof-shortcuts .btn{padding:10px 6px;gap:5px}
+.qf-prof-shortcuts svg{width:18px;height:18px;flex-shrink:0}
+.qf-prof-order-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.qf-prof-order-heading .btn{width:auto;min-height:44px;padding:8px;color:var(--orange-600)}
+#chamados-disponiveis > .section-head{display:none}
+.qf-prof-order-tabs{display:flex;border-bottom:1px solid #dce2eb;margin:8px 0 14px}
+.qf-prof-order-tabs>*{flex:1;text-align:center;padding:12px 8px;font-weight:700;font-size:14px;background:none;border:0;color:#526078}
+.qf-prof-order-tabs [aria-current]{border-bottom:3px solid var(--orange-600);color:var(--orange-600)}
+#app-shell[data-route="profissional-home"] .empty-state{background:#fff;border:1px solid #e1e5ed;border-radius:18px;padding:22px 16px}
+#app-shell[data-route="profissional-home"] .empty-state .btn{margin-top:12px}
+.qf-prof-notifications{width:100%;margin-top:6px;color:var(--orange-600)}
+#app-shell[data-route="profissional-home"] .qf-movimento{background:#fff;color:var(--navy-900);border:1px solid #e1e5ed;margin:16px 0}
+#app-shell[data-route="profissional-home"] .qf-movimento small{color:#526078}
+.qf-movimento-scope{margin-top:6px;font-size:12px!important;line-height:1.4}
+#app-shell[data-route="profissional-home"] .qf-prof-rating{padding:12px 14px;margin-bottom:16px;box-shadow:none}
+#app-shell[data-route="profissional-home"] .qf-prof-rating__value--new{font-size:15px}
+#app-shell[data-route="profissional-home"] .qf-prof-divulgar__card{padding:14px;box-shadow:none;gap:10px}
+#app-shell[data-route="profissional-home"] .qf-prof-divulgar__card .text--strong{font-size:16px}
+#app-shell[data-route="profissional-home"] .qf-prof-divulgar__card .btn{font-size:13px;min-height:44px;white-space:normal}
+#perfil-areas,#perfil-cats{scroll-margin-top:100px}
+@media(max-width:767px){#app-shell[data-route="profissional-home"] .topbar{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px}#app-shell[data-route="profissional-home"] .topbar__title{grid-column:1;grid-row:1;min-width:0}#app-shell[data-route="profissional-home"] .topbar .qf-top-dl{grid-column:1/-1;grid-row:2;justify-self:start}#app-shell[data-route="profissional-home"] .topbar>.topbar__action{grid-column:2;grid-row:1}#app-shell[data-route="profissional-home"] .topbar>.qf-topbar-support{grid-column:3;grid-row:1}}
+@media(max-width:360px){.qf-prof-status__top{align-items:flex-start}.qf-prof-status__top .btn{max-width:104px}.qf-prof-shortcuts .btn{font-size:12px!important}.qf-prof-order-heading .h3{font-size:17px!important}}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -10077,12 +10111,12 @@ alt=""></noscript>
       pendingGate(user)+
       avisoAtualizacaoCadastral(user)+
       ativ.html+
-      '<div class="section qf-prof-divulgar"><div class="card row-between qf-prof-divulgar__card"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar meu serviço</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
-      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'">'+(user.online?'<div class="qf-prof-status__online-row"><div class="qf-prof-status__copy"><div class="qf-prof-status__title"><span class="qf-live-dot" aria-hidden="true"></span>Você está online</div><div class="qf-radar-msg" id="qf-radar-msg" role="status" aria-live="polite">'+(chamadas.length ? (chamadas.length+(chamadas.length===1?' pedido disponível perto de você':' pedidos disponíveis perto de você')) : 'Nenhum pedido agora. Avisaremos você quando chegar um novo.')+'</div><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Suas categorias')+extraCats+' · até '+raio+' km</div></div><div class="qf-prof-status__call-icon" aria-hidden="true">'+icon('phoneCall')+'</div></div>':'<div class="qf-prof-status__title"><span class="qf-off-dot" aria-hidden="true"></span>Você está offline</div><div class="qf-prof-status__sub">Enquanto estiver offline, você poderá não receber novos chamados.</div>')+'<input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'>'+(user.online?'<button class="btn btn--online-off" type="button" data-action="ficar-offline-agora">Ficar offline</button>':'<button class="btn btn--primary" type="button" data-action="ficar-online-agora">Ficar online agora</button>')+'</div>'+
+      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'"><div class="qf-prof-status__top"><div class="qf-prof-status__title"><span class="'+(user.online?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+ (user.online?'Você está online':'Você está offline')+'</div><button class="btn btn--outline" type="button" data-action="'+(user.online?'ficar-offline-agora':'ficar-online-agora')+'">'+(user.online?'Ficar offline':'Ficar online')+'</button></div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div><div class="qf-prof-shortcuts"><button class="btn btn--outline" type="button" data-prof-settings="area">'+icon('mapPin')+' Ajustar raio</button><button class="btn btn--outline" type="button" data-prof-settings="profissao">'+icon('plus')+' Adicionar profissão</button></div></div>'+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
-      global.QFAbertos.movimentoHtml()+
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos perto de você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.':'Fique online para receber chamados perto de você.')+'</p></div>')+'</div>'+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.':'Fique online para receber chamados perto de você.')+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
       global.QFAbertos.secaoHtml(abertos,user)+
+      global.QFAbertos.movimentoHtml()+
+      '<div class="section qf-prof-divulgar"><div class="card row-between qf-prof-divulgar__card"><div><div class="text--strong">Quer aparecer mais?</div><div class="text--sm text--secondary">Divulgue seu serviço no carrossel do QuemFaz.</div></div><button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/anuncie">Divulgar meu serviço</button></div>'+(meusAnuncios.length?'<div class="card card--tight" style="margin-top:12px;"><div class="row-between"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">'+PU.escapeHtml(meusAnuncios[0].empresa||'Anúncio')+'</div></div>'+adStatusLabel(meusAnuncios[0])+'</div>'+(meusAnuncios[0].status==='reprovado'?'<div class="text--sm" style="margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--danger-100);color:var(--danger-600);"><strong>Motivo: </strong>'+PU.escapeHtml(meusAnuncios[0].motivoReprovacao||'O anúncio não seguiu as regras de divulgação. Revise o texto e a imagem.')+'</div><button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:10px;">Corrigir e enviar de novo</button>':'')+'</div>':'')+'</div>'+
       '<div class="section"><button class="card qf-wallet-summary" type="button" data-nav="/profissional/carteira" style="width:100%;text-align:left;background:var(--navy-100);border:none;"><div class="row-between" style="align-items:center;"><div><div class="text--sm text--secondary">Carteira QuemFaz</div><div class="h2" style="color:var(--navy-900);">'+PU.formatCurrency(user.creditos||0)+'</div><div class="text--sm text--secondary" style="margin-top:3px;">Use o saldo para desbloquear conversas com clientes.</div></div>'+icon('chevronRight','list-item__chevron')+'</div></button></div>'+
       '</div>';
   };
@@ -10296,7 +10330,7 @@ alt=""></noscript>
     movimentoHtml: function () {
       const t = global.QFAbertos.movimentoTexto(global.QFMovimento);
       if (!t) return '';
-      return '<div class="qf-movimento">' + icon('phoneCall') + '<div><strong>' + PU.escapeHtml(t.titulo) + '</strong><small>' + PU.escapeHtml(t.sub) + '</small></div></div>';
+      return '<div class="qf-movimento">' + icon('phoneCall') + '<div><strong>' + PU.escapeHtml(t.titulo) + '</strong><small>' + PU.escapeHtml(t.sub) + '</small><small class="qf-movimento-scope">Atividade geral do Quem Faz. Pode incluir pedidos fora da sua profissão ou região.</small></div></div>';
     }
   };
 
@@ -11566,6 +11600,30 @@ alt=""></noscript>
     if (pattern === '/anuncie') bindAnuncie(content);
   };
 
+  document.addEventListener('click', async function (event) {
+    const shortcut = event.target.closest('[data-prof-settings]');
+    if (shortcut) {
+      const section = shortcut.getAttribute('data-prof-settings');
+      global.navigate('/profissional/perfil', true);
+      requestAnimationFrame(function () {
+        const target = document.getElementById(section === 'area' ? 'perfil-areas' : 'perfil-cats');
+        if (!target) return;
+        target.scrollIntoView({block:'start'});
+        const field = target.querySelector(section === 'area' ? '[data-area-radius]' : '[data-catpick-search]');
+        if (field) field.focus({preventScroll:true});
+      });
+    }
+    const refresh = event.target.closest('[data-prof-refresh]');
+    if (!refresh || refresh.disabled) return;
+    refresh.disabled = true;
+    refresh.setAttribute('aria-busy','true');
+    try {
+      if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.syncForCurrentSession();
+      if (document.body.contains(refresh)) global.navigate('/profissional/home', true);
+    } catch (err) { PU.toast('Não foi possível atualizar. Tente novamente.', 'danger'); }
+    finally { refresh.disabled = false; refresh.removeAttribute('aria-busy'); }
+  });
+
   function bindNotificationActivation(content) {
     if (!global.QFPush) return;
     content.addEventListener('click', async function (event) {
@@ -12422,7 +12480,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.35.0';
+  const APP_VERSION = '11.35.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -13128,12 +13186,13 @@ alt=""></noscript>
     el.className = 'qf-prof-rating qf-rating';
     const media = Number((user && user.avaliacaoMedia) || 0), total = Number((user && user.totalAvaliacoes) || 0);
     // V11.16.27: cartão de nota com título, valor em destaque e explicação (antes era uma linha solta numa caixa vazia).
-    el.innerHTML = '<span class="qf-prof-rating__icon" aria-hidden="true">★</span><div class="qf-prof-rating__body"><div class="qf-prof-rating__label">Sua nota</div>' +
+    el.innerHTML = '<span class="qf-prof-rating__icon" aria-hidden="true">' + icon('star') + '</span><div class="qf-prof-rating__body"><div class="qf-prof-rating__label">Sua nota</div>' +
       (media && total
         ? '<div class="qf-prof-rating__value">' + media.toFixed(1).replace('.', ',') + ' <span>de 5</span></div><div class="qf-prof-rating__hint">' + total + (total === 1 ? ' avaliação de cliente' : ' avaliações de clientes') + '</div>'
-        : '<div class="qf-prof-rating__value qf-prof-rating__value--new">Novo no QuemFaz</div><div class="qf-prof-rating__hint">Sua nota aparece aqui depois da primeira avaliação de um cliente.</div>') +
+        : '<div class="qf-prof-rating__value qf-prof-rating__value--new">Aguardando a primeira avaliação</div><div class="qf-prof-rating__hint">Os clientes avaliam após o serviço.</div>') +
       '</div>';
-    status.insertAdjacentElement('afterend', el);
+    const promo = content.querySelector('.qf-prof-divulgar');
+    if (promo) promo.before(el); else status.insertAdjacentElement('afterend', el);
   }
 
   // ---------- devolução do lead ----------
@@ -13362,7 +13421,7 @@ alt=""></noscript>
         (calls.length?'<span class="badge badge--orange">'+calls.length+'</span>':'')+'</div>' +
         '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
           '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
-          '<input class="input" type="search" data-qf-portfolio-search placeholder="Filtrar por serviço, bairro ou cidade">' +
+          '<input class="input" type="search" data-qf-portfolio-search aria-label="Buscar pedidos" placeholder="Buscar serviço, bairro ou cidade">' +
         '</div>' +
         (calls.length?'<div class="stack--sm">'+calls.map(function(r){return global.QFChamadaCard?global.QFChamadaCard(r,user):'';}).join('')+'</div>':
           '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('phoneCall')+'</div><p class="text text--secondary">Nenhum pedido disponível agora. Avisaremos você quando chegar um novo.</p></div>') +
@@ -13928,11 +13987,12 @@ alt=""></noscript>
   if (oldProfHome) Screens.profHomeRender = function (params,user) {
     let html = oldProfHome(params,user).replace('Chamados disponíveis','Pedidos perto de você');
     const tools =
+      '<div class="qf-prof-order-heading"><h2 class="h3">Pedidos para você</h2><button class="btn btn--ghost" type="button" data-prof-refresh>'+icon('refresh')+' Atualizar</button></div><nav class="qf-prof-order-tabs" aria-label="Listas de pedidos"><span aria-current="page">Disponíveis</span><button type="button" data-nav="/profissional/servicos">Meus pedidos</button></nav>' +
       '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
         '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data">' +
           '<option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option>' +
         '</select>' +
-        '<input class="input" type="search" data-qf-portfolio-search placeholder="Filtrar por serviço, bairro ou cidade">' +
+        '<input class="input" type="search" data-qf-portfolio-search aria-label="Buscar pedidos" placeholder="Buscar serviço, bairro ou cidade">' +
       '</div>' +
       '<div class="text--sm text--secondary" style="margin-bottom:10px;">Veja os detalhes e planeje sua agenda sem pagar. Você só paga quando decidir desbloquear o chat.</div>';
     return html.replace('<div class="section" id="chamados-disponiveis">','<div class="section" id="chamados-disponiveis">' + tools);
@@ -14956,7 +15016,7 @@ alt=""></noscript>
     { pattern: '/cliente/como-funciona', role: 'cliente', title: 'Como funciona', back: '/cliente/perfil', render: Screens.comoFuncionaRender },
     { pattern: '/cliente/anuncie', role: 'cliente', title: 'Anuncie no QuemFaz', back: '/cliente/home', render: Screens.anuncieRender },
 
-    { pattern: '/profissional/home', role: 'profissional', tab: 'home', title: 'Chamadas', render: Screens.profHomeRender },
+    { pattern: '/profissional/home', role: 'profissional', tab: 'home', title: 'QuemFaz', render: Screens.profHomeRender },
     { pattern: '/profissional/chamada/:id', role: 'profissional', title: 'Oportunidade de serviço', back: '/profissional/servicos/disponiveis', render: Screens.profChamadaRender },
     { pattern: '/profissional/servicos', role: 'profissional', tab: 'servicos', title: 'Serviços', render: Screens.profServicosRender },
     { pattern: '/profissional/servicos/disponiveis', role: 'profissional', tab: 'servicos', title: 'Serviços disponíveis', render: Screens.profServicosDisponiveisRender },
