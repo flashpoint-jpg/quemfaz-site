@@ -51,7 +51,7 @@ assert.ok(landing.includes('Eles chamam você no WhatsApp'));
 // Pedir serviço: mesmos campos, anúncio depois do botão.
 const r = html.indexOf('<div class="qf-req-steps"');
 const pedir = html.slice(r, html.indexOf("'</div>'\n    );\n  }", r));
-['servicoField', 'regionField', 'name="descricao" required minlength="8"', 'name="telefone" type="tel"', 'name="nome" autocomplete="name" required', 'qf-request-submit'].forEach((x) => assert.ok(pedir.includes(x), x));
+['servicoField', 'regionField', 'name="descricao" required minlength="3"', 'name="telefone" type="tel"', 'name="nome" autocomplete="name" required', 'qf-request-submit'].forEach((x) => assert.ok(pedir.includes(x), x));
 assert.ok(pedir.indexOf('qf-request-submit') < pedir.indexOf('cadastroClienteAdsHtml()'));
 
 // Peças do visual novo no lugar.
