@@ -1843,6 +1843,11 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-catpick__empty-title{font-size:14px;font-weight:850;color:var(--navy-900)}
 .qf-catpick__empty-text{margin-top:3px;line-height:1.4}
 .qf-catpick__add{width:100%;margin-top:9px}
+.qf-catpick__create{padding:14px;border:2px solid var(--orange-500);border-radius:12px;background:#fff7ed}
+.qf-catpick__create-title{display:block;margin-bottom:8px;font-size:15px;font-weight:800;color:var(--navy-900)}
+.qf-catpick__create .btn{min-height:48px;width:100%;white-space:normal;line-height:1.35}
+.qf-catpick__editor{margin-top:12px}
+.qf-catpick__editor label{display:block;margin-bottom:6px;font-weight:700;color:var(--navy-900)}
 .qf-catpick [hidden]{display:none!important}
 /* cartão de anúncio da tela inicial */
 .qf-ad-cta{border:2px solid var(--orange-500)!important;background:var(--bg-surface)}
@@ -6913,15 +6918,51 @@ alt=""></noscript>
         }).join('') + '</div></details>';
     }).join('');
     return '<div class="qf-catpick" id="' + id + '">' +
-      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Digite um serviço para adicionar" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
+      '<div class="qf-catpick__create"><span class="qf-catpick__create-title">Não encontrou sua profissão?</span><button class="btn btn--primary" type="button" data-catpick-open aria-expanded="false" aria-controls="' + id + '-new">Adicionar profissão</button>' +
+      '<div class="qf-catpick__editor" id="' + id + '-new" data-catpick-editor hidden><label for="' + id + '-name">Qual é sua profissão?</label><input class="input" id="' + id + '-name" data-catpick-name maxlength="80" autocomplete="off" placeholder="Informe o nome da profissão"><button class="btn btn--primary qf-catpick__add" type="button" data-catpick-add>Adicionar e selecionar</button><button class="btn btn--ghost" type="button" data-catpick-cancel>Cancelar</button></div></div>' +
+      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar profissão na lista" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
       '<div class="qf-catpick__summary" data-catpick-summary aria-live="polite"></div>' +
-      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Não encontrou esse serviço?</div><div class="qf-catpick__empty-text">Digite o nome do serviço e toque abaixo para criar sua categoria.</div><button class="btn btn--outline qf-catpick__add" type="button" data-catpick-add>Adicionar sua categoria</button></div></div>';
+      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Profissão não encontrada na lista.</div><div class="qf-catpick__empty-text">Toque em “Adicionar profissão” acima para incluir a sua.</div></div></div>';
   }
   function bindCatPicker(root) {
     if (!root || root.dataset.catpickBound) return;
     root.dataset.catpickBound = '1';
     const search = root.querySelector('[data-catpick-search]');
     const addBtn = root.querySelector('[data-catpick-add]');
+    const openBtn = root.querySelector('[data-catpick-open]');
+    const editor = root.querySelector('[data-catpick-editor]');
+    const nameInput = root.querySelector('[data-catpick-name]');
+    function closeEditor() {
+      editor.hidden = true;
+      openBtn.setAttribute('aria-expanded', 'false');
+      nameInput.value = '';
+      openBtn.focus();
+    }
+    openBtn.addEventListener('click', function () {
+      editor.hidden = false;
+      openBtn.setAttribute('aria-expanded', 'true');
+      nameInput.value = search.value.trim();
+      nameInput.focus();
+    });
+    root.querySelector('[data-catpick-cancel]').addEventListener('click', closeEditor);
+    function confirmProfession() {
+      if (nameInput.value.trim().length < 2) {
+        PU.toast('Informe o nome da profissão com pelo menos 2 caracteres.', 'danger');
+        nameInput.focus();
+        return;
+      }
+      search.value = nameInput.value.trim();
+      filter();
+      if (addTypedCategory()) {
+        search.value = '';
+        filter();
+        closeEditor();
+      }
+    }
+    nameInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); confirmProfession(); }
+      if (e.key === 'Escape') { e.preventDefault(); closeEditor(); }
+    });
     function update() {
       const selected = Array.prototype.slice.call(root.querySelectorAll('[data-chip-cat].is-selected'));
       Array.prototype.forEach.call(root.querySelectorAll('[data-catpick-group]'), function (g) {
@@ -6992,7 +7033,7 @@ alt=""></noscript>
       group.open = true;
       chip.click();
       search.blur();
-      PU.toast('Categoria "' + saved.nome + '" adicionada.', 'success');
+      PU.toast('Profissão "' + saved.nome + '" adicionada e selecionada.', 'success');
       return true;
     }
     root.qfAddTypedCategory = addTypedCategory;
@@ -7012,11 +7053,6 @@ alt=""></noscript>
       });
       const empty = root.querySelector('[data-catpick-empty]');
       empty.hidden = any || !q;
-      if (addBtn) {
-        const typed = String(search.value || '').replace(/\s+/g, ' ').trim().slice(0, 80);
-        addBtn.disabled = typed.length < 2;
-        addBtn.textContent = typed ? 'Adicionar sua categoria: “' + typed + '”' : 'Adicionar sua categoria';
-      }
       update();
     }
     search.addEventListener('input', filter);
@@ -7028,7 +7064,7 @@ alt=""></noscript>
         search.blur();
       }
     });
-    if (addBtn) addBtn.addEventListener('click', addTypedCategory);
+    if (addBtn) addBtn.addEventListener('click', confirmProfession);
     root.addEventListener('click', function (e) { if (e.target.closest('[data-chip-cat]')) setTimeout(update, 0); });
     update();
   }
@@ -12347,7 +12383,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.5';
+  const APP_VERSION = '11.34.6';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
