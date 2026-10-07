@@ -2945,7 +2945,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
         out += '<div class="card qf-cascata-lista"><div class="row-between" style="margin-bottom:4px;gap:8px;"><div class="text--strong">Últimos chamados</div><button type="button" class="btn btn--outline btn--sm btn--block-auto" data-ocultar-todos>' + icon('trash') + ' Limpar lista</button></div>' + rec.map(function (r) {
           const lugar = [r.cidade, r.uf].filter(Boolean).join('/');
           const aceite = r.aceito_etapa ? '<span class="badge badge--success">aceito na ' + etapaTxt(r.aceito_etapa) + (r.aceito_online === false ? ' (offline)' : '') + '</span>' : '<span class="badge">sem aceite · chegou na ' + etapaTxt(r.etapa) + '</span>';
-          return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(r.titulo || 'Chamado') + '</div><div class="text--sm text--secondary">' + esc(catName(r.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + ' · ' + PU.formatDateTime(r.criado_em) + ' · avisados: ' + Number(r.avisados_etapa1 || 0) + ' na etapa 1, ' + Number(r.avisados_etapa2 || 0) + ' na etapa 2</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">' + aceite + '<button type="button" class="qf-ocultar-btn" data-ocultar="' + esc(r.id) + '" aria-label="Remover da lista">' + icon('trash') + ' Excluir</button></div></div>';
+          return '<div class="qf-semresp-pro"><div style="min-width:0;"><div class="text--strong">' + esc(r.titulo || 'Chamado') + '</div><div class="text--sm text--secondary">' + esc(catName(r.categoria)) + (lugar ? ' · ' + esc(lugar) : '') + ' · ' + PU.formatDateTime(r.criado_em) + ' · avisados: ' + Number(r.avisados_etapa1 || 0) + ' na etapa 1, ' + Number(r.avisados_etapa2 || 0) + ' na etapa 2</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">' + aceite + '<button type="button" class="qf-ocultar-btn" data-ocultar="' + esc(r.id) + '" aria-label="Excluir pedido do banco">' + icon('trash') + ' Excluir</button></div></div>';
         }).join('') + '</div>';
       }
     }
@@ -2995,21 +2995,32 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
       refresh();
     }, 30000);
   }
-  // V11.11.8: tira o chamado das listas do painel (o chamado do cliente continua existindo).
+  // Excluir um pedido apaga do banco; Limpar lista apenas organiza o painel.
   async function rpc2(name, args) { const r = await client().rpc(name, args || {}); if (r.error) throw r.error; return r.data; }
   async function ocultar(ids, btn) {
     if (btn) btn.disabled = true;
     try {
-      await rpc2('qf_admin_ocultar_chamados', { p_ids: ids });
+      if (ids) await global.QFAdminCloud.excluirChamados(ids);
+      else await rpc2('qf_admin_ocultar_chamados', { p_ids: null });
       if (resumo && Array.isArray(resumo.recentes)) resumo.recentes = ids ? resumo.recentes.filter(function (r) { return ids.indexOf(r.id) === -1; }) : [];
       if (semResp && Array.isArray(semResp.itens)) semResp.itens = ids ? semResp.itens.filter(function (r) { return ids.indexOf(r.id) === -1; }) : [];
       paint();
-      PU.toast(ids ? 'Removido da lista.' : 'Lista limpa.', 'success');
+      PU.toast(ids ? 'Pedido excluído do banco.' : 'Lista limpa no painel; os pedidos continuam ativos.', 'success');
+      if (ids) { await global.QFAdminCloud.syncSnapshot(true); await refresh(); }
     } catch (err) { PU.toast((err && err.message) || 'Não foi possível remover.', 'danger'); if (btn) btn.disabled = false; }
   }
   document.addEventListener('click', function (e) {
     const o = e.target.closest && e.target.closest('[data-ocultar]');
-    if (o) { e.preventDefault(); ocultar([o.getAttribute('data-ocultar')], o); return; }
+    if (o) {
+      e.preventDefault();
+      if (o.disabled) return;
+      if (o.dataset.confirm !== '1') {
+        o.dataset.confirm = '1'; o.innerHTML = icon('trash') + ' Confirmar exclusão do banco';
+        setTimeout(function(){ if(o.isConnected && o.dataset.confirm === '1'){ o.dataset.confirm = ''; o.innerHTML = icon('trash') + ' Excluir'; } }, 4000);
+        return;
+      }
+      o.dataset.confirm = ''; ocultar([o.getAttribute('data-ocultar')], o); return;
+    }
     const t = e.target.closest && e.target.closest('[data-ocultar-todos]');
     if (t) {
       e.preventDefault();
@@ -3655,7 +3666,20 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
     excluirAnuncio: async function(id){ const r = await client.rpc('qf_admin_excluir_anuncio', { p_id: id }); if (r.error) throw r.error; try { await syncAds(); } catch (_) {} },
     editarChamado: async function(id, dados){ const r = await client.rpc('qf_admin_editar_chamado', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
-    excluirChamados: async function(ids){ const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: ids }); if (r.error) throw r.error; return r.data; },
+    excluirChamados: async function(ids){
+      const requested = Array.from(new Set((ids || []).filter(Boolean)));
+      if (!requested.length) throw new Error('Selecione o pedido que deseja excluir.');
+      const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: requested });
+      if (r.error) throw r.error;
+      const check = await client.rpc('qf_admin_snapshot');
+      if (check.error) throw new Error('Não foi possível confirmar a exclusão no banco. Atualize o painel antes de tentar novamente.');
+      if (!check.data || !Array.isArray(check.data.chamados)) throw new Error('O banco não confirmou a exclusão. Atualize o painel.');
+      const remaining = check.data.chamados.filter(function(c){ return requested.indexOf(c.id) !== -1; });
+      if (remaining.length) throw new Error(remaining.length + ' pedido(s) continuam no banco. A exclusão não foi concluída.');
+      const n = Number(r.data);
+      if (!Number.isInteger(n) || n < 0 || n > requested.length) throw new Error('Resposta de exclusão inválida. Atualize o painel.');
+      return n;
+    },
     editarUsuario: async function(id, dados){ const r = await client.rpc('qf_admin_editar_usuario', { p_id: id, p_dados: dados }); if (r.error) throw r.error; },
     excluirUsuario: async function(id){ const r = await client.rpc('qf_admin_excluir_usuario', { p_id: id }); if (r.error) throw r.error; },
     nuncaEntraram: async function(){ const r = await client.rpc('qf_admin_nunca_entraram'); if (r.error) throw r.error; return r.data || []; },
@@ -5968,7 +5992,7 @@ Screens.adminDashboardRender = function () {
     if (bulk) {
       const ids = String(bulk.getAttribute('data-crud-bulk') || '').split(',').filter(Boolean);
       if (!ids.length) return;
-      confirm2(bulk, async function () { const n = await global.QFAdminCloud.excluirChamados(ids); PU.toast((n || ids.length) + ' serviço(s) excluído(s).', 'success'); await recarregar('/admin/servicos'); });
+      confirm2(bulk, async function () { const n = await global.QFAdminCloud.excluirChamados(ids); PU.toast(n ? n + ' serviço(s) excluído(s).' : 'Os pedidos já não estão no banco.', n ? 'success' : 'info'); await recarregar('/admin/servicos'); });
       return;
     }
     const parts = (ed || dl).getAttribute(ed ? 'data-crud-edit' : 'data-crud-del').split(':');
@@ -5981,7 +6005,7 @@ Screens.adminDashboardRender = function () {
     }
     confirm2(dl, async function () {
       if (tipo === 'anuncio') { await global.QFAdminCloud.excluirAnuncio(id); PU.toast('Anúncio excluído.', 'success'); global.navigate('/admin/anuncios', true); return; }
-      if (tipo === 'servico') { await global.QFAdminCloud.excluirChamados([id]); PU.toast('Serviço excluído.', 'success'); await recarregar(/^\/admin\/servicos\//.test(location.hash.replace('#', '')) ? '/admin/servicos' : location.hash.replace(/^#/, '')); }
+      if (tipo === 'servico') { const n = await global.QFAdminCloud.excluirChamados([id]); PU.toast(n ? 'Serviço excluído.' : 'O pedido já não está no banco.', n ? 'success' : 'info'); await recarregar(/^\/admin\/servicos\//.test(location.hash.replace('#', '')) ? '/admin/servicos' : location.hash.replace(/^#/, '')); }
       else { await global.QFAdminCloud.excluirUsuario(id); PU.toast((tipo === 'profissional' ? 'Profissional' : 'Cliente') + ' excluído.', 'success'); await recarregar(tipo === 'profissional' ? '/admin/profissionais' : '/admin/clientes'); }
     });
   }, true);
