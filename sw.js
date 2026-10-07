@@ -34,7 +34,10 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.indexOf("/download/") === 0) return; // APK e versao.json: sempre direto da rede, sem cache
   const isPage = req.mode === 'navigate' || /\.html$/.test(url.pathname) || url.pathname.endsWith('/');
-  const netReq = isPage ? new Request(req, { cache: 'no-store' }) : req;
+  // Navegações e arquivos críticos do app são sempre network-first sem cache HTTP.
+  // Evita que uma PWA instalada continue presa em index/sw antigos após um deploy.
+  const isCritical = isPage || url.pathname.endsWith('/sw.js') || url.pathname.endsWith('/manifest.webmanifest');
+  const netReq = isCritical ? new Request(req, { cache: 'no-store' }) : req;
   event.respondWith(
     fetch(netReq).then(response => {
       if (response && response.ok && response.type === 'basic') {
