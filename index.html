@@ -6947,7 +6947,7 @@ alt=""></noscript>
           '<div class="card qf-ticket qf-request-ticket">' +
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
-          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="8" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Descreva o que você precisa em pelo menos 8 caracteres.</div>') +
+          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
           prazoFieldHtml() +
           '</div>' +
           regionField +
@@ -7527,12 +7527,17 @@ alt=""></noscript>
 
       const form = content.querySelector('#cadastro-cliente-form');
       bindPrazoField(form);
+      const telefoneInput = form.querySelector('[name="telefone"]');
+      if (telefoneInput) {
+        telefoneInput.insertAdjacentHTML('afterend', '<small class="field__hint">DDD + 9 + 8 dígitos. Pode colar com +55.</small>');
+        telefoneInput.addEventListener('input', function () { telefoneInput.removeAttribute('aria-invalid'); });
+      }
       const descricaoInput = form.querySelector('textarea[name="descricao"]');
       const descricaoAjuda = form.querySelector('[data-descricao-ajuda]');
       function atualizarAjudaDescricao(forcarErro) {
         if (!descricaoInput || !descricaoAjuda) return;
         const qtd = String(descricaoInput.value || '').trim().length;
-        const faltam = Math.max(0, 8 - qtd);
+        const faltam = Math.max(0, 3 - qtd);
         descricaoAjuda.style.display = 'block';
         descricaoAjuda.style.marginTop = '7px';
         descricaoAjuda.style.fontSize = '13px';
@@ -7540,7 +7545,7 @@ alt=""></noscript>
         descricaoAjuda.style.lineHeight = '1.35';
         if (faltam > 0) {
           descricaoAjuda.textContent = qtd === 0 && !forcarErro
-            ? 'Mínimo de 8 caracteres.'
+            ? 'Conte brevemente o que precisa. Ex.: faxina ou trocar tomada.'
             : 'Faltam ' + faltam + ' ' + (faltam === 1 ? 'caractere' : 'caracteres') + ' para continuar.';
           descricaoAjuda.style.color = forcarErro ? '#b42318' : '#667085';
           descricaoInput.setAttribute('aria-invalid', forcarErro ? 'true' : 'false');
@@ -7618,7 +7623,7 @@ alt=""></noscript>
         if (!servico) { invalid('service'); PU.toast('Digite o serviço que você precisa.', 'danger'); return; }
         if (!cidade || !uf) { invalid('region'); PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
         if (!bairro) { invalid('neighborhood'); PU.toast('Informe o bairro onde o serviço será realizado.', 'danger'); const bi=form.querySelector('[name="bairro"]'); if(bi){bi.focus();} return; }
-        if (descricao.length < 8) { invalid('description'); atualizarAjudaDescricao(true); PU.toast('A descrição precisa ter pelo menos 8 caracteres.', 'danger'); if (descricaoInput) { try { descricaoInput.scrollIntoView({ block: 'center' }); descricaoInput.focus(); } catch (_) {} } return; }
+        if (descricao.length < 3) { invalid('description'); atualizarAjudaDescricao(true); PU.toast('Conte o que precisa em pelo menos 3 caracteres.', 'danger'); if (descricaoInput) { try { descricaoInput.scrollIntoView({ block: 'center' }); descricaoInput.focus(); } catch (_) {} } return; }
         // V11.29: prazo do pedido. Sem o campo na tela (versão antiga em cache), o pedido segue sem prazo.
         const prazoSel = (global.QFPrazo && fd.get('prazo')) ? global.QFPrazo.montar(String(fd.get('prazo')), String(fd.get('periodo') || ''), String(fd.get('prazoDia') || '')) : null;
         if (prazoSel && !prazoSel.ok) {
@@ -7629,7 +7634,17 @@ alt=""></noscript>
         }
         const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
         if (!nome) { invalid('name'); PU.toast('Informe seu nome.', 'danger'); return; }
-        if (!validPhone(telefone)) { invalid('phone'); PU.toast('Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente.', 'danger', 6000); return; }
+        if (!validPhone(telefone)) {
+          invalid('phone');
+          const telefoneInput = form.querySelector('[name="telefone"]');
+          if (telefoneInput) {
+            telefoneInput.setAttribute('aria-invalid', 'true');
+            telefoneInput.scrollIntoView({ block: 'center' });
+            telefoneInput.focus();
+          }
+          PU.toast('Confira o WhatsApp: informe DDD + 9 + os 8 dígitos do celular. Você também pode colar o número com +55.', 'danger', 6000);
+          return;
+        }
 
         let cat = DB.categories().find(function (x) {
           return x.id !== 'cat_outros' && catNorm(x.nome).trim() === catNorm(servico).trim();
