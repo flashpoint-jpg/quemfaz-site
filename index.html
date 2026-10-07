@@ -2287,6 +2287,15 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-aviso__foot{padding:12px 20px 20px;border-top:1px solid var(--border-subtle)}
 
 .qf-location-options{background:#fff;border:1px solid #dce3ed;border-radius:12px;max-height:240px;overflow:auto;width:100%;box-shadow:0 6px 16px #10243a12}.qf-location-options[hidden]{display:none}.qf-location-options button{display:block;width:100%;text-align:left;border:0;background:#fff;color:#18324f;padding:13px 16px;font:inherit;cursor:pointer}.qf-location-options button:hover,.qf-location-options button:focus{background:#eef4ff;outline:2px solid #2563eb;outline-offset:-2px}
+
+/* Identidade visual de perfil; o selo QF identifica a marca, não verificação. */
+.avatar.qf-avatar{position:relative;box-sizing:border-box;border:3px solid #0755ef;padding:2px;background:#e9f2ff;color:#102b53;border-radius:50%;overflow:visible;isolation:isolate}
+.avatar.qf-avatar img{border-radius:50%;display:block;background:#fff;min-width:0}
+.avatar.qf-avatar::after{content:'QF';position:absolute;right:-4px;bottom:-4px;display:flex;align-items:center;justify-content:center;width:21px;height:21px;box-sizing:border-box;border:2px solid #fff;border-radius:50%;background:#071e49;color:#ff7917;font-family:Arial,sans-serif;font-size:10px;font-weight:800;line-height:1;letter-spacing:-.5px;pointer-events:none}
+.avatar--sm.qf-avatar{border-width:2px;padding:2px}
+.avatar--sm.qf-avatar::after{width:17px;height:17px;font-size:8px;right:-3px;bottom:-3px}
+.avatar--lg.qf-avatar{border-width:4px;padding:3px}
+.avatar--lg.qf-avatar::after{width:28px;height:28px;font-size:14px;right:-3px;bottom:-3px;border-width:3px}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -8329,7 +8338,7 @@ alt=""></noscript>
           (disponiveis.length
             ? '<div class="stack--sm">' + disponiveis.map(function (p) {
                 return '<div class="card row">' +
-                  '<div class="avatar">' + PU.initials(p.nome) + '</div>' +
+                  personAvatar(p) +
                   '<div class="spacer">' +
                     '<div class="text--strong">' + PU.escapeHtml(p.nome) + '</div>' +
                     '<div class="row text--sm text--secondary" style="gap:6px;">' + starsDisplay(p.avaliacaoMedia) + '<span>' + (p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) : 'Novo') + '</span></div>' +
@@ -8575,7 +8584,7 @@ alt=""></noscript>
   function personAvatar(person, cls) {
     cls = cls || '';
     const photo = person && person.fotoUrl ? String(person.fotoUrl) : '';
-    return '<div class="avatar ' + cls + '">' + (photo ? '<img src="' + PU.escapeHtml(photo) + '" alt="Foto de ' + PU.escapeHtml(person.nome || 'profissional') + '">' : PU.initials((person || {}).nome || '?')) + '</div>';
+    return '<div class="avatar qf-avatar ' + cls + '" title="Perfil Quem Faz">' + (photo ? '<img src="' + PU.escapeHtml(photo) + '" alt="Foto de ' + PU.escapeHtml(person.nome || 'profissional') + '">' : PU.initials((person || {}).nome || '?')) + '</div>';
   }
 
   function profCard(prof, extra) {
@@ -8831,7 +8840,7 @@ alt=""></noscript>
     return (
       '<div class="view stack">' +
         '<div class="card row">' +
-          '<div class="avatar avatar--lg avatar--orange">' + PU.initials(user.nome) + '</div>' +
+          personAvatar(user, 'avatar--lg') +
           '<div>' +
             '<div class="h3">' + PU.escapeHtml(user.nome) + '</div>' +
             '<div class="text--sm text--secondary">' + (user.email ? PU.escapeHtml(user.email) : ('WhatsApp: ' + PU.escapeHtml(user.telefone || 'cadastrado'))) + '</div>' +
@@ -10555,7 +10564,7 @@ alt=""></noscript>
         '</div>' +
 
         '<div class="section card stack">' +
-          '<div class="row-between"><div class="row"><div class="avatar avatar--sm">' + PU.initials((cliente || {}).nome || '?') + '</div><div><div class="text--strong">' + PU.escapeHtml((cliente || {}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (contatoAprovado ? 'Contato liberado após aprovação' : (contatoLiberado ? 'WhatsApp liberado: chame o cliente agora' : 'Aguardando aprovação do orçamento')) + '</div></div></div>' +
+          '<div class="row-between"><div class="row">' + personAvatar(cliente, 'avatar--sm') + '<div><div class="text--strong">' + PU.escapeHtml((cliente || {}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (contatoAprovado ? 'Contato liberado após aprovação' : (contatoLiberado ? 'WhatsApp liberado: chame o cliente agora' : 'Aguardando aprovação do orçamento')) + '</div></div></div>' +
             (contatoAprovado ? '<span class="badge badge--success"><span class="badge__dot"></span>Aprovado</span>' : (contatoLiberado ? '<span class="badge badge--success"><span class="badge__dot"></span>WhatsApp liberado</span>' : '<span class="badge badge--warning"><span class="badge__dot"></span>Contato protegido</span>')) + '</div>' +
           (contatoLiberado
             ? '<div class="row text--sm text--secondary">' + icon('phoneCall', 'list-item__chevron') + ((cliente || {}).telefone ? '<a href="' + telHref(cliente.telefone) + '">' + PU.escapeHtml(cliente.telefone) + '</a>' : '<span>Telefone não informado</span>') + '</div>'
@@ -12568,7 +12577,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.35.5';
+  const APP_VERSION = '11.35.6';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14152,7 +14161,7 @@ alt=""></noscript>
       (waHref
         ? '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chamado desbloqueado</strong><span>Toque no botão verde para chamar o cliente no WhatsApp. O chat daqui também continua liberado.</span></div></div>' + waCard
         : '<div class="qf-chat-unlocked-notice" role="status">' + icon('checkCircle') + '<div><strong>Chat liberado para negociação</strong><span>Envie uma mensagem ao cliente. Com esta tela aberta a conversa é ao vivo: a resposta aparece aqui na hora, com um toque. Se você sair, o QuemFaz avisa uma vez quando chegar mensagem.</span></div></div>') +
-      '<div class="card row"><div class="avatar avatar--sm">' + PU.initials((cliente||{}).nome || '?') + '</div><div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (waHref ? 'Se preferir, converse também pelo chat abaixo.' : 'Este é o próximo passo: converse com o cliente pelo chat.') + '</div></div></div>' +
+      '<div class="card row">' + global.QFUI.personAvatar(cliente, 'avatar--sm') + '<div><div class="text--strong">' + esc((cliente||{}).nome || 'Cliente') + '</div><div class="text--sm text--secondary">' + (waHref ? 'Se preferir, converse também pelo chat abaixo.' : 'Este é o próximo passo: converse com o cliente pelo chat.') + '</div></div></div>' +
       scheduleSummary(req) +
       '<div class="qf-chat-list" data-qf-chat-list><div class="text--sm text--secondary">Carregando conversa…</div></div>' +
       '<form class="qf-chat-composer stack--sm" data-qf-chat-form>' +
@@ -14243,7 +14252,7 @@ alt=""></noscript>
     const escolhido = rows.filter(function (r) { return !!r.selecionado; })[0] || null;
     const n = rows.length;
     function cartao(r) {
-      const photo = r.profissional_foto_url ? '<img class="avatar avatar--sm" src="' + esc(r.profissional_foto_url) + '" alt="">' : '<div class="avatar avatar--sm">' + PU.initials(r.profissional_nome || '?') + '</div>';
+      const photo = global.QFUI.personAvatar({nome:r.profissional_nome, fotoUrl:r.profissional_foto_url}, 'avatar--sm');
       const last = r.ultima_mensagem ? '<div class="text--sm text--secondary" style="margin-top:6px;">' + esc(r.ultima_mensagem) + '</div>' : '<div class="text--sm text--secondary" style="margin-top:6px;">O chat está liberado para vocês combinarem o serviço.</div>';
       return '<div class="card qf-conversation-card">' +
         '<div class="row-between"><div class="row">' + photo + '<div><div class="text--strong">' + esc(r.profissional_nome || 'Profissional') + '</div>' +
