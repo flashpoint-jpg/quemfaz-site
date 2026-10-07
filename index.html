@@ -11071,11 +11071,11 @@ alt=""></noscript>
         '</div>' +
 
         '<div class="section">' +
-          '<div class="section-head"><div><h2 class="h3">Identificação do profissional ou empresa</h2><div class="text--sm text--secondary">Esta imagem pode aparecer para o cliente assim que você assumir um chamado.</div></div></div>' +
+          '<div class="section-head"><div><h2 class="h3">Identificação</h2><div class="text--sm text--secondary">A imagem aparece para o cliente quando você assumir um chamado.</div></div></div>' +
           '<div class="card stack--sm">' +
-            '<div class="row">' + personAvatar(user, 'avatar--lg') + '<div class="spacer"><div class="text--strong">' + (user.fotoUrl ? 'Imagem de identificação cadastrada' : 'Imagem obrigatória') + '</div><div class="text--sm text--secondary">Pessoa física: use sua própria selfie. Empresa: use a marca ou logotipo oficial da empresa que você representa.</div></div></div>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie do profissional<input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
+            '<div class="row">' + personAvatar(user, 'avatar--lg') + '<div class="spacer"><div class="text--strong">' + (user.fotoUrl ? 'Imagem atual' : 'Adicione sua identificação') + '</div><div class="text--sm text--secondary">' + (user.tipoPessoa === 'cnpj' ? 'Empresa: use sua logo ou marca oficial.' : 'Profissional: use uma foto sua.') + '</div></div></div>' +
+            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Sou profissional — usar minha foto<input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
+            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa — usar minha logo<input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
           '</div>' +
         '</div>' +
 
@@ -11132,13 +11132,16 @@ alt=""></noscript>
         '</div>' +
 
         '<div class="section stack--sm">' +
-          '<div class="section-head"><div><h2 class="h3">Área de atendimento</h2><div class="text--sm text--secondary" style="margin-top:3px;">Escolha as cidades onde quer receber chamados e o raio em km de cada região.</div></div></div>' +
+          '<div class="section-head"><div><h2 class="h3">Área de atendimento</h2><div class="text--sm text--secondary" style="margin-top:3px;">Escolha onde quer receber chamados e defina o raio de cada região.</div></div></div>' +
           '<div class="card stack--sm">' +
             '<div id="perfil-areas">' + renderServiceAreas(user.areasAtendimento || [{ cidade: (cidade || {}).nome || '', uf: (cidade || {}).uf || '', raioKm: user.raioKm || 10 }]) + '</div>' +
             '<button class="btn btn--outline" type="button" id="adicionar-area">' + icon('plus') + ' Adicionar outra cidade</button>' +
-            '<label class="field"><span class="field__label">Taxa de visita padrão</span><input class="input" id="perfil-taxa" inputmode="decimal" value="' + (user.taxaVisitaPadrao ? (user.taxaVisitaPadrao / 100).toFixed(2).replace('.', ',') : '') + '" placeholder="R$ 0,00"></label>' +
-            '<button class="btn btn--primary" id="salvar-atendimento">Salvar serviços e cidades</button>' +
           '</div>' +
+          '<div class="card stack--sm" style="margin-top:12px;">' +
+            '<div><div class="text--strong">Taxa de visita padrão</div><div class="text--sm text--secondary">Opcional. Deixe em branco se não cobrar taxa de visita.</div></div>' +
+            '<label class="field"><input class="input" id="perfil-taxa" inputmode="decimal" value="' + (user.taxaVisitaPadrao ? (user.taxaVisitaPadrao / 100).toFixed(2).replace('.', ',') : '') + '" placeholder="R$ 0,00"></label>' +
+          '</div>' +
+          '<button class="btn btn--primary" id="salvar-atendimento" style="margin-top:12px;">' + icon('check') + ' Salvar alterações</button>' +
         '</div>' +
 
         ((global.QFCloud && global.QFCloud.enabled) ? '' : '<div class="section">' +
