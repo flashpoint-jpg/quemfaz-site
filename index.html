@@ -7362,11 +7362,23 @@ alt=""></noscript>
           return {cat:cat,score:score};
         }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;}).slice(0,6).map(function(x){return x.cat;});
       }
+      let landingSelectedCat=null;
+      function landingSelect(cat){
+        if(!cat)return;
+        landingSelectedCat=cat;
+        if(landingSearch)landingSearch.value=cat.nome||'';
+        if(landingSuggestions){landingSuggestions.hidden=true;landingSuggestions.innerHTML='';}
+        if(homeLocation&&!homeLocation.value.trim())homeLocation.focus();
+      }
       async function landingGo(cat){
         if(!cat)return;
+        const rawLocation=homeLocation?homeLocation.value.trim():'';
+        if(!rawLocation&&!homeRegion){PU.toast('Informe sua cidade ou CEP para continuar.','danger');if(homeLocation)homeLocation.focus();return;}
         try{await saveHomeDraft();}catch(err){PU.toast(err.message||"Confira o CEP.","danger");return;}
         try{sessionStorage.setItem('qf_pending_category',cat.id);}catch(_){}
-        global.navigate('/auth/cliente/cadastro',true);
+        const submitBtn=landingSearchForm&&landingSearchForm.querySelector('button[type="submit"]');
+        if(submitBtn){submitBtn.disabled=true;submitBtn.innerHTML='<span>Buscando profissionais na sua região...</span>';}
+        setTimeout(function(){global.navigate('/auth/cliente/cadastro',true);},2200);
       }
       function renderLandingSuggestions(){
         if(!landingSearch||!landingSuggestions)return;
@@ -7380,15 +7392,16 @@ alt=""></noscript>
       if(landingSearch)landingSearch.addEventListener('input',renderLandingSuggestions);
       if(landingSuggestions)landingSuggestions.addEventListener('click',function(e){
         const btn=e.target.closest('[data-landing-search-cat]');if(!btn)return;
-        landingGo(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
+        landingSelect(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
       });
       if(landingSearchForm)landingSearchForm.addEventListener('submit',async function(e){
         e.preventDefault();
         try{await saveHomeDraft();}catch(err){PU.toast(err.message||'Confira o CEP.','danger');return;}
         const list=landingMatches(landingSearch&&landingSearch.value);
-        if(list.length){landingGo(list[0]);return;}
-        try{sessionStorage.removeItem('qf_pending_category');}catch(_){}
-        global.navigate('/auth/cliente/cadastro',true);
+        const chosen=landingSelectedCat||(list.length?list[0]:null);
+        if(chosen){landingGo(chosen);return;}
+        PU.toast('Escolha o serviço que você precisa.','danger');
+        if(landingSearch)landingSearch.focus();
       });
       // Botão fixo de baixo: aparece só quando o campo de busca sai da tela.
       const landingSticky=content.querySelector('[data-landing-sticky]');
