@@ -3459,8 +3459,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     lastSnap = Date.now();
     const results = await Promise.all([
       client.rpc('qf_admin_snapshot'),
-      global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas'),
-      global.QFConnection.deadline(syncDiagnosticoChamados(), 8000, 'diagnóstico dos chamados').catch(function () { return {}; }).catch(function (err) {
+      global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas').catch(function (err) {
         console.warn('[QuemFaz] Não foi possível carregar categorias personalizadas:', err.message);
       })
     ]);
