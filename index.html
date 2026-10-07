@@ -6645,8 +6645,6 @@ alt=""></noscript>
         '<div class="qf-how3-step"><span class="qf-how3-num qf-how3-num--zap">3</span><span>Eles chamam você no WhatsApp</span></div>' +
       '</div></section>' +
       '<section class="section">' +
-        '<button class="qf-big-cta" type="button" data-nav="/auth/profissional/login"><span class="qf-big-cta__ic">' + icon('wrench') + '</span><span class="qf-big-cta__tx"><strong>Sou profissional</strong><small>Receba chamados e ganhe R$ 25 em créditos</small></span>' + icon('chevronRight') + '</button>' +
-        '<button class="qf-big-cta qf-big-cta--ad" type="button" data-nav="/anuncie"><span class="qf-big-cta__ic">' + icon('briefcase') + '</span><span class="qf-big-cta__tx"><strong>Tem uma empresa?</strong><small>Anuncie na sua região a partir de R$ 79</small></span>' + icon('chevronRight') + '</button>' +
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
@@ -7346,7 +7344,7 @@ alt=""></noscript>
       content.addEventListener('click', function (e) {
         const cat=e.target.closest('[data-landing-cat]');
         if(cat){try{sessionStorage.setItem('qf_pending_category',cat.getAttribute('data-landing-cat'));}catch(_){} global.navigate('/auth/cliente/cadastro',true);return;}
-        if(e.target.closest('[data-action="landing-pro-menu"]')){PU.openSheet('<div class="stack"><h3 class="sheet__title">Como você quer usar o QuemFaz?</h3><div class="qf-pro-choice"><button class="qf-pro-option" type="button" data-nav="/auth/profissional/login"><strong>Sou profissional</strong><br><small>Ofereço meus serviços</small></button><button class="qf-pro-option" type="button" data-nav="/anuncie"><strong>Tenho uma empresa</strong><br><small>Divulgo minha empresa e meus serviços</small></button></div></div>');return;}
+        if(e.target.closest('[data-action="landing-pro-menu"]')){PU.openSheet('<div class="stack"><h3 class="sheet__title">Como você quer usar o QuemFaz?</h3><div class="qf-pro-choice"><button class="qf-pro-option" id="qf-pro-serv" type="button"><strong>Sou profissional</strong><br><small>Ofereço meus serviços</small></button><button class="qf-pro-option" id="qf-pro-empresa" type="button"><strong>Tenho uma empresa</strong><br><small>Divulgo minha empresa e meus serviços</small></button></div></div>');var ps=document.getElementById('qf-pro-serv'),pe=document.getElementById('qf-pro-empresa');if(ps)ps.onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true)};if(pe)pe.onclick=function(){PU.closeSheet();global.navigate('/anuncie',true)};return;}
         if(e.target.closest('[data-action="landing-login"]')){PU.openSheet('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz</h3><button class="btn btn--primary" id="qf-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-login-prof">Entrar como profissional</button></div>');const c=document.getElementById('qf-login-cliente'),p=document.getElementById('qf-login-prof');if(c)c.onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true)};if(p)p.onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true)};return;}
         if(e.target.closest('[data-action="landing-all-services"]')) global.navigate('/auth/cliente/cadastro',true);
       });
