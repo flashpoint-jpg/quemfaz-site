@@ -2284,6 +2284,19 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-aviso__title{margin:6px 0 0;font-size:21px;font-weight:800;line-height:1.25;color:#fff}
 .qf-aviso__body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;font-size:16px;line-height:1.55;color:var(--text-primary);white-space:pre-line;overflow-wrap:anywhere}
 .qf-aviso__foot{padding:12px 20px 20px;border-top:1px solid var(--border-subtle)}
+
+/* V11.35 — conversão do cliente: home -> pedido -> confirmação */
+.qf-conv-hero{margin:0 0 16px;padding:18px;border-radius:22px;background:linear-gradient(145deg,#0b1d3a,#12396c);color:#fff;overflow:hidden}
+.qf-conv-hero h2{margin:0;font-size:27px;line-height:1.08;letter-spacing:-.03em}.qf-conv-hero h2 strong{color:#f97316}
+.qf-conv-hero p{margin:10px 0 0;color:rgba(255,255,255,.86);font-size:14px;line-height:1.5}
+.qf-conv-box{margin-top:16px;padding:14px;border-radius:18px;background:#fff;color:#0b1d3a;box-shadow:0 14px 30px -22px #000}
+.qf-conv-box .input{min-height:52px;font-size:16px}.qf-conv-box .btn{width:100%;min-height:54px;margin-top:10px;font-size:15px}
+.qf-conv-trust{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;font-size:11px;font-weight:750;text-align:center;color:#53657c}
+.qf-conv-success{padding:22px 18px;text-align:center}.qf-conv-success__check{width:66px;height:66px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:#e8f7ef;color:#0a9156;font-size:34px;font-weight:900}
+.qf-conv-success h2{font-size:26px;color:#0b1d3a}.qf-conv-success>p{margin:8px auto 18px;max-width:32ch;color:#5b6878}
+.qf-conv-steps{text-align:left;margin:0 auto 18px;max-width:420px}.qf-conv-step{display:grid;grid-template-columns:34px 1fr;gap:11px;padding:10px 0}.qf-conv-step b{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#edf1f6;color:#0b1d3a}.qf-conv-step.is-done b{background:#e8f7ef;color:#0a9156}.qf-conv-step strong{display:block;color:#0b1d3a}.qf-conv-step span{display:block;margin-top:2px;font-size:13px;color:#667386}
+@media(min-width:768px){.qf-conv-hero{padding:26px}.qf-conv-hero h2{font-size:34px}}
+
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -15676,5 +15689,41 @@ alt=""></noscript>
 
 </script>
 <script src="qf-card-inline.js?v=1"></script>
+
+<script>
+/* V11.35 — camada visual de conversão; preserva o fluxo existente. */
+(function(){
+  function qs(s,r){return (r||document).querySelector(s)}
+  function home(){
+    if(location.hash && location.hash!=='#/' && location.hash!=='#')return;
+    var f=qs('[data-landing-service-form]'); if(!f||qs('.qf-conv-hero'))return;
+    var host=document.createElement('section'); host.className='qf-conv-hero';
+    host.innerHTML='<h2>O profissional certo, <strong>perto de você</strong></h2><p>Conte o que você precisa. O Quem Faz procura profissionais da sua região para você.</p><div class="qf-conv-box"><div class="field"><span class="field__label">O que você precisa?</span><input class="input" id="qf-conv-need" placeholder="Ex: limpeza de sofá, pintura, montagem..."></div><div class="field" style="margin-top:10px"><span class="field__label">Sua cidade ou CEP</span><input class="input" id="qf-conv-place" placeholder="Cidade ou CEP"></div><button class="btn btn--primary" id="qf-conv-go">Encontrar profissionais grátis</button><div class="qf-conv-trust"><span>Pedido grátis</span><span>Da sua região</span><span>Você escolhe</span></div></div>';
+    f.parentNode.insertBefore(host,f); f.style.display='none';
+    qs('#qf-conv-go',host).onclick=function(){
+      var need=qs('#qf-conv-need',host).value.trim(), place=qs('#qf-conv-place',host).value.trim();
+      try{sessionStorage.setItem('qf_conv_need',need);sessionStorage.setItem('qf_conv_place',place)}catch(_){}
+      if(window.navigate)window.navigate('/auth/cliente/cadastro'); else location.hash='#/auth/cliente/cadastro';
+    };
+  }
+  function form(){
+    var f=qs('#cadastro-cliente-form'); if(!f)return;
+    var need='',place='';try{need=sessionStorage.getItem('qf_conv_need')||'';place=sessionStorage.getItem('qf_conv_place')||''}catch(_){}
+    var d=f.querySelector('[name="descricao"]'); if(d&&need&&!d.value)d.value=need;
+    var city=f.querySelector('[name="cidade"],[name="cidadeCliente"],[name="cep"]'); if(city&&place&&!city.value)city.value=place;
+    var btn=f.querySelector('button[type="submit"]');if(btn&&!btn.dataset.qfConv){btn.dataset.qfConv='1';btn.innerHTML='Publicar pedido grátis';}
+  }
+  function success(){
+    if(!/cliente\/pedido|pedido\//.test(location.hash))return;
+    var view=qs('.view'); if(!view||qs('.qf-conv-success',view))return;
+    var box=document.createElement('section');box.className='qf-conv-success';
+    box.innerHTML='<div class="qf-conv-success__check">✓</div><h2>Pedido enviado!</h2><p>Estamos procurando profissionais da sua região.</p><div class="qf-conv-steps"><div class="qf-conv-step is-done"><b>✓</b><div><strong>Pedido publicado</strong><span>Seu pedido já está disponível para profissionais elegíveis.</span></div></div><div class="qf-conv-step"><b>2</b><div><strong>Buscando profissionais</strong><span>Profissionais da sua região podem receber o pedido.</span></div></div><div class="qf-conv-step"><b>3</b><div><strong>Profissionais interessados</strong><span>Acompanhe as respostas no Quem Faz.</span></div></div></div>';
+    view.insertBefore(box,view.firstChild);
+  }
+  function run(){setTimeout(function(){home();form();success()},60)}
+  addEventListener('hashchange',run);addEventListener('DOMContentLoaded',run);new MutationObserver(run).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
