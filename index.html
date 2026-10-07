@@ -10516,10 +10516,9 @@ alt=""></noscript>
           '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
           '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
             (primeiraGratis
-              ? 'Este é o seu primeiro desbloqueio e não usa saldo. Você chama o cliente no WhatsApp na hora. Até 3 profissionais podem desbloquear o mesmo pedido. O endereço exato só aparece se o cliente escolher você.'
-              : 'Ao desbloquear, usamos os créditos da carteira para liberar o WhatsApp do cliente e o chat. Até 3 profissionais podem desbloquear o mesmo pedido, e o cliente fecha com quem preferir. O endereço exato só aparece se o cliente escolher você.') +
+              ? 'Primeiro desbloqueio grátis.'
+              : '<strong>Tem devolução de crédito</strong> se o cliente não responder.') +
           '</p>' +
-          (primeiraGratis ? '' : '<p class="text--sm qf-refund-note">' + icon('info') + '<span><strong>Sem devolução:</strong> o crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda.</span></p>') +
           '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
         '</div>' +
 
