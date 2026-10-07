@@ -2602,6 +2602,21 @@ window.qfGoogleLead = function (requestId) {
 }
 </style>
 <link rel="stylesheet" href="qf-recrutamento.css?v=11.33.1">
+
+<style id="qf-approved-home">
+.qf-home-prof{position:relative;flex:none}.qf-home-prof summary{display:flex;align-items:center;gap:6px;min-height:42px;padding:0 12px;border:1px solid #a8b4c8;border-radius:24px;color:white;font-size:12px;font-weight:700;cursor:pointer;list-style:none;white-space:nowrap}.qf-home-prof summary::-webkit-details-marker{display:none}.qf-home-prof svg{width:18px;height:18px;flex:none}.qf-home-prof-menu{position:absolute;right:0;top:calc(100% + 10px);width:min(330px,calc(100vw - 28px));padding:12px;border-radius:18px;background:white;box-shadow:0 15px 40px #0005;z-index:70}.qf-home-prof-menu button{display:flex;align-items:center;gap:12px;width:100%;padding:16px 12px;border:0;border-radius:12px;text-align:left;background:white;color:#0b1d3a;cursor:pointer}.qf-home-prof-menu button:first-child{background:#fff2e6}.qf-home-prof-menu button>span{flex:1}.qf-home-prof-menu strong,.qf-home-prof-menu small{display:block}.qf-home-prof-menu strong{font-size:16px}.qf-home-prof-menu small{font-size:13px;line-height:1.4;color:#596578;margin-top:5px}.qf-home-prof-menu button>svg:first-child{color:#ee7300}
+.qf-landing-topbar .btn.qf-landing-login{background:#ed7100;border-color:#ed7100;border-radius:24px;color:white}.qf-home-intro{color:#c5cede;font-size:15px;line-height:1.4;margin:0 0 12px}
+#app-shell[data-route="inicio"] .qf-hero-search{padding:14px;border-radius:18px;background:#fff;color:#0b1d3a;display:block}
+#app-shell[data-route="inicio"] .qf-hero2 .qf-hero-search__label,.qf-home-location-label{display:block;color:#0b1d3a;font-size:14px;font-weight:750;margin:0 0 6px}
+.qf-home-location-label{margin:5px 0 0}.qf-home-location{position:relative}.qf-home-location>svg{position:absolute;left:12px;top:16px;width:20px;height:20px}.qf-home-location .input{padding-left:40px;padding-right:48px}.qf-home-location button{position:absolute;right:4px;top:4px;width:44px;height:44px;display:grid;place-items:center;background:transparent;border:0;color:#0b1d3a;cursor:pointer}.qf-home-location button svg{width:22px;height:22px}
+.qf-hero-search .input{min-height:52px;font-size:16px;background:#fff;color:#0b1d3a}.qf-hero2 .qf-hero-search .btn{font-size:15px;background:#ed7100;border-color:#ed7100;box-shadow:none}.qf-hero-search .qf-hero2-trust{color:#0b1d3a;font-size:12px;margin-top:14px}.qf-hero-search .qf-hero2-trust svg{color:#ee7300}.qf-hero2-trust li{flex-direction:row;text-align:left;justify-content:center}.qf-landing-hero>.qf-tape{display:none}
+@media(max-width:430px){.qf-landing-topbar{padding-left:12px;padding-right:12px;gap:7px}.qf-landing-brand{font-size:16px;gap:4px;min-width:0}.qf-landing-brand .qf-brandmark svg{width:26px;height:26px}.qf-home-prof summary{padding:0 8px;font-size:11px;gap:4px}.qf-home-prof summary svg{width:15px;height:15px}.qf-landing-topbar .btn.qf-landing-login{font-size:12px;padding:0 10px}.qf-home-prof-menu{right:-70px}}
+@media(max-width:359px){.qf-landing-brand{font-size:14px}.qf-home-prof summary{padding:0 6px;font-size:10px}.qf-home-prof summary svg{display:none}}
+
+.qf-hero-search .category-browser-search .input,.qf-hero-search .qf-home-location .input{border:1px solid #d7dce3!important;border-radius:10px;box-shadow:inset 0 1px 2px #00000008}.qf-home-nav{display:flex;align-items:center;justify-content:space-around;position:fixed;bottom:0;left:0;right:0;z-index:50;background:#061329;border-top:1px solid #23334e;padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));color:#b6c0d0}.qf-home-nav button{display:flex;flex:1;flex-direction:column;align-items:center;gap:5px;border:0;background:transparent;color:inherit;min-height:44px;font-size:11px;cursor:pointer}.qf-home-nav button>svg{width:23px;height:23px}.qf-home-nav button[aria-current]{color:#ff850a}.qf-home-nav-plus{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;background:#f78000;color:white;border:2px solid white;margin-top:-22px}.qf-home-nav-plus svg{width:29px;height:29px}.qf-home-nav-order{color:white!important;font-weight:700}.qf-landing{padding-bottom:86px}
+@media(max-width:899px){#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo{aspect-ratio:39/32}.qf-home-intro{margin-bottom:0}.qf-home-prof-menu svg{width:22px;height:22px}}
+@media(min-width:900px){.qf-home-nav{display:none}.qf-landing{padding-bottom:0}#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo{position:relative;aspect-ratio:39/26;overflow:hidden}#app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo img{position:absolute;top:0;right:0;width:177%;max-width:none;height:auto}}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -6620,9 +6635,9 @@ alt=""></noscript>
     const cats = DB.categories();
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
-      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span>Quem<span style="color:var(--orange-400);">Faz</span></span></div>' + '<button class="btn btn--outline qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Conte qual serviço você procura e receba orçamentos de profissionais da sua região.</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: chuveiro não esquenta" autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir orçamento grátis</span>' + icon('arrowRight') + '</button></div></form>' +
-        '<ul class="qf-hero2-trust"><li>' + icon('check') + '<span>Grátis</span></li><li>' + icon('users') + '<span>Até 3 profissionais</span></li><li>' + icon('whatsapp') + '<span>No WhatsApp</span></li></ul></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
+      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span>Quem<span style="color:var(--orange-400);">Faz</span></span></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><p class="qf-home-intro">Conte o que você precisa e encontre profissionais da sua região.</p><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><label class="qf-home-location-label" for="qf-home-location">Sua cidade ou CEP</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-location" data-landing-location placeholder="Cidade ou CEP" autocomplete="address-level2"><button type="button" data-home-gps aria-label="Usar minha localização">' + icon('mapPin') + '</button></div><button class="btn btn--primary" type="submit"><span>Encontrar profissionais grátis</span>' + icon('arrowRight') + '</button></div>' +
+        '<ul class="qf-hero2-trust"><li>' + icon('check') + '<span>Pedido grátis</span></li><li>' + icon('users') + '<span>Da sua região</span></li><li>' + icon('shieldCheck') + '<span>Você escolhe</span></li></ul></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       '<section class="section"><h2 class="h2">Como funciona</h2><div class="qf-how3">' +
         '<div class="qf-how3-step"><span class="qf-how3-num">1</span><span>Conte o que precisa</span></div>' +
@@ -6630,13 +6645,11 @@ alt=""></noscript>
         '<div class="qf-how3-step"><span class="qf-how3-num qf-how3-num--zap">3</span><span>Eles chamam você no WhatsApp</span></div>' +
       '</div></section>' +
       '<section class="section">' +
-        '<button class="qf-big-cta" type="button" data-nav="/auth/profissional/login"><span class="qf-big-cta__ic">' + icon('wrench') + '</span><span class="qf-big-cta__tx"><strong>Sou profissional</strong><small>Receba chamados e ganhe R$ 25 em créditos</small></span>' + icon('chevronRight') + '</button>' +
-        '<button class="qf-big-cta qf-big-cta--ad" type="button" data-nav="/anuncie"><span class="qf-big-cta__ic">' + icon('briefcase') + '</span><span class="qf-big-cta__tx"><strong>Tem uma empresa?</strong><small>Anuncie na sua região a partir de R$ 79</small></span>' + icon('chevronRight') + '</button>' +
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
       '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div>' +
-      '<div class="qf-landing-sticky" data-landing-sticky hidden><button class="btn btn--primary" type="button" data-action="landing-all-services">Pedir orçamento grátis</button></div></div>';
+      '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-nav="/auth/cliente/login">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-action="landing-login">' + icon('user') + '<span>Perfil</span></button></nav></div>';
   };
 
   function roleCard(role) {
@@ -6817,8 +6830,10 @@ alt=""></noscript>
     try { pendingCat = sessionStorage.getItem('qf_pending_category') || ''; } catch (_) {}
     try { pendingRegion = JSON.parse(sessionStorage.getItem('qf_client_search_region') || 'null'); } catch (_) { pendingRegion = null; }
 
+    const homeDraft = global.QFHomeDraft || {};
+    if (homeDraft.region) pendingRegion = homeDraft.region;
     const selectedCat = DB.categoryById(pendingCat);
-    const servicoInicial = selectedCat ? selectedCat.nome : '';
+    const servicoInicial = selectedCat ? selectedCat.nome : (homeDraft.service || '');
     const categorias = DB.categories().filter(function (cat) { return cat && cat.id !== 'cat_outros'; });
     const listaServicos = categorias.map(function (cat) {
       return '<option value="' + PU.escapeHtml(cat.nome) + '"></option>';
@@ -6836,7 +6851,7 @@ alt=""></noscript>
           field('Escolha outro serviço', '<input class="input" data-servico-edit-input autocomplete="off" placeholder="Digite a profissão ou serviço" value="' + PU.escapeHtml(servicoInicial) + '">') +
           '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div>' +
         '</div>'
-      : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
+      : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input value="' + PU.escapeHtml(servicoInicial) + '" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
     const regionField = cidadeInicial && ufInicial
       ? '<input type="hidden" name="cidade" value="' + PU.escapeHtml(cidadeInicial) + '"><input type="hidden" name="uf" value="' + PU.escapeHtml(ufInicial) + '"><div class="text--sm text--secondary" style="display:flex;align-items:center;gap:6px;padding:0 2px;">' + icon('mapPin') + '<span>Atendimento em <strong>' + PU.escapeHtml(cidadeInicial) + '/' + PU.escapeHtml(ufInicial) + '</strong></span></div>'
       : '<div class="qf-request-location">' +
@@ -7260,6 +7275,26 @@ alt=""></noscript>
       const landingSearchForm=content.querySelector('[data-landing-service-form]');
       const landingSearch=content.querySelector('[data-landing-service-search]');
       const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
+      content.addEventListener('click',function(e){const menu=content.querySelector('.qf-home-prof');if(menu&&!menu.contains(e.target))menu.open=false;});
+      content.addEventListener('keydown',function(e){if(e.key==='Escape'){const menu=content.querySelector('.qf-home-prof');if(menu){menu.open=false;menu.querySelector('summary').focus();}}});
+      const homeLocation=content.querySelector('[data-landing-location]');
+      const homeGps=content.querySelector('[data-home-gps]');
+      let homeRegion=null;
+      if(homeLocation)homeLocation.addEventListener('input',function(){homeRegion=null;});
+      if(homeGps)homeGps.addEventListener('click',async function(){
+        homeGps.disabled=true;
+        try{const pos=await global.QFGeo.currentPosition();homeRegion=await global.QFGeo.reverseGeocode(pos.latitude,pos.longitude);homeLocation.value=homeRegion.cidade+(homeRegion.uf?' / '+homeRegion.uf:'');}
+        catch(err){PU.toast(err.message||'Digite sua cidade ou CEP.','danger');}
+        finally{homeGps.disabled=false;}
+      });
+      async function saveHomeDraft(){
+        const raw=homeLocation?homeLocation.value.trim():'';
+        let region=homeRegion;
+        if(!region&&/^\d{5}-?\d{3}$/.test(raw))region=await global.QFGeo.lookupCep(raw);
+        else if(!region&&raw){const parts=raw.match(/^(.*?)\s*[,/–-]\s*([A-Za-z]{2})$/);region={cidade:parts?parts[1].trim():raw,uf:parts?parts[2].toUpperCase():''};}
+        global.QFHomeDraft={service:landingSearch?landingSearch.value.trim():'',region:region||{cidade:'',uf:''}};
+      }
+
       function landingNorm(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();}
       const landingAliases={
         cat_eletricista:'eletrica eletrico eletricidade tomada chuveiro nao esquenta sem energia curto luz lampada disjuntor fiacao fio instalar ventilador',
@@ -7293,8 +7328,9 @@ alt=""></noscript>
           return {cat:cat,score:score};
         }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;}).slice(0,6).map(function(x){return x.cat;});
       }
-      function landingGo(cat){
+      async function landingGo(cat){
         if(!cat)return;
+        try{await saveHomeDraft();}catch(err){PU.toast(err.message||"Confira o CEP.","danger");return;}
         try{sessionStorage.setItem('qf_pending_category',cat.id);}catch(_){}
         global.navigate('/auth/cliente/cadastro',true);
       }
@@ -7312,10 +7348,12 @@ alt=""></noscript>
         const btn=e.target.closest('[data-landing-search-cat]');if(!btn)return;
         landingGo(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
       });
-      if(landingSearchForm)landingSearchForm.addEventListener('submit',function(e){
+      if(landingSearchForm)landingSearchForm.addEventListener('submit',async function(e){
         e.preventDefault();
+        try{await saveHomeDraft();}catch(err){PU.toast(err.message||'Confira o CEP.','danger');return;}
         const list=landingMatches(landingSearch&&landingSearch.value);
         if(list.length){landingGo(list[0]);return;}
+        try{sessionStorage.removeItem('qf_pending_category');}catch(_){}
         global.navigate('/auth/cliente/cadastro',true);
       });
       // Botão fixo de baixo: aparece só quando o campo de busca sai da tela.
@@ -7331,6 +7369,7 @@ alt=""></noscript>
       content.addEventListener('click', function (e) {
         const cat=e.target.closest('[data-landing-cat]');
         if(cat){try{sessionStorage.setItem('qf_pending_category',cat.getAttribute('data-landing-cat'));}catch(_){} global.navigate('/auth/cliente/cadastro',true);return;}
+        if(e.target.closest('[data-home-services]')){landingSearch.scrollIntoView({block:'center'});landingSearch.focus();renderLandingSuggestions();return;}
         if(e.target.closest('[data-action="landing-login"]')){PU.openSheet('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz</h3><button class="btn btn--primary" id="qf-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-login-prof">Entrar como profissional</button></div>');const c=document.getElementById('qf-login-cliente'),p=document.getElementById('qf-login-prof');if(c)c.onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true)};if(p)p.onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true)};return;}
         if(e.target.closest('[data-action="landing-all-services"]')) global.navigate('/auth/cliente/cadastro',true);
       });
@@ -12383,7 +12422,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.34.6';
+  const APP_VERSION = '11.35.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

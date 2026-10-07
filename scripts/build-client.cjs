@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {createHash}=require('node:crypto');
 const esbuild = require('esbuild');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
 fs.rmSync(out, { recursive: true, force: true });
@@ -19,8 +20,9 @@ const shell=inline.find(m=>m[1].includes('const QF_BRAND_MARK ='));
 if (!main || !shell) throw Error('Blocos do aplicativo não encontrados');
 const assets=[];
 for (const [kind,script] of [['main',main],['shell',shell]]) {
-  const filename='app-'+kind+'-'+version+'.js';
   const code=esbuild.transformSync(script[1],{loader:'js',minify:true,keepNames:true,charset:'utf8',target:'es2020',legalComments:'inline'}).code;
+  const hash=createHash('sha256').update(code).digest('hex').slice(0,12);
+  const filename='app-'+kind+'-'+version+'-'+hash+'.js';
   new vm.Script(code,{filename});
   fs.writeFileSync(path.join(out,filename),code);
   html=html.replace(script[0],'<script defer src="'+filename+'"></script>');
