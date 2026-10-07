@@ -9766,6 +9766,7 @@ alt=""></noscript>
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(req.id, nota, comentario);
             else DB.avaliarComoCliente(req.id, nota, comentario);
             PU.toast('Serviço finalizado e sua avaliação foi enviada.', 'success');
+            qfOfferRecommendation('cliente');
             global.navigate('/cliente/pedido/' + req.id, true);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
@@ -9786,6 +9787,26 @@ alt=""></noscript>
         });
       });
     }
+  }
+
+  function qfOfferRecommendation(role) {
+    const who=role==='profissional'?'profissional':'cliente';
+    PU.confirmDialog({
+      title:'Gostou do Quem Faz?',
+      message:'Você recomendaria o Quem Faz para um amigo ou conhecido?',
+      okLabel:'Sim, recomendaria',
+      cancelLabel:'Agora não'
+    }).then(async function(ok){
+      if(!ok)return;
+      const url=location.origin+location.pathname;
+      const msg=who==='profissional'
+        ? 'Eu uso o Quem Faz para encontrar oportunidades de serviço. Conheça: '+url
+        : 'Precisou de um profissional? No Quem Faz você faz seu pedido grátis e encontra profissionais da sua região. Conheça: '+url;
+      try{
+        if(navigator.share){await navigator.share({title:'Quem Faz',text:msg,url:url});}
+        else{window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank','noopener');}
+      }catch(err){if(err&&err.name!=='AbortError')PU.toast('Não foi possível abrir o compartilhamento.','danger');}
+    });
   }
 
   function bindEndereco(content, user) {
@@ -11997,6 +12018,7 @@ alt=""></noscript>
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(params.id, nota, comentario);
             else DB.avaliarComoProfissional(params.id, nota, comentario);
             PU.toast('Sua avaliação foi enviada. Agora peça ao cliente para finalizar e avaliar o serviço.', 'success');
+            qfOfferRecommendation('profissional');
             global.navigate('/profissional/servicos', true);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
