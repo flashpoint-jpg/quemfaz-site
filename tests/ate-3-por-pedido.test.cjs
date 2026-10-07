@@ -42,7 +42,7 @@ assert.ok(html.includes('limiteParticipantes: row.limite == null ? 3 : Number(ro
 {
   const a = html.indexOf('  function renderConversationCards(rows, req) {');
   const b = html.indexOf('  const conversationCache = new Map();');
-  const sc = { esc: (v) => String(v == null ? '' : v), icon: () => '', PU: { initials: () => 'XX' }, Number };
+  const sc = { global: { QFUI: { personAvatar: () => '' } }, esc: (v) => String(v == null ? '' : v), icon: () => '', PU: { initials: () => 'XX' }, Number };
   vm.runInNewContext(html.slice(a, b) + '\nthis.f = renderConversationCards;', sc);
   const req = { id: 'r1' };
   const dois = sc.f([{ profissional_id: 'a', profissional_nome: 'Ana' }, { profissional_id: 'b', profissional_nome: 'Beto' }], req);
