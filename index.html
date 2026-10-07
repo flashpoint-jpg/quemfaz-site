@@ -6891,7 +6891,8 @@ alt=""></noscript>
       : '<div class="qf-request-location">' +
           field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') +
           field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
-        '</div>';
+        '</div>' +
+        field('Bairro', '<input class="input" name="bairro" autocomplete="address-level3" required placeholder="Ex.: Vila Pires">');
 
     return (
       '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
@@ -7568,11 +7569,13 @@ alt=""></noscript>
         const servico = String(fd.get('servico') || '').replace(/\s+/g, ' ').trim();
         const cidade = String(fd.get('cidade') || '').replace(/\s+/g, ' ').trim();
         const uf = String(fd.get('uf') || '').trim().toUpperCase();
+        const bairro = String(fd.get('bairro') || '').replace(/\s+/g, ' ').trim();
         const descricao = String(fd.get('descricao') || '').trim();
 
         function invalid(code) { if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: code }); }
         if (!servico) { invalid('service'); PU.toast('Digite o serviço que você precisa.', 'danger'); return; }
         if (!cidade || !uf) { invalid('region'); PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
+        if (!bairro) { invalid('neighborhood'); PU.toast('Informe o bairro onde o serviço será realizado.', 'danger'); const bi=form.querySelector('[name="bairro"]'); if(bi){bi.focus();} return; }
         if (descricao.length < 8) { invalid('description'); atualizarAjudaDescricao(true); PU.toast('A descrição precisa ter pelo menos 8 caracteres.', 'danger'); if (descricaoInput) { try { descricaoInput.scrollIntoView({ block: 'center' }); descricaoInput.focus(); } catch (_) {} } return; }
         // V11.29: prazo do pedido. Sem o campo na tela (versão antiga em cache), o pedido segue sem prazo.
         const prazoSel = (global.QFPrazo && fd.get('prazo')) ? global.QFPrazo.montar(String(fd.get('prazo')), String(fd.get('periodo') || ''), String(fd.get('prazoDia') || '')) : null;
@@ -7618,7 +7621,7 @@ alt=""></noscript>
           if (!user || !user.id) { PU.toast('Não foi possível identificar seu acesso.', 'danger'); return; }
 
           const endereco = {
-            rua: '', numero: '', bairro: '', complemento: '', cep: '',
+            rua: '', numero: '', bairro: bairro, complemento: '', cep: '',
             cidade: cidade, uf: uf, cidadeId: null, latitude: null, longitude: null
           };
           const pedido = (global.QFCloud && global.QFCloud.enabled)
@@ -9998,8 +10001,3 @@ alt=""></noscript>
   // Notificação que dá para ativar aqui mesmo (no Android só dentro do app; no iPhone só pelo ícone da tela de início).
   function ativPushPossivelAqui() {
     const P = global.QFPush;
-    if (!P || !P.supported || !P.supported()) return false;
-    return !(ativAndroid() && !(P.isNative && P.isNative()));
-  }
-  // Qual etapa o aviso aponta: a mais importante que dá para fazer agora neste aparelho.
-  function ativacaoPrimeiro(st) {
