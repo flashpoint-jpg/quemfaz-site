@@ -6902,6 +6902,9 @@ alt=""></noscript>
 
     const homeDraft = global.QFHomeDraft || {};
     if (homeDraft.region) pendingRegion = homeDraft.region;
+    let repeatDraft = null;
+    try { repeatDraft = JSON.parse(sessionStorage.getItem('qf_repeat_order_draft') || 'null'); } catch (_) { repeatDraft = null; }
+    if (repeatDraft && repeatDraft.endereco) pendingRegion = repeatDraft.endereco;
     const selectedCat = DB.categoryById(pendingCat);
     const servicoInicial = selectedCat ? selectedCat.nome : (homeDraft.service || '');
     const categorias = DB.categories().filter(function (cat) { return cat && cat.id !== 'cat_outros'; });
@@ -6945,7 +6948,7 @@ alt=""></noscript>
           '<div class="card qf-ticket qf-request-ticket">' +
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
-          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala"></textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
+          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
           prazoFieldHtml() +
           '</div>' +
           regionField +
@@ -9696,15 +9699,18 @@ alt=""></noscript>
       }
       if (act === 'refazer-pedido') {
         try {
+          const enderecoAnterior = req.endereco || null;
           sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({
             sourceId: req.id,
             categoriaId: req.categoriaId,
             descricao: req.descricao || '',
-            fotos: Array.isArray(req.fotos) ? req.fotos.slice(0, 4) : [],
-            endereco: req.endereco || null
+            endereco: enderecoAnterior
           }));
+          sessionStorage.setItem('qf_pending_category', req.categoriaId || '');
+          if (enderecoAnterior) sessionStorage.setItem('qf_client_search_region', JSON.stringify(enderecoAnterior));
         } catch (_) {}
-        global.navigate('/cliente/novo-pedido/' + encodeURIComponent(req.categoriaId));
+        // Refazer usa o formulário atual do cliente; a tela legada /cliente/novo-pedido não deve mais abrir.
+        global.navigate('/auth/cliente/cadastro');
       }
       if (act === 'ativar-busca-prioritaria') {
         if (!(global.QFCloud && global.QFCloud.enabled && global.QFCloud.client)) {
