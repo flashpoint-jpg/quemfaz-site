@@ -20,6 +20,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon.svg">
+<script src="qf-location-autocomplete.js?v=11.35.5"></script>
 <script>
 /* QF_MARKETING_ATTRIBUTION_V1
    Guarda a origem do clique até o cadastro ser concluído.
@@ -2284,6 +2285,8 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-aviso__title{margin:6px 0 0;font-size:21px;font-weight:800;line-height:1.25;color:#fff}
 .qf-aviso__body{padding:18px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;font-size:16px;line-height:1.55;color:var(--text-primary);white-space:pre-line;overflow-wrap:anywhere}
 .qf-aviso__foot{padding:12px 20px 20px;border-top:1px solid var(--border-subtle)}
+
+.qf-location-options{background:#fff;border:1px solid #dce3ed;border-radius:12px;max-height:240px;overflow:auto;width:100%;box-shadow:0 6px 16px #10243a12}.qf-location-options[hidden]{display:none}.qf-location-options button{display:block;width:100%;text-align:left;border:0;background:#fff;color:#18324f;padding:13px 16px;font:inherit;cursor:pointer}.qf-location-options button:hover,.qf-location-options button:focus{background:#eef4ff;outline:2px solid #2563eb;outline-offset:-2px}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -7326,10 +7329,11 @@ alt=""></noscript>
       const homeGps=content.querySelector('[data-home-gps]');
       const homeNeighborhood=content.querySelector('[data-landing-neighborhood]');
       let homeRegion=null;
-      if(homeLocation)homeLocation.addEventListener('input',function(){homeRegion=null;});
+      const locationAutocomplete=global.QFLocationAutocomplete&&global.QFLocationAutocomplete.bind(homeLocation,homeNeighborhood,function(region){homeRegion=region;});
+      if(homeLocation&&!locationAutocomplete)homeLocation.addEventListener('input',function(){homeRegion=null;});
       if(homeGps)homeGps.addEventListener('click',async function(){
         homeGps.disabled=true;
-        try{const pos=await global.QFGeo.currentPosition();homeRegion=await global.QFGeo.reverseGeocode(pos.latitude,pos.longitude);homeLocation.value=homeRegion.cidade+(homeRegion.uf?' / '+homeRegion.uf:'');if(homeNeighborhood&&homeRegion.bairro)homeNeighborhood.value=homeRegion.bairro;}
+        try{const pos=await global.QFGeo.currentPosition();homeRegion=await global.QFGeo.reverseGeocode(pos.latitude,pos.longitude);homeLocation.value=homeRegion.cidade+(homeRegion.uf?' / '+homeRegion.uf:'');if(homeNeighborhood)homeNeighborhood.value=homeRegion.bairro||'';if(locationAutocomplete)locationAutocomplete.setRegion(homeRegion);}
         catch(err){PU.toast(err.message||'Digite sua cidade ou CEP.','danger');}
         finally{homeGps.disabled=false;}
       });
@@ -12564,7 +12568,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.35.4';
+  const APP_VERSION = '11.35.5';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
