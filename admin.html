@@ -3443,13 +3443,24 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     });
   }
   let lastSnap = 0;
+  let diagnosticoChamados = {};
+  async function syncDiagnosticoChamados() {
+    if (!client) return {};
+    const res = await client.rpc('qf_admin_diagnostico_chamados', { p_dias: 30 });
+    if (res.error || !res.data || res.data.ok === false) return {};
+    const mapa = {};
+    (res.data.itens || []).forEach(function (x) { if (x && x.id) mapa[x.id] = x; });
+    diagnosticoChamados = mapa;
+    return mapa;
+  }
   async function syncSnapshot(force) {
     if (!client) return null;
     if (!force && snapshotOk && Date.now() - lastSnap < 10000) return null;
     lastSnap = Date.now();
     const results = await Promise.all([
       client.rpc('qf_admin_snapshot'),
-      global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas').catch(function (err) {
+      global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas'),
+      global.QFConnection.deadline(syncDiagnosticoChamados(), 8000, 'diagnóstico dos chamados').catch(function () { return {}; }).catch(function (err) {
         console.warn('[QuemFaz] Não foi possível carregar categorias personalizadas:', err.message);
       })
     ]);
@@ -5329,14 +5340,19 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     const cliente = DB.clienteById(r.clienteId);
     const nomes = desbloqueiosAtivos(r).map(function (x) { const p = DB.profissionalById(x.profissionalId); return PU.escapeHtml((p && p.nome) || 'Profissional'); });
     const cidade = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
+    const dg = diagnosticoChamados[r.id] || {};
+    const bairro = (r.endereco && r.endereco.bairro) || dg.bairro || 'Bairro não informado';
+    const alcance = Number(dg.profissionais_elegiveis || 0) + ' aptos · ' + Number(dg.profissionais_avisados || 0) + ' avisados' + (dg.cascata_etapa ? ' · etapa ' + Number(dg.cascata_etapa) : '');
+    const falha = dg.diagnostico && dg.diagnostico !== 'ok' ? '<span class="badge badge--danger">ATENÇÃO</span>' : '';
     const quem = PU.escapeHtml((cliente && cliente.nome) || 'Cliente não identificado') +
       (nomes.length ? ' → ' + nomes.join(', ') + (nomes.length > 1 ? ' (' + nomes.length + ' de 3)' : '') : ' · ainda ninguém desbloqueou');
     return '<button type="button" class="qf-linha qf-pedido" data-nav="/admin/servicos/' + r.id + '">' +
       '<span class="icon-tile qf-linha__icone">' + icon(cat ? cat.icon : 'tag') + '</span>' +
       '<span class="qf-linha__corpo">' +
-        '<span class="qf-pedido__topo"><span class="qf-linha__titulo">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</span>' + adminStatusBadge(r) + '</span>' +
+        '<span class="qf-pedido__topo"><span class="qf-linha__titulo">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</span>' + falha + adminStatusBadge(r) + '</span>' +
         '<span class="qf-linha__sub">' + quem + '</span>' +
-        '<span class="qf-linha__sub">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</span>' +
+        '<span class="qf-linha__sub"><b>' + PU.escapeHtml(bairro) + '</b>' + (cidade ? ' · ' + PU.escapeHtml(cidade) : '') + ' · ' + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</span>' +
+        '<span class="qf-linha__sub" style="font-weight:700;">' + PU.escapeHtml(alcance) + '</span>' +
       '</span>' +
     '</button>';
   }
@@ -6174,12 +6190,26 @@ Screens.adminDashboardRender = function () {
     const aceitoEm = r.leadUnlock && r.leadUnlock.criadoEm ? PU.formatDateTime(r.leadUnlock.criadoEm) : (prof ? PU.formatDateTime(r.atualizadoEm || r.criadoEm) : '—');
     const desb = desbloqueiosAtivos(r);
     const pedidoTitulo = r.titulo || (cat ? cat.nome : 'Serviço');
+    const dg = diagnosticoChamados[r.id] || {};
+    const diagLabel = dg.diagnostico === 'sem_distribuicao' ? 'FALHA: pedido sem distribuição' : dg.diagnostico === 'bairro_ausente' ? 'ATENÇÃO: bairro ausente' : dg.diagnostico === 'aberto_24h' ? 'ATENÇÃO: aberto há mais de 24h' : 'Distribuição normal';
+    const diagDanger = dg.diagnostico && dg.diagnostico !== 'ok';
 
     return (
       '<div class="view">' +
         '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
           '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--muted" style="margin-top:2px;">Pedido ' + PU.escapeHtml(r.id) + '</div></div></div>' +
           adminStatusBadge(r) +
+        '</div>' +
+
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Distribuição do pedido</h2></div>' +
+          '<div class="card stack--sm" style="border-left:4px solid ' + (diagDanger ? 'var(--danger-600,#dc2626)' : 'var(--success-600,#16a34a)') + ';">' +
+            rowInfo('Situação', diagLabel) +
+            rowInfo('Profissionais aptos', String(Number(dg.profissionais_elegiveis || 0))) +
+            rowInfo('Notificações registradas', String(Number(dg.profissionais_avisados || 0))) +
+            rowInfo('Etapa da cascata', dg.cascata_etapa ? String(dg.cascata_etapa) : '—') +
+            rowInfo('Bairro', (end.bairro || dg.bairro || 'NÃO INFORMADO')) +
+          '</div>' +
         '</div>' +
 
         '<div class="section">' +
