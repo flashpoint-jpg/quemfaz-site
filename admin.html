@@ -7347,7 +7347,16 @@ Screens.adminDashboardRender = function () {
   var ultimoDesenho = { path: null, html: '' };
   function semHorario(html) { return String(html == null ? '' : html).replace(/Atualizado em [^<]*/g, ''); }
   function sincronizarPainel() {
-    return global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
+    // O dashboard depende do snapshot. Anúncios e suporte são complementares:
+    // uma consulta lenta neles não pode bloquear a abertura de todo o painel.
+    return global.QFConnection.deadline(global.QFAdminCloud.syncSnapshot(), 20000, 'painel administrativo')
+      .then(function (snapshot) {
+        Promise.all([
+          global.QFAdminCloud.syncAds().catch(function (err) { console.warn('QuemFaz admin anúncios', err); }),
+          global.QFAdminCloud.syncSupport().catch(function (err) { console.warn('QuemFaz admin suporte', err); })
+        ]).catch(function () {});
+        return snapshot;
+      });
   }
   function atualizarPainelPorTras(path) {
     if (painelSincronizando || Date.now() - painelSincronizadoEm < 20000) return;
