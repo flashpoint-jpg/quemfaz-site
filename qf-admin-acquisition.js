@@ -20,6 +20,12 @@
           return '<div class="row-between"><span>' + labels[key] + '</span><strong>' + Number(counts[key] || 0) + '</strong></div>';
         }).join('') + '</div><hr class="hairline"><h3 class="h3">Pedidos por origem</h3>' +
         (d.sources || []).map(function (s) { return '<div class="row-between"><span>' + esc(s.source || 'Sem origem identificada') + '</span><strong>' + Number(s.requests || 0) + '</strong></div>'; }).join('') +
+        '<hr class="hairline"><h3 class="h3">Último campo acessado · sem pedido confirmado</h3>' +
+        '<p class="text--sm text--secondary">Sessões sem publicação e sem atividade há pelo menos 30 minutos. Indica onde pararam, não o motivo. Medição de campos iniciada em 07/10/2026.</p>' +
+        ((d.last_fields || []).length ? d.last_fields.map(function (f) {
+          var names = {servico:'Serviço',descricao:'Descrição',prazo:'Prazo',periodo:'Período',prazoDia:'Data',cidade:'Cidade',uf:'Estado',bairro:'Bairro',telefone:'WhatsApp',nome:'Nome'};
+          return '<div class="row-between"><span>' + esc(names[f.field] || 'Outro campo') + '</span><strong>' + Number(f.sessions || 0) + '</strong></div>';
+        }).join('') : '<p class="text--sm text--secondary">Ainda não há sessões encerradas com essa medição.</p>') +
         '<hr class="hairline"><h3 class="h3">Falhas registradas</h3>' +
         ((d.errors || []).length ? d.errors.map(function (e) { return '<div class="row-between"><span>' + esc(e.event + ' · ' + (e.code || 'sem código')) + '</span><strong>' + Number(e.total || 0) + '</strong></div>'; }).join('') : '<p class="text--sm text--secondary">Nenhuma falha registrada neste período.</p>');
     }).catch(function () { report.textContent = 'Não foi possível carregar as etapas agora. Atualize o painel para tentar novamente.'; });

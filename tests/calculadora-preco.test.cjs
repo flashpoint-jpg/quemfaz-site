@@ -60,7 +60,7 @@ assert.deepEqual(antesLogado, ['/cliente/home']);
 // Rota aberta ao visitante e formulário de pedido intacto (a calculadora reaproveita o mesmo formulário).
 assert.ok(html.includes("{ pattern: '/calculadora', anon: true"));
 assert.ok(html.includes('id="cadastro-cliente-form"'));
-assert.ok(html.includes('Publicar pedido grátis'));
+assert.ok(html.includes('Receber orçamentos grátis'));
 assert.ok(html.includes('data-landing-service-form'));
 
 console.log('calculadora-preco: ok');

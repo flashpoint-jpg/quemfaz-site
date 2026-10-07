@@ -33,7 +33,7 @@
 <link rel="icon" type="image/svg+xml" href="./icon.svg">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon.svg">
 <link rel="apple-touch-icon" href="./icon.svg">
-<script src="qf-location-autocomplete.js?v=11.35.5"></script>
+<script src="qf-location-autocomplete.js?v=11.35.7"></script>
 <script>
 /* QF_MARKETING_ATTRIBUTION_V1
    Guarda a origem do clique até o cadastro ser concluído.
@@ -2364,7 +2364,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.34.3"></script>
+<script src="qf-client-acquisition.js?v=11.35.7"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -6922,13 +6922,11 @@ alt=""></noscript>
           '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div>' +
         '</div>'
       : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input value="' + PU.escapeHtml(servicoInicial) + '" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
-    const regionField = (cidadeInicial && ufInicial
-      ? '<input type="hidden" name="cidade" value="' + PU.escapeHtml(cidadeInicial) + '"><input type="hidden" name="uf" value="' + PU.escapeHtml(ufInicial) + '"><div class="text--sm text--secondary" style="display:flex;align-items:center;gap:6px;padding:0 2px;">' + icon('mapPin') + '<span>Atendimento em <strong>' + PU.escapeHtml(cidadeInicial) + '/' + PU.escapeHtml(ufInicial) + '</strong></span></div>'
-      : '<div class="qf-request-location">' +
-          field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Ex.: Santo André" value="' + PU.escapeHtml(cidadeInicial) + '">') +
-          field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
-        '</div>') +
-        field('Bairro', '<input class="input" name="bairro" autocomplete="address-level3" required maxlength="100" value="' + PU.escapeHtml((pendingRegion && pendingRegion.bairro) || '') + '" placeholder="Ex.: Vila Pires">');
+    const regionField = '<div class="qf-request-location">' +
+      field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Digite sua cidade" value="' + PU.escapeHtml(cidadeInicial) + '">') +
+      field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
+      '</div>' +
+      field('Bairro', '<input class="input" name="bairro" autocomplete="address-level3" required maxlength="100" value="' + PU.escapeHtml((pendingRegion && pendingRegion.bairro) || '') + '" placeholder="Digite seu bairro"><small class="field__hint">Não encontrou na lista? Pode digitar o nome do bairro.</small>');
 
     return (
       '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
@@ -6954,10 +6952,11 @@ alt=""></noscript>
           '</div>' +
           '<div class="qf-request-contact">' +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
-          '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>O profissional chama você neste número. Só ele vê.</span></p>' +
+          '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Usado para falar com você sobre este pedido.</span></p>' +
           field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Como o profissional deve chamar você">') +
           '</div>' +
-          '<button class="btn btn--primary qf-request-submit" type="submit">Publicar pedido grátis ' + icon('arrowRight') + '</button>' +
+          '<p class="text--sm" style="text-align:center;margin:8px 0;"><strong>Receba até 3 orçamentos grátis.</strong><br>Você decide quem contratar.</p>' +
+          '<button class="btn btn--primary qf-request-submit" type="submit">Receber orçamentos grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
         cadastroClienteAdsHtml() +
       '</div>'
@@ -7527,6 +7526,18 @@ alt=""></noscript>
 
       const form = content.querySelector('#cadastro-cliente-form');
       bindPrazoField(form);
+      const cidadePedido = form.querySelector('[name="cidade"]');
+      const ufPedido = form.querySelector('[name="uf"]');
+      const bairroPedido = form.querySelector('[name="bairro"]');
+      if (global.QFLocationAutocomplete && cidadePedido && ufPedido && bairroPedido) {
+        const sugestoesPedido = global.QFLocationAutocomplete.bind(cidadePedido, bairroPedido, function (r) {
+          if (r) ufPedido.value = r.uf;
+        }, { cityOnly: true });
+        if (cidadePedido.value && ufPedido.value) sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
+        ufPedido.addEventListener('change', function () {
+          sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
+        });
+      }
       const telefoneInput = form.querySelector('[name="telefone"]');
       if (telefoneInput) {
         telefoneInput.insertAdjacentHTML('afterend', '<small class="field__hint">DDD + 9 + 8 dígitos. Pode colar com +55.</small>');
@@ -14838,7 +14849,7 @@ alt=""></noscript>
     form.insertBefore(box, form.firstChild);
     const btn = form.querySelector('button[type="submit"]');
     const antes = btn ? btn.innerHTML : '';
-    if (btn) btn.innerHTML = 'Publicar pedido grátis ' + icon('arrowRight');
+    if (btn) btn.innerHTML = 'Receber orçamentos grátis ' + icon('arrowRight');
     // Trocou de serviço: a faixa calculada não vale mais; o formulário volta ao normal.
     form.addEventListener('click', function (e) {
       if (!e.target.closest('[data-action="alterar-servico-cliente"]')) return;

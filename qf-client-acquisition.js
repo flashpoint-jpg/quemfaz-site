@@ -100,6 +100,13 @@
         form.dataset.funnelBound = '1';
         track('form_view', {}, true);
         form.addEventListener('input', function () { track('form_start', {}, true); }, { once: true });
+        var lastField = '', fieldEvents = 0;
+        form.addEventListener('focusin', function (e) {
+          var field = e.target.name || (e.target.hasAttribute('data-servico-edit-input') ? 'servico' : '');
+          if (['servico','descricao','prazo','periodo','prazoDia','cidade','uf','bairro','telefone','nome'].indexOf(field) === -1 || field === lastField || fieldEvents >= 80) return;
+          lastField = field; fieldEvents++;
+          track('field_focus', { error_code: field });
+        });
         form.addEventListener('submit', function () { submittedAt = Date.now(); track('submit'); }, true);
       }
     });
