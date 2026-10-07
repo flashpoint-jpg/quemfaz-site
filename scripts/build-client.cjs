@@ -62,3 +62,6 @@ let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');
+
+// Gera páginas SEO sem alterar a home principal.
+require('./generate-seo-pages.cjs');
