@@ -10512,14 +10512,10 @@ alt=""></noscript>
           '<div class="row"><div class="avatar avatar--sm">' + icon('whatsapp') + '</div><div><div class="text--strong">WhatsApp do cliente liberado ao desbloquear</div><div class="text--sm text--muted">Você chama o cliente no WhatsApp na hora, com a mensagem pronta. O endereço exato aparece quando o cliente escolher você.</div></div></div>' +
         '</div>' +
 
-        '<div class="section card stack--sm" style="background:var(--navy-900);border:none;">' +
-          '<div class="row-between"><div><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div></div><div class="icon-tile icon-tile--orange">' + icon('unlock') + '</div></div>' +
-          '<p class="text--sm" style="color:var(--text-on-navy-muted);">' +
-            (primeiraGratis
-              ? 'Primeiro desbloqueio grátis.'
-              : '<strong>Tem devolução de crédito</strong> se o cliente não responder.') +
-          '</p>' +
-          '<div class="row-between"><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><span class="text--strong" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</span></div>' +
+        '<div class="section card qf-unlock-simple" style="background:var(--navy-900);border:none;">' +
+          '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div>' +
+          '<p class="text--sm" style="color:#fff;margin:8px 0 0;">' + icon('shieldCheck') + ' ' + (primeiraGratis ? 'Primeiro desbloqueio grátis.' : '<strong>Tem devolução de crédito</strong> se o cliente não responder.') + '</p></div>' +
+          '<div class="qf-unlock-simple__credits"><div class="icon-tile" style="background:#fff;color:var(--navy-700);">' + icon('wallet') + '</div><div><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><div class="h2" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</div></div></div>' +
         '</div>' +
 
         (function () {
@@ -14022,6 +14018,12 @@ alt=""></noscript>
     '.qf-chat-composer textarea{min-height:76px}',
     '.qf-conversation-card{border:1px solid var(--border)}',
     '.qf-client-conversations:empty{display:none}',
+    '.qf-unlock-simple{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:22px;align-items:center;padding:22px 26px}',
+    '.qf-unlock-simple__main .h1{font-size:2.55rem;line-height:1.05;margin-top:2px}',
+    '.qf-unlock-simple__main p{display:flex;align-items:center;gap:8px}',
+    '.qf-unlock-simple__main p svg{width:20px;height:20px;flex:none}',
+    '.qf-unlock-simple__credits{display:flex;align-items:center;gap:14px;border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px 18px}',
+    '@media(max-width:639px){.qf-unlock-simple{grid-template-columns:1fr;padding:18px}.qf-unlock-simple__credits{padding:12px 14px}.qf-unlock-simple__main .h1{font-size:2.15rem}}',
     '.qf-address-grid{display:grid;grid-template-columns:1fr 110px;gap:8px}',
     '@media(min-width:640px){.qf-portfolio-tools{grid-template-columns:180px 1fr}.qf-schedule-options{grid-template-columns:repeat(4,minmax(0,1fr))}}'
   ].join('');
