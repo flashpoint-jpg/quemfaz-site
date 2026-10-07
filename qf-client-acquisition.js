@@ -1,6 +1,24 @@
 /* QuemFaz 11.34 — destino dos anúncios, etapas sem dados pessoais e conversão por pedido salvo. */
 (function (global) {
   'use strict';
+
+  // Meta Pixel: mede PageView e permite que o evento Lead abaixo seja enviado somente após o pedido salvo.
+  var QF_META_PIXEL_ID = '1124265238584181';
+  function ensureMetaPixel() {
+    if (location.search.indexOf('demo=1') !== -1 || typeof global.fbq === 'function') return;
+    try {
+      var n = global.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+      if (!global._fbq) global._fbq = n;
+      n.push = n; n.loaded = true; n.version = '2.0'; n.queue = [];
+      var t = document.createElement('script');
+      t.async = true; t.src = 'https://connect.facebook.net/en_US/fbevents.js';
+      var s = document.getElementsByTagName('script')[0];
+      if (s && s.parentNode) s.parentNode.insertBefore(t, s); else document.head.appendChild(t);
+      global.fbq('init', QF_META_PIXEL_ID);
+      global.fbq('track', 'PageView');
+    } catch (_) {}
+  }
+  ensureMetaPixel();
   var campaign = global.QFMarketingTouch || {};
   var sid;
   try {
