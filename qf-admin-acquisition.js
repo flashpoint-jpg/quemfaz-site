@@ -14,8 +14,9 @@
     var client = global.QFAdminCloud.client;
     var since = new Date(Date.now() - 7 * 86400000).toISOString();
     var summary = client.rpc('qf_client_funnel_summary', { p_days: 7 });
-    var existing = client.from('qf_chamados').select('id,status,criado_em', { count: 'exact' })
-      .gte('criado_em', since).limit(500);
+    // A leitura direta aplica as permissões de cliente/profissional e pode
+    // retornar [] ao administrador. O snapshot verifica a função administrativa.
+    var existing = client.rpc('qf_admin_snapshot');
     Promise.all([summary, existing]).then(function (responses) {
       if (!report.isConnected) return;
       var r = responses[0], live = responses[1];
@@ -27,8 +28,9 @@
         published: 'Pedidos publicados · histórico'
       };
       var esc = global.PU.escapeHtml;
-      var callList = live && !live.error && Array.isArray(live.data) ? live.data : null;
-      var liveTotal = callList ? Number(live.count == null ? callList.length : live.count) : null;
+      var callList = live && !live.error && live.data && Array.isArray(live.data.chamados)
+        ? live.data.chamados.filter(function (call) { return Date.parse(call.criado_em) >= Date.parse(since); }) : null;
+      var liveTotal = callList ? callList.length : null;
       var names = {
         servico: 'Serviço', descricao: 'Descrição', prazo: 'Prazo', periodo: 'Período',
         prazoDia: 'Data', cidade: 'Cidade', uf: 'Estado', bairro: 'Bairro',
@@ -64,7 +66,6 @@
             };
             return '<div class="row-between text--sm"><span>' + esc(pt[key] || key.replace(/_/g, ' ')) + '</span><strong>' + statuses[key] + '</strong></div>';
           }).join('');
-          if (liveTotal > callList.length) html += '<p class="text--sm text--secondary">Situações exibidas para os 500 registros mais recentes.</p>';
         }
         html += '<p class="text--sm text--secondary" style="margin-top:8px;">Esta contagem mostra os pedidos que existem hoje, não as publicações históricas. As duas métricas não são equivalentes.</p>';
       } else {
