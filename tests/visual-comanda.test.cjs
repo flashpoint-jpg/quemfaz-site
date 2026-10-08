@@ -35,21 +35,23 @@ assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: limpez
 // V11.30.1: no celular a foto ocupa a largura toda com o título por cima (no computador segue inteira), o campo e o botão
 // ficaram em largura total e a lista de sugestões abre logo abaixo do campo. A arte da foto e a busca
 // automática (mesmo campo, mesmo exemplo, mesmas sugestões) continuam as mesmas.
-assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><label class="qf-home-location-label" for="qf-home-location">'));
-assert.ok(landing.includes('<h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1>'));
+// V11.37: o index pede só o serviço; cidade e bairro foram para a etapa 2 do pedido.
+assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>'));
+assert.ok(landing.includes('<h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1>'));
 // V11.30.1: os atalhos de categoria saíram do início (o cliente escreve no campo).
 assert.ok(!landing.includes('qf-hero2-chip'), 'os atalhos de categoria não voltam para o início');
-assert.ok(landing.includes('<ul class="qf-hero2-trust">') && landing.includes('class="qf-home-nav"'));
+// V11.37: selos e "Como funciona" saíram do index (aprovado: o mais simples possível).
+assert.ok(!landing.includes('<ul class="qf-hero2-trust">') && landing.includes('class="qf-home-nav"'));
 assert.ok(landing.includes('<div class="qf-landing-install">'), 'instalar app continua na tela inicial');
 const css2 = (html.match(/<style id="qf-skin-inicio">([\s\S]*?)<\/style>/) || [])[1] || '';
 assert.ok(css2.length > 500);
 assert.ok(!/qf-landing-photo|qf-hero-search \.|qf-hero-search\{|\.qf-landing-photo img/.test(css2.replace(/\/\*[\s\S]*?\*\//g, '')), 'o visual novo não pode mexer na foto nem no campo de busca');
 // Nada de função perdida no início: entrar, instalar, ajuda, profissional, anúncio e preços.
 ['data-action="landing-login"', 'data-support-open>Ajuda', 'data-nav="/auth/profissional/login"', 'data-nav="/anuncie"', 'data-nav="/como-funciona"'].forEach((x) => assert.ok(landing.includes(x) || html.includes(x), x));
-assert.ok(landing.includes('Eles chamam você no WhatsApp'));
+assert.ok(!landing.includes('qf-how3') && !landing.includes('qf-launch-mini'));
 
 // Pedir serviço: mesmos campos, anúncio depois do botão.
-const r = html.indexOf('<div class="qf-req-steps"');
+const r = html.indexOf('<form id="cadastro-cliente-form"');
 const pedir = html.slice(r, html.indexOf("'</div>'\n    );\n  }", r));
 ['servicoField', 'regionField', 'name="descricao" required minlength="3"', 'name="telefone" type="tel"', 'name="nome" autocomplete="name" required', 'qf-request-submit'].forEach((x) => assert.ok(pedir.includes(x), x));
 assert.ok(pedir.indexOf('qf-request-submit') < pedir.indexOf('cadastroClienteAdsHtml()'));

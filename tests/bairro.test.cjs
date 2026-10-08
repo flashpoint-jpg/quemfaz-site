@@ -5,7 +5,10 @@ test('bairro continua obrigatório e preenchido com cidade/UF vindas da home',()
  vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('  function cadastroClienteView()'),html.indexOf('  // V11.5.0: escolha')),ctx);
  for(const region of [{cidade:'Santo André',uf:'SP',bairro:'Vila Pires'},{cidade:'Santo André',bairro:'Centro'},{}]){ctx.global.QFHomeDraft.region=region;const view=ctx.cadastroClienteView();assert.match(view,/name="bairro"[^>]*required/);assert.ok(view.includes('value="'+(region.bairro||'')+'"'));}
 });
-test('bairro digitado é levado da home ao rascunho do pedido',async()=>{
- const ctx={homeLocation:{value:'Santo André / SP'},homeRegion:null,locationAutocomplete:null,homeNeighborhood:{value:' Vila Pires '},landingSearch:{value:'Pintor'},global:{}};vm.createContext(ctx);
- vm.runInContext(html.slice(html.indexOf('      async function saveHomeDraft(){'),html.indexOf('      function landingNorm(')),ctx);await ctx.saveHomeDraft();assert.equal(ctx.global.QFHomeDraft.region.bairro,'Vila Pires');assert.equal(ctx.global.QFHomeDraft.region.cidade,'Santo André');
+test('index leva só o serviço; cidade e bairro são pedidos na etapa 2 do pedido',async()=>{
+ const ctx={landingSearch:{value:' Pintor '},global:{}};vm.createContext(ctx);
+ vm.runInContext(html.slice(html.indexOf('      async function saveHomeDraft(){'),html.indexOf('      function landingNorm(')),ctx);await ctx.saveHomeDraft();
+ assert.equal(ctx.global.QFHomeDraft.service,'Pintor');assert.equal(ctx.global.QFHomeDraft.region,undefined);
+ const landing=html.slice(html.indexOf('  Screens.landing = function () {'),html.indexOf('  function roleCard('));
+ assert.ok(!landing.includes('data-landing-neighborhood')&&!landing.includes('data-landing-location'));
 });

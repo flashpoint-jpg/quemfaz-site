@@ -9,17 +9,10 @@ test('cidade digitada completa UF apenas com município inequívoco',()=>{
  assert.equal(a.exactRegion(data,'Santo André','PB').uf,'PB');
  assert.equal(a.exactRegion(data,'São Paulo','RJ'),null);
 });
-function draftContext(region){
- const ctx={homeLocation:{value:'São Paulo'},homeRegion:null,homeNeighborhood:{value:' Vila Mariana '},landingSearch:{value:'Pintor'},locationAutocomplete:{resolveRegion:async()=>region},global:{}};
- vm.createContext(ctx);vm.runInContext(html.slice(html.indexOf('      async function saveHomeDraft(){'),html.indexOf('      function landingNorm(')),ctx);return ctx;
-}
-test('passagem da home aguarda resolução e preserva bairro',async()=>{
- const ctx=draftContext({cidade:'São Paulo',uf:'SP'});await ctx.saveHomeDraft();
- assert.equal(ctx.global.QFHomeDraft.region.uf,'SP');assert.equal(ctx.global.QFHomeDraft.region.bairro,'Vila Mariana');
-});
-test('cidade ambígua não segue para formulário com UF vazia',async()=>{
- const ctx=draftContext(null);ctx.homeLocation.value='Santo André';
- await assert.rejects(ctx.saveHomeDraft(),/Selecione sua cidade e o estado/);assert.equal(ctx.global.QFHomeDraft,undefined);
+test('cidade ambígua não publica com UF vazia: o erro abre o campo de estado na etapa 2',()=>{
+ assert.match(html,/if \(!uf\) \{ showFieldError\('uf', 'Selecione o estado \(UF\) do atendimento\.', 'region'\); return; \}/);
+ assert.match(html,/if \(name === 'uf'\) \{ ufManual = true; ufAuto\(\); \}/);
+ assert.match(html,/if \(input && form\.__qfEtapaDe\) form\.__qfEtapaDe\(input, name\);/);
 });
 function sessionContext(error){
  const effects={logout:0,cleared:0,session:'previous'};

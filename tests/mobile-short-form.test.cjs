@@ -38,10 +38,12 @@ test('pedido reúne contato e localização no mesmo cartão, sem bloco separado
   const end = html.indexOf('  // V11.5.0: escolha',start);
   const view = html.slice(start,end);
   assert.ok(view.includes('qf-request-ticket qf-request-unified'));
-  const contact = view.indexOf('class="qf-request-contact"');
-  const region = view.indexOf('          regionField +', contact);
-  const closeCard = view.indexOf("          '</div>' +\n          '</div>' +", region);
-  assert.ok(contact > 0 && region > contact && closeCard > region);
+  // V11.37: local e contato ficam juntos na etapa 2, dentro do mesmo cartão.
+  const etapa2 = view.indexOf('data-qf-etapa-box="2"');
+  const region = view.indexOf('          regionField +', etapa2);
+  const contact = view.indexOf('class="qf-request-contact"', region);
+  const closeCard = view.indexOf("          '</div>' +\n          '</div>' +", contact);
+  assert.ok(etapa2 > 0 && region > etapa2 && contact > region && closeCard > contact);
   assert.match(view, /data-qf-prazo-details/);
   assert.match(view, /Sem pressa — opcional/);
 });

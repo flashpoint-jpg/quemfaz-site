@@ -10,7 +10,7 @@ assert.ok(names.indexOf(mainName)<names.indexOf('qf-recrutamento.js?v=11.33.1'))
 assert.ok(names.indexOf('qf-recrutamento.js?v=11.33.1')<names.indexOf(shellName));
 for(const name of names)assert.ok(fs.existsSync(path.join(root,'dist',name.split('?')[0])),name);
 assert.ok(sw.includes('./'+mainName)&&sw.includes('./'+shellName));
-assert.ok(html.includes('Encontre o <em>profissional certo</em>'));
+assert.ok(html.includes('Conte o que precisa e veja <em>quem chama você.</em>'));
 assert.ok(!fs.existsSync(path.join(root,'dist/node_modules')));
 assert.ok(Buffer.byteLength(html)<200000);
 const early=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('QFEarly'))[1];

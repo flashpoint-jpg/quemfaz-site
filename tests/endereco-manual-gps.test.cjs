@@ -32,27 +32,17 @@ test('cliente pode informar outro local manualmente, sem precisar de GPS', () =>
   assert.ok(!view.includes('getCurrentPosition'));
 });
 
-test('endereço manual da home é preservado mesmo com GPS indisponível', async () => {
+test('index não pede local nem GPS: o local fica na etapa 2 do pedido', async () => {
   let calls = 0;
-  const ctx = {
-    homeLocation: { value: 'Santo André / SP' },
-    homeRegion: null,
-    homeNeighborhood: { value: ' Vila Pires ' },
-    landingSearch: { value: 'Pintor' },
-    locationAutocomplete: {
-      resolveRegion: async () => ({ cidade: 'Santo André', uf: 'SP' })
-    },
-    global: { QFGeo: { currentPosition: () => { calls++; throw new Error('GPS bloqueado'); } } }
-  };
+  const ctx = { landingSearch: { value: 'Pintor' }, global: { QFGeo: { currentPosition: () => { calls++; } } } };
   vm.createContext(ctx);
   vm.runInContext(
     html.slice(html.indexOf('      async function saveHomeDraft(){'), html.indexOf('      function landingNorm(')),
     ctx
   );
   await ctx.saveHomeDraft();
-  assert.equal(calls, 0, 'nunca solicitar GPS no preenchimento manual');
-  assert.equal(ctx.global.QFHomeDraft.region.cidade, 'Santo André');
-  assert.equal(ctx.global.QFHomeDraft.region.bairro, 'Vila Pires');
+  assert.equal(calls, 0, 'nunca solicitar GPS no index');
+  assert.equal(ctx.global.QFHomeDraft.service, 'Pintor');
 });
 
 test('GPS é um botão de escolha explícita, sem substituir local manual automaticamente', () => {
@@ -65,17 +55,13 @@ test('GPS é um botão de escolha explícita, sem substituir local manual automa
   assert.match(gps, /cidadePedido\.value = r\.cidade/);
   assert.match(gps, /bairroPedido\.value = r\.bairro/);
   assert.match(gps, /Confira cidade e bairro antes de publicar/);
-  assert.match(html, /GPS é opcional/);
 });
 
 
-test('home mostra ação de GPS com texto e estilo de botão, sem esconder no campo', () => {
-  assert.match(html, /class="qf-home-gps-action" data-home-gps/);
-  assert.match(html, /qf-home-gps-action\{display:inline-flex/);
-  assert.match(html, /Usar minha localização \(GPS\)/);
-  const inicio = html.indexOf('data-landing-location placeholder=');
-  const botao = html.indexOf('class="qf-home-gps-action" data-home-gps', inicio);
-  const bairro = html.indexOf('data-landing-neighborhood', inicio);
-  assert.ok(inicio >= 0 && botao > inicio && bairro > botao,
-    'GPS fica visível entre os campos de cidade e bairro');
+test('index tem um campo só e o botão Pedir grátis; GPS fica no pedido', () => {
+  const landing = html.slice(html.indexOf('  Screens.landing = function () {'), html.indexOf('  function roleCard('));
+  assert.ok(!landing.includes('data-home-gps') && !landing.includes('data-landing-location'));
+  assert.equal((landing.match(/<input /g) || []).length, 1);
+  assert.match(landing, /<span>Pedir grátis<\/span>/);
+  assert.match(html, /data-cliente-gps[^>]*>Usar minha localização \(GPS\)/);
 });
