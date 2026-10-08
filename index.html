@@ -2594,7 +2594,7 @@ window.qfGoogleLead = function (requestId) {
     position: fixed;
     z-index: 100;
     left: 50%;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--qf-keyboard-inset, 0px));
     transform: translateX(-50%);
     width: min(calc(100vw - 28px), 520px);
     max-width: calc(100vw - 28px);
@@ -2604,11 +2604,29 @@ window.qfGoogleLead = function (requestId) {
     border-radius: 14px;
     box-shadow: 0 0 0 5px rgba(248,249,252,.94), 0 8px 26px rgba(11,29,58,.2);
   }
-  /* Teclado aberto: liberar area de digitacao; o CTA volta ao fechar o teclado. */
-  .qf-client-request:has(input:focus,textarea:focus,select:focus) .qf-request-submit {
-    visibility: hidden;
-    pointer-events: none;
-  }
+  /* Erro de validação foca um campo: jamais ocultar o envio por causa do foco. */
+  .qf-client-request .qf-request-submit { visibility: visible; }
+  .qf-client-request .qf-req-steps { display: none; }
+  .qf-client-request .qf-request-unified { gap: 9px; }
+  .qf-client-request .qf-request-unified .qf-perf { display: none; }
+  .qf-client-request .qf-request-unified .textarea { min-height: 68px; }
+  .qf-client-request .qf-request-unified .field { gap: 4px; }
+  .qf-client-request .qf-request-contact { border-top: 0; padding-top: 0; gap: 9px; }
+  .qf-client-request .qf-request-contact .qf-request-hint { margin: -2px 0 2px; font-size: 12px; }
+  .qf-client-request .qf-request-location { gap: 8px; }
+  .qf-client-request .qf-request-unified .input,
+  .qf-client-request .qf-request-unified .select { min-height: 46px; }
+  .qf-client-request [data-descricao-rapida] { margin-top: 0 !important; min-height: 34px; padding: 6px 10px; font-size: 12px; }
+  .qf-client-request [data-descricao-rapida][hidden] { display: none !important; }
+  .qf-client-request .qf-request-schedule { border-top: 1px solid var(--border-subtle); padding-top: 7px; }
+  .qf-client-request .qf-request-schedule summary { padding: 8px 0; font-size: 14px; }
+  .qf-client-request .qf-request-schedule .qf-prazo { margin-top: 3px; }
+  .qf-client-request .qf-request-schedule .qf-prazo > .field__label { display: none; }
+  .qf-client-request .qf-request-unified .qf-location-caption { margin: 4px 0 0 !important; font-size: 12px; }
+  .qf-client-request .qf-request-unified [data-cliente-gps] { padding: 4px 10px; min-height: 38px !important; font-size: 12px; }
+  .qf-client-request .field input,
+  .qf-client-request .field textarea,
+  .qf-client-request .field select { scroll-margin-bottom: 110px; }
 }
 @media (max-width: 430px) { .qf-req-steps { margin-left: -16px; margin-right: -16px; } }
 @media (min-width: 768px) { .qf-req-steps { margin: 0; border-radius: 16px; overflow: hidden; } .qf-req-steps__in { padding-top: 14px; } }
@@ -7188,6 +7206,8 @@ alt=""></noscript>
       else if (modo === 'semana') txt = 'Até ' + P.curto(P.somar(h, 6)) + '.';
       else if (modo === 'data') txt = escolhido ? 'Para ' + P.curto(escolhido) + '.' : 'Escolha o dia acima.';
       nota.textContent = txt;
+      const resumo = box.closest('[data-qf-prazo-details]') && box.closest('[data-qf-prazo-details]').querySelector('[data-qf-prazo-resumo]');
+      if (resumo) resumo.textContent = modo === 'sem_pressa' ? 'Sem pressa — opcional' : txt;
       nota.classList.toggle('is-urgente', modo === 'hoje');
     }
     opts.forEach(function (b) {
@@ -7241,7 +7261,7 @@ alt=""></noscript>
           '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div>' +
         '</div>'
       : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input value="' + PU.escapeHtml(servicoInicial) + '" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
-    const regionField = '<p class="text--sm text--secondary" style="margin:0 0 8px;">Onde será realizado o serviço? Informe o local mesmo que esteja em outra cidade.</p>' + '<div class="qf-request-location">' +
+    const regionField = '<p class="text--sm text--secondary qf-location-caption" style="margin:0 0 8px;">Onde será realizado o serviço? Informe o local mesmo que esteja em outra cidade.</p>' + '<div class="qf-request-location">' +
       field('Cidade ou CEP do serviço', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Digite a cidade ou o CEP" value="' + PU.escapeHtml(cidadeInicial) + '">') +
       field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
       '</div>' +
@@ -7262,21 +7282,23 @@ alt=""></noscript>
         '</div><div class="qf-tape" aria-hidden="true"></div></div>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
-          '<div class="card qf-ticket qf-request-ticket">' +
+          '<div class="card qf-ticket qf-request-ticket qf-request-unified">' +
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="' + PU.escapeHtml(servicoInicial ? ('Ex.: preciso de orçamento para ' + servicoInicial.toLowerCase()) : 'Ex.: descreva seu problema em poucas palavras') + '">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Uma frase sobre o serviço já basta.</div>') +
           '<button class="btn btn--outline btn--sm" type="button" data-descricao-rapida style="width:auto;align-self:flex-start;margin-top:4px;">Usar descrição simples</button>' +
-          prazoFieldHtml() +
+          '<div class="qf-request-contact">' +
+            field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
+            field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
+            '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Seus dados serão usados para contato sobre o pedido.</span></p>' +
           '</div>' +
           regionField +
+          '<details class="qf-request-schedule" data-qf-prazo-details><summary>Pra quando precisa? <span data-qf-prazo-resumo style="color:var(--text-secondary);font-size:12px;font-weight:500;">Sem pressa — opcional</span></summary>' +
+          prazoFieldHtml() +
+          '</details>' +
           '</div>' +
-          '<div class="qf-request-contact">' +
-          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
-          '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Usado para falar com você sobre este pedido.</span></p>' +
-          field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Como o profissional deve chamar você">') +
           '</div>' +
-          '<p class="text--sm" style="text-align:center;margin:8px 0;"><strong>Receba até 3 orçamentos grátis.</strong><br>Você decide quem contratar.</p>' +
+          '<p class="text--sm qf-request-benefit" style="text-align:center;margin:2px 0;">Até 3 orçamentos grátis. Você escolhe.</p>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Receber orçamentos grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
         cadastroClienteAdsHtml() +
@@ -7851,6 +7873,19 @@ alt=""></noscript>
 
       const form = content.querySelector('#cadastro-cliente-form');
       bindPrazoField(form);
+      // CTA fixo permanece visível no erro e acompanha o teclado quando necessário.
+      const submitFixo = form.querySelector('.qf-request-submit');
+      if (submitFixo && global.visualViewport) {
+        const ajustarTeclado = function () {
+          if (!form.isConnected) return;
+          const v = global.visualViewport;
+          const oculto = Math.max(0, Math.round(global.innerHeight - v.height - v.offsetTop));
+          submitFixo.style.setProperty('--qf-keyboard-inset', (oculto > 130 ? oculto : 0) + 'px');
+        };
+        global.visualViewport.addEventListener('resize', ajustarTeclado);
+        global.visualViewport.addEventListener('scroll', ajustarTeclado);
+        ajustarTeclado();
+      }
       const cidadePedido = form.querySelector('[name="cidade"]');
       const ufPedido = form.querySelector('[name="uf"]');
       const bairroPedido = form.querySelector('[name="bairro"]');
@@ -7894,7 +7929,9 @@ alt=""></noscript>
         const qtd = String(descricaoInput.value || '').trim().length;
         const faltam = Math.max(0, 3 - qtd);
         descricaoAjuda.style.display = 'block';
-        descricaoAjuda.style.marginTop = '7px';
+        const ajudaRapida = form.querySelector('[data-descricao-rapida]');
+        if (ajudaRapida) ajudaRapida.hidden = qtd > 0;
+        descricaoAjuda.style.marginTop = '3px';
         descricaoAjuda.style.fontSize = '13px';
         descricaoAjuda.style.fontWeight = '700';
         descricaoAjuda.style.lineHeight = '1.35';
@@ -8036,15 +8073,9 @@ alt=""></noscript>
           return;
         }
         const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
-        if (!nome) { invalid('name'); PU.toast('Informe seu nome.', 'danger'); return; }
+        if (!nome) { showFieldError('nome', 'Informe seu nome para receber os orçamentos.', 'name'); return; }
         if (!validPhone(telefone)) {
-          const telefoneInput = form.querySelector('[name="telefone"]');
-          if (telefoneInput) {
-            telefoneInput.setAttribute('aria-invalid', 'true');
-            telefoneInput.scrollIntoView({ block: 'center' });
-            telefoneInput.focus();
-          }
-          showFieldError('telefone', 'Confira o WhatsApp: digite DDD e número com 9 dígitos. Exemplo: (11) 98765-4321.', 'phone');
+          showFieldError('telefone', 'Confira o WhatsApp: use DDD e celular com 9 dígitos. Ex.: (11) 98765-4321.', 'phone');
           return;
         }
 
