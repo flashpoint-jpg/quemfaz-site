@@ -1,0 +1,24 @@
+QuemFaz 11.38.0 — Cidade do pedido não trava mais no estado (UF)
+
+Motivo: na etapa 2 do pedido, o erro mais registrado era "Cidade / estado". Reproduzido no
+navegador: quem digitava a cidade sem tocar na lista ("sao paulo sp", "SP", "Santo André",
+"Itaquera", "Sao Palo") caía em "Selecione o estado (UF)". Ao corrigir a cidade, o bairro já
+digitado era apagado e o aviso de UF continuava na tela mesmo com o estado preenchido.
+
+O que mudou (só no formulário "Pedir serviço"):
+- A cidade é entendida do jeito que o cliente escreve: estado no fim sem vírgula, "SP" para a
+  capital, "capital", nome que existe em mais de um estado (fica SP) e erro de uma letra em
+  cidade de SP.
+- Quando não dá para ter certeza, aparece a lista "Qual é a sua cidade?" logo abaixo do campo,
+  sempre com São Paulo / SP. Um toque escolhe a cidade e publica, sem redigitar nada.
+- Bairro da capital que também é cidade de outro estado ("Lapa", "Penha", "Liberdade") deixou de
+  virar pedido em outro estado sem o cliente perceber: agora ele confirma na lista.
+- O bairro digitado não é mais apagado quando a cidade é corrigida. Se o cliente escreveu o
+  bairro no campo da cidade e deixou o bairro vazio, o texto vai para o bairro.
+- Avisos de uma tentativa anterior somem na tentativa seguinte.
+
+Não mudou: CEP, GPS, escolha manual de estado ("trocar"), bairro e telefone obrigatórios,
+as outras telas com cidade (regra exactRegion intacta) e os eventos de medição.
+
+Validação: npm test (60 testes, 6 novos em tests/cidade-tolerante.test.cjs). Fluxo conferido no
+navegador em 390px com 11 jeitos de preencher a cidade, sem publicar pedido real.

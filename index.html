@@ -40,7 +40,7 @@
 <link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">
 <link rel="apple-touch-icon" href="/quemfaz.png">
 <link rel="manifest" href="./manifest.webmanifest">
-<script src="qf-location-autocomplete.js?v=11.35.9"></script>
+<script src="qf-location-autocomplete.js?v=11.38.0"></script>
 <script>
 /* QF_MARKETING_ATTRIBUTION_V1
    Guarda a origem do clique até o cadastro ser concluído.
@@ -7983,7 +7983,19 @@ alt=""></noscript>
         sugestoesPedido = global.QFLocationAutocomplete.bind(cidadePedido, bairroPedido, function (r) {
           // Não apagar a UF escolhida manualmente enquanto a cidade é digitada.
           if (r && r.uf) { ufPedido.value = r.uf; if (form.__qfUfAuto) form.__qfUfAuto(); }
-        }, { cityOnly: true });
+        }, {
+          cityOnly: true,
+          // V11.38: entende o jeito que o cliente escreve a cidade e não apaga o bairro já digitado.
+          tolerant: true,
+          keepBairro: true,
+          // Tocou numa cidade da lista de correção: publica sem pedir outro toque.
+          onPick: function () {
+            setTimeout(function () {
+              if (!form.isConnected) return;
+              if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }, 0);
+          }
+        });
         if (cidadePedido.value && ufPedido.value) sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
         ufPedido.addEventListener('change', function () {
           sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
@@ -8240,6 +8252,9 @@ alt=""></noscript>
         e.preventDefault();
         if (form.dataset.publishing === '1' || form.dataset.resolving === '1') return;
         if (form.getAttribute('data-qf-etapa') === '1') { if (form.__qfContinuar) form.__qfContinuar(); return; }
+        // Aviso de uma tentativa anterior não fica na tela depois que o campo foi corrigido.
+        form.querySelectorAll('[data-qf-validation-for]').forEach(function (el) { el.remove(); });
+        form.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
         form.dataset.resolving = '1';
         try { if (sugestoesPedido) await sugestoesPedido.resolveRegion(ufPedido.value); }
         finally { delete form.dataset.resolving; }
@@ -8283,6 +8298,21 @@ alt=""></noscript>
         }
         if (!servico) { showFieldError('servico', 'Informe qual serviço você precisa para continuar.', 'service'); return; }
         if (!cidade) { showFieldError('cidade', 'Informe a cidade onde o serviço será realizado.', 'region'); return; }
+        if (!uf && sugestoesPedido && sugestoesPedido.hasOptions()) {
+          // V11.38: cidade não reconhecida não trava mais no campo de estado. A lista logo abaixo
+          // traz as cidades prováveis; um toque escolhe e publica.
+          invalid('region');
+          const campoCidade = form.querySelector('[name="cidade"]');
+          campoCidade.setAttribute('aria-invalid', 'true');
+          const aviso = document.createElement('div');
+          aviso.setAttribute('data-qf-validation-for', 'cidade');
+          aviso.setAttribute('role', 'alert');
+          aviso.style.cssText = 'color:#b42318;font-size:13px;font-weight:600;margin:6px 0 2px;line-height:1.4';
+          aviso.textContent = 'Qual é a sua cidade? Toque nela aqui embaixo:';
+          campoCidade.insertAdjacentElement('afterend', aviso);
+          try { (document.getElementById('qf-city-options') || campoCidade).scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+          return;
+        }
         if (!uf) { showFieldError('uf', 'Selecione o estado (UF) do atendimento.', 'region'); return; }
         if (!bairro) { showFieldError('bairro', 'Informe o bairro onde o serviço será realizado.', 'neighborhood'); return; }
         if (descricao.length < 3) { atualizarAjudaDescricao(true); showFieldError('descricao', 'Descreva brevemente o que precisa. Exemplo: consertar torneira vazando.', 'description'); return; }
@@ -13272,7 +13302,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.37.2';
+  const APP_VERSION = '11.38.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
