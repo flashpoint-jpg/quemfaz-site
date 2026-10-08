@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://quemfazservico.com.br/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+  <url><loc>https://quemfazservico.com.br/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/eletricista/santo-andre/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/encanador/sao-bernardo-do-campo/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/diarista/santo-andre/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/pintor/maua/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/eletricista/diadema/</loc></url>
+  <url><loc>https://quemfazservico.com.br/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc></url>
 </urlset>
