@@ -566,7 +566,12 @@ input, select, textarea { font-size: 16px; }
 .qf-location-change { width:auto; flex:none; border:0; background:transparent; color:var(--orange-700); padding:7px 4px; font-size:13px; font-weight:800; cursor:pointer; }
 .qf-order-location__fields { margin-top:8px; }
 .qf-order-location__hint { margin-top:8px; line-height:1.4; }
-.qf-codigo-acesso { border:1.5px dashed var(--orange-500); background:var(--orange-100); text-align:center; padding:14px 16px; }
+.qf-codigo-acesso { border:1px solid var(--border-subtle); background:var(--bg-surface); padding:13px 15px; }
+.qf-codigo-acesso__status { font-size:14px; color:var(--navy-900); font-weight:700; line-height:1.4; }
+.qf-codigo-acesso__recovery { margin-top:8px; border-top:1px solid var(--border-subtle); padding-top:9px; }
+.qf-codigo-acesso__recovery summary { font-size:13px; color:var(--navy-700); font-weight:700; cursor:pointer; padding:4px 0; }
+.qf-codigo-acesso__recovery summary:focus-visible { outline:2px solid var(--orange-500); outline-offset:3px; }
+.qf-codigo-acesso__recovery .qf-codigo-acesso__num { font-size:26px; margin:8px 0; }
 .qf-codigo-acesso__label { font-size:13px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
 .qf-codigo-acesso__num { font-family:var(--qf-display, inherit); font-weight:800; font-size:34px; letter-spacing:.08em; color:var(--navy-900); line-height:1.15; margin:2px 0 4px; }
 .qf-codigo-acesso__hint { font-size:14px; color:var(--navy-900); line-height:1.4; }
@@ -889,6 +894,37 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   z-index: 100; padding: 0;
 }
 .overlay.is-hidden { display: none; }
+/* Modal de confirmação sempre acima da navegação premium (z-index:110)
+   e com as duas escolhas à vista inclusive em celulares pequenos. */
+#sheet-overlay { z-index: 600; }
+/* Nenhuma barra inferior deve tapar as escolhas de qualquer janela do site. */
+@media (max-width: 899px) {
+  body:has(#sheet-overlay:not(.is-hidden)) .tabbar,
+  body:has(#sheet-overlay:not(.is-hidden)) .qf-home-nav {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  #sheet-overlay:not(.is-hidden) { isolation: isolate; }
+  #sheet-overlay .sheet {
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top, 0px)));
+    overscroll-behavior: contain;
+  }
+}
+#sheet-overlay[data-confirm="true"] {
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(16px, env(safe-area-inset-bottom, 0px));
+}
+#sheet-overlay[data-confirm="true"] .sheet {
+  width: 100%;
+  max-width: 430px;
+  max-height: calc(100dvh - 40px);
+  border-radius: 20px;
+  padding: 22px 18px max(22px, env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 18px 56px rgba(8,16,32,.24);
+}
+#sheet-overlay[data-confirm="true"] .btn-row { display: flex; flex-wrap: wrap; gap: 10px; }
+#sheet-overlay[data-confirm="true"] .btn-row .btn { flex: 1 1 150px; min-height: 48px; white-space: normal; }
 .sheet {
   background: var(--bg-surface);
   width: 100%; max-width: var(--app-max-width);
@@ -2572,6 +2608,62 @@ window.qfGoogleLead = function (requestId) {
 .qf-request-hint { display: flex; align-items: flex-start; gap: 8px; margin-top: -10px; font-size: 13.5px; line-height: 1.4; color: #0f6b43; }
 .qf-request-hint svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 #app-shell:not([data-route="inicio"]) .qf-request-submit { min-height: 62px; font-size: 18px; border-radius: 18px; }
+/* Pedido do cliente no celular: CTA sempre ao alcance, mantendo um unico botao de submit. */
+@media (max-width: 767px) {
+  .view.qf-client-request {
+    gap: 12px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+  .qf-client-request #cadastro-cliente-form.qf-request-form { gap: 12px; }
+  .qf-client-request .qf-request-fields,
+  .qf-client-request .qf-request-contact { gap: 12px; }
+  .qf-client-request .qf-request-contact { padding-top: 12px; }
+  .qf-client-request .qf-request-ticket { padding: 12px 14px 14px; }
+  .qf-client-request .qf-request-ticket .qf-perf { margin: 9px 0; }
+  .qf-client-request .qf-request-ticket .textarea { min-height: 78px; }
+  .qf-client-request .qf-prazo { margin-top: 11px; gap: 7px; }
+  .qf-client-request .qf-prazo__opts { gap: 6px; }
+  .qf-client-request .qf-prazo__opt { min-height: 44px; padding: 7px 9px; }
+  .qf-client-request .qf-tape { display: none; }
+  .qf-client-request .qf-req-steps__in { padding-bottom: 10px; }
+  .qf-client-request #cadastro-cliente-form .qf-request-submit {
+    position: fixed;
+    z-index: 100;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--qf-keyboard-inset, 0px));
+    transform: translateX(-50%);
+    width: min(calc(100vw - 28px), 520px);
+    max-width: calc(100vw - 28px);
+    min-height: 54px;
+    padding: 11px 14px;
+    font-size: 16px;
+    border-radius: 14px;
+    box-shadow: 0 0 0 5px rgba(248,249,252,.94), 0 8px 26px rgba(11,29,58,.2);
+  }
+  /* Erro de validação foca um campo: jamais ocultar o envio por causa do foco. */
+  .qf-client-request .qf-request-submit { visibility: visible; }
+  .qf-client-request .qf-req-steps { display: none; }
+  .qf-client-request .qf-request-unified { gap: 9px; }
+  .qf-client-request .qf-request-unified .qf-perf { display: none; }
+  .qf-client-request .qf-request-unified .textarea { min-height: 68px; }
+  .qf-client-request .qf-request-unified .field { gap: 4px; }
+  .qf-client-request .qf-request-contact { border-top: 0; padding-top: 0; gap: 9px; }
+  .qf-client-request .qf-request-contact .qf-request-hint { margin: -2px 0 2px; font-size: 12px; }
+  .qf-client-request .qf-request-location { gap: 8px; }
+  .qf-client-request .qf-request-unified .input,
+  .qf-client-request .qf-request-unified .select { min-height: 46px; }
+  .qf-client-request [data-descricao-rapida] { margin-top: 0 !important; min-height: 34px; padding: 6px 10px; font-size: 12px; }
+  .qf-client-request [data-descricao-rapida][hidden] { display: none !important; }
+  .qf-client-request .qf-request-schedule { border-top: 1px solid var(--border-subtle); padding-top: 7px; }
+  .qf-client-request .qf-request-schedule summary { padding: 8px 0; font-size: 14px; }
+  .qf-client-request .qf-request-schedule .qf-prazo { margin-top: 3px; }
+  .qf-client-request .qf-request-schedule .qf-prazo > .field__label { display: none; }
+  .qf-client-request .qf-request-unified .qf-location-caption { margin: 4px 0 0 !important; font-size: 12px; }
+  .qf-client-request .qf-request-unified [data-cliente-gps] { padding: 4px 10px; min-height: 38px !important; font-size: 12px; }
+  .qf-client-request .field input,
+  .qf-client-request .field textarea,
+  .qf-client-request .field select { scroll-margin-bottom: 110px; }
+}
 @media (max-width: 430px) { .qf-req-steps { margin-left: -16px; margin-right: -16px; } }
 @media (min-width: 768px) { .qf-req-steps { margin: 0; border-radius: 16px; overflow: hidden; } .qf-req-steps__in { padding-top: 14px; } }
 
@@ -2653,6 +2745,11 @@ window.qfGoogleLead = function (requestId) {
 #app-shell[data-route="inicio"] .qf-hero-search{padding:14px;border-radius:18px;background:#fff;color:#0b1d3a;display:block}
 #app-shell[data-route="inicio"] .qf-hero2 .qf-hero-search__label,.qf-home-location-label{display:block;color:#0b1d3a;font-size:14px;font-weight:750;margin:0 0 6px}
 .qf-home-location-label{margin:5px 0 0}.qf-home-location{position:relative}.qf-home-location>svg{position:absolute;left:12px;top:16px;width:20px;height:20px}.qf-home-location .input{padding-left:40px;padding-right:48px}.qf-home-location button{position:absolute;right:4px;top:4px;width:44px;height:44px;display:grid;place-items:center;background:transparent;border:0;color:#0b1d3a;cursor:pointer}.qf-home-location button svg{width:22px;height:22px}
+.qf-home-gps-action{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:46px;margin:9px 0 11px;padding:10px 14px;background:#fff7ef;color:#0b1d3a;border:1.5px solid #ed7100;border-radius:12px;font-size:14px;font-weight:800;line-height:1.3;cursor:pointer;transition:background .15s,border-color .15s}
+.qf-home-gps-action svg{width:19px;height:19px;color:#bc5600;flex:none}
+.qf-home-gps-action:hover,.qf-home-gps-action:focus-visible{background:#ffead6;border-color:#c85d00}
+.qf-home-gps-action:disabled{opacity:.6;cursor:wait}
+
 .qf-hero-search .input{min-height:52px;font-size:16px;background:#fff;color:#0b1d3a}.qf-hero2 .qf-hero-search .btn{font-size:15px;background:#ed7100;border-color:#ed7100;box-shadow:none}.qf-hero-search .qf-hero2-trust{color:#0b1d3a;font-size:12px;margin-top:14px}.qf-hero-search .qf-hero2-trust svg{color:#ee7300}.qf-hero2-trust li{flex-direction:row;text-align:left;justify-content:center}.qf-landing-hero>.qf-tape{display:none}
 @media(max-width:430px){.qf-landing-topbar{padding-left:12px;padding-right:12px;gap:7px}.qf-landing-brand{font-size:16px;gap:4px;min-width:0}.qf-landing-brand .qf-brandmark svg{width:26px;height:26px}.qf-home-prof summary{padding:0 8px;font-size:11px;gap:4px}.qf-home-prof summary svg{width:15px;height:15px}.qf-landing-topbar .btn.qf-landing-login{font-size:12px;padding:0 10px}.qf-home-prof-menu{right:-70px}}
 @media(max-width:359px){.qf-landing-brand{font-size:14px}.qf-home-prof summary{padding:0 6px;font-size:10px}.qf-home-prof summary svg{display:none}}
@@ -3291,6 +3388,7 @@ alt=""></noscript>
       });
     }
     overlay.dataset.persistent = opts.persistent ? 'true' : 'false';
+    overlay.dataset.confirm = opts.confirm ? 'true' : 'false';
     overlay.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' +
       (opts.persistent ? '<div class="sheet__handle"></div>' :
         '<div class="sheet__toolbar"><button type="button" class="sheet__close" aria-label="Fechar janela">Fechar <span aria-hidden="true">×</span></button></div>') + innerHtml + '</div>';
@@ -3316,7 +3414,7 @@ alt=""></noscript>
             '<button class="btn ' + (opts.danger ? 'btn--danger-ghost' : 'btn--primary') + '" id="' + id + '_ok">' + escapeHtml(opts.okLabel || 'Confirmar') + '</button>' +
           '</div>' +
         '</div>',
-        { persistent: true }
+        { persistent: true, confirm: true }
       );
       document.getElementById(id + '_cancel').onclick = function () { closeSheet(); resolve(false); };
       document.getElementById(id + '_ok').onclick = function () { closeSheet(); resolve(true); };
@@ -6979,7 +7077,7 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<div class="qf-launch-mini" aria-label="Lançamento Google Play em quatro dias"><svg viewBox="0 0 48 48" width="19" height="19" aria-hidden="true"><path fill="#00aaff" d="M7 3v42l22-21z"/><path fill="#00c96b" d="M7 3l28 16-6 5z"/><path fill="#ffba00" d="M29 24l6 5L7 45z"/><path fill="#f04b55" d="M35 19l8 5-8 5-6-5z"/></svg><div class="qf-launch-mini__text"><strong>Play Store · Faltam <span data-qf-days>04</span> dias</strong><div class="qf-launch-mini__timer" data-qf-launch-clock role="timer"><span data-qf-hours>00</span>h <span data-qf-minutes>00</span>m <span data-qf-seconds>00</span>s</div></div></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><p class="qf-home-intro">Conte o que você precisa e encontre profissionais da sua região.</p><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><label class="qf-home-location-label" for="qf-home-location">Sua cidade ou CEP</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-location" data-landing-location placeholder="Cidade ou CEP" autocomplete="address-level2"><button type="button" data-home-gps aria-label="Usar minha localização">' + icon('mapPin') + '</button></div><label class="qf-home-location-label" for="qf-home-neighborhood">Seu bairro</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-neighborhood" data-landing-neighborhood placeholder="Bairro" autocomplete="address-level3" required></div><button class="btn btn--primary" type="submit"><span>Encontrar profissionais grátis</span>' + icon('arrowRight') + '</button></div>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><p class="qf-home-intro">Conte o que você precisa e encontre profissionais da sua região.</p><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><label class="qf-home-location-label" for="qf-home-location">Cidade ou CEP do serviço</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-location" data-landing-location placeholder="Ex.: Santo André / SP ou CEP" autocomplete="address-level2"></div><button type="button" class="qf-home-gps-action" data-home-gps>' + icon('mapPin') + '<span>Usar minha localização (GPS)</span></button><label class="qf-home-location-label" for="qf-home-neighborhood">Bairro do serviço</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-neighborhood" data-landing-neighborhood placeholder="Bairro" autocomplete="address-level3" required></div><p class="text--sm text--secondary" style="margin:2px 0 0;font-size:12px;">Pode estar em outro local. Informe onde o serviço será feito; GPS é opcional.</p><button class="btn btn--primary" type="submit"><span>Encontrar profissionais grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<ul class="qf-hero2-trust"><li>' + icon('check') + '<span>Pedido grátis</span></li><li>' + icon('users') + '<span>Da sua região</span></li><li>' + icon('shieldCheck') + '<span>Você escolhe</span></li></ul></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       '<section class="section"><h2 class="h2">Como funciona</h2><div class="qf-how3">' +
@@ -7022,15 +7120,15 @@ alt=""></noscript>
         '<div class="stack--sm" style="text-align:center;">' +
           '<div class="icon-tile icon-tile--lg' + (role === 'profissional' ? ' icon-tile--orange' : '') + '" style="margin:6px auto 0;">' + icon(m.iconName) + '</div>' +
           '<h1 class="h1" style="text-align:center;">' + m.titulo + '</h1>' +
-          '<p class="text text--secondary" style="text-align:center;">' + (role === 'cliente' ? 'Digite seu WhatsApp e o código de acesso que apareceu quando você fez o pedido.' : 'Entre com o e-mail e a senha da sua conta.') + '</p>' +
+          '<p class="text text--secondary" style="text-align:center;">' + (role === 'cliente' ? 'Se você está em outro aparelho, informe seu WhatsApp e o código de recuperação. No aparelho onde fez o pedido, basta abrir Meus pedidos.' : 'Entre com o e-mail e a senha da sua conta.') + '</p>' +
         '</div>' +
         (role === 'cliente'
           ? '<form id="login-form" class="stack" novalidate data-login-whatsapp>' +
               field('WhatsApp / celular', '<input class="input" type="tel" name="telefone" autocomplete="tel" inputmode="tel" required placeholder="(11) 91234-5678">') +
-              field('Código de acesso', '<input class="input" type="text" name="codigo" autocomplete="off" inputmode="numeric" maxlength="7" required placeholder="6 números">') +
+              field('Código de recuperação', '<input class="input" type="text" name="codigo" autocomplete="off" inputmode="numeric" maxlength="7" required placeholder="6 números">') +
               '<button class="btn btn--primary" type="submit">Entrar</button>' +
             '</form>' +
-            '<p class="text text--sm text--muted" style="text-align:center;">Não anotou o código? Abra o QuemFaz no celular em que você fez o pedido: ele aparece na tela do pedido.</p>' +
+            '<p class="text text--sm text--muted" style="text-align:center;">No celular do pedido, abra Meus pedidos e toque em "Precisa entrar em outro celular?" para consultar o código. Não compartilhe com terceiros.</p>' +
             '<div class="divider-label">ou</div><button class="btn btn--outline" data-nav="/auth/cliente/cadastro">Pedir serviço grátis</button>' +
           '</div>'
           : '') +
@@ -7145,6 +7243,8 @@ alt=""></noscript>
       else if (modo === 'semana') txt = 'Até ' + P.curto(P.somar(h, 6)) + '.';
       else if (modo === 'data') txt = escolhido ? 'Para ' + P.curto(escolhido) + '.' : 'Escolha o dia acima.';
       nota.textContent = txt;
+      const resumo = box.closest('[data-qf-prazo-details]') && box.closest('[data-qf-prazo-details]').querySelector('[data-qf-prazo-resumo]');
+      if (resumo) resumo.textContent = modo === 'sem_pressa' ? 'Sem pressa — opcional' : txt;
       nota.classList.toggle('is-urgente', modo === 'hoje');
     }
     opts.forEach(function (b) {
@@ -7198,11 +7298,12 @@ alt=""></noscript>
           '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div>' +
         '</div>'
       : '<div style="position:relative;">' + field('Qual serviço você precisa?', '<input class="input" name="servico" data-servico-edit-input value="' + PU.escapeHtml(servicoInicial) + '" autocomplete="off" required placeholder="Ex.: pintor, eletricista, diarista">') + '<div class="qf-service-suggestions" data-servico-edit-suggestions hidden></div></div>';
-    const regionField = '<div class="qf-request-location">' +
-      field('Cidade', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Digite sua cidade" value="' + PU.escapeHtml(cidadeInicial) + '">') +
+    const regionField = '<p class="text--sm text--secondary qf-location-caption" style="margin:0 0 8px;">Onde será realizado o serviço? Informe o local mesmo que esteja em outra cidade.</p>' + '<div class="qf-request-location">' +
+      field('Cidade ou CEP do serviço', '<input class="input" name="cidade" autocomplete="address-level2" required placeholder="Digite a cidade ou o CEP" value="' + PU.escapeHtml(cidadeInicial) + '">') +
       field('UF', '<select class="select" name="uf" required><option value="">UF</option>' + global.QFGeo.ufOptions(ufInicial) + '</select>') +
       '</div>' +
-      field('Bairro', '<input class="input" name="bairro" autocomplete="address-level3" required maxlength="100" value="' + PU.escapeHtml((pendingRegion && pendingRegion.bairro) || '') + '" placeholder="Digite seu bairro"><small class="field__hint">Não encontrou na lista? Pode digitar o nome do bairro.</small>');
+      field('Bairro do serviço', '<input class="input" name="bairro" autocomplete="address-level3" required maxlength="100" value="' + PU.escapeHtml((pendingRegion && pendingRegion.bairro) || '') + '" placeholder="Digite o bairro do serviço"><small class="field__hint">Não encontrou na lista? Pode digitar o nome do bairro.</small>') +
+      '<button type="button" class="btn btn--outline btn--sm" data-cliente-gps style="width:auto;align-self:flex-start;min-height:44px;">Usar minha localização (GPS)</button>';
 
     return (
       '<div class="view qf-client-request' + (global.QFApp && global.QFApp.platform() !== 'web' ? ' qf-client-request--installed' : '') + '">' +
@@ -7218,21 +7319,23 @@ alt=""></noscript>
         '</div><div class="qf-tape" aria-hidden="true"></div></div>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate>' +
           '<div class="qf-request-fields">' +
-          '<div class="card qf-ticket qf-request-ticket">' +
+          '<div class="card qf-ticket qf-request-ticket qf-request-unified">' +
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
-          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
+          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="' + PU.escapeHtml(servicoInicial ? ('Ex.: preciso de orçamento para ' + servicoInicial.toLowerCase()) : 'Ex.: descreva seu problema em poucas palavras') + '">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Uma frase sobre o serviço já basta.</div>') +
           '<button class="btn btn--outline btn--sm" type="button" data-descricao-rapida style="width:auto;align-self:flex-start;margin-top:4px;">Usar descrição simples</button>' +
-          prazoFieldHtml() +
+          '<div class="qf-request-contact">' +
+            field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
+            field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
+            '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Usado para falar com você sobre este pedido.</span></p>' +
           '</div>' +
           regionField +
+          '<details class="qf-request-schedule" data-qf-prazo-details><summary>Pra quando precisa? <span data-qf-prazo-resumo style="color:var(--text-secondary);font-size:12px;font-weight:500;">Sem pressa — opcional</span></summary>' +
+          prazoFieldHtml() +
+          '</details>' +
           '</div>' +
-          '<div class="qf-request-contact">' +
-          field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
-          '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Usado para falar com você sobre este pedido.</span></p>' +
-          field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Como o profissional deve chamar você">') +
           '</div>' +
-          '<p class="text--sm" style="text-align:center;margin:8px 0;"><strong>Receba até 3 orçamentos grátis.</strong><br>Você decide quem contratar.</p>' +
+          '<p class="text--sm qf-request-benefit" style="text-align:center;margin:2px 0;">Até 3 orçamentos grátis. Você escolhe.</p>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Receber orçamentos grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
         cadastroClienteAdsHtml() +
@@ -7632,7 +7735,7 @@ alt=""></noscript>
       if(homeLocation&&!locationAutocomplete)homeLocation.addEventListener('input',function(){homeRegion=null;});
       if(homeGps)homeGps.addEventListener('click',async function(){
         homeGps.disabled=true;
-        try{const pos=await global.QFGeo.currentPosition();homeRegion=await global.QFGeo.reverseGeocode(pos.latitude,pos.longitude);homeLocation.value=homeRegion.cidade+(homeRegion.uf?' / '+homeRegion.uf:'');if(homeNeighborhood)homeNeighborhood.value=homeRegion.bairro||'';if(locationAutocomplete)locationAutocomplete.setRegion(homeRegion);}
+        try{const pos=await global.QFGeo.currentPosition();homeRegion=await global.QFGeo.reverseGeocode(pos.latitude,pos.longitude);homeLocation.value=homeRegion.cidade+(homeRegion.uf?' / '+homeRegion.uf:'');if(homeNeighborhood)homeNeighborhood.value=homeRegion.bairro||'';if(locationAutocomplete)locationAutocomplete.setRegion(homeRegion);PU.toast('GPS preenchido. Confira se este é o local do serviço.', 'success');}
         catch(err){PU.toast(err.message||'Digite sua cidade ou CEP.','danger');}
         finally{homeGps.disabled=false;}
       });
@@ -7807,6 +7910,19 @@ alt=""></noscript>
 
       const form = content.querySelector('#cadastro-cliente-form');
       bindPrazoField(form);
+      // CTA fixo permanece visível no erro e acompanha o teclado quando necessário.
+      const submitFixo = form.querySelector('.qf-request-submit');
+      if (submitFixo && global.visualViewport) {
+        const ajustarTeclado = function () {
+          if (!form.isConnected) return;
+          const v = global.visualViewport;
+          const oculto = Math.max(0, Math.round(global.innerHeight - v.height - v.offsetTop));
+          submitFixo.style.setProperty('--qf-keyboard-inset', (oculto > 130 ? oculto : 0) + 'px');
+        };
+        global.visualViewport.addEventListener('resize', ajustarTeclado);
+        global.visualViewport.addEventListener('scroll', ajustarTeclado);
+        ajustarTeclado();
+      }
       const cidadePedido = form.querySelector('[name="cidade"]');
       const ufPedido = form.querySelector('[name="uf"]');
       const bairroPedido = form.querySelector('[name="bairro"]');
@@ -7822,6 +7938,23 @@ alt=""></noscript>
         });
       }
       const telefoneInput = form.querySelector('[name="telefone"]');
+      // GPS é solicitado apenas no clique. Endereço digitado continua sendo a escolha principal.
+      const clienteGpsBtn = content.querySelector('[data-cliente-gps]');
+      if (clienteGpsBtn) clienteGpsBtn.addEventListener('click', async function () {
+        clienteGpsBtn.disabled = true;
+        try {
+          const pos = await global.QFGeo.currentPosition();
+          const r = await global.QFGeo.reverseGeocode(pos.latitude, pos.longitude);
+          if (!r || !r.cidade || !r.uf) throw new Error('Local não identificado');
+          cidadePedido.value = r.cidade;
+          ufPedido.value = r.uf;
+          bairroPedido.value = r.bairro || '';
+          if (sugestoesPedido) sugestoesPedido.setRegion(r);
+          PU.toast('Local preenchido. Confira cidade e bairro antes de publicar.', 'success');
+        } catch (err) {
+          PU.toast('Não foi possível localizar. Digite cidade ou CEP do serviço.', 'danger');
+        } finally { clienteGpsBtn.disabled = false; }
+      });
       if (telefoneInput) {
         telefoneInput.insertAdjacentHTML('afterend', '<small class="field__hint">DDD + 9 + 8 dígitos. Pode colar com +55.</small>');
         telefoneInput.addEventListener('input', function () { telefoneInput.removeAttribute('aria-invalid'); });
@@ -7833,13 +7966,15 @@ alt=""></noscript>
         const qtd = String(descricaoInput.value || '').trim().length;
         const faltam = Math.max(0, 3 - qtd);
         descricaoAjuda.style.display = 'block';
-        descricaoAjuda.style.marginTop = '7px';
+        const ajudaRapida = form.querySelector('[data-descricao-rapida]');
+        if (ajudaRapida) ajudaRapida.hidden = qtd > 0;
+        descricaoAjuda.style.marginTop = '3px';
         descricaoAjuda.style.fontSize = '13px';
         descricaoAjuda.style.fontWeight = '700';
         descricaoAjuda.style.lineHeight = '1.35';
         if (faltam > 0) {
           descricaoAjuda.textContent = qtd === 0 && !forcarErro
-            ? 'Conte brevemente o que precisa. Ex.: faxina ou trocar tomada.'
+            ? 'Conte em uma frase o que precisa.'
             : 'Faltam ' + faltam + ' ' + (faltam === 1 ? 'caractere' : 'caracteres') + ' para continuar.';
           descricaoAjuda.style.color = forcarErro ? '#b42318' : '#667085';
           descricaoInput.setAttribute('aria-invalid', forcarErro ? 'true' : 'false');
@@ -7975,15 +8110,9 @@ alt=""></noscript>
           return;
         }
         const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
-        if (!nome) { invalid('name'); PU.toast('Informe seu nome.', 'danger'); return; }
+        if (!nome) { showFieldError('nome', 'Informe seu nome para receber os orçamentos.', 'name'); return; }
         if (!validPhone(telefone)) {
-          const telefoneInput = form.querySelector('[name="telefone"]');
-          if (telefoneInput) {
-            telefoneInput.setAttribute('aria-invalid', 'true');
-            telefoneInput.scrollIntoView({ block: 'center' });
-            telefoneInput.focus();
-          }
-          showFieldError('telefone', 'Confira o WhatsApp: digite DDD e número com 9 dígitos. Exemplo: (11) 98765-4321.', 'phone');
+          showFieldError('telefone', 'Confira o WhatsApp: use DDD e celular com 9 dígitos. Ex.: (11) 98765-4321.', 'phone');
           return;
         }
 
@@ -10112,7 +10241,7 @@ alt=""></noscript>
         })();
       }
       if (act === 'cancelar-pedido') {
-        PU.confirmDialog({ title: 'Cancelar pedido', message: 'Tem certeza que deseja cancelar este pedido?', okLabel: 'Cancelar pedido', danger: true }).then(function (ok) {
+        PU.confirmDialog({ title: 'Cancelar pedido', message: 'Tem certeza que deseja cancelar este pedido?', cancelLabel: 'Manter pedido', okLabel: 'Sim, cancelar pedido', danger: true }).then(function (ok) {
           if (!ok) return;
           if (global.QFCloud && global.QFCloud.enabled) {
             global.QFCloud.cancelClientCall(req.id).then(function () {
@@ -14968,9 +15097,12 @@ alt=""></noscript>
       card.className = 'card qf-codigo-acesso';
       card.setAttribute('data-qf-codigo-acesso', '');
       card.innerHTML =
-        '<div class="qf-codigo-acesso__label">Seu código de acesso</div>' +
-        '<div class="qf-codigo-acesso__num" aria-label="Código ' + cod.split('').join(' ') + '">' + cod.slice(0, 3) + ' ' + cod.slice(3) + '</div>' +
-        '<div class="qf-codigo-acesso__hint"><strong>Anote este código.</strong> Com ele e o seu WhatsApp você vê seus pedidos em outro celular.</div>';
+        '<div class="qf-codigo-acesso__status">Seu pedido fica salvo na sua conta neste aparelho.</div>' +
+        '<details class="qf-codigo-acesso__recovery"><summary>Precisa entrar em outro celular?</summary>' +
+          '<div class="qf-codigo-acesso__label">Código de recuperação provisório</div>' +
+          '<div class="qf-codigo-acesso__num" aria-label="Código ' + cod.split('').join(' ') + '">' + cod.slice(0, 3) + ' ' + cod.slice(3) + '</div>' +
+          '<div class="qf-codigo-acesso__hint">Use este código com seu WhatsApp somente para recuperar o acesso em outro aparelho. Não compartilhe.</div>' +
+        '</details>';
       const anchor = view.querySelector('.section, .card');
       if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor); else view.appendChild(card);
     } catch (_) {}
