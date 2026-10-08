@@ -2765,6 +2765,69 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
  #app-shell[data-route="profissional/home"] #chamados-disponiveis .section-head{margin-top:0;}
 }
 </style>
+<style id="qf-premium-fixed-navigation">
+/* Barra fixa premium compartilhada: cliente, profissional e página inicial. */
+@media (max-width: 899px) {
+  .qf-home-nav, .tabbar {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(7px + env(safe-area-inset-bottom, 0px)) !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: 72px !important;
+    padding: 8px 5px !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(225,232,244,.95) !important;
+    border-radius: 28px !important;
+    background: rgba(255,255,255,.97) !important;
+    color: #102b58 !important;
+    box-shadow: 0 8px 28px rgba(13,38,81,.18) !important;
+    z-index: 110 !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+  }
+  .qf-home-nav button, .tabbar__item {
+    color: #1b3764 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    border-radius: 15px !important;
+    min-width: 0 !important;
+    min-height: 53px !important;
+    padding: 5px 2px !important;
+    gap: 3px !important;
+    line-height: 1.15 !important;
+    justify-content: center !important;
+  }
+  .qf-home-nav button > svg, .tabbar__item > svg { width: 22px !important; height: 22px !important; }
+  .qf-home-nav button[aria-current], .tabbar__item.is-active {
+    color: #0752c4 !important;
+    background: #eaf1ff !important;
+  }
+  .qf-home-nav-order { color: #102b58 !important; background: transparent !important; }
+  .qf-home-nav-plus {
+    width: 53px !important;
+    height: 53px !important;
+    margin-top: -32px !important;
+    margin-bottom: 1px !important;
+    border: 3px solid #fff !important;
+    background: #ff7914 !important;
+    box-shadow: 0 4px 12px rgba(255,121,20,.28) !important;
+  }
+  .qf-home-nav-plus svg { width: 27px !important; height: 27px !important; }
+  .qf-home-nav .qf-home-nav-order { overflow: visible !important; }
+  .tabbar__brand, .qf-tabbar-dl { display: none !important; }
+  .tabbar__item { flex: 1 1 0 !important; }
+  .tabbar__notice-badge { border-color: #fff !important; }
+  .qf-landing { padding-bottom: 110px !important; }
+  #app-shell .view { padding-bottom: max(92px, calc(92px + env(safe-area-inset-bottom, 0px))); }
+}
+@media (max-width: 360px) {
+  .qf-home-nav, .tabbar { left: 4px !important; right: 4px !important; }
+  .qf-home-nav button, .tabbar__item { font-size: 10px !important; }
+}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
