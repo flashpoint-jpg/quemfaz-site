@@ -28,7 +28,7 @@ test('cliente pode informar outro local manualmente, sem precisar de GPS', () =>
   assert.match(view, /value="Santo André"/);
   assert.match(view, /value="Vila Pires"/);
   assert.match(view, /data-cliente-gps/);
-  assert.match(view, /Usar GPS \(opcional\)/);
+  assert.match(view, /Usar minha localização \(GPS\)/);
   assert.ok(!view.includes('getCurrentPosition'));
 });
 
@@ -66,4 +66,16 @@ test('GPS é um botão de escolha explícita, sem substituir local manual automa
   assert.match(gps, /bairroPedido\.value = r\.bairro/);
   assert.match(gps, /Confira cidade e bairro antes de publicar/);
   assert.match(html, /GPS é opcional/);
+});
+
+
+test('home mostra ação de GPS com texto e estilo de botão, sem esconder no campo', () => {
+  assert.match(html, /class="qf-home-gps-action" data-home-gps/);
+  assert.match(html, /qf-home-gps-action\\{display:inline-flex/);
+  assert.match(html, /Usar minha localização \\(GPS\\)/);
+  const inicio = html.indexOf('data-landing-location placeholder=');
+  const botao = html.indexOf('class="qf-home-gps-action" data-home-gps', inicio);
+  const bairro = html.indexOf('data-landing-neighborhood', inicio);
+  assert.ok(inicio >= 0 && botao > inicio && bairro > botao,
+    'GPS fica visível entre os campos de cidade e bairro');
 });
