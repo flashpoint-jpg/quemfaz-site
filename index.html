@@ -2756,6 +2756,19 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   #app-shell .topbar__title, #app-shell .topbar__back { color:#122a4c; }
 }
 </style>
+<style>
+/* QF_PROF_DESKTOP_COLUMNS_2026_10_07 */
+@media(min-width:1024px){
+ #app-shell[data-route="profissional/home"] .view:has(> .qf-prof-status){display:grid;grid-template-columns:minmax(320px,0.85fr) minmax(0,1.4fr);gap:20px 28px;align-content:start;align-items:start;max-width:1440px;}
+ #app-shell[data-route="profissional/home"] .view:has(> .qf-prof-status)>*{min-width:0;}
+ #app-shell[data-route="profissional/home"] .view:has(> .qf-prof-status)>:not(.qf-prof-status):not(#chamados-disponiveis){grid-column:1/-1;}
+ #app-shell[data-route="profissional/home"] .view>.qf-prof-status{grid-column:1;grid-row:auto;margin:0;}
+ #app-shell[data-route="profissional/home"] .view>#chamados-disponiveis{grid-column:2;grid-row:auto;margin:0;}
+ #app-shell[data-route="profissional/home"] .view>.qf-prof-status + :not(#chamados-disponiveis){grid-column:1!important;}
+ #app-shell[data-route="profissional/home"] .view>.qf-prof-status + :not(#chamados-disponiveis) + #chamados-disponiveis{grid-row:span 2;}
+ #app-shell[data-route="profissional/home"] #chamados-disponiveis .section-head{margin-top:0;}
+}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
