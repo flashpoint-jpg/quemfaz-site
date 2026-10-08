@@ -67,3 +67,6 @@ console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; s
 require('./generate-seo-pages.cjs');
 
 require('./generate-seo-extra.cjs');
+
+// Falha o build se o sitemap gerado tiver URLs malformadas ou duplicadas.
+require('./check-sitemap.cjs');
