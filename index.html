@@ -892,6 +892,19 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 /* Modal de confirmação sempre acima da navegação premium (z-index:110)
    e com as duas escolhas à vista inclusive em celulares pequenos. */
 #sheet-overlay { z-index: 600; }
+/* Nenhuma barra inferior deve tapar as escolhas de qualquer janela do site. */
+@media (max-width: 899px) {
+  body:has(#sheet-overlay:not(.is-hidden)) .tabbar,
+  body:has(#sheet-overlay:not(.is-hidden)) .qf-home-nav {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  #sheet-overlay:not(.is-hidden) { isolation: isolate; }
+  #sheet-overlay .sheet {
+    max-height: calc(100dvh - max(16px, env(safe-area-inset-top, 0px)));
+    overscroll-behavior: contain;
+  }
+}
 #sheet-overlay[data-confirm="true"] {
   align-items: center;
   justify-content: center;
