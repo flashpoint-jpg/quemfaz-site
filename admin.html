@@ -1245,6 +1245,13 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-aviso-pessoa{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle)}
 .qf-aviso-pessoa:last-child{border-bottom:0}
 .qf-aviso-pessoa .badge{flex:0 0 auto}
+
+/* Central visual administrativa: apresentação de dados existentes, sem modificar regras. */
+.qf-control-overview{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:16px;margin-bottom:14px}
+.qf-control-heading{display:flex;flex-direction:column;gap:3px;color:#0b2346}.qf-control-heading strong{font-size:20px}.qf-control-heading small{font-size:12px;color:#64748b}
+.qf-control-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}.qf-control-kpis>div{background:#f1f5f9;border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;gap:4px;text-align:center}.qf-control-kpis strong{font-size:23px;color:#0b3678}.qf-control-kpis span{font-size:11px;color:#475569}
+.qf-control-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.qf-control-facts span{font-size:11px;background:#edf4fc;color:#183c68;padding:7px 9px;border-radius:9px}.qf-control-status{font-size:12px;font-weight:700;color:#9a4c0a;margin-top:8px}
+@media(max-width:440px){.qf-control-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -6117,11 +6124,34 @@ Screens.adminDashboardRender = function () {
     if (nav && nav.getAttribute('data-nav') === '/admin/servicos') servicosTabAtual = 'todos';
   }, true);
 
+  function adminPedidoControleHtml(r) {
+    const desb = desbloqueiosAtivos(r);
+    const encerrados = desb.filter(function(x){return x.desfecho === 'fechado';}).length;
+    const naoFechados = desb.filter(function(x){return x.desfecho === 'nao_fechado';}).length;
+    const status = encerrados ? 'Serviço fechado (informado)' : desb.length ? 'Desbloqueado · aguardando desfecho' : 'Aguardando desbloqueio';
+    return '<div class="qf-control-facts">' +
+      '<span><strong>' + desb.length + '/3</strong> desbloqueios</span>' +
+      '<span><strong>' + encerrados + '</strong> fechados</span>' +
+      '<span><strong>' + naoFechados + '</strong> não fechados</span>' +
+      '</div><div class="qf-control-status">' + PU.escapeHtml(status) + '</div>';
+  }
+  function adminControleResumoHtml(all) {
+    const abertos = all.filter(function(r){return !desbloqueiosAtivos(r).length && r.status !== 'cancelado' && r.status !== 'concluido';}).length;
+    const comContato = all.filter(function(r){return desbloqueiosAtivos(r).length > 0;}).length;
+    const fechados = all.filter(function(r){return desbloqueiosAtivos(r).some(function(x){return x.desfecho === 'fechado';});}).length;
+    return '<section class="qf-control-overview"><div class="qf-control-heading"><strong>Central de pedidos</strong><small>Dados disponíveis no painel · atualize para consultar novamente</small></div><div class="qf-control-kpis">' +
+      '<div><strong>' + all.length + '</strong><span>Total</span></div>' +
+      '<div><strong>' + abertos + '</strong><span>Sem desbloqueio</span></div>' +
+      '<div><strong>' + comContato + '</strong><span>Desbloqueados</span></div>' +
+      '<div><strong>' + fechados + '</strong><span>Fechados informados</span></div>' +
+      '</div></section>';
+  }
   Screens.adminServicosRender = function (params) {
     const activeTab = (params && params.tab) || servicosTabAtual || 'todos';
     const all = DB.allRequests();
     return (
-      '<div class="view">' +
+      '<div class="view qf-control-page">' +
+        adminControleResumoHtml(all) +
         '<div class="segmented" id="servicos-segmented">' + TABS_SERVICOS.map(function (t) {
           return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
         }).join('') + '</div>' +
@@ -6148,11 +6178,12 @@ Screens.adminDashboardRender = function () {
             '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
               '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
               '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</div>' +
-              '<div class="text--sm text--secondary"><b>Quem desbloqueou:</b> ' + PU.escapeHtml(prof ? prof.nome : 'Ainda ninguém') + '</div>' +
+              '<div class="text--sm text--secondary"><b>Quem desbloqueou:</b> ' + PU.escapeHtml(desbloqueiosAtivos(r).map(function(x){const p=DB.profissionalById(x.profissionalId);return p ? p.nome : 'Profissional';}).join(', ') || 'Ainda ninguém') + '</div>' +
             '</div></div>' +
             icon('chevronRight', 'list-item__chevron') +
           '</div>' +
           '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
+          adminPedidoControleHtml(r) +
           '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
             '<div>' + adminStatusBadge(r) + '</div>' +
             '<div class="text--sm text--muted text-right">' + (lugar ? PU.escapeHtml(lugar) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
