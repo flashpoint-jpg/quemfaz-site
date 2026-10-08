@@ -566,7 +566,12 @@ input, select, textarea { font-size: 16px; }
 .qf-location-change { width:auto; flex:none; border:0; background:transparent; color:var(--orange-700); padding:7px 4px; font-size:13px; font-weight:800; cursor:pointer; }
 .qf-order-location__fields { margin-top:8px; }
 .qf-order-location__hint { margin-top:8px; line-height:1.4; }
-.qf-codigo-acesso { border:1.5px dashed var(--orange-500); background:var(--orange-100); text-align:center; padding:14px 16px; }
+.qf-codigo-acesso { border:1px solid var(--border-subtle); background:var(--bg-surface); padding:13px 15px; }
+.qf-codigo-acesso__status { font-size:14px; color:var(--navy-900); font-weight:700; line-height:1.4; }
+.qf-codigo-acesso__recovery { margin-top:8px; border-top:1px solid var(--border-subtle); padding-top:9px; }
+.qf-codigo-acesso__recovery summary { font-size:13px; color:var(--navy-700); font-weight:700; cursor:pointer; padding:4px 0; }
+.qf-codigo-acesso__recovery summary:focus-visible { outline:2px solid var(--orange-500); outline-offset:3px; }
+.qf-codigo-acesso__recovery .qf-codigo-acesso__num { font-size:26px; margin:8px 0; }
 .qf-codigo-acesso__label { font-size:13px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; }
 .qf-codigo-acesso__num { font-family:var(--qf-display, inherit); font-weight:800; font-size:34px; letter-spacing:.08em; color:var(--navy-900); line-height:1.15; margin:2px 0 4px; }
 .qf-codigo-acesso__hint { font-size:14px; color:var(--navy-900); line-height:1.4; }
@@ -7115,15 +7120,15 @@ alt=""></noscript>
         '<div class="stack--sm" style="text-align:center;">' +
           '<div class="icon-tile icon-tile--lg' + (role === 'profissional' ? ' icon-tile--orange' : '') + '" style="margin:6px auto 0;">' + icon(m.iconName) + '</div>' +
           '<h1 class="h1" style="text-align:center;">' + m.titulo + '</h1>' +
-          '<p class="text text--secondary" style="text-align:center;">' + (role === 'cliente' ? 'Digite seu WhatsApp e o código de acesso que apareceu quando você fez o pedido.' : 'Entre com o e-mail e a senha da sua conta.') + '</p>' +
+          '<p class="text text--secondary" style="text-align:center;">' + (role === 'cliente' ? 'Se você está em outro aparelho, informe seu WhatsApp e o código de recuperação. No aparelho onde fez o pedido, basta abrir Meus pedidos.' : 'Entre com o e-mail e a senha da sua conta.') + '</p>' +
         '</div>' +
         (role === 'cliente'
           ? '<form id="login-form" class="stack" novalidate data-login-whatsapp>' +
               field('WhatsApp / celular', '<input class="input" type="tel" name="telefone" autocomplete="tel" inputmode="tel" required placeholder="(11) 91234-5678">') +
-              field('Código de acesso', '<input class="input" type="text" name="codigo" autocomplete="off" inputmode="numeric" maxlength="7" required placeholder="6 números">') +
+              field('Código de recuperação', '<input class="input" type="text" name="codigo" autocomplete="off" inputmode="numeric" maxlength="7" required placeholder="6 números">') +
               '<button class="btn btn--primary" type="submit">Entrar</button>' +
             '</form>' +
-            '<p class="text text--sm text--muted" style="text-align:center;">Não anotou o código? Abra o QuemFaz no celular em que você fez o pedido: ele aparece na tela do pedido.</p>' +
+            '<p class="text text--sm text--muted" style="text-align:center;">No celular do pedido, abra Meus pedidos e toque em "Precisa entrar em outro celular?" para consultar o código. Não compartilhe com terceiros.</p>' +
             '<div class="divider-label">ou</div><button class="btn btn--outline" data-nav="/auth/cliente/cadastro">Pedir serviço grátis</button>' +
           '</div>'
           : '') +
@@ -15092,9 +15097,12 @@ alt=""></noscript>
       card.className = 'card qf-codigo-acesso';
       card.setAttribute('data-qf-codigo-acesso', '');
       card.innerHTML =
-        '<div class="qf-codigo-acesso__label">Seu código de acesso</div>' +
-        '<div class="qf-codigo-acesso__num" aria-label="Código ' + cod.split('').join(' ') + '">' + cod.slice(0, 3) + ' ' + cod.slice(3) + '</div>' +
-        '<div class="qf-codigo-acesso__hint"><strong>Anote este código.</strong> Com ele e o seu WhatsApp você vê seus pedidos em outro celular.</div>';
+        '<div class="qf-codigo-acesso__status">Seu pedido fica salvo na sua conta neste aparelho.</div>' +
+        '<details class="qf-codigo-acesso__recovery"><summary>Precisa entrar em outro celular?</summary>' +
+          '<div class="qf-codigo-acesso__label">Código de recuperação provisório</div>' +
+          '<div class="qf-codigo-acesso__num" aria-label="Código ' + cod.split('').join(' ') + '">' + cod.slice(0, 3) + ' ' + cod.slice(3) + '</div>' +
+          '<div class="qf-codigo-acesso__hint">Use este código com seu WhatsApp somente para recuperar o acesso em outro aparelho. Não compartilhe.</div>' +
+        '</details>';
       const anchor = view.querySelector('.section, .card');
       if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor); else view.appendChild(card);
     } catch (_) {}
