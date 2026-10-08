@@ -1,4 +1,4 @@
-/* QuemFaz 11.34 — destino dos anúncios, etapas sem dados pessoais e conversão por pedido salvo. */
+/* QuemFaz 11.36 — anúncios entram na home; atribuição e conversão sem dados pessoais. */
 (function (global) {
   'use strict';
 
@@ -42,16 +42,27 @@
   function applyDestination() {
     var cat = serviceFromLink(location.search);
     if (!cat || !global.DB || !global.DB.categoryById(cat)) return;
-    // Compatibilidade com os anúncios já ativos. Não interfere em links de profissionais ou pedidos.
+    // Guarda o serviço anunciado, mas mantém o visitante na página inicial.
+    // Links explícitos para formulário e outras telas continuam funcionando normalmente.
     if (!/^#\/(?:calculadora\/?|auth\/cliente\/cadastro\/?|)?$/.test(location.hash || '#/')) return;
-    try { sessionStorage.setItem('qf_pending_category', cat); sessionStorage.removeItem('qf_calc'); } catch (_) {}
-    history.replaceState(null, '', location.pathname + location.search + '#/auth/cliente/cadastro');
+    try { sessionStorage.setItem('qf_pending_category', cat); } catch (_) {}
   }
   function attribution() {
+    var touch = global.QFMarketingTouch || campaign || {};
     var out = {};
     ['source', 'medium', 'campaign', 'content', 'term', 'click_id'].forEach(function (key) {
-      if (campaign[key]) out[key] = String(campaign[key]).slice(0, key === 'click_id' ? 512 : 240);
+      if (touch[key]) out[key] = String(touch[key]).slice(0, key === 'click_id' ? 512 : 240);
     });
+    // Sem UTM não significa anúncio: registra apenas o referenciador conhecido,
+    // sem classificar esse acesso como campanha paga.
+    if (!out.source) {
+      try {
+        var host = new URL(document.referrer).hostname.toLowerCase();
+        if (/(^|\\.)google\\./.test(host)) out.source = 'google_referral';
+        else if (/(^|\\.)(facebook\\.com|fb\\.com|instagram\\.com)$/.test(host)) out.source = 'meta_referral';
+        else if (/(^|\\.)bing\\.com$/.test(host)) out.source = 'bing_referral';
+      } catch (_) {}
+    }
     return out;
   }
   function track(event, detail, once) {
@@ -62,11 +73,12 @@
     seen[key] = true;
     var client = global.QFCloud && global.QFCloud.client;
     if (!client) return;
+    var origin = attribution();
     var row = {
       session_id: sid, event: event, category: String(detail.category || '').slice(0, 120) || null,
-      source: String(campaign.source || '').slice(0, 120) || null,
-      campaign: String(campaign.campaign || '').slice(0, 240) || null,
-      content: String(campaign.content || '').slice(0, 240) || null,
+      source: origin.source || null,
+      campaign: origin.campaign || null,
+      content: origin.content || null,
       request_id: detail.request_id || null,
       error_code: String(detail.error_code || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || null,
       duration_ms: submittedAt ? Math.min(3600000, Math.max(0, Date.now() - submittedAt)) : null
