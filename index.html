@@ -32,7 +32,7 @@
 <link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">
 <link rel="apple-touch-icon" href="/quemfaz.png">
 <link rel="manifest" href="./manifest.webmanifest">
-<script src="qf-location-autocomplete.js?v=11.35.7"></script>
+<script src="qf-location-autocomplete.js?v=11.35.9"></script>
 <script>
 /* QF_MARKETING_ATTRIBUTION_V1
    Guarda a origem do clique até o cadastro ser concluído.
@@ -5543,6 +5543,10 @@ alt=""></noscript>
     }).finally(function () { publicAdsSync = null; });
   }
 
+  function isInvalidStoredSession(error) {
+    return !!error && ['refresh_token_not_found', 'refresh_token_already_used', 'session_not_found', 'session_expired'].indexOf(String(error.code || '')) !== -1;
+  }
+
   async function syncForCurrentSession(force) {
     if (!enabled) return null;
     prepareLocalState();
@@ -5570,6 +5574,16 @@ alt=""></noscript>
         if (role === 'profissional') await syncProfessionalCalls(user.id);
         lastSyncAt = Date.now();
         return { role: role, userId: user.id, user: localUser };
+      } catch (err) {
+        // Sessão definitivamente inválida: libera uma nova entrada neste aparelho.
+        // Falhas de rede e do servidor preservam a sessão para a próxima tentativa.
+        if (!isInvalidStoredSession(err)) throw err;
+        await client.auth.signOut({ scope: 'local' });
+        DB.setSession(null);
+        clearRuntimeData();
+        lastSyncAt = Date.now();
+        if (global.PU) global.PU.toast('Seu acesso expirou. Entre novamente para continuar.', 'danger');
+        return null;
       } finally {
         syncing = null;
       }
@@ -7602,8 +7616,10 @@ alt=""></noscript>
       async function saveHomeDraft(){
         const raw=homeLocation?homeLocation.value.trim():'';
         let region=homeRegion;
+        if(locationAutocomplete)region=await locationAutocomplete.resolveRegion();
         if(!region&&/^\d{5}-?\d{3}$/.test(raw))region=await global.QFGeo.lookupCep(raw);
         else if(!region&&raw){const parts=raw.match(/^(.*?)\s*[,/–-]\s*([A-Za-z]{2})$/);region={cidade:parts?parts[1].trim():raw,uf:parts?parts[2].toUpperCase():''};}
+        if(!region||!region.uf)throw new Error('Selecione sua cidade e o estado na lista para continuar.');
         region=Object.assign({},region||{cidade:'',uf:''},{bairro:homeNeighborhood?homeNeighborhood.value.trim():''});
         global.QFHomeDraft={service:landingSearch?landingSearch.value.trim():'',region:region||{cidade:'',uf:''}};
       }
@@ -7649,12 +7665,14 @@ alt=""></noscript>
         if(landingSuggestions){landingSuggestions.hidden=true;landingSuggestions.innerHTML='';}
         if(homeLocation&&!homeLocation.value.trim())homeLocation.focus();
       }
+      let landingGoing=false;
       async function landingGo(cat){
-        if(!cat)return;
+        if(!cat||landingGoing)return;
         const rawLocation=homeLocation?homeLocation.value.trim():'';
         if(!rawLocation&&!homeRegion){PU.toast('Informe sua cidade ou CEP para continuar.','danger');if(homeLocation)homeLocation.focus();return;}
         if(!homeNeighborhood||!homeNeighborhood.value.trim()){PU.toast('Informe o bairro onde o serviço será realizado.','danger');if(homeNeighborhood)homeNeighborhood.focus();return;}
-        try{await saveHomeDraft();}catch(err){PU.toast(err.message||"Confira o CEP.","danger");return;}
+        landingGoing=true;
+        try{await saveHomeDraft();}catch(err){landingGoing=false;PU.toast(err.message||"Confira o CEP.","danger");if(homeLocation)homeLocation.focus();return;}
         try{sessionStorage.setItem('qf_pending_category',cat.id);}catch(_){}
         const submitBtn=landingSearchForm&&landingSearchForm.querySelector('button[type="submit"]');
         if(submitBtn){submitBtn.disabled=true;submitBtn.innerHTML='<span>Buscando profissionais na sua região...</span>';}
@@ -7769,9 +7787,10 @@ alt=""></noscript>
       const cidadePedido = form.querySelector('[name="cidade"]');
       const ufPedido = form.querySelector('[name="uf"]');
       const bairroPedido = form.querySelector('[name="bairro"]');
+      let sugestoesPedido = null;
       if (global.QFLocationAutocomplete && cidadePedido && ufPedido && bairroPedido) {
-        const sugestoesPedido = global.QFLocationAutocomplete.bind(cidadePedido, bairroPedido, function (r) {
-          if (r) ufPedido.value = r.uf;
+        sugestoesPedido = global.QFLocationAutocomplete.bind(cidadePedido, bairroPedido, function (r) {
+          ufPedido.value = r ? r.uf : '';
         }, { cityOnly: true });
         if (cidadePedido.value && ufPedido.value) sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
         ufPedido.addEventListener('change', function () {
@@ -7860,7 +7879,10 @@ alt=""></noscript>
 
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        if (form.dataset.publishing === '1') return;
+        if (form.dataset.publishing === '1' || form.dataset.resolving === '1') return;
+        form.dataset.resolving = '1';
+        try { if (sugestoesPedido) await sugestoesPedido.resolveRegion(ufPedido.value); }
+        finally { delete form.dataset.resolving; }
         const fd = new FormData(form);
         const nome = String(fd.get('nome') || '').trim();
         const telefone = String(fd.get('telefone') || '').trim();
@@ -12895,7 +12917,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.35.8';
+  const APP_VERSION = '11.35.9';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
