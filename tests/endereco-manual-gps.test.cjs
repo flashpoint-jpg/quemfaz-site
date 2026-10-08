@@ -57,7 +57,7 @@ test('endereço manual da home é preservado mesmo com GPS indisponível', async
 
 test('GPS é um botão de escolha explícita, sem substituir local manual automaticamente', () => {
   const start = html.indexOf("const clienteGpsBtn = content.querySelector('[data-cliente-gps]')");
-  const end = html.indexOf('const telefoneInput = form.querySelector', start);
+  const end = html.indexOf('if (telefoneInput) {', start);
   assert.ok(start > 0 && end > start, 'tratamento do GPS opcional no formulário');
   const gps = html.slice(start, end);
   assert.match(gps, /addEventListener\('click', async function/);
