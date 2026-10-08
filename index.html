@@ -2694,6 +2694,7 @@ window.qfGoogleLead = function (requestId) {
 .qf-request-location.qf-request-location--so-cidade { grid-template-columns:minmax(0,1fr) !important; }
 /* Index com um campo só: o cartão termina logo depois do botão. */
 #app-shell .qf-landing .qf-hero-search { padding-bottom:14px !important; }
+#app-shell .qf-landing .qf-home-promessa { margin:10px 0 0;text-align:center;font-size:14px;font-weight:700;line-height:1.35;color:#274b82; }
 #cadastro-cliente-form { scroll-margin-top:96px; }
 .qf-uf-auto { margin-top:-6px;font-size:13px;font-weight:600;color:var(--text-secondary); }
 .qf-uf-auto[hidden] { display:none; }
@@ -7111,7 +7112,7 @@ alt=""></noscript>
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
-        '</form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
+        '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       '<section class="section">' +
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
@@ -13267,7 +13268,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.37.0';
+  const APP_VERSION = '11.37.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
