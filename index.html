@@ -7076,7 +7076,7 @@ alt=""></noscript>
     const cats = DB.categories();
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
-      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<div class="qf-launch-mini" aria-label="Lançamento Google Play em quatro dias"><svg viewBox="0 0 48 48" width="19" height="19" aria-hidden="true"><path fill="#00aaff" d="M7 3v42l22-21z"/><path fill="#00c96b" d="M7 3l28 16-6 5z"/><path fill="#ffba00" d="M29 24l6 5L7 45z"/><path fill="#f04b55" d="M35 19l8 5-8 5-6-5z"/></svg><div class="qf-launch-mini__text"><strong>Play Store · Faltam <span data-qf-days>04</span> dias</strong><div class="qf-launch-mini__timer" data-qf-launch-clock role="timer"><span data-qf-hours>00</span>h <span data-qf-minutes>00</span>m <span data-qf-seconds>00</span>s</div></div></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-login">Entrar</button></div>' +
+      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<div class="qf-launch-mini" aria-label="Lançamento Google Play em quatro dias"><svg viewBox="0 0 48 48" width="19" height="19" aria-hidden="true"><path fill="#00aaff" d="M7 3v42l22-21z"/><path fill="#00c96b" d="M7 3l28 16-6 5z"/><path fill="#ffba00" d="M29 24l6 5L7 45z"/><path fill="#f04b55" d="M35 19l8 5-8 5-6-5z"/></svg><div class="qf-launch-mini__text"><strong>Play Store · Faltam <span data-qf-days>04</span> dias</strong><div class="qf-launch-mini__timer" data-qf-launch-clock role="timer"><span data-qf-hours>00</span>h <span data-qf-minutes>00</span>m <span data-qf-seconds>00</span>s</div></div></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Encontre o <em>profissional certo</em> para o que você precisa.</h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><p class="qf-home-intro">Conte o que você precisa e encontre profissionais da sua região.</p><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><label class="qf-home-location-label" for="qf-home-location">Cidade ou CEP do serviço</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-location" data-landing-location placeholder="Ex.: Santo André / SP ou CEP" autocomplete="address-level2"></div><button type="button" class="qf-home-gps-action" data-home-gps>' + icon('mapPin') + '<span>Usar minha localização (GPS)</span></button><label class="qf-home-location-label" for="qf-home-neighborhood">Bairro do serviço</label><div class="qf-home-location">' + icon('mapPin') + '<input class="input" id="qf-home-neighborhood" data-landing-neighborhood placeholder="Bairro" autocomplete="address-level3" required></div><p class="text--sm text--secondary" style="margin:2px 0 0;font-size:12px;">Pode estar em outro local. Informe onde o serviço será feito; GPS é opcional.</p><button class="btn btn--primary" type="submit"><span>Encontrar profissionais grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<ul class="qf-hero2-trust"><li>' + icon('check') + '<span>Pedido grátis</span></li><li>' + icon('users') + '<span>Da sua região</span></li><li>' + icon('shieldCheck') + '<span>Você escolhe</span></li></ul></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
@@ -7090,7 +7090,7 @@ alt=""></noscript>
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
       '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div>' +
-      '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-nav="/auth/cliente/login">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-action="landing-login">' + icon('user') + '<span>Perfil</span></button></nav></div>';
+      '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-action="landing-my-orders">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-support-open>' + icon('info') + '<span>Ajuda</span></button></nav></div>';
   };
 
   function roleCard(role) {
@@ -7842,7 +7842,8 @@ alt=""></noscript>
         const cat=e.target.closest('[data-landing-cat]');
         if(cat){try{sessionStorage.setItem('qf_pending_category',cat.getAttribute('data-landing-cat'));}catch(_){} global.navigate('/auth/cliente/cadastro',true);return;}
         if(e.target.closest('[data-home-services]')){landingSearch.scrollIntoView({block:'center'});landingSearch.focus();renderLandingSuggestions();return;}
-        if(e.target.closest('[data-action="landing-login"]')){PU.openSheet('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz</h3><button class="btn btn--primary" id="qf-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-login-prof">Entrar como profissional</button></div>');const c=document.getElementById('qf-login-cliente'),p=document.getElementById('qf-login-prof');if(c)c.onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true)};if(p)p.onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true)};return;}
+        if(e.target.closest('[data-action="landing-my-orders"]')){const sess=DB.getSession();if(sess&&sess.role==='cliente'){global.navigate('/cliente/pedidos');return;}PU.toast('Os pedidos deste aparelho aparecem aqui depois que você publicar um serviço. Para fazer um pedido, preencha acima.', 'info');if(landingSearch)landingSearch.scrollIntoView({block:'center',behavior:'smooth'});return;}
+        if(e.target.closest('[data-action="landing-login"]')){global.navigate('/auth/profissional/login',true);return;}
         if(e.target.closest('[data-action="landing-all-services"]')) global.navigate('/auth/cliente/cadastro',true);
       });
     }
@@ -14206,18 +14207,14 @@ alt=""></noscript>
     return c.rpc(name, args).then(function (r) { if (r.error) throw new Error(r.error.message || 'Não foi possível falar com o suporte.'); return r.data; });
   }
   function visitorLinks() {
-    return '<div class="qf-support-links"><button class="btn btn--outline" type="button" id="qf-support-forgot">Esqueci minha senha</button>' +
-      '<button class="btn btn--ghost" type="button" id="qf-support-login">Já tenho conta: Entrar</button></div>';
+    return '<div class="qf-support-links"><button class="btn btn--primary" type="button" id="qf-support-pedir">Fazer pedido grátis</button>' +
+      '<button class="btn btn--outline" type="button" id="qf-support-login">Sou profissional: entrar</button></div>';
   }
   function bindVisitorLinks() {
-    const forgot = document.getElementById('qf-support-forgot');
+    const pedir = document.getElementById('qf-support-pedir');
     const login = document.getElementById('qf-support-login');
-    if (forgot) forgot.onclick = function () { PU.closeSheet(); if (global.QFPasswordRecovery) global.QFPasswordRecovery.openRequest(''); };
-    if (login) login.onclick = function () {
-      PU.openSheet('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz</h3><button class="btn btn--primary" id="qf-support-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-support-login-prof">Entrar como profissional</button></div>');
-      document.getElementById('qf-support-login-cliente').onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/login', true); };
-      document.getElementById('qf-support-login-prof').onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
-    };
+    if (pedir) pedir.onclick = function () { PU.closeSheet(); global.navigate('/auth/cliente/cadastro', true); };
+    if (login) login.onclick = function () { PU.closeSheet(); global.navigate('/auth/profissional/login', true); };
   }
   function openVisitorHome() {
     clearPoll();
@@ -15086,36 +15083,14 @@ alt=""></noscript>
     } catch (_) {}
   }
 
-  // V11.26: código de acesso do cliente no topo da tela do pedido.
-  async function fillClienteCodigoAcesso(content) {
-    try {
-      if (!content || !global.QFCloud || !global.QFCloud.clienteCodigoAcesso) return;
-      const cod = await global.QFCloud.clienteCodigoAcesso();
-      if (!cod || !content.isConnected || content.querySelector('[data-qf-codigo-acesso]')) return;
-      const view = content.querySelector('.view') || content;
-      const card = document.createElement('div');
-      card.className = 'card qf-codigo-acesso';
-      card.setAttribute('data-qf-codigo-acesso', '');
-      card.innerHTML =
-        '<div class="qf-codigo-acesso__status">Seu pedido fica salvo na sua conta neste aparelho.</div>' +
-        '<details class="qf-codigo-acesso__recovery"><summary>Precisa entrar em outro celular?</summary>' +
-          '<div class="qf-codigo-acesso__label">Código de recuperação provisório</div>' +
-          '<div class="qf-codigo-acesso__num" aria-label="Código ' + cod.split('').join(' ') + '">' + cod.slice(0, 3) + ' ' + cod.slice(3) + '</div>' +
-          '<div class="qf-codigo-acesso__hint">Use este código com seu WhatsApp somente para recuperar o acesso em outro aparelho. Não compartilhe.</div>' +
-        '</details>';
-      const anchor = view.querySelector('.section, .card');
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor); else view.appendChild(card);
-    } catch (_) {}
-  }
-
+  // Pedidos abrem no aparelho onde foram publicados, sem pedir código.
   const prevAfter = Screens.afterRender;
   Screens.refreshDetail = function (pattern, content, params) {
-    if (pattern === '/cliente/pedido/:id') { fillClientConversations(content, params); fillClienteCodigoAcesso(content); }
+    if (pattern === '/cliente/pedido/:id') { fillClientConversations(content, params); }
     if (pattern === '/profissional/pedido/:id') fillProfCompetition(content, params);
   };
   Screens.afterRender = function (pattern,content,params,user) {
     if (prevAfter) prevAfter(pattern,content,params,user);
-    if (pattern === '/cliente/pedido/:id') fillClienteCodigoAcesso(content);
     if (pattern==='/cliente/novo-pedido/:catId') bindSchedule(content);
     if (pattern==='/profissional/home' || pattern==='/profissional/servicos/disponiveis') bindPortfolio(content);
     if (pattern==='/cliente/pedido/:id') bindClientDetailFeature(content,params);
@@ -15679,6 +15654,8 @@ alt=""></noscript>
 
   async function route() {
     const path = currentPath();
+    // Antigos links de login do cliente voltam para o pedido gratuito.
+    if (path === '/auth/cliente/login') { navigate('/', true); return; }
     const found = matchRoute(path);
     if (found && found.route.publicPage) { renderAnon(found); return; }
     if (found && found.route.anon && global.QFCloud && !currentSession()) {

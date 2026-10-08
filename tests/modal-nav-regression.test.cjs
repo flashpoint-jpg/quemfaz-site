@@ -15,8 +15,8 @@ test('todas as janelas compartilhadas ficam acima da navegacao premium',()=>{
   assert.match(html,/#sheet-overlay \.sheet\s*\{[\s\S]*?max-height:\s*calc\(100dvh/);
 });
 
-test('Entrar no QuemFaz e menus de confirmação usam a mesma janela corrigida',()=>{
-  assert.match(html,/PU\.openSheet\('<div class="stack"><h3 class="sheet__title">Entrar no QuemFaz/);
+test('janelas de confirmação e suporte usam camada acima da navegação',()=>{
+  assert.match(html,/PU\.openSheet\(/);
   assert.match(html,/function openSheet\(innerHtml, opts\)/);
   assert.match(html,/overlay\.id = 'sheet-overlay'/);
   assert.match(html,/function confirmDialog\(opts\)/);
