@@ -3043,8 +3043,36 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   #app-shell .qf-landing-topbar .qf-launch-mini { padding-inline: 14px; }
   #app-shell .qf-landing-topbar .qf-home-prof summary { padding-inline: 16px; font-size: 14px; }
 }
+#app-shell .qf-landing-topbar .btn.qf-landing-login svg { display: none; }
+/* Proposta: barra de cima em uma linha só no celular. */
+@media (max-width: 899px) {
+  #app-shell .qf-landing-topbar {
+    grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "brand professional login";
+    gap: 8px; padding: calc(var(--safe-top) + 9px) 14px 9px;
+    box-shadow: 0 4px 18px rgba(11, 29, 58, .12); position: relative; z-index: 6;
+  }
+  #app-shell .qf-landing-topbar .qf-brand-words { font-size: 21px; }
+  #app-shell .qf-landing-topbar .qf-brand-words small { font-size: 7.5px; margin-top: 4px; }
+  #app-shell .qf-landing-topbar .qf-brandmark--services { width: 28px; height: 32px; }
+  #app-shell .qf-landing-topbar .qf-home-prof summary {
+    min-height: 44px; padding: 0 13px; border-radius: 999px; border-color: #c9d0dc;
+    font-size: 13px; font-weight: 700; white-space: nowrap;
+  }
+  #app-shell .qf-landing-topbar .qf-home-prof summary svg { width: 16px; height: 16px; }
+  #app-shell .qf-landing-topbar .btn.qf-landing-login { width: 44px; min-width: 44px; padding: 0; border-radius: 999px; }
+  #app-shell .qf-landing-topbar .btn.qf-landing-login svg { display: block; width: 20px; height: 20px; }
+  #app-shell .qf-landing-topbar .btn.qf-landing-login span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+}
+@media (max-width: 380px) {
+  #app-shell .qf-landing-topbar { padding-inline: 12px; gap: 6px; }
+  #app-shell .qf-landing-topbar .qf-brand-words { font-size: 19px; }
+  #app-shell .qf-landing-topbar .qf-brandmark--services { width: 25px; height: 29px; }
+  #app-shell .qf-landing-topbar .qf-landing-brand { gap: 6px; }
+  #app-shell .qf-landing-topbar .qf-home-prof summary { padding: 0 11px; font-size: 12.5px; }
+  #app-shell .qf-landing-topbar .qf-home-prof summary svg { display: none; }
+}
 @media (max-width: 359px) {
-  #app-shell .qf-landing-topbar { padding-inline: 12px; gap: 10px 8px; }
+  #app-shell .qf-landing-topbar { padding-inline: 12px; gap: 6px; }
   #app-shell .qf-landing-topbar .qf-brand-words { font-size: 23px; }
   #app-shell .qf-landing-topbar .qf-launch-mini { padding-inline: 7px; gap: 5px; }
 }
@@ -7114,7 +7142,7 @@ alt=""></noscript>
     const cats = DB.categories();
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
-      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
+      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders" aria-label="Meus pedidos">' + icon('clipboard') + '<span>Meus pedidos</span></button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
