@@ -2820,7 +2820,14 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   .tabbar__brand, .qf-tabbar-dl { display: none !important; }
   .tabbar__item { flex: 1 1 0 !important; }
   .tabbar__notice-badge { border-color: #fff !important; }
-  .qf-landing { padding-bottom: 110px !important; }
+  /* Reserva espaço de rolagem para o menu não impedir acesso ao CTA. */
+  html { scroll-padding-bottom: 116px; }
+  .qf-landing { padding-bottom: 145px !important; }
+  .qf-hero-search { padding-bottom: 105px !important; }
+  .qf-hero-search input, .qf-hero-search button, .qf-hero-search select,
+  .qf-hero-search textarea, .qf-landing a, .view input, .view button {
+    scroll-margin-bottom: 116px;
+  }
   #app-shell .view { padding-bottom: max(92px, calc(92px + env(safe-area-inset-bottom, 0px))); }
 }
 @media (max-width: 360px) {
