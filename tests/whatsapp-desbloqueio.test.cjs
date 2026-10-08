@@ -30,7 +30,7 @@ assert.ok(html.includes('Chat liberado para negociação</strong>'));
 // Textos do cliente não prometem mais telefone protegido.
 assert.ok(!html.includes('Seu WhatsApp é protegido e só é liberado'));
 assert.ok(!html.includes('Telefone e endereço exato continuam protegidos'));
-assert.ok(html.includes('Só os profissionais do seu pedido veem o número.'));
+assert.ok(html.includes('No máximo 3 profissionais verão seu número. Ele não fica público no site.'));
 
 // Banco: telefone só durante a negociação ou após proposta aceita; endereço segue protegido.
 assert.match(sql, /when c\.status='em_negociacao' or private\.qf_prof_has_accepted_quote\(c\.id,auth\.uid\(\)\) then p\.whatsapp/);

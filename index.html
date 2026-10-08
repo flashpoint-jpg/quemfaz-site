@@ -2696,6 +2696,10 @@ window.qfGoogleLead = function (requestId) {
 #app-shell .qf-landing .qf-hero-search { padding-bottom:14px !important; }
 #app-shell .qf-landing .qf-home-promessa { margin:10px 0 0;text-align:center;font-size:14px;font-weight:700;line-height:1.35;color:#274b82; }
 #cadastro-cliente-form { scroll-margin-top:96px; }
+.qf-zap-seguro { display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:14px;background:#e9f7ef;color:#0b5c36;font-size:13.5px;line-height:1.35; }
+.qf-zap-seguro svg { flex:none;width:22px;height:22px;margin-top:1px; }
+.qf-zap-seguro strong { display:block;font-size:14.5px;font-weight:800;color:#07472a; }
+.qf-zap-seguro span { font-weight:600; }
 .qf-uf-auto { margin-top:-6px;font-size:13px;font-weight:600;color:var(--text-secondary); }
 .qf-uf-auto[hidden] { display:none; }
 .qf-uf-auto strong { color:var(--text-primary); }
@@ -7383,7 +7387,7 @@ alt=""></noscript>
           '<div class="qf-request-contact">' +
             field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
             field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
-            '<p class="qf-request-hint">' + icon('shieldCheck') + '<span>Só os profissionais do seu pedido veem o número.</span></p>' +
+            '<div class="qf-zap-seguro">' + icon('shieldCheck') + '<div><strong>Seu WhatsApp fica protegido</strong><span>No máximo 3 profissionais verão seu número. Ele não fica público no site.</span></div></div>' +
           '</div>' +
           '<details class="qf-request-schedule" data-qf-prazo-details><summary>Pra quando precisa? <span data-qf-prazo-resumo style="color:var(--text-secondary);font-size:12px;font-weight:500;">Sem pressa — opcional</span></summary>' +
           prazoFieldHtml() +
@@ -13268,7 +13272,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.37.1';
+  const APP_VERSION = '11.37.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
