@@ -2572,6 +2572,44 @@ window.qfGoogleLead = function (requestId) {
 .qf-request-hint { display: flex; align-items: flex-start; gap: 8px; margin-top: -10px; font-size: 13.5px; line-height: 1.4; color: #0f6b43; }
 .qf-request-hint svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 #app-shell:not([data-route="inicio"]) .qf-request-submit { min-height: 62px; font-size: 18px; border-radius: 18px; }
+/* Pedido do cliente no celular: CTA sempre ao alcance, mantendo um unico botao de submit. */
+@media (max-width: 767px) {
+  .view.qf-client-request {
+    gap: 12px;
+    padding-bottom: calc(110px + env(safe-area-inset-bottom, 0px));
+  }
+  .qf-client-request #cadastro-cliente-form.qf-request-form { gap: 12px; }
+  .qf-client-request .qf-request-fields,
+  .qf-client-request .qf-request-contact { gap: 12px; }
+  .qf-client-request .qf-request-contact { padding-top: 12px; }
+  .qf-client-request .qf-request-ticket { padding: 12px 14px 14px; }
+  .qf-client-request .qf-request-ticket .qf-perf { margin: 9px 0; }
+  .qf-client-request .qf-request-ticket .textarea { min-height: 78px; }
+  .qf-client-request .qf-prazo { margin-top: 11px; gap: 7px; }
+  .qf-client-request .qf-prazo__opts { gap: 6px; }
+  .qf-client-request .qf-prazo__opt { min-height: 44px; padding: 7px 9px; }
+  .qf-client-request .qf-tape { display: none; }
+  .qf-client-request .qf-req-steps__in { padding-bottom: 10px; }
+  .qf-client-request #cadastro-cliente-form .qf-request-submit {
+    position: fixed;
+    z-index: 100;
+    left: 50%;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%);
+    width: min(calc(100vw - 28px), 520px);
+    max-width: calc(100vw - 28px);
+    min-height: 54px;
+    padding: 11px 14px;
+    font-size: 16px;
+    border-radius: 14px;
+    box-shadow: 0 0 0 5px rgba(248,249,252,.94), 0 8px 26px rgba(11,29,58,.2);
+  }
+  /* Teclado aberto: liberar area de digitacao; o CTA volta ao fechar o teclado. */
+  .qf-client-request:has(input:focus,textarea:focus,select:focus) .qf-request-submit {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
 @media (max-width: 430px) { .qf-req-steps { margin-left: -16px; margin-right: -16px; } }
 @media (min-width: 768px) { .qf-req-steps { margin: 0; border-radius: 16px; overflow: hidden; } .qf-req-steps__in { padding-top: 14px; } }
 
@@ -7227,7 +7265,7 @@ alt=""></noscript>
           '<div class="card qf-ticket qf-request-ticket">' +
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
-          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
+          field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="' + PU.escapeHtml(servicoInicial ? ('Ex.: preciso de orçamento para ' + servicoInicial.toLowerCase()) : 'Ex.: descreva seu problema em poucas palavras') + '">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Uma frase sobre o serviço já basta.</div>') +
           '<button class="btn btn--outline btn--sm" type="button" data-descricao-rapida style="width:auto;align-self:flex-start;margin-top:4px;">Usar descrição simples</button>' +
           prazoFieldHtml() +
           '</div>' +
@@ -7862,7 +7900,7 @@ alt=""></noscript>
         descricaoAjuda.style.lineHeight = '1.35';
         if (faltam > 0) {
           descricaoAjuda.textContent = qtd === 0 && !forcarErro
-            ? 'Conte brevemente o que precisa. Ex.: faxina ou trocar tomada.'
+            ? 'Conte em uma frase o que precisa.'
             : 'Faltam ' + faltam + ' ' + (faltam === 1 ? 'caractere' : 'caracteres') + ' para continuar.';
           descricaoAjuda.style.color = forcarErro ? '#b42318' : '#667085';
           descricaoInput.setAttribute('aria-invalid', forcarErro ? 'true' : 'false');
