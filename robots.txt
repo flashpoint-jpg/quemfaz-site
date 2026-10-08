@@ -3,4 +3,4 @@ Allow: /
 Disallow: /admin.html
 Disallow: /profissional.html
 
-Sitemap: https://quemfaz-site.vercel.app/sitemap.xml
+Sitemap: https://quemfazservico.com.br/sitemap.xml
