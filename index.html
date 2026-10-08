@@ -7725,11 +7725,39 @@ alt=""></noscript>
         const bairro = String(fd.get('bairro') || '').replace(/\s+/g, ' ').trim();
         const descricao = String(fd.get('descricao') || '').trim();
 
+        // Mensagens de validação junto ao campo, sem limpar o formulário.
         function invalid(code) { if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: code }); }
-        if (!servico) { invalid('service'); PU.toast('Digite o serviço que você precisa.', 'danger'); return; }
-        if (!cidade || !uf) { invalid('region'); PU.toast('Informe a cidade e o estado do atendimento.', 'danger'); return; }
-        if (!bairro) { invalid('neighborhood'); PU.toast('Informe o bairro onde o serviço será realizado.', 'danger'); const bi=form.querySelector('[name="bairro"]'); if(bi){bi.focus();} return; }
-        if (descricao.length < 3) { invalid('description'); atualizarAjudaDescricao(true); PU.toast('Conte o que precisa em pelo menos 3 caracteres.', 'danger'); if (descricaoInput) { try { descricaoInput.scrollIntoView({ block: 'center' }); descricaoInput.focus(); } catch (_) {} } return; }
+        function showFieldError(name, message, code) {
+          invalid(code);
+          const input = form.querySelector('[name="' + name + '"]');
+          if (input) {
+            input.setAttribute('aria-invalid', 'true');
+            let hint = form.querySelector('[data-qf-validation-for="' + name + '"]');
+            if (!hint) {
+              hint = document.createElement('div');
+              hint.setAttribute('data-qf-validation-for', name);
+              hint.setAttribute('role', 'alert');
+              hint.style.cssText = 'color:#b42318;font-size:13px;font-weight:600;margin:6px 0 10px;line-height:1.4';
+              input.insertAdjacentElement('afterend', hint);
+            }
+            hint.textContent = message;
+            const clear = function () {
+              input.removeAttribute('aria-invalid');
+              if (hint.parentNode) hint.remove();
+              input.removeEventListener('input', clear);
+              input.removeEventListener('change', clear);
+            };
+            input.addEventListener('input', clear);
+            input.addEventListener('change', clear);
+            try { input.scrollIntoView({block:'center',behavior:'smooth'}); input.focus({preventScroll:true}); } catch (_) { input.focus(); }
+          }
+          PU.toast(message, 'danger', 5500);
+        }
+        if (!servico) { showFieldError('servico', 'Informe qual serviço você precisa para continuar.', 'service'); return; }
+        if (!cidade) { showFieldError('cidade', 'Informe a cidade onde o serviço será realizado.', 'region'); return; }
+        if (!uf) { showFieldError('uf', 'Selecione o estado (UF) do atendimento.', 'region'); return; }
+        if (!bairro) { showFieldError('bairro', 'Informe o bairro onde o serviço será realizado.', 'neighborhood'); return; }
+        if (descricao.length < 3) { atualizarAjudaDescricao(true); showFieldError('descricao', 'Descreva brevemente o que precisa. Exemplo: consertar torneira vazando.', 'description'); return; }
         // V11.29: prazo do pedido. Sem o campo na tela (versão antiga em cache), o pedido segue sem prazo.
         const prazoSel = (global.QFPrazo && fd.get('prazo')) ? global.QFPrazo.montar(String(fd.get('prazo')), String(fd.get('periodo') || ''), String(fd.get('prazoDia') || '')) : null;
         if (prazoSel && !prazoSel.ok) {
@@ -7741,14 +7769,13 @@ alt=""></noscript>
         const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
         if (!nome) { invalid('name'); PU.toast('Informe seu nome.', 'danger'); return; }
         if (!validPhone(telefone)) {
-          invalid('phone');
           const telefoneInput = form.querySelector('[name="telefone"]');
           if (telefoneInput) {
             telefoneInput.setAttribute('aria-invalid', 'true');
             telefoneInput.scrollIntoView({ block: 'center' });
             telefoneInput.focus();
           }
-          PU.toast('Confira o WhatsApp: informe DDD + 9 + os 8 dígitos do celular. Você também pode colar o número com +55.', 'danger', 6000);
+          showFieldError('telefone', 'Confira o WhatsApp: digite DDD e número com 9 dígitos. Exemplo: (11) 98765-4321.', 'phone');
           return;
         }
 
