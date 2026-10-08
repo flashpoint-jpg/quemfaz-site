@@ -2375,7 +2375,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.36.0"></script>
+<script src="qf-client-acquisition.js?v=11.36.1"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -7200,6 +7200,7 @@ alt=""></noscript>
           servicoField +
           '<div class="qf-perf" aria-hidden="true"></div>' +
           field('O que precisa ser feito?', '<textarea class="textarea" name="descricao" required minlength="3" aria-describedby="qf-descricao-ajuda" placeholder="Ex.: preciso pintar dois quartos e uma sala">' + PU.escapeHtml((repeatDraft && repeatDraft.descricao) || '') + '</textarea><div id="qf-descricao-ajuda" class="field__hint" data-descricao-ajuda>Conte brevemente o que precisa. Ex.: faxina, pintar sala ou trocar tomada.</div>') +
+          '<button class="btn btn--outline btn--sm" type="button" data-descricao-rapida style="width:auto;align-self:flex-start;margin-top:4px;">Usar descrição simples</button>' +
           prazoFieldHtml() +
           '</div>' +
           regionField +
@@ -7829,6 +7830,23 @@ alt=""></noscript>
       if (descricaoInput) {
         descricaoInput.addEventListener('input', function () { atualizarAjudaDescricao(false); });
         atualizarAjudaDescricao(false);
+      }
+
+      // Ajuda quem sabe o serviço, mas não consegue explicar os detalhes no momento.
+      // O texto fica visível e editável antes da publicação.
+      const descricaoRapida = form.querySelector('[data-descricao-rapida]');
+      if (descricaoRapida && descricaoInput) {
+        descricaoRapida.addEventListener('click', function () {
+          if (descricaoInput.value.trim()) { descricaoInput.focus(); return; }
+          const servicoNome = String((form.querySelector('[name="servico"]') || {}).value || '').trim();
+          if (!servicoNome) {
+            PU.toast('Primeiro escolha o serviço.', 'danger');
+            return;
+          }
+          descricaoInput.value = 'Preciso de um orçamento para ' + servicoNome.toLowerCase() + '.';
+          descricaoInput.dispatchEvent(new Event('input', { bubbles: true }));
+          descricaoInput.focus();
+        });
       }
 
 
@@ -12918,7 +12936,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.35.9';
+  const APP_VERSION = '11.36.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
