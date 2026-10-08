@@ -2699,6 +2699,12 @@ window.qfGoogleLead = function (requestId) {
 #app-shell .topbar__title--brand .qf-brand-words>span{color:#ff7900!important}
 #app-shell .topbar__title--brand .qf-brand-words small{color:#073c91!important}
 #app-shell .topbar .qf-top-dl{color:#0754b8!important;border-color:#0754b8!important}
+
+/* Login: seta de voltar abaixo da área do sistema, com alvo de toque maior. */
+.qf-auth-login-view{padding-top:calc(max(var(--safe-top), 16px) + 18px)!important}
+.qf-auth-login-view>.row:first-child{position:relative;z-index:5;min-height:60px;align-items:center}
+.qf-auth-login-view>.row:first-child .topbar__back{position:relative;z-index:6;display:inline-flex;align-items:center;justify-content:center;width:58px!important;height:58px!important;min-width:58px;border-radius:18px;background:#fff!important;color:#073c91!important;box-shadow:0 2px 12px rgba(11,29,58,.12);touch-action:manipulation;cursor:pointer}
+.qf-auth-login-view>.row:first-child .topbar__back svg{width:25px;height:25px;pointer-events:none}
 </style>
 </head>
 <body>
@@ -6767,7 +6773,7 @@ alt=""></noscript>
     const m = ROLE_META[role];
     if (!m) return Screens.landing();
     return (
-      '<div class="view stack--lg">' +
+      '<div class="view stack--lg qf-auth-login-view">' +
         backRow('/', null) +
         '<div class="stack--sm" style="text-align:center;">' +
           '<div class="icon-tile icon-tile--lg' + (role === 'profissional' ? ' icon-tile--orange' : '') + '" style="margin:6px auto 0;">' + icon(m.iconName) + '</div>' +
