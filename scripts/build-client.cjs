@@ -13,6 +13,9 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// Favicon tradicional para Google e navegadores, sem alterar a interface.
+require('./generate-favicon.cjs');
+html=html.replace('<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">','<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">');
 const version=/const APP_VERSION = '([^']+)'/.exec(html)[1];
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 const main=inline.find(m=>m[1].includes('biblioteca de ícones'));
