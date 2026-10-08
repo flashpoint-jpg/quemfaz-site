@@ -2811,6 +2811,20 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   }
   .qf-home-nav-plus svg { width: 27px !important; height: 27px !important; }
   .qf-home-nav .qf-home-nav-order { overflow: visible !important; }
+  /* Ajuste mobile: botão central proporcional, sem invadir a área dos avisos. */
+  .qf-home-nav .qf-home-nav-order { gap: 3px !important; }
+  .qf-home-nav .qf-home-nav-plus {
+    width: 50px !important;
+    height: 50px !important;
+    margin-top: -19px !important;
+    margin-bottom: 0 !important;
+  }
+  /* O aviso de atualização nunca deve ficar escondido atrás da navegação. */
+  body:has(.qf-home-nav) .qf-update-banner.qf-update-float,
+  body:has(.tabbar) .qf-update-banner.qf-update-float {
+    bottom: calc(102px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 100 !important;
+  }
   .tabbar__brand, .qf-tabbar-dl { display: none !important; }
   .tabbar__item { flex: 1 1 0 !important; }
   .tabbar__notice-badge { border-color: #fff !important; }
