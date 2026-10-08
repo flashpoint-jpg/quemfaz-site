@@ -65,3 +65,5 @@ console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; s
 
 // Gera páginas SEO sem alterar a home principal.
 require('./generate-seo-pages.cjs');
+
+require('./generate-seo-extra.cjs');
