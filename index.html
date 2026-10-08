@@ -2277,7 +2277,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   #app-shell[data-route="profissional-perfil"] .view > #atualizacao-cadastral,
   #app-shell[data-route="profissional-perfil"] .view > .section:has(.status-track){column-span:all}
   /* V11.16.31: Dados cadastrais na largura inteira com os campos em duas colunas; Categorias entra na divisão das colunas. */
-  #prof-cadastro-update-form{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 22px;align-items:start}
+  #prof-cadastro-update-form[hidden]{display:none!important}\n  #prof-cadastro-update-form{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px 22px;align-items:start}
   #prof-cadastro-update-form > *{margin:0!important}
   #prof-cadastro-update-form > .divider-label,#prof-cadastro-update-form > .card,#prof-cadastro-update-form > .btn{grid-column:1 / -1}
   #prof-cadastro-update-form > .btn{max-width:420px;justify-self:center;width:100%}
@@ -11301,7 +11301,8 @@ alt=""></noscript>
           '<div class="section-head"><div><h2 class="h3">Dados cadastrais</h2><div class="text--sm text--secondary">CPF/CNPJ e endereço são usados para segurança e não aparecem publicamente.</div></div>' +
             (cadastroPendente(user) ? '<span class="badge badge--warning"><span class="badge__dot"></span>Atualização necessária</span>' : '<span class="badge badge--success"><span class="badge__dot"></span>Atualizado</span>') +
           '</div>' +
-          '<form id="prof-cadastro-update-form" class="card stack">' +
+          (!cadastroPendente(user) ? '<button type="button" class="btn btn--outline" id="prof-cadastro-toggle" aria-expanded="false" aria-controls="prof-cadastro-update-form" style="margin-top:12px;">Editar dados cadastrais</button>' : '') +
+          '<form id="prof-cadastro-update-form" class="card stack"' + (!cadastroPendente(user) ? ' hidden' : '') + '>' +
             '<label class="field"><span class="field__label">Tipo de cadastro</span><select class="select" name="tipoPessoa" required><option value="cpf"' + (user.tipoPessoa !== 'cnpj' ? ' selected' : '') + '>Pessoa Física (CPF)</option><option value="cnpj"' + (user.tipoPessoa === 'cnpj' ? ' selected' : '') + '>Empresa / Pessoa Jurídica (CNPJ)</option></select></label>' +
             '<label class="field"><span class="field__label" data-update-doc-label>' + (user.tipoPessoa === 'cnpj' ? 'CNPJ' : 'CPF') + '</span><input class="input" name="documento" inputmode="numeric" required autocomplete="off" placeholder="' + (user.tipoPessoa === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00') + '"></label>' +
             '<label class="field"><span class="field__label" data-update-fantasia-label>' + (user.tipoPessoa === 'cnpj' ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)') + '</span><input class="input" name="nomeFantasia" maxlength="120" value="' + PU.escapeHtml(user.nomeFantasia || '') + '" placeholder="Nome profissional ou da empresa"></label>' +
@@ -12541,6 +12542,15 @@ alt=""></noscript>
 
   function bindPerfil(content, user) {
     const cadastroForm = content.querySelector('#prof-cadastro-update-form');
+    const cadastroToggle = content.querySelector('#prof-cadastro-toggle');
+    if (cadastroForm && cadastroToggle) {
+      cadastroToggle.addEventListener('click', function () {
+        const abrir = cadastroForm.hidden;
+        cadastroForm.hidden = !abrir;
+        cadastroToggle.setAttribute('aria-expanded', String(abrir));
+        cadastroToggle.textContent = abrir ? 'Fechar dados cadastrais' : 'Editar dados cadastrais';
+      });
+    }
     if (cadastroForm) {
       const tipo = cadastroForm.querySelector('[name="tipoPessoa"]');
       const doc = cadastroForm.querySelector('[name="documento"]');
