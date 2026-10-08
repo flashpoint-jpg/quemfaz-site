@@ -4686,7 +4686,24 @@ alt=""></noscript>
     if (role === 'profissional' && Array.isArray(customCats) && customCats.length) await ensureCustomCategories(customCats, user.id);
     const existing = await client.from('qf_profiles').select('*').eq('id', user.id).maybeSingle();
     if (existing.error) throw existing.error;
-    if (existing.data) return existing.data;
+    if (existing.data) {
+      // Cadastro interrompido após gravar o perfil: recupera o registro profissional ausente.
+      if (existing.data.tipo === 'profissional') {
+        const check = await client.from('qf_profissionais').select('user_id').eq('user_id', user.id).maybeSingle();
+        if (check.error) throw check.error;
+        if (!check.data) {
+          const categorias = data.categorias || meta.qf_categorias || [];
+          const restored = await client.from('qf_profissionais').upsert({
+            user_id: user.id,
+            especialidades: Array.isArray(categorias) ? categorias : [],
+            raio_km: Number(data.raioKm || meta.qf_raio_km || 10),
+            online: false
+          }, { onConflict: 'user_id' });
+          if (restored.error) throw restored.error;
+        }
+      }
+      return existing.data;
+    }
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || meta.qf_cidade || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || meta.qf_uf || '').trim().toUpperCase() || null;
@@ -5648,7 +5665,7 @@ alt=""></noscript>
       res = await client.auth.signUp({
         email: email,
         password: authPassword,
-        options: { data: meta }
+        options: { data: meta, emailRedirectTo: location.origin + location.pathname }
       });
       if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     }
@@ -5674,7 +5691,12 @@ alt=""></noscript>
   async function signIn(expectedRole, email, senha) {
     if (!enabled) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     const res = await client.auth.signInWithPassword({ email: email, password: senha });
-    if (res.error) return { ok: false, error: 'Senha incorreta. Tente novamente ou use “Esqueci minha senha”.' };
+    if (res.error) {
+      const authError = String(res.error.code || '') + ' ' + String(res.error.message || '');
+      if (/email_not_confirmed|email not confirmed/i.test(authError)) return { ok: false, error: 'Sua conta já foi criada. Confirme seu e-mail para entrar. Confira também a caixa de spam.' };
+      if (/rate limit|too many/i.test(authError)) return { ok: false, error: 'Muitas tentativas. Aguarde um pouco e tente novamente.' };
+      return { ok: false, error: 'Não foi possível entrar. Confira seu e-mail e senha ou use “Esqueci minha senha”.' };
+    }
     try {
       const p = await ensureProfile(res.data.user, expectedRole, null);
       await applyPendingIdentity(email, p.tipo);
@@ -8263,6 +8285,9 @@ alt=""></noscript>
             return;
           }
           global.navigate('/profissional/home', true);
+        } catch (err) {
+          console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
+          PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
         } finally {
           if (btn) btn.disabled = false;
         }
