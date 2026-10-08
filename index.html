@@ -2375,7 +2375,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.35.7"></script>
+<script src="qf-client-acquisition.js?v=11.36.0"></script>
 
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
@@ -7790,7 +7790,8 @@ alt=""></noscript>
       let sugestoesPedido = null;
       if (global.QFLocationAutocomplete && cidadePedido && ufPedido && bairroPedido) {
         sugestoesPedido = global.QFLocationAutocomplete.bind(cidadePedido, bairroPedido, function (r) {
-          ufPedido.value = r ? r.uf : '';
+          // Não apagar a UF escolhida manualmente enquanto a cidade é digitada.
+          if (r && r.uf) ufPedido.value = r.uf;
         }, { cityOnly: true });
         if (cidadePedido.value && ufPedido.value) sugestoesPedido.setRegion({ cidade: cidadePedido.value, uf: ufPedido.value });
         ufPedido.addEventListener('change', function () {
