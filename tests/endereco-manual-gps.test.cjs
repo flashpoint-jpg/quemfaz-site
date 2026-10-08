@@ -71,8 +71,8 @@ test('GPS é um botão de escolha explícita, sem substituir local manual automa
 
 test('home mostra ação de GPS com texto e estilo de botão, sem esconder no campo', () => {
   assert.match(html, /class="qf-home-gps-action" data-home-gps/);
-  assert.match(html, /qf-home-gps-action\\{display:inline-flex/);
-  assert.match(html, /Usar minha localização \\(GPS\\)/);
+  assert.match(html, /qf-home-gps-action\{display:inline-flex/);
+  assert.match(html, /Usar minha localização \(GPS\)/);
   const inicio = html.indexOf('data-landing-location placeholder=');
   const botao = html.indexOf('class="qf-home-gps-action" data-home-gps', inicio);
   const bairro = html.indexOf('data-landing-neighborhood', inicio);
