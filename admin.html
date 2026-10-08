@@ -1252,6 +1252,9 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-control-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}.qf-control-kpis>div{background:#f1f5f9;border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;gap:4px;text-align:center}.qf-control-kpis strong{font-size:23px;color:#0b3678}.qf-control-kpis span{font-size:11px;color:#475569}
 .qf-control-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.qf-control-facts span{font-size:11px;background:#edf4fc;color:#183c68;padding:7px 9px;border-radius:9px}.qf-control-status{font-size:12px;font-weight:700;color:#9a4c0a;margin-top:8px}
 @media(max-width:440px){.qf-control-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.qf-control-dashboard-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;background:#fff;border:1px solid #dce6f1;border-radius:16px;margin:12px 0}.qf-control-dashboard-link span{font-size:12px;color:#64748b}
+.qf-control-pro{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #e2e8f0}.qf-control-pro strong{display:block;font-size:13px;color:#12335c}.qf-control-pro small{display:block;font-size:11px;color:#64748b;margin-top:3px}.qf-control-pro>span{font-size:11px;font-weight:700;color:#0754b8;white-space:nowrap}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -5628,6 +5631,7 @@ Screens.adminDashboardRender = function () {
       '<div class="view qf-painel">' + migrationBanner() +
         (global.QFAdminParados ? global.QFAdminParados.banners() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="qf-painel__topo"><span class="text--sm text--secondary">Atualizado em ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
+        '<div class="qf-control-dashboard-link"><button class="btn btn--primary" type="button" data-nav="/admin/servicos">Abrir Central de Controle de Pedidos →</button><span>Todos os pedidos, desbloqueios e profissionais compatíveis</span></div>' +
         '<div class="qf-painel__grid">' +
           '<div class="qf-painel__col">' + receitaHtml(s) + comoEstaIndoHtml(s) + atalhosHtml(s) + '</div>' +
           '<div class="qf-painel__col">' + precisaHtml(s) + adminPedidosRecentesHtml() + '</div>' +
@@ -6146,6 +6150,27 @@ Screens.adminDashboardRender = function () {
       '<div><strong>' + fechados + '</strong><span>Fechados informados</span></div>' +
       '</div></section>';
   }
+  function adminProfissionaisElegiveisHtml(r) {
+    const city = DB.cityById ? DB.cityById(r.cidadeId) : null;
+    const cityName = ((r.endereco || {}).cidade || (city && city.nome) || '').toLowerCase().trim();
+    const pros = (DB.state.users.profissionais || []).filter(function(p){
+      const cats = p.categorias || [];
+      const matchesCat = cats.some(function(x){return String(x) === String(r.categoriaId);});
+      const pc = DB.cityById ? DB.cityById(p.cidadeId) : null;
+      const sameCity = p.cidadeId && r.cidadeId ? String(p.cidadeId) === String(r.cidadeId) : !!(cityName && pc && String(pc.nome || '').toLowerCase().trim() === cityName);
+      return matchesCat && sameCity && !p.bloqueado;
+    });
+    const online = pros.filter(function(p){return p.online;}).length;
+    return '<section class="section"><div class="section-head"><h2 class="h3">Profissionais da região e categoria</h2></div>' +
+      '<div class="card stack--sm"><div class="qf-control-facts"><span><strong>' + pros.length + '</strong> cadastrados compatíveis</span><span><strong>' + online + '</strong> online no último retrato</span></div>' +
+      '<p class="text--sm text--secondary">Compatibilidade preliminar por cidade e categoria. Distância exata, raio real, entrega de notificações e aceite exigem dados de geolocalização e eventos; não são confirmados aqui.</p>' +
+      (pros.length ? pros.slice(0,30).map(function(p){
+        const unlocked = desbloqueiosAtivos(r).some(function(x){return String(x.profissionalId) === String(p.id);});
+        return '<div class="qf-control-pro"><div><strong>' + PU.escapeHtml(p.nome || 'Profissional') + '</strong><small>' + (p.online ? 'Online no retrato' : 'Offline no retrato') + ' · Raio configurado: ' + Number(p.raioKm || 0) + ' km</small></div><span>' + (unlocked ? 'Desbloqueou' : 'Não desbloqueou') + '</span></div>';
+      }).join('') : '<p class="text--sm text--secondary">Nenhum profissional compatível por cidade e categoria no retrato atual.</p>') +
+      (pros.length > 30 ? '<p class="text--sm">Mostrando os primeiros 30 de ' + pros.length + ' profissionais.</p>' : '') +
+      '</div></section>';
+  }
   Screens.adminServicosRender = function (params) {
     const activeTab = (params && params.tab) || servicosTabAtual || 'todos';
     const all = DB.allRequests();
@@ -6239,6 +6264,7 @@ Screens.adminDashboardRender = function () {
           }).join('') : '<div class="card stack--sm" style="border-left:4px solid var(--orange-500,#f97316);">' + rowInfo('Profissional', 'Ainda nenhum profissional desbloqueou') + '</div>') +
         '</div>' +
 
+        adminProfissionaisElegiveisHtml(r) +
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Detalhes do pedido</h2></div>' +
           '<div class="card stack--sm">' +
