@@ -58,9 +58,9 @@
     if (!out.source) {
       try {
         var host = new URL(document.referrer).hostname.toLowerCase();
-        if (/(^|\\.)google\\./.test(host)) out.source = 'google_referral';
-        else if (/(^|\\.)(facebook\\.com|fb\\.com|instagram\\.com)$/.test(host)) out.source = 'meta_referral';
-        else if (/(^|\\.)bing\\.com$/.test(host)) out.source = 'bing_referral';
+        if (/(^|\.)google\./.test(host)) out.source = 'google_referral';
+        else if (/(^|\.)(facebook\.com|fb\.com|instagram\.com)$/.test(host)) out.source = 'meta_referral';
+        else if (/(^|\.)bing\.com$/.test(host)) out.source = 'bing_referral';
       } catch (_) {}
     }
     return out;
