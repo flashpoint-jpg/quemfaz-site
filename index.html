@@ -2929,6 +2929,18 @@ window.qfGoogleLead = function (requestId) {
 #app-shell[data-route="profissional-home"] .qf-prof-status .btn{margin-top:0;height:auto;min-height:44px;white-space:normal;font-size:13px}
 #app-shell[data-route="profissional-home"] .qf-prof-status__title{font-size:17px}
 #app-shell[data-route="profissional-home"] .qf-radar-meta{color:#526078;margin-top:10px;font-size:14px;line-height:1.5}
+.qf-prof-estado{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border-radius:14px;border:2px solid var(--success-600);background:#e8f8ee}
+.qf-prof-estado.is-offline{border-color:var(--danger-600);background:#fdecec}
+.qf-prof-estado__copy{min-width:0;flex:1}
+#app-shell[data-route="profissional-home"] .qf-prof-estado .qf-prof-status__title{color:#14713a}
+#app-shell[data-route="profissional-home"] .qf-prof-estado.is-offline .qf-prof-status__title{color:#b42318}
+.qf-prof-estado__msg{margin-top:3px;font-size:14px;line-height:1.35;font-weight:600;color:#14713a}
+.qf-prof-estado.is-offline .qf-prof-estado__msg{color:#b42318}
+.qf-prof-estado .qf-live-dot{background:#16a34a}
+.qf-prof-estado .qf-off-dot{background:#dc2626;box-shadow:0 0 0 4px rgba(220,38,38,.22)}
+#app-shell[data-route="profissional-home"] .qf-prof-status .qf-prof-estado__btn{width:auto;flex-shrink:0;padding:8px 14px;border:none;color:#fff;font-weight:800;background:#16a34a}
+#app-shell[data-route="profissional-home"] .qf-prof-status .qf-prof-estado.is-offline .qf-prof-estado__btn{background:#dc2626}
+@media(max-width:360px){.qf-prof-estado{flex-direction:column;align-items:stretch}.qf-prof-estado__btn{width:100%!important}}
 .qf-prof-shortcuts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid #e1e5ed}
 .qf-prof-shortcuts .btn{padding:10px 6px;gap:5px}
 .qf-prof-shortcuts svg{width:18px;height:18px;flex-shrink:0}
@@ -11175,6 +11187,65 @@ alt=""></noscript>
     if(b){e.preventDefault();abrirHorarioRapido();}
   });
 
+  // V11.42: "Ajustar raio" e "Adicionar profissão" abrem na própria tela inicial.
+  function abrirAtendimentoRapido(qual) {
+    const s0=DB.getSession(); const u=s0?DB.profissionalById(s0.userId):null;
+    if(!u) return;
+    const cid=u.cidadeId?DB.cityById(u.cidadeId):null;
+    const areas0=(u.areasAtendimento&&u.areasAtendimento.length)?u.areasAtendimento:[{cidade:(cid||{}).nome||'',uf:(cid||{}).uf||'',raioKm:u.raioKm||10}];
+    const ehArea=qual==='area';
+    PU.openSheet('<div class="stack" id="qf-atd-rapido">'+(ehArea
+      ? '<h3 class="sheet__title">Raio de atendimento</h3><p class="text--sm text--secondary" style="margin:0;">Arraste para escolher até quantos km você atende em cada cidade.</p><div id="qf-atd-areas">'+renderServiceAreas(areas0)+'</div><button class="btn btn--outline" type="button" id="qf-atd-add">'+icon('plus')+' Adicionar outra cidade</button>'
+      : '<h3 class="sheet__title">Suas profissões</h3><p class="text--sm text--secondary" style="margin:0;">Toque no grupo e marque todas as profissões que você atende.</p>'+global.QFCatPicker.html('qf-atd-cats',u.categorias||[]))+
+      '<button class="btn btn--primary" type="button" id="qf-atd-salvar" style="position:sticky;bottom:8px;z-index:2;box-shadow:0 0 0 8px #fff;">Salvar</button></div>');
+    const box=document.getElementById('qf-atd-rapido'); if(!box) return;
+    const wrap=box.querySelector('#qf-atd-areas'), chips=box.querySelector('#qf-atd-cats');
+    if(wrap){
+      wrap.addEventListener('input',function(e){const r=e.target.closest('[data-area-radius]');if(!r)return;const l=r.closest('[data-area-row]').querySelector('[data-area-radius-label]');if(l)l.textContent=r.value;});
+      wrap.addEventListener('click',function(e){const b=e.target.closest('[data-remove-area]');if(b)b.closest('[data-area-row]').remove();});
+      box.querySelector('#qf-atd-add').addEventListener('click',function(){
+        const n=wrap.querySelectorAll('[data-area-row]').length;
+        if(n>=10){PU.toast('Você pode cadastrar até 10 cidades por enquanto.','danger');return;}
+        wrap.insertAdjacentHTML('beforeend',renderServiceAreaRow({cidade:'',uf:'',raioKm:10},n));
+      });
+    }
+    if(chips){
+      chips.addEventListener('click',function(e){const c=e.target.closest('[data-chip-cat]');if(c)c.classList.toggle('is-selected');});
+      global.QFCatPicker.bind(chips);
+    }
+    const btn=box.querySelector('#qf-atd-salvar');
+    btn.onclick=async function(){
+      let areas=areas0, categorias=(u.categorias||[]).slice(), custom=[];
+      if(wrap){
+        areas=Array.prototype.map.call(wrap.querySelectorAll('[data-area-row]'),function(row){
+          return {cidade:row.querySelector('[data-area-city]').value.trim(),uf:row.querySelector('[data-area-uf]').value,raioKm:Number(row.querySelector('[data-area-radius]').value||10)};
+        }).filter(function(a){return a.cidade;});
+        if(!areas.length||areas.some(function(a){return !a.uf;})){PU.toast('Informe a cidade e o estado de atendimento.','danger');return;}
+      }
+      if(chips){
+        if(chips.qfAutoPick) chips.qfAutoPick();
+        categorias=Array.prototype.map.call(chips.querySelectorAll('[data-chip-cat].is-selected'),function(c){return c.getAttribute('data-chip-cat');});
+        custom=chips.qfCustomCategories?chips.qfCustomCategories():[];
+        if(!categorias.length){PU.toast('Toque na sua profissão na lista para marcar.','danger');return;}
+      }
+      btn.disabled=true;
+      try{
+        if(global.QFCloud&&global.QFCloud.enabled) await global.QFCloud.saveProfessionalSettings(categorias,areas,custom);
+        else{
+          const f=areas[0]; let lc=DB.cities().find(function(c){return String(c.nome).toLowerCase()===String(f.cidade).toLowerCase()&&c.uf===f.uf;});
+          if(!lc) lc=DB.criarCidade(f.cidade,f.uf);
+          DB.atualizarPerfilProfissional(u.id,{categorias:categorias,cidadeId:lc.id,raioKm:f.raioKm,areasAtendimento:areas});
+        }
+        PU.closeSheet();
+        PU.toast(ehArea?'Salvo! Você atende até '+areas[0].raioKm+' km.':'Profissões salvas!','success');
+        if(/\/profissional\/home/.test(location.hash)) global.navigate('/profissional/home',true);
+      }catch(err){
+        PU.toast(err&&err.message?err.message:'Não foi possível salvar agora. Tente de novo.','danger');
+        btn.disabled=false;
+      }
+    };
+  }
+
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
     const todasChamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
@@ -11203,7 +11274,7 @@ alt=""></noscript>
       pendingGate(user)+
       avisoAtualizacaoCadastral(user)+
       ativ.html+
-      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'"><div class="qf-prof-welcome"><div class="avatar avatar--lg qf-avatar qf-prof-welcome__avatar">'+(user.fotoUrl?'<img src="'+PU.escapeHtml(user.fotoUrl)+'" alt="">':PU.escapeHtml(String(user.nome||'QF').trim().slice(0,2).toUpperCase()))+'</div><div class="qf-prof-welcome__copy"><div class="qf-prof-welcome__title">Bem-vindo, '+PU.escapeHtml((user.tipoPessoa==='cnpj'&&String(user.nomeFantasia||'').trim())?String(user.nomeFantasia).trim():String(user.nome||'').trim().split(/\\s+/)[0])+'!</div><div class="qf-prof-welcome__msg">Obrigado por fazer parte do Quem Faz.</div></div></div><div class="qf-prof-status__top"><div class="qf-prof-status__title"><span class="'+(user.online?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+ (user.online?'Online':'Offline')+'</div><button class="btn btn--outline" type="button" data-action="'+(user.online?'ficar-offline-agora':'ficar-online-agora')+'">'+(user.online?'Ficar offline':'Ficar online')+'</button></div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div><div class="qf-prof-shortcuts"><button class="btn btn--outline" type="button" data-prof-settings="area">'+icon('mapPin')+' Ajustar raio</button><button class="btn btn--outline" type="button" data-prof-settings="profissao">'+icon('plus')+' Adicionar profissão</button></div></div>'+
+      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'"><div class="qf-prof-welcome"><div class="avatar avatar--lg qf-avatar qf-prof-welcome__avatar">'+(user.fotoUrl?'<img src="'+PU.escapeHtml(user.fotoUrl)+'" alt="">':PU.escapeHtml(String(user.nome||'QF').trim().slice(0,2).toUpperCase()))+'</div><div class="qf-prof-welcome__copy"><div class="qf-prof-welcome__title">Bem-vindo, '+PU.escapeHtml((user.tipoPessoa==='cnpj'&&String(user.nomeFantasia||'').trim())?String(user.nomeFantasia).trim():String(user.nome||'').trim().split(/\\s+/)[0])+'!</div><div class="qf-prof-welcome__msg">Obrigado por fazer parte do Quem Faz.</div></div></div><div class="qf-prof-estado '+(user.online?'is-online':'is-offline')+'"><div class="qf-prof-estado__copy"><div class="qf-prof-status__title"><span class="'+(user.online?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+(user.online?'Você está online':'Você está offline')+'</div><div class="qf-prof-estado__msg">'+(user.online?'Você está recebendo pedidos.':'Você não pode receber pedidos. Toque em “Ficar online” para receber.')+'</div></div><button class="btn qf-prof-estado__btn" type="button" data-action="'+(user.online?'ficar-offline-agora':'ficar-online-agora')+'">'+(user.online?'Ficar offline':'Ficar online')+'</button></div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div><div class="qf-prof-shortcuts"><button class="btn btn--outline" type="button" data-prof-settings="area">'+icon('mapPin')+' Ajustar raio</button><button class="btn btn--outline" type="button" data-prof-settings="profissao">'+icon('plus')+' Adicionar profissão</button></div></div>'+
       horarioAtendimentoLembrete(user)+ // V11.41: lembrete do horário, direto na tela inicial
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.':'Fique online para receber chamados perto de você.')+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
@@ -12695,15 +12766,9 @@ alt=""></noscript>
   document.addEventListener('click', async function (event) {
     const shortcut = event.target.closest('[data-prof-settings]');
     if (shortcut) {
-      const section = shortcut.getAttribute('data-prof-settings');
-      global.navigate('/profissional/perfil', true);
-      requestAnimationFrame(function () {
-        const target = document.getElementById(section === 'area' ? 'perfil-areas' : 'perfil-cats');
-        if (!target) return;
-        target.scrollIntoView({block:'start'});
-        const field = target.querySelector(section === 'area' ? '[data-area-radius]' : '[data-catpick-search]');
-        if (field) field.focus({preventScroll:true});
-      });
+      // V11.42: raio e profissão abrem na própria tela (como o horário), sem ir para o Perfil.
+      event.preventDefault();
+      abrirAtendimentoRapido(shortcut.getAttribute('data-prof-settings') === 'area' ? 'area' : 'profissao');
     }
     const refresh = event.target.closest('[data-prof-refresh]');
     if (!refresh || refresh.disabled) return;
@@ -13582,7 +13647,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.41.0';
+  const APP_VERSION = '11.42.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
