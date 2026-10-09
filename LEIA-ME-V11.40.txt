@@ -1,0 +1,21 @@
+QuemFaz 11.40.0 — Contador de profissionais por cidade na tela inicial
+
+Motivo: a página prometia "até 3 profissionais chamam você" sem mostrar que há gente cadastrada.
+
+O que entrou (computador e celular):
+- Faixa "N profissionais cadastrados em N cidades" com o botão "Ver cidades".
+- A lista mostra todas as cidades onde há profissional. Com 3 ou mais, aparece o número;
+  com 1 ou 2, só o nome da cidade.
+- Conta todos os cadastrados (verificados ou não).
+- Atualiza sozinho: lê o banco ao abrir a página e a cada minuto enquanto ela estiver aberta.
+- Sem resposta do banco, a faixa não aparece. Nunca mostra número fixo ou inventado.
+
+Banco: supabase/migrations/20261008214500_home_stats_profissionais.sql (aplicado no projeto QuemFaz).
+Função qf_home_stats(): devolve só totais por cidade, sem nome, contato ou dado de profissional;
+cidades com menos de 3 saem sem número. Liberada para visitante (anon).
+
+Não mudou: foto, título, busca com um campo só e "Pedir grátis".
+
+Validação: npm test (62 testes, 1 novo em tests/home-contador.test.cjs). No navegador (390 e 1366px),
+com resposta simulada do banco: lista, números só a partir de 3, novo cadastro subindo o total com a
+lista aberta, nome de cidade com HTML escapado e faixa oculta sem resposta.

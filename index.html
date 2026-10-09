@@ -2582,6 +2582,8 @@ window.qfGoogleLead = function (requestId) {
 #app-shell[data-route="inicio"] .qf-landing-footer .qf-footer-help { all: unset; cursor: pointer; display: inline-block; padding: 14px 6px; color: var(--navy-700); text-decoration: underline; }
 .qf-desk-extra, .qf-desk-wide, .qf-desk-menu { display: none; }
 .qf-mob-extra { display: grid; gap: 10px; margin-bottom: 4px; }
+.qf-stats-slot:empty { display: none; }
+.qf-stats__list { max-height: 340px; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
 .qf-stats { background: var(--navy-900); color: #fff; border-radius: 16px; }
 .qf-stats summary { display: flex; align-items: center; gap: 10px; min-height: 60px; padding: 10px 14px; cursor: pointer; list-style: none; }
 .qf-stats summary::-webkit-details-marker { display: none; }
@@ -2600,7 +2602,7 @@ window.qfGoogleLead = function (requestId) {
 .qf-stats__list small { font-weight: 600; color: var(--text-on-navy-muted); }
 .qf-stats__list b { flex: none; min-width: 26px; padding: 2px 7px; border-radius: 999px; background: var(--orange-500); color: #fff; font-size: 12.5px; text-align: center; }
 .qf-stats__more { margin: 12px 0 0; font-size: 13px; line-height: 1.45; color: var(--text-on-navy-muted); }
-@media (min-width: 900px) { .qf-stats-slot { min-height: 68px; } .qf-stats summary { padding: 12px 20px; min-height: 68px; } .qf-stats__txt strong { display: inline; font-size: 22px; } .qf-stats__txt { font-size: 16px; } .qf-stats__body { padding: 0 20px 20px; } }
+@media (min-width: 900px) { .qf-stats summary { padding: 12px 20px; min-height: 68px; } .qf-stats__txt strong { display: inline; font-size: 22px; } .qf-stats__txt { font-size: 16px; } .qf-stats__body { padding: 0 20px 20px; } }
 .qf-mob-extra + .section { margin-top: 0; }
 .qf-mob-extra:empty { display: none; }
 .qf-mob-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 18px; padding: 16px; }
@@ -7252,7 +7254,7 @@ alt=""></noscript>
   const DESK_SERVICES = [['Eletricista','bolt'],['Encanador','droplet'],['Pintor','paintRoller'],['Montador de móveis','toolbox'],['Diarista','home'],['Limpeza de sofá','broom','Limpeza de estofados e tapetes'],['Pedreiro','trowel'],['Marido de aluguel','wrench'],['Desentupidor','pipe']];
   function deskExtra() {
     return '<div class="qf-desk-extra">' +
-      '<div class="qf-stats-slot" data-home-lazy="stats"></div>' +
+      '<div class="qf-stats-slot" data-home-stats></div>' +
       '<section class="qf-desk-card" id="qf-sec-como" aria-labelledby="qf-desk-how"><h2 class="qf-desk-h" id="qf-desk-how">Como funciona</h2><ol class="qf-desk-steps">' +
         '<li><span class="qf-desk-num">1</span><div><strong>Escreva o que você precisa</strong><p>Leva menos de 1 minuto. É grátis e não precisa de cadastro.</p></div></li>' +
         '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 3 profissionais recebem o seu pedido.</p></div></li>' +
@@ -7268,7 +7270,7 @@ alt=""></noscript>
   // Prévia do celular: mais conteúdo abaixo do botão, curto, com o resto recolhido em "toque para abrir".
   function mobFold(titulo, corpo) { return '<details class="qf-mob-fold"><summary><span>' + titulo + '</span>' + icon('chevronDown') + '</summary><div class="qf-mob-fold__body">' + corpo + '</div></details>'; }
   function mobExtraInner() {
-    return statsInner() + '<section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
+    return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
         '<li><span class="qf-mob-num">1</span><div><strong>Escreva o que você precisa</strong><p>Grátis e sem cadastro.</p></div></li>' +
         '<li><span class="qf-mob-num">2</span><div><strong>Até 3 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
@@ -7278,15 +7280,39 @@ alt=""></noscript>
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
   }
-  // PRÉVIA: contador de profissionais por cidade. Números = retrato real do banco em 08/10/2026;
-  // na versão final vêm de uma consulta pública só com totais (sem dado pessoal) e sobem sozinhos.
-  const STATS_PREVIA = { total: 195, cidades: 60, top: [['São Paulo','SP',83],['São Bernardo do Campo','SP',8],['Jundiaí','SP',6],['Osasco','SP',6],['Diadema','SP',5],['Mogi das Cruzes','SP',5],['Guarulhos','SP',4],['Itaquaquecetuba','SP',4],['Ribeirão Pires','SP',4],['Santana de Parnaíba','SP',4],['Suzano','SP',4],['Belo Horizonte','MG',3],['Praia Grande','SP',3],['Santo André','SP',3],['São Vicente','SP',3]] };
-  function statsInner() {
-    const d = STATS_PREVIA;
-    return '<details class="qf-stats"><summary><span class="qf-stats__live" aria-hidden="true"></span><span class="qf-stats__txt"><strong>' + d.total + ' profissionais</strong> cadastrados em ' + d.cidades + ' cidades</span><span class="qf-stats__btn">Ver cidades' + icon('chevronDown') + '</span></summary>' +
+  // Contador de profissionais por cidade. Os números vêm de qf_home_stats() (só totais, sem dado pessoal)
+  // e sobem sozinhos a cada cadastro. Sem resposta do banco, a faixa não aparece: nunca mostra número inventado.
+  function statsCity(nome) { return String(nome || '').toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); }).replace(/ (De|Do|Da|Dos|Das|E) /g, function (m) { return m.toLowerCase(); }); }
+  function statsHtml(d, open) {
+    const esc = function (v) { return String(v).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
+    const total = Number(d && d.total) || 0, lista = (d && Array.isArray(d.lista)) ? d.lista : [];
+    if (total < 1 || !lista.length) return '';
+    return '<details class="qf-stats"' + (open ? ' open' : '') + '><summary><span class="qf-stats__live" aria-hidden="true"></span><span class="qf-stats__txt"><strong>' + total + ' profissionais</strong> cadastrados em ' + lista.length + ' cidades</span><span class="qf-stats__btn">Ver cidades' + icon('chevronDown') + '</span></summary>' +
       '<div class="qf-stats__body"><p class="qf-stats__note">Atualiza sozinho a cada novo cadastro.</p>' +
-      '<ul class="qf-stats__list">' + d.top.map(function (c) { return '<li data-stats-city="' + c[0].toLowerCase() + '"><span>' + c[0] + ' <small>' + c[1] + '</small></span><b>' + c[2] + '</b></li>'; }).join('') + '</ul>' +
-      '<p class="qf-stats__more">e mais ' + (d.cidades - d.top.length) + ' cidades. Não achou a sua? Peça mesmo assim: avisamos os profissionais mais próximos.</p></div></details>';
+      '<ul class="qf-stats__list">' + lista.map(function (c) { const n = Number(c.n) || 0; return '<li><span>' + esc(statsCity(c.cidade)) + ' <small>' + esc(c.uf || '') + '</small></span>' + (n >= 3 ? '<b>' + n + '</b>' : '') + '</li>'; }).join('') + '</ul>' +
+      '<p class="qf-stats__more">Não achou a sua cidade? Peça mesmo assim: avisamos os profissionais mais próximos.</p></div></details>';
+  }
+  let statsData = null, statsTimer = null;
+  function statsPaint(root) {
+    (root || document).querySelectorAll('[data-home-stats]').forEach(function (el) {
+      const atual = el.querySelector('.qf-stats');
+      el.innerHTML = statsData ? statsHtml(statsData, !!(atual && atual.open)) : '';
+    });
+  }
+  async function statsLoad(root) {
+    try { if (!statsData) { const salvo = JSON.parse(localStorage.getItem('qf_home_stats') || 'null'); if (salvo && salvo.total) { statsData = salvo; statsPaint(root); } } } catch (_) {}
+    try {
+      const c = global.QFCloud && global.QFCloud.client; if (!c) return;
+      const r = await c.rpc('qf_home_stats'); if (r.error || !r.data || !r.data.total) return;
+      statsData = r.data; statsPaint(root);
+      try { localStorage.setItem('qf_home_stats', JSON.stringify(r.data)); } catch (_) {}
+    } catch (_) {}
+  }
+  // Chamado quando a tela inicial é montada; renova a cada minuto enquanto ela estiver aberta.
+  function statsStart(root) {
+    statsLoad(root);
+    if (statsTimer) clearInterval(statsTimer);
+    statsTimer = setInterval(function () { if (!document.querySelector('[data-home-stats]')) { clearInterval(statsTimer); statsTimer = null; return; } if (!document.hidden) statsLoad(document); }, 60000);
   }
   function deskMenu() {
     return '<nav class="qf-desk-menu" aria-label="Menu do site">' +
@@ -7322,7 +7348,7 @@ alt=""></noscript>
   // O conteúdo abaixo da primeira tela entra depois que o app carrega, para a página abrir leve.
   function deskWide() { return '<div class="qf-desk-wide" data-home-lazy="wide"></div>'; }
   function mobExtra() { return '<div class="qf-mob-extra" data-home-lazy="mob"></div>'; }
-  global.QFHomeExtras = { wide: deskWideInner, mob: mobExtraInner, stats: statsInner };
+  global.QFHomeExtras = { wide: deskWideInner, mob: mobExtraInner, stats: statsStart };
   function roleCard(role) {
     const m = ROLE_META[role];
     return (
@@ -7980,6 +8006,7 @@ alt=""></noscript>
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/') {
       content.querySelectorAll('[data-home-lazy]').forEach(function(el){const f=global.QFHomeExtras&&global.QFHomeExtras[el.getAttribute('data-home-lazy')];if(f&&!el.firstChild)el.innerHTML=f();});
+      if(global.QFHomeExtras&&global.QFHomeExtras.stats)global.QFHomeExtras.stats(content);
       const landingSearchForm=content.querySelector('[data-landing-service-form]');
       const landingSearch=content.querySelector('[data-landing-service-search]');
       const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
@@ -13505,7 +13532,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.39.0';
+  const APP_VERSION = '11.40.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
