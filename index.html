@@ -11126,6 +11126,18 @@ alt=""></noscript>
   }
   global.QFAtivacao = { estado: ativacaoEstado, boasVindas: function (uid) { ativGravar('sessionStorage', ATIV_BOAS_VINDAS, uid ? String(uid) : null); } };
 
+  // V11.41: o chamado só chega para quem está online e dentro do horário de atendimento.
+  // O lembrete fica na tela inicial e leva direto ao ajuste do horário.
+  function horarioAtendimentoLembrete(user) {
+    const ini=String((user&&user.horarioInicio)||'06:00').slice(0,5), fim=String((user&&user.horarioFim)||'22:00').slice(0,5);
+    const faixa=ini===fim?'o dia todo':'das '+ini+' às '+fim;
+    return '<div class="section" id="qf-horario-lembrete"><div class="card row-between" style="gap:12px;align-items:center;">'+
+      '<div><div class="text--strong">Horário de atendimento: '+PU.escapeHtml(faixa)+'</div>'+
+      '<div class="text--sm text--secondary">Você só recebe chamado online e dentro desse horário.</div></div>'+
+      '<button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/configuracoes">Ajustar horário</button>'+
+    '</div></div>';
+  }
+
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
     const todasChamadas=DB.chamadasPendentes(user.id).slice().sort(function(a,b){
@@ -11155,6 +11167,7 @@ alt=""></noscript>
       avisoAtualizacaoCadastral(user)+
       ativ.html+
       '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'"><div class="qf-prof-welcome"><div class="avatar avatar--lg qf-avatar qf-prof-welcome__avatar">'+(user.fotoUrl?'<img src="'+PU.escapeHtml(user.fotoUrl)+'" alt="">':PU.escapeHtml(String(user.nome||'QF').trim().slice(0,2).toUpperCase()))+'</div><div class="qf-prof-welcome__copy"><div class="qf-prof-welcome__title">Bem-vindo, '+PU.escapeHtml((user.tipoPessoa==='cnpj'&&String(user.nomeFantasia||'').trim())?String(user.nomeFantasia).trim():String(user.nome||'').trim().split(/\\s+/)[0])+'!</div><div class="qf-prof-welcome__msg">Obrigado por fazer parte do Quem Faz.</div></div></div><div class="qf-prof-status__top"><div class="qf-prof-status__title"><span class="'+(user.online?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+ (user.online?'Online':'Offline')+'</div><button class="btn btn--outline" type="button" data-action="'+(user.online?'ficar-offline-agora':'ficar-online-agora')+'">'+(user.online?'Ficar offline':'Ficar online')+'</button></div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div><div class="qf-prof-shortcuts"><button class="btn btn--outline" type="button" data-prof-settings="area">'+icon('mapPin')+' Ajustar raio</button><button class="btn btn--outline" type="button" data-prof-settings="profissao">'+icon('plus')+' Adicionar profissão</button></div></div>'+
+      horarioAtendimentoLembrete(user)+ // V11.41: lembrete do horário, direto na tela inicial
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.12: enquanto a ativação está pendente, o cartão de ativação já mostra o que falta
       '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.':'Fique online para receber chamados perto de você.')+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
       global.QFAbertos.secaoHtml(abertos,user)+
@@ -11884,7 +11897,7 @@ alt=""></noscript>
   });
 
   // ---------------- Preferências de chamado (V11.11) ----------------
-  // Horário para receber chamado estando offline + modo do alerta (toque+vibração ou só vibração).
+  // V11.41: horário de atendimento (só recebe online e dentro dele) + modo do alerta.
   function prefChamadoSection(user) {
     const ini = (user && user.horarioInicio) || '06:00';
     const fim = (user && user.horarioFim) || '22:00';
@@ -11895,13 +11908,13 @@ alt=""></noscript>
         '<div><div class="text--strong">' + titulo + '</div><div class="text--sm text--secondary">' + sub + '</div></div></label>';
     }
     return '<div class="section" id="pref-chamado">' +
-      '<div class="section-head"><div><h2 class="h3">Quando receber chamados</h2><div class="text--sm text--secondary">Online você recebe sempre. Offline, só no horário que escolher.</div></div></div>' +
+      '<div class="section-head"><div><h2 class="h3">Horário de atendimento</h2><div class="text--sm text--secondary">Você recebe chamado quando está online e dentro deste horário.</div></div></div>' +
       '<div class="card stack">' +
         '<div class="row" style="gap:10px;">' +
           '<label class="field" style="flex:1;"><span class="field__label">Das</span><input class="input" type="time" id="pref-inicio" value="' + PU.escapeHtml(ini) + '" required></label>' +
           '<label class="field" style="flex:1;"><span class="field__label">Até</span><input class="input" type="time" id="pref-fim" value="' + PU.escapeHtml(fim) + '" required></label>' +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin:0;">Fora desse horário, se estiver offline, você não é chamado. Para receber o dia todo, coloque o mesmo horário nos dois campos.</p>' +
+        '<p class="text--sm text--secondary" style="margin:0;">Fora desse horário você não é chamado, mesmo online. Offline você não recebe. Para atender o dia todo, coloque o mesmo horário nos dois campos.</p>' +
         '<div class="field__label" style="margin-top:4px;">Como avisar um chamado novo</div>' +
         '<div class="stack stack--sm">' +
           opt('toque', 'Tocar e vibrar', 'Recomendado: você não perde chamado.') +
@@ -11923,7 +11936,7 @@ alt=""></noscript>
     return '<div class="view stack">' +
       prefChamadoSection(user) +
       '<div class="section"><div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('info') + '</div>' +
-        '<div class="text--sm">Ficar <strong>online</strong> faz você receber o chamado antes dos outros, a qualquer hora. O horário acima vale só para quando você está <strong>offline</strong>.</div></div></div></div>' +
+        '<div class="text--sm">Para receber chamado você precisa estar <strong>online</strong> e dentro do <strong>horário de atendimento</strong> acima. Offline você não recebe.</div></div></div></div>' +
       '<div class="section stack--sm"><div class="section-head"><h2 class="h3">Notificações</h2></div>' +
         (global.QFPush ? global.QFPush.card('profissional') : '') +
         ((global.QFNativeOnline && global.QFNativeOnline.available()) ? linha('', 'bell', 'Revisar permissões de alerta', 'Para o chamado tocar mesmo com a tela apagada', 'revisar-alertas') : '') +
@@ -12122,7 +12135,7 @@ alt=""></noscript>
           '<button class="card row" style="width:100%;text-align:left;" data-nav="/profissional/configuracoes">' +
             '<div class="icon-tile icon-tile--orange">' + icon('sliders') + '</div>' +
             '<div class="spacer"><div class="text--strong">Configurações de chamados</div><div class="text--sm text--secondary">' +
-              PU.escapeHtml(((user && user.horarioInicio) || '06:00') === ((user && user.horarioFim) || '22:00') ? 'Recebe o dia todo' : 'Offline: das ' + ((user && user.horarioInicio) || '06:00') + ' às ' + ((user && user.horarioFim) || '22:00')) +
+              PU.escapeHtml(((user && user.horarioInicio) || '06:00') === ((user && user.horarioFim) || '22:00') ? 'Atende o dia todo' : 'Atende das ' + ((user && user.horarioInicio) || '06:00') + ' às ' + ((user && user.horarioFim) || '22:00')) +
               ' · ' + ((user && user.alertaModo) === 'vibrar' ? 'Só vibrar' : 'Tocar e vibrar') +
             '</div></div>' +
             icon('chevronRight', 'list-item__chevron') +
@@ -13532,7 +13545,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.40.0';
+  const APP_VERSION = '11.41.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

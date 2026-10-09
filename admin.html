@@ -3493,6 +3493,10 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
           temFoto: !!p.tem_foto, verificado: !!pr.verificado, categorias: pr.especialidades || [],
           cidadeId: cityId(a ? a.cidade : p.cidade, a ? a.uf : p.uf), raioKm: Number((a && a.raio_km) || pr.raio_km || 10),
           areas: (areas[p.id] || []).map(function (x) { return x.cidade + '/' + x.uf + ' (' + x.raio_km + ' km)'; }),
+          // V11.41: tudo o que o admin pode editar do profissional.
+          areasLista: (areas[p.id] || []).map(function (x) { return { cidade: x.cidade, uf: String(x.uf || '').trim() }; }),
+          horarioInicio: String(pr.horario_inicio || '06:00').slice(0, 5), horarioFim: String(pr.horario_fim || '22:00').slice(0, 5),
+          alertaModo: pr.alerta_modo === 'vibrar' ? 'vibrar' : 'toque', descricao: pr.descricao || '', nomeFantasia: p.nome_fantasia || '',
           statusAprovacao: 'aprovado', online: !!pr.online, saldo: wallets[p.id] || 0, creditos: wallets[p.id] || 0,
           avaliacaoMedia: Number(pr.avaliacao_media || 0), totalAvaliacoes: Number(pr.total_avaliacoes || 0), documentos: {}
         }));
@@ -5934,6 +5938,16 @@ Screens.adminDashboardRender = function () {
       '<div class="row" style="gap:8px;"><div style="flex:1">' + campo('eu-cid', 'Cidade', inputTxt('eu-cid', cidade)) + '</div><div style="width:92px">' + campo('eu-uf', 'UF', selectUf('eu-uf', uf)) + '</div></div>' +
       (cats ? '<div class="field"><span class="field__label">Profissões (toque para marcar)</span><div class="row" id="eu-cats" style="gap:6px;flex-wrap:wrap;max-height:260px;overflow:auto;">' +
         DB.categories().map(function (k) { return '<button type="button" class="chip' + (cats.indexOf(k.id) !== -1 ? ' is-selected' : '') + '" data-eu-cat="' + k.id + '">' + PU.escapeHtml(k.nome) + '</button>'; }).join('') + '</div></div>' : '') +
+      (tipo === 'profissional' ?
+        campo('eu-fantasia', 'Nome fantasia (empresa)', inputTxt('eu-fantasia', u.nomeFantasia, ' maxlength="100"')) +
+        campo('eu-raio', 'Raio de atendimento (km)', inputTxt('eu-raio', String(u.raioKm || 20), ' type="number" inputmode="numeric" min="1" max="300" step="1"')) +
+        campo('eu-areas', 'Cidades de atendimento (uma por linha, Cidade/UF)', '<textarea class="textarea" id="eu-areas" rows="3" style="height:auto;">' + PU.escapeHtml((u.areasLista || []).map(function (a) { return a.cidade + '/' + a.uf; }).join('\n')) + '</textarea>') +
+        '<div class="row" style="gap:8px;"><div style="flex:1">' + campo('eu-hini', 'Atende das', inputTxt('eu-hini', u.horarioInicio || '06:00', ' type="time"')) + '</div><div style="flex:1">' + campo('eu-hfim', 'Até', inputTxt('eu-hfim', u.horarioFim || '22:00', ' type="time"')) + '</div></div>' +
+        '<div class="text--sm text--muted">Só recebe chamado online e dentro desse horário. Mesmo horário nos dois campos = o dia todo.</div>' +
+        campo('eu-alerta', 'Aviso de chamado', '<select class="select" id="eu-alerta"><option value="toque"' + (u.alertaModo === 'vibrar' ? '' : ' selected') + '>Tocar e vibrar</option><option value="vibrar"' + (u.alertaModo === 'vibrar' ? ' selected' : '') + '>Só vibrar</option></select>') +
+        campo('eu-desc', 'Descrição do profissional', '<textarea class="textarea" id="eu-desc" rows="3" maxlength="1000" style="height:auto;">' + PU.escapeHtml(u.descricao || '') + '</textarea>') +
+        '<label class="row" style="gap:8px;align-items:center;"><input type="checkbox" id="eu-online"' + (u.online ? ' checked' : '') + '> Online (desmarque para deixar offline)</label>'
+      : '') +
       '<label class="row" style="gap:8px;align-items:center;"><input type="checkbox" id="eu-ativo"' + (u.bloqueado ? '' : ' checked') + '> Conta ativa (desmarque para bloquear)</label>' +
       '<div class="text--sm text--muted">E-mail de login: ' + PU.escapeHtml(u.email || '—') + '</div>' +
       '<button class="btn btn--primary" type="button" id="eu-salvar">Salvar alterações</button></div>');
@@ -5943,6 +5957,26 @@ Screens.adminDashboardRender = function () {
       const b = this; b.disabled = true;
       const dados = { nome: val('eu-nome').trim(), whatsapp: val('eu-wa').trim(), cidade: val('eu-cid').trim(), uf: val('eu-uf'), ativo: document.getElementById('eu-ativo').checked };
       if (box) dados.especialidades = Array.prototype.map.call(box.querySelectorAll('.is-selected'), function (x) { return x.getAttribute('data-eu-cat'); });
+      if (tipo === 'profissional') {
+        // V11.41: o admin controla todas as opções do profissional.
+        const raio = Number(val('eu-raio'));
+        if (!Number.isInteger(raio) || raio < 1 || raio > 300) { PU.toast('O raio precisa ficar entre 1 e 300 km.', 'danger'); b.disabled = false; return; }
+        const cidades = [], invalidas = [];
+        val('eu-areas').split(/\n+/).forEach(function (linha) {
+          const t = linha.trim(); if (!t) return;
+          const m = /^(.+?)\s*[\/\-,]\s*([A-Za-z]{2})$/.exec(t);
+          if (m && UFS.indexOf(m[2].toUpperCase()) !== -1) cidades.push({ cidade: m[1].trim(), uf: m[2].toUpperCase() }); else invalidas.push(t);
+        });
+        if (invalidas.length) { PU.toast('Cidade fora do formato Cidade/UF: ' + invalidas[0], 'danger'); b.disabled = false; return; }
+        if (!cidades.length) { PU.toast('Informe pelo menos uma cidade de atendimento.', 'danger'); b.disabled = false; return; }
+        if (!val('eu-hini') || !val('eu-hfim')) { PU.toast('Preencha o horário de atendimento.', 'danger'); b.disabled = false; return; }
+        dados.nome_fantasia = val('eu-fantasia').trim();
+        dados.raio_km = raio; dados.cidades = cidades;
+        dados.horario_inicio = val('eu-hini'); dados.horario_fim = val('eu-hfim');
+        dados.alerta_modo = val('eu-alerta'); dados.descricao = val('eu-desc').trim();
+        // Só manda online/offline quando o admin mexeu, para não desfazer o que o profissional acabou de escolher.
+        if (document.getElementById('eu-online').checked !== !!u.online) dados.online = document.getElementById('eu-online').checked;
+      }
       try { await global.QFAdminCloud.editarUsuario(u.id, dados); PU.closeSheet(); PU.toast('Dados atualizados.', 'success'); recarregar(location.hash.replace(/^#/, '')); }
       catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); b.disabled = false; }
     };

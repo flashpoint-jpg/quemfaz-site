@@ -1,0 +1,21 @@
+QuemFaz 11.41.0 — Aviso de chamado só para quem está online e no horário; admin edita tudo do profissional
+
+Motivo: profissional de Praia Grande (raio de 20 km) recebeu aviso de pedidos em São Paulo e São Caetano,
+fora do horário dele. A ampliação da busca (até 60/100 km) ignorava o raio, o horário e o offline.
+
+Regra nova do aviso de chamado (função qf_chamado_destinatarios_alcance):
+- Offline não recebe.
+- Online recebe só dentro do horário de atendimento que escolheu.
+- A ampliação nunca passa do raio do próprio profissional. Quem atende a cidade do pedido continua recebendo.
+- Não mudou: a lista "Pedidos para você" e os pedidos abertos a todos.
+
+App do profissional:
+- Tela inicial: cartão "Horário de atendimento" com o botão "Ajustar horário", que abre direto o ajuste.
+- Configurações: textos trocados para a regra nova.
+
+Painel admin (Editar profissional):
+- Raio (km), cidades de atendimento, horário, tipo de aviso, descrição, nome fantasia e online/offline,
+  além do que já existia (nome, WhatsApp, cidade, profissões, conta ativa).
+
+Banco: supabase/migrations/20261009011500_aviso_so_online_no_horario_e_admin_edita_tudo.sql
+Validação: npm test (tests/aviso-online-horario.test.cjs).
