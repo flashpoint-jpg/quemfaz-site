@@ -8412,12 +8412,15 @@ alt=""></noscript>
         function continuar() {
           const a = servicoAtual();
           if (!a.nome) {
+            // V11.43.2: falha na etapa 1 também entra no painel (antes só a etapa 2 registrava).
+            if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: 'service' });
             PU.toast('Informe qual serviço você precisa para continuar.', 'danger');
             const campo = form.querySelector('[data-servico-edit-input]');
             if (campo) campo.focus();
             return;
           }
           if (descricaoInput.value.trim().length < 3) {
+            if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: 'description' });
             escrevendo = true; desenhar();
             atualizarAjudaDescricao(true);
             PU.toast('Descreva brevemente o que precisa. Exemplo: consertar torneira vazando.', 'danger');
@@ -13687,7 +13690,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.43.1';
+  const APP_VERSION = '11.43.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
