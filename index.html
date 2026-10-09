@@ -7944,7 +7944,9 @@ alt=""></noscript>
         if (!res.ok) { PU.toast(res.error || 'Não foi possível enviar o link.', 'danger'); return; }
         PU.openSheet(
           '<div class="stack"><h3 class="sheet__title">Confira seu e-mail</h3>' +
-          '<p class="text text--secondary">Se esse e-mail estiver cadastrado no QuemFaz, você receberá um link para criar uma nova senha.</p>' +
+          '<p class="text text--secondary">Enviamos um link para <strong>' + PU.escapeHtml(email) + '</strong>, se esse e-mail estiver cadastrado no QuemFaz.</p>' +
+          '<p class="text text--secondary"><strong>1.</strong> Abra o e-mail. <strong>2.</strong> Toque no link. <strong>3.</strong> Crie a nova senha.</p>' +
+          '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);"><strong>Não achou?</strong> Olhe na caixa de spam. Se pedir de novo, use só o e-mail mais recente.</div></div>' +
           '<button class="btn btn--primary" id="qf-password-recovery-done">Entendi</button></div>'
         );
         const done = document.getElementById('qf-password-recovery-done');

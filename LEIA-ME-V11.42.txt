@@ -3,5 +3,6 @@ QuemFaz 11.42.0 — Tela inicial do profissional: tudo abre ali mesmo e o online
 - "Ajustar raio" e "Adicionar profissão" abrem na própria tela inicial (como o "Ajustar horário"), sem ir para o Perfil.
 - Online: faixa verde, botão verde e a mensagem "Você está recebendo pedidos."
 - Offline: faixa vermelha, botão vermelho e a mensagem "Você não pode receber pedidos. Toque em “Ficar online” para receber."
+- Esqueci minha senha: o aviso mostra o e-mail, os 3 passos e manda olhar o spam e usar o e-mail mais recente.
 
 Validação: npm test e tests/prof-home-browser.cjs.
