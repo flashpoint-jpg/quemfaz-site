@@ -2581,6 +2581,32 @@ window.qfGoogleLead = function (requestId) {
 .qf-big-cta--ad .qf-big-cta__tx small { font-size: 13.5px; color: var(--text-secondary); }
 #app-shell[data-route="inicio"] .qf-landing-footer .qf-footer-help { all: unset; cursor: pointer; display: inline-block; padding: 14px 6px; color: var(--navy-700); text-decoration: underline; }
 .qf-desk-extra, .qf-desk-wide, .qf-desk-menu { display: none; }
+.qf-mob-extra { display: grid; gap: 10px; margin-bottom: 4px; }
+.qf-mob-extra + .section { margin-top: 0; }
+.qf-mob-extra:empty { display: none; }
+.qf-mob-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 18px; padding: 16px; }
+.qf-mob-h { margin: 0; font-family: var(--qf-display); font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy-900); }
+.qf-mob-steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; }
+.qf-mob-steps li { display: flex; gap: 12px; align-items: center; }
+.qf-mob-steps strong { display: block; font-size: 15px; font-weight: 750; line-height: 1.25; color: var(--navy-900); }
+.qf-mob-steps p { margin: 1px 0 0; font-size: 13.5px; line-height: 1.35; color: var(--text-secondary); }
+.qf-mob-num { width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--navy-900); color: #fff; font-family: var(--qf-display); font-size: 16px; font-weight: 800; }
+.qf-mob-num--zap { background: #128c4a; }
+.qf-mob-num svg { width: 17px; height: 17px; }
+.qf-mob-fold { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px; }
+.qf-mob-fold summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding: 0 16px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 750; color: var(--navy-900); }
+.qf-mob-fold summary::-webkit-details-marker { display: none; }
+.qf-mob-fold summary svg { width: 20px; height: 20px; flex: none; color: var(--text-secondary); transition: transform .15s; }
+.qf-mob-fold[open] summary svg { transform: rotate(180deg); }
+.qf-mob-fold summary:focus-visible { outline: 3px solid var(--orange-400); outline-offset: 2px; border-radius: 14px; }
+.qf-mob-fold__body { padding: 0 16px 16px; }
+.qf-mob-fold__body p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; color: var(--navy-800); }
+.qf-mob-fold__body p:last-child { margin-bottom: 0; }
+.qf-mob-fold .qf-desk-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 9px; }
+.qf-mob-fold .qf-desk-list:last-child { margin-bottom: 0; }
+.qf-mob-fold .qf-desk-list li { display: flex; gap: 9px; align-items: flex-start; font-size: 14.5px; line-height: 1.4; color: var(--navy-800); }
+.qf-mob-fold .qf-desk-list svg { width: 17px; height: 17px; flex: none; margin-top: 2px; color: #128c4a; stroke-width: 2.6; }
+@media (min-width: 900px) { .qf-mob-extra { display: none; } }
 .qf-desk-extra + .section { margin-top: 0; }
 @media (min-width: 900px) {
   #app-shell[data-route="inicio"] .qf-desk-extra { display: grid; gap: 16px; margin-bottom: 12px; }
@@ -7193,7 +7219,7 @@ alt=""></noscript>
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
-      deskExtra() +
+      deskExtra() + mobExtra() +
       '<section class="section">' +
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
@@ -7219,16 +7245,28 @@ alt=""></noscript>
     '</div>';
   }
 
+  // Prévia do celular: mais conteúdo abaixo do botão, curto, com o resto recolhido em "toque para abrir".
+  function mobFold(titulo, corpo) { return '<details class="qf-mob-fold"><summary><span>' + titulo + '</span>' + icon('chevronDown') + '</summary><div class="qf-mob-fold__body">' + corpo + '</div></details>'; }
+  function mobExtraInner() {
+    return '<section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
+        '<li><span class="qf-mob-num">1</span><div><strong>Escreva o que você precisa</strong><p>Grátis e sem cadastro.</p></div></li>' +
+        '<li><span class="qf-mob-num">2</span><div><strong>Até 3 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
+        '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
+      '</ol></section>' +
+      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
+      mobFold('Sou profissional', deskList(['R$ 25 em créditos grátis no cadastro, sem validade','Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender']) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
+      mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
+      mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
+  }
   function deskMenu() {
     return '<nav class="qf-desk-menu" aria-label="Menu do site">' +
       [['qf-sec-como','Como funciona'],['qf-sec-servicos','Serviços'],['qf-sec-beneficios','Benefícios'],['qf-sec-recrut','Recrutamento'],['qf-sec-app','Baixar o app'],['qf-sec-quem','Quem somos']].map(function (x) { return '<button type="button" data-desk-go="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</nav>';
   }
   function deskList(items) { return '<ul class="qf-desk-list">' + items.map(function (t) { return '<li>' + icon('check') + '<span>' + t + '</span></li>'; }).join('') + '</ul>'; }
-  function deskWide() {
+  function deskWideInner() {
     const loja = (global.QF_PLAY && /^https:/.test(global.QF_PLAY.LINK_DA_LOJA || '')) ? global.QF_PLAY.LINK_DA_LOJA : 'https://play.google.com/store/apps/details?id=br.app.quemfaz';
     const play = '<a class="qf-desk-play" href="' + loja + '" target="_blank" rel="noopener">' + icon('download') + '<span><small>Disponível na</small>Google Play</span></a>';
-    return '<div class="qf-desk-wide">' +
-      '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
+    return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 3 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
@@ -7249,9 +7287,12 @@ alt=""></noscript>
       '<section class="qf-desk-card qf-desk-about" id="qf-sec-quem" aria-labelledby="qf-desk-quemh"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-quemh">Quem somos</h2>' +
         '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região: eletricista, encanador, pintor, diarista, montador de móveis e dezenas de outros.</p>' +
         '<p>A ideia é simples: você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação. Para o profissional, é um jeito de receber pedidos de clientes por perto e escolher quais quer atender.</p></section>' +
-      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer>' +
-    '</div>';
+      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer>';
   }
+  // O conteúdo abaixo da primeira tela entra depois que o app carrega, para a página abrir leve.
+  function deskWide() { return '<div class="qf-desk-wide" data-home-lazy="wide"></div>'; }
+  function mobExtra() { return '<div class="qf-mob-extra" data-home-lazy="mob"></div>'; }
+  global.QFHomeExtras = { wide: deskWideInner, mob: mobExtraInner };
   function roleCard(role) {
     const m = ROLE_META[role];
     return (
@@ -7908,6 +7949,7 @@ alt=""></noscript>
 
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/') {
+      content.querySelectorAll('[data-home-lazy]').forEach(function(el){const f=global.QFHomeExtras&&global.QFHomeExtras[el.getAttribute('data-home-lazy')];if(f&&!el.firstChild)el.innerHTML=f();});
       const landingSearchForm=content.querySelector('[data-landing-service-form]');
       const landingSearch=content.querySelector('[data-landing-service-search]');
       const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
