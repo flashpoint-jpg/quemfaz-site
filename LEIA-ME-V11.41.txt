@@ -10,7 +10,8 @@ Regra nova do aviso de chamado (função qf_chamado_destinatarios_alcance):
 - Não mudou: a lista "Pedidos para você" e os pedidos abertos a todos.
 
 App do profissional:
-- Tela inicial: cartão "Horário de atendimento" com o botão "Ajustar horário", que abre direto o ajuste.
+- Tela inicial: cartão "Horário de atendimento" com o botão "Ajustar horário", que abre o ajuste ali mesmo, sem trocar de tela.
+- Pedido feito fora do horário continua em "Pedidos para você" e aparece quando ele abre o app.
 - Configurações: textos trocados para a regra nova.
 
 Painel admin (Editar profissional):

@@ -15,11 +15,13 @@ test('banco: aviso exige online, horário e respeita o raio do profissional', ()
   assert.match(fn, /least\(greatest\(1,coalesce\(p_raio_km,0\)\),x\.raio_proprio\)/);
 });
 
-test('profissional: lembrete do horário na tela inicial leva direto ao ajuste', () => {
+test('profissional: lembrete do horário na tela inicial ajusta ali mesmo', () => {
   const home = index.slice(index.indexOf('Screens.profHomeRender = function'));
   assert.match(home.slice(0, 6000), /horarioAtendimentoLembrete\(user\)/);
   const helper = index.slice(index.indexOf('function horarioAtendimentoLembrete'), index.indexOf('Screens.profHomeRender = function'));
-  assert.match(helper, /data-nav="\/profissional\/configuracoes"/);
+  assert.match(helper, /data-qf-horario-rapido/);
+  assert.ok(!/data-nav/.test(helper));
+  assert.match(index, /function abrirHorarioRapido\(\)[\s\S]{0,2500}qf_salvar_preferencias_chamado/);
   assert.match(helper, /Ajustar horário/);
   // A tela de configurações abre com o horário no topo.
   const cfg = index.slice(index.indexOf('Screens.profConfigRender = function'));

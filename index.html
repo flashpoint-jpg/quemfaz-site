@@ -11127,16 +11127,53 @@ alt=""></noscript>
   global.QFAtivacao = { estado: ativacaoEstado, boasVindas: function (uid) { ativGravar('sessionStorage', ATIV_BOAS_VINDAS, uid ? String(uid) : null); } };
 
   // V11.41: o chamado só chega para quem está online e dentro do horário de atendimento.
-  // O lembrete fica na tela inicial e leva direto ao ajuste do horário.
+  // O lembrete fica na tela inicial e o ajuste abre ali mesmo, sem trocar de tela.
   function horarioAtendimentoLembrete(user) {
     const ini=String((user&&user.horarioInicio)||'06:00').slice(0,5), fim=String((user&&user.horarioFim)||'22:00').slice(0,5);
     const faixa=ini===fim?'o dia todo':'das '+ini+' às '+fim;
     return '<div class="section" id="qf-horario-lembrete"><div class="card row-between" style="gap:12px;align-items:center;">'+
       '<div><div class="text--strong">Horário de atendimento: '+PU.escapeHtml(faixa)+'</div>'+
       '<div class="text--sm text--secondary">Você só recebe chamado online e dentro desse horário.</div></div>'+
-      '<button class="btn btn--sm btn--primary btn--block-auto" type="button" data-nav="/profissional/configuracoes">Ajustar horário</button>'+
+      '<button class="btn btn--sm btn--primary btn--block-auto" type="button" data-qf-horario-rapido="1">Ajustar horário</button>'+
     '</div></div>';
   }
+
+  function abrirHorarioRapido() {
+    const s0=DB.getSession(); const u=s0?DB.profissionalById(s0.userId):null;
+    if(!u) return;
+    const ini=String(u.horarioInicio||'06:00').slice(0,5), fim=String(u.horarioFim||'22:00').slice(0,5);
+    PU.openSheet('<div class="stack"><h3 class="sheet__title">Horário de atendimento</h3>'+
+      '<div class="row" style="gap:10px;">'+
+        '<label class="field" style="flex:1;"><span class="field__label">Das</span><input class="input" type="time" id="qf-hr-ini" value="'+PU.escapeHtml(ini)+'" required></label>'+
+        '<label class="field" style="flex:1;"><span class="field__label">Até</span><input class="input" type="time" id="qf-hr-fim" value="'+PU.escapeHtml(fim)+'" required></label>'+
+      '</div>'+
+      '<p class="text--sm text--secondary" style="margin:0;">Você recebe chamado online e dentro desse horário. Para atender o dia todo, coloque o mesmo horário nos dois campos.</p>'+
+      '<button class="btn btn--primary" type="button" id="qf-hr-salvar">Salvar horário</button></div>');
+    const btn=document.getElementById('qf-hr-salvar');
+    if(!btn) return;
+    btn.onclick=async function(){
+      const a=(document.getElementById('qf-hr-ini')||{}).value||'', b=(document.getElementById('qf-hr-fim')||{}).value||'';
+      if(!/^\d{2}:\d{2}$/.test(a)||!/^\d{2}:\d{2}$/.test(b)){PU.toast('Escolha o horário de início e de fim.','danger');return;}
+      if(!(global.QFCloud&&global.QFCloud.client)){PU.toast('Sem conexão com o QuemFaz agora. Tente de novo.','danger');return;}
+      btn.disabled=true;
+      try{
+        const res=await global.QFCloud.client.rpc('qf_salvar_preferencias_chamado',{p_inicio:a,p_fim:b,p_alerta:u.alertaModo==='vibrar'?'vibrar':'toque'});
+        if(res.error) throw res.error;
+        u.horarioInicio=a; u.horarioFim=b; DB.persist();
+        PU.closeSheet();
+        PU.toast(a===b?'Salvo! Você atende o dia todo.':'Salvo! Você atende das '+a+' às '+b+'.','success');
+        if(/\/profissional\/home/.test(location.hash)) global.navigate('/profissional/home',true);
+      }catch(err){
+        console.warn('QuemFaz horário',err);
+        PU.toast('Não foi possível salvar agora. Tente de novo.','danger');
+        btn.disabled=false;
+      }
+    };
+  }
+  document.addEventListener('click',function(e){
+    const b=e.target&&e.target.closest?e.target.closest('[data-qf-horario-rapido]'):null;
+    if(b){e.preventDefault();abrirHorarioRapido();}
+  });
 
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
@@ -12060,7 +12097,7 @@ alt=""></noscript>
       const s = DB.getSession();
       const u = s ? DB.profissionalById(s.userId) : null;
       if (u) { u.horarioInicio = ini; u.horarioFim = fim; u.alertaModo = modo; DB.persist(); }
-      PU.toast(ini === fim ? 'Salvo! Você recebe chamados o dia todo.' : 'Salvo! Offline, você recebe chamados das ' + ini + ' às ' + fim + '.', 'success');
+      PU.toast(ini === fim ? 'Salvo! Você recebe chamados o dia todo.' : 'Salvo! Você atende das ' + ini + ' às ' + fim + '.', 'success');
       Array.prototype.forEach.call(box.querySelectorAll('input[name="pref-alerta"]'), function (r) {
         const card = r.closest('label');
         if (card) { card.style.borderColor = r.checked ? 'var(--orange-500)' : ''; card.style.boxShadow = r.checked ? '0 0 0 1px var(--orange-500)' : ''; }
