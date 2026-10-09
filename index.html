@@ -2658,7 +2658,7 @@ window.qfGoogleLead = function (requestId) {
   .qf-desk-app__card > div { flex: 1; min-width: 0; }
   .qf-desk-app__card strong { display: block; font-size: 17px; font-weight: 800; }
   .qf-desk-app__card p { margin: 3px 0 0; font-size: 14px; line-height: 1.4; color: var(--text-on-navy-muted); }
-  .qf-desk-play { display: flex; align-items: center; gap: 10px; flex: none; min-height: 52px; padding: 6px 16px; border-radius: 12px; background: #fff; color: var(--navy-900); text-decoration: none; font-size: 16px; font-weight: 800; line-height: 1.15; }
+  .qf-desk-play { border: 0; cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 10px; flex: none; min-height: 52px; padding: 6px 16px; border-radius: 12px; background: #fff; color: var(--navy-900); text-decoration: none; font-size: 16px; font-weight: 800; line-height: 1.15; }
   .qf-desk-play svg { width: 20px; height: 20px; flex: none; color: var(--orange-600); }
   .qf-desk-play small { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); }
   .qf-desk-play:hover { background: var(--orange-100); }
@@ -7264,8 +7264,8 @@ alt=""></noscript>
   }
   function deskList(items) { return '<ul class="qf-desk-list">' + items.map(function (t) { return '<li>' + icon('check') + '<span>' + t + '</span></li>'; }).join('') + '</ul>'; }
   function deskWideInner() {
-    const loja = (global.QF_PLAY && /^https:/.test(global.QF_PLAY.LINK_DA_LOJA || '')) ? global.QF_PLAY.LINK_DA_LOJA : 'https://play.google.com/store/apps/details?id=br.app.quemfaz';
-    const play = '<a class="qf-desk-play" href="' + loja + '" target="_blank" rel="noopener">' + icon('download') + '<span><small>Disponível na</small>Google Play</span></a>';
+    // A página do app na Google Play ainda não abre para o público; por isso o botão usa o "Instalar app" do próprio site.
+    const play = '<button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Instalar app</span></button>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 3 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
@@ -7280,7 +7280,7 @@ alt=""></noscript>
         '<ol class="qf-desk-steps">' +
           [['Escolha um pacote','Compra avulsa, sem renovação automática. Parte do valor vira anúncio da sua vaga.'],['Cadastre a vaga','Cargo, cidade, benefícios e quantas pessoas você precisa.'],['O QuemFaz divulga','Nós criamos e cuidamos dos anúncios da vaga.'],['Receba os candidatos','Contato e currículo ficam liberados no seu painel, sem taxa por candidato.']].map(function (x, i) { return '<li><span class="qf-desk-num">' + (i + 1) + '</span><div><strong>' + x[0] + '</strong><p>' + x[1] + '</p></div></li>'; }).join('') +
         '</ol></section>' +
-      '<section class="qf-desk-app" id="qf-sec-app" aria-labelledby="qf-desk-apph"><div class="qf-desk-app__head"><h2 id="qf-desk-apph">Instale o app QuemFaz no celular</h2><p>Na Google Play, para Android. O mesmo app serve para cliente e para profissional.</p></div><div class="qf-desk-two">' +
+      '<section class="qf-desk-app" id="qf-sec-app" aria-labelledby="qf-desk-apph"><div class="qf-desk-app__head"><h2 id="qf-desk-apph">Instale o app QuemFaz</h2><p>Abre pelo ícone, como um aplicativo. O mesmo app serve para cliente e para profissional.</p></div><div class="qf-desk-two">' +
         '<div class="qf-desk-app__card">' + icon('user') + '<div><strong>Sou cliente</strong><p>Faça pedidos e acompanhe quem respondeu, direto pelo app.</p></div>' + play + '</div>' +
         '<div class="qf-desk-app__card">' + icon('briefcase') + '<div><strong>Sou profissional</strong><p>Receba o aviso de pedido novo com toque alto, mesmo com o celular no bolso.</p></div>' + play + '</div>' +
       '</div></section>' +
@@ -7978,6 +7978,7 @@ alt=""></noscript>
         cat_encanador:'encanamento hidraulica vazamento vazando torneira cano pia entupida entupido vaso descarga agua',
         cat_montador:'montagem montar moveis movel guarda roupa guarda-roupa armario cama mesa desmontar',
         cat_diarista:'faxina limpeza limpar casa apartamento sujeira diarista domestica',
+        cat_limpeza_estofados:'limpeza de sofa limpar sofa lavar sofa sofa sujo estofado poltrona colchao tapete carpete higienizacao lavagem a seco',
         cat_pintor:'pintura pintar parede teto tinta descascando mofo',
         cat_pedreiro:'reforma obra construcao construir alvenaria piso azulejo reboco quebrar parede',
         cat_jardinagem:'jardim jardinagem jardineiro grama cortar grama poda podar arvore',
@@ -13474,7 +13475,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.38.0';
+  const APP_VERSION = '11.39.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
