@@ -1253,6 +1253,60 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 .qf-control-facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.qf-control-facts span{font-size:11px;background:#edf4fc;color:#183c68;padding:7px 9px;border-radius:9px}.qf-control-status{font-size:12px;font-weight:700;color:#9a4c0a;margin-top:8px}
 @media(max-width:440px){.qf-control-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* V11.44: Central de pedidos — quem desbloqueou e a hora dentro do pedido + extrato ao lado. */
+.qf-ped-cols{display:flex;flex-direction:column;gap:14px}
+.qf-ped-cols>*{min-width:0}
+.qf-ped{padding:0;overflow:hidden;border-left:5px solid #e2e6ee}
+.qf-ped--sem{border-left-color:var(--danger-600)}.qf-ped--des{border-left-color:var(--orange-500)}.qf-ped--fec{border-left-color:var(--success-600)}.qf-ped--can{border-left-color:#c9d0dc}
+.qf-ped__topo{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.qf-ped__titulo{font-weight:700;font-size:16px;color:var(--text-primary)}
+.qf-ped__sub{font-size:13.5px;color:var(--text-secondary);margin-top:2px;line-height:1.4;word-break:break-word}
+.qf-ped__meta{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:13.5px;color:var(--text-secondary)}
+.qf-ped__meta strong{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.qf-vagas{display:inline-flex;gap:4px;vertical-align:middle;margin-right:6px}
+.qf-vagas i{width:14px;height:8px;border-radius:4px;background:#e2e6ee}.qf-vagas i.on{background:var(--orange-500)}
+.qf-ped__quem{background:#fafbfd;border-top:1px solid #e2e6ee;padding:10px 16px 12px}
+.qf-ped__quem h3{margin:0 0 6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);font-weight:700}
+.qf-ped__pro{display:flex;align-items:center;gap:10px;padding:7px 0}
+.qf-ped__pro+.qf-ped__pro{border-top:1px dashed #e2e6ee}
+.qf-ped__av{flex:none;width:36px;height:36px;border-radius:50%;background:var(--navy-100);color:var(--navy-800);display:grid;place-items:center;font-weight:700;font-size:13px}
+.qf-ped__n{flex:1;min-width:0}
+.qf-ped__n b{display:block;color:var(--text-primary);word-break:break-word}
+.qf-ped__n span{font-size:12.5px;color:var(--text-secondary)}
+.qf-ped__h{text-align:right;flex:none}
+.qf-ped__h b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+.qf-ped__h span{display:block;font-size:12px;color:var(--text-secondary)}
+.qf-ped__tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:4px;background:var(--success-100);color:var(--success-600);vertical-align:middle}
+.qf-ped__vazio{color:var(--danger-600);font-weight:600;font-size:14px;padding:4px 0}
+.qf-ped--can .qf-ped__vazio,.qf-ped--fec .qf-ped__vazio{color:var(--text-secondary)}
+.qf-extrato{background:#fff;border:1px solid #e2e6ee;border-radius:16px;overflow:hidden}
+.qf-extrato>summary{list-style:none;cursor:pointer;background:var(--navy-900);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.qf-extrato>summary::-webkit-details-marker{display:none}
+.qf-extrato>summary strong{display:block;font-size:16px}
+.qf-extrato>summary small{display:block;font-size:12.5px;color:var(--text-on-navy-muted);margin-top:2px}
+.qf-extrato>summary em{font-style:normal;font-size:12.5px;font-weight:700;background:rgba(255,255,255,.14);padding:6px 10px;border-radius:999px;white-space:nowrap}
+.qf-extrato[open]>summary em{display:none}
+.qf-extrato__dia{display:flex;justify-content:space-between;gap:8px;background:#f3f5f9;padding:7px 16px;font-size:12px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em}
+.qf-extrato__mov{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;padding:10px 16px;border-top:1px solid #e2e6ee;align-items:center}
+.qf-extrato__mov:hover{background:#fafbfd}
+.qf-extrato__hr{font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-primary)}
+.qf-extrato__hr small{display:block;font-weight:400;font-size:11.5px;color:var(--text-muted)}
+.qf-extrato__qm{min-width:0}
+.qf-extrato__qm b,.qf-extrato__qm span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qf-extrato__qm b{color:var(--text-primary)}.qf-extrato__qm span{font-size:12.5px;color:var(--text-secondary)}
+.qf-extrato__vl{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;color:var(--success-600)}
+.qf-extrato__vl small{display:block;font-weight:600;font-size:11.5px;color:var(--text-muted)}
+.qf-extrato__vl.is-zero{color:var(--text-secondary)}
+.qf-extrato__total{display:flex;justify-content:space-between;padding:12px 16px;border-top:2px solid var(--navy-900);font-weight:700;color:var(--text-primary)}
+.qf-extrato__total b{font-variant-numeric:tabular-nums}
+.qf-extrato__vazio{padding:16px;font-size:14px;color:var(--text-secondary)}
+@media(min-width:980px){
+  .qf-ped-cols{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:20px;align-items:start}
+  .qf-ped-cols__lista{grid-column:1;grid-row:1}
+  .qf-extrato{grid-column:2;grid-row:1;position:sticky;top:12px;max-height:calc(100vh - 110px);overflow-y:auto}
+  .qf-extrato>summary{cursor:default;pointer-events:none;position:sticky;top:0}
+}
+
 .qf-control-dashboard-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;background:#fff;border:1px solid #dce6f1;border-radius:16px;margin:12px 0}.qf-control-dashboard-link span{font-size:12px;color:#64748b}
 .qf-control-pro{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #e2e8f0}.qf-control-pro strong{display:block;font-size:13px;color:#12335c}.qf-control-pro small{display:block;font-size:11px;color:#64748b;margin-top:3px}.qf-control-pro>span{font-size:11px;font-weight:700;color:#0754b8;white-space:nowrap}
 </style>
@@ -6167,16 +6221,105 @@ Screens.adminDashboardRender = function () {
     if (nav && nav.getAttribute('data-nav') === '/admin/servicos') servicosTabAtual = 'todos';
   }, true);
 
-  function adminPedidoControleHtml(r) {
-    const desb = desbloqueiosAtivos(r);
-    const encerrados = desb.filter(function(x){return x.desfecho === 'fechado';}).length;
-    const naoFechados = desb.filter(function(x){return x.desfecho === 'nao_fechado';}).length;
-    const status = encerrados ? 'Serviço fechado (informado)' : desb.length ? 'Desbloqueado · aguardando desfecho' : 'Aguardando desbloqueio';
-    return '<div class="qf-control-facts">' +
-      '<span><strong>' + desb.length + '/3</strong> desbloqueios</span>' +
-      '<span><strong>' + encerrados + '</strong> fechados</span>' +
-      '<span><strong>' + naoFechados + '</strong> não fechados</span>' +
-      '</div><div class="qf-control-status">' + PU.escapeHtml(status) + '</div>';
+  // V11.44: data e hora sempre no horário de Brasília, e quanto tempo levou para desbloquear.
+  const QF_TZ = 'America/Sao_Paulo';
+  function qfHora(iso) { const d = new Date(iso); return isNaN(d) ? '—' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: QF_TZ }); }
+  function qfDiaMes(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', timeZone: QF_TZ }); }
+  function qfDiaChave(iso) { const d = iso ? new Date(iso) : new Date(); return isNaN(d) ? '' : d.toLocaleDateString('en-CA', { timeZone: QF_TZ }); }
+  function qfDiaRotulo(chave) {
+    if (!chave) return 'Sem data';
+    const p = chave.split('-'), br = p[2] + '/' + p[1] + '/' + p[0];
+    if (chave === qfDiaChave()) return 'Hoje · ' + br;
+    if (chave === qfDiaChave(new Date(Date.now() - 86400000).toISOString())) return 'Ontem · ' + br;
+    return br;
+  }
+  function qfDuracao(ms) {
+    if (!(ms >= 0)) return '';
+    const min = Math.floor(ms / 60000);
+    if (min < 1) return 'menos de 1 min';
+    if (min < 60) return min + ' min';
+    const h = Math.floor(min / 60);
+    if (h < 24) return h + 'h' + (min % 60 ? ' ' + String(min % 60).padStart(2, '0') + 'min' : '');
+    const d = Math.floor(h / 24);
+    return d + (d === 1 ? ' dia' : ' dias');
+  }
+  // Como o desbloqueio foi pago: crédito da carteira, plano ou sem cobrança (bônus/grátis).
+  function qfDesbPagamento(x) {
+    if (x.origem === 'plano') return { valor: 0, rotulo: 'plano' };
+    const v = Number(x.valor || 0);
+    return v > 0 ? { valor: v, rotulo: 'crédito' } : { valor: 0, rotulo: 'grátis' };
+  }
+  function qfPedidoTitulo(r) {
+    const cat = DB.categoryById(r.categoriaId);
+    return (cat && cat.nome) || 'Serviço';
+  }
+  // Extrato: uma linha por desbloqueio (data, hora, quem, qual pedido e valor), do mais novo para o mais antigo.
+  const EXTRATO_MAX = 80;
+  function adminExtratoMovimentos(all) {
+    const movs = [];
+    all.forEach(function (r) {
+      desbloqueiosAtivos(r).forEach(function (x) {
+        movs.push({ r: r, x: x, t: Date.parse(x.criadoEm) || 0 });
+      });
+    });
+    return movs.sort(function (a, b) { return b.t - a.t; });
+  }
+  function adminExtratoHtml(all) {
+    const movs = adminExtratoMovimentos(all);
+    const hoje = qfDiaChave();
+    let qtdHoje = 0, totalHoje = 0;
+    const dias = [], porDia = {};
+    movs.forEach(function (m) {
+      const k = m.t ? qfDiaChave(m.x.criadoEm) : '';
+      const pg = qfDesbPagamento(m.x);
+      if (!porDia[k]) { porDia[k] = { chave: k, qtd: 0, total: 0, movs: [] }; dias.push(porDia[k]); }
+      porDia[k].qtd += 1; porDia[k].total += pg.valor; porDia[k].movs.push(m);
+      if (k === hoje) { qtdHoje += 1; totalHoje += pg.valor; }
+    });
+    let restam = EXTRATO_MAX;
+    const corpo = dias.map(function (d) {
+      if (restam <= 0) return '';
+      const linhas = d.movs.slice(0, restam); restam -= linhas.length;
+      return '<div class="qf-extrato__dia"><span>' + PU.escapeHtml(qfDiaRotulo(d.chave)) + '</span><span>' + d.qtd + (d.qtd === 1 ? ' desbloqueio' : ' desbloqueios') + '</span></div>' +
+        linhas.map(function (m) {
+          const p = DB.profissionalById(m.x.profissionalId);
+          const pg = qfDesbPagamento(m.x);
+          const pedido = qfPedidoTitulo(m.r) + (m.r.titulo ? ' · ' + String(m.r.titulo).trim() : '');
+          return '<button type="button" class="qf-extrato__mov" data-nav="/admin/servicos/' + m.r.id + '">' +
+            '<span class="qf-extrato__hr">' + (m.t ? qfHora(m.x.criadoEm) : '—') + '<small>' + (m.t ? qfDiaMes(m.x.criadoEm) : 'sem data') + '</small></span>' +
+            '<span class="qf-extrato__qm"><b>' + PU.escapeHtml((p && p.nome) || 'Profissional') + '</b><span>' + PU.escapeHtml(pedido) + '</span></span>' +
+            '<span class="qf-extrato__vl' + (pg.valor > 0 ? '' : ' is-zero') + '">' + PU.formatCurrency(pg.valor) + '<small>' + pg.rotulo + '</small></span>' +
+          '</button>';
+        }).join('') +
+        '<div class="qf-extrato__total"><span>Total do dia</span><b>' + PU.formatCurrency(d.total) + '</b></div>';
+    }).join('');
+    const largo = !!(global.matchMedia && global.matchMedia('(min-width:980px)').matches);
+    return '<details class="qf-extrato" id="extrato-desbloqueios"' + (largo ? ' open' : '') + '>' +
+      '<summary><span><strong>Extrato de desbloqueios</strong><small>Hoje: ' + qtdHoje + (qtdHoje === 1 ? ' desbloqueio' : ' desbloqueios') + ' · ' + PU.formatCurrency(totalHoje) + '</small></span><em>Abrir</em></summary>' +
+      (movs.length ? corpo + (movs.length > EXTRATO_MAX ? '<div class="qf-extrato__vazio">Mostrando os ' + EXTRATO_MAX + ' mais recentes de ' + movs.length + '.</div>' : '')
+        : '<div class="qf-extrato__vazio">Nenhum desbloqueio registrado ainda.</div>') +
+    '</details>';
+  }
+  // Quem desbloqueou, dentro do próprio pedido: nome, hora, data, valor e resultado.
+  function adminPedidoQuemHtml(r, fechadoOuCancelado) {
+    const desb = desbloqueiosAtivos(r).slice().sort(function (a, b) { return (Date.parse(a.criadoEm) || 0) - (Date.parse(b.criadoEm) || 0); });
+    const t0 = Date.parse(r.criadoEm) || 0;
+    if (!desb.length) {
+      return '<div class="qf-ped__quem"><h3>Quem desbloqueou</h3><div class="qf-ped__vazio">' +
+        (fechadoOuCancelado ? 'Ninguém desbloqueou' : 'Ninguém ainda' + (t0 ? ' · aberto há ' + qfDuracao(Date.now() - t0) : '')) + '</div></div>';
+    }
+    return '<div class="qf-ped__quem"><h3>Quem desbloqueou · ' + desb.length + ' de 3</h3>' + desb.map(function (x, n) {
+      const p = DB.profissionalById(x.profissionalId);
+      const nome = (p && p.nome) || 'Profissional';
+      const t = Date.parse(x.criadoEm) || 0;
+      const pg = qfDesbPagamento(x);
+      const partes = [(n + 1) + 'º'];
+      if (t && t0 && t >= t0) partes.push(qfDuracao(t - t0) + ' depois do pedido');
+      if (x.desfecho === 'fechado') partes.push('fechou o serviço'); else if (x.desfecho === 'nao_fechado') partes.push('não fechou');
+      return '<div class="qf-ped__pro"><div class="qf-ped__av">' + PU.escapeHtml(PU.initials(nome)) + '</div>' +
+        '<div class="qf-ped__n"><b>' + PU.escapeHtml(nome) + (p && p.verificado ? '<span class="qf-ped__tag">Verificado</span>' : '') + '</b><span>' + PU.escapeHtml(partes.join(' · ')) + '</span></div>' +
+        '<div class="qf-ped__h"><b>' + (t ? qfHora(x.criadoEm) : '—') + '</b><span>' + (t ? qfDiaMes(x.criadoEm) + ' · ' : '') + (pg.valor > 0 ? PU.formatCurrency(pg.valor) : pg.rotulo) + '</span></div></div>';
+    }).join('') + '</div>';
   }
   function adminControleResumoHtml(all) {
     const abertos = all.filter(function(r){return !desbloqueiosAtivos(r).length && r.status !== 'cancelado' && r.status !== 'concluido';}).length;
@@ -6216,10 +6359,15 @@ Screens.adminDashboardRender = function () {
     return (
       '<div class="view qf-control-page">' +
         adminControleResumoHtml(all) +
-        '<div class="segmented" id="servicos-segmented">' + TABS_SERVICOS.map(function (t) {
-          return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
-        }).join('') + '</div>' +
-        '<div class="section" id="servicos-lista">' + renderServicosLista(all, activeTab) + '</div>' +
+        '<div class="qf-ped-cols">' +
+          adminExtratoHtml(all) +
+          '<div class="qf-ped-cols__lista">' +
+            '<div class="segmented" id="servicos-segmented">' + TABS_SERVICOS.map(function (t) {
+              return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
+            }).join('') + '</div>' +
+            '<div class="section" id="servicos-lista">' + renderServicosLista(all, activeTab) + '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>'
     );
   };
@@ -6232,27 +6380,30 @@ Screens.adminDashboardRender = function () {
     return bulk + '<div class="stack--sm">' + list.map(function (r) {
       const cat = DB.categoryById(r.categoriaId);
       const cliente = DB.clienteById(r.clienteId);
-      const prof = r.profissionalId ? DB.profissionalById(r.profissionalId) : null;
-      const lugar = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
+      const lugar = [r.endereco && r.endereco.bairro, [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/')].filter(Boolean).join(', ');
       const pedido = String(r.titulo || r.descricao || 'Sem descrição').trim();
       const resumo = pedido.length > 130 ? pedido.slice(0, 127) + '...' : pedido;
-      return '<div class="card" style="padding:0;overflow:hidden;">' +
+      const desb = desbloqueiosAtivos(r);
+      const cancelado = r.status === STATUS.CANCELADO;
+      const fechado = desb.some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1;
+      const cor = cancelado ? 'can' : fechado ? 'fec' : desb.length ? 'des' : 'sem';
+      const vagas = [0, 1, 2].map(function (n) { return '<i' + (n < desb.length ? ' class="on"' : '') + '></i>'; }).join('');
+      return '<div class="card qf-ped qf-ped--' + cor + '">' +
         '<button type="button" class="qf-crud-open" data-nav="/admin/servicos/' + r.id + '">' +
-          '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
-            '<div class="row" style="align-items:flex-start;min-width:0;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div style="min-width:0;">' +
-              '<div class="text--strong">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
-              '<div class="text--sm text--secondary" style="margin-top:3px;"><b>Cliente:</b> ' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</div>' +
-              '<div class="text--sm text--secondary"><b>Quem desbloqueou:</b> ' + PU.escapeHtml(desbloqueiosAtivos(r).map(function(x){const p=DB.profissionalById(x.profissionalId);return p ? p.nome : 'Profissional';}).join(', ') || 'Ainda ninguém') + '</div>' +
-            '</div></div>' +
-            icon('chevronRight', 'list-item__chevron') +
+          '<div class="qf-ped__topo">' +
+            '<div style="min-width:0;"><div class="qf-ped__titulo">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
+              '<div class="qf-ped__sub">' + PU.escapeHtml(resumo) + '</div></div>' +
+            '<div style="flex:none;">' + adminStatusBadge(r) + '</div>' +
           '</div>' +
-          '<div class="text--sm" style="margin-top:10px;line-height:1.45;"><b>Pedido:</b> ' + PU.escapeHtml(resumo) + '</div>' +
-          adminPedidoControleHtml(r) +
-          '<div class="row-between" style="margin-top:10px;gap:8px;align-items:flex-end;">' +
-            '<div>' + adminStatusBadge(r) + '</div>' +
-            '<div class="text--sm text--muted text-right">' + (lugar ? PU.escapeHtml(lugar) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</div>' +
+          '<div class="qf-ped__meta">' +
+            '<span>Pedido <strong>' + PU.escapeHtml(qfDiaMes(r.criadoEm) + ' às ' + qfHora(r.criadoEm)) + '</strong></span>' +
+            '<span>Cliente <strong>' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</strong></span>' +
+            (lugar ? '<span>' + PU.escapeHtml(lugar) + '</span>' : '') +
+            '<span><span class="qf-vagas">' + vagas + '</span><strong>' + desb.length + ' de 3</strong> ' + (desb.length >= 3 ? '· lotado' : 'vagas') + '</span>' +
           '</div>' +
-        '</button>' + (cloudOn() ? '<div style="padding:0 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') +
+        '</button>' +
+        adminPedidoQuemHtml(r, cancelado || fechado) +
+        (cloudOn() ? '<div style="padding:12px 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') +
       '</div>';
     }).join('') + '</div>';
   }
@@ -7249,7 +7400,7 @@ Screens.adminDashboardRender = function () {
 
 </script>
 <script src="qf-recrutamento.js?v=11.33.1"></script>
-<script src="qf-admin-acquisition.js?v=11.43.3"></script>
+<script src="qf-admin-acquisition.js?v=11.44"></script>
 <script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
