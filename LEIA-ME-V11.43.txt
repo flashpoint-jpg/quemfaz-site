@@ -1,0 +1,9 @@
+QuemFaz 11.43.0 — Nota para o QuemFaz ao finalizar (cliente e profissional)
+
+- Ao finalizar e avaliar o serviço, cliente e profissional veem "Que nota você dá para o QuemFaz?" (1 a 5 estrelas, comentário opcional, "Agora não").
+- Quem dá 4 ou 5 é convidado a recomendar o QuemFaz (o convite que já existia).
+- Correção: do lado do profissional o convite nunca abria e aparecia "Não foi possível enviar a avaliação" mesmo com a avaliação enviada.
+- Painel admin (Como está indo): cartão "Nota do QuemFaz" com a média geral, de clientes, de profissionais e as últimas notas com comentário.
+
+Banco: supabase/migrations/20261009021500_nota_do_quemfaz.sql (tabela qf_notas_app, qf_enviar_nota_app, qf_admin_notas_app).
+Validação: tests/nota-app-browser.cjs.

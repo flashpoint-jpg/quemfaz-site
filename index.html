@@ -10789,8 +10789,8 @@ alt=""></noscript>
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(req.id, nota, comentario);
             else DB.avaliarComoCliente(req.id, nota, comentario);
             PU.toast('Serviço finalizado e sua avaliação foi enviada.', 'success');
-            qfOfferRecommendation('cliente');
             global.navigate('/cliente/pedido/' + req.id, true);
+            setTimeout(function () { qfOfferRecommendation('cliente', req.id); }, 350);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
           }
@@ -10812,8 +10812,46 @@ alt=""></noscript>
     }
   }
 
-  function qfOfferRecommendation(role) {
+  // V11.43: ao finalizar, cliente e profissional dão uma nota para o próprio QuemFaz.
+  function qfOfferRecommendation(role, chamadoId) {
     const who=role==='profissional'?'profissional':'cliente';
+    PU.openSheet('<div class="stack" id="qf-nota-app"><h3 class="sheet__title" style="text-align:center;">Que nota você dá para o QuemFaz?</h3>'+
+      '<p class="text--sm text--secondary" style="margin:0;text-align:center;">Sua nota ajuda a gente a melhorar o app.</p>'+
+      '<div class="star-picker" id="qf-nota-app-stars" style="justify-content:center;">'+[1,2,3,4,5].map(function(n){return '<button type="button" data-star="'+n+'" aria-label="'+n+' estrelas">'+icon('starFilled')+'</button>';}).join('')+'</div>'+
+      '<textarea class="textarea" id="qf-nota-app-comentario" maxlength="500" placeholder="O que podemos melhorar? (opcional)"></textarea>'+
+      '<button class="btn btn--primary" type="button" id="qf-nota-app-enviar">Enviar nota</button>'+
+      '<button class="btn btn--ghost" type="button" id="qf-nota-app-depois">Agora não</button></div>');
+    const box=document.getElementById('qf-nota-app'); if(!box) return;
+    const stars=box.querySelector('#qf-nota-app-stars'); let nota=0;
+    stars.addEventListener('click',function(e){
+      const b=e.target.closest('[data-star]'); if(!b) return;
+      nota=Number(b.getAttribute('data-star'));
+      Array.prototype.forEach.call(stars.querySelectorAll('[data-star]'),function(x){x.classList.toggle('is-active',Number(x.getAttribute('data-star'))<=nota);});
+    });
+    box.querySelector('#qf-nota-app-depois').onclick=function(){PU.closeSheet();};
+    const enviar=box.querySelector('#qf-nota-app-enviar');
+    enviar.onclick=async function(){
+      if(!nota){PU.toast('Toque nas estrelas para dar a nota.','danger');return;}
+      const comentario=box.querySelector('#qf-nota-app-comentario').value.trim();
+      enviar.disabled=true;
+      try{
+        if(global.QFCloud&&global.QFCloud.enabled&&global.QFCloud.client){
+          const r=await global.QFCloud.client.rpc('qf_enviar_nota_app',{p_nota:nota,p_comentario:comentario||null,p_chamado_id:chamadoId?String(chamadoId):null});
+          if(r.error) throw r.error;
+          if(r.data&&r.data.ok===false) throw new Error(r.data.reason||'erro');
+        }
+        PU.closeSheet();
+        PU.toast('Obrigado pela sua nota!','success');
+        if(nota>=4) qfConvidarRecomendar(who);
+      }catch(err){
+        console.warn('QuemFaz nota',err);
+        PU.toast('Não foi possível enviar a nota agora. Tente de novo.','danger');
+        enviar.disabled=false;
+      }
+    };
+  }
+  global.QFNotaApp = qfOfferRecommendation; // usada também na tela do profissional
+  function qfConvidarRecomendar(who) {
     PU.confirmDialog({
       title:'Gostou do Quem Faz?',
       message:'Você recomendaria o Quem Faz para um amigo ou conhecido?',
@@ -13140,8 +13178,9 @@ alt=""></noscript>
             if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.submitEvaluation(params.id, nota, comentario);
             else DB.avaliarComoProfissional(params.id, nota, comentario);
             PU.toast('Sua avaliação foi enviada. Agora peça ao cliente para finalizar e avaliar o serviço.', 'success');
-            qfOfferRecommendation('profissional');
             global.navigate('/profissional/servicos', true);
+            // A nota abre depois da troca de tela, que fecha as janelas abertas.
+            setTimeout(function () { if (global.QFNotaApp) global.QFNotaApp('profissional', params.id); }, 350);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível enviar a avaliação.', 'danger');
           }
@@ -13649,7 +13688,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.42.0';
+  const APP_VERSION = '11.43.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
