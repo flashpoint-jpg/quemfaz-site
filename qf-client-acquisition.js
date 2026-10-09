@@ -107,6 +107,17 @@
   global.addEventListener('DOMContentLoaded', function () {
     if (!/profissional|recrutamento/.test(location.hash || '') && !/profissionais/i.test(campaign.campaign || '')) track('landing', {}, true);
     var observer = new MutationObserver(function () {
+      // V11.43.3: tela inicial. Mede só se a pessoa tocou no campo, digitou ou tentou enviar; nunca o texto digitado.
+      var home = document.querySelector('[data-landing-service-form]');
+      if (home && !home.dataset.funnelBound) {
+        home.dataset.funnelBound = '1';
+        home.addEventListener('focusin', function () { track('home_focus', {}, true); });
+        home.addEventListener('input', function () { track('home_type', {}, true); }, { once: true });
+        home.addEventListener('submit', function () { track('home_submit', {}, true); }, true);
+        document.addEventListener('click', function (e) {
+          if (e.target.closest && e.target.closest('[data-home-services]')) track('home_cta', {}, true);
+        }, true);
+      }
       var form = document.getElementById('cadastro-cliente-form');
       if (form && !form.dataset.funnelBound) {
         form.dataset.funnelBound = '1';

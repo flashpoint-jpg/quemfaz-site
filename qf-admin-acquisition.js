@@ -23,7 +23,9 @@
       if (r.error) throw r.error;
       var d = r.data || {}, counts = d.steps || {};
       var labels = {
-        landing: 'Visitas medidas', form_view: 'Abriu o formulário',
+        landing: 'Visitas medidas', home_cta: 'Tocou em "Pedir grátis" (tela inicial)',
+        home_focus: 'Tocou no campo da tela inicial', home_type: 'Digitou na tela inicial',
+        home_submit: 'Enviou da tela inicial', form_view: 'Abriu o formulário',
         form_start: 'Começou a preencher', submit: 'Tentou publicar',
         published: 'Pedidos publicados · histórico'
       };

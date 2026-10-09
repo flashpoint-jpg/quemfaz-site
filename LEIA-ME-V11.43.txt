@@ -11,3 +11,5 @@ Validação: tests/nota-app-browser.cjs.
 11.43.1: o cartão "Nota do QuemFaz" subiu para o alto do painel admin, logo depois da entrada de hoje (antes ficava lá embaixo, em Como está indo).
 
 11.43.2: o painel admin (Falhas registradas) passa a contar também as falhas da etapa 1 do pedido (serviço em branco ou descrição com menos de 3 caracteres). Antes só a etapa 2 registrava. Nada muda na tela do cliente.
+
+11.43.3: medição da tela inicial no painel (Captação de clientes): toque em "Pedir grátis", toque no campo, digitou e enviou. Não grava o texto digitado. Banco: supabase/migrations/20261009123000_funil_eventos_tela_inicial.sql
