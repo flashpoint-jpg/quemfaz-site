@@ -5952,6 +5952,64 @@ Screens.adminDashboardRender = function () {
       ? '<span class="badge" style="background:#16a34a;color:#fff;font-weight:700;">🆕 Cadastro novo · ' + PU.escapeHtml(PU.formatDateTime(u.criadoEm)) + '</span>'
       : '<span class="badge badge--muted">Cadastro ' + PU.escapeHtml(PU.formatDateTime(u.criadoEm)) + '</span>';
   }
+  // V11.70: as selfies saíram do carregamento geral do painel (eram 7 MB a cada abertura). Agora cada foto é
+  // buscada só quando aparece na tela, em lotes, e fica guardada enquanto o painel está aberto.
+  const QF_FOTOS = {};
+  function qfFotoImg(src, alt) { return '<img src="' + PU.escapeHtml(src) + '" alt="' + PU.escapeHtml(alt || '') + '">'; }
+  function qfFotoHtml(p, alt, vazio) {
+    const src = (p && (p.fotoUrl || QF_FOTOS[p.id])) || '';
+    if (src) return qfFotoImg(src, alt);
+    if (p && p.temFoto) return '<span data-qf-foto="' + PU.escapeHtml(p.id) + '" data-qf-foto-alt="' + PU.escapeHtml(alt || '') + '" style="display:contents;">' + vazio + '</span>';
+    return vazio;
+  }
+  (function () {
+    if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') return;
+    const fila = {}, pedindo = {};
+    let filaTimer = null, varrerTimer = null;
+    function trocar(id) {
+      const src = QF_FOTOS[id];
+      if (!src) return;
+      document.querySelectorAll('[data-qf-foto]').forEach(function (n) {
+        if (n.getAttribute('data-qf-foto') === id) n.outerHTML = qfFotoImg(src, n.getAttribute('data-qf-foto-alt'));
+      });
+    }
+    async function buscar() {
+      filaTimer = null;
+      const ids = Object.keys(fila).filter(function (id) { return !pedindo[id] && !QF_FOTOS[id]; }).slice(0, 12);
+      ids.forEach(function (id) { delete fila[id]; pedindo[id] = 1; });
+      if (!ids.length) return;
+      try {
+        const c = global.QFAdminCloud && global.QFAdminCloud.client;
+        const r = c ? await c.rpc('qf_admin_fotos', { p_ids: ids }) : null;
+        const fotos = (r && r.data && r.data.ok && r.data.fotos) || {};
+        Object.keys(fotos).forEach(function (id) { QF_FOTOS[id] = fotos[id]; trocar(id); });
+      } catch (_) {}
+      ids.forEach(function (id) { delete pedindo[id]; });
+      if (Object.keys(fila).length) filaTimer = setTimeout(buscar, 60);
+    }
+    const olho = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        olho.unobserve(e.target);
+        if (e.target.__qfFotoId) fila[e.target.__qfFotoId] = 1;
+      });
+      if (!filaTimer && Object.keys(fila).length) filaTimer = setTimeout(buscar, 150);
+    }, { rootMargin: '300px' }) : null;
+    function varrer() {
+      varrerTimer = null;
+      document.querySelectorAll('[data-qf-foto]:not([data-qf-foto-visto])').forEach(function (n) {
+        const id = n.getAttribute('data-qf-foto');
+        if (QF_FOTOS[id]) { n.outerHTML = qfFotoImg(QF_FOTOS[id], n.getAttribute('data-qf-foto-alt')); return; }
+        n.setAttribute('data-qf-foto-visto', '1');
+        // display:contents não tem caixa própria: observa o elemento de fora (o círculo da foto).
+        const alvo = n.parentElement || n;
+        if (olho) { alvo.__qfFotoId = id; olho.observe(alvo); }
+        else { fila[id] = 1; if (!filaTimer) filaTimer = setTimeout(buscar, 150); }
+      });
+    }
+    new MutationObserver(function () { if (!varrerTimer) varrerTimer = setTimeout(varrer, 40); }).observe(document.documentElement, { childList: true, subtree: true });
+  })();
+
   function profBadges(p) {
     return (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
       (p.verificado ? '<span class="badge badge--success">Verificado</span>' : '') +
@@ -6030,7 +6088,7 @@ Screens.adminDashboardRender = function () {
     const extra = (p.areas && p.areas.length > 1) ? ' · +' + (p.areas.length - 1) + ' cidade(s)' : '';
     return '<div data-prof-search="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '"><button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/admin/profissionais/' + p.id + '" data-x="' + PU.escapeHtml(catNormAdmin(p.nome + ' ' + String(p.telefone || '').replace(/\D/g, '') + ' ' + (p.telefone || '') + ' ' + (p.email || ''))) + '">' +
       '<div class="row-between">' +
-        '<div class="row"><div class="avatar avatar--sm">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' +
+        '<div class="row"><div class="avatar avatar--sm">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' +
         '<div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(cidade.label) + PU.escapeHtml(extra) + (p.bloqueado ? ' · Bloqueado' : '') + '</div>' +
         '<div class="text--sm" style="word-break:break-all;">' + PU.escapeHtml(p.email || 'sem e-mail') + (p.telefone ? ' · ' + PU.escapeHtml(p.telefone) : '') + '</div></div></div>' +
         icon('chevronRight', 'list-item__chevron') +
@@ -6342,13 +6400,13 @@ Screens.adminDashboardRender = function () {
       // Selo do verificado no perfil: faixa azul com dourado, aro dourado na foto e etiqueta dourada.
       '<div class="card' + (p.verificado ? ' qf-adm-ver' : ' row') + '">' +
       (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#0b1d3a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
-      '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
+      '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
       (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
       adminProfAtivHtml(p) +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
         '<div class="card row" style="align-items:center;">' +
-          '<div class="admin-selfie">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie de segurança do profissional">' : '<div class="admin-selfie-empty">Selfie não cadastrada</div>') + '</div>' +
-          '<div class="spacer"><div class="text--strong">' + (p.fotoUrl ? 'Selfie cadastrada' : 'Selfie pendente') + '</div>' +
+          '<div class="admin-selfie">' + qfFotoHtml(p, 'Selfie de segurança do profissional', '<div class="admin-selfie-empty">' + (p.temFoto ? 'Carregando a selfie…' : 'Selfie não cadastrada') + '</div>') + '</div>' +
+          '<div class="spacer"><div class="text--strong">' + (p.fotoUrl || p.temFoto ? 'Selfie cadastrada' : 'Selfie pendente') + '</div>' +
           '<div class="text--sm text--secondary" style="margin-top:5px;">Imagem visível no painel administrativo para conferência de segurança.</div></div>' +
         '</div></div>' +
       '<div class="section card stack--sm admin-prof-info">' +
