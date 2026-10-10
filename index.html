@@ -2852,7 +2852,23 @@ window.qfGoogleLead = function (requestId) {
 
 /* V11.37: pedido em 2 etapas */
 .qf-etapas { display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--text-secondary); }
-.qf-etapas__barras { display:grid;grid-template-columns:1fr 1fr;gap:6px; }
+.qf-etapas__barras { display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
+#cadastro-cliente-form[data-qf-etapa="2"]:not([data-qf-sub="c"]) .qf-request-submit,
+#cadastro-cliente-form[data-qf-etapa="2"]:not([data-qf-sub="c"]) .qf-request-benefit { display:none !important; }
+[data-qf-sub-box] { display:flex;flex-direction:column;gap:12px; }
+[data-qf-sub-box][hidden] { display:none; }
+.qf-quantos__opts { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
+.qf-quantos__opt { font-size:17px;font-weight:800;min-height:50px;justify-content:center;text-align:center; }
+.qf-quantos__opt[aria-checked="true"], #cadastro-cliente-form .qf-prazo__opt[aria-checked="true"], #cadastro-cliente-form .qf-prazo__opt[aria-pressed="true"] { background:var(--orange-600);border-color:var(--orange-600);color:#fff; }
+.qf-cli-vagas__barras { display:flex;gap:6px;margin:10px 0 6px; }
+.qf-cli-vagas__barras i { flex:1;height:10px;border-radius:99px;background:var(--border-strong); }
+.qf-cli-vagas__barras i.is-on { background:var(--success-600,#12804a); }
+.qf-escolha-cliente { background:#fff3e6;border:1px solid #f3c79a;color:#8a3a05;border-radius:14px;padding:10px 12px;font-weight:700;font-size:13.5px;margin-bottom:10px; }
+.qf-sem-devolucao { background:#fdecea;border:1px solid #f3b6b0;color:#8f1d15;border-radius:14px;padding:10px 12px;font-size:13px;font-weight:600;line-height:1.35;margin-top:10px; }
+.qf-sem-devolucao b { display:block;font-size:13.5px;margin-bottom:2px; }
+.qf-sub__titulo { margin:0;font-size:18px;font-weight:800;color:var(--navy-900); }
+.qf-client-request .qf-request-schedule.qf-request-schedule--aberto { border:0;padding:0;background:none; }
+.qf-client-request .qf-request-schedule.qf-request-schedule--aberto .qf-prazo > .field__label { display:block; }
 .qf-etapas__barras i { height:6px;border-radius:99px;background:var(--border-strong); }
 .qf-etapas__barras i.is-on { background:var(--orange-500); }
 #cadastro-cliente-form[data-qf-etapa="1"] .qf-request-submit,
@@ -4973,6 +4989,11 @@ alt=""></noscript>
   }
   function firstName(s) { return String(s || '').trim().split(/\s+/)[0] || 'Usuário'; }
 
+  // V11.71: o cliente escolhe quantos orçamentos quer (1 a 8). Sem escolha (pedidos antigos) vale 3.
+  global.QFMaxOrc = function (req) {
+    const n = Number(req && (req.maxOrcamentos || req.limiteParticipantes)) || 3;
+    return Math.max(1, Math.min(8, Math.round(n)));
+  };
   function cloudCustomCatFromName(v) {
     const nome = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 80);
     if (nome.length < 2) return null;
@@ -5263,7 +5284,8 @@ alt=""></noscript>
       prazoDia: row.prazo_dia || null,
       periodo: row.periodo || null,
       participantes: row.participantes == null ? null : Number(row.participantes),
-      limiteParticipantes: row.limite == null ? 3 : Number(row.limite),
+      limiteParticipantes: row.limite == null ? (Number(row.max_orcamentos) || 3) : Number(row.limite),
+      maxOrcamentos: Number(row.max_orcamentos || row.limite) || 3,
       // V11.32: pedido aberto a todos (motivo) e distância aproximada quando o profissional não tem localização salva.
       abertoTodos: row.aberto_todos || null,
       distanciaAprox: !!row.distancia_aprox,
@@ -6051,7 +6073,7 @@ alt=""></noscript>
       res = await client.auth.signUp({
         email: email,
         password: authPassword,
-        options: { data: meta, emailRedirectTo: location.origin + location.pathname }
+        options: { data: meta, emailRedirectTo: enderecoPublico() }
       });
       if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     }
@@ -6159,11 +6181,18 @@ alt=""></noscript>
     } catch (_) { return null; }
   }
 
+  function enderecoPublico() {
+    const h = String(location.hostname || '');
+    if (!/^https?:$/.test(location.protocol) || h === 'localhost' || h === '127.0.0.1' || h === '') return 'https://quemfazservico.com.br/';
+    return location.origin + location.pathname;
+  }
+
   async function requestPasswordReset(email) {
     if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     email = String(email || '').trim();
     if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 3) return { ok: false, error: 'Digite um e-mail válido.' };
-    const redirectTo = location.origin + location.pathname;
+    // V11.71: dentro do app Android o endereço interno é "localhost"; o link do e-mail tem que abrir o site de verdade.
+    const redirectTo = enderecoPublico();
     const res = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
     if (res.error) {
       const msg = String(res.error.message || '');
@@ -6423,7 +6452,16 @@ alt=""></noscript>
     // V11.29: prazo do pedido. Se o banco recusar por causa desses campos, publica sem eles: o pedido nunca se perde.
     const comPrazo = !!data.prazo;
     if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }
+    // V11.71: quantos orçamentos o cliente quer (1 a 8). Se o banco recusar o campo, publica sem ele (fica 3).
+    const maxOrc = Math.round(Number(data.maxOrcamentos));
+    const comMax = maxOrc >= 1 && maxOrc <= 8;
+    if (comMax) row.max_orcamentos = maxOrc;
     let res = await client.from('qf_chamados').insert(row).select('*').single();
+    if (res.error && comMax && /max_orcamentos/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz quantidade de orçamentos não gravada', res.error);
+      delete row.max_orcamentos;
+      res = await client.from('qf_chamados').insert(row).select('*').single();
+    }
     if (res.error && comPrazo && /prazo|periodo/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz prazo não gravado', res.error);
       delete row.prazo; delete row.prazo_dia; delete row.periodo;
@@ -7504,13 +7542,13 @@ alt=""></noscript>
       '<div class="qf-stats-slot" data-home-stats></div>' +
       '<section class="qf-desk-card" id="qf-sec-como" aria-labelledby="qf-desk-how"><h2 class="qf-desk-h" id="qf-desk-how">Como funciona</h2><ol class="qf-desk-steps">' +
         '<li><span class="qf-desk-num">1</span><div><strong>Escreva o que você precisa</strong><p>Leva menos de 1 minuto. É grátis e não precisa de cadastro.</p></div></li>' +
-        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 3 profissionais recebem o seu pedido.</p></div></li>' +
+        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 8 profissionais recebem o seu pedido.</p></div></li>' +
         '<li><span class="qf-desk-num qf-desk-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora. Você compara e escolhe com quem fechar.</p></div></li>' +
       '</ol></section>' +
       '<section class="qf-desk-card" id="qf-sec-servicos" aria-labelledby="qf-desk-serv"><h2 class="qf-desk-h" id="qf-desk-serv">Serviços mais pedidos</h2><p class="qf-desk-sub">Clique em um serviço para começar o seu pedido.</p><div class="qf-desk-services">' +
         DESK_SERVICES.map(function (x) { return '<button type="button" data-desk-service="' + (x[2] || x[0]) + '">' + icon(x[1]) + '<span>' + x[0] + '</span></button>'; }).join('') +
       '</div></section>' +
-      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Sem cadastro</span></li><li>' + icon('lock') + '<span>Só até 3 profissionais veem o seu WhatsApp</span></li></ul>' +
+      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Sem cadastro</span></li><li>' + icon('lock') + '<span>Só até 8 profissionais veem o seu WhatsApp</span></li></ul>' +
     '</div>';
   }
 
@@ -7519,10 +7557,10 @@ alt=""></noscript>
   function mobExtraInner() {
     return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
         '<li><span class="qf-mob-num">1</span><div><strong>Escreva o que você precisa</strong><p>Grátis e sem cadastro.</p></div></li>' +
-        '<li><span class="qf-mob-num">2</span><div><strong>Até 3 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
+        '<li><span class="qf-mob-num">2</span><div><strong>Até 8 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
       '</ol></section>' +
-      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
+      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
@@ -7571,7 +7609,7 @@ alt=""></noscript>
     const play = '<button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Instalar app</span></button>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
-          deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 3 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
+          deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 8 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para profissionais</p>' +
           deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
@@ -7836,12 +7874,12 @@ alt=""></noscript>
           '<button class="qf-request-help" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
         '</header>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate data-qf-etapa="1">' +
-          '<div class="qf-etapas"><div class="qf-etapas__barras" aria-hidden="true"><i class="is-on"></i><i data-qf-etapa-barra2></i></div><span data-qf-etapa-rotulo>Etapa 1 de 2</span></div>' +
+          '<div class="qf-etapas"><div class="qf-etapas__barras" aria-hidden="true"><i class="is-on"></i><i data-qf-etapa-barra2></i><i data-qf-etapa-barra3></i><i data-qf-etapa-barra4></i></div><span data-qf-etapa-rotulo>Etapa 1 de 4</span></div>' +
           '<div class="qf-request-fields">' +
           '<div class="card qf-ticket qf-request-ticket qf-request-unified">' +
           '<div data-qf-etapa-box="1">' +
           '<h2 class="qf-etapa1__titulo" data-qf-etapa-titulo>' + PU.escapeHtml((selectedCat && etapasCfg.opcoes[selectedCat.id] && etapasCfg.opcoes[selectedCat.id].titulo) || 'Do que você precisa?') + '</h2>' +
-          '<p class="qf-etapa1__sub">Grátis. Até 3 orçamentos direto no seu WhatsApp.</p>' +
+          '<p class="qf-etapa1__sub">Grátis. Você escolhe quantos orçamentos quer, até 8, direto no seu WhatsApp.</p>' +
           servicoField +
           '<div data-qf-opcoes-bloco hidden><div class="qf-etapa1__pergunta">O que precisa ser feito?</div><div class="qf-opcoes" data-qf-opcoes></div><button type="button" class="qf-etapa1__escrever" data-qf-escrever>Prefiro escrever o que preciso</button></div>' +
           '<div data-qf-descricao-bloco class="qf-etapa1__descricao">' +
@@ -7853,19 +7891,39 @@ alt=""></noscript>
           '</div>' +
           '<div data-qf-etapa-box="2" hidden>' +
           '<div class="qf-etapa2__resumo"><div class="spacer"><small>Seu pedido</small><strong data-qf-resumo></strong></div><button class="btn btn--ghost btn--sm btn--block-auto" type="button" data-qf-voltar-etapa style="padding:8px 10px;">Alterar</button></div>' +
+          // V11.71: a etapa 2 virou três telas: onde é o serviço, escolhas (tudo aberto em botões) e contato.
+          '<div data-qf-sub-box="a">' +
           regionField +
+          '<button class="btn btn--primary" type="button" data-qf-sub-ir="b">Continuar ' + icon('arrowRight') + '</button>' +
+          '</div>' +
+          '<div data-qf-sub-box="b" hidden>' +
+          '<div class="qf-request-schedule qf-request-schedule--aberto" data-qf-prazo-details>' +
+          prazoFieldHtml() +
+          '</div>' +
+          '<div class="field qf-quantos" data-qf-quantos>' +
+            '<span class="field__label" id="qf-quantos-label">Quantos orçamentos você quer receber?</span>' +
+            '<div class="qf-quantos__opts" role="radiogroup" aria-labelledby="qf-quantos-label">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) {
+              return '<button type="button" class="qf-prazo__opt qf-quantos__opt" role="radio" aria-checked="' + (n === 3 ? 'true' : 'false') + '" data-qf-quantos-opt="' + n + '">' + n + '</button>';
+            }).join('') + '</div>' +
+            '<p class="qf-prazo__nota">Você escolhe de 1 a 8. Só essa quantidade de profissionais vai ver o seu WhatsApp.</p>' +
+            '<input type="hidden" name="maxOrcamentos" value="3">' +
+          '</div>' +
+          '<button class="btn btn--primary" type="button" data-qf-sub-ir="c">Continuar ' + icon('arrowRight') + '</button>' +
+          '<button class="btn btn--outline" type="button" data-qf-sub-ir="a">Voltar</button>' +
+          '</div>' +
+          '<div data-qf-sub-box="c" hidden>' +
+          '<h3 class="qf-sub__titulo">Para o profissional entrar em contato</h3>' +
           '<div class="qf-request-contact">' +
             field('Seu nome', '<input class="input" name="nome" autocomplete="name" required placeholder="Seu nome">') +
             field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
-            '<div class="qf-zap-seguro">' + icon('shieldCheck') + '<div><strong>Seu WhatsApp fica protegido</strong><span>No máximo 3 profissionais verão seu número. Ele não fica público no site.</span></div></div>' +
+            '<div class="qf-zap-seguro">' + icon('shieldCheck') + '<div><strong>Seu WhatsApp fica protegido</strong><span data-qf-zap-max>No máximo 3 profissionais verão seu número. Ele não fica público no site.</span></div></div>' +
           '</div>' +
-          '<details class="qf-request-schedule" data-qf-prazo-details><summary>Pra quando precisa? <span data-qf-prazo-resumo style="color:var(--text-secondary);font-size:12px;font-weight:500;">Sem pressa — opcional</span></summary>' +
-          prazoFieldHtml() +
-          '</details>' +
+          '<button class="btn btn--outline" type="button" data-qf-sub-ir="b">Voltar</button>' +
           '</div>' +
           '</div>' +
           '</div>' +
-          '<p class="text--sm qf-request-benefit" style="text-align:center;margin:2px 0;">Até 3 orçamentos grátis. Você escolhe.</p>' +
+          '</div>' +
+          '<p class="text--sm qf-request-benefit" style="text-align:center;margin:2px 0;" data-qf-benefit-max>Até 3 orçamentos grátis. Você escolhe.</p>' +
           '<button class="btn btn--primary qf-request-submit" type="submit">Receber orçamentos grátis ' + icon('arrowRight') + '</button>' +
         '</form>' +
         cadastroClienteAdsHtml() +
@@ -8660,8 +8718,9 @@ alt=""></noscript>
           form.setAttribute('data-qf-etapa', String(n));
           box1.hidden = n !== 1;
           box2.hidden = n !== 2;
-          if (rotulo) rotulo.textContent = n === 1 ? 'Etapa 1 de 2' : 'Etapa 2 de 2 · falta pouco';
+          if (rotulo) rotulo.textContent = 'Etapa 1 de 4';
           if (barra2) barra2.classList.toggle('is-on', n === 2);
+          if (n === 2) irSub(sub, true); else form.removeAttribute('data-qf-sub');
           if (n === 2 && resumo) {
             const a = servicoAtual();
             const d = descricaoInput.value.trim();
@@ -8670,6 +8729,51 @@ alt=""></noscript>
           if (n === 1) desenhar();
           try { form.scrollIntoView({ block: 'start' }); } catch (_) {}
         }
+        // V11.71: as três telas da etapa 2 (a = onde é, b = escolhas, c = contato).
+        let sub = 'a';
+        const barra3 = form.querySelector('[data-qf-etapa-barra3]'), barra4 = form.querySelector('[data-qf-etapa-barra4]');
+        function irSub(s, semRolar) {
+          sub = s === 'b' || s === 'c' ? s : 'a';
+          form.setAttribute('data-qf-sub', sub);
+          form.querySelectorAll('[data-qf-sub-box]').forEach(function (b) { b.hidden = b.getAttribute('data-qf-sub-box') !== sub; });
+          if (rotulo) rotulo.textContent = sub === 'a' ? 'Etapa 2 de 4' : (sub === 'b' ? 'Etapa 3 de 4' : 'Última etapa · falta pouco');
+          if (barra3) barra3.classList.toggle('is-on', sub !== 'a');
+          if (barra4) barra4.classList.toggle('is-on', sub === 'c');
+          if (!semRolar) { try { form.scrollIntoView({ block: 'start' }); } catch (_) {} }
+        }
+        function avancarSub() {
+          if (sub === 'a') {
+            const cid = form.querySelector('[name="cidade"]'), bai = form.querySelector('[name="bairro"]');
+            if (cid && !String(cid.value || '').trim()) { PU.toast('Informe a cidade onde o serviço será realizado.', 'danger'); try { cid.focus(); } catch (_) {} return; }
+            if (bai && !String(bai.value || '').trim()) { PU.toast('Informe o bairro onde o serviço será realizado.', 'danger'); try { bai.focus(); } catch (_) {} return; }
+            irSub('b');
+          } else if (sub === 'b') irSub('c');
+        }
+        form.__qfAvancarSub = avancarSub;
+        form.addEventListener('click', function (e) {
+          const b = e.target.closest('[data-qf-sub-ir]');
+          if (!b || !form.contains(b)) return;
+          const alvo = b.getAttribute('data-qf-sub-ir');
+          if ((sub === 'a' && alvo === 'b') || (sub === 'b' && alvo === 'c')) avancarSub(); else irSub(alvo);
+        });
+        // Quantos orçamentos: botões de 1 a 8; o aviso do WhatsApp e o botão final acompanham a escolha.
+        function quantos(n) {
+          n = Math.max(1, Math.min(8, Math.round(Number(n)) || 3));
+          const campo = form.querySelector('[name="maxOrcamentos"]');
+          if (campo) campo.value = String(n);
+          form.querySelectorAll('[data-qf-quantos-opt]').forEach(function (b) { b.setAttribute('aria-checked', Number(b.getAttribute('data-qf-quantos-opt')) === n ? 'true' : 'false'); });
+          const zap = form.querySelector('[data-qf-zap-max]');
+          if (zap) zap.textContent = (n === 1 ? 'Só 1 profissional verá seu número.' : 'No máximo ' + n + ' profissionais verão seu número.') + ' Ele não fica público no site.';
+          const ben = form.querySelector('[data-qf-benefit-max]');
+          if (ben) ben.textContent = (n === 1 ? '1 orçamento grátis.' : 'Até ' + n + ' orçamentos grátis. Você escolhe.');
+          const envio = form.querySelector('.qf-request-submit');
+          if (envio && form.dataset.publishing !== '1') envio.innerHTML = 'Receber ' + (n === 1 ? '1 orçamento' : n + ' orçamentos') + ' grátis ' + icon('arrowRight');
+        }
+        form.addEventListener('click', function (e) {
+          const b = e.target.closest('[data-qf-quantos-opt]');
+          if (b && form.contains(b)) quantos(b.getAttribute('data-qf-quantos-opt'));
+        });
+        quantos(3);
         function continuar() {
           const a = servicoAtual();
           if (!a.nome) {
@@ -8744,6 +8848,8 @@ alt=""></noscript>
           if (name === 'uf') { ufManual = true; ufAuto(); }
           if (box1.contains(input)) { if (input === descricaoInput) escrevendo = true; if (etapa !== 1) ir(1); else desenhar(); }
           else if (box2.contains(input) && etapa !== 2) ir(2);
+          const caixa = input && input.closest ? input.closest('[data-qf-sub-box]') : null;
+          if (caixa && caixa.getAttribute('data-qf-sub-box') !== sub) irSub(caixa.getAttribute('data-qf-sub-box'), true);
         };
         ufAuto();
         desenhar();
@@ -8759,6 +8865,8 @@ alt=""></noscript>
         e.preventDefault();
         if (form.dataset.publishing === '1' || form.dataset.resolving === '1') return;
         if (form.getAttribute('data-qf-etapa') === '1') { if (form.__qfContinuar) form.__qfContinuar(); return; }
+        // V11.71: Enter numa tela do meio da etapa 2 = Continuar.
+        if (form.getAttribute('data-qf-sub') === 'a' || form.getAttribute('data-qf-sub') === 'b') { if (form.__qfAvancarSub) form.__qfAvancarSub(); return; }
         // Aviso de uma tentativa anterior não fica na tela depois que o campo foi corrigido.
         form.querySelectorAll('[data-qf-validation-for]').forEach(function (el) { el.remove(); });
         form.querySelectorAll('[aria-invalid="true"]').forEach(function (el) { el.removeAttribute('aria-invalid'); });
@@ -8810,6 +8918,7 @@ alt=""></noscript>
           // traz as cidades prováveis; um toque escolhe e publica.
           invalid('region');
           const campoCidade = form.querySelector('[name="cidade"]');
+          if (form.__qfEtapaDe) form.__qfEtapaDe(campoCidade, 'cidade');
           campoCidade.setAttribute('aria-invalid', 'true');
           const aviso = document.createElement('div');
           aviso.setAttribute('data-qf-validation-for', 'cidade');
@@ -8828,6 +8937,7 @@ alt=""></noscript>
         if (prazoSel && !prazoSel.ok) {
           PU.toast(prazoSel.erro, 'danger');
           const campoDia = form.querySelector('[data-qf-prazo-dia]');
+          if (campoDia && form.__qfEtapaDe) form.__qfEtapaDe(campoDia, 'prazoDia');
           if (campoDia) { try { campoDia.scrollIntoView({ block: 'center' }); campoDia.focus(); } catch (_) {} }
           return;
         }
@@ -8881,7 +8991,8 @@ alt=""></noscript>
                 fotos: [],
                 endereco: endereco,
                 prioridade: false,
-                prioridadeMetodo: 'pix'
+                prioridadeMetodo: 'pix',
+                maxOrcamentos: Number(fd.get('maxOrcamentos')) || 3
               }, prazoDados))
             : DB.criarPedido(Object.assign({
                 clienteId: user.id,
@@ -9599,7 +9710,7 @@ alt=""></noscript>
 
     if (req.status === STATUS.AGUARDANDO_ORCAMENTO) {
       titulo = 'Um profissional vai chamar você';
-      texto = 'Ele desbloqueou seu pedido e vai chamar você no WhatsApp. Até 3 profissionais podem chamar: fique de olho nas mensagens.';
+      texto = 'Ele desbloqueou seu pedido e vai chamar você no WhatsApp. Você pediu até ' + global.QFMaxOrc(req) + (global.QFMaxOrc(req) === 1 ? ' orçamento' : ' orçamentos') + ': fique de olho nas mensagens.';
       botao = 'Ver pedido';
       ic = 'message';
       destaque = 'Profissional em contato';
@@ -10043,7 +10154,7 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(req.prioridade ? 'bolt' : 'bell') + '</div>' +
           '<h2 class="h3" style="margin-top:14px;">' + (req.prioridade ? 'Chamado prioritário publicado' : 'Chamado publicado') + '</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais próximos podem visualizar seu pedido. Até 3 podem desbloquear e chamar você no WhatsApp ou pelo chat.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Profissionais próximos podem visualizar seu pedido. Você pediu até ' + global.QFMaxOrc(req) + (global.QFMaxOrc(req) === 1 ? ' orçamento: 1 profissional pode' : ' orçamentos: até ' + global.QFMaxOrc(req) + ' profissionais podem') + ' desbloquear e chamar você no WhatsApp ou pelo chat.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
@@ -10153,15 +10264,15 @@ alt=""></noscript>
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 16px;">' +
           '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('document') + '</div>' +
           '<h2 class="h3" style="margin-top:12px;">Profissional em contato</h2>' +
-          '<p class="text text--secondary text--sm" style="margin-top:4px;">Até 3 profissionais podem desbloquear seu pedido e chamar você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui e fechar com quem preferir.</p>' +
+          '<p class="text text--secondary text--sm" style="margin-top:4px;">Você pediu até ' + global.QFMaxOrc(req) + (global.QFMaxOrc(req) === 1 ? ' orçamento' : ' orçamentos') + '. Os profissionais que desbloquearem seu pedido chamam você no WhatsApp: fique de olho nas mensagens. Você também pode conversar pelo chat daqui e fechar com quem preferir.</p>' +
           '<div class="qf-search-radar" data-search-radar data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '">' +
             '<div class="qf-search-radar__visual" aria-hidden="true">' +
               '<span class="qf-search-radar__ring"></span><span class="qf-search-radar__ring qf-search-radar__ring--2"></span><span class="qf-search-radar__ring qf-search-radar__ring--3"></span>' +
               '<span class="qf-search-radar__center">' + icon('mapPin') + '</span>' +
             '</div>' +
             '<div class="qf-search-radar__stage" data-search-stage>Profissional em contato</div>' +
-            '<div class="qf-search-radar__sub" data-search-sub>Até 3 profissionais podem chamar você no WhatsApp</div>' +
-            '<div class="qf-search-radar__km" data-search-km>Até 3 profissionais</div>' +
+            '<div class="qf-search-radar__sub" data-search-sub>Até ' + global.QFMaxOrc(req) + ' profissionais podem chamar você no WhatsApp</div>' +
+            '<div class="qf-search-radar__km" data-search-km>Até ' + global.QFMaxOrc(req) + ' profissionais</div>' +
           '</div>' +
           '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '" data-orcamentos="0"><span data-call-reach-copy>O profissional vai chamar você no WhatsApp.</span></div>' +
         '</div>' +
@@ -11065,7 +11176,7 @@ alt=""></noscript>
     return city&&city.nome?String(city.nome):'sua cidade';
   }
   function searchStage(req){
-    if(req&&[STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)!==-1)return{title:'Profissional em contato',sub:'Até 3 profissionais podem chamar você no WhatsApp',km:'Até 3 profissionais'};
+    if(req&&[STATUS.AGUARDANDO_ORCAMENTO,STATUS.ORCAMENTO_ENVIADO].indexOf(req.status)!==-1)return{title:'Profissional em contato',sub:'Até '+global.QFMaxOrc(req)+' profissionais podem chamar você no WhatsApp',km:'Até '+global.QFMaxOrc(req)+' profissionais'};
     if(req&&req.prioridade)return{title:'Busca prioritária ativa',sub:'Ampliando o alcance mais rápido',km:'Prioridade'};
     const created=typeof req.criadoEm==='number'?req.criadoEm:Date.parse(req.criadoEm||'');
     const elapsed=Number.isFinite(created)?Math.max(0,Date.now()-created):0;
@@ -11924,10 +12035,13 @@ alt=""></noscript>
       const v = CallInfo.vagas(req);
       let pontos = '';
       for (let i = 0; i < v.limite; i++) pontos += '<i' + (i < v.ocupadas ? ' class="is-on"' : '') + '></i>';
-      const sub = 'Até ' + v.limite + ' profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.';
-      return '<div class="qf-vagas' + (grande ? ' qf-vagas--grande' : '') + '" data-qf-vagas="' + v.ocupadas + '/' + v.limite + '">' +
+      const sub = v.limite === 1 ? 'Só 1 profissional pode desbloquear este pedido e chamar o cliente.' : 'Até ' + v.limite + ' profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.';
+      // V11.71: a quantidade é escolha do cliente e fica à vista antes do desbloqueio, com o aviso de que não há devolução.
+      const escolha = grande ? '<div class="qf-escolha-cliente">Escolha do cliente: ' + (v.limite === 1 ? '1 orçamento' : 'até ' + v.limite + ' orçamentos') + ' · ' + (v.livres === 1 ? 'resta 1 vaga' : 'restam ' + v.livres + ' vagas') + '</div>' : '';
+      const semDev = grande ? '<div class="qf-sem-devolucao"><b>' + (v.limite === 1 ? 'O cliente pediu 1 orçamento.' : 'O cliente vai comparar até ' + v.limite + ' orçamentos.') + '</b>O desbloqueio não é devolvido se o cliente não te responder ou escolher outro profissional.</div>' : '';
+      return escolha + '<div class="qf-vagas' + (grande ? ' qf-vagas--grande' : '') + '" data-qf-vagas="' + v.ocupadas + '/' + v.limite + '">' +
         '<span class="qf-vagas__pontos" aria-hidden="true">' + pontos + '</span>' +
-        '<span class="qf-vagas__txt"><strong>' + CallInfo.vagasTitulo(req) + '</strong>' + (grande ? '<small>' + sub + '</small>' : '') + '</span></div>';
+        '<span class="qf-vagas__txt"><strong>' + CallInfo.vagasTitulo(req) + '</strong>' + (grande ? '<small>' + sub + '</small>' : '') + '</span></div>' + semDev;
     },
     km: function (req) { const k = Number(req && req.distanciaKm); return req && req.distanciaKm != null && Number.isFinite(k) ? k : null; },
     kmTxt: function (req) { const k = CallInfo.km(req); return k == null ? '' : (req.distanciaAprox ? '~' + Math.round(k) : k.toFixed(1).replace('.', ',')) + ' km'; },
@@ -12558,7 +12672,7 @@ alt=""></noscript>
       '<section class="section">' +
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
-          walletInfoRow('lock', 'No máximo 3 profissionais por pedido', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, só até 3 profissionais desbloqueiam o mesmo pedido, e você vê quantas vagas ainda tem antes de desbloquear.') +
+          walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 8), e você vê quantas vagas ainda tem antes de desbloquear.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não. Você escolhe o horário: fora dele, estando offline, ninguém te incomoda.') +
@@ -13650,7 +13764,7 @@ alt=""></noscript>
         const primeiraGratis = false;
         const usaPlano = !!(user && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
-        const vagasFrase = 'Este pedido aceita até ' + vg.limite + ' profissionais' + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' já desbloqueou' : ' já desbloquearam') : ' e ninguém desbloqueou ainda') + '. ';
+        const vagasFrase = 'O cliente escolheu receber ' + (vg.limite === 1 ? '1 orçamento' : 'até ' + vg.limite + ' orçamentos') + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' profissional já desbloqueou' : ' profissionais já desbloquearam') : ' e ninguém desbloqueou ainda') + ': você será o ' + (vg.ocupadas + 1) + 'º de ' + vg.limite + '. Sem devolução: se o cliente não te responder ou fechar com outro, o valor não volta. ';
         PU.confirmDialog({
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: vagasFrase + (primeiraGratis
@@ -13679,7 +13793,7 @@ alt=""></noscript>
             PU.toast('Finalize e avalie o serviço pendente antes de aceitar outro chamado.', 'danger');
             global.navigate('/profissional/pedido/' + result.chamadoId, true);
           } else if (result && result.reason === 'reservado') {
-            PU.toast('As 3 vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.', 'danger');
+            PU.toast('As vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.', 'danger');
             global.navigate('/profissional/servicos/disponiveis', true);
           } else if (result && result.reason === 'saldo') {
             PU.openSheet(
@@ -14298,7 +14412,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.62';
+  const APP_VERSION = '11.71';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15237,7 +15351,7 @@ alt=""></noscript>
     return '<div class="view">' +
       qfServiceTabs('disponiveis') +
       '<div class="section" id="chamados-disponiveis">' +
-        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. Até 3 profissionais podem desbloquear cada pedido: veja as vagas em cada cartão.</p></div>' +
+        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. O cliente escolhe quantos profissionais podem desbloquear (até 8): veja as vagas em cada cartão.</p></div>' +
         (calls.length?'<span class="badge badge--orange">'+calls.length+'</span>':'')+'</div>' +
         '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
           '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
@@ -15739,10 +15853,11 @@ alt=""></noscript>
   }
   global.QFExecLabel = execLabel;
 
-  function competitionCopy(n) {
+  function competitionCopy(n, lim) {
+    lim = Number(lim) || 3;
     return {
-      title:(Number(n) || 0) + ' de 3 vagas ocupadas',
-      sub:'Até 3 profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.'
+      title:(Number(n) || 0) + ' de ' + lim + ' vagas ocupadas',
+      sub:'Até ' + lim + ' profissionais podem desbloquear este pedido e chamar o cliente. Ele fecha com quem preferir.'
     };
   }
   global.QFCompetitionCopy = competitionCopy;
@@ -15918,7 +16033,7 @@ alt=""></noscript>
     let html = oldProfCall(params,user);
     if (!req) return html;
     if (req.status !== 'buscando' || req.profissionalId) {
-      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','As 3 vagas deste pedido já foram preenchidas. Confira os demais serviços disponíveis.');
+      return html.replace('Outro profissional já assumiu este pedido. Se ele voltar para a busca, o chamado poderá aparecer novamente para profissionais elegíveis.','As vagas deste pedido já foram preenchidas. Confira os demais serviços disponíveis.');
     }
     const comp = '<div class="section">' + global.QFCallInfo.vagasHtml(req, true) + '</div>';
     html = html.replace('<div class="section qf-call-facts">', comp + scheduleSummary(req) + '<div class="section qf-call-facts">');
@@ -16065,7 +16180,7 @@ alt=""></noscript>
 
   // V11.28: até 3 profissionais podem desbloquear o pedido; o cliente vê um cartão para cada um.
   function renderConversationCards(rows, req) {
-    if (!rows.length) return '<div class="card text--sm text--secondary">Seu pedido está no portfólio aguardando um profissional desbloquear.</div>';
+    if (!rows.length) return clienteVagasHtml(0, req) + '<div class="card text--sm text--secondary" style="margin-top:10px;">Seu pedido está no portfólio aguardando um profissional desbloquear.</div>';
     const escolhido = rows.filter(function (r) { return !!r.selecionado; })[0] || null;
     const n = rows.length;
     function cartao(r) {
@@ -16083,14 +16198,27 @@ alt=""></noscript>
         '</div>' +
       '</div>';
     }
-    return '<div class="card qf-client-decision">' +
+    return (escolhido ? '' : clienteVagasHtml(n, req) + '<div style="height:10px;"></div>') + '<div class="card qf-client-decision">' +
         '<div class="text--strong">' + (escolhido ? 'Serviço confirmado' : (n === 1 ? 'Um profissional desbloqueou seu pedido' : n + ' profissionais desbloquearam seu pedido')) + '</div>' +
-        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (escolhido ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Até 3 profissionais podem desbloquear seu pedido e chamar você no WhatsApp. Converse, compare e toque em “Fechei com este” no profissional que você escolher.') + '</div>' +
+        '<div class="text--sm text--secondary" style="margin-top:4px;">' + (escolhido ? 'Você escolheu este profissional. Continue combinando os detalhes pelo chat.' : 'Até ' + orcMax(req) + ' profissionais podem desbloquear seu pedido e chamar você no WhatsApp. Converse, compare e toque em “Fechei com este” no profissional que você escolher.') + '</div>' +
       '</div>' +
       '<div class="section-head" style="margin-top:14px;"><h2 class="h3">' + (escolhido || n === 1 ? 'Profissional em conversa' : 'Profissionais em conversa') + '</h2>' + (escolhido ? '<span class="badge badge--success">Escolhido</span>' : '<span class="badge badge--orange">' + n + ' de 3</span>') + '</div>' +
       (escolhido ? [escolhido] : rows).map(cartao).join('');
   }
 
+  function orcMax(req) { return global.QFMaxOrc ? global.QFMaxOrc(req) : 3; }
+  // V11.71: "Você pediu até N orçamentos" com uma barrinha por vaga, que vai enchendo.
+  function clienteVagasHtml(n, req) {
+    const max = orcMax(req), oc = Math.max(0, Math.min(max, n));
+    let barras = '';
+    for (let i = 0; i < max; i++) barras += '<i' + (i < oc ? ' class="is-on"' : '') + '></i>';
+    const faltam = max - oc;
+    return '<div class="card qf-cli-vagas" data-qf-cli-vagas="' + oc + '/' + max + '">' +
+      '<div class="text--strong">Você pediu ' + (max === 1 ? '1 orçamento' : 'até ' + max + ' orçamentos') + '</div>' +
+      '<div class="qf-cli-vagas__barras" aria-hidden="true">' + barras + '</div>' +
+      '<div class="text--sm text--secondary"><strong style="color:var(--navy-900);">' + oc + ' de ' + max + '</strong> ' + (oc === 1 ? 'profissional já pegou seu pedido' : 'profissionais já pegaram seu pedido') +
+      (faltam > 0 ? ' · ' + (faltam === 1 ? 'falta 1 vaga' : 'faltam ' + faltam + ' vagas') : ' · vagas preenchidas') + '</div></div>';
+  }
   const conversationCache = new Map();
   async function fillClientConversations(content, params) {
     const slot = content.querySelector('[data-qf-client-conversations]');

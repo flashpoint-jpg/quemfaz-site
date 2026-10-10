@@ -20,8 +20,8 @@ assert.ok(sql.includes("desfecho in ('fechado','nao_fechado')"));
 assert.ok(html.includes('CallInfo.vagasHtml(req) +'));                       // cartão da lista
 assert.ok(html.includes('global.QFCallInfo.vagasHtml(req, true)'));          // tela da oportunidade, antes dos dados
 assert.ok(html.includes("message: vagasFrase + (primeiraGratis"));           // confirmação do desbloqueio
-assert.ok(html.includes("'As 3 vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.'"));
-assert.ok(html.includes('limiteParticipantes: row.limite == null ? 3 : Number(row.limite),'));
+assert.ok(html.includes("'As vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.'"));
+assert.ok(html.includes('limiteParticipantes: row.limite == null ? (Number(row.max_orcamentos) || 3) : Number(row.limite),'));
 // Nada mais fala em reserva de um profissional só.
 ['Quem desbloquear primeiro reserva', 'reservado para um profissional por vez', 'Reserva exclusiva', 'Você reservou este serviço', 'data-qf-continue-search>'].forEach((t) => assert.ok(!html.includes(t), t));
 

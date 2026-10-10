@@ -39,13 +39,17 @@ test('pedido reúne contato e localização no mesmo cartão, sem bloco separado
   const view = html.slice(start,end);
   assert.ok(view.includes('qf-request-ticket qf-request-unified'));
   // V11.37: local e contato ficam juntos na etapa 2, dentro do mesmo cartão.
+  // V11.71: a etapa 2 virou três telas no mesmo cartão: onde é (a), escolhas abertas em botões (b) e contato (c).
   const etapa2 = view.indexOf('data-qf-etapa-box="2"');
   const region = view.indexOf('          regionField +', etapa2);
-  const contact = view.indexOf('class="qf-request-contact"', region);
-  const closeCard = view.indexOf("          '</div>' +\n          '</div>' +", contact);
-  assert.ok(etapa2 > 0 && region > etapa2 && contact > region && closeCard > contact);
+  const escolhas = view.indexOf('data-qf-sub-box="b"', region);
+  const quantos = view.indexOf('data-qf-quantos', escolhas);
+  const contact = view.indexOf('class="qf-request-contact"', quantos);
+  assert.ok(etapa2 > 0 && region > etapa2 && escolhas > region && quantos > escolhas && contact > quantos);
   assert.match(view, /data-qf-prazo-details/);
-  assert.match(view, /Sem pressa — opcional/);
+  assert.ok(!view.includes('<details class="qf-request-schedule"'), 'prazo fica aberto, sem precisar tocar para abrir');
+  assert.ok(view.includes('[1, 2, 3, 4, 5, 6, 7, 8]') && view.includes('name="maxOrcamentos" value="3"'));
+  assert.ok(view.includes('Para o profissional entrar em contato'));
 });
 
 test('erro em nome ou WhatsApp mostra campo sem esconder CTA', () => {
