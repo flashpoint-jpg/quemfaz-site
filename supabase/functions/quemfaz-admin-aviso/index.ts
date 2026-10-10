@@ -98,7 +98,10 @@ async function sendFcm(access: string, token: string, payload: any, soDados: boo
 
 async function sendToAdmins(payload: any) {
   const { data: admins } = await admin.from("qf_admins").select("user_id");
-  const ids = (admins || []).map((a: any) => String(a.user_id)).filter(Boolean);
+  return sendToUsers((admins || []).map((a: any) => String(a.user_id)).filter(Boolean), payload);
+}
+
+async function sendToUsers(ids: string[], payload: any) {
   if (!ids.length) return { sent: 0, total: 0 };
   const { data: subs, error } = await admin
     .from("qf_push_subscriptions")
@@ -286,6 +289,24 @@ Deno.serve(async (req) => {
   if (okSecret !== true) return json({ error: "unauthorized" }, 401);
 
   const body: any = await req.json().catch(() => ({}));
+  // Recado do admin para usuários específicos (ex.: "seu Pix ficou pendente"). Aviso comum, sem toque de chamado.
+  if (String(body.action || "") === "user_notice") {
+    const ids = (Array.isArray(body.user_ids) ? body.user_ids : []).map(String).filter((x: string) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 50);
+    const title = String(body.title || "").trim().slice(0, 120);
+    const texto = String(body.body || "").trim().slice(0, 400);
+    if (!ids.length || !title || !texto) return json({ error: "invalid_notice" }, 400);
+    try {
+      const porUsuario: Record<string, unknown> = {};
+      for (const uid of ids) {
+        porUsuario[uid] = await sendToUsers([uid], { title, body: texto, url: String(body.url || "/#/"), tag: String(body.tag || "qf-recado") });
+      }
+      return json({ ok: true, recado: porUsuario });
+    } catch (err) {
+      console.error("recado usuario", err);
+      return json({ error: "user_notice_failed" }, 500);
+    }
+  }
+
   const event = String(body.event || "");
   const id = String(body.entity_id || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "invalid_entity" }, 400);
