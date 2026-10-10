@@ -38,3 +38,19 @@ assert.ok(/qf_admin_planos_painel[\s\S]*?private\.qf_is_admin\(\)/.test(sql));
 assert.ok(sql.includes('h.substituido_em >= new.criado_em'));
 assert.ok(sql.includes('revoke all on public.qf_planos_catalogo_hist from anon, authenticated'));
 console.log('planos-no-painel: ok');
+
+// V11.57: ativar/trocar/tirar o plano na mão e gerar o Pix do plano pelo painel.
+{
+  const sql2 = fs.readFileSync(path.join(root, 'supabase/2026-10-10-plano-manual-e-pix-pelo-painel.sql'), 'utf8');
+  const fn = fs.readFileSync(path.join(root, 'supabase/functions/quemfaz-admin-pix/index.ts'), 'utf8');
+  for (const nome of ['qf_admin_ativar_plano', 'qf_admin_remover_plano']) assert.ok(new RegExp(nome + '[\\s\\S]*?private\\.qf_is_admin\\(\\)').test(sql2), nome);
+  // Criar a recarga do plano para outra pessoa: só o servidor, e só com um admin de verdade.
+  assert.ok(sql2.includes('revoke all on function public.qf_admin_recarga_plano_criar(uuid, uuid, text) from public, anon, authenticated'));
+  assert.ok(sql2.includes('exists (select 1 from public.qf_admins a where a.user_id = p_admin)'));
+  assert.ok(fn.includes('from("qf_admins").select("user_id").eq("user_id", u.user.id)') && fn.indexOf('"forbidden"') < fn.indexOf('qf_admin_recarga_plano_criar'));
+  assert.ok(fn.includes('"qf:recarga:" + recargaId'), 'o Pix do painel é conferido como recarga');
+  assert.ok(admin.includes("functions.invoke('quemfaz-admin-pix'") && admin.includes("rpc('qf_admin_ativar_plano'") && admin.includes("rpc('qf_admin_remover_plano'"));
+  const acoes = admin.slice(admin.indexOf("const b = t.closest('[data-plano-acao]');"), admin.indexOf('function admPlanoLer(f)'));
+  assert.ok(acoes.indexOf('await PU.confirmDialog(') > 0 && acoes.indexOf('await PU.confirmDialog(') < acoes.indexOf("functions.invoke('quemfaz-admin-pix'"), 'confirma antes de agir');
+  console.log('plano manual e pix pelo painel: ok');
+}

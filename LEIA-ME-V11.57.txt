@@ -1,0 +1,16 @@
+QuemFaz 11.57 — ativar plano na mão e gerar Pix pelo painel
+
+PAINEL > Planos dos profissionais > cartão novo "Ativar plano ou gerar Pix"
+- Escolha o profissional (digite o nome ou o telefone) e o plano. Três ações, todas com confirmação:
+  * Gerar Pix para enviar: cria o Pix do plano (QR Code + copia e cola) e o botão "Enviar no
+    WhatsApp" já abre a conversa com o código. Pagou, o plano ativa sozinho e você é avisado.
+  * Ativar sem pagamento: o plano entra na hora. Se ele já tinha plano, o atual é encerrado e entra
+    o novo (serve para trocar de plano). Não conta como receita. O profissional é avisado no celular.
+  * Tirar o plano: zera os chamados que restam. O saldo da carteira não muda.
+- Na lista "Quem assinou ou tentou assinar", quem tem conta e não pagou ganhou o atalho
+  "Pix ou ativar", que já deixa o profissional e o plano escolhidos. Plano ativado por você aparece
+  na lista como "Ativado por você".
+- Só para quem já tem conta. Quem parou no Pix do cadastro (sem conta) continua pelo próprio cadastro.
+
+SERVIDOR (já publicado)
+- Função quemfaz-admin-pix (só admin) e supabase/2026-10-10-plano-manual-e-pix-pelo-painel.sql.

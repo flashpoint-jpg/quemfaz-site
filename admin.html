@@ -1487,6 +1487,21 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-plano .qf-adm-filtro{flex:0 1 130px}
 .qf-adm-plano .qf-adm-filtro .input{height:40px;border-radius:10px}
 .qf-adm-plano__cada{flex:1 1 150px;align-self:center;font-size:13px;color:var(--text-secondary)}
+/* V11.57: ativar plano na mão e Pix pelo painel */
+.qf-adm-manual{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.qf-adm-manual__pro{flex:1 1 260px}
+.qf-adm-manual .input,.qf-adm-manual .select{height:40px;border-radius:10px;background-color:#fff;font-size:14px}
+.qf-adm-manual .qf-adm-filtro .select{min-width:230px}
+.qf-adm-manual__botoes{display:flex;gap:8px;flex-wrap:wrap}
+.qf-adm-plano-acoes{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.qf-adm-pix{margin-top:14px;padding:14px 16px;border:1px solid var(--success-600);border-radius:16px;background:var(--success-100)}
+.qf-adm-pix__tit{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--success-600);margin-bottom:12px}
+.qf-adm-pix__tit svg{width:18px;height:18px;flex:none}
+.qf-adm-pix__corpo{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.qf-adm-pix__corpo img{border-radius:12px;background:#fff;padding:6px}
+.qf-adm-pix__lado{flex:1 1 280px;display:flex;flex-direction:column;gap:10px}
+.qf-adm-pix__lado .textarea{background:#fff;font-size:12px;min-height:74px}
+.qf-adm-pix__botoes{display:flex;gap:8px;flex-wrap:wrap}
 /* V11.56: Simular chamado para todos */
 .qf-teste-todos{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding:12px 16px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
 .qf-teste-todos>div{display:flex;flex-direction:column;gap:2px;flex:1 1 220px}
@@ -7998,8 +8013,57 @@ Screens.adminDashboardRender = function () {
     aguardando: ['aguardando', 'Aguardando pagamento'],
     vencido: ['cancelado', 'Não pagou (venceu)'],
     nao_gerou: ['cancelado', 'Não gerou a cobrança'],
-    cancelado: ['cancelado', 'Cancelado']
+    cancelado: ['cancelado', 'Cancelado'],
+    manual: ['desbloqueado', 'Ativado por você']
   };
+  // V11.57: ativar/trocar/tirar o plano na mão e gerar o Pix do plano pelo painel.
+  let admPlanosDados = null;      // última resposta de qf_admin_planos_painel
+  let admPlanoPix = null;         // último Pix gerado (fica na tela até gerar outro)
+  let admPlanoEscolha = { pro: '', plano: '' };
+  function admPlanoProfs() {
+    return ((DB.state.users || {}).profissionais || []).map(function (p) {
+      const fone = p.whatsapp || p.telefone || '';
+      return { id: String(p.id), nome: String(p.nome || p.email || 'Sem nome'), fone: String(fone), rotulo: String(p.nome || 'Sem nome') + ' · ' + (fone || p.email || '') };
+    }).sort(function (a, b) { return a.nome.localeCompare(b.nome); });
+  }
+  function admPlanoProPorRotulo(txt) {
+    const t = String(txt || '').trim().toLowerCase();
+    if (!t) return null;
+    const lista = admPlanoProfs();
+    return lista.find(function (p) { return p.rotulo.toLowerCase() === t; }) ||
+      (function () { const ach = lista.filter(function (p) { return p.rotulo.toLowerCase().indexOf(t) !== -1; }); return ach.length === 1 ? ach[0] : null; })();
+  }
+  function admPlanoPixHtml() {
+    const x = admPlanoPix;
+    if (!x) return '';
+    const esc = PU.escapeHtml;
+    let n = String(x.fone || '').replace(/\D/g, ''); if (n && n.length <= 11) n = '55' + n;
+    const msg = 'Oi' + (x.nome ? ', ' + String(x.nome).split(' ')[0] : '') + '! Aqui é do QuemFaz. Segue o Pix do plano ' + x.nome_plano + ' (' + PU.formatCurrency(x.valor_centavos) + '). ' +
+      'No app do seu banco, escolha Pix copia e cola e cole o código abaixo. O plano ativa sozinho assim que o pagamento cair. O Pix vale por 24 horas.\n\n' + x.pix_copy_paste;
+    return '<div class="qf-adm-pix">' +
+      '<div class="qf-adm-pix__tit">' + icon('checkCircle') + ' Pix gerado para ' + esc(x.nome || 'o profissional') + ' · Plano ' + esc(x.nome_plano) + ' · ' + PU.formatCurrency(x.valor_centavos) + '</div>' +
+      '<div class="qf-adm-pix__corpo">' + (x.qr_image ? '<img src="' + esc(x.qr_image) + '" alt="QR Code Pix" width="150" height="150">' : '') +
+        '<div class="qf-adm-pix__lado"><label class="qf-adm-filtro">Pix copia e cola<textarea class="textarea" readonly data-plano-pix-codigo rows="3">' + esc(x.pix_copy_paste) + '</textarea></label>' +
+          '<div class="qf-adm-pix__botoes"><button type="button" class="btn btn--outline btn--sm" style="width:auto;" data-plano-pix-copiar>' + icon('document') + ' Copiar código</button>' +
+          (n ? '<a class="btn btn--primary btn--sm" style="width:auto;" target="_blank" rel="noopener" href="https://wa.me/' + n + '?text=' + encodeURIComponent(msg) + '">' + icon('chat') + ' Enviar no WhatsApp</a>' : '') + '</div>' +
+          '<p class="qf-adm-mudo" style="margin:0;font-size:13px;">Vale por 24 horas. Quando ele pagar, o plano ativa sozinho e você recebe o aviso no celular.</p></div></div></div>';
+  }
+  function admPlanoManualHtml(planos) {
+    const esc = PU.escapeHtml, profs = admPlanoProfs();
+    const pro = profs.find(function (p) { return p.id === admPlanoEscolha.pro; });
+    return '<form class="qf-adm-manual" data-plano-manual-form>' +
+      '<label class="qf-adm-filtro qf-adm-manual__pro">Profissional<input class="input" name="pro" list="qf-adm-plano-profs" autocomplete="off" placeholder="Digite o nome ou o telefone" value="' + esc(pro ? pro.rotulo : '') + '"></label>' +
+      '<datalist id="qf-adm-plano-profs">' + profs.map(function (p) { return '<option value="' + esc(p.rotulo) + '"></option>'; }).join('') + '</datalist>' +
+      '<label class="qf-adm-filtro">Plano<select class="select" name="plano">' + planos.map(function (p) {
+        return '<option value="' + esc(p.plano) + '"' + (p.plano === admPlanoEscolha.plano ? ' selected' : '') + '>' + esc(p.nome) + ' · ' + PU.formatCurrency(p.preco_centavos) + ' · ' + Number(p.chamados) + ' chamados</option>'; }).join('') + '</select></label>' +
+      '<div class="qf-adm-manual__botoes">' +
+        '<button type="button" class="btn btn--primary btn--sm qf-adm-head__btn" data-plano-acao="pix">' + icon('bolt') + 'Gerar Pix para enviar</button>' +
+        '<button type="button" class="btn btn--outline btn--sm" style="width:auto;" data-plano-acao="ativar">' + icon('checkCircle') + ' Ativar sem pagamento</button>' +
+        '<button type="button" class="btn btn--outline btn--sm" style="width:auto;" data-plano-acao="tirar">Tirar o plano</button>' +
+      '</div>' +
+      '<p class="qf-adm-mudo" style="margin:0;font-size:13px;flex-basis:100%;">Gerar Pix: você manda o código e o plano ativa quando ele pagar. Ativar sem pagamento: o plano entra na hora (trocando o que ele tiver) e não conta como receita. Só para quem já tem conta.</p>' +
+    '</form><div data-plano-pix-box>' + admPlanoPixHtml() + '</div>';
+  }
   function admPlanoQuando(iso) {
     const d = new Date(iso || '');
     if (isNaN(d.getTime())) return '';
@@ -8014,6 +8078,7 @@ Screens.adminDashboardRender = function () {
   }
   function admPlanosHtml(d) {
     const esc = PU.escapeHtml, planos = (d && d.planos) || [], lista = (d && d.lista) || [];
+    admPlanosDados = d;
     const nomes = {}; planos.forEach(function (p) { nomes[p.plano] = p.nome; });
     const editar = planos.map(function (p) {
       const cada = Math.round(p.preco_centavos / Math.max(1, p.chamados));
@@ -8028,6 +8093,7 @@ Screens.adminDashboardRender = function () {
     }).join('');
     const conta = { pago: 0, aguardando: 0, vencido: 0 }; let recebido = 0;
     lista.forEach(function (x) {
+      if (x.situacao === 'manual') return;
       if (x.situacao === 'pago' || x.situacao === 'pago_sem_conta') { conta.pago++; recebido += Number(x.valor_centavos || 0); }
       else if (x.situacao === 'aguardando') conta.aguardando++;
       else if (x.situacao === 'vencido') conta.vencido++;
@@ -8035,20 +8101,23 @@ Screens.adminDashboardRender = function () {
     const linhas = lista.map(function (x) {
       const sit = ADM_PLANO_SIT[x.situacao] || ADM_PLANO_SIT.cancelado;
       const plano = nomes[x.plano] || x.plano;
-      const pago = x.situacao === 'pago' || x.situacao === 'pago_sem_conta';
+      const pago = x.situacao === 'pago' || x.situacao === 'pago_sem_conta' || x.situacao === 'manual';
       const zap = pago && x.situacao !== 'pago_sem_conta' ? '' : admPlanoZap(x.telefone, x.nome, plano);
-      const resta = x.situacao === 'pago' && x.chamados_total != null
+      // Quem tem conta e não pagou: atalho que já deixa o profissional e o plano escolhidos no cartão de cima.
+      const atalho = !pago && x.profissional_id ? '<button type="button" class="btn btn--outline btn--sm" style="width:auto;" data-plano-escolher="' + esc(String(x.profissional_id)) + '" data-plano-escolher-plano="' + esc(x.plano) + '">' + icon('bolt') + ' Pix ou ativar</button>' : '';
+      const resta = (x.situacao === 'pago' || x.situacao === 'manual') && x.chamados_total != null
         ? '<div class="qf-adm-mudo" style="font-size:12px;">' + Number(x.chamados_restantes || 0) + ' de ' + Number(x.chamados_total) + ' chamados' + (x.valido_ate ? ' · até ' + new Date(x.valido_ate).toLocaleDateString('pt-BR') : '') + '</div>' : '';
       return '<tr><td><strong>' + esc(x.nome || x.email || 'Sem nome') + '</strong><div class="qf-adm-mudo" style="font-size:12px;">' + esc(x.telefone || x.email || '') + (x.origem === 'cadastro' ? ' · ainda sem conta' : '') + '</div></td>' +
         '<td>' + esc(plano) + '</td>' +
-        '<td>' + PU.formatCurrency(Number(x.valor_centavos || 0)) + '<div class="qf-adm-mudo" style="font-size:12px;">' + esc(x.metodo === 'pix' ? 'Pix' : x.metodo === 'cartao' ? 'Cartão' : x.metodo === 'boleto' ? 'Boleto' : (x.metodo || '')) + '</div></td>' +
+        '<td>' + (x.situacao === 'manual' ? '<span class="qf-adm-mudo">sem pagamento</span>' : PU.formatCurrency(Number(x.valor_centavos || 0)) + '<div class="qf-adm-mudo" style="font-size:12px;">' + esc(x.metodo === 'pix' ? 'Pix' : x.metodo === 'cartao' ? 'Cartão' : x.metodo === 'boleto' ? 'Boleto' : (x.metodo || '')) + '</div>') + '</td>' +
         '<td><span class="qf-adm-sit qf-adm-sit--' + sit[0] + '">' + sit[1] + '</span>' + resta + '</td>' +
         '<td>' + esc(admPlanoQuando(pago ? (x.aprovado_em || x.criado_em) : x.criado_em)) + '</td>' +
-        '<td>' + (zap ? '<a class="btn btn--outline btn--sm" style="width:auto;" target="_blank" rel="noopener" href="' + esc(zap) + '">' + icon('chat') + ' Chamar</a>' : '') + '</td></tr>';
+        '<td><div class="qf-adm-plano-acoes">' + atalho + (zap ? '<a class="btn btn--outline btn--sm" style="width:auto;" target="_blank" rel="noopener" href="' + esc(zap) + '">' + icon('chat') + ' Chamar</a>' : '') + '</div></td></tr>';
     });
     return admCard('Preço dos planos', 'vale na hora para novas assinaturas',
         '<div class="qf-adm-planos">' + editar + '</div>' +
         '<p class="qf-adm-mudo" style="margin:12px 0 0;font-size:13px;">O app passa a mostrar o preço novo sozinho. Quem já tinha gerado o Pix com o preço antigo ainda consegue pagar e recebe o plano como estava.</p>') +
+      admCard('Ativar plano ou gerar Pix', 'para um profissional que já tem conta', admPlanoManualHtml(planos)) +
       admCard('Quem assinou ou tentou assinar', conta.pago + ' pago' + (conta.pago === 1 ? '' : 's') + ' · ' + PU.formatCurrency(recebido) + ' recebidos · ' + conta.aguardando + ' aguardando · ' + conta.vencido + ' não pagaram',
         admTabela(['Profissional', 'Plano', 'Valor', 'Situação', 'Quando', ''], linhas, lista.length ? admLinhas(lista.length, 'registro', 'registros') : '', 'Ninguém escolheu um plano ainda.'));
   }
@@ -8065,6 +8134,68 @@ Screens.adminDashboardRender = function () {
   Screens.adminPlanosRender = function () {
     return admPage('<div data-adm-planos>' + admCard('Planos dos profissionais', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>');
   };
+  document.addEventListener('click', async function (e) {
+    const t = e.target && e.target.closest ? e.target : null;
+    if (!t) return;
+    const copiar = t.closest('[data-plano-pix-copiar]');
+    if (copiar) {
+      const campo = document.querySelector('[data-plano-pix-codigo]');
+      try {
+        if (navigator.clipboard) await navigator.clipboard.writeText(campo.value); else { campo.select(); document.execCommand('copy'); }
+        PU.toast('Código Pix copiado.', 'success');
+      } catch (_) { try { campo.select(); } catch (__) {} PU.toast('Selecione e copie o código.', 'danger'); }
+      return;
+    }
+    const esc = t.closest('[data-plano-escolher]');
+    if (esc) {
+      admPlanoEscolha = { pro: esc.getAttribute('data-plano-escolher'), plano: esc.getAttribute('data-plano-escolher-plano') || '' };
+      const box = esc.closest('[data-adm-planos]');
+      if (box && admPlanosDados) box.innerHTML = admPlanosHtml(admPlanosDados);
+      const f = document.querySelector('[data-plano-manual-form]');
+      if (f) f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      return;
+    }
+    const b = t.closest('[data-plano-acao]');
+    if (!b) return;
+    e.preventDefault();
+    const f = b.closest('[data-plano-manual-form]'), acao = b.getAttribute('data-plano-acao');
+    const pro = admPlanoProPorRotulo(f.pro.value);
+    if (!pro) { PU.toast('Escolha o profissional na lista (digite o nome e toque nele).', 'danger'); try { f.pro.focus(); } catch (_) {} return; }
+    const plano = f.plano.value, op = f.plano.options[f.plano.selectedIndex];
+    const nomePlano = op ? op.textContent.split(' · ')[0] : plano;
+    admPlanoEscolha = { pro: pro.id, plano: plano };
+    const textos = {
+      pix: ['Gerar Pix do plano ' + nomePlano, 'Gera um Pix de ' + (op ? op.textContent.split(' · ')[1] : '') + ' para ' + pro.nome + '. Você envia o código e o plano ativa sozinho quando ele pagar. Confirma?', 'Gerar Pix'],
+      ativar: ['Ativar o plano ' + nomePlano + ' sem pagamento', pro.nome + ' recebe o plano ' + nomePlano + ' agora, sem pagar. Se ele já tiver um plano ativo, o atual é encerrado e entra este. Ele é avisado no celular. Confirma?', 'Ativar agora'],
+      tirar: ['Tirar o plano de ' + pro.nome, 'Os chamados que restam no plano dele são zerados agora. O saldo da carteira não muda. Confirma?', 'Tirar o plano']
+    }[acao];
+    if (!textos) return;
+    if (!(await PU.confirmDialog({ title: textos[0], message: textos[1], okLabel: textos[2] }))) return;
+    const botoes = f.querySelectorAll('[data-plano-acao]');
+    botoes.forEach(function (x) { x.disabled = true; });
+    try {
+      const cli = global.QFAdminCloud.client;
+      if (acao === 'pix') {
+        const r = await cli.functions.invoke('quemfaz-admin-pix', { body: { profissional_id: pro.id, plano: plano } });
+        if (r.error) throw r.error;
+        const d = r.data || {};
+        if (!d.ok) throw new Error(d.error || 'Não foi possível gerar o Pix.');
+        admPlanoPix = { nome: pro.nome, fone: pro.fone, nome_plano: d.nome_plano, valor_centavos: d.valor_centavos, pix_copy_paste: d.pix_copy_paste, qr_image: d.qr_image, checkout_url: d.checkout_url };
+        const box = document.querySelector('[data-plano-pix-box]');
+        if (box) { box.innerHTML = admPlanoPixHtml(); box.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        PU.toast('Pix gerado. Envie para ' + pro.nome + '.', 'success');
+        return;
+      }
+      const r = acao === 'ativar'
+        ? await cli.rpc('qf_admin_ativar_plano', { p_profissional: pro.id, p_plano: plano })
+        : await cli.rpc('qf_admin_remover_plano', { p_profissional: pro.id });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível concluir.');
+      const box = f.closest('[data-adm-planos]'); if (box) box.innerHTML = admPlanosHtml(r.data);
+      PU.toast(acao === 'ativar' ? 'Plano ' + nomePlano + ' ativado para ' + pro.nome + '.' : 'Plano de ' + pro.nome + ' encerrado.', 'success');
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível concluir.', 'danger'); }
+    finally { document.querySelectorAll('[data-plano-acao]').forEach(function (x) { x.disabled = false; }); }
+  });
   function admPlanoLer(f) {
     return {
       preco: Math.round(Number(String(f.preco.value).replace(',', '.')) * 100),
