@@ -1,0 +1,10 @@
+QuemFaz 11.62 — conta criada na hora em qualquer plano, com o aviso de cada plano
+
+CADASTRO DO PROFISSIONAL > Etapa 5 (Escolha seu plano)
+- A conta agora é criada na hora em qualquer plano (antes, Mensal, Pro e Premium só criavam a conta depois do pagamento).
+- Ao tocar em um plano aparece o aviso dele:
+  Avulso: conta criada agora; para desbloquear chamado precisa adicionar crédito na Carteira.
+  Mensal, Pro e Premium: conta criada agora; em seguida abre o pagamento do plano. Pagou, o plano entra na carteira.
+  Enquanto não pagar, o profissional fica no Avulso.
+- Botão dos planos pagos: "Criar conta e pagar · R$ ...". Depois de criar a conta, a Carteira abre o Pix do plano.
+- Quem já tinha um pagamento aberto pelo fluxo antigo continua sendo atendido: pagou, o plano é ativado.

@@ -15,9 +15,10 @@ assert.equal(/const APP_VERSION = '([^']+)'/.exec(html)[1], /const SW_VERSION = 
 // Foto: os dois botões ficam numa pilha com espaço (antes a classe não aplicava o espaçamento).
 assert.ok(html.includes('class="card stack qf-cad-foto"') && html.includes('.qf-cad-foto{gap:14px}'));
 
-// Plano pago: o envio do cadastro abre o pagamento e NÃO cria a conta.
+// V11.62: a conta é criada na hora em qualquer plano; o plano pago abre o pagamento na Carteira depois.
 const envio = html.slice(html.indexOf("const planoPago = QF_CAD_PLANOS.find"), html.indexOf("const foundCity = DB.cities()"));
-assert.ok(envio.indexOf('abrirPagamento(dados, planoPago') > 0 && envio.indexOf('abrirPagamento(dados, planoPago') < envio.indexOf('criarContaAgora(dados, null, null)'));
+assert.ok(!envio.includes('abrirPagamento(') && envio.includes("criarContaAgora(dados, planoPago ? planoPago.id : null, 'pix')"));
+assert.ok(html.includes('sua conta também é criada agora.') && html.includes('Enquanto não pagar, você fica no Avulso') && html.includes("'Criar conta e pagar · ' + pl.preco"));
 // A conta só nasce depois do "aprovado"; em seguida o pagamento vira plano e os dados da conta aparecem.
 const conf = html.slice(html.indexOf('async function pagamentoConfirmado()'), html.indexOf('function renderContaCriada(conta)'));
 assert.ok(conf.indexOf("signUp('profissional', dados)") < conf.indexOf('preCadastroResgatar(pre.pag.id, pre.pag.segredo)'));
