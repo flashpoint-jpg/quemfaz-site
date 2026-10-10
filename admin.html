@@ -1365,6 +1365,158 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="qf-recrutamento.css?v=11.33.1">
+<style id="qf-adm-layout">
+/* V11.45 — painel do administrador: barra de cima, menu lateral, cartões brancos e tabelas. Só admin. */
+body.qf-adm-body{display:block;padding:0;background:#f3f3f3}
+#app-shell.qf-adm{display:block;max-width:none;width:100%;min-height:100vh;margin:0;border-radius:0;box-shadow:none;overflow:visible;background:#f3f3f3}
+#app-shell.qf-adm #app-content{padding:0;min-height:0;width:auto}
+#app-shell.qf-adm .view{padding:0;max-width:none;margin:0;width:auto}
+.qf-adm-top{position:sticky;top:0;z-index:60;height:56px;display:flex;align-items:center;gap:10px;padding:0 16px 0 20px;background:var(--navy-900);color:#fff}
+.qf-adm-top__marca{display:flex;align-items:baseline;gap:10px;font-size:16px;white-space:nowrap;min-width:0;overflow:hidden}
+.qf-adm-top__marca b{font-weight:800;letter-spacing:-.01em}
+.qf-adm-top__marca>span[aria-hidden]{opacity:.5}
+.qf-adm-top__sub{font-weight:500;color:var(--text-on-navy)}
+.qf-adm-top__curto{display:none}
+.qf-adm-top__acoes{margin-left:auto;display:flex;align-items:center;gap:4px}
+.qf-adm-top__btn{all:unset;box-sizing:border-box;position:relative;width:40px;height:40px;flex:none;display:grid;place-items:center;border-radius:10px;cursor:pointer;color:#fff}
+.qf-adm-top__btn:hover{background:rgba(255,255,255,.12)}
+.qf-adm-top__btn:focus-visible,.qf-adm-top__avatar:focus-visible{outline:2px solid var(--orange-400);outline-offset:2px}
+.qf-adm-top__btn svg{width:21px;height:21px;stroke:currentColor}
+.qf-adm-top__badge{position:absolute;top:3px;right:1px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--orange-500);color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+.qf-adm-top__menu{display:none}
+.qf-adm-conta{position:relative}
+.qf-adm-top__avatar{border:0;padding:0;width:34px;height:34px;margin-left:6px;border-radius:50%;background:var(--orange-500);color:#fff;font-weight:800;font-size:15px;display:grid;place-items:center;cursor:pointer}
+.qf-adm-conta__menu{position:absolute;right:0;top:46px;z-index:70;min-width:230px;display:flex;flex-direction:column;gap:2px;padding:16px;background:#fff;color:var(--text-primary);border:1px solid #e3e3e3;border-radius:14px;box-shadow:var(--shadow-float)}
+.qf-adm-conta__menu[hidden]{display:none}
+.qf-adm-conta__menu small{color:var(--text-secondary);word-break:break-all;margin-bottom:10px}
+.qf-adm-corpo{display:flex;align-items:flex-start}
+.qf-adm-side{position:sticky;top:56px;flex:0 0 260px;width:260px;height:calc(100vh - 56px);overflow-y:auto;padding:16px 12px 28px;background:#f3f3f3;border-right:1px solid #e3e3e3}
+.qf-adm-site{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:13px 14px;background:#fff;border:1px solid #e3e3e3;border-radius:14px;font-size:14px;font-weight:700;color:var(--navy-900);overflow-wrap:anywhere}
+.qf-adm-site svg{width:18px;height:18px;flex:none;color:var(--orange-600);stroke:currentColor}
+.qf-adm-nav{display:flex;flex-direction:column;gap:2px}
+.qf-adm-nav__item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:8px;font-size:14.5px;font-weight:600;color:var(--text-primary);cursor:pointer}
+.qf-adm-nav__item svg{width:20px;height:20px;flex:none;stroke:currentColor}
+.qf-adm-nav__item:hover{background:#e5e5e5}
+.qf-adm-nav__item:focus-visible{outline:2px solid var(--navy-700);outline-offset:-2px}
+.qf-adm-nav__item.is-active{background:var(--orange-600);color:#fff}
+.qf-adm-nav__sep{border:0;border-top:1px solid #dadada;margin:8px 4px}
+.qf-adm-main{flex:1 1 auto;min-width:0;padding:28px 32px 56px}
+.qf-adm-pagina{max-width:1010px;margin:0 auto}
+.qf-adm-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.qf-adm-head h1{margin:0;font-size:26px;line-height:1.2;font-weight:700;color:var(--text-primary)}
+.qf-adm-head__btn{width:auto;--btn-h:42px;padding:0 18px;border-radius:10px;font-size:14.5px}
+.qf-adm-voltar{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:8px;font-size:14px;font-weight:700;color:var(--navy-700)}
+.qf-adm-voltar svg{width:16px;height:16px;stroke:currentColor}
+/* Cartão dos números do dia */
+.qf-adm-numeros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:28px;background:#fff;border:1px solid #e3e3e3;border-radius:22px;overflow:hidden}
+.qf-adm-numeros--3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.qf-adm-num__item{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;min-width:0;padding:20px 22px;border-left:1px solid #e3e3e3}
+.qf-adm-num__item:first-child{border-left:0}
+button.qf-adm-num__item{cursor:pointer}
+button.qf-adm-num__item:hover{background:#fafafa}
+button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-offset:-2px}
+.qf-adm-num__item span{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.qf-adm-num__item b{font-size:30px;line-height:1.1;font-weight:700;color:var(--text-primary);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.qf-adm-num__item.is-alerta b{color:var(--orange-600)}
+/* Seções, filtros e tabelas */
+.qf-adm-secao{margin-bottom:28px}
+.qf-adm-secao__head h2{margin:0 0 12px;font-size:18px;font-weight:700}
+.qf-adm-barra{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.qf-adm-barra__filtros{display:flex;gap:10px;flex-wrap:wrap}
+.qf-adm-filtro{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--text-secondary)}
+.qf-adm-filtro .select{width:auto;min-width:170px;height:40px;padding-top:0;padding-bottom:0;border-radius:10px;background-color:#fff;font-size:14px}
+.qf-adm-link{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 4px;font-size:14px;font-weight:700;color:var(--orange-700)}
+.qf-adm-link:hover{text-decoration:underline}
+.qf-adm-link svg{width:18px;height:18px;stroke:currentColor}
+.qf-adm-tabela{background:#fff;border:1px solid #e3e3e3;border-radius:22px;overflow:hidden}
+.qf-adm-tabela__rolar{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.qf-adm-tabela table{width:100%;min-width:760px;border-collapse:collapse;font-size:14px}
+.qf-adm-tabela th{padding:12px 16px;text-align:left;white-space:nowrap;font-size:12px;font-weight:700;color:var(--text-secondary);background:#fafafa;border-bottom:1px solid #e3e3e3}
+.qf-adm-tabela td{padding:12px 16px;vertical-align:top;color:var(--text-primary);border-bottom:1px solid #ececec}
+.qf-adm-tabela tbody tr:last-child td{border-bottom:0}
+.qf-adm-tabela td:first-child{min-width:200px}
+.qf-adm-tr-link{cursor:pointer}
+.qf-adm-tr-link:hover td{background:#fafafa}
+.qf-adm-tr-link:focus-visible{outline:2px solid var(--navy-700);outline-offset:-2px}
+.qf-adm-tabela__vazio td{padding:28px 16px;text-align:center;color:var(--text-secondary)}
+.qf-adm-tabela__rodape{padding:10px 16px;border-top:1px solid #e3e3e3;font-size:13px;color:var(--text-secondary)}
+.qf-adm-resumo{display:block;margin-top:2px;font-size:12.5px;color:var(--text-secondary)}
+.qf-adm-quem{display:block;white-space:nowrap}
+.qf-adm-quem+.qf-adm-quem{margin-top:6px}
+.qf-adm-quem b{font-weight:600}
+.qf-adm-quem small{display:block;font-size:12px;color:var(--text-secondary)}
+.qf-adm-mudo{color:var(--text-muted)}
+.qf-adm-nowrap,.qf-adm-num{white-space:nowrap}
+.qf-adm-num{font-variant-numeric:tabular-nums}
+.qf-adm-sit{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;white-space:nowrap;font-size:12.5px;font-weight:700}
+.qf-adm-sit::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.qf-adm-sit--aguardando{background:var(--warning-100);color:var(--warning-600)}
+.qf-adm-sit--desbloqueado{background:var(--navy-100);color:var(--navy-700)}
+.qf-adm-sit--cheio{background:var(--orange-100);color:var(--orange-700)}
+.qf-adm-sit--fechado{background:var(--success-100);color:var(--success-600)}
+.qf-adm-sit--cancelado{background:#eceff4;color:var(--text-secondary)}
+/* Cartões e listas de itens */
+.qf-adm-card{margin-bottom:20px;padding:20px 22px;background:#fff;border:1px solid #e3e3e3;border-radius:22px}
+.qf-adm-card__head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+.qf-adm-card__head h2{margin:0;font-size:16px;font-weight:700}
+.qf-adm-card__head span{font-size:13px;color:var(--text-muted)}
+.qf-adm-itens{display:flex;flex-direction:column}
+.qf-adm-item{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;min-height:56px;padding:10px 6px;border-top:1px solid #ececec;cursor:pointer;border-radius:8px}
+.qf-adm-item:first-child{border-top:0}
+.qf-adm-item:hover{background:#fafafa}
+.qf-adm-item:focus-visible{outline:2px solid var(--navy-700);outline-offset:-2px}
+.qf-adm-item svg{width:20px;height:20px;flex:none;stroke:currentColor;color:var(--navy-700)}
+.qf-adm-item>span{flex:1;min-width:0;display:flex;flex-direction:column}
+.qf-adm-item b{font-size:15px;font-weight:600}
+.qf-adm-item small{font-size:13px;color:var(--text-secondary)}
+.qf-adm-item .qf-adm-item__seta{width:18px;height:18px;color:var(--text-muted)}
+.qf-adm-card--atalhos{padding:14px 16px}
+.qf-adm-atalhos{display:flex;flex-wrap:wrap;gap:8px}
+.qf-adm-chip{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;background:#fff;border:1px solid #e3e3e3;border-radius:999px;font-size:14px;font-weight:600}
+.qf-adm-chip svg{width:17px;height:17px;stroke:currentColor}
+.qf-adm-chip:hover{background:#fafafa}
+.qf-adm-chip[aria-expanded="true"]{border-color:var(--navy-900);background:var(--navy-100)}
+.qf-adm-card--atalhos .qf-gaveta{margin-top:14px}
+.qf-adm-embutido>.section{margin:0 0 20px;padding:20px 22px;background:#fff;border:1px solid #e3e3e3;border-radius:22px}
+/* As telas que já existiam ganham os mesmos cartões brancos (sem sombra, borda fina, cantos de 22px). */
+#app-shell.qf-adm .card{border:1px solid #e3e3e3;box-shadow:none;border-radius:22px}
+#app-shell.qf-adm .kpi-card{border:1px solid #e3e3e3;box-shadow:none}
+#app-shell.qf-adm .qf-adm-card .card,#app-shell.qf-adm .qf-adm-embutido .card{border-color:#ececec;border-radius:16px}
+#app-shell.qf-adm .qf-ped-cols--so-lista{display:block}
+#app-shell.qf-adm .qf-control-overview{border-radius:22px;border:1px solid #e3e3e3;box-shadow:none}
+@media (min-width:900px) and (max-width:1199px){
+  #app-shell.qf-adm .qf-painel__grid{display:flex;flex-direction:column;gap:22px}
+  #app-shell.qf-adm .qf-painel__col{display:contents}
+}
+/* Celular e tablet: o menu lateral abre por cima do conteúdo. */
+@media (max-width:899px){
+  .qf-adm-top{padding:0 8px 0 6px;gap:6px}
+  .qf-adm-top__menu{display:grid}
+  .qf-adm-side{position:fixed;top:56px;left:0;bottom:0;z-index:58;width:min(290px,86vw);height:auto;visibility:hidden;transform:translateX(-105%);transition:transform .2s ease,visibility 0s linear .2s;box-shadow:var(--shadow-float)}
+  .qf-adm--menu .qf-adm-side{visibility:visible;transform:none;transition:transform .2s ease}
+  .qf-adm-fundo{position:fixed;top:56px;right:0;bottom:0;left:0;z-index:57;background:rgba(11,29,58,.4)}
+  .qf-adm-main{padding:18px 16px 40px}
+  .qf-adm-head h1{font-size:22px}
+  .qf-adm-num__item{padding:16px 18px}
+  .qf-adm-num__item b{font-size:24px}
+}
+@media (max-width:700px){
+  .qf-adm-numeros,.qf-adm-numeros--3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .qf-adm-num__item:nth-child(odd){border-left:0}
+  .qf-adm-num__item:nth-child(n+3){border-top:1px solid #e3e3e3}
+  .qf-adm-numeros--3 .qf-adm-num__item:nth-child(3){grid-column:1/-1}
+  .qf-adm-card,.qf-adm-embutido>.section{padding:16px}
+}
+@media (max-width:520px){
+  .qf-adm-top__marca{font-size:15px;gap:7px}
+  .qf-adm-top__longo{display:none}
+  .qf-adm-top__curto{display:inline}
+  .qf-adm-filtro{flex:1 1 140px}
+  .qf-adm-filtro .select{min-width:0;width:100%}
+  .qf-adm-head__btn{flex:1 1 auto}
+}
+@media (prefers-reduced-motion:reduce){.qf-adm-side{transition:none!important}}
+</style>
 </head>
 <body>
 <div id="app-shell">
@@ -2922,7 +3074,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   const prevAfter = Screens.afterRender;
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfter) prevAfter(pattern, content, params, user);
-    if (pattern !== '/admin/dashboard') return;
+    if (pattern !== '/admin/dashboard' && pattern !== '/admin/servicos') return;
     timer = null; start();
     let go = false; try { go = sessionStorage.getItem('qf_goto_parados') === '1'; sessionStorage.removeItem('qf_goto_parados'); } catch (_) {}
     if (go) setTimeout(function () { if (global.QFPainel) { global.QFPainel.abrir('parados'); return; } const el = document.getElementById('parados'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
@@ -3116,7 +3268,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   const prevAfter = Screens.afterRender;
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfter) prevAfter(pattern, content, params, user);
-    if (pattern !== '/admin/dashboard') return;
+    if (pattern !== '/admin/dashboard' && pattern !== '/admin/servicos') return;
     timer = null; start();
     let go = false; try { go = sessionStorage.getItem('qf_goto_semresp') === '1'; sessionStorage.removeItem('qf_goto_semresp'); } catch (_) {}
     if (go) setTimeout(function () { if (global.QFPainel) { global.QFPainel.abrir('sem-resposta'); return; } const el = document.getElementById('sem-resposta'); if (el) el.scrollIntoView({ block: 'start' }); }, 150);
@@ -3247,7 +3399,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   const prevAfter = Screens.afterRender;
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfter) prevAfter(pattern, content, params, user);
-    if (pattern === '/admin/dashboard') refresh();
+    if (pattern === '/admin/dashboard' || pattern === '/admin/comunicados') refresh();
   };
   global.QFAdminAviso = { html: html, refresh: refresh, _set: function (itens, l) { lista = { itens: itens }; if (l) { leituras = l; leiturasAberto = true; } paint(); } };
 })(window);
@@ -5391,24 +5543,6 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
     return r && r.profissionalId ? [{ profissionalId: r.profissionalId, valor: r.leadUnlock ? r.leadUnlock.valor : 0, origem: 'saldo', desfecho: null, criadoEm: r.leadUnlock ? r.leadUnlock.criadoEm : null, unico: true }] : [];
   }
 
-  // V11.27 — últimos pedidos em linha compacta: serviço, quem pediu, quem desbloqueou, onde e quando.
-  function adminPedidoLinha(r) {
-    const cat = DB.categoryById(r.categoriaId);
-    const cliente = DB.clienteById(r.clienteId);
-    const nomes = desbloqueiosAtivos(r).map(function (x) { const p = DB.profissionalById(x.profissionalId); return PU.escapeHtml((p && p.nome) || 'Profissional'); });
-    const cidade = [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/');
-    const quem = PU.escapeHtml((cliente && cliente.nome) || 'Cliente não identificado') +
-      (nomes.length ? ' → ' + nomes.join(', ') + (nomes.length > 1 ? ' (' + nomes.length + ' de 3)' : '') : ' · ainda ninguém desbloqueou');
-    return '<button type="button" class="qf-linha qf-pedido" data-nav="/admin/servicos/' + r.id + '">' +
-      '<span class="icon-tile qf-linha__icone">' + icon(cat ? cat.icon : 'tag') + '</span>' +
-      '<span class="qf-linha__corpo">' +
-        '<span class="qf-pedido__topo"><span class="qf-linha__titulo">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</span>' + adminStatusBadge(r) + '</span>' +
-        '<span class="qf-linha__sub">' + quem + '</span>' +
-        '<span class="qf-linha__sub">' + (cidade ? PU.escapeHtml(cidade) + ' · ' : '') + PU.escapeHtml(PU.formatDateTime(r.criadoEm)) + '</span>' +
-      '</span>' +
-    '</button>';
-  }
-
   // ---------------- V11.22: fluxo simples + quadro de fechamento ----------------
   const ST_DESBLOQUEADO = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO];
   const ST_CONCLUIDO = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO];
@@ -5652,18 +5786,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
   });
   global.QFAdminFechamento = { stats: fechamentoStats };
 
-  // 4. Últimos pedidos, em linhas.
-  function adminPedidosRecentesHtml() {
-    const list = DB.allRequests().slice().sort(function (a, b) {
-      return (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0);
-    }).slice(0, 5);
-    if (!list.length) return '';
-    return '<section class="section qf-p-pedidos">' +
-      '<div class="section-head"><h2 class="h3">Últimos pedidos</h2></div>' +
-      '<div class="qf-lista qf-lista--pedidos">' + list.map(adminPedidoLinha).join('') + '</div>' +
-      '<button type="button" class="btn btn--outline" data-nav="/admin/servicos" style="margin-top:10px;">Ver todos os serviços</button>' +
-    '</section>';
-  }
+  // 4. Últimos pedidos: tabela com filtros, em admUltimosHtml (V11.45).
 
   // 5. Atalhos: ferramentas e listas que antes ficavam abertas na tela.
   function atalho(ic, rotulo, sub, attrs) {
@@ -5694,10 +5817,10 @@ Screens.adminDashboardRender = function () {
       '<div class="view qf-painel">' + migrationBanner() +
         (global.QFAdminParados ? global.QFAdminParados.banners() : '') +
         (cloudOn() && meta.snapshotEm ? '<div class="qf-painel__topo"><span class="text--sm text--secondary">Atualizado em ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
-        '<div class="qf-control-dashboard-link"><button class="btn btn--primary" type="button" data-nav="/admin/servicos">Abrir Central de Controle de Pedidos →</button><span>Todos os pedidos, desbloqueios e profissionais compatíveis</span></div>' +
+        admNumerosHtml(s) + admUltimosHtml() +
         '<div class="qf-painel__grid">' +
           '<div class="qf-painel__col">' + receitaHtml(s) + notaAppSecaoHtml() + comoEstaIndoHtml(s) + atalhosHtml(s) + '</div>' +
-          '<div class="qf-painel__col">' + precisaHtml(s) + adminPedidosRecentesHtml() + '</div>' +
+          '<div class="qf-painel__col">' + precisaHtml(s) + '</div>' +
         '</div>' +
       '</div>'
     );
@@ -6358,9 +6481,8 @@ Screens.adminDashboardRender = function () {
     const all = DB.allRequests();
     return (
       '<div class="view qf-control-page">' +
-        adminControleResumoHtml(all) +
-        '<div class="qf-ped-cols">' +
-          adminExtratoHtml(all) +
+        adminControleResumoHtml(all) + admPedidosExtrasHtml() +
+        '<div class="qf-ped-cols qf-ped-cols--so-lista">' +
           '<div class="qf-ped-cols__lista">' +
             '<div class="segmented" id="servicos-segmented">' + TABS_SERVICOS.map(function (t) {
               return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
@@ -6606,20 +6728,17 @@ Screens.adminDashboardRender = function () {
   Screens.adminPagamentosRender = function () {
     const list = DB.pagamentos();
     if (!list.length) return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><p class="text text--secondary">Nenhuma receita registrada ainda.</p></div></div>';
-    return (
-      '<div class="view stack--sm">' + list.map(function (e) {
-        const r = e.request || null;
-        const cliente = r ? DB.clienteById(r.clienteId) : null;
-        const prof = e.profissionalId ? DB.profissionalById(e.profissionalId) : null;
-        return '<div class="card stack--sm">' +
-          rowInfo('Origem', e.tipo) +
-          (e.ad ? rowInfo('Anunciante', e.ad.empresa) : (r ? rowInfo('Cliente', (cliente || {}).nome || '—') : '')) +
-          (prof ? rowInfo('Profissional', prof.nome) : '') +
-          rowInfo(e.creditos ? 'Créditos usados' : 'Dinheiro que entrou', PU.formatCurrency(e.valor)) +
-          rowInfo('Data', PU.formatDateTime(e.criadoEm)) +
-        '</div>';
-      }).join('') + '</div>'
-    );
+    // V11.45: mesma informação de antes, em tabela (origem, cliente ou anunciante, profissional, valor e data).
+    return admPage(admTabela(['Origem', 'Cliente / anunciante', 'Profissional', 'Valor', 'Data'], list.map(function (e) {
+      const r = e.request || null;
+      const cliente = r ? DB.clienteById(r.clienteId) : null;
+      const prof = e.profissionalId ? DB.profissionalById(e.profissionalId) : null;
+      const quem = e.ad ? e.ad.empresa : (r ? (cliente || {}).nome || '—' : '—');
+      return '<tr><td><b>' + PU.escapeHtml(e.tipo) + '</b></td><td>' + PU.escapeHtml(quem) + (e.ad ? '<small class="qf-adm-resumo">anunciante</small>' : '') + '</td>' +
+        '<td>' + (prof ? PU.escapeHtml(prof.nome) : '<span class="qf-adm-mudo">—</span>') + '</td>' +
+        '<td class="qf-adm-num"><b>' + PU.formatCurrency(e.valor) + '</b><small class="qf-adm-resumo">' + (e.creditos ? 'créditos usados' : 'dinheiro que entrou') + '</small></td>' +
+        '<td class="qf-adm-nowrap">' + PU.escapeHtml(PU.formatDateTime(e.criadoEm)) + '</td></tr>';
+    }), admLinhas(list.length, 'lançamento', 'lançamentos')));
   };
 
   // ---------------- Cancelamentos ----------------
@@ -7395,6 +7514,293 @@ Screens.adminDashboardRender = function () {
       });
     });
   }
+
+  // ---------------- V11.45: painel com menu lateral (só layout) ----------------
+  // Mesmos dados de sempre (DB e QFAdminCloud); aqui só se organiza em páginas, cartões e tabelas.
+  function admPage(conteudo, extraClasse) {
+    return '<div class="view qf-adm-view' + (extraClasse ? ' ' + extraClasse : '') + '">' + migrationBanner() + conteudo + '</div>';
+  }
+  function admCard(titulo, sub, corpo) {
+    return '<section class="qf-adm-card">' +
+      (titulo ? '<div class="qf-adm-card__head"><h2>' + titulo + '</h2>' + (sub ? '<span>' + sub + '</span>' : '') + '</div>' : '') +
+      corpo + '</section>';
+  }
+  function admTabela(cabecalho, linhas, rodape, vazio) {
+    return '<div class="qf-adm-tabela"><div class="qf-adm-tabela__rolar"><table>' +
+      '<thead><tr>' + cabecalho.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr></thead>' +
+      '<tbody>' + (linhas.length ? linhas.join('') : '<tr class="qf-adm-tabela__vazio"><td colspan="' + cabecalho.length + '">' + (vazio || 'Nada por aqui.') + '</td></tr>') + '</tbody>' +
+      '</table></div>' + (rodape ? '<div class="qf-adm-tabela__rodape">' + rodape + '</div>' : '') + '</div>';
+  }
+  function admLinhas(n, singular, plural) { return n + ' ' + (n === 1 ? singular : plural); }
+
+  // Situação do pedido em uma palavra, com cor: aguardando, desbloqueado, vagas preenchidas, fechado, cancelado.
+  function admSituacao(r) {
+    const desb = desbloqueiosAtivos(r);
+    if (r.status === STATUS.CANCELADO) return { id: 'cancelado', rotulo: r.desfecho === 'nao_fechado' ? 'Não fechou' : r.desfecho === 'sem_retorno' ? 'Sem retorno' : 'Cancelado' };
+    if (desb.some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1) return { id: 'fechado', rotulo: 'Fechado' };
+    if (desb.length >= 3) return { id: 'cheio', rotulo: 'Vagas preenchidas' };
+    if (desb.length) return { id: 'desbloqueado', rotulo: 'Desbloqueado · ' + desb.length + ' de 3' };
+    return { id: 'aguardando', rotulo: 'Aguardando' };
+  }
+  const ADM_SITUACOES = [['todas', 'Todas'], ['aguardando', 'Aguardando'], ['desbloqueado', 'Desbloqueado'], ['cheio', 'Vagas preenchidas'], ['fechado', 'Fechado'], ['cancelado', 'Cancelado']];
+  function admCidadePedido(r) {
+    const e = r.endereco || {}, c = DB.cityById ? DB.cityById(r.cidadeId) : null;
+    return [e.cidade || (c && c.nome), e.uf || (c && c.uf)].filter(Boolean).join('/');
+  }
+  function admValorPedido(r) { return desbloqueiosAtivos(r).reduce(function (s, x) { return s + qfDesbPagamento(x).valor; }, 0); }
+  function admOrdenados() {
+    return DB.allRequests().slice().sort(function (a, b) { return (Date.parse(b.criadoEm) || 0) - (Date.parse(a.criadoEm) || 0); });
+  }
+
+  // Últimos pedidos (Início): filtros por serviço e situação; a tabela se refaz sem recarregar a tela.
+  const ADM_ULTIMOS_MAX = 20;
+  let admFiltroServico = 'todos', admFiltroSituacao = 'todas';
+  function admFiltrados() {
+    return admOrdenados().filter(function (r) {
+      return (admFiltroServico === 'todos' || String(r.categoriaId) === admFiltroServico) &&
+        (admFiltroSituacao === 'todas' || admSituacao(r).id === admFiltroSituacao);
+    });
+  }
+  function admPedidoTr(r) {
+    const desb = desbloqueiosAtivos(r).slice().sort(function (a, b) { return (Date.parse(a.criadoEm) || 0) - (Date.parse(b.criadoEm) || 0); });
+    const sit = admSituacao(r);
+    const resumo = String(r.titulo || r.descricao || '').trim();
+    const valor = admValorPedido(r);
+    const quem = desb.length ? desb.map(function (x) {
+      const p = DB.profissionalById(x.profissionalId);
+      return '<span class="qf-adm-quem"><b>' + PU.escapeHtml((p && p.nome) || 'Profissional') + '</b><small>' + (Date.parse(x.criadoEm) ? qfDiaMes(x.criadoEm) + ' · ' + qfHora(x.criadoEm) : 'sem hora') + '</small></span>';
+    }).join('') : '<span class="qf-adm-mudo">Ninguém ainda</span>';
+    return '<tr class="qf-adm-tr-link" data-nav="/admin/servicos/' + r.id + '" tabindex="0">' +
+      '<td><b>' + PU.escapeHtml(qfPedidoTitulo(r)) + '</b>' + (resumo ? '<small class="qf-adm-resumo">' + PU.escapeHtml(resumo.length > 60 ? resumo.slice(0, 57) + '…' : resumo) + '</small>' : '') + '</td>' +
+      '<td>' + (PU.escapeHtml(admCidadePedido(r)) || '<span class="qf-adm-mudo">—</span>') + '</td>' +
+      '<td class="qf-adm-nowrap">' + (Date.parse(r.criadoEm) ? qfDiaMes(r.criadoEm) + ' · ' + qfHora(r.criadoEm) : '—') + '</td>' +
+      '<td>' + quem + '</td>' +
+      '<td><span class="qf-adm-sit qf-adm-sit--' + sit.id + '">' + sit.rotulo + '</span></td>' +
+      '<td class="qf-adm-num">' + (valor > 0 ? PU.formatCurrency(valor) : '<span class="qf-adm-mudo">—</span>') + '</td>' +
+    '</tr>';
+  }
+  const ADM_CAB_PEDIDOS = ['Pedido', 'Cidade', 'Recebido', 'Quem desbloqueou', 'Situação', 'Valor'];
+  function admUltimosTabela() {
+    const lista = admFiltrados();
+    const mostra = lista.slice(0, ADM_ULTIMOS_MAX);
+    const total = DB.allRequests().length;
+    const rodape = 'Mostrando ' + mostra.length + ' de ' + admLinhas(lista.length, 'pedido', 'pedidos') + (lista.length !== total ? ' (filtrado de ' + total + ')' : '');
+    return admTabela(ADM_CAB_PEDIDOS, mostra.map(admPedidoTr), rodape, 'Nenhum pedido com esse filtro.');
+  }
+  function admUltimosHtml() {
+    const cats = {};
+    DB.allRequests().forEach(function (r) { if (r.categoriaId != null) cats[r.categoriaId] = qfPedidoTitulo(r); });
+    const opcoesServ = [['todos', 'Todos']].concat(Object.keys(cats).sort(function (a, b) { return cats[a].localeCompare(cats[b]); }).map(function (k) { return [k, cats[k]]; }));
+    if (!opcoesServ.some(function (o) { return o[0] === admFiltroServico; })) admFiltroServico = 'todos';
+    function sel(id, rotulo, opcoes, atual) {
+      return '<label class="qf-adm-filtro"><span>' + rotulo + '</span><select class="select" id="' + id + '">' +
+        opcoes.map(function (o) { return '<option value="' + PU.escapeHtml(o[0]) + '"' + (o[0] === atual ? ' selected' : '') + '>' + PU.escapeHtml(o[1]) + '</option>'; }).join('') + '</select></label>';
+    }
+    return '<section class="qf-adm-secao qf-p-pedidos" id="adm-ultimos">' +
+      '<div class="qf-adm-secao__head"><h2>Últimos pedidos</h2></div>' +
+      '<div class="qf-adm-barra">' +
+        '<div class="qf-adm-barra__filtros">' + sel('adm-f-servico', 'Serviço', opcoesServ, admFiltroServico) + sel('adm-f-situacao', 'Situação', ADM_SITUACOES, admFiltroSituacao) + '</div>' +
+        '<button type="button" class="qf-adm-link" data-adm-baixar="pedidos">' + icon('download') + 'Baixar tudo</button>' +
+      '</div>' +
+      '<div id="adm-ultimos-tabela">' + admUltimosTabela() + '</div>' +
+    '</section>';
+  }
+  document.addEventListener('change', function (e) {
+    const id = e.target && e.target.id;
+    if (id !== 'adm-f-servico' && id !== 'adm-f-situacao') return;
+    if (id === 'adm-f-servico') admFiltroServico = e.target.value; else admFiltroSituacao = e.target.value;
+    const box = document.getElementById('adm-ultimos-tabela');
+    if (box) box.innerHTML = admUltimosTabela();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' || !e.target || !e.target.matches || !e.target.matches('tr.qf-adm-tr-link')) return;
+    global.navigate(e.target.getAttribute('data-nav'));
+  });
+
+  // "Baixar tudo": planilha CSV com os pedidos que o painel já tem carregados (nenhuma consulta nova).
+  function admCsv(linhas) {
+    return '﻿' + linhas.map(function (l) {
+      return l.map(function (v) { const s = String(v == null ? '' : v); return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(';');
+    }).join('\r\n');
+  }
+  function admBaixarPedidos() {
+    const linhas = [['Pedido', 'Descrição', 'Cliente', 'Cidade', 'Recebido em', 'Quem desbloqueou', 'Situação', 'Valor (R$)']];
+    admOrdenados().forEach(function (r) {
+      const cliente = DB.clienteById(r.clienteId);
+      const quem = desbloqueiosAtivos(r).map(function (x) {
+        const p = DB.profissionalById(x.profissionalId);
+        return ((p && p.nome) || 'Profissional') + (Date.parse(x.criadoEm) ? ' (' + qfDiaMes(x.criadoEm) + ' ' + qfHora(x.criadoEm) + ')' : '');
+      }).join(' | ');
+      linhas.push([qfPedidoTitulo(r), String(r.titulo || r.descricao || '').trim(), (cliente && cliente.nome) || '', admCidadePedido(r),
+        Date.parse(r.criadoEm) ? qfDiaMes(r.criadoEm) + ' ' + qfHora(r.criadoEm) : '', quem, admSituacao(r).rotulo, (admValorPedido(r) / 100).toFixed(2).replace('.', ',')]);
+    });
+    const blob = new Blob([admCsv(linhas)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'quemfaz-pedidos-' + qfDiaChave() + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    PU.toast('Planilha com ' + admLinhas(linhas.length - 1, 'pedido', 'pedidos') + ' baixada.', 'success');
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-adm-baixar]');
+    if (b) { e.preventDefault(); admBaixarPedidos(); }
+  });
+
+  // Quantas coisas pedem ação (mesma conta do "Precisa de você").
+  function admPendencias(s) {
+    s = s || DB.dashboardStats();
+    const par = global.QFAdminParados, cas = global.QFAdminCascata;
+    const suporte = ((global.QFAdminCloud && global.QFAdminCloud.supportTickets) || []).filter(function (t) { return t.status !== 'resolvido'; }).length;
+    return (cloudOn() ? semPushListaAtual().length : 0) + Number((par && par.count()) || 0) + Number((cas && cas.count()) || 0) + suporte +
+      Number(s.profissionaisPendentes || 0) + (cloudOn() ? Number(s.profissionaisSemSelfie || 0) : 0);
+  }
+  // Quatro números do dia, num cartão só. A receita é a mesma "Entrada de hoje" (soma tudo e zera à meia-noite).
+  function admNumerosHtml(s) {
+    const en = s.entrada || {};
+    const hoje = qfDiaChave();
+    const pedidosHoje = DB.allRequests().filter(function (r) { return r.criadoEm && qfDiaChave(r.criadoEm) === hoje; }).length;
+    const pend = admPendencias(s);
+    function n(rotulo, valor, attrs, cls) {
+      return '<' + (attrs ? 'button type="button" ' + attrs : 'div') + ' class="qf-adm-num__item' + (cls ? ' ' + cls : '') + '"><span>' + rotulo + '</span><b>' + valor + '</b></' + (attrs ? 'button' : 'div') + '>';
+    }
+    return '<section class="qf-adm-numeros" aria-label="Números de hoje">' +
+      n('Receita de hoje', PU.formatCurrency(en.hoje), 'data-nav="/admin/pagamentos"') +
+      n('Pedidos de hoje', pedidosHoje, 'data-nav="/admin/servicos"') +
+      n('Desbloqueios de hoje', Number(en.desbloqueiosHojeQtd || 0), 'data-nav="/admin/desbloqueios"') +
+      n('Precisa de você', pend, 'data-adm-ir-precisa', pend > 0 ? 'is-alerta' : '') +
+    '</section>';
+  }
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-adm-ir-precisa]');
+    if (!b) return;
+    e.preventDefault();
+    const alvo = document.querySelector('.qf-p-precisa');
+    if (alvo) { alvo.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    try { sessionStorage.setItem('qf_adm_ir_precisa', '1'); } catch (_) {}
+    global.navigate('/admin/dashboard');
+  });
+
+  // Desbloqueios: o extrato que ficava ao lado da lista de pedidos, agora com página própria.
+  Screens.adminDesbloqueiosRender = function () {
+    const all = DB.allRequests();
+    const movs = adminExtratoMovimentos(all);
+    const hoje = qfDiaChave();
+    let qtdHoje = 0, totalHoje = 0, total = 0;
+    movs.forEach(function (m) { const v = qfDesbPagamento(m.x).valor; total += v; if (m.t && qfDiaChave(m.x.criadoEm) === hoje) { qtdHoje++; totalHoje += v; } });
+    return admPage(
+      '<section class="qf-adm-numeros qf-adm-numeros--3">' +
+        '<div class="qf-adm-num__item"><span>Desbloqueios de hoje</span><b>' + qtdHoje + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Valor de hoje</span><b>' + PU.formatCurrency(totalHoje) + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Desbloqueios no total</span><b>' + movs.length + '</b></div>' +
+      '</section>' +
+      adminExtratoHtml(all), 'qf-adm-desb');
+  };
+
+  // Por cidade: o agrupamento que existia em Profissionais, em tabela. A linha abre a lista já filtrada.
+  Screens.adminPorCidadeRender = function () {
+    const groups = {};
+    DB.state.users.profissionais.forEach(function (p) {
+      const c = profCidadeInfo(p);
+      (groups[c.key] = groups[c.key] || { key: c.key, label: c.label, itens: [] }).itens.push(p);
+    });
+    const ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.itens.length - a.itens.length || a.label.localeCompare(b.label); });
+    const linhas = ordered.map(function (g) {
+      const online = g.itens.filter(function (p) { return p.online; }).length;
+      const novos = g.itens.filter(ehCadastroNovo).length;
+      return '<tr class="qf-adm-tr-link" data-adm-cidade="' + PU.escapeHtml(g.key) + '" tabindex="0">' +
+        '<td><b>' + PU.escapeHtml(g.label) + '</b></td><td class="qf-adm-num">' + g.itens.length + '</td><td class="qf-adm-num">' + online + '</td><td class="qf-adm-num">' + novos + '</td>' +
+        '<td><small class="qf-adm-resumo">' + PU.escapeHtml(topCats(g.itens) || 'Sem profissões marcadas') + '</small></td></tr>';
+    });
+    return admPage(admTabela(['Cidade', 'Profissionais', 'Online', 'Novos (' + NOVO_HORAS + 'h)', 'Principais profissões'], linhas,
+      admLinhas(ordered.length, 'cidade', 'cidades') + ' · ' + admLinhas(DB.state.users.profissionais.length, 'profissional', 'profissionais'), 'Nenhum profissional cadastrado ainda.'));
+  };
+  document.addEventListener('click', function (e) {
+    const tr = e.target.closest && e.target.closest('[data-adm-cidade]');
+    if (!tr) return;
+    profCidadeFiltro = tr.getAttribute('data-adm-cidade');
+    global.navigate('/admin/profissionais');
+  });
+
+  // Verificações: quem espera aprovação, quem está sem selfie e quem tem o selo. Cada linha abre o profissional.
+  Screens.adminVerificacoesRender = function () {
+    const list = DB.state.users.profissionais;
+    function tabela(itens, vazio) {
+      return admTabela(['Profissional', 'Cidade', 'Cadastro', 'Situação'], itens.slice().sort(function (a, b) { return tsCadastro(b) - tsCadastro(a); }).map(function (p) {
+        return '<tr class="qf-adm-tr-link" data-nav="/admin/profissionais/' + p.id + '" tabindex="0"><td><b>' + PU.escapeHtml(p.nome || 'Sem nome') + '</b><small class="qf-adm-resumo">' + PU.escapeHtml(p.telefone || p.email || '') + '</small></td>' +
+          '<td>' + PU.escapeHtml(profCidadeInfo(p).label) + '</td><td class="qf-adm-nowrap">' + (tsCadastro(p) ? PU.escapeHtml(PU.formatDateTime(p.criadoEm)) : '—') + '</td>' +
+          '<td>' + aprovacaoBadge(p.statusAprovacao) + (p.verificado ? ' <span class="badge badge--navy">Verificado</span>' : '') + '</td></tr>';
+      }), admLinhas(itens.length, 'profissional', 'profissionais'), vazio);
+    }
+    const pend = list.filter(function (p) { return p.statusAprovacao === 'pendente'; });
+    const semSelfie = list.filter(function (p) { return p.temFoto === false; });
+    const comSelo = list.filter(function (p) { return p.verificado; });
+    return admPage(
+      '<section class="qf-adm-secao"><div class="qf-adm-secao__head"><h2>Cadastros para aprovar</h2></div>' + tabela(pend, 'Nenhum cadastro esperando aprovação.') + '</section>' +
+      '<section class="qf-adm-secao"><div class="qf-adm-secao__head"><h2>Sem selfie</h2></div>' + tabela(semSelfie, 'Todos os profissionais têm selfie.') + '</section>' +
+      '<section class="qf-adm-secao"><div class="qf-adm-secao__head"><h2>Com selo verificado</h2></div>' + tabela(comSelo, 'Nenhum profissional com selo ainda.') + '</section>');
+  };
+
+  function admItem(ic, rotulo, sub, attrs) {
+    return '<button type="button" class="qf-adm-item" ' + attrs + '>' + icon(ic) + '<span><b>' + rotulo + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</span>' + icon('chevronRight', 'qf-adm-item__seta') + '</button>';
+  }
+  const ADM_SO_CONECTADO = '<p class="qf-adm-mudo" style="margin:0;">Disponível quando o painel está conectado ao banco de dados.</p>';
+
+  // Comunicados: aviso geral na tela, quem não entrou e quem está sem notificação.
+  Screens.adminComunicadosRender = function () {
+    const aviso = global.QFAdminAviso ? global.QFAdminAviso.html() : '';
+    return admPage(
+      (aviso ? '<div class="qf-adm-embutido">' + aviso + '</div>' : admCard('Aviso geral na tela', 'aparece ao abrir o app', ADM_SO_CONECTADO)) +
+      admCard('Outros comunicados', '', '<div class="qf-adm-itens">' +
+        admItem('users', 'Avisar quem não entrou', 'mensagem para quem se cadastrou e não voltou', 'data-nav="/admin/avisar-acesso"') +
+        admItem('bellOff', 'Profissionais sem notificações', 'chamar no WhatsApp', 'data-nav="/admin/sem-push"') +
+      '</div>'));
+  };
+  Screens.adminBonusRender = function () {
+    const bonus = global.QFAdminBonus ? global.QFAdminBonus.html() : '';
+    return admPage(bonus ? '<div class="qf-adm-embutido">' + bonus + '</div>' : admCard('Bônus para todos', 'só quem ainda não recebeu', ADM_SO_CONECTADO));
+  };
+  // Configurações: o que antes ficava em "Mais" e não é do dia a dia.
+  Screens.adminConfiguracoesRender = function () {
+    return admPage(
+      admCard('Cadastro do app', '', '<div class="qf-adm-itens">' +
+        admItem('tag', 'Categorias', 'serviços que aparecem no app', 'data-nav="/admin/categorias"') +
+        admItem('building', 'Cidades e regiões', 'onde o QuemFaz atende', 'data-nav="/admin/cidades"') +
+        admItem('unlock', 'Taxas dos chamados', 'valor do desbloqueio', 'data-nav="/admin/comissao"') +
+        admItem('smartphone', 'Versão do app e atualização obrigatória', '', 'data-nav="/admin/versao"') +
+      '</div>') +
+      admCard('Conta', '', '<div class="qf-adm-itens">' +
+        (cloudOn() ? '' : admItem('refresh', 'Restaurar dados de demonstração', 'apaga os dados atuais deste aparelho', 'data-action="restaurar-demo"')) +
+        admItem('logout', 'Sair da conta', '', 'data-logout') +
+      '</div>'));
+  };
+  // Pedidos: chamados parados, sem resposta, cascata e cancelamentos ficam junto da Central.
+  function admPedidosExtrasHtml() {
+    const par = global.QFAdminParados, cas = global.QFAdminCascata;
+    const cascata = cas ? cas.cascata() : '';
+    return '<section class="qf-adm-card qf-adm-card--atalhos"><div class="qf-adm-atalhos">' +
+      (par ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('parados') + '>' + icon('clock') + 'Chamados parados ' + contaPill(par.count(), 'parados') + '</button>' : '') +
+      (cas ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('sem-resposta') + '>' + icon('chat') + 'Sem resposta ' + contaPill(cas.count(), 'sem-resposta') + '</button>' : '') +
+      (cascata ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('cascata') + '>' + icon('layers') + 'Cascata do chamado</button>' : '') +
+      '<button type="button" class="qf-adm-chip" data-nav="/admin/cancelamentos">' + icon('alertTriangle') + 'Cancelamentos</button>' +
+    '</div>' +
+    (par ? gaveta('parados', par.secao()) : '') + (cas ? gaveta('sem-resposta', cas.semResp()) : '') + gaveta('cascata', cascata) +
+    '</section>';
+  }
+
+  const prevAfterAdm = Screens.afterRender;
+  Screens.afterRender = function (pattern, content, params, user) {
+    if (prevAfterAdm) prevAfterAdm(pattern, content, params, user);
+    if (pattern === '/admin/configuracoes') bindMais(content);
+    if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
+    if (pattern === '/admin/servicos') atualizarContas();
+    if (pattern === '/admin/dashboard') {
+      let ir = false; try { ir = sessionStorage.getItem('qf_adm_ir_precisa') === '1'; sessionStorage.removeItem('qf_adm_ir_precisa'); } catch (_) {}
+      const alvo = ir && content.querySelector('.qf-p-precisa');
+      if (alvo) setTimeout(function () { alvo.scrollIntoView({ block: 'start' }); }, 60);
+    }
+  };
+  global.QFAdminLayout = { pendencias: function () { return admPendencias(); } };
 })(window);
 
 
@@ -7453,7 +7859,7 @@ Screens.adminDashboardRender = function () {
   // ---------------- Rotas ----------------
 
   const routes = [
-    { pattern: '/admin/recrutamento', role: 'admin', title: 'Recrutamento', back: '/admin/dashboard', render: Screens.recrutAdminRender },
+    { pattern: '/admin/recrutamento', role: 'admin', title: 'Recrutamento', render: Screens.recrutAdminRender },
 
     { pattern: '/', anon: true, render: function () { return Screens.landing(); } },
     { pattern: '/auth/:role/login', anon: true, render: function (p) { return Screens.authLogin(p); } },
@@ -7476,24 +7882,30 @@ Screens.adminDashboardRender = function () {
     { pattern: '/profissional/perfil', role: 'profissional', tab: 'perfil', title: 'Perfil profissional', render: Screens.profPerfilRender },
     { pattern: '/profissional/avaliacoes', role: 'profissional', title: 'Avaliações', back: '/profissional/perfil', render: Screens.profAvaliacoesRender },
 
-    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard', title: 'Painel administrativo', render: Screens.adminDashboardRender },
+    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard', title: 'Início', render: Screens.adminDashboardRender },
     { pattern: '/admin/profissionais', role: 'admin', tab: 'profissionais', title: 'Profissionais', render: Screens.adminProfissionaisRender },
     { pattern: '/admin/profissionais/:id', role: 'admin', title: 'Profissional', back: '/admin/profissionais', render: Screens.adminProfissionalDetalheRender },
-    { pattern: '/admin/clientes', role: 'admin', title: 'Clientes', back: '/admin/mais', render: Screens.adminClientesRender },
-    { pattern: '/admin/servicos', role: 'admin', tab: 'servicos', title: 'Serviços', render: Screens.adminServicosRender },
+    { pattern: '/admin/clientes', role: 'admin', title: 'Clientes', render: Screens.adminClientesRender },
+    { pattern: '/admin/servicos', role: 'admin', tab: 'servicos', title: 'Pedidos', render: Screens.adminServicosRender },
     { pattern: '/admin/servicos/:id', role: 'admin', title: 'Detalhe do serviço', back: '/admin/servicos', render: Screens.adminServicoDetalheRender },
-    { pattern: '/admin/categorias', role: 'admin', title: 'Categorias', back: '/admin/mais', render: Screens.adminCategoriasRender },
-    { pattern: '/admin/cidades', role: 'admin', title: 'Cidades e regiões', back: '/admin/mais', render: Screens.adminCidadesRender },
-    { pattern: '/admin/comissao', role: 'admin', title: 'Taxas dos chamados', back: '/admin/mais', render: Screens.adminComissaoRender },
-    { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios patrocinados', back: '/admin/mais', render: Screens.adminAnunciosRender },
-    { pattern: '/admin/pagamentos', role: 'admin', title: 'Receitas do app', back: '/admin/mais', render: Screens.adminPagamentosRender },
-    { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/mais', render: Screens.adminCancelamentosRender },
-    { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/mais', render: function(){ return Screens.adminAvisarAcessoRender(); } },
-    { pattern: '/admin/sem-push', role: 'admin', title: 'Profissionais sem notificações', back: '/admin/mais', render: function(){ return Screens.adminSemPushRender(); } },
-    { pattern: '/admin/suporte', role: 'admin', title: 'Central de suporte', back: '/admin/mais', render: Screens.adminSuporteRender },
+    { pattern: '/admin/categorias', role: 'admin', title: 'Categorias', back: '/admin/configuracoes', render: Screens.adminCategoriasRender },
+    { pattern: '/admin/cidades', role: 'admin', title: 'Cidades e regiões', back: '/admin/configuracoes', render: Screens.adminCidadesRender },
+    { pattern: '/admin/comissao', role: 'admin', title: 'Taxas dos chamados', back: '/admin/configuracoes', render: Screens.adminComissaoRender },
+    { pattern: '/admin/anuncios', role: 'admin', title: 'Planos e anúncios', render: Screens.adminAnunciosRender },
+    { pattern: '/admin/pagamentos', role: 'admin', title: 'Receita', render: Screens.adminPagamentosRender },
+    { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/servicos', render: Screens.adminCancelamentosRender },
+    { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/comunicados', render: function(){ return Screens.adminAvisarAcessoRender(); } },
+    { pattern: '/admin/sem-push', role: 'admin', title: 'Profissionais sem notificações', back: '/admin/comunicados', render: function(){ return Screens.adminSemPushRender(); } },
+    { pattern: '/admin/suporte', role: 'admin', title: 'Suporte', render: Screens.adminSuporteRender },
     { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
-    { pattern: '/admin/versao', role: 'admin', title: 'Versão do app', back: '/admin/mais', render: Screens.adminVersaoRender },
+    { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
+    { pattern: '/admin/por-cidade', role: 'admin', title: 'Por cidade', render: Screens.adminPorCidadeRender },
+    { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
+    { pattern: '/admin/comunicados', role: 'admin', title: 'Comunicados', render: Screens.adminComunicadosRender },
+    { pattern: '/admin/bonus', role: 'admin', title: 'Bônus', render: Screens.adminBonusRender },
+    { pattern: '/admin/configuracoes', role: 'admin', title: 'Configurações', render: Screens.adminConfiguracoesRender },
+    { pattern: '/admin/versao', role: 'admin', title: 'Versão do app', back: '/admin/configuracoes', render: Screens.adminVersaoRender },
   ];
 
   function compilePattern(pattern) {
@@ -7621,8 +8033,10 @@ Screens.adminDashboardRender = function () {
     }, true);
   });
 
+  function semMolduraAdmin(shell) { shell.className = ''; document.body.classList.remove('qf-adm-body'); }
   function renderAnon(found) {
     const shell = document.getElementById('app-shell');
+    semMolduraAdmin(shell);
     shell.innerHTML = '<div id="app-content"></div>';
     const content = document.getElementById('app-content');
     content.style.paddingBottom = '0';
@@ -7632,8 +8046,123 @@ Screens.adminDashboardRender = function () {
     window.scrollTo(0, 0);
   }
 
-  function renderApp(found, user, session) {
+  // V11.45: menu lateral do painel. Cada rota do admin acende um item (as telas internas acendem o item de origem).
+  const ADMIN_MENU = [
+    { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
+    { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
+    { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
+    { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
+    { id: 'cidades', label: 'Por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
+    { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
+    { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
+    { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
+    { id: 'comunicados', label: 'Comunicados', icon: 'megaphone', route: '/admin/comunicados', also: ['/admin/avisar-acesso', '/admin/sem-push'] },
+    { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
+    { id: 'planos', label: 'Planos e anúncios', icon: 'image', route: '/admin/anuncios' },
+    { id: 'suporte', label: 'Suporte', icon: 'chat', route: '/admin/suporte', also: ['/admin/suporte/:id'] },
+    { id: 'recrutamento', label: 'Recrutamento', icon: 'briefcase', route: '/admin/recrutamento' },
+    { divider: true },
+    { id: 'config', label: 'Configurações', icon: 'settings', route: '/admin/configuracoes', also: ['/admin/mais', '/admin/categorias', '/admin/cidades', '/admin/comissao', '/admin/versao'] },
+  ];
+  // Botão principal de cada página (à direita do título). Só navegação ou ações que o painel já tinha.
+  const ADMIN_ACAO = {
+    '/admin/dashboard': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/comunicados">' + icon('megaphone') + 'Enviar comunicado</button>',
+    '/admin/servicos': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-adm-baixar="pedidos">' + icon('download') + 'Baixar tudo</button>',
+    '/admin/desbloqueios': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/servicos">' + icon('clipboard') + 'Ver pedidos</button>',
+    '/admin/profissionais': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/por-cidade">' + icon('mapPin') + 'Ver por cidade</button>',
+    '/admin/por-cidade': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
+    '/admin/verificacoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
+    '/admin/comunicados': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/avisar-acesso">' + icon('users') + 'Avisar quem não entrou</button>',
+    '/admin/bonus': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
+    '/admin/configuracoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/categorias">' + icon('tag') + 'Categorias</button>',
+  };
+  function adminMenuAtivo(pattern) {
+    const item = ADMIN_MENU.find(function (m) { return m.route === pattern || (m.also && m.also.indexOf(pattern) !== -1); });
+    return item ? item.id : '';
+  }
+  function adminInicial(user) { const n = String((user && user.nome) || 'A').trim(); return (n[0] || 'A').toUpperCase(); }
+  function renderAdminApp(found, user) {
     const shell = document.getElementById('app-shell');
+    const pattern = found.route.pattern;
+    const ativo = adminMenuAtivo(pattern);
+    const raiz = ADMIN_MENU.some(function (m) { return m.route === pattern; });
+    const titulo = typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title;
+    let pend = 0;
+    try { pend = global.QFAdminLayout ? global.QFAdminLayout.pendencias() : 0; } catch (_) { pend = 0; }
+    shell.className = 'qf-adm';
+    shell.innerHTML =
+      '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
+      '<header class="qf-adm-top">' +
+        '<button type="button" class="qf-adm-top__btn qf-adm-top__menu" data-adm-menu aria-label="Abrir menu" aria-controls="qf-adm-side" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>' +
+        '<div class="qf-adm-top__marca"><b>QuemFaz</b><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
+        '<div class="qf-adm-top__acoes">' +
+          '<button type="button" class="qf-adm-top__btn" data-adm-avisos aria-label="Avisos' + (pend ? ': ' + pend + ' pendentes' : '') + '">' + icon('bell') + (pend ? '<span class="qf-adm-top__badge">' + (pend > 99 ? '99+' : pend) + '</span>' : '') + '</button>' +
+          '<button type="button" class="qf-adm-top__btn" data-nav="/admin/configuracoes" aria-label="Configurações">' + icon('settings') + '</button>' +
+          '<div class="qf-adm-conta"><button type="button" class="qf-adm-top__avatar" data-adm-conta aria-label="Conta do administrador" aria-expanded="false" aria-controls="qf-adm-conta-menu">' + PU.escapeHtml(adminInicial(user)) + '</button>' +
+            '<div class="qf-adm-conta__menu" id="qf-adm-conta-menu" hidden><b>' + PU.escapeHtml((user && user.nome) || 'Administrador') + '</b>' + (user && user.email ? '<small>' + PU.escapeHtml(user.email) + '</small>' : '') +
+            '<button type="button" class="btn btn--outline btn--sm" data-logout>' + icon('logout') + ' Sair da conta</button></div></div>' +
+        '</div>' +
+      '</header>' +
+      '<div class="qf-adm-corpo">' +
+        '<aside class="qf-adm-side" id="qf-adm-side" aria-label="Menu do painel">' +
+          '<div class="qf-adm-site">' + icon('location') + '<span>quemfazservico.com.br</span></div>' +
+          '<nav class="qf-adm-nav">' + ADMIN_MENU.map(function (m) {
+            if (m.divider) return '<hr class="qf-adm-nav__sep">';
+            return '<button type="button" class="qf-adm-nav__item' + (m.id === ativo ? ' is-active' : '') + '" data-nav="' + m.route + '"' + (m.id === ativo ? ' aria-current="page"' : '') + '>' + icon(m.icon) + '<span>' + m.label + '</span></button>';
+          }).join('') + '</nav>' +
+        '</aside>' +
+        '<div class="qf-adm-fundo" data-adm-menu-fechar hidden></div>' +
+        '<div class="qf-adm-main"><div class="qf-adm-pagina">' +
+          (found.route.back && !raiz ? '<button type="button" class="qf-adm-voltar" data-nav="' + found.route.back + '">' + icon('chevronLeft') + 'Voltar</button>' : '') +
+          '<div class="qf-adm-head"><h1>' + PU.escapeHtml(titulo) + '</h1>' + (ADMIN_ACAO[pattern] || '') + '</div>' +
+          '<main id="app-content" role="main"></main>' +
+        '</div></div>' +
+      '</div>';
+    document.body.classList.add('qf-adm-body');
+    const content = document.getElementById('app-content');
+    const telaHtml = found.route.render(found.params, user);
+    ultimoDesenho = { path: currentPath(), html: telaHtml };
+    content.innerHTML = telaHtml;
+    bindGlobalDelegation(content);
+    if (Screens.afterRender) Screens.afterRender(found.route.pattern, content, found.params, user);
+    window.scrollTo(0, 0);
+  }
+  function adminMenuAbrir(abrir) {
+    const shell = document.getElementById('app-shell');
+    if (!shell || !shell.classList.contains('qf-adm')) return;
+    shell.classList.toggle('qf-adm--menu', abrir);
+    const fundo = shell.querySelector('[data-adm-menu-fechar]');
+    if (fundo) fundo.hidden = !abrir;
+    const b = shell.querySelector('[data-adm-menu]');
+    if (b) b.setAttribute('aria-expanded', String(abrir));
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-adm-menu]')) { e.preventDefault(); adminMenuAbrir(!document.getElementById('app-shell').classList.contains('qf-adm--menu')); return; }
+    if (e.target.closest('[data-adm-menu-fechar]')) { adminMenuAbrir(false); return; }
+    if (e.target.closest('[data-adm-avisos]')) {
+      e.preventDefault();
+      const alvo = document.querySelector('.qf-p-precisa');
+      if (alvo) { alvo.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+      try { sessionStorage.setItem('qf_adm_ir_precisa', '1'); } catch (_) {}
+      navigate('/admin/dashboard');
+    }
+    const contaBtn = e.target.closest('[data-adm-conta]');
+    if (contaBtn) { contaAbrir(contaBtn.getAttribute('aria-expanded') !== 'true'); return; }
+    if (!e.target.closest('.qf-adm-conta')) contaAbrir(false);
+  });
+  function contaAbrir(abrir) {
+    const b = document.querySelector('[data-adm-conta]'), m = document.getElementById('qf-adm-conta-menu');
+    if (!b || !m) return;
+    b.setAttribute('aria-expanded', String(abrir)); m.hidden = !abrir;
+  }
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { adminMenuAbrir(false); contaAbrir(false); }
+  });
+
+  function renderApp(found, user, session) {
+    if (session.role === 'admin') { renderAdminApp(found, user); return; }
+    const shell = document.getElementById('app-shell');
+    semMolduraAdmin(shell);
     const tabs = TABS[session.role] || [];
     const showTabbar = !!found.route.tab || tabs.some(function (t) { return t.route === '/' + session.role + currentPath().replace('/' + session.role, ''); });
     const isTabRoute = !!found.route.tab;
@@ -7687,7 +8216,7 @@ Screens.adminDashboardRender = function () {
   }
   document.addEventListener('click', function (e) {
     const navEl = e.target.closest('[data-nav]');
-    if (navEl && navEl.closest('.tabbar, .topbar')) { e.preventDefault(); navigate(navEl.getAttribute('data-nav')); }
+    if (navEl && navEl.closest('.tabbar, .topbar, .qf-adm-top, .qf-adm-side, .qf-adm-pagina > .qf-adm-head, .qf-adm-voltar')) { e.preventDefault(); adminMenuAbrir(false); navigate(navEl.getAttribute('data-nav')); }
     const logoutEl = e.target.closest('[data-logout]');
     if (logoutEl) {
       e.preventDefault();
