@@ -103,6 +103,9 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
       alerta: String(payload.alerta || "toque"),
       grouped: payload.grouped ? "1" : "0",
       count: String(Math.max(0, Number(payload.count || 0))),
+      // V11.51: "Simular chamado" — mesmo aviso forte do chamado real, marcado como teste.
+      tipo: String(payload.tipo || "chamado"),
+      ...(payload.teste_id ? { teste_id: String(payload.teste_id), teste_token: String(payload.teste_token || "") } : {}),
     },
     android: {
       priority: "HIGH",
@@ -819,6 +822,36 @@ Deno.serve(async (req) => {
       strong: false,
     });
     return json({ ok: true, ...result });
+  }
+
+  // V11.51: "Simular chamado" (só admin). Grava o teste em chamados_teste e manda o aviso para o
+  // profissional pelo MESMO caminho do chamado real (strong: canal quemfaz_chamados, toque oficial,
+  // tela cheia), com tipo "teste". Vai direto para ele: não olha online/offline nem horário.
+  // Não cria pedido, não mexe em carteira e não entra em receita nem em contagem de pedidos.
+  if (action === "teste_chamado") {
+    const { data: isAdmin } = await admin.from("qf_admins").select("user_id").eq("user_id", user.id).maybeSingle();
+    if (!isAdmin) return json({ error: "forbidden" }, 403);
+    const proId = String(body.profissional_id || "");
+    if (!proId) return json({ error: "profissional_id_required" }, 400);
+    const { data: pro } = await admin.from("qf_profissionais").select("user_id").eq("user_id", proId).maybeSingle();
+    if (!pro) return json({ error: "professional_not_found" }, 404);
+    const { data: teste, error: tErr } = await admin.from("chamados_teste")
+      .insert({ profissional_id: proId, enviado_por: user.id })
+      .select("id,token,enviado_em")
+      .single();
+    if (tErr || !teste) return json({ error: "teste_insert_failed" }, 500);
+    const result = await sendToUsers([proId], {
+      title: "Chamado de teste",
+      body: "O QuemFaz está testando se o aviso de chamado chega no seu celular. Toque para confirmar.",
+      url: "/#/profissional/teste/" + teste.id + "?t=" + teste.token,
+      tag: "qf-teste-" + teste.id,
+      strong: true,
+      tipo: "teste",
+      teste_id: teste.id,
+      teste_token: teste.token,
+    });
+    await admin.from("chamados_teste").update({ envio: result }).eq("id", teste.id);
+    return json({ ok: true, id: teste.id, enviado_em: teste.enviado_em, ...result });
   }
 
   // V11.1: registro do token do Firebase enviado pelo APK.

@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.50';
+const SW_VERSION = '11.51';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.44', './qf-admin-acquisition.js?v=11.44', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -49,6 +49,19 @@ self.addEventListener('fetch', event => {
   );
 });
 
+// V11.51: "Simular chamado" — o aviso de teste marca "chegou no aparelho" assim que chega,
+// mesmo com o app fechado (chave do aviso + chave pública do site; só altera aquele teste).
+const QF_SUPABASE_URL = 'https://dczlyrgnzlxmzghzaooz.supabase.co';
+const QF_SUPABASE_KEY = 'sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A';
+function qfTesteChegou(data) {
+  if (!data || data.tipo !== 'teste' || !data.teste_id || !data.teste_token) return Promise.resolve();
+  return fetch(QF_SUPABASE_URL + '/rest/v1/rpc/qf_teste_chegou', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: QF_SUPABASE_KEY, Authorization: 'Bearer ' + QF_SUPABASE_KEY },
+    body: JSON.stringify({ p_id: data.teste_id, p_token: data.teste_token })
+  }).catch(() => null);
+}
+
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (_) {
@@ -72,6 +85,7 @@ self.addEventListener('push', event => {
     }
   };
   event.waitUntil((async () => {
+    const chegou = qfTesteChegou(data);
     const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
     // V11.16.33: mensagem da conversa que já está aberta e visível não vira notificação — o chat mostra na hora.
     const chatHash = String(data.tag || '').indexOf('qf-chat-') === 0 ? (String(data.url || '').split('#')[1] || '').split('?')[0] : '';
@@ -79,6 +93,7 @@ self.addEventListener('push', event => {
     if (!inChat) await self.registration.showNotification(data.title || 'QuemFaz', options);
     // Avisa janelas abertas para atualizarem a tela e tocarem o som do app.
     list.forEach(c => c.postMessage({ type: 'QF_PUSH', payload: data }));
+    await chegou;
   })());
 });
 

@@ -1478,6 +1478,22 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-chip[aria-expanded="true"]{border-color:var(--navy-900);background:var(--navy-100)}
 .qf-adm-card--atalhos .qf-gaveta{margin-top:14px}
 .qf-adm-bonus-cad{display:flex;flex-direction:column;gap:12px}
+/* V11.51: Simular chamado */
+.qf-teste-resumo{margin-bottom:16px}
+.qf-teste-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 2px;padding:10px 14px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
+.qf-teste-linha__info{display:flex;flex-direction:column;gap:4px;min-width:0}
+.qf-teste-linha__info small{font-size:12px;color:var(--text-secondary)}
+.qf-teste-linha__info>span:last-child{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.qf-teste-linha__rotulo{font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--text-muted)}
+.qf-teste-sit{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700}
+.qf-teste-sit::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.qf-teste-sit--verde{background:var(--success-100);color:var(--success-600)}
+.qf-teste-sit--amarelo{background:var(--warning-100);color:var(--warning-600)}
+.qf-teste-sit--vermelho{background:var(--danger-100);color:var(--danger-600)}
+.qf-teste-sit--azul{background:var(--navy-100);color:var(--navy-700)}
+.qf-teste-sit--cinza{background:#eceff4;color:var(--text-secondary)}
+.qf-teste-btn{width:auto;flex:none}
+.qf-teste-btn svg{width:16px;height:16px}
 .qf-adm-bonus-cad__status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
 .qf-adm-bonus-cad__check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
 .qf-adm-bonus-cad__check input{width:18px;height:18px;accent-color:var(--orange-600)}
@@ -5879,8 +5895,94 @@ Screens.adminDashboardRender = function () {
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-    '</button>' + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
+    '</button>' + testeLinhaHtml(p.id) + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
+
+  // ---------------- V11.51: Simular chamado ----------------
+  // Teste do aviso de chamado no celular do profissional (tabela chamados_teste). Não cria pedido,
+  // não mexe em carteira e não entra em receita nem em contagem de pedidos.
+  const TESTE_AGUARDA_MS = 2 * 60 * 1000;
+  let testes = null;            // lista mais recente de chamados_teste (null = ainda não carregou)
+  const testeEnviando = {};      // profissional -> envio em andamento
+  let testeTimer = null;
+  function ultimoTeste(proId) {
+    if (!testes) return null;
+    for (let i = 0; i < testes.length; i++) if (String(testes[i].profissional_id) === String(proId)) return testes[i];
+    return null;
+  }
+  function testeSituacao(t) {
+    if (!t) return { cor: 'cinza', rotulo: 'Nunca testado', quando: '' };
+    if (t.confirmado_em) return { cor: 'verde', rotulo: 'Confirmado pelo profissional', quando: t.confirmado_em };
+    if (t.chegou_em) return { cor: 'amarelo', rotulo: 'Chegou no aparelho, não confirmou', quando: t.chegou_em };
+    if (Date.now() - (Date.parse(t.enviado_em) || 0) < TESTE_AGUARDA_MS) return { cor: 'azul', rotulo: 'Enviado agora, aguardando', quando: t.enviado_em };
+    const semAparelho = t.envio && Number(t.envio.total) === 0;
+    return { cor: 'vermelho', rotulo: 'Enviado, não chegou no aparelho' + (semAparelho ? ' (sem aparelho cadastrado)' : ''), quando: t.enviado_em };
+  }
+  function testeEtiquetaHtml(proId) {
+    const sit = testeSituacao(ultimoTeste(proId));
+    return '<span class="qf-teste-sit qf-teste-sit--' + sit.cor + '">' + sit.rotulo + '</span>' +
+      (sit.quando ? '<small>' + PU.escapeHtml(PU.formatDateTime(sit.quando)) + '</small>' : '');
+  }
+  function testeLinhaHtml(proId) {
+    return '<div class="qf-teste-linha"><div class="qf-teste-linha__info"><span class="qf-teste-linha__rotulo">Último teste</span>' +
+      '<span data-teste-sit="' + PU.escapeHtml(String(proId)) + '">' + (cloudOn() && !testes ? '<span class="qf-teste-sit qf-teste-sit--cinza">Carregando…</span>' : testeEtiquetaHtml(proId)) + '</span></div>' +
+      '<button type="button" class="btn btn--primary btn--sm qf-teste-btn" data-simular-chamado="' + PU.escapeHtml(String(proId)) + '"' + (testeEnviando[proId] ? ' disabled' : '') + '>' + icon('bell') + 'Simular chamado</button></div>';
+  }
+  function testeResumoHtml() {
+    const l = testes || [];
+    const agora = Date.now();
+    const conf = l.filter(function (t) { return t.confirmado_em; }).length;
+    const chegou = l.filter(function (t) { return t.chegou_em && !t.confirmado_em; }).length;
+    const naoChegou = l.filter(function (t) { return !t.chegou_em && agora - (Date.parse(t.enviado_em) || 0) >= TESTE_AGUARDA_MS; }).length;
+    function n(rot, v, cor) { return '<div class="qf-adm-num__item"><span>' + rot + '</span><b' + (cor ? ' style="color:' + cor + '"' : '') + '>' + (testes ? v : '…') + '</b></div>'; }
+    return n('Testes enviados', l.length) + n('Confirmados', conf, 'var(--success-600)') + n('Chegou e não confirmou', chegou, 'var(--warning-600)') + n('Não chegou no aparelho', naoChegou, 'var(--danger-600)');
+  }
+  function testePintar() {
+    document.querySelectorAll('[data-teste-sit]').forEach(function (el) { el.innerHTML = testeEtiquetaHtml(el.getAttribute('data-teste-sit')); });
+    const r = document.querySelector('[data-teste-resumo]');
+    if (r) r.innerHTML = testeResumoHtml();
+  }
+  async function testeCarregar() {
+    if (!cloudOn()) return;
+    try {
+      const res = await global.QFAdminCloud.client.from('chamados_teste')
+        .select('id,profissional_id,enviado_em,chegou_em,confirmado_em,envio')
+        .order('enviado_em', { ascending: false }).limit(2000);
+      if (res.error) throw res.error;
+      testes = res.data || [];
+    } catch (err) { console.warn('QuemFaz testes', err); if (!testes) testes = []; }
+    testePintar();
+  }
+  // A situação se atualiza sozinha a cada 5 s enquanto a lista de profissionais estiver aberta.
+  function testeAcompanhar() {
+    if (testeTimer) clearInterval(testeTimer);
+    testeCarregar();
+    testeTimer = setInterval(function () {
+      if (!document.querySelector('[data-teste-sit]')) { clearInterval(testeTimer); testeTimer = null; return; }
+      if (!document.hidden) testeCarregar();
+    }, 5000);
+  }
+  document.addEventListener('click', async function (e) {
+    const b = e.target.closest && e.target.closest('[data-simular-chamado]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!cloudOn()) { PU.toast('O teste de chamado funciona com o painel conectado ao banco de dados.', 'danger'); return; }
+    const proId = b.getAttribute('data-simular-chamado');
+    if (testeEnviando[proId]) return;
+    testeEnviando[proId] = true; b.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.functions.invoke('quemfaz-push', { body: { action: 'teste_chamado', profissional_id: proId } });
+      if (r.error) throw r.error;
+      const d = r.data || {};
+      if (!d.ok) throw new Error(d.error || 'Não foi possível enviar o teste.');
+      testes = [{ id: d.id, profissional_id: proId, enviado_em: d.enviado_em || new Date().toISOString(), chegou_em: null, confirmado_em: null, envio: { sent: d.sent, total: d.total } }].concat(testes || []);
+      testePintar();
+      PU.toast(Number(d.total) ? 'Chamado de teste enviado para ' + d.sent + ' de ' + d.total + ' aparelho(s).' : 'Teste registrado, mas este profissional não tem aparelho cadastrado para avisos.', Number(d.total) ? 'success' : 'danger');
+    } catch (err) {
+      PU.toast('Não foi possível enviar o teste: ' + ((err && err.message) || err), 'danger');
+    } finally { testeEnviando[proId] = false; b.disabled = false; }
+  }, true);
+
   function adminCategoryName(id) {
     const c = DB.categoryById(id);
     if (c && c.nome) return c.nome;
@@ -5917,6 +6019,7 @@ Screens.adminDashboardRender = function () {
     return (
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
+        '<section class="qf-adm-numeros qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
         '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
         chips +
         '' +
@@ -7254,7 +7357,7 @@ Screens.adminDashboardRender = function () {
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfterRender) prevAfterRender(pattern, content, params, user);
 
-    if (pattern === '/admin/profissionais') bindProfissionaisLista(content);
+    if (pattern === '/admin/profissionais') { bindProfissionaisLista(content); testeAcompanhar(); }
     if (pattern === '/admin/profissionais/:id') bindProfissionalDetalhe(content, params);
     if (pattern === '/admin/clientes') bindClientes(content);
     if (pattern === '/admin/servicos') bindServicosLista(content, params);

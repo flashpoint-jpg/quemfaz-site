@@ -6956,7 +6956,8 @@ alt=""></noscript>
         strong: data.strong === '1' || data.strong === true || data.strong === 1,
         tag: data.tag || '',
         grouped: data.grouped === '1' || data.grouped === true || data.grouped === 1,
-        count: Number(data.count || 0)
+        count: Number(data.count || 0),
+        tipo: data.tipo || '', teste_id: data.teste_id || '', teste_token: data.teste_token || ''
       };
       if (global.QFApp && global.QFApp.onPush) global.QFApp.onPush(payload);
     });
@@ -14214,7 +14215,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.50';
+  const APP_VERSION = '11.51';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -14277,6 +14278,8 @@ alt=""></noscript>
   // Push recebido com o app aberto (Web Push pelo SW ou push nativo do APK): som + aviso + atualiza.
   function onPush(payload) {
     payload = payload || {};
+    // V11.51: chamado de teste — tela cheia de teste com o toque oficial; não vira toast nem atualiza pedidos.
+    if (payload.tipo === 'teste' && payload.teste_id && global.QFTeste) { global.QFTeste.abrir(String(payload.teste_id), String(payload.teste_token || '')); return; }
     const strong = !!payload.strong;
     const rawUrl=String(payload.url||(payload.data&&payload.data.url)||'');
     // V11.16.33: mensagem da conversa que já está aberta na tela — sem aviso por cima, o próprio chat mostra e toca.
@@ -15179,6 +15182,7 @@ alt=""></noscript>
       if (pattern === '/cliente/novo-pedido/:catId') bindCoverage(content, params);
       if (pattern === '/cliente/pedido/:id') bindStillSearching(content);
       if (pattern === '/profissional/home') { profRating(content, user); Indicacao.registerPending(); }
+      if (pattern === '/profissional/teste/:id' && global.QFTeste) { const t = global.QFTeste.deRota(params.id); global.QFTeste.abrir(t.id, t.token); }
       if (pattern === '/profissional/carteira') {
         const first = content.querySelector('.view > .card');
         if (first && !content.querySelector('[data-indicacao]')) { const d = document.createElement('div'); d.setAttribute('data-indicacao', ''); first.insertAdjacentElement('afterend', d); fillIndicacao(content); }
@@ -15534,6 +15538,97 @@ alt=""></noscript>
     return render();
   }
   global.QFCallAlert={offer:offer,close:function(){close(true);},isOpen:function(){return !!document.getElementById('qf-call-overlay');}};
+})(window);
+
+
+/* QuemFaz V11.51 — "Simular chamado": tela cheia de teste, com o mesmo toque do chamado real.
+   Não cria pedido, não gasta crédito e não aparece na lista de pedidos. */
+(function (global) {
+  const PU=global.PU,icon=global.icon;
+  let audio=null,vibTimer=null,atual='';
+  function cl(){return global.QFCloud&&global.QFCloud.enabled?global.QFCloud.client:null;}
+  // Estilo da tela de teste vem com o script (não pesa no HTML da página inicial).
+  function estilo(){
+    if(document.getElementById('qf-teste-css'))return;
+    const st=document.createElement('style');st.id='qf-teste-css';
+    st.textContent='.qf-teste{position:fixed;inset:0;z-index:260;display:flex;justify-content:center;align-items:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;background:var(--navy-950);color:#fff;padding:calc(var(--safe-top) + 24px) 18px calc(var(--safe-bottom) + 28px)}.qf-teste__inner{width:min(100%,480px);display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;margin:auto 0}.qf-teste__etiqueta{padding:7px 18px;border-radius:999px;background:#ffd400;color:#1a1300;font-size:16px;font-weight:900;letter-spacing:.18em;box-shadow:0 0 0 4px rgba(255,212,0,.25)}.qf-teste__icone,.qf-teste__ok-icone{width:84px;height:84px;display:grid;place-items:center;border-radius:50%;background:var(--orange-600);animation:qf-teste-pulso 1.2s ease-in-out infinite}.qf-teste__icone svg,.qf-teste__ok-icone svg{width:42px;height:42px;stroke:#fff}.qf-teste__ok-icone{background:var(--success-600);animation:none}@keyframes qf-teste-pulso{0%,100%{box-shadow:0 0 0 0 rgba(224,99,15,.55)}50%{box-shadow:0 0 0 18px rgba(224,99,15,0)}}.qf-teste__titulo{margin:4px 0 0;font-size:28px;font-weight:800;line-height:1.15;color:#fff}.qf-teste__texto{margin:0;font-size:16px;line-height:1.45;color:var(--text-on-navy)}.qf-teste__lista{list-style:none;margin:6px 0 4px;padding:14px 16px;width:100%;display:flex;flex-direction:column;gap:10px;text-align:left;border-radius:16px;background:rgba(255,255,255,.07)}.qf-teste__lista li{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:600}.qf-teste__lista svg{width:22px;height:22px;flex:none;stroke:#4ade80}.qf-teste__confirmar{width:100%;--btn-h:64px;height:auto;min-height:64px;padding:14px 18px;border-radius:18px;background:#16a34a;color:#fff;font-size:18px;font-weight:800;line-height:1.25;white-space:normal;box-shadow:0 12px 28px -10px rgba(22,163,74,.75)}.qf-teste__confirmar:hover{background:#15803d}.qf-teste__fechar{width:100%;min-height:56px;border-radius:16px;background:#fff;color:var(--navy-900);font-size:17px;font-weight:800}@media (prefers-reduced-motion:reduce){.qf-teste__icone{animation:none}}';
+    document.head.appendChild(st);
+  }
+  function pararToque(){
+    if(vibTimer){clearInterval(vibTimer);vibTimer=null;try{if(navigator.vibrate)navigator.vibrate(0);}catch(_){}}
+    if(audio){try{audio.pause();audio.currentTime=0;}catch(_){}audio=null;}
+  }
+  function tocar(){
+    pararToque();
+    // Mesmo toque e mesma preferência do chamado real ("Só vibrar" vibra em loop, sem som).
+    if(global.qfSoVibrar&&global.qfSoVibrar()){
+      const pulse=function(){try{if(navigator.vibrate)navigator.vibrate([600,300,600,300,600]);}catch(_){}};
+      pulse();vibTimer=setInterval(pulse,3000);return;
+    }
+    try{audio=new Audio('./quemfaz_chamado.mp3');audio.loop=true;audio.volume=1;const p=audio.play();if(p&&p.catch)p.catch(function(){});}catch(_){}
+    try{if(navigator.vibrate)navigator.vibrate([400,150,400,150,600]);}catch(_){}
+  }
+  // Marca "chegou no aparelho" (vale o primeiro registro; o service worker pode já ter marcado).
+  function chegou(id,token){
+    const c=cl(); if(!c||!id||!token)return;
+    c.rpc('qf_teste_chegou',{p_id:id,p_token:token}).then(function(){},function(){});
+  }
+  function fechar(){
+    pararToque();atual='';
+    const el=document.getElementById('qf-teste-overlay');if(el)el.remove();
+    if(/^#\/profissional\/teste\//.test(location.hash||'')&&global.navigate)global.navigate('/profissional/home',true);
+  }
+  function confirmadoHtml(){
+    return '<div class="qf-teste__inner qf-teste__inner--ok" role="alertdialog" aria-modal="true" aria-labelledby="qf-teste-ok-titulo">'+
+      '<div class="qf-teste__ok-icone">'+icon('checkCircle')+'</div>'+
+      '<h2 class="qf-teste__titulo" id="qf-teste-ok-titulo">Teste confirmado</h2>'+
+      '<p class="qf-teste__texto">Seu celular está recebendo os chamados do QuemFaz. Quando chegar um pedido de verdade, vai tocar assim.</p>'+
+      '<button class="btn qf-teste__fechar" type="button" data-teste-fechar>Fechar</button></div>';
+  }
+  function abrir(id,token){
+    if(!id)return false;
+    chegou(id,token);
+    if(atual===id&&document.getElementById('qf-teste-overlay'))return true;
+    atual=id;estilo();
+    try{if(global.QFCallAlert&&global.QFCallAlert.isOpen())global.QFCallAlert.close();}catch(_){}
+    let el=document.getElementById('qf-teste-overlay');
+    if(!el){el=document.createElement('div');el.id='qf-teste-overlay';el.className='qf-teste';document.body.appendChild(el);}
+    el.innerHTML='<div class="qf-teste__inner" role="alertdialog" aria-modal="true" aria-labelledby="qf-teste-titulo">'+
+      '<div class="qf-teste__etiqueta">TESTE</div>'+
+      '<div class="qf-teste__icone">'+icon('bell')+'</div>'+
+      '<h2 class="qf-teste__titulo" id="qf-teste-titulo">Chamado de teste</h2>'+
+      '<p class="qf-teste__texto">O QuemFaz está testando se o aviso de chamado chega no seu celular.</p>'+
+      '<ul class="qf-teste__lista">'+
+        ['Não é um cliente de verdade','Não gasta seus créditos','É só clicar no botão abaixo'].map(function(t){return '<li>'+icon('checkCircle')+'<span>'+t+'</span></li>';}).join('')+
+      '</ul>'+
+      '<button class="btn qf-teste__confirmar" type="button" data-teste-confirmar>Clique aqui para confirmar o teste</button></div>';
+    tocar();
+    return true;
+  }
+  document.addEventListener('click',async function(e){
+    const b=e.target.closest&&e.target.closest('#qf-teste-overlay [data-teste-confirmar]');
+    if(b){
+      e.preventDefault();pararToque();b.disabled=true;b.textContent='Confirmando…';
+      const c=cl();
+      try{
+        if(c){const r=await c.rpc('qf_teste_confirmar',{p_id:atual});if(r.error)throw r.error;if(!r.data||!r.data.ok)throw new Error('Este teste não é da sua conta.');}
+        const el=document.getElementById('qf-teste-overlay');if(el)el.innerHTML=confirmadoHtml();
+      }catch(err){
+        b.disabled=false;b.textContent='Clique aqui para confirmar o teste';
+        PU.toast('Não foi possível confirmar agora. Verifique a internet e toque de novo.','danger');
+      }
+      return;
+    }
+    if(e.target.closest&&e.target.closest('#qf-teste-overlay [data-teste-fechar]')){e.preventDefault();fechar();}
+  });
+  // Aberto pelo aviso (toque na notificação): /profissional/teste/:id?t=chave
+  function deRota(param){
+    const raw=String(param||''),i=raw.indexOf('?');
+    const id=i>=0?raw.slice(0,i):raw;
+    const m=/[?&]t=([^&]+)/.exec(i>=0?raw.slice(i):(location.hash||''));
+    return {id:id,token:m?decodeURIComponent(m[1]):''};
+  }
+  global.QFTeste={abrir:abrir,fechar:fechar,deRota:deRota,isOpen:function(){return !!document.getElementById('qf-teste-overlay');}};
 })(window);
 
 
@@ -16734,6 +16829,8 @@ alt=""></noscript>
     { pattern: '/cliente/anuncie', role: 'cliente', title: 'Anuncie no QuemFaz', back: '/cliente/home', render: Screens.anuncieRender },
 
     { pattern: '/profissional/home', role: 'profissional', tab: 'home', title: 'QuemFaz', render: Screens.profHomeRender },
+    // V11.51: aviso de teste tocado no celular. Mostra o início por baixo e abre a tela de teste por cima.
+    { pattern: '/profissional/teste/:id', role: 'profissional', tab: 'home', title: 'QuemFaz', render: Screens.profHomeRender },
     { pattern: '/profissional/chamada/:id', role: 'profissional', title: 'Oportunidade de serviço', back: '/profissional/servicos/disponiveis', render: Screens.profChamadaRender },
     { pattern: '/profissional/servicos', role: 'profissional', tab: 'servicos', title: 'Serviços', render: Screens.profServicosRender },
     { pattern: '/profissional/servicos/disponiveis', role: 'profissional', tab: 'servicos', title: 'Serviços disponíveis', render: Screens.profServicosDisponiveisRender },
