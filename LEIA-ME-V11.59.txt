@@ -1,0 +1,9 @@
+QuemFaz 11.59 — selo "Profissional verificado pelo QuemFaz · Recomendado" para o cliente
+
+- Profissional marcado como verificado no painel aparece para o cliente com uma faixa azul-marinho no
+  topo do cartão (escudo laranja + "Profissional verificado pelo QuemFaz" + etiqueta "Recomendado"),
+  borda destacada e um "certinho" laranja na foto.
+- Vale no cartão do profissional dentro do pedido e nos cartões de "Profissionais em conversa".
+- No cartão do pedido, uma caixinha: "O QuemFaz conferiu este profissional".
+- Quem não é verificado continua igual. O selo verde pequeno "Verificado" saiu (a faixa substitui).
+- Só visual. Nada no banco; quem marca verificado continua sendo você, no painel.
