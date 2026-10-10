@@ -1,0 +1,11 @@
+QuemFaz site 11.47 — tela de desbloqueio sem promessa de devolução
+
+TELA DO PROFISSIONAL (Oportunidade de serviço)
+- Antes: "Tem devolução de crédito se o cliente não responder."
+- Agora: "Sem devolução: chame o cliente no WhatsApp assim que desbloquear."
+- Motivo: a conversa acontece no WhatsApp e o sistema não vê se o cliente respondeu.
+  A devolução está desligada desde a 11.21 (qf_config devolucao_lead = false e o
+  agendamento qf-cancelar-sem-resposta-48h desativado). Carteira, Perfil e regras já
+  diziam "sem devolução"; só esta frase tinha ficado para trás.
+
+NADA MUDOU no banco, nos preços nem nas regras.

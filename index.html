@@ -11588,7 +11588,7 @@ alt=""></noscript>
 
         '<div class="section card qf-unlock-simple" style="background:var(--navy-900);border:none;">' +
           '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div>' +
-          '<p class="text--sm" style="color:#fff;margin:8px 0 0;">' + icon('shieldCheck') + ' ' + (primeiraGratis ? 'Primeiro desbloqueio grátis.' : '<strong>Tem devolução de crédito</strong> se o cliente não responder.') + '</p></div>' +
+          '<p class="text--sm" style="color:#fff;margin:8px 0 0;">' + (primeiraGratis ? icon('shieldCheck') + ' Primeiro desbloqueio grátis.' : icon('info') + ' <strong>Sem devolução:</strong> chame o cliente no WhatsApp assim que desbloquear.') + '</p></div>' +
           '<div class="qf-unlock-simple__credits"><div class="icon-tile" style="background:#fff;color:var(--navy-700);">' + icon('wallet') + '</div><div><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><div class="h2" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</div></div></div>' +
         '</div>' +
 
@@ -13697,7 +13697,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.46';
+  const APP_VERSION = '11.47';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

@@ -33,6 +33,8 @@ assert.ok(!/volta (automaticamente|sozinho)/.test(html));
 assert.ok(!html.includes('seu pedido será cancelado'));
 assert.ok(!html.includes("fillRefundSummary(content);"));
 assert.ok(html.includes('Desbloqueio sem devolução'));
+// V11.47: a tela de desbloqueio também não promete devolução (o sistema não vê a resposta no WhatsApp).
+assert.ok(!html.includes('Tem devolução de crédito') && html.includes('<strong>Sem devolução:</strong> chame o cliente no WhatsApp assim que desbloquear.'));
 assert.ok(html.includes('Não há devolução.'));
 assert.match(sql, /'devolucao_lead', '\{"ativo": false\}'/);
 assert.match(sql, /cron\.alter_job\(jobid, active := false\)/);
