@@ -20,3 +20,7 @@ BANCO E SERVIDOR (já aplicados no Supabase em 10/10/2026)
 - Função quemfaz-pre-cadastro: cria a cobrança na Efí sem conta e consulta a confirmação.
 - Testado: Pix e link de cartão reais gerados na Efí (cancelados em seguida), resgate no banco
   com desfazer automático (plano de 60 chamados criado, sem duplicar, segredo errado recusado).
+
+AVULSO
+- No plano Avulso a conta é criada na hora. O cartão do plano e um aviso acima do botão explicam
+  que, para desbloquear um chamado, é preciso adicionar crédito na Carteira (Pix, cartão ou boleto).

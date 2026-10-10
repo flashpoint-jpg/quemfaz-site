@@ -1910,6 +1910,8 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-cad-planos__depois{all:unset;cursor:pointer;display:block;text-align:center;padding:8px;font-size:14px;font-weight:700;color:var(--navy-700)}
 .qf-cad-planos__nota{text-align:center;font-size:12.5px;color:var(--text-muted)}
 /* V11.50: foto (botões separados), pagamento antes da conta e dados da conta criada */
+.qf-cad-planos__nota--aviso{text-align:left;font-size:13.5px;line-height:1.4;color:var(--warning-600);background:var(--warning-100);border:1.5px solid #efc46e;border-radius:14px;padding:12px 14px}
+.qf-cad-planos__nota--aviso strong{display:block;color:var(--text-primary);margin-bottom:2px}
 .qf-cad-foto{gap:14px}
 .qf-cad-foto .btn{width:100%;min-height:52px}
 .qf-pag-metodo{width:100%;text-align:left;padding:14px;gap:12px;align-items:center}
@@ -7348,7 +7350,7 @@ alt=""></noscript>
   // V11.49: planos mostrados na etapa 5 do cadastro do profissional (mesmos preços da Carteira e do banco).
   const QF_CAD_PLANOS = [
     { id: 'avulso', nome: 'Avulso', preco: 'R$ 4,90 a R$ 12,90', per: 'por chamado', unit: 'Sem mensalidade',
-      itens: ['Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto', 'Bom para começar e testar'] },
+      itens: ['Conta criada na hora, sem pagar nada agora', 'Para desbloquear um chamado você precisa adicionar crédito na Carteira', 'Crédito por Pix, cartão ou boleto', 'Bom para começar e testar'] },
     { id: 'mensal', nome: 'Mensal', preco: 'R$ 49,90', per: 'por 30 dias', unit: '10 chamados · R$ 4,99 cada', valor: 4990,
       itens: ['Vale para qualquer serviço', 'Até 61% mais barato que o avulso (pedreiro, frete, mecânico)', 'Sem renovação automática e sem fidelidade'] },
     { id: 'pro', nome: 'Pro', preco: 'R$ 99,90', per: 'por 30 dias', unit: '25 chamados · R$ 4,00 cada', valor: 9990,
@@ -8063,9 +8065,9 @@ alt=""></noscript>
             '</label>';
           }).join('') + '</div>' +
           '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table><tr><td>10 chamados</td><td>avulso R$ 79,00</td><td><b>Mensal R$ 49,90</b></td></tr><tr><td>25 chamados</td><td>avulso R$ 197,50</td><td><b>Pro R$ 99,90</b></td></tr><tr><td>60 chamados</td><td>avulso R$ 474,00</td><td><b>Premium R$ 199,90</b></td></tr></table></div>' +
+          '<div class="qf-cad-planos__nota" data-plano-nota>Pagamento confirmado: a conta é criada e o plano entra na sua carteira.</div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Ir para o pagamento · R$ 199,90</button></div>' +
           '<button class="qf-cad-planos__depois" type="button" data-plano-depois>Prefiro escolher depois</button>' +
-          '<div class="qf-cad-planos__nota">Pagamento confirmado: a conta é criada e o plano entra na sua carteira.</div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
           '<div class="qf-step stack" data-step="6" hidden>' +
@@ -9048,6 +9050,14 @@ alt=""></noscript>
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
         const b = form.querySelector('[data-cad-criar]');
         if (b) b.textContent = pl.id === 'avulso' ? 'Criar conta de profissional' : 'Ir para o pagamento · ' + pl.preco;
+        // V11.50: no Avulso a conta sai na hora, mas desbloquear chamado exige crédito na Carteira.
+        const nota = form.querySelector('[data-plano-nota]');
+        if (nota) {
+          nota.classList.toggle('qf-cad-planos__nota--aviso', pl.id === 'avulso');
+          nota.innerHTML = pl.id === 'avulso'
+            ? '<strong>No Avulso sua conta é criada agora.</strong> Para desbloquear um chamado e falar com o cliente, você precisa adicionar crédito na Carteira (Pix, cartão ou boleto).' + ((global.QFBonusCadastro || {}).texto ? ' Você já começa com ' + PU.escapeHtml(global.QFBonusCadastro.texto) + ' de bônus.' : '')
+            : 'Pagamento confirmado: a conta é criada e o plano entra na sua carteira.';
+        }
       }
       form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       form.addEventListener('click', function (e) {

@@ -36,3 +36,5 @@ assert.ok(sql.includes("if r.status <> 'aprovado' then") && sql.includes("'ja_us
 assert.ok(fn.includes('"email_em_uso"') && fn.indexOf('qf_pre_cadastro_email_livre') < fn.indexOf('await criarPix(row'));
 assert.ok(fn.includes('esperado === original && pago >= esperado') && fn.includes('q.data.segredo !== segredo'));
 console.log('pagamento-antes-da-conta ok');
+// Avulso: conta na hora, com o aviso de que desbloquear chamado exige crédito na Carteira.
+assert.ok(html.includes('Para desbloquear um chamado você precisa adicionar crédito na Carteira') && html.includes('data-plano-nota') && html.includes('No Avulso sua conta é criada agora.'));
