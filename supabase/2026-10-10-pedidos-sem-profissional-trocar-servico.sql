@@ -1,0 +1,4 @@
+-- V11.67: painel > "Pedidos sem profissional" — pedidos abertos que ninguém recebeu, e a troca de serviço com reenvio.
+-- (Aplicado no banco como a migração admin_pedidos_sem_profissional_trocar_servico.)
+--   public.qf_admin_pedidos_sem_profissional()                 -> lista para o painel (só admin, só leitura)
+--   public.qf_admin_trocar_servico_reenviar(chamado, servico)  -> troca o serviço do pedido aberto e dispara o aviso de chamado

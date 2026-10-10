@@ -1609,6 +1609,17 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-prox__ver{display:inline-block;margin-top:12px;font-weight:700;color:var(--navy-700);cursor:pointer}
 .qf-prox .qf-adm-tabela{margin-bottom:0}
 @media (max-width:640px){.qf-prox>summary{flex-direction:column;align-items:flex-start;gap:4px}.qf-prox__meta{text-align:left}}
+
+/* Pedidos sem profissional */
+.qf-semprof__topo{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
+.qf-semprof__topo b{display:block;font-size:17px}
+.qf-semprof__topo small{display:block;font-size:12.5px;color:var(--text-secondary)}
+.qf-semprof__meta{font-size:13.5px;font-weight:600;flex:none;text-align:right}
+.qf-semprof__desc{margin:10px 0 0;font-size:14px;color:var(--text-secondary)}
+.qf-semprof__motivo{margin:12px 0;padding:10px 12px;border-radius:12px;background:#fdecea;color:#b3261e;font-weight:600;font-size:13.5px}
+.qf-semprof--enviado .qf-semprof__motivo{background:#e3f6ec;color:#12804a}
+.qf-semprof__acao{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+@media (max-width:640px){.qf-semprof__topo{flex-direction:column;gap:4px}.qf-semprof__meta{text-align:left}.qf-semprof__acao .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -8107,6 +8118,69 @@ Screens.adminDashboardRender = function () {
       '<div data-adm-proximos>' + admCard('Próximos ao pedido', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-proximos');
   };
 
+  // V11.67: Pedidos sem profissional — pedidos abertos que ninguém recebeu; troca o serviço e reenvia.
+  function admSemProfHtml(d) {
+    const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
+    const servicos = (Array.isArray(d.servicos) ? d.servicos : []).map(function (x) { return { id: x.id, n: Number(x.n || 0), nome: adminCategoryName(x.id) }; })
+      .filter(function (x) { return x.n > 0 && !/indispon/i.test(x.nome); })
+      .sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+    if (!pedidos.length) return admCard('Tudo certo', '', '<p class="qf-adm-mudo" style="margin:0;">Nenhum pedido aberto ficou sem profissional. Quando entrar um, ele aparece aqui e você recebe um aviso no celular.</p>');
+    const hoje = qfDiaChave();
+    return pedidos.map(function (c) {
+      const local = [c.bairro, [c.cidade, c.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ');
+      const quando = (qfDiaChave(c.criado_em) === hoje ? 'Hoje' : qfDiaMes(c.criado_em)) + ' às ' + qfHora(c.criado_em);
+      const semServico = Number(c.profissionais || 0) === 0;
+      const opcoes = '<option value="">Escolha o serviço certo…</option>' + servicos.map(function (x) {
+        return '<option value="' + PU.escapeHtml(x.id) + '"' + (x.id === c.sugestao ? ' selected' : '') + '>' + PU.escapeHtml(x.nome) + ' (' + x.n + ')</option>';
+      }).join('');
+      return '<section class="qf-adm-card qf-semprof">' +
+        '<div class="qf-semprof__topo"><div><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></div>' +
+          '<div class="qf-semprof__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '</div></div>' +
+        (c.descricao ? '<p class="qf-semprof__desc">“' + PU.escapeHtml(String(c.descricao).slice(0, 260)) + '”</p>' : '') +
+        '<p class="qf-semprof__motivo">' + (semServico ? 'Ninguém tem esse serviço cadastrado. Nenhum profissional foi avisado.' : 'O serviço tem ' + admLinhas(Number(c.profissionais), 'profissional', 'profissionais') + ', mas nenhum foi avisado deste pedido.') + '</p>' +
+        '<div class="qf-semprof__acao"><label class="field" style="margin:0;flex:1;min-width:220px;"><span class="field__label">Enviar para os profissionais de</span><select class="input" data-semprof-servico>' + opcoes + '</select></label>' +
+          '<button class="btn btn--primary" type="button" data-semprof-enviar="' + PU.escapeHtml(c.id) + '">Trocar serviço e reenviar</button></div>' +
+        '<a class="qf-prox__ver" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</a>' +
+      '</section>';
+    }).join('');
+  }
+  async function admSemProfCarregar(content) {
+    const box = content.querySelector('[data-adm-semprof]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_pedidos_sem_profissional');
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
+      box.innerHTML = admSemProfHtml(r.data);
+    } catch (err) { box.innerHTML = admCard('Pedidos sem profissional', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
+  }
+  Screens.adminSemProfRender = function () {
+    return admPage('<p class="qf-prox__intro">Pedidos abertos que nenhum profissional recebeu, normalmente porque o cliente escreveu um serviço que ninguém tem cadastrado. Escolha o serviço certo e o pedido é enviado na hora para os profissionais dele.</p>' +
+      '<div data-adm-semprof>' + admCard('Pedidos sem profissional', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-semprof');
+  };
+  document.addEventListener('click', async function (e) {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-semprof-enviar]') : null;
+    if (!btn) return;
+    const card = btn.closest('.qf-semprof');
+    const sel = card && card.querySelector('[data-semprof-servico]');
+    if (!sel || !sel.value) { PU.toast('Escolha o serviço certo antes de reenviar.', 'danger'); if (sel) sel.focus(); return; }
+    const nome = sel.options[sel.selectedIndex].text;
+    btn.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_trocar_servico_reenviar', { p_chamado_id: btn.getAttribute('data-semprof-enviar'), p_categoria: sel.value });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível reenviar.');
+      PU.toast('Pedido enviado para ' + nome + '. Só quem está online recebe o toque.', 'success');
+      const tela = document.querySelector('[data-adm-semprof]');
+      if (tela && tela.parentNode) setTimeout(function () { admSemProfCarregar(tela.parentNode); }, 4000);
+      card.classList.add('qf-semprof--enviado');
+      card.querySelector('.qf-semprof__motivo').textContent = 'Enviado agora para ' + nome + '.';
+    } catch (err) {
+      PU.toast((err && err.message) || 'Não foi possível reenviar.', 'danger');
+      btn.disabled = false;
+    }
+  });
+
   // Por cidade: o agrupamento que existia em Profissionais, em tabela. A linha abre a lista já filtrada.
   Screens.adminPorCidadeRender = function () {
     const groups = {};
@@ -8472,6 +8546,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
     if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/proximos') admProximosCarregar(content);
+    if (pattern === '/admin/sem-profissional') admSemProfCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
     if (pattern === '/admin/dashboard') {
@@ -8581,6 +8656,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
+    { pattern: '/admin/sem-profissional', role: 'admin', title: 'Pedidos sem profissional', render: function () { return Screens.adminSemProfRender(); } },
     { pattern: '/admin/proximos', role: 'admin', title: 'Profissionais próximos ao pedido', render: function () { return Screens.adminProximosRender(); } },
     { pattern: '/admin/por-cidade', role: 'admin', title: 'Por cidade', render: Screens.adminPorCidadeRender },
     { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
@@ -8734,6 +8810,7 @@ Screens.adminDashboardRender = function () {
     { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
     { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
     { id: 'proximos', label: 'Próximos ao pedido', icon: 'mapPin', route: '/admin/proximos' },
+    { id: 'semprof', label: 'Pedidos sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },

@@ -8,7 +8,7 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // Menu na ordem combinada; cada rota do menu existe.
-const menu = ['Início', 'Pedidos', 'Próximos ao pedido', 'Desbloqueios', 'Finalizados', 'Profissionais', 'Por cidade', 'Clientes', 'Receita', 'Verificações', 'Comunicados', 'Bônus', 'Planos dos profissionais', 'Planos e anúncios', 'Suporte', 'Recrutamento', 'Configurações'];
+const menu = ['Início', 'Pedidos', 'Próximos ao pedido', 'Pedidos sem profissional', 'Desbloqueios', 'Finalizados', 'Profissionais', 'Por cidade', 'Clientes', 'Receita', 'Verificações', 'Comunicados', 'Bônus', 'Planos dos profissionais', 'Planos e anúncios', 'Suporte', 'Recrutamento', 'Configurações'];
 const bloco = admin.slice(admin.indexOf('const ADMIN_MENU = ['), admin.indexOf('];', admin.indexOf('const ADMIN_MENU = [')));
 const labels = [...bloco.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
 assert.deepEqual(labels, menu);
