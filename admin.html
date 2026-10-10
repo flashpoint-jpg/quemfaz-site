@@ -1487,6 +1487,11 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-plano .qf-adm-filtro{flex:0 1 130px}
 .qf-adm-plano .qf-adm-filtro .input{height:40px;border-radius:10px}
 .qf-adm-plano__cada{flex:1 1 150px;align-self:center;font-size:13px;color:var(--text-secondary)}
+/* V11.56: Simular chamado para todos */
+.qf-teste-todos{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 10px;padding:12px 16px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
+.qf-teste-todos>div{display:flex;flex-direction:column;gap:2px;flex:1 1 220px}
+.qf-teste-todos span{font-size:13px;color:var(--text-secondary)}
+.qf-teste-todos .btn span{color:inherit;font-size:inherit}
 /* V11.51: Simular chamado */
 .qf-teste-resumo{margin-bottom:16px}
 .qf-teste-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 2px;padding:10px 14px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
@@ -5995,6 +6000,62 @@ Screens.adminDashboardRender = function () {
     } finally { testeEnviando[proId] = false; b.disabled = false; }
   }, true);
 
+  // V11.56: "Simular chamado para todos" — repete o teste individual para cada profissional da lista
+  // (4 por vez). Cada um fica com o seu registro em chamados_teste, igual ao teste individual.
+  let testeTodosRodando = false;
+  async function testeEnviarUm(proId) {
+    const r = await global.QFAdminCloud.client.functions.invoke('quemfaz-push', { body: { action: 'teste_chamado', profissional_id: proId } });
+    if (r.error) throw r.error;
+    const d = r.data || {};
+    if (!d.ok) throw new Error(d.error || 'falha');
+    testes = [{ id: d.id, profissional_id: proId, enviado_em: d.enviado_em || new Date().toISOString(), chegou_em: null, confirmado_em: null, envio: { sent: d.sent, total: d.total } }].concat(testes || []);
+    return d;
+  }
+  document.addEventListener('click', async function (e) {
+    const b = e.target.closest && e.target.closest('[data-simular-todos]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!cloudOn()) { PU.toast('O teste de chamado funciona com o painel conectado ao banco de dados.', 'danger'); return; }
+    if (testeTodosRodando) return;
+    const todos = DB.state.users.profissionais || [];
+    const daCidade = profCidadeFiltro === 'todas' ? todos : todos.filter(function (p) { return profCidadeInfo(p).key === profCidadeFiltro; });
+    const alvo = daCidade.length ? daCidade : todos;
+    const ids = alvo.map(function (p) { return String(p.id); }).filter(Boolean);
+    if (!ids.length) { PU.toast('Nenhum profissional na lista.', 'danger'); return; }
+    const ok = await PU.confirmDialog({ title: 'Simular chamado para ' + ids.length + ' profissiona' + (ids.length === 1 ? 'l' : 'is'),
+      message: 'O celular de cada um vai tocar o chamado de teste em tela cheia, com o toque de chamado, agora. Não cria pedido e não mexe em carteira. Confirma?',
+      okLabel: 'Enviar para todos' });
+    if (!ok) return;
+    testeTodosRodando = true;
+    let feitos = 0, comAparelho = 0, semAparelho = 0, falhas = 0;
+    function pintarBotao() {
+      const bt = document.querySelector('[data-simular-todos]'), tx = document.querySelector('[data-simular-todos-txt]');
+      if (bt) bt.disabled = testeTodosRodando;
+      if (tx) tx.textContent = testeTodosRodando ? 'Enviando ' + feitos + ' de ' + ids.length + '…' : 'Simular chamado para todos';
+    }
+    pintarBotao();
+    const fila = ids.slice();
+    async function trabalhador() {
+      while (fila.length) {
+        const id = fila.shift();
+        try {
+          const d = await testeEnviarUm(id);
+          if (Number(d.sent) > 0) comAparelho++; else semAparelho++;
+        } catch (err) { falhas++; console.warn('QuemFaz teste para todos', id, err && err.message); }
+        feitos++;
+        pintarBotao();
+        if (feitos % 5 === 0) testePintar();
+      }
+    }
+    try { await Promise.all([trabalhador(), trabalhador(), trabalhador(), trabalhador()]); }
+    finally {
+      testeTodosRodando = false;
+      pintarBotao(); testePintar();
+      PU.toast('Teste enviado para ' + comAparelho + ' profissiona' + (comAparelho === 1 ? 'l' : 'is') + '.' +
+        (semAparelho ? ' ' + semAparelho + ' sem aparelho para receber.' : '') + (falhas ? ' ' + falhas + ' com falha no envio.' : ''), falhas && !comAparelho ? 'danger' : 'success');
+    }
+  }, true);
+
   function adminCategoryName(id) {
     const c = DB.categoryById(id);
     if (c && c.nome) return c.nome;
@@ -6032,6 +6093,14 @@ Screens.adminDashboardRender = function () {
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
         '<section class="qf-adm-numeros qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
+        // V11.56: o mesmo "Simular chamado", para todos de uma vez (ou só a cidade escolhida nos filtros).
+        (function () {
+          const alvo = profCidadeFiltro === 'todas' ? list : (groups[profCidadeFiltro] ? groups[profCidadeFiltro].itens : list);
+          const onde = profCidadeFiltro === 'todas' || !groups[profCidadeFiltro] ? 'todos' : groups[profCidadeFiltro].label;
+          return '<div class="qf-teste-todos"><div><strong>Testar ' + (onde === 'todos' ? 'todos de uma vez' : 'todos de ' + PU.escapeHtml(onde)) + '</strong>' +
+            '<span>Manda o chamado de teste para ' + alvo.length + ' profissiona' + (alvo.length === 1 ? 'l' : 'is') + '. Não cria pedido nem mexe em carteira.</span></div>' +
+            '<button type="button" class="btn btn--primary btn--sm qf-teste-btn" data-simular-todos' + (testeTodosRodando ? ' disabled' : '') + '>' + icon('bell') + '<span data-simular-todos-txt>' + (testeTodosRodando ? 'Enviando…' : 'Simular chamado para todos') + '</span></button></div>';
+        })() +
         '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
         chips +
         '' +

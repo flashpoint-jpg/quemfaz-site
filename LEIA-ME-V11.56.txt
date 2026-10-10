@@ -1,0 +1,10 @@
+QuemFaz 11.56 — Simular chamado para todos
+
+PAINEL > Profissionais
+- Botão novo "Simular chamado para todos", acima da busca. Manda o mesmo chamado de teste do botão
+  individual para todos os profissionais de uma vez (4 por vez). Com uma cidade escolhida nos
+  filtros, manda só para os profissionais daquela cidade.
+- Pede confirmação antes, mostra "Enviando X de Y" e, no fim, quantos receberam e quantos não têm
+  aparelho para receber. Cada profissional fica com o seu "Último teste", como no individual.
+- Não cria pedido, não mexe em carteira e não entra em receita.
+- Nada mudou no servidor: usa o mesmo envio do teste individual (quemfaz-push, teste_chamado).

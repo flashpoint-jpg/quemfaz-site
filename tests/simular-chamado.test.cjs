@@ -61,3 +61,14 @@ console.log('PASS simular chamado: banco, servidor, service worker, app e painel
 // V11.53: quem usa só o APK não aparece como "não chegou" (o APK 12 não informa a chegada).
 assert.ok(admin.includes("rpc('qf_admin_chamados_teste')") && admin.includes('Enviado ao celular (app Android não informa a chegada)') && admin.includes('!soApk(t)'));
 assert.ok(fs.readFileSync(path.join(root, 'supabase', '2026-10-10-chamados-teste-aparelhos.sql'), 'utf8').includes("if not private.qf_is_admin() then raise exception"));
+
+// V11.56: "Simular chamado para todos" usa o mesmo envio do teste individual, um registro por profissional.
+{
+  const fs2 = require('node:fs'), path2 = require('node:path'), assert2 = require('node:assert');
+  const adm = fs2.readFileSync(path2.join(__dirname, '..', 'admin.html'), 'utf8');
+  assert2.ok(adm.includes('data-simular-todos') && adm.includes("okLabel: 'Enviar para todos'"));
+  const bloco = adm.slice(adm.indexOf('async function testeEnviarUm(proId)'), adm.indexOf('function adminCategoryName(id)'));
+  assert2.ok(bloco.includes("body: { action: 'teste_chamado', profissional_id: proId }"));
+  assert2.ok(bloco.includes('await PU.confirmDialog(') && bloco.indexOf('await PU.confirmDialog(') < bloco.indexOf('testeTodosRodando = true;'), 'pede confirmação antes de enviar');
+  assert2.ok(bloco.includes('Promise.all([trabalhador(), trabalhador(), trabalhador(), trabalhador()])'));
+}
