@@ -1,0 +1,13 @@
+QuemFaz 11.61 — testes de chamado separados no painel e aviso forte para quem está sem notificação
+
+PAINEL > Profissionais > resumo dos testes
+- Agora conta um por profissional (o último teste de cada um), em seis números: Profissionais testados,
+  Confirmados, Chegou e não confirmou, Não chegou no aparelho (tem aparelho, mas o aviso falhou),
+  Sem aparelho cadastrado (não ativou as notificações) e Enviado ao app Android (não informa a chegada).
+- No cartão do profissional, quem não tem aparelho aparece em cinza como "Sem aparelho cadastrado",
+  não mais em vermelho como "não chegou".
+
+APP DO PROFISSIONAL
+- A faixa amarela discreta de "online sem notificações" virou um aviso vermelho no topo:
+  "Seu celular NÃO vai tocar quando chegar chamado", com o botão "Ativar notificações agora".
+  Ativou, o aviso some sozinho.

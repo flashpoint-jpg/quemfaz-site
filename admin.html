@@ -1521,6 +1521,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-teste-todos .btn span{color:inherit;font-size:inherit}
 /* V11.51: Simular chamado */
 .qf-teste-resumo{margin-bottom:16px}
+@media (min-width:900px){.qf-adm-numeros--6{grid-template-columns:repeat(3,minmax(0,1fr))}.qf-adm-numeros--6 .qf-adm-num__item:nth-child(3n+1){border-left:0}.qf-adm-numeros--6 .qf-adm-num__item:nth-child(n+4){border-top:1px solid #e3e3e3}}
 .qf-teste-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 2px;padding:10px 14px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
 .qf-teste-linha__info{display:flex;flex-direction:column;gap:4px;min-width:0}
 .qf-teste-linha__info small{font-size:12px;color:var(--text-secondary)}
@@ -6019,7 +6020,9 @@ Screens.adminDashboardRender = function () {
     const semAparelho = t.envio && Number(t.envio.total) === 0;
     // V11.53: o app Android (APK 12) não informa a chegada; só o PWA marca "chegou" sozinho.
     if (!semAparelho && soApk(t)) return { cor: 'laranja', rotulo: 'Enviado ao celular (app Android não informa a chegada)', quando: t.enviado_em };
-    return { cor: 'vermelho', rotulo: 'Enviado, não chegou no aparelho' + (semAparelho ? ' (sem aparelho cadastrado)' : ''), quando: t.enviado_em };
+    // V11.61: sem aparelho cadastrado não é falha de envio — ele nunca ativou as notificações.
+    if (semAparelho) return { cor: 'cinza', rotulo: 'Sem aparelho cadastrado (não ativou as notificações)', quando: t.enviado_em };
+    return { cor: 'vermelho', rotulo: 'Enviado, não chegou no aparelho', quando: t.enviado_em };
   }
   function testeEtiquetaHtml(proId) {
     const sit = testeSituacao(ultimoTeste(proId));
@@ -6031,14 +6034,23 @@ Screens.adminDashboardRender = function () {
       '<span data-teste-sit="' + PU.escapeHtml(String(proId)) + '">' + (cloudOn() && !testes ? '<span class="qf-teste-sit qf-teste-sit--cinza">Carregando…</span>' : testeEtiquetaHtml(proId)) + '</span></div>' +
       '<button type="button" class="btn btn--primary btn--sm qf-teste-btn" data-simular-chamado="' + PU.escapeHtml(String(proId)) + '"' + (testeEnviando[proId] ? ' disabled' : '') + '>' + icon('bell') + 'Simular chamado</button></div>';
   }
+  // V11.61: um número por profissional (o último teste de cada um), separando falha de envio de quem não tem aparelho.
   function testeResumoHtml() {
-    const l = testes || [];
+    const visto = {}, l = [];
+    (testes || []).forEach(function (t) { const k = String(t.profissional_id); if (!visto[k]) { visto[k] = 1; l.push(t); } });
     const agora = Date.now();
-    const conf = l.filter(function (t) { return t.confirmado_em; }).length;
-    const chegou = l.filter(function (t) { return t.chegou_em && !t.confirmado_em; }).length;
-    const naoChegou = l.filter(function (t) { return !t.chegou_em && agora - (Date.parse(t.enviado_em) || 0) >= TESTE_AGUARDA_MS && !soApk(t); }).length;
-    function n(rot, v, cor) { return '<div class="qf-adm-num__item"><span>' + rot + '</span><b' + (cor ? ' style="color:' + cor + '"' : '') + '>' + (testes ? v : '…') + '</b></div>'; }
-    return n('Testes enviados', l.length) + n('Confirmados', conf, 'var(--success-600)') + n('Chegou e não confirmou', chegou, 'var(--warning-600)') + n('Não chegou no aparelho', naoChegou, 'var(--danger-600)');
+    let conf = 0, chegou = 0, naoChegou = 0, semAparelho = 0, android = 0;
+    l.forEach(function (t) {
+      if (t.confirmado_em) { conf++; return; }
+      if (t.chegou_em) { chegou++; return; }
+      if (agora - (Date.parse(t.enviado_em) || 0) < TESTE_AGUARDA_MS) return;
+      if (t.envio && Number(t.envio.total) === 0) semAparelho++;
+      else if (soApk(t)) android++;
+      else naoChegou++;
+    });
+    function n(rot, v, cor, sub) { return '<div class="qf-adm-num__item"><span>' + rot + '</span><b' + (cor ? ' style="color:' + cor + '"' : '') + '>' + (testes ? v : '…') + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>'; }
+    return n('Profissionais testados', l.length, '', 'último teste de cada um') + n('Confirmados', conf, 'var(--success-600)', 'tocaram em confirmar') + n('Chegou e não confirmou', chegou, 'var(--warning-600)', 'o aviso chegou no celular') +
+      n('Não chegou no aparelho', naoChegou, 'var(--danger-600)', 'tem aparelho, mas o aviso falhou') + n('Sem aparelho cadastrado', semAparelho, 'var(--text-secondary)', 'não ativou as notificações') + n('Enviado ao app Android', android, 'var(--orange-700)', 'o app não informa a chegada');
   }
   function testePintar() {
     document.querySelectorAll('[data-teste-sit]').forEach(function (el) { el.innerHTML = testeEtiquetaHtml(el.getAttribute('data-teste-sit')); });
@@ -6177,7 +6189,7 @@ Screens.adminDashboardRender = function () {
     return (
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
-        '<section class="qf-adm-numeros qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
+        '<section class="qf-adm-numeros qf-adm-numeros--6 qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
         // V11.56: o mesmo "Simular chamado", para todos de uma vez (ou só a cidade escolhida nos filtros).
         (function () {
           const alvo = profCidadeFiltro === 'todas' ? list : (groups[profCidadeFiltro] ? groups[profCidadeFiltro].itens : list);

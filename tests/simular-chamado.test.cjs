@@ -44,7 +44,7 @@ assert.ok(push.includes('tipo: String(payload.tipo || "chamado")') && push.inclu
 
 // Painel: botão, etiquetas, resumo e atualização automática.
 ['Simular chamado', 'Confirmado pelo profissional', 'Chegou no aparelho, não confirmou', 'Enviado, não chegou no aparelho', 'Enviado agora, aguardando', 'Nunca testado',
- 'Testes enviados', 'Confirmados', 'Chegou e não confirmou', 'Não chegou no aparelho', "action: 'teste_chamado'", '}, 5000);']
+ 'Profissionais testados', 'Confirmados', 'Chegou e não confirmou', 'Não chegou no aparelho', 'Sem aparelho cadastrado', "action: 'teste_chamado'", '}, 5000);']
   .forEach((t) => assert.ok(admin.includes(t), t));
 console.log('PASS simular chamado: banco, servidor, service worker, app e painel');
 
@@ -59,7 +59,7 @@ console.log('PASS simular chamado: banco, servidor, service worker, app e painel
 }
 
 // V11.53: quem usa só o APK não aparece como "não chegou" (o APK 12 não informa a chegada).
-assert.ok(admin.includes("rpc('qf_admin_chamados_teste')") && admin.includes('Enviado ao celular (app Android não informa a chegada)') && admin.includes('!soApk(t)'));
+assert.ok(admin.includes("rpc('qf_admin_chamados_teste')") && admin.includes('Enviado ao celular (app Android não informa a chegada)') && admin.includes('else if (soApk(t)) android++'));
 assert.ok(fs.readFileSync(path.join(root, 'supabase', '2026-10-10-chamados-teste-aparelhos.sql'), 'utf8').includes("if not private.qf_is_admin() then raise exception"));
 
 // V11.56: "Simular chamado para todos" usa o mesmo envio do teste individual, um registro por profissional.

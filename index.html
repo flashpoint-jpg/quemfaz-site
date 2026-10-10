@@ -682,6 +682,11 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 /* V11.1: faixa "online sem notificação" no topo das telas do profissional */
 .qf-push-banner { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:10px 16px; background:var(--warning-100); border-bottom:1px solid #f0cf91; color:var(--warning-600); font-size:13.5px; font-weight:600; }
 .qf-push-banner .btn { width:auto; flex:none; }
+.qf-push-banner--forte { background:var(--danger-600); border-bottom:0; color:#fff; padding:14px 16px; gap:12px; }
+.qf-push-banner--forte .qf-push-banner__txt { flex:1 1 220px; min-width:0; }
+.qf-push-banner--forte strong { display:block; font-size:15.5px; line-height:1.25; }
+.qf-push-banner--forte span { display:block; font-size:13px; font-weight:500; margin-top:3px; opacity:.95; }
+.qf-push-banner--forte .btn { background:#fff; color:var(--danger-600); border:0; font-weight:800; flex:1 1 200px; }
 
 /* ---------- Badges / status ---------- */
 
@@ -14292,7 +14297,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.60';
+  const APP_VERSION = '11.61';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17167,8 +17172,9 @@ alt=""></noscript>
     // V11.1: profissional online sem notificações ativas só recebe chamados com o app aberto — avisa no topo.
     let pushBannerHtml = '';
     if (session.role === 'profissional' && user && user.online && global.QFPush && !global.QFPush.isActive()) {
-      pushBannerHtml = '<div class="qf-push-banner" role="status"><span>Você está online, mas só recebe chamados com o app aberto.</span>' +
-        '<button class="btn btn--primary btn--sm" type="button" data-action="ativar-notificacoes-faixa">' + icon('bell') + ' Ativar notificações</button></div>';
+      // V11.61: aviso forte (vermelho) — sem notificação o celular não toca quando chega pedido.
+      pushBannerHtml = '<div class="qf-push-banner qf-push-banner--forte" role="alert"><div class="qf-push-banner__txt"><strong>Seu celular NÃO vai tocar quando chegar chamado</strong><span>Você está online, mas as notificações estão desligadas. Toque no botão para ativar agora.</span></div>' +
+        '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes-faixa">' + icon('bell') + ' Ativar notificações agora</button></div>';
     }
 
     if (global.QFApp && global.QFApp.apkStripHtml) pushBannerHtml += global.QFApp.apkStripHtml(session.role);
