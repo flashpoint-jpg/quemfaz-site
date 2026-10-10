@@ -1487,6 +1487,18 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-plano .qf-adm-filtro{flex:0 1 130px}
 .qf-adm-plano .qf-adm-filtro .input{height:40px;border-radius:10px}
 .qf-adm-plano__cada{flex:1 1 150px;align-self:center;font-size:13px;color:var(--text-secondary)}
+/* V11.58: atividade do profissional (desbloqueios, finalizados e notas) */
+.qf-prof-ativ{margin:8px 0 0;font-size:12.5px;font-weight:600;color:var(--text-secondary)}
+.qf-prof-ativ b{color:var(--text-primary);font-variant-numeric:tabular-nums}
+.qf-prof-ativ.is-zero{font-weight:400;color:var(--text-muted)}
+.qf-adm-num__item small{font-size:12px;font-weight:400;color:var(--text-muted)}
+.qf-prof-hist{background:#fff;border:1px solid #e2e6ee;border-radius:16px;overflow:hidden}
+.qf-prof-hist .qf-extrato__mov:first-child{border-top:0}
+.qf-prof-hist .qf-extrato__qm>span{white-space:normal}
+.qf-prof-hist .qf-extrato__qm span span{display:inline}
+.qf-prof-hist__res{font-weight:700}
+.qf-prof-hist__res.is-ok{color:var(--success-600)}
+.qf-prof-hist__res.is-nao{color:var(--danger-600,#c0392b)}
 /* V11.57: ativar plano na mão e Pix pelo painel */
 .qf-adm-manual{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
 .qf-adm-manual__pro{flex:1 1 260px}
@@ -3818,12 +3830,14 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       return { id: r.id, profissionalId: r.profissional_id, valor: Number(r.valor_centavos || 0), metodo: r.metodo || null, plano: r.plano || null, criadoEm: r.aprovado_em || null };
     }) : null;
     DB.state.reviews = [];
+    // V11.58: notas guardadas com o profissional avaliado, para o perfil dele no painel.
+    DB.state.avaliacoesAdmin = (d.avaliacoes || []).map(function (a) { return { requestId: a.chamado_id, profissionalId: a.profissional_id, autor: a.autor_tipo === 'profissional' ? 'profissional' : 'cliente', nota: Number(a.nota || 0), comentario: a.comentario || '', criadoEm: a.criado_em }; });
     DB.state.meta = Object.assign({}, DB.state.meta, { snapshotEm: d.gerado_em, pushInscritos: Number(d.push_inscritos || 0), cloud: true });
     try { DB.persist(); } catch (_) { /* dados ficam em memória se o armazenamento local estiver cheio */ }
     return d;
   }
   function clearLocalData() {
-    DB.state.users.clientes = []; DB.state.users.profissionais = []; DB.state.requests = []; DB.state.transactions = []; DB.state.reviews = []; DB.state.recargasPagas = null;
+    DB.state.users.clientes = []; DB.state.users.profissionais = []; DB.state.requests = []; DB.state.transactions = []; DB.state.reviews = []; DB.state.avaliacoesAdmin = []; DB.state.recargasPagas = null;
     DB.state.meta = Object.assign({}, DB.state.meta, { cloud: true, snapshotEm: null });
     try { DB.persist(); } catch (_) {}
   }
@@ -5914,6 +5928,61 @@ Screens.adminDashboardRender = function () {
     return { key: key, nome: nome, uf: String(uf).toUpperCase(), label: nome + (uf ? '/' + String(uf).toUpperCase() : '') };
   }
   function catNormAdmin(v) { return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  // ---------------- V11.58: atividade do profissional ----------------
+  // Quantos pedidos ele desbloqueou, quantos finalizou (informou que fechou o serviço) e as notas que os clientes deram.
+  function adminProfAtividade(proId) {
+    const id = String(proId);
+    const itens = [];
+    (DB.state.requests || []).forEach(function (r) {
+      desbloqueiosAtivos(r).forEach(function (x) {
+        if (String(x.profissionalId) === id) itens.push({ r: r, x: x, t: Date.parse(x.criadoEm) || 0 });
+      });
+    });
+    itens.sort(function (a, b) { return b.t - a.t; });
+    const notas = (DB.state.avaliacoesAdmin || []).filter(function (a) { return String(a.profissionalId) === id && a.autor === 'cliente'; });
+    const notaPorPedido = {};
+    notas.forEach(function (a) { notaPorPedido[a.requestId] = a; });
+    let fechados = 0, naoFechados = 0, gasto = 0;
+    itens.forEach(function (m) {
+      if (m.x.desfecho === 'fechado') fechados++; else if (m.x.desfecho === 'nao_fechado') naoFechados++;
+      gasto += qfDesbPagamento(m.x).valor;
+      m.nota = notaPorPedido[m.r.id] || null;
+    });
+    const soma = notas.reduce(function (s, a) { return s + a.nota; }, 0);
+    return { itens: itens, total: itens.length, fechados: fechados, naoFechados: naoFechados, semResposta: itens.length - fechados - naoFechados,
+      gasto: gasto, notas: notas, media: notas.length ? soma / notas.length : 0 };
+  }
+  function adminProfNotaTxt(a) { return a.notas.length ? a.media.toFixed(1).replace('.', ',') + ' (' + a.notas.length + (a.notas.length === 1 ? ' nota' : ' notas') + ')' : 'sem nota'; }
+  function adminProfAtivLinha(p) {
+    const a = adminProfAtividade(p.id);
+    if (!a.total) return '<div class="qf-prof-ativ is-zero">Nenhum desbloqueio ainda</div>';
+    return '<div class="qf-prof-ativ"><b>' + a.total + '</b> ' + (a.total === 1 ? 'desbloqueio' : 'desbloqueios') + ' · <b>' + a.fechados + '</b> ' + (a.fechados === 1 ? 'finalizado' : 'finalizados') + ' · Nota: <b>' + adminProfNotaTxt(a) + '</b></div>';
+  }
+  function adminProfAtivHtml(p) {
+    const a = adminProfAtividade(p.id);
+    function n(rot, v, sub) { return '<div class="qf-adm-num__item"><span>' + rot + '</span><b>' + v + '</b><small>' + sub + '</small></div>'; }
+    const numeros = '<section class="qf-adm-numeros" aria-label="Atividade do profissional" style="margin:14px 0 0;">' +
+      n('Desbloqueios', a.total, a.total ? PU.formatCurrency(a.gasto) + ' em desbloqueios' : 'nenhum ainda') +
+      n('Finalizados', a.fechados, 'informou que fechou o serviço') +
+      n('Não fechou', a.naoFechados, a.semResposta ? a.semResposta + ' ainda sem resultado' : 'nenhum sem resultado') +
+      n('Nota dos clientes', a.notas.length ? a.media.toFixed(1).replace('.', ',') : '—', a.notas.length ? a.notas.length + (a.notas.length === 1 ? ' cliente avaliou' : ' clientes avaliaram') : 'nenhum cliente avaliou ainda') +
+    '</section>';
+    const lista = a.itens.map(function (m) {
+      const pg = qfDesbPagamento(m.x);
+      const pedido = qfPedidoTitulo(m.r) + (m.r.titulo && String(m.r.titulo).trim() !== qfPedidoTitulo(m.r) ? ' · ' + String(m.r.titulo).trim() : '');
+      const res = m.x.desfecho === 'fechado' ? '<span class="qf-prof-hist__res is-ok">Finalizado</span>' : m.x.desfecho === 'nao_fechado' ? '<span class="qf-prof-hist__res is-nao">Não fechou</span>' : '<span class="qf-prof-hist__res">Sem resultado ainda</span>';
+      const nota = m.nota ? ' · Cliente deu nota ' + m.nota.nota + (m.nota.comentario ? ' — “' + PU.escapeHtml(m.nota.comentario) + '”' : '') : (m.x.desfecho === 'fechado' ? ' · Cliente ainda não deu nota' : '');
+      return '<button type="button" class="qf-extrato__mov" data-nav="/admin/servicos/' + m.r.id + '">' +
+        '<span class="qf-extrato__hr">' + (m.t ? qfDiaMes(m.x.criadoEm) : '—') + '<small>' + (m.t ? qfHora(m.x.criadoEm) : 'sem data') + '</small></span>' +
+        '<span class="qf-extrato__qm"><b>' + PU.escapeHtml(pedido) + '</b><span>' + res + nota + '</span></span>' +
+        '<span class="qf-extrato__vl' + (pg.valor > 0 ? '' : ' is-zero') + '">' + PU.formatCurrency(pg.valor) + '<small>' + pg.rotulo + '</small></span>' +
+      '</button>';
+    }).join('');
+    return numeros +
+      '<div class="section"><div class="section-head"><h2 class="h3">Pedidos que ele desbloqueou</h2></div>' +
+        (a.total ? '<div class="qf-prof-hist">' + lista + '</div>' : '<div class="card card--tight"><div class="text--sm text--secondary">Este profissional ainda não desbloqueou nenhum pedido.</div></div>') +
+      '</div>';
+  }
   function profCard(p) {
     const cidade = profCidadeInfo(p);
     const extra = (p.areas && p.areas.length > 1) ? ' · +' + (p.areas.length - 1) + ' cidade(s)' : '';
@@ -5925,6 +5994,7 @@ Screens.adminDashboardRender = function () {
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
+      (cloudOn() ? adminProfAtivLinha(p) : '') +
     '</button>' + testeLinhaHtml(p.id) + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
 
@@ -6217,6 +6287,7 @@ Screens.adminDashboardRender = function () {
     const endereco = e ? [ruaNumero, e.bairro || '', cidadeUf, e.cep ? 'CEP ' + e.cep : '', e.complemento || ''].filter(Boolean).join(' · ') : 'Não informado';
     return '<div class="view">' +
       '<div class="card row"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + profBadges(p) + '</div></div></div>' +
+      adminProfAtivHtml(p) +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
         '<div class="card row" style="align-items:center;">' +
           '<div class="admin-selfie">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie de segurança do profissional">' : '<div class="admin-selfie-empty">Selfie não cadastrada</div>') + '</div>' +
@@ -6231,7 +6302,6 @@ Screens.adminDashboardRender = function () {
         rowInfoLong('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
         rowInfo('Selfie', p.temFoto ? 'Cadastrada' : 'Não cadastrada') +
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
-        rowInfo('Avaliação', p.avaliacaoMedia ? p.avaliacaoMedia.toFixed(1) + ' (' + p.totalAvaliacoes + ' avaliações)' : 'Sem avaliações') +
         rowInfo('Saldo em carteira', PU.formatCurrency(p.saldo || 0)) +
         rowInfo('Cadastro', PU.formatDateTime(p.criadoEm)) +
       '</div>' +

@@ -1,0 +1,14 @@
+QuemFaz 11.58 — desbloqueios, finalizados e notas no perfil do profissional (painel)
+
+PAINEL > Profissionais > abrir um profissional
+- Logo abaixo do nome, quatro números: Desbloqueios (com o total gasto), Finalizados (pedidos em que
+  ele informou que fechou o serviço), Não fechou (e quantos ainda estão sem resultado) e Nota dos
+  clientes (média e quantos clientes avaliaram).
+- Lista "Pedidos que ele desbloqueou": data, hora, pedido, valor, resultado e a nota que o cliente
+  deu naquele pedido (ou "Cliente ainda não deu nota"). Tocar na linha abre o pedido.
+
+PAINEL > Profissionais (lista)
+- Cada cartão ganhou uma linha: "3 desbloqueios · 2 finalizados · Nota: sem nota".
+
+- Só conta a nota que o CLIENTE deu ao profissional. A nota que o profissional dá ao cliente não entra.
+- Só o painel mudou. Nada no banco, no app do cliente ou do profissional.
