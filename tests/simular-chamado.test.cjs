@@ -57,3 +57,7 @@ console.log('PASS simular chamado: banco, servidor, service worker, app e painel
   const sql2 = fs.readFileSync(path.join(root, 'supabase', '2026-10-10-aviso-abertos-a-todos.sql'), 'utf8');
   assert.ok(sql2.includes("e.evento in ('new_call', 'aberto_todos')") && sql2.includes('to service_role;') && sql2.includes('from public, anon, authenticated;'));
 }
+
+// V11.53: quem usa só o APK não aparece como "não chegou" (o APK 12 não informa a chegada).
+assert.ok(admin.includes("rpc('qf_admin_chamados_teste')") && admin.includes('Enviado ao celular (app Android não informa a chegada)') && admin.includes('!soApk(t)'));
+assert.ok(fs.readFileSync(path.join(root, 'supabase', '2026-10-10-chamados-teste-aparelhos.sql'), 'utf8').includes("if not private.qf_is_admin() then raise exception"));

@@ -1490,6 +1490,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-teste-sit--verde{background:var(--success-100);color:var(--success-600)}
 .qf-teste-sit--amarelo{background:var(--warning-100);color:var(--warning-600)}
 .qf-teste-sit--vermelho{background:var(--danger-100);color:var(--danger-600)}
+.qf-teste-sit--laranja{background:var(--orange-100);color:var(--orange-700)}
 .qf-teste-sit--azul{background:var(--navy-100);color:var(--navy-700)}
 .qf-teste-sit--cinza{background:#eceff4;color:var(--text-secondary)}
 .qf-teste-btn{width:auto;flex:none}
@@ -5910,12 +5911,15 @@ Screens.adminDashboardRender = function () {
     for (let i = 0; i < testes.length; i++) if (String(testes[i].profissional_id) === String(proId)) return testes[i];
     return null;
   }
+  function soApk(t) { return Number(t.apk) > 0 && !Number(t.web) && !(t.envio && Number(t.envio.sent) === 0); }
   function testeSituacao(t) {
     if (!t) return { cor: 'cinza', rotulo: 'Nunca testado', quando: '' };
     if (t.confirmado_em) return { cor: 'verde', rotulo: 'Confirmado pelo profissional', quando: t.confirmado_em };
     if (t.chegou_em) return { cor: 'amarelo', rotulo: 'Chegou no aparelho, não confirmou', quando: t.chegou_em };
     if (Date.now() - (Date.parse(t.enviado_em) || 0) < TESTE_AGUARDA_MS) return { cor: 'azul', rotulo: 'Enviado agora, aguardando', quando: t.enviado_em };
     const semAparelho = t.envio && Number(t.envio.total) === 0;
+    // V11.53: o app Android (APK 12) não informa a chegada; só o PWA marca "chegou" sozinho.
+    if (!semAparelho && soApk(t)) return { cor: 'laranja', rotulo: 'Enviado ao celular (app Android não informa a chegada)', quando: t.enviado_em };
     return { cor: 'vermelho', rotulo: 'Enviado, não chegou no aparelho' + (semAparelho ? ' (sem aparelho cadastrado)' : ''), quando: t.enviado_em };
   }
   function testeEtiquetaHtml(proId) {
@@ -5933,7 +5937,7 @@ Screens.adminDashboardRender = function () {
     const agora = Date.now();
     const conf = l.filter(function (t) { return t.confirmado_em; }).length;
     const chegou = l.filter(function (t) { return t.chegou_em && !t.confirmado_em; }).length;
-    const naoChegou = l.filter(function (t) { return !t.chegou_em && agora - (Date.parse(t.enviado_em) || 0) >= TESTE_AGUARDA_MS; }).length;
+    const naoChegou = l.filter(function (t) { return !t.chegou_em && agora - (Date.parse(t.enviado_em) || 0) >= TESTE_AGUARDA_MS && !soApk(t); }).length;
     function n(rot, v, cor) { return '<div class="qf-adm-num__item"><span>' + rot + '</span><b' + (cor ? ' style="color:' + cor + '"' : '') + '>' + (testes ? v : '…') + '</b></div>'; }
     return n('Testes enviados', l.length) + n('Confirmados', conf, 'var(--success-600)') + n('Chegou e não confirmou', chegou, 'var(--warning-600)') + n('Não chegou no aparelho', naoChegou, 'var(--danger-600)');
   }
@@ -5945,9 +5949,8 @@ Screens.adminDashboardRender = function () {
   async function testeCarregar() {
     if (!cloudOn()) return;
     try {
-      const res = await global.QFAdminCloud.client.from('chamados_teste')
-        .select('id,profissional_id,enviado_em,chegou_em,confirmado_em,envio')
-        .order('enviado_em', { ascending: false }).limit(2000);
+      // V11.53: vem junto o tipo de aparelho (apk/web) para não mostrar "não chegou" a quem usa o APK.
+      const res = await global.QFAdminCloud.client.rpc('qf_admin_chamados_teste');
       if (res.error) throw res.error;
       testes = res.data || [];
     } catch (err) { console.warn('QuemFaz testes', err); if (!testes) testes = []; }
