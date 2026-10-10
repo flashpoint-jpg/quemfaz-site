@@ -1,0 +1,17 @@
+QuemFaz site 11.48 — bônus de cadastro com botão no painel (começa desligado)
+
+BANCO (já aplicado no Supabase em 10/10/2026: supabase/2026-10-10-bonus-cadastro-chave.sql)
+- Nova chave qf_config.bonus_cadastro = {"ativo": false, "valor_centavos": 2500}.
+- O gatilho que dava R$ 25 a todo profissional novo agora lê essa chave. Desligado:
+  cria só a carteira, sem crédito. Quem já recebeu (209 profissionais) continua com o saldo.
+- qf_bonus_cadastro_info() (leitura pública) e qf_admin_salvar_bonus_cadastro()
+  (só admin; valor de R$ 1 a R$ 100).
+
+PAINEL ADMIN (Bônus)
+- Seção "Bônus de cadastro": mostra Ligado/Desligado, liga ou desliga e muda o valor,
+  com confirmação antes de salvar.
+
+SITE E APP DO PROFISSIONAL
+- Página inicial, aviso de cadastro, tela de cadastro, Carteira, "Como funciona" e
+  perguntas frequentes só falam do bônus quando ele está ligado, e com o valor do painel.
+  Desligado: nenhuma promessa de R$ 25.

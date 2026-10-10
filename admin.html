@@ -1477,6 +1477,10 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-chip:hover{background:#fafafa}
 .qf-adm-chip[aria-expanded="true"]{border-color:var(--navy-900);background:var(--navy-100)}
 .qf-adm-card--atalhos .qf-gaveta{margin-top:14px}
+.qf-adm-bonus-cad{display:flex;flex-direction:column;gap:12px}
+.qf-adm-bonus-cad__status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.qf-adm-bonus-cad__check{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;cursor:pointer}
+.qf-adm-bonus-cad__check input{width:18px;height:18px;accent-color:var(--orange-600)}
 .qf-adm-embutido>.section{margin:0 0 20px;padding:20px 22px;background:#fff;border:1px solid #e3e3e3;border-radius:22px}
 /* As telas que já existiam ganham os mesmos cartões brancos (sem sombra, borda fina, cantos de 22px). */
 #app-shell.qf-adm .card{border:1px solid #e3e3e3;box-shadow:none;border-radius:22px}
@@ -7758,8 +7762,51 @@ Screens.adminDashboardRender = function () {
   };
   Screens.adminBonusRender = function () {
     const bonus = global.QFAdminBonus ? global.QFAdminBonus.html() : '';
-    return admPage(bonus ? '<div class="qf-adm-embutido">' + bonus + '</div>' : admCard('Bônus para todos', 'só quem ainda não recebeu', ADM_SO_CONECTADO));
+    return admPage(
+      admCard('Bônus de cadastro', 'crédito automático para profissional novo', cloudOn() ? '<div data-bonus-cadastro><p class="qf-adm-mudo" style="margin:0;">Carregando…</p></div>' : ADM_SO_CONECTADO) +
+      (bonus ? '<div class="qf-adm-embutido">' + bonus + '</div>' : admCard('Bônus para todos', 'só quem ainda não recebeu', ADM_SO_CONECTADO)));
   };
+  // V11.48: liga, desliga e muda o valor do bônus que o profissional ganha ao se cadastrar (qf_config bonus_cadastro).
+  // Quem já recebeu não perde nada; a mudança vale para os próximos cadastros e para os textos do app.
+  function admBonusCadastroHtml(d) {
+    const ativo = !!(d && d.ativo), valor = Number((d && d.valor_centavos) || 2500);
+    return '<form data-bonus-cadastro-form class="qf-adm-bonus-cad">' +
+      '<div class="qf-adm-bonus-cad__status"><span class="qf-adm-sit qf-adm-sit--' + (ativo ? 'fechado' : 'cancelado') + '">' + (ativo ? 'Ligado' : 'Desligado') + '</span>' +
+        '<span>' + (ativo ? 'Cada profissional novo ganha ' + PU.formatCurrency(valor) + ' em créditos ao se cadastrar.' : 'Profissional novo não ganha crédito ao se cadastrar. O app não promete bônus.') + '</span></div>' +
+      '<label class="qf-adm-bonus-cad__check"><input type="checkbox" name="ativo"' + (ativo ? ' checked' : '') + '> Dar bônus para quem se cadastrar</label>' +
+      '<label class="qf-adm-filtro">Valor (R$)<input class="input" type="number" name="valor" min="1" max="100" step="0.01" value="' + (valor / 100).toFixed(2) + '" style="max-width:160px;"></label>' +
+      '<div><button type="submit" class="btn btn--primary btn--sm qf-adm-head__btn">Salvar</button></div>' +
+      '<p class="qf-adm-mudo" style="margin:0;font-size:13px;">Quem já recebeu continua com o crédito. A mudança vale para os próximos cadastros.</p>' +
+    '</form>';
+  }
+  async function admBonusCadastroCarregar(content) {
+    const box = content.querySelector('[data-bonus-cadastro]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_bonus_cadastro_info');
+      if (r.error) throw r.error;
+      box.innerHTML = admBonusCadastroHtml(r.data);
+    } catch (err) { box.innerHTML = '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'; }
+  }
+  document.addEventListener('submit', async function (e) {
+    const f = e.target && e.target.closest && e.target.closest('[data-bonus-cadastro-form]');
+    if (!f) return;
+    e.preventDefault();
+    const ativo = f.ativo.checked, cents = Math.round(Number(String(f.valor.value).replace(',', '.')) * 100);
+    if (!(cents >= 100 && cents <= 10000)) { PU.toast('Use um valor de R$ 1 a R$ 100.', 'danger'); return; }
+    const ok = await PU.confirmDialog({ title: ativo ? 'Ligar bônus de cadastro' : 'Desligar bônus de cadastro',
+      message: ativo ? 'Cada profissional que se cadastrar a partir de agora ganha ' + PU.formatCurrency(cents) + ' em créditos. Confirma?' : 'Profissionais que se cadastrarem a partir de agora não ganham crédito. Quem já recebeu continua com o saldo. Confirma?',
+      okLabel: ativo ? 'Ligar' : 'Desligar' });
+    if (!ok) return;
+    const btn = f.querySelector('[type="submit"]'); if (btn) btn.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_salvar_bonus_cadastro', { p_ativo: ativo, p_valor_centavos: cents });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível salvar.');
+      const box = f.closest('[data-bonus-cadastro]'); if (box) box.innerHTML = admBonusCadastroHtml(r.data);
+      PU.toast(ativo ? 'Bônus de cadastro ligado.' : 'Bônus de cadastro desligado.', 'success');
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); if (btn) btn.disabled = false; }
+  });
   // Configurações: o que antes ficava em "Mais" e não é do dia a dia.
   Screens.adminConfiguracoesRender = function () {
     return admPage(
@@ -7792,6 +7839,7 @@ Screens.adminDashboardRender = function () {
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfterAdm) prevAfterAdm(pattern, content, params, user);
     if (pattern === '/admin/configuracoes') bindMais(content);
+    if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
     if (pattern === '/admin/dashboard') {

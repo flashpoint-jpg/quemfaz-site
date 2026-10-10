@@ -6760,6 +6760,19 @@ alt=""></noscript>
     clearProfessionalNotices: clearProfessionalNotices,
     pendingFlow: pendingFlow
   };
+  // V11.48: bônus de cadastro do profissional vem do painel (qf_config bonus_cadastro).
+  // Enquanto não chega a resposta (ou se estiver desligado), o app não promete bônus.
+  const BONUS_KEY = 'qf_bonus_cadastro_v1';
+  function bonusAplicar(d) {
+    const v = d && d.ativo ? Number(d.valor_centavos) || 0 : 0;
+    global.QFBonusCadastro = { valor: v, texto: v > 0 ? 'R$ ' + (v % 100 ? (v / 100).toFixed(2).replace('.', ',') : String(v / 100)) : '' };
+  }
+  try { bonusAplicar(JSON.parse(localStorage.getItem(BONUS_KEY) || 'null')); } catch (_) { bonusAplicar(null); }
+  if (client) client.rpc('qf_bonus_cadastro_info').then(function (r) {
+    if (r.error || !r.data) return;
+    bonusAplicar(r.data);
+    try { localStorage.setItem(BONUS_KEY, JSON.stringify(r.data)); } catch (_) {}
+  }).catch(function () {});
 })(window);
 
 /* QuemFaz — Web Push real para PWA instalada (HTTPS). */
@@ -7287,7 +7300,7 @@ alt=""></noscript>
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
       '</ol></section>' +
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
-      mobFold('Sou profissional', deskList(['R$ 25 em créditos grátis no cadastro, sem validade','Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender']) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
+      mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
   }
@@ -7338,7 +7351,7 @@ alt=""></noscript>
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 3 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 3 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para profissionais</p>' +
-          deskList(['R$ 25 em créditos grátis no cadastro, sem validade','Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso']) +
+          deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
           '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro"><span>Quero receber pedidos</span>' + icon('arrowRight') + '</button></div>' +
       '</div></section>' +
       '<section class="qf-desk-card qf-desk-recrut" id="qf-sec-recrut" aria-labelledby="qf-desk-rech"><div class="qf-desk-recrut__intro"><p class="qf-desk-kicker">Para empresas</p><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-rech">Recrutamento: precisa contratar funcionário?</h2>' +
@@ -7881,7 +7894,7 @@ alt=""></noscript>
           field('Taxa de visita padrão (opcional)', '<input class="input" name="taxaVisita" inputmode="decimal" placeholder="R$ 0,00">') +
           '</div></details>' +
           '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--navy-800);">Sua foto aparece para o cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">Você começa com R$ 25,00 em créditos de lançamento. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.</div></div></div>' +
+            '<p class="text text--sm" style="color:var(--navy-800);">Sua foto aparece para o cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">' + ((global.QFBonusCadastro || {}).texto ? 'Você começa com ' + global.QFBonusCadastro.texto + ' em créditos de bônus. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.' : 'Você coloca créditos na carteira (Pix, cartão ou boleto) e usa para desbloquear os pedidos que quiser.') + '</div></div></div>' +
           '</div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit">Criar conta de profissional</button></div>' +
           '</div>' +
@@ -8932,7 +8945,7 @@ alt=""></noscript>
           const user = DB.cadastrarProfissional(dados);
           DB.setSession({ role: 'profissional', userId: user.id });
           if (global.QFAtivacao) global.QFAtivacao.boasVindas(user.id);
-          PU.toast('Cadastro criado! Você ganhou R$ 25 em créditos para começar.', 'success');
+          PU.toast('Cadastro criado!' + ((global.QFBonusCadastro || {}).texto ? ' Você ganhou ' + global.QFBonusCadastro.texto + ' em créditos para começar.' : ''), 'success');
           if (sessionStorage.getItem('qf_pending_ad_draft')) {
             global.navigate('/profissional/anuncie', true);
             return;
@@ -11838,7 +11851,7 @@ alt=""></noscript>
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
-            walletInfoRow('money', 'R$ 25 de bônus de lançamento', 'Todo novo profissional começa com R$ 25,00 em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') +
+            ((global.QFBonusCadastro || {}).texto ? walletInfoRow('money', global.QFBonusCadastro.texto + ' de bônus de cadastro', 'Todo novo profissional começa com ' + global.QFBonusCadastro.texto + ' em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') : '') +
             walletInfoRow('phoneCall', 'Contato liberado', 'Depois do desbloqueio, você recebe o WhatsApp do cliente e combina o serviço direto com ele.') +
             walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
             '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
@@ -11958,7 +11971,7 @@ alt=""></noscript>
             return '<div class="list-item"><div class="text--strong" style="min-width:84px;color:var(--orange-600, #c2410c);">' + f.valor + '</div><div class="list-item__body"><div class="list-item__sub">' + f.cats + '</div></div></div>';
           }).join('') +
         '</div>' +
-        '<div class="card card--tight" style="background:var(--success-100);border:none;margin-top:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><div class="text--sm"><strong>Ganhe R$ 25 em créditos no cadastro.</strong> Dá para desbloquear seus primeiros chamados sem pagar nada. Os créditos não vencem.</div></div></div>' +
+        ((global.QFBonusCadastro || {}).texto ? '<div class="card card--tight" style="background:var(--success-100);border:none;margin-top:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><div class="text--sm"><strong>Ganhe ' + global.QFBonusCadastro.texto + ' em créditos no cadastro.</strong> Dá para desbloquear seus primeiros chamados sem pagar nada. Os créditos não vencem.</div></div></div>' : '') +
       '</section>' +
 
       '<section class="section" id="cf-planos">' +
@@ -11996,7 +12009,7 @@ alt=""></noscript>
           cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Na aba Config. (barra de baixo), em Quando receber chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
           cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Na aba Config. (barra de baixo), escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
-          cfFaq('Os R$ 25 de bônus vencem?', 'Não. Eles ficam na sua carteira até você usar.') +
+          cfFaq('Os créditos de bônus vencem?', 'Não. Bônus que você recebeu fica na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
           cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
           cfFaq('Como assino um plano?', 'Na aba Planos (barra de baixo), toque em Assinar e pague por Pix, cartão ou boleto. O plano é ativado sozinho quando o pagamento é confirmado, sem precisar falar com ninguém.') +
@@ -13697,7 +13710,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.47';
+  const APP_VERSION = '11.48';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

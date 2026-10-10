@@ -48,3 +48,14 @@ assert.ok(admin.includes('.qf-adm--menu .qf-adm-side{visibility:visible'));
   assert.equal(sc.f([['Pedido', 'Valor'], ['Pintura; sala', '4,90']]), '﻿Pedido;Valor\r\n"Pintura; sala";4,90');
 }
 console.log('PASS painel com menu lateral: menu, rotas, início, módulos e cores');
+
+// V11.48: bônus de cadastro com chave no painel; o app só promete bônus quando ele está ligado.
+{
+  const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(admin.includes("rpc('qf_admin_salvar_bonus_cadastro', { p_ativo: ativo, p_valor_centavos: cents })"));
+  assert.ok(admin.includes("if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);"));
+  assert.ok(site.includes("client.rpc('qf_bonus_cadastro_info')"));
+  assert.ok(!/R\$ ?25/.test(site), 'o site não pode prometer R$ 25 fixo');
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-10-bonus-cadastro-chave.sql'), 'utf8');
+  assert.ok(sql.includes(`'{"ativo": false, "valor_centavos": 2500}'`) && sql.includes('if not v_ativo or v_valor <= 0 then') && sql.includes('if not private.qf_is_admin() then'));
+}
