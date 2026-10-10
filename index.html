@@ -8306,8 +8306,8 @@ alt=""></noscript>
         // Serviço fora da lista: segue para o pedido com o texto digitado.
         const livre=landingSearch?landingSearch.value.trim():'';
         if(livre.length>=3){try{sessionStorage.removeItem('qf_pending_category');}catch(_){} global.QFHomeDraft={service:livre,descricao:livre};global.navigate('/auth/cliente/cadastro',true);return;}
-        PU.toast('Escreva o que você precisa.','danger');
-        if(landingSearch)landingSearch.focus();
+        // "Pedir grátis" com o campo vazio abre o pedido (etapa 1) em vez de travar na tela inicial.
+        global.navigate('/auth/cliente/cadastro',true);
       });
       // Botão fixo de baixo: aparece só quando o campo de busca sai da tela.
       const landingSticky=content.querySelector('[data-landing-sticky]');
@@ -8326,6 +8326,8 @@ alt=""></noscript>
         if(deskService&&landingSearch&&landingSearchForm){landingSearch.value=deskService.getAttribute('data-desk-service');landingSearchForm.requestSubmit();return;}
         const cat=e.target.closest('[data-landing-cat]');
         if(cat){try{sessionStorage.setItem('qf_pending_category',cat.getAttribute('data-landing-cat'));}catch(_){} global.navigate('/auth/cliente/cadastro',true);return;}
+        // O botão "Pedir grátis" de baixo abre o pedido; só o atalho "Serviços" do menu leva ao campo.
+        if(e.target.closest('.btn[data-home-services]')&&landingSearchForm){landingSearchForm.requestSubmit();return;}
         if(e.target.closest('[data-home-services]')){landingSearch.scrollIntoView({block:'center'});landingSearch.focus();renderLandingSuggestions();return;}
         if(e.target.closest('[data-action="landing-my-orders"]')){const sess=DB.getSession();if(sess&&sess.role==='cliente'){global.navigate('/cliente/pedidos');return;}PU.toast('Os pedidos deste aparelho aparecem aqui depois que você publicar um serviço. Para fazer um pedido, escreva acima o que precisa.', 'info');if(landingSearch)landingSearch.scrollIntoView({block:'center',behavior:'smooth'});return;}
         if(e.target.closest('[data-action="landing-login"]')){global.navigate('/auth/profissional/login',true);return;}
