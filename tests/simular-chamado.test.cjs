@@ -47,3 +47,13 @@ assert.ok(push.includes('tipo: String(payload.tipo || "chamado")') && push.inclu
  'Testes enviados', 'Confirmados', 'Chegou e não confirmou', 'Não chegou no aparelho', "action: 'teste_chamado'", '}, 5000);']
   .forEach((t) => assert.ok(admin.includes(t), t));
 console.log('PASS simular chamado: banco, servidor, service worker, app e painel');
+
+// V11.52: aviso simples para quem é da profissão quando o pedido vira "aberto a todos".
+{
+  const i = push.indexOf('async function notifyOpenToAll(callId: string) {');
+  const bloco = push.slice(i, push.indexOf('async function progressiveNewCallPush', i));
+  assert.ok(bloco.includes('qf_push_aberto_todos_destinatarios') && bloco.includes('p_evento: "aberto_todos"') && bloco.includes('strong: false'));
+  assert.ok(push.includes('const openToAll = await notifyOpenToAll(call.id);') && push.includes('if (event === "aberto_todos")'));
+  const sql2 = fs.readFileSync(path.join(root, 'supabase', '2026-10-10-aviso-abertos-a-todos.sql'), 'utf8');
+  assert.ok(sql2.includes("e.evento in ('new_call', 'aberto_todos')") && sql2.includes('to service_role;') && sql2.includes('from public, anon, authenticated;'));
+}

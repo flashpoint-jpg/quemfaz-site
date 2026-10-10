@@ -1,0 +1,14 @@
+QuemFaz 11.52 — aviso para a profissão quando o pedido vira "aberto a todos"
+
+Problema: pedido sem ninguém depois da etapa 3 (ex.: Azulejista em São Paulo) ficava em
+"Abertos a todos" para os 31 azulejistas do app, mas só 1 recebeu aviso (os outros estavam
+a mais de 100 km). Quem está longe só via se abrisse o app.
+
+Agora (servidor, já publicado — quemfaz-push v38 + supabase/2026-10-10-aviso-abertos-a-todos.sql):
+- Na etapa 3, depois da ampliação de 100 km, quem é da MESMA profissão em qualquer região e
+  ainda não foi avisado recebe um aviso comum, SEM toque de chamado:
+  "Pedido de <serviço> aberto em <cidade>/<UF> — Ninguém da região pegou ainda. Se você atende
+  lá, veja em Abertos a todos."
+- Só vale para pedido ainda sem nenhum desbloqueio. Um aviso por pessoa por pedido
+  (qf_push_entregas, evento "aberto_todos"); não conta como aviso de chamado.
+- Evento interno "aberto_todos" permite avisar um pedido que já passou da etapa 3.

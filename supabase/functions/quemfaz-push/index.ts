@@ -550,7 +550,37 @@ async function sendCascadeStage3(callId: string) {
     tag: "qf-sem-resposta-" + call.id,
     strong: true,
   });
-  return { stopped: false, expansion, admin: adminResult };
+  const openToAll = await notifyOpenToAll(call.id);
+  return { stopped: false, expansion, admin: adminResult, aberto_todos: openToAll };
+}
+
+// V11.52: pedido virou "aberto a todos" (ninguém pegou depois da etapa 3): aviso comum, SEM toque de
+// chamado, para quem é da mesma profissão em qualquer região e ainda não foi avisado desse pedido.
+// Fica em qf_push_entregas com evento "aberto_todos" (não repete e não conta como aviso de chamado).
+async function notifyOpenToAll(callId: string) {
+  const { data: ids, error } = await admin.rpc("qf_push_aberto_todos_destinatarios", { p_chamado_id: callId });
+  if (error) { console.error("aberto_todos destinatarios", error); return { recipients: 0, sent: 0, total: 0 }; }
+  const candidates = Array.isArray(ids) ? ids.map(String) : [];
+  if (!candidates.length) return { recipients: 0, sent: 0, total: 0 };
+  const { data: reserved, error: reserveErr } = await admin.rpc("qf_push_reservar_entregas", {
+    p_chamado_id: callId,
+    p_user_ids: candidates,
+    p_evento: "aberto_todos",
+    p_raio_etapa_km: null,
+  });
+  if (reserveErr) { console.error("aberto_todos reserva", reserveErr); return { recipients: 0, sent: 0, total: 0 }; }
+  const fresh = Array.isArray(reserved) ? reserved.map(String) : [];
+  if (!fresh.length) return { recipients: 0, sent: 0, total: 0 };
+  const { data: call } = await admin.from("qf_chamados").select("id,titulo,cidade,uf").eq("id", callId).maybeSingle();
+  const place = [call?.cidade, call?.uf].filter(Boolean).join("/");
+  const result = await sendToUsers(fresh, {
+    title: "Pedido de " + (call?.titulo || "serviço") + " aberto" + (place ? " em " + place : ""),
+    body: "Ninguém da região pegou ainda. Se você atende lá, veja em Abertos a todos.",
+    url: "/#/profissional/servicos/disponiveis",
+    tag: "qf-aberto-todos-" + callId,
+    strong: false,
+  });
+  return { recipients: fresh.length, ...result };
 }
 
 async function progressiveNewCallPush(callId: string) {
@@ -721,6 +751,15 @@ Deno.serve(async (req) => {
       } catch (err) {
         console.error("cascade_stage2", err);
         return json({ error: "cascade_stage2_failed" }, 500);
+      }
+    }
+
+    if (event === "aberto_todos") {
+      try {
+        return json({ ok: true, aberto_todos: await notifyOpenToAll(callId) });
+      } catch (err) {
+        console.error("aberto_todos", err);
+        return json({ error: "aberto_todos_failed" }, 500);
       }
     }
 
