@@ -29,7 +29,7 @@ begin
       '⚠️ Pedido sem profissional: ' || coalesce(nullif(trim(new.titulo), ''), 'Serviço'),
       concat_ws(' · ', nullif(trim(new.bairro), ''), nullif(concat_ws('/', new.cidade, new.uf), '')) ||
         ' — ninguém cadastrado nesse serviço, então ninguém foi avisado. Abra o painel e decida para quem mandar.',
-      '/admin.html#/admin/servicos/' || new.id::text,
+      '/admin.html#/admin/sem-profissional',
       'qf-sem-prof-' || new.id::text);
   end if;
   return new;

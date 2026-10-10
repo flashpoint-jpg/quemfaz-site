@@ -8110,7 +8110,8 @@ Screens.adminDashboardRender = function () {
       const r = await global.QFAdminCloud.client.rpc('qf_admin_proximos_ao_pedido', { p_pedidos: 12, p_por_pedido: 15 });
       if (r.error) throw r.error;
       if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
-      box.innerHTML = admProximosHtml(r.data);
+      const h = admProximosHtml(r.data);
+      if (box.__qfHtml !== h) { box.__qfHtml = h; box.innerHTML = h; }
     } catch (err) { box.innerHTML = admCard('Próximos ao pedido', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
   }
   Screens.adminProximosRender = function () {
@@ -8151,10 +8152,23 @@ Screens.adminDashboardRender = function () {
       const r = await global.QFAdminCloud.client.rpc('qf_admin_pedidos_sem_profissional');
       if (r.error) throw r.error;
       if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
-      box.innerHTML = admSemProfHtml(r.data);
+      const h = admSemProfHtml(r.data);
+      if (box.__qfHtml !== h) { box.__qfHtml = h; box.innerHTML = h; }
     } catch (err) { box.innerHTML = admCard('Pedidos sem profissional', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
   }
+  // Tempo real nas duas telas que vêm do servidor: recarrega a cada 20 segundos, só troca o que mudou.
+  let semProfMexido = false;
+  document.addEventListener('change', function (e) { if (e.target && e.target.closest && e.target.closest('.qf-semprof')) semProfMexido = true; });
+  setInterval(function () {
+    if (document.hidden) return;
+    const prox = document.querySelector('[data-adm-proximos]');
+    // Não recarrega "Próximos" com um pedido aberto no meio da leitura fechando sozinho: só troca se o conteúdo mudou.
+    if (prox && prox.parentNode) admProximosCarregar(prox.parentNode);
+    const sem = document.querySelector('[data-adm-semprof]');
+    if (sem && sem.parentNode && !semProfMexido) admSemProfCarregar(sem.parentNode);
+  }, 20000);
   Screens.adminSemProfRender = function () {
+    semProfMexido = false;
     return admPage('<p class="qf-prox__intro">Pedidos abertos que nenhum profissional recebeu, normalmente porque o cliente escreveu um serviço que ninguém tem cadastrado. Escolha o serviço certo e o pedido é enviado na hora para os profissionais dele.</p>' +
       '<div data-adm-semprof>' + admCard('Pedidos sem profissional', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-semprof');
   };
@@ -8762,10 +8776,11 @@ Screens.adminDashboardRender = function () {
     return global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
   }
   function atualizarPainelPorTras(path) {
-    if (painelSincronizando || Date.now() - painelSincronizadoEm < 20000) return;
+    if (painelSincronizando || Date.now() - painelSincronizadoEm < 12000) return;
     painelSincronizando = true;
     sincronizarPainel().then(function () {
       painelSincronizadoEm = Date.now();
+      avisarPedidoNovo();
       // Só redesenha se a pessoa continua na mesma tela e ainda não tocou em nada dela.
       if (telaMexida || currentPath() !== path) return;
       const f = matchRoute(path), s = currentSession(), u = currentUser();
@@ -8788,9 +8803,45 @@ Screens.adminDashboardRender = function () {
   }
   if (typeof document !== 'undefined' && document.addEventListener) ['pointerdown', 'keydown', 'input'].forEach(function (ev) {
     document.addEventListener(ev, function (e) {
-      if (e.target && e.target.closest && e.target.closest('#app-content')) telaMexida = true;
+      if (e.target && e.target.closest && e.target.closest('#app-content')) { telaMexida = true; telaMexidaEm = Date.now(); }
     }, true);
   });
+
+  // V11.68: painel em tempo real. A cada 15 segundos busca os dados por trás, sem F5 e sem piscar:
+  // a tela só é redesenhada se algo mudou, e pedido novo aparece num aviso no canto.
+  var pedidosVistos = null, telaMexidaEm = 0;
+  function avisarPedidoNovo() {
+    let lista = [];
+    try { lista = (global.DB && global.DB.allRequests ? global.DB.allRequests() : []) || []; } catch (_) { return; }
+    const ids = {};
+    lista.forEach(function (r) { ids[r.id] = 1; });
+    if (pedidosVistos) {
+      const novos = lista.filter(function (r) { return !pedidosVistos[r.id]; });
+      if (novos.length && global.PU && global.PU.toast) {
+        const r = novos[0];
+        const onde = [r.endereco && r.endereco.bairro, r.endereco && r.endereco.cidade].filter(Boolean).join(' · ');
+        global.PU.toast(novos.length === 1 ? 'Chegou pedido novo: ' + String(r.titulo || 'Serviço') + (onde ? ' · ' + onde : '') : 'Chegaram ' + novos.length + ' pedidos novos.', 'success');
+      }
+    }
+    pedidosVistos = ids;
+  }
+  if (typeof document !== 'undefined' && typeof setInterval === 'function') {
+    const tempoReal = function () {
+      if (document.hidden) return;
+      const p = currentPath(), f = matchRoute(p), s = currentSession();
+      if (!f || f.route.anon || !s || s.role !== 'admin') return;
+      // Tocou na tela há mais de 30 segundos e não está preenchendo nada: volta a atualizar sozinha.
+      if (telaMexida && Date.now() - telaMexidaEm > 30000) {
+        const c = document.getElementById('app-content'), a = document.activeElement;
+        const digitando = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName || '');
+        const aberto = document.querySelector('#sheet-overlay:not(.is-hidden), dialog[open]');
+        if (c && !digitando && !aberto && !c.querySelector('form, textarea, details[open]:not(.qf-prox)')) telaMexida = false;
+      }
+      atualizarPainelPorTras(p);
+    };
+    setInterval(tempoReal, 15000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) tempoReal(); });
+  }
 
   function semMolduraAdmin(shell) { shell.className = ''; document.body.classList.remove('qf-adm-body'); }
   function renderAnon(found) {

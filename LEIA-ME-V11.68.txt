@@ -1,0 +1,9 @@
+QuemFaz 11.68 — painel em tempo real (sem F5)
+
+- O painel busca os dados sozinho a cada 15 segundos enquanto a aba está aberta. A tela só é redesenhada quando
+  algo mudou, então não pisca. Ao voltar para a aba, atualiza na hora.
+- Chegou pedido novo: aparece o aviso "Chegou pedido novo: serviço · bairro" no canto, em qualquer tela do painel.
+- Se você tocou na tela, ela espera 30 segundos parada para voltar a atualizar, e não atualiza enquanto você
+  está preenchendo um formulário ou com uma janela aberta (para não apagar o que está digitando).
+- "Próximos ao pedido" e "Pedidos sem profissional" também recarregam sozinhas (a cada 20 segundos).
+- O aviso de "Pedido sem profissional" no celular agora abre direto a tela Pedidos sem profissional.
