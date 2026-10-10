@@ -1579,6 +1579,20 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   .qf-adm-head__btn{flex:1 1 auto}
 }
 @media (prefers-reduced-motion:reduce){.qf-adm-side{transition:none!important}}
+
+/* Perfil do profissional verificado no painel: faixa azul com dourado. */
+.card.qf-adm-ver{padding:0;overflow:hidden}
+.qf-adm-ver__faixa{background:linear-gradient(100deg,#0b1d3a 0%,#16335c 60%,#0b1d3a 100%);color:#fff;display:flex;align-items:center;gap:10px;padding:12px 16px;position:relative}
+.qf-adm-ver__faixa:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#b8862b,#f6d77a,#b8862b)}
+.qf-adm-ver__faixa svg{width:24px;height:24px;flex:none}
+.qf-adm-ver__faixa b{font-size:14px;font-weight:800;flex:1;line-height:1.2}
+.qf-adm-ver__faixa em{font-style:normal;font-size:11px;font-weight:800;letter-spacing:.06em;color:#3a2a05;background:linear-gradient(90deg,#f6d77a,#e2b24a);border-radius:999px;padding:5px 10px;text-transform:uppercase;flex:none}
+.qf-adm-ver__corpo{padding:18px 16px 12px;gap:16px}
+.qf-adm-ver__foto{position:relative;border-radius:50%;box-shadow:0 0 0 3px #fff,0 0 0 6px #e2b24a}
+.qf-adm-ver__tick{position:absolute;right:-5px;bottom:-3px;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#f6d77a,#c9952f);border:3px solid #fff;display:grid;place-items:center}
+.qf-adm-ver__tick svg{width:14px;height:14px}
+.badge.qf-adm-ver__chip{background:linear-gradient(90deg,#f6d77a,#e2b24a);color:#3a2a05}
+.qf-adm-ver__sub{font-size:12.5px;color:var(--text-secondary,#6b7890);padding:0 16px 14px}
 </style>
 </head>
 <body>
@@ -6298,7 +6312,11 @@ Screens.adminDashboardRender = function () {
     const cidadeUf = e ? [e.cidade || '', e.uf || ''].filter(Boolean).join('/') : '';
     const endereco = e ? [ruaNumero, e.bairro || '', cidadeUf, e.cep ? 'CEP ' + e.cep : '', e.complemento || ''].filter(Boolean).join(' · ') : 'Não informado';
     return '<div class="view">' +
-      '<div class="card row"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + profBadges(p) + '</div></div></div>' +
+      // Selo do verificado no perfil: faixa azul com dourado, aro dourado na foto e etiqueta dourada.
+      '<div class="card' + (p.verificado ? ' qf-adm-ver' : ' row') + '">' +
+      (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#0b1d3a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
+      '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + (p.fotoUrl ? '<img src="' + PU.escapeHtml(p.fotoUrl) + '" alt="Selfie do profissional">' : PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
+      (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
       adminProfAtivHtml(p) +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
         '<div class="card row" style="align-items:center;">' +
