@@ -1478,6 +1478,15 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-chip[aria-expanded="true"]{border-color:var(--navy-900);background:var(--navy-100)}
 .qf-adm-card--atalhos .qf-gaveta{margin-top:14px}
 .qf-adm-bonus-cad{display:flex;flex-direction:column;gap:12px}
+/* V11.55: Planos dos profissionais */
+.qf-adm-planos{display:flex;flex-direction:column;gap:12px}
+.qf-adm-plano{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;padding:14px 16px;border:1px solid #e3e3e3;border-radius:16px;background:#fff}
+.qf-adm-plano__nome{display:flex;flex-direction:column;gap:2px;min-width:120px;align-self:center}
+.qf-adm-plano__nome strong{font-size:16px}
+.qf-adm-plano__nome span{font-size:12px;color:var(--text-secondary)}
+.qf-adm-plano .qf-adm-filtro{flex:0 1 130px}
+.qf-adm-plano .qf-adm-filtro .input{height:40px;border-radius:10px}
+.qf-adm-plano__cada{flex:1 1 150px;align-self:center;font-size:13px;color:var(--text-secondary)}
 /* V11.51: Simular chamado */
 .qf-teste-resumo{margin-bottom:16px}
 .qf-teste-linha{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:8px 0 2px;padding:10px 14px;background:#fff;border:1px solid #e3e3e3;border-radius:16px}
@@ -7913,6 +7922,114 @@ Screens.adminDashboardRender = function () {
       PU.toast(ativo ? 'Bônus de cadastro ligado.' : 'Bônus de cadastro desligado.', 'success');
     } catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); if (btn) btn.disabled = false; }
   });
+  // ---------------- V11.55: Planos dos profissionais (preço editável + quem assinou ou tentou) ----------------
+  const ADM_PLANO_SIT = {
+    pago: ['fechado', 'Pago'],
+    pago_sem_conta: ['aguardando', 'Pago, falta criar a conta'],
+    aguardando: ['aguardando', 'Aguardando pagamento'],
+    vencido: ['cancelado', 'Não pagou (venceu)'],
+    nao_gerou: ['cancelado', 'Não gerou a cobrança'],
+    cancelado: ['cancelado', 'Cancelado']
+  };
+  function admPlanoQuando(iso) {
+    const d = new Date(iso || '');
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+  function admPlanoZap(fone, nome, plano) {
+    let n = String(fone || '').replace(/\D/g, '');
+    if (!n) return '';
+    if (n.length <= 11) n = '55' + n;
+    const msg = 'Oi' + (nome ? ', ' + String(nome).split(' ')[0] : '') + '! Aqui é do QuemFaz. Vi que você escolheu o plano ' + plano + ' e o pagamento não foi concluído. Posso te ajudar?';
+    return 'https://wa.me/' + n + '?text=' + encodeURIComponent(msg);
+  }
+  function admPlanosHtml(d) {
+    const esc = PU.escapeHtml, planos = (d && d.planos) || [], lista = (d && d.lista) || [];
+    const nomes = {}; planos.forEach(function (p) { nomes[p.plano] = p.nome; });
+    const editar = planos.map(function (p) {
+      const cada = Math.round(p.preco_centavos / Math.max(1, p.chamados));
+      return '<form class="qf-adm-plano" data-plano-form="' + esc(p.plano) + '" data-plano-nome="' + esc(p.nome) + '">' +
+        '<div class="qf-adm-plano__nome"><strong>' + esc(p.nome) + '</strong><span>' + (Number(p.ativos) || 0) + ' ativo' + (Number(p.ativos) === 1 ? '' : 's') + ' agora</span></div>' +
+        '<label class="qf-adm-filtro">Preço (R$)<input class="input" type="number" name="preco" min="1" max="5000" step="0.01" value="' + (p.preco_centavos / 100).toFixed(2) + '"></label>' +
+        '<label class="qf-adm-filtro">Chamados<input class="input" type="number" name="chamados" min="1" max="1000" step="1" value="' + Number(p.chamados) + '"></label>' +
+        '<label class="qf-adm-filtro">Vale por (dias)<input class="input" type="number" name="dias" min="1" max="365" step="1" value="' + Number(p.dias) + '"></label>' +
+        '<div class="qf-adm-plano__cada">sai a <strong data-plano-cada>' + PU.formatCurrency(cada) + '</strong> por chamado</div>' +
+        '<button type="submit" class="btn btn--primary btn--sm qf-adm-head__btn">Salvar</button>' +
+      '</form>';
+    }).join('');
+    const conta = { pago: 0, aguardando: 0, vencido: 0 }; let recebido = 0;
+    lista.forEach(function (x) {
+      if (x.situacao === 'pago' || x.situacao === 'pago_sem_conta') { conta.pago++; recebido += Number(x.valor_centavos || 0); }
+      else if (x.situacao === 'aguardando') conta.aguardando++;
+      else if (x.situacao === 'vencido') conta.vencido++;
+    });
+    const linhas = lista.map(function (x) {
+      const sit = ADM_PLANO_SIT[x.situacao] || ADM_PLANO_SIT.cancelado;
+      const plano = nomes[x.plano] || x.plano;
+      const pago = x.situacao === 'pago' || x.situacao === 'pago_sem_conta';
+      const zap = pago && x.situacao !== 'pago_sem_conta' ? '' : admPlanoZap(x.telefone, x.nome, plano);
+      const resta = x.situacao === 'pago' && x.chamados_total != null
+        ? '<div class="qf-adm-mudo" style="font-size:12px;">' + Number(x.chamados_restantes || 0) + ' de ' + Number(x.chamados_total) + ' chamados' + (x.valido_ate ? ' · até ' + new Date(x.valido_ate).toLocaleDateString('pt-BR') : '') + '</div>' : '';
+      return '<tr><td><strong>' + esc(x.nome || x.email || 'Sem nome') + '</strong><div class="qf-adm-mudo" style="font-size:12px;">' + esc(x.telefone || x.email || '') + (x.origem === 'cadastro' ? ' · ainda sem conta' : '') + '</div></td>' +
+        '<td>' + esc(plano) + '</td>' +
+        '<td>' + PU.formatCurrency(Number(x.valor_centavos || 0)) + '<div class="qf-adm-mudo" style="font-size:12px;">' + esc(x.metodo === 'pix' ? 'Pix' : x.metodo === 'cartao' ? 'Cartão' : x.metodo === 'boleto' ? 'Boleto' : (x.metodo || '')) + '</div></td>' +
+        '<td><span class="qf-adm-sit qf-adm-sit--' + sit[0] + '">' + sit[1] + '</span>' + resta + '</td>' +
+        '<td>' + esc(admPlanoQuando(pago ? (x.aprovado_em || x.criado_em) : x.criado_em)) + '</td>' +
+        '<td>' + (zap ? '<a class="btn btn--outline btn--sm" style="width:auto;" target="_blank" rel="noopener" href="' + esc(zap) + '">' + icon('chat') + ' Chamar</a>' : '') + '</td></tr>';
+    });
+    return admCard('Preço dos planos', 'vale na hora para novas assinaturas',
+        '<div class="qf-adm-planos">' + editar + '</div>' +
+        '<p class="qf-adm-mudo" style="margin:12px 0 0;font-size:13px;">O app passa a mostrar o preço novo sozinho. Quem já tinha gerado o Pix com o preço antigo ainda consegue pagar e recebe o plano como estava.</p>') +
+      admCard('Quem assinou ou tentou assinar', conta.pago + ' pago' + (conta.pago === 1 ? '' : 's') + ' · ' + PU.formatCurrency(recebido) + ' recebidos · ' + conta.aguardando + ' aguardando · ' + conta.vencido + ' não pagaram',
+        admTabela(['Profissional', 'Plano', 'Valor', 'Situação', 'Quando', ''], linhas, lista.length ? admLinhas(lista.length, 'registro', 'registros') : '', 'Ninguém escolheu um plano ainda.'));
+  }
+  async function admPlanosCarregar(content) {
+    const box = content.querySelector('[data-adm-planos]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_planos_painel');
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
+      box.innerHTML = admPlanosHtml(r.data);
+    } catch (err) { box.innerHTML = admCard('Planos dos profissionais', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
+  }
+  Screens.adminPlanosRender = function () {
+    return admPage('<div data-adm-planos>' + admCard('Planos dos profissionais', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>');
+  };
+  function admPlanoLer(f) {
+    return {
+      preco: Math.round(Number(String(f.preco.value).replace(',', '.')) * 100),
+      chamados: Math.round(Number(f.chamados.value)),
+      dias: Math.round(Number(f.dias.value))
+    };
+  }
+  document.addEventListener('input', function (e) {
+    const f = e.target && e.target.closest && e.target.closest('[data-plano-form]');
+    if (!f) return;
+    const v = admPlanoLer(f), alvo = f.querySelector('[data-plano-cada]');
+    if (alvo && v.preco > 0 && v.chamados > 0) alvo.textContent = PU.formatCurrency(Math.round(v.preco / v.chamados));
+  });
+  document.addEventListener('submit', async function (e) {
+    const f = e.target && e.target.closest && e.target.closest('[data-plano-form]');
+    if (!f) return;
+    e.preventDefault();
+    const v = admPlanoLer(f), nome = f.getAttribute('data-plano-nome') || 'plano';
+    if (!(v.preco >= 100 && v.preco <= 500000)) { PU.toast('Use um preço de R$ 1 a R$ 5.000.', 'danger'); return; }
+    if (!(v.chamados >= 1 && v.chamados <= 1000)) { PU.toast('Use de 1 a 1.000 chamados.', 'danger'); return; }
+    if (!(v.dias >= 1 && v.dias <= 365)) { PU.toast('Use de 1 a 365 dias.', 'danger'); return; }
+    const ok = await PU.confirmDialog({ title: 'Mudar o plano ' + nome,
+      message: 'O plano ' + nome + ' passa a custar ' + PU.formatCurrency(v.preco) + ', com ' + v.chamados + ' chamados, valendo por ' + v.dias + ' dias (' + PU.formatCurrency(Math.round(v.preco / v.chamados)) + ' por chamado). Vale na hora para quem assinar a partir de agora. Confirma?',
+      okLabel: 'Salvar' });
+    if (!ok) return;
+    const btn = f.querySelector('[type="submit"]'); if (btn) btn.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_salvar_plano', { p_plano: f.getAttribute('data-plano-form'), p_preco_centavos: v.preco, p_chamados: v.chamados, p_dias: v.dias });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível salvar.');
+      const box = f.closest('[data-adm-planos]'); if (box) box.innerHTML = admPlanosHtml(r.data);
+      PU.toast('Plano ' + nome + ' atualizado.', 'success');
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); if (btn) btn.disabled = false; }
+  });
   // Configurações: o que antes ficava em "Mais" e não é do dia a dia.
   Screens.adminConfiguracoesRender = function () {
     return admPage(
@@ -7946,6 +8063,7 @@ Screens.adminDashboardRender = function () {
     if (prevAfterAdm) prevAfterAdm(pattern, content, params, user);
     if (pattern === '/admin/configuracoes') bindMais(content);
     if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
+    if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
     if (pattern === '/admin/dashboard') {
@@ -8058,6 +8176,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
     { pattern: '/admin/comunicados', role: 'admin', title: 'Comunicados', render: Screens.adminComunicadosRender },
     { pattern: '/admin/bonus', role: 'admin', title: 'Bônus', render: Screens.adminBonusRender },
+    { pattern: '/admin/planos', role: 'admin', title: 'Planos dos profissionais', render: Screens.adminPlanosRender },
     { pattern: '/admin/configuracoes', role: 'admin', title: 'Configurações', render: Screens.adminConfiguracoesRender },
     { pattern: '/admin/versao', role: 'admin', title: 'Versão do app', back: '/admin/configuracoes', render: Screens.adminVersaoRender },
   ];
@@ -8212,6 +8331,7 @@ Screens.adminDashboardRender = function () {
     { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
     { id: 'comunicados', label: 'Comunicados', icon: 'megaphone', route: '/admin/comunicados', also: ['/admin/avisar-acesso', '/admin/sem-push'] },
     { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
+    { id: 'assinaturas', label: 'Planos dos profissionais', icon: 'wallet', route: '/admin/planos' },
     { id: 'planos', label: 'Planos e anúncios', icon: 'image', route: '/admin/anuncios' },
     { id: 'suporte', label: 'Suporte', icon: 'chat', route: '/admin/suporte', also: ['/admin/suporte/:id'] },
     { id: 'recrutamento', label: 'Recrutamento', icon: 'briefcase', route: '/admin/recrutamento' },
@@ -8228,6 +8348,7 @@ Screens.adminDashboardRender = function () {
     '/admin/verificacoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
     '/admin/comunicados': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/avisar-acesso">' + icon('users') + 'Avisar quem não entrou</button>',
     '/admin/bonus': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
+    '/admin/planos': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/pagamentos">' + icon('money') + 'Ver receita</button>',
     '/admin/configuracoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/categorias">' + icon('tag') + 'Categorias</button>',
   };
   function adminMenuAtivo(pattern) {

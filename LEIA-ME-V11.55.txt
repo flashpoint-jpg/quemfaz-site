@@ -1,0 +1,21 @@
+QuemFaz 11.55 — planos dos profissionais no painel
+
+PAINEL (menu novo "Planos dos profissionais")
+- Preço dos planos: muda preço, quantidade de chamados e validade (dias) do Mensal, Pro e Premium.
+  Vale na hora para novas assinaturas. Mostra quanto sai por chamado enquanto você digita.
+- Quem assinou ou tentou assinar: nome, WhatsApp, plano, valor, situação (pago, aguardando,
+  não pagou, pago e falta criar a conta) e botão "Chamar" que abre o WhatsApp com a mensagem pronta.
+  Inclui quem parou no Pix do cadastro e ainda não tem conta.
+
+APP
+- Cadastro, Carteira, aba Planos, "Como funciona" e o incentivo ao plano leem o preço do banco
+  (qf_planos_catalogo). Não há mais preço de plano escrito à mão; os textos "sai a R$ X" e
+  "até X% mais barato" são calculados.
+
+BANCO (supabase/2026-10-10-planos-no-painel.sql, já aplicado)
+- qf_admin_salvar_plano e qf_admin_planos_painel (só admin).
+- qf_planos_catalogo_hist: quem gerou o Pix no preço antigo e pagou depois da troca recebe o plano.
+
+TESTES
+- tests/planos-no-painel.test.cjs (novo). tests/publicacao-leve.test.cjs já falhava antes desta
+  versão: a página inicial publicada passou de 200 KB (201 KB).

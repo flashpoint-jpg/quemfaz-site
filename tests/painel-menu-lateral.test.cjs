@@ -8,7 +8,7 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // Menu na ordem combinada; cada rota do menu existe.
-const menu = ['Início', 'Pedidos', 'Desbloqueios', 'Profissionais', 'Por cidade', 'Clientes', 'Receita', 'Verificações', 'Comunicados', 'Bônus', 'Planos e anúncios', 'Suporte', 'Recrutamento', 'Configurações'];
+const menu = ['Início', 'Pedidos', 'Desbloqueios', 'Profissionais', 'Por cidade', 'Clientes', 'Receita', 'Verificações', 'Comunicados', 'Bônus', 'Planos dos profissionais', 'Planos e anúncios', 'Suporte', 'Recrutamento', 'Configurações'];
 const bloco = admin.slice(admin.indexOf('const ADMIN_MENU = ['), admin.indexOf('];', admin.indexOf('const ADMIN_MENU = [')));
 const labels = [...bloco.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
 assert.deepEqual(labels, menu);
@@ -63,7 +63,8 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
 // V11.49: plano Premium e etapa 5 do cadastro (escolha do plano).
 {
   const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert.ok(site.includes("{ id: 'premium', nome: 'Premium', preco: 19990, chamados: 60 }"));
+  // V11.55: os números do Premium vêm de QFPlanos (painel); 19990 / 60 é só o ponto de partida.
+  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 60, dias: 30 }") && site.includes("qfCadPlano('premium', 'MAIS COMPLETO'"));
   assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
   assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
   // V11.50: plano pago vai para o pagamento antes da conta; só o boleto ainda abre na Carteira depois do cadastro.

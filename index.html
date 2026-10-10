@@ -6856,6 +6856,54 @@ alt=""></noscript>
     clearProfessionalNotices: clearProfessionalNotices,
     pendingFlow: pendingFlow
   };
+  // V11.55: preço, quantidade de chamados e validade dos planos vêm do painel (qf_planos_catalogo).
+  // Os números abaixo são só o ponto de partida até a resposta chegar (fica guardada para a próxima abertura).
+  const PLANOS_KEY = 'qf_planos_catalogo_v1';
+  const QFPlanos = global.QFPlanos = (function () {
+    const AVULSO_MAIS_CARO = 1290;
+    const dados = {
+      mensal: { nome: 'Mensal', preco: 4990, chamados: 10, dias: 30 },
+      pro: { nome: 'Pro', preco: 9990, chamados: 25, dias: 30 },
+      premium: { nome: 'Premium', preco: 19990, chamados: 60, dias: 30 }
+    };
+    function brl(c) { return 'R$ ' + (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
+    function get(id) { return dados[id] || dados.mensal; }
+    function cadaCentavos(id) { const p = get(id); return Math.round(p.preco / Math.max(1, p.chamados)); }
+    return {
+      ids: ['mensal', 'pro', 'premium'],
+      brl: brl,
+      // Devolve true quando algum número mudou.
+      aplicar: function (rows) {
+        let mudou = false;
+        (Array.isArray(rows) ? rows : []).forEach(function (r) {
+          const p = r && dados[r.plano];
+          const preco = Number(r && r.preco_centavos), chamados = Number(r && r.chamados), dias = Number(r && r.dias);
+          if (!p || !(preco > 0) || !(chamados > 0) || !(dias > 0)) return;
+          if (p.preco !== preco || p.chamados !== chamados || p.dias !== dias) mudou = true;
+          p.preco = preco; p.chamados = chamados; p.dias = dias;
+        });
+        return mudou;
+      },
+      nome: function (id) { return get(id).nome; },
+      valor: function (id) { return get(id).preco; },
+      preco: function (id) { return brl(get(id).preco); },
+      chamados: function (id) { return get(id).chamados; },
+      dias: function (id) { return get(id).dias; },
+      cada: function (id) { return brl(cadaCentavos(id)); },
+      // Quanto sai mais barato que o chamado avulso mais caro (R$ 12,90). 0 = não compensa.
+      pct: function (id) { return Math.max(0, Math.round((1 - cadaCentavos(id) / AVULSO_MAIS_CARO) * 100)); }
+    };
+  })();
+  try { QFPlanos.aplicar(JSON.parse(localStorage.getItem(PLANOS_KEY) || 'null')); } catch (_) {}
+  if (client) client.from('qf_planos_catalogo').select('plano,preco_centavos,chamados,dias').then(function (r) {
+    if (r.error || !Array.isArray(r.data) || !r.data.length) return;
+    const mudou = QFPlanos.aplicar(r.data);
+    try { localStorage.setItem(PLANOS_KEY, JSON.stringify(r.data)); } catch (_) {}
+    // Preço mudou no painel e a tela aberta mostra plano: redesenha (menos no meio do cadastro, para não apagar o que foi digitado).
+    if (mudou && /^#\/(profissional\/(carteira|planos)|como-funciona)/.test(location.hash || '')) {
+      try { global.dispatchEvent(new HashChangeEvent('hashchange')); } catch (_) {}
+    }
+  }, function () {});
   // V11.48: bônus de cadastro do profissional vem do painel (qf_config bonus_cadastro).
   // Enquanto não chega a resposta (ou se estiver desligado), o app não promete bônus.
   const BONUS_KEY = 'qf_bonus_cadastro_v1';
@@ -7349,15 +7397,22 @@ alt=""></noscript>
   const DB = global.DB, PU = global.PU, icon = global.icon, Screens = global.Screens;
 
   // V11.49: planos mostrados na etapa 5 do cadastro do profissional (mesmos preços da Carteira e do banco).
+  // V11.55: preço, chamados e validade vêm de QFPlanos (painel); os textos fazem a conta sozinhos.
+  function qfCadPlano(id, selo, extras) {
+    const P = global.QFPlanos;
+    return { id: id, nome: P.nome(id), selo: selo,
+      get preco() { return P.preco(id); },
+      get per() { return 'por ' + P.dias(id) + ' dias'; },
+      get unit() { return P.chamados(id) + ' chamados · ' + P.cada(id) + ' cada'; },
+      get valor() { return P.valor(id); },
+      get itens() { const pct = P.pct(id); return extras(pct).filter(Boolean); } };
+  }
   const QF_CAD_PLANOS = [
     { id: 'avulso', nome: 'Avulso', preco: 'R$ 4,90 a R$ 12,90', per: 'por chamado', unit: 'Sem mensalidade',
       itens: ['Conta criada na hora, sem pagar nada agora', 'Para desbloquear um chamado você precisa adicionar crédito na Carteira', 'Crédito por Pix, cartão ou boleto', 'Bom para começar e testar'] },
-    { id: 'mensal', nome: 'Mensal', preco: 'R$ 49,90', per: 'por 30 dias', unit: '10 chamados · R$ 4,99 cada', valor: 4990,
-      itens: ['Vale para qualquer serviço', 'Até 61% mais barato que o avulso (pedreiro, frete, mecânico)', 'Sem renovação automática e sem fidelidade'] },
-    { id: 'pro', nome: 'Pro', preco: 'R$ 99,90', per: 'por 30 dias', unit: '25 chamados · R$ 4,00 cada', valor: 9990,
-      itens: ['Até 69% mais barato que o avulso', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade'] },
-    { id: 'premium', nome: 'Premium', preco: 'R$ 199,90', per: 'por 30 dias', unit: '60 chamados · R$ 3,33 cada', valor: 19990, selo: 'MAIS COMPLETO',
-      itens: ['O menor preço por chamado do QuemFaz: até 74% mais barato que o avulso', 'Seu anúncio no carrossel do app por 30 dias (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade'] }
+    qfCadPlano('mensal', '', function (pct) { return ['Vale para qualquer serviço', pct > 0 ? 'Até ' + pct + '% mais barato que o avulso (pedreiro, frete, mecânico)' : '', 'Sem renovação automática e sem fidelidade']; }),
+    qfCadPlano('pro', '', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; }),
+    qfCadPlano('premium', 'MAIS COMPLETO', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Seu anúncio no carrossel do app por 30 dias (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; })
   ];
   global.QFCadPlanos = QF_CAD_PLANOS;
 
@@ -8065,9 +8120,9 @@ alt=""></noscript>
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table><tr><td>10 chamados</td><td>avulso R$ 79,00</td><td><b>Mensal R$ 49,90</b></td></tr><tr><td>25 chamados</td><td>avulso R$ 197,50</td><td><b>Pro R$ 99,90</b></td></tr><tr><td>60 chamados</td><td>avulso R$ 474,00</td><td><b>Premium R$ 199,90</b></td></tr></table></div>' +
+          '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table>' + global.QFPlanos.ids.map(function (id) { const P = global.QFPlanos; return '<tr><td>' + P.chamados(id) + ' chamados</td><td>avulso ' + P.brl(P.chamados(id) * 790) + '</td><td><b>' + P.nome(id) + ' ' + P.preco(id) + '</b></td></tr>'; }).join('') + '</table></div>' +
           '<div class="qf-cad-planos__nota" data-plano-nota>Pagamento confirmado: a conta é criada e o plano entra na sua carteira.</div>' +
-          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Ir para o pagamento · R$ 199,90</button></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Ir para o pagamento · ' + global.QFPlanos.preco('premium') + '</button></div>' +
           '<button class="qf-cad-planos__depois" type="button" data-plano-depois>Prefiro escolher depois</button>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
@@ -9250,7 +9305,7 @@ alt=""></noscript>
             '<div class="qf-conta-dados__nota">Anote ou tire um print: você usa esse e-mail e essa senha para entrar no QuemFaz.</div></div>' +
           '<div class="card card--tight row" style="background:var(--success-100);border:none;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--success-600);">' +
             (conta.ativo ? 'Plano ' + esc(conta.plano.nome) + ' creditado na sua carteira' : 'Pagamento do plano ' + esc(conta.plano.nome) + ' confirmado') + '</div><div class="text--sm">' +
-            (conta.ativo ? esc(conta.plano.unit.split(' · ')[0]) + ' para usar em 30 dias.' : 'O plano entra na sua carteira em instantes, assim que você abrir o app.') + '</div></div></div>' +
+            (conta.ativo ? esc(conta.plano.unit.split(' · ')[0]) + ' para usar em ' + global.QFPlanos.dias(conta.plano.id) + ' dias.' : 'O plano entra na sua carteira em instantes, assim que você abrir o app.') + '</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
       }
       async function criarContaAgora(dados, planoId, metodo) {
@@ -11885,13 +11940,12 @@ alt=""></noscript>
   };
 
   // V11.14: incentivo ao plano — mostra ao profissional avulso quanto ele economizaria.
-  // Mesmos preços da tela Planos (Mensal R$ 49,90 / 10 chamados; Pro R$ 99,90 / 25 chamados).
+  // Mesmos preços da tela Planos (vêm do painel, por QFPlanos).
   const PlanoIncentivo = global.QFPlanoIncentivo = {
-    planos: [
-      { id: 'mensal', nome: 'Mensal', preco: 4990, chamados: 10 },
-      { id: 'pro', nome: 'Pro', preco: 9990, chamados: 25 },
-      { id: 'premium', nome: 'Premium', preco: 19990, chamados: 60 }
-    ],
+    get planos() {
+      const P = global.QFPlanos;
+      return P.ids.map(function (id) { return { id: id, nome: P.nome(id), preco: P.valor(id), chamados: P.chamados(id) }; });
+    },
     unit: function (p) { return Math.round(p.preco / p.chamados); },
     // Melhor plano para UM chamado deste valor (menor preço por chamado que ainda economiza).
     porChamado: function (valor) {
@@ -12382,7 +12436,7 @@ alt=""></noscript>
     const validade = ativo && ativo.validoAte ? new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '';
     function buy(plano, nome, preco, valor, detalhe, destaque) {
       return '<div class="card row-between" style="gap:12px;' + (destaque ? 'border:2px solid var(--orange-500);' : '') + '">' +
-        '<div><div class="text--strong">' + nome + ' · ' + preco + '<span class="text--sm text--secondary" style="font-weight:600;"> por 30 dias</span></div><div class="text--sm text--secondary">' + detalhe + '</div></div>' +
+        '<div><div class="text--strong">' + nome + ' · ' + preco + '<span class="text--sm text--secondary" style="font-weight:600;"> por ' + global.QFPlanos.dias(plano) + ' dias</span></div><div class="text--sm text--secondary">' + detalhe + '</div></div>' +
         '<button class="btn btn--primary btn--sm" type="button" data-action="assinar-plano" data-plano="' + plano + '" data-valor="' + valor + '" style="flex:none;width:auto;">Assinar</button>' +
       '</div>';
     }
@@ -12392,9 +12446,10 @@ alt=""></noscript>
         ? '<div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div></div>'
         : '') +
       '<div class="stack stack--sm">' +
-        buy('mensal', 'Mensal', 'R$ 49,90', 4990, '10 chamados · sai a R$ 4,99 cada', false) +
-        buy('pro', 'Pro', 'R$ 99,90', 9990, '25 chamados · sai a R$ 4,00 cada', false) +
-        buy('premium', 'Premium', 'R$ 199,90', 19990, '60 chamados · sai a R$ 3,33 cada · anúncio no carrossel por 30 dias incluído · selo Premium', true) +
+        global.QFPlanos.ids.map(function (id) {
+          const P = global.QFPlanos;
+          return buy(id, P.nome(id), P.preco(id), P.valor(id), P.chamados(id) + ' chamados · sai a ' + P.cada(id) + ' cada' + (id === 'premium' ? ' · anúncio no carrossel por 30 dias incluído · selo Premium' : ''), id === 'premium');
+        }).join('') +
       '</div>' +
       '<p class="text--sm text--secondary" style="margin-top:8px;">Paga com a forma escolhida acima (Pix, cartão ou boleto). O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
     '</div>';
@@ -12466,14 +12521,14 @@ alt=""></noscript>
           cfPlano('Avulso', false, 'R$ 4,90', 'a R$ 12,90', 'por chamado desbloqueado',
             ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
             role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
-          cfPlano('Mensal', false, 'R$ 49,90', 'por mês', '10 chamados por mês',
-            ['Sai a R$ 4,99 por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática e sem fidelidade'],
+          cfPlano('Mensal', false, global.QFPlanos.preco('mensal'), 'por ' + global.QFPlanos.dias('mensal') + ' dias', global.QFPlanos.chamados('mensal') + ' chamados',
+            ['Sai a ' + global.QFPlanos.cada('mensal') + ' por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática e sem fidelidade'],
             assinar('Mensal')) +
-          cfPlano('Pro', false, 'R$ 99,90', 'por mês', '25 chamados por mês',
-            ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
+          cfPlano('Pro', false, global.QFPlanos.preco('pro'), 'por ' + global.QFPlanos.dias('pro') + ' dias', global.QFPlanos.chamados('pro') + ' chamados',
+            ['Sai a ' + global.QFPlanos.cada('pro') + ' por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
             assinar('Pro')) +
-          cfPlano('Premium', true, 'R$ 199,90', 'por mês', '60 chamados por mês',
-            ['Sai a R$ 3,33 por chamado: o menor preço do QuemFaz', 'Seu anúncio no carrossel do app por 30 dias incluído (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
+          cfPlano('Premium', true, global.QFPlanos.preco('premium'), 'por ' + global.QFPlanos.dias('premium') + ' dias', global.QFPlanos.chamados('premium') + ' chamados',
+            ['Sai a ' + global.QFPlanos.cada('premium') + ' por chamado', 'Seu anúncio no carrossel do app por 30 dias incluído (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
             assinar('Premium')) +
         '</div>' +
         '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo.</p>' +
@@ -12675,12 +12730,17 @@ alt=""></noscript>
       '<section class="section" id="planos-chamados">' +
         '<div class="section-head"><div><h2 class="h3">Planos de chamados</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
         '<div class="stack">' +
-          cfPlano('Mensal', false, 'R$ 49,90', 'por 30 dias', '10 chamados · sai a R$ 4,99 cada',
-            ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática'], assinar('mensal', 4990, 'Mensal')) +
-          cfPlano('Pro', false, 'R$ 99,90', 'por 30 dias', '25 chamados · sai a R$ 4,00 cada',
-            ['Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', 9990, 'Pro')) +
-          cfPlano('Premium', true, 'R$ 199,90', 'por 30 dias', '60 chamados · sai a R$ 3,33 cada',
-            ['O menor preço por chamado do QuemFaz', 'Anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('premium', 19990, 'Premium')) +
+          (function () {
+            const P = global.QFPlanos;
+            function linha(id) { return [P.preco(id), 'por ' + P.dias(id) + ' dias', P.chamados(id) + ' chamados · sai a ' + P.cada(id) + ' cada']; }
+            const m = linha('mensal'), pr = linha('pro'), pm = linha('premium');
+            return cfPlano('Mensal', false, m[0], m[1], m[2],
+              ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática'], assinar('mensal', P.valor('mensal'), 'Mensal')) +
+            cfPlano('Pro', false, pr[0], pr[1], pr[2],
+              ['Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', P.valor('pro'), 'Pro')) +
+            cfPlano('Premium', true, pm[0], pm[1], pm[2],
+              ['Anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('premium', P.valor('premium'), 'Premium'));
+          })() +
         '</div>' +
         '<div style="margin-top:14px;"><div class="field__label" style="margin-bottom:8px;">Como quer pagar o plano?</div>' +
           '<div class="qf-pay-methods" id="planos-metodos">' +
@@ -14217,7 +14277,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.51';
+  const APP_VERSION = '11.55';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
