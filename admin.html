@@ -2804,7 +2804,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     });
     recargasPagas().forEach(function (p) {
       const forma = p.metodo === 'pix' ? ' · Pix' : (p.metodo === 'cartao' ? ' · Cartão' : (p.metodo === 'boleto' ? ' · Boleto' : ''));
-      eventos.push({ tipo: (p.plano ? 'Plano ' + (p.plano === 'pro' ? 'Pro' : 'Mensal') : 'Recarga de créditos') + forma, grupo: p.plano ? 'plano' : 'recarga', valor: p.valor, criadoEm: p.criadoEm, request: null, profissionalId: p.profissionalId });
+      eventos.push({ tipo: (p.plano ? 'Plano ' + (p.plano === 'premium' ? 'Premium' : (p.plano === 'pro' ? 'Pro' : 'Mensal')) : 'Recarga de créditos') + forma, grupo: p.plano ? 'plano' : 'recarga', valor: p.valor, criadoEm: p.criadoEm, request: null, profissionalId: p.profissionalId });
     });
     (state.ads || []).forEach(function (a) {
       if (a.pagamentoStatus === 'aprovado') eventos.push({ tipo: 'Anúncio patrocinado · ' + ((adPlan(a.plano) || {}).nome || a.plano), grupo: 'anuncio', valor: a.valorPago || 0, criadoEm: a.pagoEm || a.criadoEm, ad: a, profissionalId: null });

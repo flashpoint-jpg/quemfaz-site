@@ -59,3 +59,17 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
   const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-10-bonus-cadastro-chave.sql'), 'utf8');
   assert.ok(sql.includes(`'{"ativo": false, "valor_centavos": 2500}'`) && sql.includes('if not v_ativo or v_valor <= 0 then') && sql.includes('if not private.qf_is_admin() then'));
 }
+
+// V11.49: plano Premium e etapa 5 do cadastro (escolha do plano).
+{
+  const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(site.includes("{ id: 'premium', nome: 'Premium', preco: 19990, chamados: 60 }"));
+  assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
+  assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
+  assert.ok(site.includes("sessionStorage.setItem('qf_plano_pos_cadastro', pl.id)") && site.includes("openRechargeSheet(user, pl.valor, 'pix', pl.id)"));
+  assert.ok(site.includes("if (!out.pagamento_id && !out.incluido_no_plano)") && site.includes('Anúncio incluído no seu Premium'));
+  assert.ok(site.includes("client.rpc('qf_profissionais_premium'") && site.includes('qf-selo-premium'));
+  assert.ok(admin.includes("p.plano === 'premium' ? 'Premium'"));
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-10-plano-premium.sql'), 'utf8');
+  assert.ok(sql.includes("values ('premium', 'Premium', 19990, 60, 30, true)") && sql.includes("'incluido_no_plano', true"));
+}

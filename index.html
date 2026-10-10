@@ -1879,6 +1879,38 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 /* escolha de profissões em grupos */
 .qf-catpick{display:flex;flex-direction:column;gap:8px}
 .qf-step__head{display:flex;flex-direction:column;gap:4px}.qf-step__count{font-size:13px;font-weight:800;color:var(--orange-500)}.qf-step__bar{height:6px;border-radius:99px;background:var(--bg-sunken);overflow:hidden;margin-top:6px}.qf-step__bar span{display:block;height:100%;background:var(--orange-500);border-radius:99px}.qf-step__nav{display:flex;gap:10px;margin-top:6px}.qf-step__nav .btn{flex:1}.qf-step__opt{border:1px solid var(--border-subtle,rgba(11,29,58,.12));border-radius:12px;padding:12px;background:var(--bg-surface)}.qf-step__opt>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy-900)}.qf-step[hidden]{display:none!important}.qf-step__nav:has(button[type=submit]){flex-direction:column-reverse}.qf-step__nav:has(button[type=submit]) .btn{flex:none;width:100%}body:has(#cadastro-prof-form) .qf-support-fab,body:has(#cadastro-cliente-form) .qf-support-fab,body:has(#login-form) .qf-support-fab{top:calc(env(safe-area-inset-top, 0px) + 12px);bottom:auto!important;padding:0;width:44px;min-width:44px;height:44px;min-height:44px;justify-content:center;font-size:0;gap:0}body:has(#cadastro-prof-form) .view>.row:first-child,body:has(#cadastro-cliente-form) .view>.row:first-child,body:has(#login-form) .view>.row:first-child{padding-right:52px}
+/* V11.49: etapa 5 do cadastro (planos) e selo Premium */
+.qf-cad-planos{display:flex;flex-direction:column;gap:14px;margin-top:6px}
+.qf-cad-plano{position:relative;display:flex;flex-direction:column;gap:9px;padding:18px 16px 16px;background:#fff;border:1.5px solid var(--border-subtle);border-radius:18px;cursor:pointer}
+.qf-cad-plano input{position:absolute;opacity:0;pointer-events:none}
+.qf-cad-plano:has(input:checked){border:2px solid var(--orange-600);box-shadow:0 10px 24px -14px rgba(196,83,10,.6)}
+.qf-cad-plano:has(input:focus-visible){outline:2px solid var(--navy-700);outline-offset:2px}
+.qf-cad-plano--top{background:linear-gradient(180deg,#fff6ee 0,#fff 60%)}
+.qf-cad-plano__selo{position:absolute;top:-11px;left:16px;padding:4px 10px;border-radius:999px;background:var(--orange-600);color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.02em}
+.qf-cad-plano__topo{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.qf-cad-plano__nome{font-size:17px;font-weight:800;color:var(--navy-900)}
+.qf-cad-plano__radio{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:50%;border:2px solid var(--border-strong)}
+.qf-cad-plano:has(input:checked) .qf-cad-plano__radio{border-color:var(--orange-600)}
+.qf-cad-plano:has(input:checked) .qf-cad-plano__radio::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--orange-600)}
+.qf-cad-plano__preco{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.qf-cad-plano__preco b{font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--text-primary)}
+.qf-cad-plano__preco span{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.qf-cad-plano__unit{align-self:flex-start;padding:5px 10px;border-radius:999px;background:var(--navy-100);color:var(--navy-700);font-size:13px;font-weight:700}
+.qf-cad-plano--top .qf-cad-plano__unit{background:var(--success-100);color:var(--success-600)}
+.qf-cad-plano__lista{display:flex;flex-direction:column;gap:7px}
+.qf-cad-plano__lista span{display:flex;gap:8px;font-size:13.5px;line-height:1.35;color:var(--text-primary)}
+.qf-cad-plano__lista svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--success-600)}
+.qf-cad-planos__ex{padding:12px 14px;border-radius:14px;background:var(--bg-sunken);font-size:13px;line-height:1.45;color:var(--text-secondary)}
+.qf-cad-planos__ex b{color:var(--text-primary)}
+.qf-cad-planos__ex table{width:100%;margin-top:8px;border-collapse:collapse;font-size:12.5px}
+.qf-cad-planos__ex td{padding:5px 0;border-top:1px solid #dfe3ea}
+.qf-cad-planos__ex td:nth-child(2){color:var(--text-muted);text-decoration:line-through}
+.qf-cad-planos__ex td:last-child{text-align:right}
+.qf-cad-planos__ex td:last-child b{color:var(--success-600)}
+.qf-cad-planos__depois{all:unset;cursor:pointer;display:block;text-align:center;padding:8px;font-size:14px;font-weight:700;color:var(--navy-700)}
+.qf-cad-planos__nota{text-align:center;font-size:12.5px;color:var(--text-muted)}
+.qf-selo-premium{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(90deg,#f6a23a,var(--orange-600));color:#fff}
+.qf-selo-premium svg{width:12px;height:12px;fill:currentColor}
 .qf-catpick__search{position:relative;display:block}
 .qf-catpick__search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--text-muted);pointer-events:none}
 .qf-catpick__search .input{padding-left:38px}
@@ -5097,7 +5129,7 @@ alt=""></noscript>
         const ultimo = rows[rows.length - 1];
         planoAtivo = {
           plano: ultimo.plano,
-          nome: ultimo.plano === 'pro' ? 'Pro' : 'Mensal',
+          nome: ultimo.plano === 'premium' ? 'Premium' : (ultimo.plano === 'pro' ? 'Pro' : 'Mensal'),
           restantes: rows.reduce(function (t, x) { return t + Number(x.chamados_restantes || 0); }, 0),
           validoAte: rows[0].valido_ate
         };
@@ -5134,6 +5166,7 @@ alt=""></noscript>
       saldo: 0,
       creditos: w ? Number(w.saldo_centavos || 0) : 0,
       plano: planoAtivo,
+      premium: await premiumIds([user.id]).then(function (s) { return s.has(user.id); }),
       horarioInicio: String(pr.horario_inicio || '06:00').slice(0, 5),
       horarioFim: String(pr.horario_fim || '22:00').slice(0, 5),
       alertaModo: pr.alerta_modo === 'vibrar' ? 'vibrar' : 'toque',
@@ -5330,6 +5363,17 @@ alt=""></noscript>
     return reqs;
   }
 
+  // V11.49: quais profissionais têm o plano Premium valendo (para o selo). Falhou: ninguém tem selo.
+  async function premiumIds(ids) {
+    ids = (ids || []).filter(Boolean);
+    if (!client || !ids.length) return new Set();
+    try {
+      const r = await client.rpc('qf_profissionais_premium', { p_ids: ids });
+      if (r.error) throw r.error;
+      return new Set((r.data || []).map(function (x) { return x.id; }));
+    } catch (_) { return new Set(); }
+  }
+
   async function attachLatestQuotes(reqs) {
     reqs = reqs || [];
     const ids = reqs.map(function (r) { return r.id; }).filter(Boolean);
@@ -5457,6 +5501,9 @@ alt=""></noscript>
     await attachCallPhotos(DB.state.requests);
     await attachLatestQuotes(DB.state.requests);
     await attachEvaluations(DB.state.requests);
+    // V11.49: selo Premium nos profissionais que aparecem para o cliente.
+    const premium = await premiumIds(DB.state.users.profissionais.map(function (p) { return p.id; }));
+    DB.state.users.profissionais.forEach(function (p) { p.premium = premium.has(p.id); });
 
     const local = DB.clienteById(userId);
     if (local && res.data && res.data[0]) {
@@ -5647,7 +5694,7 @@ alt=""></noscript>
     if (res.error) throw res.error;
     const out = res.data || {};
     if (!out.ok) throw new Error(out.reason || 'Não foi possível enviar o anúncio.');
-    if (!out.pagamento_id) throw new Error('Pagamento do anúncio não foi criado.');
+    if (!out.pagamento_id && !out.incluido_no_plano) throw new Error('Pagamento do anúncio não foi criado.');
     if (dados.arteConfig) {
       const artSave = await client.rpc('qf_editar_anuncio_proprio', {
         p_anuncio_id: out.anuncio_id,
@@ -5659,6 +5706,10 @@ alt=""></noscript>
         p_arte_config: dados.arteConfig
       });
       if (artSave.error) throw artSave.error;
+    }
+    if (out.incluido_no_plano) {
+      await syncPublicAds();
+      return { ad: DB.anuncioById(out.anuncio_id), pagamento: out };
     }
     const checkout = await startEfiCheckout('anuncio', out.pagamento_id);
     out.checkout_url = checkout.checkout_url || null;
@@ -7251,6 +7302,28 @@ alt=""></noscript>
 (function (global) {
   const DB = global.DB, PU = global.PU, icon = global.icon, Screens = global.Screens;
 
+  // V11.49: planos mostrados na etapa 5 do cadastro do profissional (mesmos preços da Carteira e do banco).
+  const QF_CAD_PLANOS = [
+    { id: 'avulso', nome: 'Avulso', preco: 'R$ 4,90 a R$ 12,90', per: 'por chamado', unit: 'Sem mensalidade',
+      itens: ['Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto', 'Bom para começar e testar'] },
+    { id: 'mensal', nome: 'Mensal', preco: 'R$ 49,90', per: 'por 30 dias', unit: '10 chamados · R$ 4,99 cada', valor: 4990,
+      itens: ['Vale para qualquer serviço', 'Até 61% mais barato que o avulso (pedreiro, frete, mecânico)', 'Sem renovação automática e sem fidelidade'] },
+    { id: 'pro', nome: 'Pro', preco: 'R$ 99,90', per: 'por 30 dias', unit: '25 chamados · R$ 4,00 cada', valor: 9990,
+      itens: ['Até 69% mais barato que o avulso', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade'] },
+    { id: 'premium', nome: 'Premium', preco: 'R$ 199,90', per: 'por 30 dias', unit: '60 chamados · R$ 3,33 cada', valor: 19990, selo: 'MAIS COMPLETO',
+      itens: ['O menor preço por chamado do QuemFaz: até 74% mais barato que o avulso', 'Seu anúncio no carrossel do app por 30 dias (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade'] }
+  ];
+  // Guarda o plano pago escolhido no cadastro; a Carteira abre o pagamento dele ao entrar. Devolve true se há plano a pagar.
+  function planoPosCadastro(fd) {
+    const pl = QF_CAD_PLANOS.find(function (x) { return x.id === String(fd.get('planoEscolhido') || 'avulso'); });
+    try {
+      if (pl && pl.valor) sessionStorage.setItem('qf_plano_pos_cadastro', pl.id);
+      else sessionStorage.removeItem('qf_plano_pos_cadastro');
+    } catch (_) {}
+    return !!(pl && pl.valor);
+  }
+  global.QFCadPlanos = QF_CAD_PLANOS;
+
   const ROLE_META = {
     cliente: { titulo: 'Sou Cliente', sub: 'Encontre profissionais perto de você', iconName: 'search', demo: 'fernanda@exemplo.com' },
     profissional: { titulo: 'Sou Profissional', sub: 'Receba chamados e novos clientes', iconName: 'briefcase', demo: 'carlos@exemplo.com' },
@@ -7849,7 +7922,7 @@ alt=""></noscript>
         backRow('/auth/profissional/login', 'Cadastro de profissional') +
         '<form id="cadastro-prof-form" class="stack" novalidate>' +
           '<div class="qf-step stack" data-step="1">' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 4</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:25%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 5</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:20%"></span></div></div>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
           field('E-mail obrigatório', '<input class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="voce@exemplo.com">') +
           field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(35) 91234-5678">') +
@@ -7860,12 +7933,12 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="2" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 4</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Você pode adicionar quantos serviços precisar. Se não encontrar um, crie sua própria categoria.</div><div class="qf-step__bar"><span style="width:50%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 5</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Você pode adicionar quantos serviços precisar. Se não encontrar um, crie sua própria categoria.</div><div class="qf-step__bar"><span style="width:40%"></span></div></div>' +
           '<div class="field"><span class="field__label">Toque no grupo, depois toque na sua profissão para marcar</span>' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="3" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 4</div><div class="h2">Seu endereço e onde você atende</div><div class="text--sm text--secondary">Informe seu endereço obrigatório. O CEP ou GPS pode preencher os campos automaticamente.</div><div class="qf-step__bar"><span style="width:75%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 5</div><div class="h2">Seu endereço e onde você atende</div><div class="text--sm text--secondary">Informe seu endereço obrigatório. O CEP ou GPS pode preencher os campos automaticamente.</div><div class="qf-step__bar"><span style="width:60%"></span></div></div>' +
           '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
           field('Rua / Avenida', '<input class="input" name="rua" required maxlength="160" autocomplete="address-line1" placeholder="Nome da rua ou avenida">') +
@@ -7881,7 +7954,7 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="4" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 4</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 5</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:80%"></span></div></div>' +
           '<div class="card stack--sm" style="background:var(--warning-100);border:2px solid #efc46e;">' +
             '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Escolha uma opção: tire uma selfie sua ou, se você representa uma empresa, envie o logotipo ou a marca oficial da empresa pela galeria.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
@@ -7896,7 +7969,24 @@ alt=""></noscript>
           '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
             '<p class="text text--sm" style="color:var(--navy-800);">Sua foto aparece para o cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">' + ((global.QFBonusCadastro || {}).texto ? 'Você começa com ' + global.QFBonusCadastro.texto + ' em créditos de bônus. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.' : 'Você coloca créditos na carteira (Pix, cartão ou boleto) e usa para desbloquear os pedidos que quiser.') + '</div></div></div>' +
           '</div>' +
-          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit">Criar conta de profissional</button></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
+          '</div>' +
+          // V11.49: etapa 5 — escolha do plano. Nada é cobrado aqui: Mensal, Pro e Premium vão para o pagamento logo depois de criar a conta.
+          '<div class="qf-step stack" data-step="5" hidden>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Você escolhe agora e paga só depois de criar a conta. Dá para trocar quando quiser, na Carteira.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
+            return '<label class="qf-cad-plano' + (pl.id === 'premium' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
+              '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'premium' ? ' checked' : '') + '>' +
+              '<span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">' + pl.nome + '</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span>' +
+              '<span class="qf-cad-plano__preco"><b>' + pl.preco + '</b><span>' + pl.per + '</span></span>' +
+              '<span class="qf-cad-plano__unit">' + pl.unit + '</span>' +
+              '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
+            '</label>';
+          }).join('') + '</div>' +
+          '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table><tr><td>10 chamados</td><td>avulso R$ 79,00</td><td><b>Mensal R$ 49,90</b></td></tr><tr><td>25 chamados</td><td>avulso R$ 197,50</td><td><b>Pro R$ 99,90</b></td></tr><tr><td>60 chamados</td><td>avulso R$ 474,00</td><td><b>Premium R$ 199,90</b></td></tr></table></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Assinar o Premium · R$ 199,90</button></div>' +
+          '<button class="qf-cad-planos__depois" type="button" data-plano-depois>Prefiro escolher depois</button>' +
+          '<div class="qf-cad-planos__nota">O plano é ativado assim que o pagamento é confirmado (Pix, cartão ou boleto).</div>' +
           '</div>' +
         '</form>' +
       '</div>'
@@ -8842,6 +8932,11 @@ alt=""></noscript>
             return false;
           }
         }
+        if (n === 4 && !selfieData) {
+          try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
+          PU.toast('Falta a foto: toque em "Tirar selfie" (ou, se for empresa, escolha o logo).', 'danger');
+          return false;
+        }
         if (n === 3) {
           if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite um CEP válido.', 'danger'); marcarErro('cep'); return false; }
           if (!String(fd.get('rua') || '').trim()) { PU.toast('Informe a rua ou avenida do seu endereço.', 'danger'); marcarErro('rua'); return false; }
@@ -8861,10 +8956,23 @@ alt=""></noscript>
         avancando = true;
         try {
           if (stepAtual === 3 && !(await confirmarCidade())) return;
-          goStep(Math.min(4, stepAtual + 1));
+          goStep(Math.min(5, stepAtual + 1));
         } finally { avancando = false; }
       }
+      function botaoPlano() {
+        const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
+        const b = form.querySelector('[data-cad-criar]');
+        if (b) b.textContent = pl.id === 'avulso' ? 'Criar conta de profissional' : 'Assinar o ' + pl.nome + ' · ' + pl.preco;
+      }
+      form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       form.addEventListener('click', function (e) {
+        if (e.target.closest('[data-plano-depois]')) {
+          const av = form.querySelector('input[name="planoEscolhido"][value="avulso"]');
+          if (av) av.checked = true;
+          botaoPlano();
+          if (form.requestSubmit) form.requestSubmit(); else form.querySelector('[data-cad-criar]').click();
+          return;
+        }
         if (e.target.closest('[data-step-next]')) avancar();
         else if (e.target.closest('[data-step-back]')) goStep(Math.max(1, stepAtual - 1));
       });
@@ -8875,11 +8983,12 @@ alt=""></noscript>
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         // Enter no teclado numa etapa do meio = Continuar.
-        if (stepAtual < 4) { avancar(); return; }
+        if (stepAtual < 5) { avancar(); return; }
         for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
         if (!(await confirmarCidade())) { goStep(3); return; }
         const fd = new FormData(form);
         if (!selfieData) {
+          goStep(4);
           try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
           PU.toast('Falta a foto: toque em "Tirar selfie" (ou, se for empresa, escolha o logo).', 'danger');
           return;
@@ -8927,6 +9036,7 @@ alt=""></noscript>
             if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return; }
             // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
             if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
+            planoPosCadastro(fd);
             if (res.needsConfirmation) {
               PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
               global.navigate('/auth/profissional/login', true);
@@ -8937,6 +9047,7 @@ alt=""></noscript>
               global.navigate('/profissional/anuncie', true);
               return;
             }
+            if (planoPosCadastro(fd)) { global.navigate('/profissional/carteira', true); return; }
             global.navigate('/profissional/home', true);
             return;
           }
@@ -9573,6 +9684,7 @@ alt=""></noscript>
           '<div class="spacer">' +
             '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="text--strong">' + PU.escapeHtml(prof.nome) + '</div>' +
               (prof.verificado ? '<span class="badge badge--success"><span class="badge__dot"></span>Verificado</span>' : (prof.fotoUrl ? '<span class="badge badge--warning"><span class="badge__dot"></span>Identificação cadastrada</span>' : '')) +
+              (prof.premium ? '<span class="badge qf-selo-premium">' + icon('starFilled') + 'Premium</span>' : '') +
             '</div>' +
             '<div class="row text--sm text--secondary qf-rating" style="gap:6px;margin-top:4px;">' + global.QFRating(prof.avaliacaoMedia, prof.totalAvaliacoes) + '</div>' +
             ((prof.cidadeNome || prof.uf) ? '<div class="text--sm text--secondary" style="margin-top:4px;">' + icon('mapPin', 'list-item__chevron') + ' ' + PU.escapeHtml([prof.cidadeNome, prof.uf].filter(Boolean).join(' · ')) + '</div>' : '') +
@@ -11405,7 +11517,8 @@ alt=""></noscript>
   const PlanoIncentivo = global.QFPlanoIncentivo = {
     planos: [
       { id: 'mensal', nome: 'Mensal', preco: 4990, chamados: 10 },
-      { id: 'pro', nome: 'Pro', preco: 9990, chamados: 25 }
+      { id: 'pro', nome: 'Pro', preco: 9990, chamados: 25 },
+      { id: 'premium', nome: 'Premium', preco: 19990, chamados: 60 }
     ],
     unit: function (p) { return Math.round(p.preco / p.chamados); },
     // Melhor plano para UM chamado deste valor (menor preço por chamado que ainda economiza).
@@ -11908,7 +12021,8 @@ alt=""></noscript>
         : '') +
       '<div class="stack stack--sm">' +
         buy('mensal', 'Mensal', 'R$ 49,90', 4990, '10 chamados · sai a R$ 4,99 cada', false) +
-        buy('pro', 'Pro', 'R$ 99,90', 9990, '25 chamados · sai a R$ 4,00 cada', true) +
+        buy('pro', 'Pro', 'R$ 99,90', 9990, '25 chamados · sai a R$ 4,00 cada', false) +
+        buy('premium', 'Premium', 'R$ 199,90', 19990, '60 chamados · sai a R$ 3,33 cada · anúncio no carrossel por 30 dias incluído · selo Premium', true) +
       '</div>' +
       '<p class="text--sm text--secondary" style="margin-top:8px;">Paga com a forma escolhida acima (Pix, cartão ou boleto). O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
     '</div>';
@@ -11983,9 +12097,12 @@ alt=""></noscript>
           cfPlano('Mensal', false, 'R$ 49,90', 'por mês', '10 chamados por mês',
             ['Sai a R$ 4,99 por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática e sem fidelidade'],
             assinar('Mensal')) +
-          cfPlano('Pro', true, 'R$ 99,90', 'por mês', '25 chamados por mês',
-            ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'O menor preço por chamado do QuemFaz', 'Sem renovação automática e sem fidelidade'],
+          cfPlano('Pro', false, 'R$ 99,90', 'por mês', '25 chamados por mês',
+            ['Sai a R$ 4,00 por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
             assinar('Pro')) +
+          cfPlano('Premium', true, 'R$ 199,90', 'por mês', '60 chamados por mês',
+            ['Sai a R$ 3,33 por chamado: o menor preço do QuemFaz', 'Seu anúncio no carrossel do app por 30 dias incluído (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
+            assinar('Premium')) +
         '</div>' +
         '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo.</p>' +
       '</section>' +
@@ -12188,8 +12305,10 @@ alt=""></noscript>
         '<div class="stack">' +
           cfPlano('Mensal', false, 'R$ 49,90', 'por 30 dias', '10 chamados · sai a R$ 4,99 cada',
             ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática'], assinar('mensal', 4990, 'Mensal')) +
-          cfPlano('Pro', true, 'R$ 99,90', 'por 30 dias', '25 chamados · sai a R$ 4,00 cada',
-            ['O menor preço por chamado do QuemFaz', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', 9990, 'Pro')) +
+          cfPlano('Pro', false, 'R$ 99,90', 'por 30 dias', '25 chamados · sai a R$ 4,00 cada',
+            ['Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', 9990, 'Pro')) +
+          cfPlano('Premium', true, 'R$ 199,90', 'por 30 dias', '60 chamados · sai a R$ 3,33 cada',
+            ['O menor preço por chamado do QuemFaz', 'Anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('premium', 19990, 'Premium')) +
         '</div>' +
         '<div style="margin-top:14px;"><div class="field__label" style="margin-bottom:8px;">Como quer pagar o plano?</div>' +
           '<div class="qf-pay-methods" id="planos-metodos">' +
@@ -12265,7 +12384,7 @@ alt=""></noscript>
           '<div class="spacer">' +
             '<div class="h3">' + PU.escapeHtml(user.nome) + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(user.email) + '</div>' +
-            '<div style="margin-top:6px;">' + ((global.QFCloud && global.QFCloud.enabled) ? (user.verificado ? '<span class="badge badge--success"><span class="badge__dot"></span>Verificado</span>' : '<span class="badge badge--navy"><span class="badge__dot"></span>Conta ativa</span>') : aprovacaoBadge(user.statusAprovacao)) + '</div>' +
+            '<div style="margin-top:6px;">' + ((global.QFCloud && global.QFCloud.enabled) ? (user.verificado ? '<span class="badge badge--success"><span class="badge__dot"></span>Verificado</span>' : '<span class="badge badge--navy"><span class="badge__dot"></span>Conta ativa</span>') : aprovacaoBadge(user.statusAprovacao)) + (user.premium ? ' <span class="badge qf-selo-premium">' + icon('starFilled') + 'Premium</span>' : '') + '</div>' +
           '</div>' +
         '</div>' +
 
@@ -12801,6 +12920,11 @@ alt=""></noscript>
         const out=await global.QFCloud.submitAd(dados); const ad=out.ad,pagamento=out.pagamento||{};
         const p=DB.adPlan((ad&&ad.plano)||dados.plano); const valor=Number(pagamento.valor_centavos!=null?pagamento.valor_centavos:p.valor||0);
         try{sessionStorage.removeItem('qf_pending_ad_draft');}catch(_){}
+        if(pagamento.incluido_no_plano){
+          PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('checkCircle')+'</div><h3 class="sheet__title" style="text-align:center;">Anúncio incluído no seu Premium</h3><p class="text text--secondary" style="text-align:center;">Você não paga nada por este anúncio. Ele vai para a aprovação da equipe QuemFaz e, aprovado, fica 30 dias no carrossel do app.</p><button class="btn btn--primary" id="fechar-anuncio">Entendi</button></div>');
+          document.getElementById('fechar-anuncio').onclick=function(){PU.closeSheet();const sess=DB.getSession();global.navigate(sess&&sess.role==='profissional'?'/profissional/home':'/cliente/home',true);};
+          return;
+        }
         const pixCode=String(pagamento.pix_copy_paste||''),checkoutUrl=String(pagamento.checkout_url||''),qrImage=String(pagamento.qr_image||'');
         PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('wallet')+'</div><h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3><p class="text text--secondary" style="text-align:center;">Valor: <strong>'+PU.formatCurrency(valor)+'</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>'+(qrImage?'<img src="'+PU.escapeHtml(qrImage)+'" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">':'')+(pixCode?'<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">'+PU.escapeHtml(pixCode)+'</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">'+icon('clipboard')+' Copiar Pix</button>':'')+(checkoutUrl?'<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>':'')+'<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div><button class="btn btn--outline" id="fechar-anuncio">Fechar</button></div>',{persistent:true});
         const copyPix=document.getElementById('qf-ad-copy-pix'); if(copyPix)copyPix.onclick=async function(){try{await navigator.clipboard.writeText(pixCode);PU.toast('Pix copiado.','success');}catch(_){const area=document.getElementById('qf-ad-pix-code');if(area){area.focus();area.select();document.execCommand('copy');PU.toast('Pix copiado.','success');}}};
@@ -13262,6 +13386,12 @@ alt=""></noscript>
   }
 
   function bindCarteira(content, user) {
+    // V11.49: plano pago escolhido na etapa 5 do cadastro: abre o pagamento dele na primeira visita à Carteira.
+    try {
+      const escolhido = sessionStorage.getItem('qf_plano_pos_cadastro');
+      const pl = escolhido && (global.QFCadPlanos || []).find(function (x) { return x.id === escolhido && x.valor; });
+      if (pl) { sessionStorage.removeItem('qf_plano_pos_cadastro'); setTimeout(function () { openRechargeSheet(user, pl.valor, 'pix', pl.id); }, 300); }
+    } catch (_) {}
     const action = content.querySelector('[data-action="iniciar-recarga"]');
     if (!action) return;
     const valuesWrap = content.querySelector('#wallet-values');
@@ -13348,7 +13478,7 @@ alt=""></noscript>
   }
 
   function openRechargeSheet(user, valor, method, plano) {
-    const planoNome = plano === 'pro' ? 'Pro' : (plano === 'mensal' ? 'Mensal' : '');
+    const planoNome = plano === 'premium' ? 'Premium' : (plano === 'pro' ? 'Pro' : (plano === 'mensal' ? 'Mensal' : ''));
     const displayValue = PU.formatCurrency(valor);
     if (global.QFCloud && global.QFCloud.enabled) {
       const methodLabel = method === 'cartao' ? 'cartão de crédito' : (method === 'boleto' ? 'boleto' : 'Pix');
@@ -13710,7 +13840,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.48';
+  const APP_VERSION = '11.49';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
