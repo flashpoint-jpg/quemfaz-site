@@ -1,0 +1,22 @@
+QuemFaz site 11.50 — plano pago antes de criar a conta + botões da foto separados
+
+CADASTRO DO PROFISSIONAL
+- Etapa 4 (foto): "Tirar selfie" e "Sou empresa" agora têm espaço entre eles.
+- Etapa 5: plano pago (Mensal, Pro, Premium) leva para a tela "Como você quer pagar?".
+  * Pix: QR Code e copia e cola na própria tela. Confirmou, a conta é criada sozinha.
+  * Cartão: abre o pagamento seguro no Efí Bank. Aprovou, a conta é criada.
+  * Boleto: demora até 3 dias úteis, então a conta é criada na hora e o boleto abre na Carteira
+    (o plano ativa quando compensar).
+- Pagamento confirmado: a conta é criada, a tela mostra "Dados da sua conta" (e-mail e senha)
+  e o plano já entra na carteira.
+- Avulso / "Prefiro escolher depois": conta criada na hora, sem pagamento (como antes).
+- E-mail que já tem conta é avisado ANTES de cobrar.
+- Fechou o app no meio: ao voltar ao cadastro no mesmo aparelho, continua do pagamento.
+  Se a pessoa entrar numa conta, o plano pago é ativado nela ao abrir o app.
+
+BANCO E SERVIDOR (já aplicados no Supabase em 10/10/2026)
+- supabase/2026-10-10-pagamento-antes-da-conta.sql: tabela qf_pre_cadastro_pagamentos (fechada),
+  qf_resgatar_pre_cadastro (vira recarga aprovada do plano, uma vez só).
+- Função quemfaz-pre-cadastro: cria a cobrança na Efí sem conta e consulta a confirmação.
+- Testado: Pix e link de cartão reais gerados na Efí (cancelados em seguida), resgate no banco
+  com desfazer automático (plano de 60 chamados criado, sem duplicar, segredo errado recusado).

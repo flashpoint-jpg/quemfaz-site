@@ -1909,6 +1909,21 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-cad-planos__ex td:last-child b{color:var(--success-600)}
 .qf-cad-planos__depois{all:unset;cursor:pointer;display:block;text-align:center;padding:8px;font-size:14px;font-weight:700;color:var(--navy-700)}
 .qf-cad-planos__nota{text-align:center;font-size:12.5px;color:var(--text-muted)}
+/* V11.50: foto (botões separados), pagamento antes da conta e dados da conta criada */
+.qf-cad-foto{gap:14px}
+.qf-cad-foto .btn{width:100%;min-height:52px}
+.qf-pag-metodo{width:100%;text-align:left;padding:14px;gap:12px;align-items:center}
+.qf-pag-metodo>svg{flex:none;width:20px;height:20px;color:var(--text-muted)}
+.qf-pag-status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:var(--navy-100);color:var(--navy-900);font-size:14px;font-weight:700;line-height:1.35}
+.qf-pag-spin{flex:none;width:18px;height:18px;border-radius:50%;border:3px solid rgba(11,29,58,.18);border-top-color:var(--orange-600);animation:qf-pag-spin 1s linear infinite}
+@keyframes qf-pag-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.qf-pag-spin{animation:none}}
+.qf-conta-dados{border:2px solid var(--orange-600);border-radius:18px;background:#fff;padding:16px}
+.qf-conta-dados__tit{font-size:13px;font-weight:800;color:var(--orange-600);text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px}
+.qf-conta-dados__linha{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--border-subtle)}
+.qf-conta-dados__linha span{font-size:14px;color:var(--text-secondary);flex:none}
+.qf-conta-dados__linha strong{font-size:16px;color:var(--text-primary);text-align:right;overflow-wrap:anywhere}
+.qf-conta-dados__nota{font-size:12.5px;color:var(--text-muted);padding-top:8px;border-top:1px solid var(--border-subtle)}
 .qf-selo-premium{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(90deg,#f6a23a,var(--orange-600));color:#fff}
 .qf-selo-premium svg{width:12px;height:12px;fill:currentColor}
 .qf-catpick__search{position:relative;display:block}
@@ -6319,6 +6334,31 @@ alt=""></noscript>
     };
   }
 
+  // V11.50: plano pago ANTES de criar a conta (cadastro do profissional). A cobrança nasce sem conta;
+  // depois de confirmada, a conta é criada e preCadastroResgatar transforma o pagamento em plano ativo.
+  async function preCadastroInvoke(body) {
+    const fn = await client.functions.invoke('quemfaz-pre-cadastro', { body: body });
+    if (fn.error) {
+      let detail = null;
+      try { if (fn.error.context && typeof fn.error.context.json === 'function') detail = await fn.error.context.json(); } catch (_) {}
+      if (detail && detail.error) return detail;
+      console.warn('QuemFaz pré-cadastro', body && body.acao, fn.error);
+      return { ok: false, error: 'falha_conexao' };
+    }
+    return fn.data || { ok: false, error: 'falha_conexao' };
+  }
+  async function preCadastroCriar(plano, metodo, pessoa) {
+    return preCadastroInvoke({ acao: 'criar', plano: plano, metodo: metodo, email: pessoa.email, nome: pessoa.nome, telefone: pessoa.telefone });
+  }
+  async function preCadastroStatus(id, segredo) {
+    return preCadastroInvoke({ acao: 'status', id: id, segredo: segredo });
+  }
+  async function preCadastroResgatar(id, segredo) {
+    const r = await client.rpc('qf_resgatar_pre_cadastro', { p_id: id, p_segredo: segredo });
+    if (r.error) { console.warn('QuemFaz pré-cadastro resgate', r.error); return { ok: false, error: 'falha_conexao' }; }
+    return r.data || { ok: false, error: 'falha_conexao' };
+  }
+
   async function createCall(data) {
     const city = cityFromId(data.endereco.cidadeId);
     const cat = DB.categoryById(data.categoriaId);
@@ -6781,6 +6821,9 @@ alt=""></noscript>
     startEfiCheckout: startEfiCheckout,
     createRecharge: createRecharge,
     createPlan: createPlan,
+    preCadastroCriar: preCadastroCriar,
+    preCadastroStatus: preCadastroStatus,
+    preCadastroResgatar: preCadastroResgatar,
     createCall: createCall,
     unlockCall: unlockCall,
     sendQuote: sendQuote,
@@ -7313,16 +7356,52 @@ alt=""></noscript>
     { id: 'premium', nome: 'Premium', preco: 'R$ 199,90', per: 'por 30 dias', unit: '60 chamados · R$ 3,33 cada', valor: 19990, selo: 'MAIS COMPLETO',
       itens: ['O menor preço por chamado do QuemFaz: até 74% mais barato que o avulso', 'Seu anúncio no carrossel do app por 30 dias (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade'] }
   ];
-  // Guarda o plano pago escolhido no cadastro; a Carteira abre o pagamento dele ao entrar. Devolve true se há plano a pagar.
-  function planoPosCadastro(fd) {
-    const pl = QF_CAD_PLANOS.find(function (x) { return x.id === String(fd.get('planoEscolhido') || 'avulso'); });
-    try {
-      if (pl && pl.valor) sessionStorage.setItem('qf_plano_pos_cadastro', pl.id);
-      else sessionStorage.removeItem('qf_plano_pos_cadastro');
-    } catch (_) {}
-    return !!(pl && pl.valor);
-  }
   global.QFCadPlanos = QF_CAD_PLANOS;
+
+  // V11.50: plano pago ANTES da conta. O pagamento (id + segredo) e os dados do cadastro ficam guardados
+  // no aparelho até a conta ser criada; a senha fica só na sessão do navegador.
+  const QFPreCadastro = (function () {
+    const KEY = 'qf_pre_cadastro', KEY_SENHA = 'qf_pre_cadastro_s', VALE_MS = 72 * 3600000;
+    function ler() {
+      try {
+        const v = JSON.parse(localStorage.getItem(KEY) || 'null');
+        if (!v || typeof v !== 'object') return null;
+        if (v.em && Date.now() - Number(v.em) > VALE_MS) { limpar(); return null; }
+        return v;
+      } catch (_) { return null; }
+    }
+    function salvar(v, senha) {
+      try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) {
+        // Sem espaço para a foto: guarda pelo menos o pagamento.
+        try { localStorage.setItem(KEY, JSON.stringify({ em: v.em, plano: v.plano, pag: v.pag })); } catch (__) {}
+      }
+      try { if (senha) sessionStorage.setItem(KEY_SENHA, senha); } catch (_) {}
+    }
+    function senha() { try { return sessionStorage.getItem(KEY_SENHA) || ''; } catch (_) { return ''; } }
+    function limpar() { try { localStorage.removeItem(KEY); sessionStorage.removeItem(KEY_SENHA); } catch (_) {} }
+    // Rede de segurança: quem pagou e entrou numa conta (nova ou antiga) recebe o plano ao abrir o app.
+    let tentando = false;
+    async function tentar() {
+      const v = ler();
+      const sess = DB.getSession();
+      if (tentando || !v || !v.pag || !v.pag.id || !sess || sess.role !== 'profissional') return false;
+      if (!(global.QFCloud && global.QFCloud.enabled)) return false;
+      tentando = true;
+      try {
+        const st = await global.QFCloud.preCadastroStatus(v.pag.id, v.pag.segredo);
+        if (!st || !st.ok) { if (st && st.error === 'nao_encontrado') limpar(); return false; }
+        if (st.status !== 'aprovado') { if (st.status !== 'pendente') limpar(); return false; }
+        const rg = await global.QFCloud.preCadastroResgatar(v.pag.id, v.pag.segredo);
+        if (rg && (rg.ok || rg.error === 'ja_usado' || rg.error === 'nao_encontrado')) limpar();
+        if (!(rg && rg.ok) || rg.ja_resgatado) return false;
+        try { await global.QFCloud.syncForCurrentSession(true); } catch (_) {}
+        PU.toast('Pagamento confirmado: seu plano já está ativo na Carteira.', 'success');
+        return true;
+      } catch (_) { return false; } finally { tentando = false; }
+    }
+    return { ler: ler, salvar: salvar, senha: senha, limpar: limpar, tentar: tentar };
+  })();
+  global.QFPreCadastro = QFPreCadastro;
 
   const ROLE_META = {
     cliente: { titulo: 'Sou Cliente', sub: 'Encontre profissionais perto de você', iconName: 'search', demo: 'fernanda@exemplo.com' },
@@ -7955,7 +8034,7 @@ alt=""></noscript>
           '</div>' +
           '<div class="qf-step stack" data-step="4" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 5</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:80%"></span></div></div>' +
-          '<div class="card stack--sm" style="background:var(--warning-100);border:2px solid #efc46e;">' +
+          '<div class="card stack qf-cad-foto" style="background:var(--warning-100);border:2px solid #efc46e;">' +
             '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Escolha uma opção: tire uma selfie sua ou, se você representa uma empresa, envie o logotipo ou a marca oficial da empresa pela galeria.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie do profissional<input type="file" id="cadastro-prof-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
@@ -7971,9 +8050,9 @@ alt=""></noscript>
           '</div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
-          // V11.49: etapa 5 — escolha do plano. Nada é cobrado aqui: Mensal, Pro e Premium vão para o pagamento logo depois de criar a conta.
+          // V11.49: etapa 5 — escolha do plano. V11.50: Mensal, Pro e Premium vão para o pagamento ANTES de criar a conta.
           '<div class="qf-step stack" data-step="5" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Você escolhe agora e paga só depois de criar a conta. Dá para trocar quando quiser, na Carteira.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Nos planos pagos você paga primeiro e a conta é criada assim que o pagamento é confirmado. No Avulso a conta é criada na hora.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'premium' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
               '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'premium' ? ' checked' : '') + '>' +
@@ -7984,10 +8063,16 @@ alt=""></noscript>
             '</label>';
           }).join('') + '</div>' +
           '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table><tr><td>10 chamados</td><td>avulso R$ 79,00</td><td><b>Mensal R$ 49,90</b></td></tr><tr><td>25 chamados</td><td>avulso R$ 197,50</td><td><b>Pro R$ 99,90</b></td></tr><tr><td>60 chamados</td><td>avulso R$ 474,00</td><td><b>Premium R$ 199,90</b></td></tr></table></div>' +
-          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Assinar o Premium · R$ 199,90</button></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Ir para o pagamento · R$ 199,90</button></div>' +
           '<button class="qf-cad-planos__depois" type="button" data-plano-depois>Prefiro escolher depois</button>' +
-          '<div class="qf-cad-planos__nota">O plano é ativado assim que o pagamento é confirmado (Pix, cartão ou boleto).</div>' +
+          '<div class="qf-cad-planos__nota">Pagamento confirmado: a conta é criada e o plano entra na sua carteira.</div>' +
           '</div>' +
+          // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
+          '<div class="qf-step stack" data-step="6" hidden>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Pagamento</div><div class="h2">Como você quer pagar?</div><div class="text--sm text--secondary" data-pag-resumo></div></div>' +
+          '<div class="stack" data-pag-area></div>' +
+          '</div>' +
+          '<div class="qf-step stack" data-step="7" hidden><div class="stack" data-conta-criada></div></div>' +
         '</form>' +
       '</div>'
     );
@@ -8962,7 +9047,7 @@ alt=""></noscript>
       function botaoPlano() {
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
         const b = form.querySelector('[data-cad-criar]');
-        if (b) b.textContent = pl.id === 'avulso' ? 'Criar conta de profissional' : 'Assinar o ' + pl.nome + ' · ' + pl.preco;
+        if (b) b.textContent = pl.id === 'avulso' ? 'Criar conta de profissional' : 'Ir para o pagamento · ' + pl.preco;
       }
       form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       form.addEventListener('click', function (e) {
@@ -8980,8 +9065,295 @@ alt=""></noscript>
       const raioValor = content.querySelector('#raio-valor');
       raioRange.addEventListener('input', function () { raioValor.textContent = raioRange.value; });
 
+      // ---------- V11.50: pagamento do plano antes de criar a conta ----------
+      const pagArea = form.querySelector('[data-pag-area]');
+      const pagResumo = form.querySelector('[data-pag-resumo]');
+      const contaBox = form.querySelector('[data-conta-criada]');
+      let pre = null, preSenha = '', preTimer = null, preOcupado = false, preConsultando = false, preInicio = 0, formPreenchido = false;
+      function esc(v) { return PU.escapeHtml(String(v == null ? '' : v)); }
+      function planoDoPre() { return QF_CAD_PLANOS.find(function (x) { return pre && x.id === pre.plano; }) || QF_CAD_PLANOS[QF_CAD_PLANOS.length - 1]; }
+      function naTela() { return document.body.contains(form); }
+      function preGuardar() { if (pre) QFPreCadastro.salvar(pre, preSenha); }
+      function pagStatus(txt) { return '<div class="qf-pag-status"><span class="qf-pag-spin" aria-hidden="true"></span><span>' + txt + '</span></div>'; }
+      function pagAviso(txt) { return txt ? '<div class="card card--tight" style="background:var(--warning-100);border:none;"><div class="text--sm" style="color:var(--warning-600);font-weight:700;">' + esc(txt) + '</div></div>' : ''; }
+      function metodoBtn(id, iconName, titulo, sub, selo) {
+        return '<button type="button" class="card card--pressable row qf-pag-metodo" data-pag-metodo="' + id + '"><div class="icon-tile icon-tile--orange">' + icon(iconName) + '</div>' +
+          '<div class="spacer"><div class="text--strong">' + titulo + '</div><div class="text--sm text--secondary">' + sub + '</div></div>' +
+          (selo ? '<span class="badge badge--success">' + selo + '</span>' : icon('chevronRight')) + '</button>';
+      }
+      function resumoPlano() {
+        const pl = planoDoPre();
+        if (pagResumo) pagResumo.innerHTML = 'Plano <strong>' + esc(pl.nome) + '</strong> · <strong>' + esc(pl.preco) + '</strong> · ' + esc(pl.unit);
+      }
+      function renderEscolha(aviso) {
+        clearTimeout(preTimer);
+        resumoPlano();
+        pagArea.innerHTML = pagAviso(aviso) +
+          metodoBtn('pix', 'bolt', 'Pix', 'Confirma na hora. A conta é criada em seguida.', 'Mais rápido') +
+          metodoBtn('cartao', 'creditCard', 'Cartão de crédito', 'Pagamento seguro no Efí Bank. A conta é criada quando aprovar.') +
+          metodoBtn('boleto', 'document', 'Boleto', 'Demora até 3 dias úteis: a conta é criada agora e o plano ativa quando o boleto compensar.') +
+          '<div class="text--sm text--secondary" style="text-align:center;">Sua conta será criada com o e-mail <strong>' + esc(pre.dados && pre.dados.email) + '</strong>.</div>' +
+          (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-voltar>Voltar e trocar de plano</button>' : '<button class="qf-cad-planos__depois" type="button" data-pag-cancelar>Cancelar e começar de novo</button>');
+      }
+      function renderAguardando() {
+        resumoPlano();
+        const g = pre.pag, pix = g.metodo === 'pix';
+        pagArea.innerHTML = (pix
+          ? (g.qr ? '<div class="card" style="padding:14px;text-align:center;background:#fff;"><img src="' + esc(g.qr) + '" alt="QR Code Pix" style="width:min(230px,72vw);height:auto;display:block;margin:0 auto;border-radius:12px;"></div>' : '') +
+            '<label class="field"><span class="field__label">Pix copia e cola</span><textarea class="textarea" data-pag-codigo readonly style="min-height:96px;">' + esc(g.pix) + '</textarea></label>' +
+            '<button class="btn btn--primary" type="button" data-pag-copiar>' + icon('document') + ' Copiar código Pix</button>'
+          : '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">O pagamento abre no Efí Bank. O QuemFaz não recebe nem guarda o número do cartão. Depois de pagar, volte para esta tela.</div></div>' +
+            '<a class="btn btn--primary" href="' + esc(g.url) + '" target="_blank" rel="noopener">' + icon('creditCard') + ' Pagar com cartão no Efí Bank</a>') +
+          pagStatus('Aguardando o pagamento. Assim que for confirmado, sua conta é criada sozinha.') +
+          '<button class="btn btn--outline" type="button" data-pag-ja-paguei>Já paguei</button>' +
+          '<button class="qf-cad-planos__depois" type="button" data-pag-trocar>Trocar a forma de pagamento</button>';
+      }
+      function renderErroPagamento(msg, extra) {
+        pagArea.innerHTML = '<div class="card stack--sm" style="text-align:center;"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('alertTriangle') + '</div><div class="text--strong">' + esc(msg) + '</div></div>' + (extra || '') +
+          '<button class="btn btn--outline" type="button" data-pag-outra>Escolher outra forma de pagamento</button>';
+      }
+      function abrirPagamento(dados, pl, indicacao) {
+        const semSenha = Object.assign({}, dados); delete semSenha.senha;
+        const antigo = QFPreCadastro.ler();
+        // Mesmo e-mail e mesmo plano com cobrança já aberta: continua nela em vez de abrir outra.
+        // Também vale para quem pagou e precisou preencher o cadastro de novo (aí o plano é o que foi pago).
+        const reusa = !!(antigo && antigo.pag && (!antigo.dados || (antigo.plano === pl.id && antigo.dados.email === dados.email)));
+        pre = { em: reusa ? antigo.em : Date.now(), plano: reusa ? antigo.plano : pl.id, planoEscolhido: pl.id, indicacao: String(indicacao || ''), dados: semSenha, pag: reusa ? antigo.pag : null };
+        preSenha = String(dados.senha || '');
+        formPreenchido = true;
+        preGuardar();
+        if (pre.pag) { renderAguardando(); preInicio = Date.now(); consultarPagamento(false); } else renderEscolha();
+        goStep(6);
+      }
+      async function gerarCobranca(metodo) {
+        if (preOcupado || !pre) return;
+        preOcupado = true;
+        pagArea.innerHTML = pagStatus(metodo === 'pix' ? 'Gerando o Pix…' : 'Preparando o pagamento com cartão…');
+        try {
+          const r = await global.QFCloud.preCadastroCriar(pre.plano, metodo, { email: pre.dados.email, nome: pre.dados.nome, telefone: pre.dados.telefone });
+          if (!naTela() || !pre) return;
+          if (!r || !r.ok) {
+            const erro = r && r.error;
+            if (erro === 'email_em_uso') renderErroPagamento('Esse e-mail já tem conta no QuemFaz. Nada foi cobrado.', '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>' + (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-email>Usar outro e-mail</button>' : ''));
+            else if (erro === 'muitas_tentativas') renderErroPagamento('Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.');
+            else if (erro === 'cobranca_indisponivel' && metodo === 'cartao') renderErroPagamento('Pagamento com cartão indisponível no momento. Use o Pix: confirma na hora.');
+            else renderErroPagamento('Não foi possível gerar o pagamento. Confira a internet e tente de novo. Nada foi cobrado.');
+            return;
+          }
+          pre.pag = { id: r.id, segredo: r.segredo, metodo: metodo, valor: Number(r.valor_centavos || 0), pix: r.pix_copy_paste || '', qr: r.qr_image || '', url: r.checkout_url || '' };
+          preGuardar();
+          renderAguardando();
+          preInicio = Date.now();
+          agendarConsulta();
+        } finally { preOcupado = false; }
+      }
+      function agendarConsulta() {
+        clearTimeout(preTimer);
+        if (!pre || !pre.pag || !naTela()) return;
+        // 5 em 5 segundos nos primeiros 10 minutos; depois, de 20 em 20.
+        preTimer = setTimeout(function () { consultarPagamento(false); }, Date.now() - preInicio < 600000 ? 5000 : 20000);
+      }
+      async function consultarPagamento(manual) {
+        if (!pre || !pre.pag || !naTela()) return;
+        if (preConsultando) { if (manual) PU.toast('Conferindo o pagamento…', 'success'); return; }
+        preConsultando = true;
+        let seguir = true;
+        try {
+          const r = await global.QFCloud.preCadastroStatus(pre.pag.id, pre.pag.segredo);
+          if (!naTela() || !pre || !pre.pag) return;
+          if (r && r.ok && r.status === 'aprovado') { seguir = false; await pagamentoConfirmado(); return; }
+          if ((r && r.ok && r.status !== 'pendente') || (r && r.error === 'nao_encontrado')) {
+            seguir = false; pre.pag = null; pre.plano = pre.planoEscolhido || pre.plano; preGuardar();
+            renderEscolha('Esse pagamento expirou ou foi cancelado. Escolha a forma de pagamento de novo.');
+            return;
+          }
+          if (manual) PU.toast('O pagamento ainda não foi confirmado. Assim que cair, sua conta é criada sozinha.', 'danger');
+        } catch (_) {
+          if (manual) PU.toast('Não foi possível conferir agora. Confira a internet.', 'danger');
+        } finally {
+          preConsultando = false;
+          if (seguir) agendarConsulta();
+        }
+      }
+      function renderPedirSenha() {
+        pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Crie a senha da sua conta <strong>' + esc(pre.dados.email) + '</strong> para terminar.</div></div>' +
+          '<label class="field"><span class="field__label">Senha</span><input class="input" type="text" data-pag-senha minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>' +
+          '<button class="btn btn--primary" type="button" data-pag-criar-conta>Criar minha conta</button>';
+      }
+      function renderErroConta(msg) {
+        pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Seu pagamento está guardado. Falta só criar a conta.</div></div>' +
+          pagAviso(msg || 'Não foi possível criar a conta agora.') +
+          '<button class="btn btn--primary" type="button" data-pag-criar-conta>Tentar de novo</button>' +
+          '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/login">Já tenho conta: entrar</button>' +
+          '<div class="text--sm text--secondary" style="text-align:center;">Se você entrar numa conta que já existe, o plano pago é ativado nela.</div>';
+      }
+      async function pagamentoConfirmado() {
+        clearTimeout(preTimer);
+        if (preOcupado || !pre || !pre.pag) return;
+        if (!pre.dados || !pre.dados.email || !/^data:image\//i.test(String(pre.dados.selfieData || ''))) {
+          // Sem os dados do cadastro neste aparelho: o pagamento continua valendo para a conta em que a pessoa entrar.
+          pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Preencha o cadastro de novo para criar a conta. Você não paga outra vez: o plano entra assim que a conta for criada.</div></div>' +
+            '<button class="btn btn--primary" type="button" data-pag-refazer>Preencher o cadastro</button>';
+          return;
+        }
+        if (!preSenha || preSenha.length < 6) { renderPedirSenha(); return; }
+        preOcupado = true;
+        pagArea.innerHTML = pagStatus('Pagamento confirmado! Criando sua conta…');
+        try {
+          const dados = Object.assign({}, pre.dados, { senha: preSenha });
+          if (global.QFIndicacao) global.QFIndicacao.beforeSignup(pre.indicacao);
+          const res = await global.QFCloud.signUp('profissional', dados);
+          if (!res.ok) { renderErroConta(res.error); return; }
+          if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
+          if (res.needsConfirmation) {
+            PU.toast('Conta criada. Confirme o e-mail e entre: o plano pago é ativado ao entrar.', 'success');
+            global.navigate('/auth/profissional/login', true);
+            return;
+          }
+          let rg = null;
+          for (let i = 0; i < 3 && !(rg && rg.ok); i++) {
+            rg = await global.QFCloud.preCadastroResgatar(pre.pag.id, pre.pag.segredo);
+            if (!(rg && rg.ok)) await new Promise(function (ok) { setTimeout(ok, 1200); });
+          }
+          try { await global.QFCloud.syncForCurrentSession(true); } catch (_) {}
+          const pl = planoDoPre();
+          const conta = { email: dados.email, senha: preSenha, plano: pl, ativo: !!(rg && rg.ok) };
+          // Plano ativado: nada mais a guardar. Se o plano ainda não entrou, fica só o pagamento (a Carteira ativa ao abrir).
+          if (conta.ativo) QFPreCadastro.limpar(); else QFPreCadastro.salvar({ em: pre.em, plano: pre.plano, pag: pre.pag }, '');
+          pre = null; preSenha = '';
+          renderContaCriada(conta);
+          goStep(7);
+        } catch (err) {
+          console.warn('QuemFaz: conta após pagamento não concluída', err && err.message);
+          renderErroConta('Falha de conexão ao criar a conta. Confira a internet e tente de novo.');
+        } finally { preOcupado = false; }
+      }
+      function renderContaCriada(conta) {
+        contaBox.innerHTML = '<div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:8px auto 0;background:var(--success-100);color:var(--success-600);">' + icon('checkCircle') + '</div>' +
+          '<div class="h2" style="text-align:center;">' + (conta.ativo ? 'Pagamento confirmado e conta criada!' : 'Conta criada!') + '</div>' +
+          '<div class="qf-conta-dados"><div class="qf-conta-dados__tit">Dados da sua conta</div>' +
+            '<div class="qf-conta-dados__linha"><span>E-mail</span><strong>' + esc(conta.email) + '</strong></div>' +
+            '<div class="qf-conta-dados__linha"><span>Senha</span><strong>' + esc(conta.senha) + '</strong></div>' +
+            '<div class="qf-conta-dados__nota">Anote ou tire um print: você usa esse e-mail e essa senha para entrar no QuemFaz.</div></div>' +
+          '<div class="card card--tight row" style="background:var(--success-100);border:none;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--success-600);">' +
+            (conta.ativo ? 'Plano ' + esc(conta.plano.nome) + ' creditado na sua carteira' : 'Pagamento do plano ' + esc(conta.plano.nome) + ' confirmado') + '</div><div class="text--sm">' +
+            (conta.ativo ? esc(conta.plano.unit.split(' · ')[0]) + ' para usar em 30 dias.' : 'O plano entra na sua carteira em instantes, assim que você abrir o app.') + '</div></div></div>' +
+          '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
+      }
+      async function criarContaAgora(dados, planoId, metodo) {
+        const res = await global.QFCloud.signUp('profissional', dados);
+        if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return false; }
+        // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
+        if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
+        // Boleto: a conta nasce agora e a Carteira abre o boleto do plano escolhido.
+        try {
+          if (planoId) { sessionStorage.setItem('qf_plano_pos_cadastro', planoId); sessionStorage.setItem('qf_plano_pos_cadastro_metodo', metodo || 'pix'); }
+          else sessionStorage.removeItem('qf_plano_pos_cadastro');
+        } catch (_) {}
+        // Conta criada sem plano com um pagamento ainda guardado: fica só o pagamento (ativa sozinho se cair).
+        const guardado = QFPreCadastro.ler();
+        if (!planoId && guardado && guardado.pag) QFPreCadastro.salvar({ em: guardado.em, plano: guardado.plano, pag: guardado.pag }, ''); else QFPreCadastro.limpar();
+        pre = null; preSenha = '';
+        if (res.needsConfirmation) {
+          PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
+          global.navigate('/auth/profissional/login', true);
+          return true;
+        }
+        PU.toast('Cadastro criado com selfie de segurança!', 'success');
+        if (sessionStorage.getItem('qf_pending_ad_draft')) { global.navigate('/profissional/anuncie', true); return true; }
+        global.navigate(planoId ? '/profissional/carteira' : '/profissional/home', true);
+        return true;
+      }
+      form.addEventListener('click', async function (e) {
+        const alvo = e.target.closest('[data-pag-metodo],[data-pag-voltar],[data-pag-cancelar],[data-pag-copiar],[data-pag-ja-paguei],[data-pag-trocar],[data-pag-outra],[data-pag-email],[data-pag-criar-conta],[data-pag-refazer],[data-conta-entrar]');
+        if (!alvo) return;
+        if (alvo.hasAttribute('data-conta-entrar')) {
+          global.navigate(sessionStorage.getItem('qf_pending_ad_draft') ? '/profissional/anuncie' : '/profissional/carteira', true);
+          return;
+        }
+        if (alvo.hasAttribute('data-pag-refazer')) { pre.dados = null; preGuardar(); goStep(1); return; }
+        if (!pre) return;
+        if (alvo.hasAttribute('data-pag-metodo')) {
+          const metodo = alvo.getAttribute('data-pag-metodo');
+          if (metodo !== 'boleto') { gerarCobranca(metodo); return; }
+          if (preOcupado) return;
+          preOcupado = true;
+          pagArea.innerHTML = pagStatus('Criando sua conta para gerar o boleto…');
+          try {
+            if (global.QFIndicacao) global.QFIndicacao.beforeSignup(pre.indicacao);
+            const plano = pre.plano;
+            const ok = await criarContaAgora(Object.assign({}, pre.dados, { senha: preSenha }), plano, 'boleto');
+            if (!ok && naTela() && pre) renderEscolha();
+          } catch (_) {
+            PU.toast('Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
+            if (naTela() && pre) renderEscolha();
+          } finally { preOcupado = false; }
+          return;
+        }
+        if (alvo.hasAttribute('data-pag-voltar')) { clearTimeout(preTimer); goStep(5); return; }
+        if (alvo.hasAttribute('data-pag-email')) { clearTimeout(preTimer); goStep(1); marcarErro('email'); return; }
+        if (alvo.hasAttribute('data-pag-outra')) { renderEscolha(); return; }
+        if (alvo.hasAttribute('data-pag-cancelar')) {
+          QFPreCadastro.limpar(); pre = null; preSenha = ''; clearTimeout(preTimer);
+          goStep(1);
+          return;
+        }
+        if (alvo.hasAttribute('data-pag-copiar')) {
+          const campo = pagArea.querySelector('[data-pag-codigo]');
+          try {
+            if (navigator.clipboard) await navigator.clipboard.writeText(campo.value);
+            else { campo.select(); document.execCommand('copy'); }
+            PU.toast('Código Pix copiado. Cole no app do seu banco.', 'success');
+          } catch (_) { try { campo.select(); } catch (__) {} PU.toast('Selecione e copie o código Pix.', 'danger'); }
+          return;
+        }
+        if (alvo.hasAttribute('data-pag-ja-paguei')) { consultarPagamento(true); return; }
+        if (alvo.hasAttribute('data-pag-trocar')) {
+          // Confere antes de trocar: se já caiu, segue para a conta em vez de cobrar de novo.
+          if (preOcupado || !pre.pag) return;
+          clearTimeout(preTimer);
+          alvo.disabled = true;
+          let st = null;
+          try { st = await global.QFCloud.preCadastroStatus(pre.pag.id, pre.pag.segredo); } catch (_) {}
+          if (!naTela() || !pre) return;
+          if (st && st.ok && st.status === 'aprovado') { pagamentoConfirmado(); return; }
+          pre.pag = null; pre.plano = pre.planoEscolhido || pre.plano; preGuardar();
+          renderEscolha();
+          return;
+        }
+        if (alvo.hasAttribute('data-pag-criar-conta')) {
+          const campo = pagArea.querySelector('[data-pag-senha]');
+          if (campo) {
+            if (String(campo.value || '').length < 6) { PU.toast('Crie uma senha com pelo menos 6 letras ou números.', 'danger'); try { campo.focus(); } catch (_) {} return; }
+            preSenha = String(campo.value);
+          }
+          pagamentoConfirmado();
+        }
+      });
+      // Voltou ao cadastro com um pagamento aberto neste aparelho (fechou o app, foi ao banco pagar): continua de onde parou.
+      (function retomarPagamento() {
+        if (!(global.QFCloud && global.QFCloud.enabled)) return;
+        const salvo = QFPreCadastro.ler();
+        if (!salvo || !salvo.pag || !salvo.pag.id) return;
+        if (!salvo.dados) {
+          // Só o pagamento ficou guardado: se já caiu, avisa que falta preencher o cadastro (sem cobrar de novo).
+          global.QFCloud.preCadastroStatus(salvo.pag.id, salvo.pag.segredo).then(function (r) {
+            if (!naTela() || pre || stepAtual !== 1 || !(r && r.ok && r.status === 'aprovado')) return;
+            pre = salvo; resumoPlano(); pagamentoConfirmado(); goStep(6);
+          }).catch(function () {});
+          return;
+        }
+        pre = salvo; preSenha = QFPreCadastro.senha();
+        renderAguardando();
+        goStep(6);
+        preInicio = Date.now();
+        consultarPagamento(false);
+      })();
+
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        // Pagamento e conta criada não reenviam o formulário (Enter no campo da senha = criar a conta).
+        if (stepAtual > 5) { const cc = form.querySelector('[data-pag-criar-conta]'); if (stepAtual === 6 && cc) cc.click(); return; }
         // Enter no teclado numa etapa do meio = Continuar.
         if (stepAtual < 5) { avancar(); return; }
         for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
@@ -9028,27 +9400,14 @@ alt=""></noscript>
           selfieData: selfieData
         };
         const btn = form.querySelector('button[type="submit"]');
+        const planoPago = QF_CAD_PLANOS.find(function (x) { return x.id === String(fd.get('planoEscolhido') || 'avulso') && x.valor; });
+        // V11.50: plano pago = pagamento primeiro. A conta só é criada depois da confirmação.
+        if (planoPago && global.QFCloud && global.QFCloud.enabled) { abrirPagamento(dados, planoPago, fd.get('indicacao')); return; }
         if (btn) btn.disabled = true;
         if (global.QFIndicacao) global.QFIndicacao.beforeSignup(fd.get('indicacao'));
         try {
           if (global.QFCloud && global.QFCloud.enabled) {
-            const res = await global.QFCloud.signUp('profissional', dados);
-            if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return; }
-            // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
-            if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
-            planoPosCadastro(fd);
-            if (res.needsConfirmation) {
-              PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
-              global.navigate('/auth/profissional/login', true);
-              return;
-            }
-            PU.toast('Cadastro criado com selfie de segurança!', 'success');
-            if (sessionStorage.getItem('qf_pending_ad_draft')) {
-              global.navigate('/profissional/anuncie', true);
-              return;
-            }
-            if (planoPosCadastro(fd)) { global.navigate('/profissional/carteira', true); return; }
-            global.navigate('/profissional/home', true);
+            await criarContaAgora(dados, null, null);
             return;
           }
           const foundCity = DB.cities().find(function (c) { return String(c.nome).toLowerCase() === String(dados.cidade).toLowerCase() && c.uf === dados.uf; });
@@ -12554,6 +12913,10 @@ alt=""></noscript>
     if (prevAfterRender) prevAfterRender(pattern, content, params, user);
 
     if (pattern === '/profissional/home') bindHome(content, user);
+    // V11.50: quem pagou o plano no cadastro e entrou depois recebe o plano aqui (rede de segurança).
+    if ((pattern === '/profissional/home' || pattern === '/profissional/carteira') && global.QFPreCadastro && global.QFPreCadastro.ler()) {
+      global.QFPreCadastro.tentar().then(function (ativou) { if (ativou && (location.hash || '').indexOf(pattern) !== -1) global.navigate(pattern, true); });
+    }
     if (pattern === '/profissional/chamada/:id') bindChamada(content, params, user);
     if (pattern === '/profissional/servicos') bindProfServicos(content, user);
     if (pattern === '/profissional/pedido/:id') bindPedidoDetalhe(content, params, user);
@@ -13390,7 +13753,8 @@ alt=""></noscript>
     try {
       const escolhido = sessionStorage.getItem('qf_plano_pos_cadastro');
       const pl = escolhido && (global.QFCadPlanos || []).find(function (x) { return x.id === escolhido && x.valor; });
-      if (pl) { sessionStorage.removeItem('qf_plano_pos_cadastro'); setTimeout(function () { openRechargeSheet(user, pl.valor, 'pix', pl.id); }, 300); }
+      const metodoEscolhido = sessionStorage.getItem('qf_plano_pos_cadastro_metodo') === 'boleto' ? 'boleto' : 'pix';
+      if (pl) { sessionStorage.removeItem('qf_plano_pos_cadastro'); sessionStorage.removeItem('qf_plano_pos_cadastro_metodo'); setTimeout(function () { openRechargeSheet(user, pl.valor, metodoEscolhido, pl.id); }, 300); }
     } catch (_) {}
     const action = content.querySelector('[data-action="iniciar-recarga"]');
     if (!action) return;
@@ -13840,7 +14204,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.49';
+  const APP_VERSION = '11.50';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

@@ -66,7 +66,8 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
   assert.ok(site.includes("{ id: 'premium', nome: 'Premium', preco: 19990, chamados: 60 }"));
   assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
   assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
-  assert.ok(site.includes("sessionStorage.setItem('qf_plano_pos_cadastro', pl.id)") && site.includes("openRechargeSheet(user, pl.valor, 'pix', pl.id)"));
+  // V11.50: plano pago vai para o pagamento antes da conta; só o boleto ainda abre na Carteira depois do cadastro.
+  assert.ok(site.includes("sessionStorage.setItem('qf_plano_pos_cadastro', planoId)") && site.includes("openRechargeSheet(user, pl.valor, metodoEscolhido, pl.id)"));
   assert.ok(site.includes("if (!out.pagamento_id && !out.incluido_no_plano)") && site.includes('Anúncio incluído no seu Premium'));
   assert.ok(site.includes("client.rpc('qf_profissionais_premium'") && site.includes('qf-selo-premium'));
   assert.ok(admin.includes("p.plano === 'premium' ? 'Premium'"));
