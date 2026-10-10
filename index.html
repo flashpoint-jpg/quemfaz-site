@@ -6051,7 +6051,7 @@ alt=""></noscript>
       res = await client.auth.signUp({
         email: email,
         password: authPassword,
-        options: { data: meta, emailRedirectTo: location.origin + location.pathname }
+        options: { data: meta, emailRedirectTo: enderecoPublico() }
       });
       if (res.error) return { ok: false, error: traduzErroAuth(res.error.message) };
     }
@@ -6159,11 +6159,18 @@ alt=""></noscript>
     } catch (_) { return null; }
   }
 
+  function enderecoPublico() {
+    const h = String(location.hostname || '');
+    if (!/^https?:$/.test(location.protocol) || h === 'localhost' || h === '127.0.0.1' || h === '') return 'https://quemfazservico.com.br/';
+    return location.origin + location.pathname;
+  }
+
   async function requestPasswordReset(email) {
     if (!enabled || !client) return { ok: false, error: 'Não foi possível carregar a conexão com o banco.' };
     email = String(email || '').trim();
     if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 3) return { ok: false, error: 'Digite um e-mail válido.' };
-    const redirectTo = location.origin + location.pathname;
+    // V11.63: dentro do app Android o endereço interno é "localhost"; o link do e-mail tem que abrir o site de verdade.
+    const redirectTo = enderecoPublico();
     const res = await client.auth.resetPasswordForEmail(email, { redirectTo: redirectTo });
     if (res.error) {
       const msg = String(res.error.message || '');
@@ -14298,7 +14305,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.62';
+  const APP_VERSION = '11.63';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

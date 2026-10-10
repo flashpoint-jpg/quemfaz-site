@@ -1,0 +1,5 @@
+QuemFaz 11.63 — link do "Esqueci minha senha" pedido de dentro do app Android
+
+- Quem pedia a troca de senha de dentro do app Android recebia no e-mail um link que abria "localhost"
+  ("Não é possível acessar esse site"). Agora o link abre https://quemfazservico.com.br/ para criar a senha nova.
+- No site nada muda: o link continua voltando para o próprio site.
