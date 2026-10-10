@@ -3786,7 +3786,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     const temDesb = Array.isArray(d.desbloqueios);
     const desbs = {};
     (d.desbloqueios || []).forEach(function (x) {
-      (desbs[x.chamado_id] = desbs[x.chamado_id] || []).push({ profissionalId: x.profissional_id, valor: Number(x.valor_centavos || 0), origem: x.origem || 'saldo', ativo: x.ativo !== false, desfecho: x.desfecho || null, criadoEm: x.criado_em });
+      (desbs[x.chamado_id] = desbs[x.chamado_id] || []).push({ profissionalId: x.profissional_id, valor: Number(x.valor_centavos || 0), origem: x.origem || 'saldo', ativo: x.ativo !== false, desfecho: x.desfecho || null, desfechoEm: x.desfecho_em || null, criadoEm: x.criado_em });
     });
     const requests = (d.chamados || []).map(function (c) {
       let st = statusLocal(c.status);
@@ -3816,7 +3816,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
         taxaVisita: q ? Number(q.taxa_visita_centavos || 0) : 0,
         orcamento: q ? { maoDeObra: Number(q.mao_obra_centavos || 0), material: Number(q.material_centavos || 0), total: Number(q.valor_centavos || 0), status: q.status } : null,
         avaliacaoCliente: revCli ? { nota: revCli.nota, comentario: revCli.comentario || '' } : null,
-        desfecho: c.desfecho || null,
+        desfecho: c.desfecho || null, desfechoEm: c.desfecho_em || null,
         desbloqueios: temDesb ? (desbs[c.id] || []) : null,
         canceladoPor: c.desfecho === 'nao_fechado' ? 'Profissional' : c.desfecho === 'sem_retorno' ? 'Sistema (7 dias sem resposta)' : (c.status === 'cancelado' ? '—' : null),
         motivoCancelamento: c.desfecho === 'nao_fechado' ? 'Profissional informou que não fechou o serviço.' : c.desfecho === 'sem_retorno' ? 'Profissional não informou o resultado em 7 dias.' : null, historico: hist
@@ -7970,6 +7970,49 @@ Screens.adminDashboardRender = function () {
       adminExtratoHtml(all), 'qf-adm-desb');
   };
 
+  // V11.60: Finalizados — cada pedido que um profissional informou que fechou: quem finalizou, quando, cliente e nota.
+  function adminFinalizadosLista() {
+    const notas = {};
+    (DB.state.avaliacoesAdmin || []).forEach(function (a) { if (a.autor === 'cliente') notas[a.requestId + '|' + a.profissionalId] = a; });
+    const itens = [];
+    DB.allRequests().forEach(function (r) {
+      desbloqueiosAtivos(r).forEach(function (x) {
+        if (x.desfecho !== 'fechado') return;
+        const quando = x.desfechoEm || r.desfechoEm || r.atualizadoEm || x.criadoEm;
+        itens.push({ r: r, x: x, quando: quando, t: Date.parse(quando) || 0, nota: notas[r.id + '|' + x.profissionalId] || null });
+      });
+    });
+    return itens.sort(function (a, b) { return b.t - a.t; });
+  }
+  Screens.adminFinalizadosRender = function () {
+    const itens = adminFinalizadosLista();
+    const hoje = qfDiaChave();
+    const pros = {};
+    let qtdHoje = 0, comNota = 0;
+    itens.forEach(function (m) { pros[m.x.profissionalId] = 1; if (m.t && qfDiaChave(m.quando) === hoje) qtdHoje++; if (m.nota) comNota++; });
+    const linhas = itens.map(function (m) {
+      const p = DB.profissionalById(m.x.profissionalId);
+      const c = DB.clienteById(m.r.clienteId);
+      const pedido = qfPedidoTitulo(m.r) + (m.r.titulo && String(m.r.titulo).trim() !== qfPedidoTitulo(m.r) ? ' · ' + String(m.r.titulo).trim() : '');
+      const local = [m.r.endereco && m.r.endereco.bairro, m.r.endereco && m.r.endereco.cidade].filter(Boolean).join(' · ');
+      return '<tr class="qf-adm-tr-link" data-nav="/admin/servicos/' + m.r.id + '" tabindex="0">' +
+        '<td><b>' + (m.t ? qfDiaMes(m.quando) : '—') + '</b><small class="qf-adm-resumo"> ' + (m.t ? qfHora(m.quando) : '') + '</small></td>' +
+        '<td><small class="qf-adm-resumo">Finalizado por</small><br><b>' + PU.escapeHtml((p && p.nome) || 'Profissional') + '</b></td>' +
+        '<td>' + PU.escapeHtml(pedido) + (local ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(local) + '</small>' : '') + '</td>' +
+        '<td>' + PU.escapeHtml((c && c.nome) || 'Cliente') + (c && c.telefone ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(c.telefone) + '</small>' : '') + '</td>' +
+        '<td>' + (m.nota ? '<b>' + m.nota.nota + ' de 5</b>' + (m.nota.comentario ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(m.nota.comentario) + '</small>' : '') : '<small class="qf-adm-resumo">Cliente ainda não deu nota</small>') + '</td>' +
+      '</tr>';
+    });
+    return admPage(
+      '<section class="qf-adm-numeros">' +
+        '<div class="qf-adm-num__item"><span>Finalizados no total</span><b>' + itens.length + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Finalizados hoje</span><b>' + qtdHoje + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Profissionais que finalizaram</span><b>' + Object.keys(pros).length + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Com nota do cliente</span><b>' + comNota + '</b></div>' +
+      '</section>' +
+      admTabela(['Quando', 'Profissional', 'Pedido', 'Cliente', 'Nota do cliente'], linhas, admLinhas(itens.length, 'chamado finalizado', 'chamados finalizados') + ' · do mais novo para o mais antigo', 'Nenhum profissional finalizou um chamado ainda.'), 'qf-adm-finalizados');
+  };
+
   // Por cidade: o agrupamento que existia em Profissionais, em tabela. A linha abre a lista já filtrada.
   Screens.adminPorCidadeRender = function () {
     const groups = {};
@@ -8442,6 +8485,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
+    { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
     { pattern: '/admin/por-cidade', role: 'admin', title: 'Por cidade', render: Screens.adminPorCidadeRender },
     { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
     { pattern: '/admin/comunicados', role: 'admin', title: 'Comunicados', render: Screens.adminComunicadosRender },
@@ -8594,6 +8638,7 @@ Screens.adminDashboardRender = function () {
     { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
     { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
+    { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
     { id: 'cidades', label: 'Por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
     { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
