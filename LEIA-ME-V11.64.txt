@@ -1,0 +1,9 @@
+QuemFaz 11.64 — painel: "Próximos ao pedido"
+
+PAINEL > menu da esquerda > Próximos ao pedido (logo abaixo de Pedidos)
+- Cada pedido que entrou (os 12 mais novos) com os profissionais do serviço pedido, do mais perto para o mais longe.
+- Para cada profissional: distância em km, online/offline, se o pedido está dentro do raio dele,
+  se foi avisado ou já desbloqueou, e botão de WhatsApp. O nome abre o perfil dele.
+- Localização do profissional: a do aparelho; se não tiver, a do endereço do cadastro ("pelo endereço").
+  Quem não tem nenhuma das duas aparece no fim, como "Sem localização".
+- Banco: supabase/2026-10-10-profissionais-proximos-ao-pedido.sql (só leitura, só admin).

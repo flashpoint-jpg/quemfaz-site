@@ -1593,6 +1593,22 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-ver__tick svg{width:14px;height:14px}
 .badge.qf-adm-ver__chip{background:linear-gradient(90deg,#f6d77a,#e2b24a);color:#3a2a05}
 .qf-adm-ver__sub{font-size:12.5px;color:var(--text-secondary,#6b7890);padding:0 16px 14px}
+
+/* Próximos ao pedido */
+.qf-prox__intro{margin:0 0 16px;color:var(--text-secondary);font-size:14px}
+.qf-prox>summary{display:flex;justify-content:space-between;align-items:center;gap:14px;cursor:pointer;list-style:none}
+.qf-prox>summary::-webkit-details-marker{display:none}
+.qf-prox[open]>summary{margin-bottom:14px}
+.qf-prox__tit b{display:block;font-size:17px}
+.qf-prox__tit small,.qf-prox__meta small{display:block;font-size:12.5px;color:var(--text-secondary);font-weight:400}
+.qf-prox__meta{text-align:right;font-size:13.5px;font-weight:600;flex:none}
+.qf-prox__nome{font-weight:700;color:inherit;cursor:pointer;text-decoration:underline;text-decoration-color:#c9cfdb;text-underline-offset:3px}
+.qf-prox__km b{font-size:15px;white-space:nowrap}
+.qf-prox__sim{color:#12804a;font-weight:700}
+.qf-prox__nao{color:#b3261e;font-weight:600}
+.qf-prox__ver{display:inline-block;margin-top:12px;font-weight:700;color:var(--navy-700);cursor:pointer}
+.qf-prox .qf-adm-tabela{margin-bottom:0}
+@media (max-width:640px){.qf-prox>summary{flex-direction:column;align-items:flex-start;gap:4px}.qf-prox__meta{text-align:left}}
 </style>
 </head>
 <body>
@@ -8043,6 +8059,54 @@ Screens.adminDashboardRender = function () {
       admTabela(['Quando', 'Profissional', 'Pedido', 'Cliente', 'Nota do cliente'], linhas, admLinhas(itens.length, 'chamado finalizado', 'chamados finalizados') + ' · do mais novo para o mais antigo', 'Nenhum profissional finalizou um chamado ainda.'), 'qf-adm-finalizados');
   };
 
+  // V11.64: Próximos ao pedido — para cada pedido que entrou, os profissionais do serviço pedido, do mais perto ao mais longe.
+  function admProximosHtml(d) {
+    const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
+    if (!pedidos.length) return admCard('Próximos ao pedido', '', '<p class="qf-adm-mudo" style="margin:0;">Nenhum pedido entrou ainda.</p>');
+    const hoje = qfDiaChave();
+    return pedidos.map(function (c, i) {
+      const pros = Array.isArray(c.profissionais) ? c.profissionais : [];
+      const local = [c.bairro, [c.cidade, c.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ');
+      const quando = (qfDiaChave(c.criado_em) === hoje ? 'Hoje' : qfDiaMes(c.criado_em)) + ' às ' + qfHora(c.criado_em);
+      const aberto = c.status === 'aberto' || c.status === 'em_negociacao';
+      const linhas = pros.map(function (p) {
+        const temKm = p.km !== null && p.km !== undefined;
+        const km = temKm ? Number(p.km) : null;
+        const dentro = temKm && km <= Number(p.raio_km || 0);
+        const wa = waHref(p.telefone);
+        return '<tr>' +
+          '<td class="qf-prox__km">' + (temKm ? '<b>' + String(km.toFixed(1)).replace('.', ',') + ' km</b>' + (p.pelo_endereco ? '<small class="qf-adm-resumo">pelo endereço</small>' : '') : '<small class="qf-adm-resumo">Sem localização</small>') + '</td>' +
+          '<td><a class="qf-prox__nome" data-nav="/admin/profissionais/' + PU.escapeHtml(p.id) + '">' + PU.escapeHtml(p.nome || 'Profissional') + '</a>' + (p.verificado ? ' <span class="badge qf-adm-ver__chip">★ Verificado</span>' : '') + '<small class="qf-adm-resumo">' + PU.escapeHtml([p.cidade, p.uf].filter(Boolean).join('/') || 'Cidade não informada') + '</small></td>' +
+          '<td>' + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') + '</td>' +
+          '<td>' + (temKm ? (dentro ? '<span class="qf-prox__sim">Dentro do raio</span>' : '<span class="qf-prox__nao">Fora do raio</span>') : '—') + '<small class="qf-adm-resumo">atende até ' + Number(p.raio_km || 0) + ' km</small></td>' +
+          '<td>' + (p.desbloqueou ? '<span class="qf-prox__sim">Desbloqueou</span>' : (p.avisado ? 'Foi avisado' : '<span class="qf-prox__nao">Não foi avisado</span>')) + '</td>' +
+          '<td>' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener" data-prox-wa>' + icon('whatsapp') + ' WhatsApp</a>' : '') + '</td>' +
+        '</tr>';
+      });
+      const total = Number(c.total || 0);
+      const rodape = total ? (total > pros.length ? 'Mostrando os ' + pros.length + ' mais perto de ' + total + ' profissionais desse serviço' : admLinhas(total, 'profissional desse serviço', 'profissionais desse serviço')) : '';
+      return '<details class="qf-adm-card qf-prox"' + (i === 0 || aberto ? ' open' : '') + '><summary><span class="qf-prox__tit"><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></span>' +
+        '<span class="qf-prox__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '<small>' + (total ? admLinhas(total, 'profissional do serviço', 'profissionais do serviço') : 'Nenhum profissional desse serviço') + '</small></span></summary>' +
+        admTabela(['Distância', 'Profissional', 'Agora', 'Raio dele', 'Neste pedido', ''], linhas, rodape, 'Ainda não há profissional cadastrado nesse serviço.') +
+        '<a class="qf-prox__ver" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</a>' +
+      '</details>';
+    }).join('');
+  }
+  async function admProximosCarregar(content) {
+    const box = content.querySelector('[data-adm-proximos]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_proximos_ao_pedido', { p_pedidos: 12, p_por_pedido: 15 });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
+      box.innerHTML = admProximosHtml(r.data);
+    } catch (err) { box.innerHTML = admCard('Próximos ao pedido', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
+  }
+  Screens.adminProximosRender = function () {
+    return admPage('<p class="qf-prox__intro">Cada pedido que entrou, com os profissionais do serviço pedido, do mais perto para o mais longe. A distância é calculada do local do pedido até a localização do profissional.</p>' +
+      '<div data-adm-proximos>' + admCard('Próximos ao pedido', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-proximos');
+  };
+
   // Por cidade: o agrupamento que existia em Profissionais, em tabela. A linha abre a lista já filtrada.
   Screens.adminPorCidadeRender = function () {
     const groups = {};
@@ -8407,6 +8471,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/configuracoes') bindMais(content);
     if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
     if (pattern === '/admin/planos') admPlanosCarregar(content);
+    if (pattern === '/admin/proximos') admProximosCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
     if (pattern === '/admin/dashboard') {
@@ -8516,6 +8581,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
+    { pattern: '/admin/proximos', role: 'admin', title: 'Profissionais próximos ao pedido', render: function () { return Screens.adminProximosRender(); } },
     { pattern: '/admin/por-cidade', role: 'admin', title: 'Por cidade', render: Screens.adminPorCidadeRender },
     { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
     { pattern: '/admin/comunicados', role: 'admin', title: 'Comunicados', render: Screens.adminComunicadosRender },
@@ -8667,6 +8733,7 @@ Screens.adminDashboardRender = function () {
   const ADMIN_MENU = [
     { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
     { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
+    { id: 'proximos', label: 'Próximos ao pedido', icon: 'mapPin', route: '/admin/proximos' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
