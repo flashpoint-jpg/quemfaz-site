@@ -69,3 +69,18 @@ assert.ok(html.includes("client.rpc('qf_portfolio_abertos_todos')"));           
 assert.ok(html.includes('a.status === DB.STATUS.BUSCANDO && !abertoTodos) {'));               // sem alerta no app
 assert.ok(!html.includes('attachAbertos'));
 console.log('abertos-a-todos 11.32.1: ok');
+
+// V11.46: aberto a todos com vagas já ocupadas não diz "Ninguém desbloqueou ainda".
+{
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+  const i = html.indexOf('    vagas: function (req) {');
+  const j = html.indexOf('    vagasTitulo: function (req) {');
+  const sc = { Math, Number };
+  require('node:vm').runInNewContext('var CallInfo = {' + html.slice(i, j) + '}; this.CI = CallInfo;', sc);
+  const m = (abertoTodos, participantes) => sc.CI.abertoMotivoHtml({ abertoTodos, participantes, limiteParticipantes: 3 });
+  require('node:assert/strict').ok(m('sem_desbloqueio', 0).includes('Ninguém desbloqueou ainda'));
+  require('node:assert/strict').equal(m('sem_desbloqueio', 2), '');
+  require('node:assert/strict').ok(m('sem_profissional', 0).includes('Sem profissional da categoria na região'));
+  require('node:assert/strict').ok(!html.includes('Pedidos que ninguém pegou ainda.'));
+  console.log('PASS aberto a todos: motivo acompanha as vagas ocupadas');
+}

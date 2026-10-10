@@ -11336,6 +11336,13 @@ alt=""></noscript>
       const ocupadas = Math.max(0, Math.min(limite, Number((req && req.participantes) || 0) || 0));
       return { limite: limite, ocupadas: ocupadas, livres: limite - ocupadas };
     },
+    // V11.46: o servidor mantém o pedido "aberto a todos" até as 3 vagas encherem. Com alguém dentro,
+    // não dá para dizer "ninguém desbloqueou": a linha some e as vagas ocupadas contam a história.
+    abertoMotivoHtml: function (req) {
+      if (!req || !req.abertoTodos) return '';
+      if (req.abertoTodos === 'sem_profissional') return '<div class="qf-aberto-motivo">Sem profissional da categoria na região</div>';
+      return CallInfo.vagas(req).ocupadas ? '' : '<div class="qf-aberto-motivo">Ninguém desbloqueou ainda</div>';
+    },
     vagasTitulo: function (req) {
       const v = CallInfo.vagas(req);
       return v.ocupadas + ' de ' + v.limite + ' vagas ocupadas';
@@ -11479,7 +11486,7 @@ alt=""></noscript>
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Bairro não informado') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (prazoInfo ? global.QFPrazo.linhaHtml(prazoInfo) : (req.dataPreferida && global.QFExecLabel ? '<div class="qf-exec-line">' + icon('clock') + '<span><strong>Execução:</strong> ' + PU.escapeHtml(global.QFExecLabel(req.dataPreferida)) + '</span></div>' : '')) +
-            (req.abertoTodos ? '<div class="qf-aberto-motivo">' + (req.abertoTodos === 'sem_profissional' ? 'Sem profissional da categoria na região' : 'Ninguém desbloqueou ainda') + '</div>' : '') +
+            (req.abertoTodos ? CallInfo.abertoMotivoHtml(req) : '') +
             CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
@@ -11518,7 +11525,7 @@ alt=""></noscript>
       if (!abertos || !abertos.length) return '';
       return '<div class="section qf-abertos" id="pedidos-abertos-a-todos">' +
         '<div class="section-head"><div><h2 class="h3">Abertos a todos <span class="badge badge--orange">' + abertos.length + '</span></h2>' +
-        '<p class="text--sm text--secondary">Pedidos que ninguém pegou ainda. Qualquer profissional pode desbloquear.</p></div></div>' +
+        '<p class="text--sm text--secondary">Pedidos que ainda têm vaga. Qualquer profissional pode desbloquear.</p></div></div>' +
         '<div class="stack--sm">' + abertos.map(function (req) { return chamadaCard(req, user); }).join('') + '</div>' +
         '<p class="qf-abertos__aviso">Só pegue se você faz esse serviço. O crédito não volta.</p>' +
       '</div>';
@@ -13690,7 +13697,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.45';
+  const APP_VERSION = '11.46';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
