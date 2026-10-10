@@ -8775,8 +8775,8 @@ Screens.adminDashboardRender = function () {
   function sincronizarPainel() {
     return global.QFConnection.deadline(Promise.all([global.QFAdminCloud.syncAds(), global.QFAdminCloud.syncSnapshot(), global.QFAdminCloud.syncSupport()]), 15000, 'painel administrativo');
   }
-  function atualizarPainelPorTras(path) {
-    if (painelSincronizando || Date.now() - painelSincronizadoEm < 12000) return;
+  function atualizarPainelPorTras(path, forcar) {
+    if (painelSincronizando || Date.now() - painelSincronizadoEm < (forcar ? 3000 : 20000)) return;
     painelSincronizando = true;
     sincronizarPainel().then(function () {
       painelSincronizadoEm = Date.now();
@@ -8809,7 +8809,7 @@ Screens.adminDashboardRender = function () {
 
   // V11.68: painel em tempo real. A cada 15 segundos busca os dados por trás, sem F5 e sem piscar:
   // a tela só é redesenhada se algo mudou, e pedido novo aparece num aviso no canto.
-  var pedidosVistos = null, telaMexidaEm = 0;
+  var pedidosVistos = null, telaMexidaEm = 0, pulsoAtual = null, pulsoOcupado = false;
   function avisarPedidoNovo() {
     let lista = [];
     try { lista = (global.DB && global.DB.allRequests ? global.DB.allRequests() : []) || []; } catch (_) { return; }
@@ -8837,7 +8837,17 @@ Screens.adminDashboardRender = function () {
         const aberto = document.querySelector('#sheet-overlay:not(.is-hidden), dialog[open]');
         if (c && !digitando && !aberto && !c.querySelector('form, textarea, details[open]:not(.qf-prox)')) telaMexida = false;
       }
-      atualizarPainelPorTras(p);
+      // V11.69: consulta só o "pulso" (resposta minúscula). Os dados completos, que são pesados,
+      // só são baixados quando o pulso muda — antes baixava tudo a cada 15 segundos.
+      if (pulsoOcupado || !(global.QFAdminCloud && global.QFAdminCloud.enabled && global.QFAdminCloud.client)) return;
+      pulsoOcupado = true;
+      global.QFAdminCloud.client.rpc('qf_admin_pulso').then(function (r) {
+        const d = r && r.data;
+        if (!d || !d.ok) return;
+        const mudou = pulsoAtual !== null && d.p !== pulsoAtual;
+        pulsoAtual = d.p;
+        if (mudou) atualizarPainelPorTras(p, true);
+      }).catch(function () {}).then(function () { pulsoOcupado = false; });
     };
     setInterval(tempoReal, 15000);
     document.addEventListener('visibilitychange', function () { if (!document.hidden) tempoReal(); });

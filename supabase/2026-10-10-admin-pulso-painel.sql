@@ -1,0 +1,3 @@
+-- V11.69: pulso do painel — resposta minúscula que só muda quando algo mudou (public.qf_admin_pulso, só admin).
+-- O painel consulta o pulso a cada 15 segundos e só baixa os dados completos quando ele muda.
+-- (Aplicado no banco como a migração admin_pulso_painel.)
