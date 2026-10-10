@@ -14,6 +14,8 @@ const sql = fs.readFileSync(path.join(root, 'supabase', '2026-10-10-chamados-tes
 assert.ok(sql.includes('create table if not exists public.chamados_teste') && sql.includes('enable row level security'));
 assert.ok(sql.includes('grant update (chegou_em, confirmado_em) on public.chamados_teste to authenticated'));
 assert.ok(sql.includes('using (private.qf_is_admin())') && sql.includes('using (profissional_id = auth.uid())'));
+// V11.51.1: a edge function grava o teste pelo acesso interno; sem esta permissão o envio dava erro 500.
+assert.ok(sql.includes('grant select, insert, update on public.chamados_teste to service_role;'));
 assert.ok(!/qf_chamados|qf_carteiras|qf_movimentacoes/.test(sql.replace(/^--.*$/gm, '').replace(/references public\.qf_profissionais/g, '')), 'o teste não toca em pedidos nem carteira');
 
 // Servidor: mesmo envio do chamado real (strong), só admin, direto para o profissional.

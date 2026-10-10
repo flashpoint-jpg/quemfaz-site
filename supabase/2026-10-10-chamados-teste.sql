@@ -36,6 +36,9 @@ revoke all on public.chamados_teste from anon;
 revoke update on public.chamados_teste from authenticated;
 grant select, insert on public.chamados_teste to authenticated;
 grant update (chegou_em, confirmado_em) on public.chamados_teste to authenticated;
+-- A edge function quemfaz-push grava o teste com o acesso interno (este projeto não dá permissão automática).
+grant select, insert, update on public.chamados_teste to service_role;
+revoke truncate, trigger, references on public.chamados_teste from authenticated;
 
 -- Chegou no aparelho: chamada pelo service worker (PWA) ou pelo app nativo, com a chave do aviso.
 create or replace function public.qf_teste_chegou(p_id uuid, p_token uuid)
