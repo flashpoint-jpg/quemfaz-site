@@ -2973,6 +2973,47 @@ window.qfGoogleLead = function (requestId) {
   #app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo img { height: auto; object-fit: initial; transform: none; }
   .qf-landing-sticky { display: none; }
 }
+/* V11.72 — mini carrossel "Anuncie sua marca aqui" logo abaixo da foto. A altura é fixa para a tela não pular quando o texto troca. */
+.qf-brandrot { margin: 0 0 12px; }
+.qf-brandrot__card { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 16px; border: 1px solid rgba(255,255,255,.24); background: rgba(255,255,255,.08); }
+.qf-brandrot__logo { flex: none; display: flex; align-items: center; gap: 5px; height: 46px; padding: 0 8px; border-radius: 11px; background: #fff; color: #073c91; font-size: 13px; }
+.qf-brandrot__logo .qf-brandmark--services { width: 24px; height: 27px; background: none; border: 0; box-shadow: none; color: inherit; }
+.qf-brandrot__logo .qf-brandmark--services svg { width: 100%; height: 100%; }
+.qf-brandrot__logo .qf-brand-words { font-size: 13px; }
+.qf-brandrot__logo .qf-brand-words small { font-size: 6px; margin-top: 2px; }
+.qf-brandrot__copy { flex: 1; min-width: 0; height: 52px; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; transition: opacity .22s; }
+.qf-brandrot__copy.is-out { opacity: 0; }
+.qf-brandrot__tag { font-size: 10px; line-height: 1.2; font-weight: 800; letter-spacing: .14em; color: #ffc27a; }
+.qf-brandrot__title { font-size: 14px; line-height: 1.2; font-weight: 800; color: #fff; }
+.qf-brandrot__text { display: none; font-size: 13.5px; line-height: 1.3; color: var(--text-on-navy-muted); }
+.qf-brandrot__cta { flex: none; display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 11px; background: #fff; color: var(--navy-900); font: inherit; font-size: 14px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+.qf-brandrot__cta svg { display: none; width: 15px; height: 15px; flex: none; }
+/* No celular as bolinhas ficam de fora para o botão "Pedir grátis" continuar na primeira tela. */
+.qf-brandrot__dots { display: none; justify-content: center; gap: 2px; margin-top: 4px; }
+.qf-brandrot__dot { width: 28px; height: 20px; padding: 0; border: 0; background: none; display: grid; place-items: center; cursor: pointer; }
+.qf-brandrot__dot::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.42); transition: width .2s, background .2s; }
+.qf-brandrot__dot[aria-current="true"]::before { width: 20px; background: var(--orange-400); }
+@media (max-width: 379px) { .qf-brandrot__logo .qf-brand-words { display: none; } }
+@media (min-width: 900px) {
+  /* No computador a ordem é foto, carrossel, título e campo. */
+  #app-shell[data-route="inicio"] .qf-hero2 { display: flex; flex-direction: column; }
+  #app-shell[data-route="inicio"] .qf-hero2-head { display: contents; }
+  #app-shell[data-route="inicio"] .qf-hero2-head .qf-landing-photo { order: 1; margin-bottom: 14px; }
+  .qf-brandrot { order: 2; margin: 0 0 18px; }
+  #app-shell[data-route="inicio"] .qf-hero2-head .qf-hero2-title { order: 3; flex: none; margin-bottom: 16px; }
+  #app-shell[data-route="inicio"] .qf-hero2 > .qf-landing-actions { order: 4; }
+  .qf-brandrot__card { gap: 16px; padding: 12px 14px; }
+  .qf-brandrot__logo { height: 62px; padding: 0 12px; gap: 7px; }
+  .qf-brandrot__logo .qf-brandmark--services { width: 32px; height: 36px; }
+  .qf-brandrot__logo .qf-brand-words { font-size: 17px; }
+  .qf-brandrot__logo .qf-brand-words small { font-size: 8px; }
+  .qf-brandrot__copy { height: 62px; gap: 3px; }
+  .qf-brandrot__title { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qf-brandrot__text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qf-brandrot__cta { padding: 0 18px; font-size: 15px; }
+  .qf-brandrot__cta svg { display: block; }
+  .qf-brandrot__dots { display: flex; }
+}
 </style>
 <link rel="stylesheet" href="qf-recrutamento.css?v=11.33.1">
 
@@ -7522,7 +7563,10 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + deskMenu() + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div>' +
+      // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
+      '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
+      '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       deskExtra() + mobExtra() +
@@ -8335,6 +8379,26 @@ alt=""></noscript>
 
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/') {
+      // V11.72: mini carrossel "Anuncie sua marca aqui". Troca sozinho a cada 3 s e para quando a pessoa sai da tela inicial.
+      (function(){
+        const rot=content.querySelector('[data-brandrot]');
+        if(!rot||rot.getAttribute('data-brandrot')==='on')return;
+        rot.setAttribute('data-brandrot','on');
+        const slides=[['Anuncie sua marca aqui','Este espaço pode ser da sua empresa.'],['Sua empresa neste espaço','Sua loja vista por quem pede serviço.'],['Quer aparecer aqui?','Conheça os planos de divulgação.']];
+        const copy=rot.querySelector('[data-brandrot-copy]'),titulo=rot.querySelector('[data-brandrot-title]'),texto=rot.querySelector('[data-brandrot-text]');
+        const dots=Array.prototype.slice.call(rot.querySelectorAll('[data-brandrot-dot]'));
+        let atual=0,timer=null;
+        function mostrar(n){
+          atual=n;copy.classList.add('is-out');
+          setTimeout(function(){titulo.textContent=slides[atual][0];texto.textContent=slides[atual][1];dots.forEach(function(d,k){if(k===atual)d.setAttribute('aria-current','true');else d.removeAttribute('aria-current');});copy.classList.remove('is-out');},220);
+        }
+        function iniciar(){
+          if(global.matchMedia&&global.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+          timer=setInterval(function(){if(!rot.isConnected){clearInterval(timer);return;}if(document.hidden)return;mostrar((atual+1)%slides.length);},3000);
+        }
+        dots.forEach(function(d,k){d.addEventListener('click',function(){clearInterval(timer);mostrar(k);iniciar();});});
+        iniciar();
+      })();
       content.querySelectorAll('[data-home-lazy]').forEach(function(el){const f=global.QFHomeExtras&&global.QFHomeExtras[el.getAttribute('data-home-lazy')];if(f&&!el.firstChild)el.innerHTML=f();});
       if(global.QFHomeExtras&&global.QFHomeExtras.stats)global.QFHomeExtras.stats(content);
       const landingSearchForm=content.querySelector('[data-landing-service-form]');
@@ -14447,7 +14511,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.71';
+  const APP_VERSION = '11.72';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
