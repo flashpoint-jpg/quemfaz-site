@@ -5,17 +5,17 @@
 <meta name="google-site-verification" content="NryNLw-PohY4iFWiT0v9_Ob5hAG02_NZfxrLHVaybfI" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
-<title>Quem Faz | Encontre Profissionais e Receba até 3 Contatos Grátis</title>
+<title>Quem Faz | Encontre Profissionais e Receba até 8 Contatos Grátis</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
 <!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
-<meta name="description" content="Precisa de um profissional? Publique seu pedido grátis no Quem Faz e receba até 3 contatos de profissionais da sua região.">
+<meta name="description" content="Precisa de um profissional? Publique seu pedido grátis no Quem Faz e receba até 8 contatos de profissionais da sua região.">
 <link rel="canonical" href="https://quemfazservico.com.br/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Quem Faz">
-<meta property="og:title" content="Quem Faz | Encontre Profissionais e Receba até 3 Contatos Grátis">
-<meta property="og:description" content="Publique seu pedido grátis e receba até 3 contatos de profissionais da sua região.">
+<meta property="og:title" content="Quem Faz | Encontre Profissionais e Receba até 8 Contatos Grátis">
+<meta property="og:description" content="Publique seu pedido grátis e receba até 8 contatos de profissionais da sua região.">
 <meta property="og:url" content="https://quemfazservico.com.br/">
 <meta name="twitter:card" content="summary">
 <meta property="og:image" content="https://quemfazservico.com.br/quemfaz.png">
@@ -7798,6 +7798,7 @@ alt=""></noscript>
         opt('hoje', 'Hoje') + opt('amanha', 'Amanhã') + opt('semana', 'Esta semana') + opt('data', 'Escolher data') + opt('sem_pressa', 'Sem pressa', true) +
       '</div>' +
       '<input class="input" type="date" name="prazoDia" data-qf-prazo-dia hidden aria-label="Dia em que você precisa do serviço" min="' + P.ymd(h) + '" max="' + P.ymd(P.somar(h, 365)) + '">' +
+      '<p data-qf-prazo-erro role="alert" hidden style="color:#b42318;font-size:13px;font-weight:600;margin:6px 0 0;"></p>' +
       '<div class="qf-prazo__periodo" data-qf-prazo-periodo hidden><span>Melhor horário (se quiser)</span><div class="qf-prazo__opts">' +
         per('manha', 'Manhã') + per('tarde', 'Tarde') + per('noite', 'Noite') +
       '</div></div>' +
@@ -7841,6 +7842,12 @@ alt=""></noscript>
       const resumo = box.closest('[data-qf-prazo-details]') && box.closest('[data-qf-prazo-details]').querySelector('[data-qf-prazo-resumo]');
       if (resumo) resumo.textContent = modo === 'sem_pressa' ? 'Sem pressa — opcional' : txt;
       nota.classList.toggle('is-urgente', modo === 'hoje');
+      const validacao = P.montar(modo, hPer.value, dia.value);
+      const erro = box.querySelector('[data-qf-prazo-erro]');
+      if (validacao.ok) {
+        dia.removeAttribute('aria-invalid');
+        if (erro) { erro.hidden = true; erro.textContent = ''; }
+      } else if (erro && !erro.hidden) erro.textContent = validacao.erro;
     }
     opts.forEach(function (b) {
       b.addEventListener('click', function () {
@@ -7904,7 +7911,7 @@ alt=""></noscript>
     const servicoField = selectedCat
       ? '<input type="hidden" name="servico" data-servico-hidden value="' + PU.escapeHtml(servicoInicial) + '">' +
         '<div class="card card--tight" data-servico-escolhido style="display:flex;align-items:center;gap:10px;background:var(--navy-100);border:0;">' +
-          '<span class="icon-tile icon-tile--orange">' + icon(selectedCat.icon || 'briefcase') + '</span>' +
+          '<span class="icon-tile icon-tile--orange" data-servico-escolhido-icone>' + icon(selectedCat.icon || 'briefcase') + '</span>' +
           '<div class="spacer"><div class="text--sm text--secondary">Serviço escolhido</div><div class="text--strong" data-servico-escolhido-nome>' + PU.escapeHtml(servicoInicial) + '</div></div>' +
           '<button class="btn btn--ghost btn--sm btn--block-auto" type="button" data-action="alterar-servico-cliente" style="padding:8px 10px;">Alterar</button>' +
         '</div>' +
@@ -8747,7 +8754,18 @@ alt=""></noscript>
       const servicoEditInput = content.querySelector('[data-servico-edit-input]');
       const servicoHidden = content.querySelector('[data-servico-hidden]');
       const servicoSuggestions = content.querySelector('[data-servico-edit-suggestions]');
+      const servicoNomeVisivel = servicoEscolhido && servicoEscolhido.querySelector('[data-servico-escolhido-nome]');
+      const servicoIconeVisivel = servicoEscolhido && servicoEscolhido.querySelector('[data-servico-escolhido-icone]');
       function normServico(v){ return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+      function atualizarServicoVisivel() {
+        const nome = String(((servicoHidden || servicoEditInput) || {}).value || '').replace(/\s+/g, ' ').trim();
+        if (servicoNomeVisivel) servicoNomeVisivel.textContent = nome || 'Selecione um serviço';
+        if (servicoIconeVisivel) {
+          const cat = DB.categories().find(function (c) { return c && c.id !== 'cat_outros' && normServico(c.nome) === normServico(nome); });
+          servicoIconeVisivel.innerHTML = icon(cat && cat.icon || 'briefcase');
+        }
+      }
+      atualizarServicoVisivel();
       function renderServicoSuggestions(){
         if(!servicoEditInput || !servicoSuggestions) return;
         const q=normServico(servicoEditInput.value);
@@ -8771,6 +8789,7 @@ alt=""></noscript>
       if(servicoEditInput){
         servicoEditInput.addEventListener('input',function(){
           if(servicoHidden) servicoHidden.value=String(servicoEditInput.value||'').replace(/\s+/g,' ').trim();
+          atualizarServicoVisivel();
           renderServicoSuggestions();
         });
       }
@@ -8780,6 +8799,7 @@ alt=""></noscript>
           const cat=DB.categoryById(btn.getAttribute('data-servico-edit-cat')); if(!cat)return;
           servicoEditInput.value=cat.nome;
           if(servicoHidden) servicoHidden.value=cat.nome;
+          atualizarServicoVisivel();
           servicoSuggestions.hidden=true;
           servicoSuggestions.innerHTML='';
         });
@@ -8884,6 +8904,22 @@ alt=""></noscript>
               irSub('b');
             } finally { verificandoLocal = false; }
           } else if (sub === 'b') {
+            const prazoBox = form.querySelector('[data-qf-prazo]');
+            const P = global.QFPrazo;
+            if (P && prazoBox) {
+              const campoDia = prazoBox.querySelector('[data-qf-prazo-dia]');
+              const modo = prazoBox.querySelector('[name="prazo"]');
+              const periodo = prazoBox.querySelector('[name="periodo"]');
+              const validacao = P.montar(modo ? modo.value : 'sem_pressa', periodo ? periodo.value : '', campoDia ? campoDia.value : '');
+              if (!validacao.ok) {
+                if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: 'date' });
+                const erro = prazoBox.querySelector('[data-qf-prazo-erro]');
+                if (erro) { erro.textContent = validacao.erro; erro.hidden = false; }
+                if (campoDia) { campoDia.setAttribute('aria-invalid', 'true'); try { campoDia.focus(); } catch (_) {} }
+                PU.toast(validacao.erro, 'danger');
+                return;
+              }
+            }
             if (global.QFClientAcquisition) global.QFClientAcquisition.track('step_options_completed', {}, true);
             irSub('c');
           }
@@ -14328,7 +14364,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.73';
+  const APP_VERSION = '11.74';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16648,7 +16684,7 @@ alt=""></noscript>
     box.innerHTML = '<p class="qf-calc-lock__t">Seu resultado está pronto</p>' +
       '<div class="qf-calc-lock__p"><span>' + brl(c.min) + ' a ' + brl(c.max) + '</span></div>' +
       '<p class="qf-calc-lock__s">' + esc(c.resumo) + '</p>' +
-      '<p class="qf-calc-lock__s">Estimativa de mercado. Ao enviar o formulário, seu pedido é publicado grátis e até 3 profissionais podem chamar você no WhatsApp com o valor exato.</p>';
+      '<p class="qf-calc-lock__s">Estimativa de mercado. Ao enviar o formulário, seu pedido é publicado grátis e até 8 profissionais podem chamar você no WhatsApp com o valor exato. Você escolhe quantos.</p>';
     form.insertBefore(box, form.firstChild);
     const btn = form.querySelector('button[type="submit"]');
     const antes = btn ? btn.innerHTML : '';
@@ -16674,12 +16710,14 @@ alt=""></noscript>
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
     wrap.setAttribute('aria-labelledby', 'qf-calc-result-preco');
+    const maxProf = Math.max(1, Math.min(8, Math.round(Number(req.maxOrcamentos || req.limiteParticipantes) || 3)));
+    const textoProf = maxProf === 1 ? '1 profissional pode chamar você no WhatsApp com o valor exato.' : 'Até ' + maxProf + ' profissionais podem chamar você no WhatsApp com o valor exato.';
     wrap.innerHTML = '<div class="qf-calc-result__card">' +
       '<p class="qf-calc-result__resumo">' + esc(c.resumo) + '</p>' +
       '<div><p class="qf-calc-result__lbl">Costuma ficar entre</p>' +
       '<p class="qf-calc-result__preco" id="qf-calc-result-preco">' + brl(c.min) + ' e ' + brl(c.max) + '</p></div>' +
       '<p class="qf-calc-result__obs">É uma estimativa de mercado. O valor exato depende do serviço e quem passa é o profissional.</p>' +
-      '<div class="qf-calc-result__ok"><i>' + CERTO + '</i><div><strong>Seu pedido foi publicado grátis</strong><span>Até 3 profissionais podem chamar você no WhatsApp com o valor exato.</span></div></div>' +
+      '<div class="qf-calc-result__ok"><i>' + CERTO + '</i><div><strong>Seu pedido foi publicado grátis</strong><span>' + textoProf + '</span></div></div>' +
       '<button type="button" class="btn btn--primary" data-qf-calc-fechar>Acompanhar meu pedido</button>' +
     '</div>';
     function fechar() { document.removeEventListener('keydown', tecla); if (wrap.parentNode) wrap.parentNode.removeChild(wrap); }
