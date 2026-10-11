@@ -2173,7 +2173,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'Premium', valor: 19900, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -2198,7 +2198,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       state.settings.adPlans = {
         local: { nome: 'Local', valor: 7900, dias: 30 },
         destaque: { nome: 'Destaque', valor: 12900, dias: 30 },
-        premium: { nome: 'Premium', valor: 19900, dias: 30 }
+        premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 }
       };
       changed = true;
     }
@@ -3694,11 +3694,18 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     if (adsRes.error) throw adsRes.error;
     if (cfgRes.error) throw cfgRes.error;
     DB.state.ads = (adsRes.data || []).map(mapAd);
+    // V11.73: quem pediu a propaganda (nome e WhatsApp) fica numa tabela à parte, que só o admin lê.
+    try {
+      const sol = await client.rpc('qf_admin_anuncio_solicitantes');
+      const porId = {};
+      (sol.data || []).forEach(function (r) { porId[r.anuncio_id] = r; });
+      DB.state.ads.forEach(function (a) { const r = porId[a.id]; if (r) { a.solicitanteNome = r.nome || ''; a.solicitanteWhatsapp = r.whatsapp || ''; } });
+    } catch (_) {}
     const cfg = cfgRes.data || {};
     DB.state.settings.adPlans = DB.state.settings.adPlans || {};
     DB.state.settings.adPlans.local = Object.assign(DB.state.settings.adPlans.local || {}, { nome:'Local', valor:Number(cfg.local_centavos || 7900), dias:30 });
     DB.state.settings.adPlans.destaque = Object.assign(DB.state.settings.adPlans.destaque || {}, { nome:'Destaque', valor:Number(cfg.destaque_centavos || 12900), dias:30 });
-    DB.state.settings.adPlans.premium = Object.assign(DB.state.settings.adPlans.premium || {}, { nome:'Premium', valor:Number(cfg.premium_centavos || 19900), dias:30 });
+    DB.state.settings.adPlans.premium = Object.assign(DB.state.settings.adPlans.premium || {}, { nome:'QuemFaz Premium', valor:Number(cfg.premium_centavos || 30000), dias:30 });
     DB.state.settings.adMaxSlots = Number(cfg.max_slots || 4);
     DB.persist();
     return DB.state.ads;
@@ -3724,6 +3731,15 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
   async function reactivate(id) {
     const res = await client.rpc('qf_admin_reativar_anuncio', { p_anuncio_id:id });
+    if (res.error) throw res.error;
+    await syncAds();
+    return res.data || {};
+  }
+  // V11.73: o admin corrige a propaganda antes de publicar.
+  async function editAd(id, v) {
+    const res = await client.rpc('qf_admin_editar_anuncio', {
+      p_id: id, p_empresa: v.empresa, p_chamada: v.chamada, p_destino_tipo: v.destinoTipo, p_destino_valor: v.destinoValor, p_imagem_data: v.imagem || null
+    });
     if (res.error) throw res.error;
     await syncAds();
     return res.data || {};
@@ -3987,7 +4003,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     return true;
   }
 
-  global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig,
+  global.QFAdminCloud = { enabled, client, signIn, signOut, hasSession, syncAds, approve, reject, pause, reactivate, saveConfig, editAd,
     syncSnapshot, alertMetrics, setBlocked, setVerified, addCredits, setTemporaryPassword, getAppConfig, saveAppConfig,
     syncSupport, getSupportMessages, supportReply, supportSetStatus, supportDelete,
     excluirAnuncio: async function(id){ const r = await client.rpc('qf_admin_excluir_anuncio', { p_id: id }); if (r.error) throw r.error; try { await syncAds(); } catch (_) {} },
@@ -7086,9 +7102,18 @@ Screens.adminDashboardRender = function () {
     const pend = list.filter(function(a){ return a.status === 'aguardando_aprovacao'; }).length;
     const receita = list.reduce(function(sum,a){ return sum + (a.pagamentoStatus === 'aprovado' ? Number(a.valorPago||0) : 0); },0);
     function priceInput(key) { const p=plans[key]; return '<label class="field"><span class="field__label">Plano ' + PU.escapeHtml(p.nome) + '</span><input class="input" id="ad-price-' + key + '" inputmode="decimal" value="' + (p.valor/100).toFixed(2).replace('.',',') + '"><span class="field__hint">30 dias</span></label>'; }
+    // V11.73: o que abre ao clicar na propaganda (WhatsApp, ligação ou site) e quem pediu.
+    function adExtra(a) {
+      const d = global.QFAdDestino(a);
+      const fone = function (n) { n = String(n || '').replace(/\D/g, ''); return n.length >= 10 ? '(' + n.slice(0, 2) + ') ' + n.slice(2, n.length - 4) + '-' + n.slice(-4) : n; };
+      const destino = d.tipo === 'site' ? 'abre o site ' + d.valor : (d.tipo === 'ligacao' ? 'liga para ' + fone(d.valor) : 'abre o WhatsApp ' + fone(d.valor));
+      return '<div class="text--sm text--secondary" style="margin-top:5px;">Ao clicar: ' + PU.escapeHtml(destino) + '</div>' +
+        (a.solicitanteNome || a.solicitanteWhatsapp ? '<div class="text--sm text--secondary" style="margin-top:3px;">Quem pediu: ' + PU.escapeHtml(a.solicitanteNome || '—') + (a.solicitanteWhatsapp ? ' · ' + PU.escapeHtml(fone(a.solicitanteWhatsapp)) : '') + '</div>' : '');
+    }
     function statusBadgeAd(a) {
+      if (a.status === 'aguardando_aprovacao' && a.pagamentoStatus !== 'aprovado') return '<span class="badge badge--muted"><span class="badge__dot"></span>Aguardando o Pix</span>';
       const map = { ativo:'success', aguardando_aprovacao:'warning', pausado:'muted', reprovado:'danger' };
-      const lab = { ativo:'Ativo', aguardando_aprovacao:'Aguardando aprovação', pausado:'Pausado', reprovado:'Reprovado' };
+      const lab = { ativo:'Ativo', aguardando_aprovacao:'Pix pago · aguardando você', pausado:'Pausado', reprovado:'Reprovado' };
       if (a.fimEm && new Date(a.fimEm) < new Date()) return '<span class="badge badge--muted"><span class="badge__dot"></span>Expirado</span>';
       return '<span class="badge badge--' + (map[a.status] || 'muted') + '"><span class="badge__dot"></span>' + (lab[a.status] || a.status) + '</span>';
     }
@@ -7096,18 +7121,19 @@ Screens.adminDashboardRender = function () {
       const city = a.cidadeId === 'all' ? 'Todas as cidades' : ((DB.cityById(a.cidadeId)||{}).nome || 'Região removida');
       const plan = DB.adPlan(a.plano);
       return '<div class="card stack--sm" data-ad-admin="' + a.id + '"><div class="row" style="align-items:flex-start;">' +
-        '<div class="ad-admin-thumb">' + (a.imagem ? '<img src="' + a.imagem + '" alt="">' : '') + '</div><div class="spacer"><div class="row-between" style="gap:8px;"><div class="text--strong">' + PU.escapeHtml(a.empresa) + '</div>' + statusBadgeAd(a) + '</div><div class="text--sm text--secondary" style="margin-top:3px;">' + PU.escapeHtml(plan.nome) + ' · ' + PU.escapeHtml(city) + ' · ' + PU.formatCurrency(a.valorPago) + '</div><div class="text--sm" style="margin-top:5px;">' + PU.escapeHtml(a.chamada) + '</div></div></div>' +
+        '<div class="ad-admin-thumb">' + (a.imagem ? '<img src="' + a.imagem + '" alt="">' : '') + '</div><div class="spacer"><div class="row-between" style="gap:8px;"><div class="text--strong">' + PU.escapeHtml(a.empresa) + '</div>' + statusBadgeAd(a) + '</div><div class="text--sm text--secondary" style="margin-top:3px;">' + PU.escapeHtml(plan.nome) + ' · ' + PU.escapeHtml(city) + ' · ' + PU.formatCurrency(a.valorPago) + '</div><div class="text--sm" style="margin-top:5px;">' + PU.escapeHtml(a.chamada) + '</div>' + adExtra(a) + '</div></div>' +
         '<div class="row-between"><span class="text--sm text--secondary">' + Number(a.impressoes||0) + ' visualizações · ' + Number(a.cliques||0) + ' cliques</span><span class="text--sm text--muted">' + (a.fimEm ? 'até ' + PU.formatDate(a.fimEm) : PU.formatDate(a.criadoEm)) + '</span></div>' +
         '<div class="row" style="flex-wrap:wrap;">' +
-          (a.status === 'aguardando_aprovacao' ? '<button class="btn btn--sm btn--primary btn--block-auto" data-ad-action="aprovar" data-id="' + a.id + '">Aprovar</button><button class="btn btn--sm btn--danger-ghost btn--block-auto" data-ad-action="reprovar" data-id="' + a.id + '">Reprovar</button>' : '') +
+          '<button class="btn btn--sm btn--outline btn--block-auto" data-ad-action="corrigir" data-id="' + a.id + '">Corrigir</button>' +
+          (a.status === 'aguardando_aprovacao' && a.pagamentoStatus === 'aprovado' ? '<button class="btn btn--sm btn--primary btn--block-auto" data-ad-action="aprovar" data-id="' + a.id + '">Aprovar e publicar</button><button class="btn btn--sm btn--danger-ghost btn--block-auto" data-ad-action="reprovar" data-id="' + a.id + '">Reprovar</button>' : '') +
           (a.status === 'ativo' ? '<button class="btn btn--sm btn--outline btn--block-auto" data-ad-action="pausar" data-id="' + a.id + '">Pausar</button>' : '') +
           (a.status === 'pausado' ? '<button class="btn btn--sm btn--primary btn--block-auto" data-ad-action="reativar" data-id="' + a.id + '">Reativar</button>' : '') +
           (cloudOn() ? '<button class="btn btn--sm btn--outline btn--block-auto qf-crud-del" data-crud-del="anuncio:' + a.id + '">' + icon('trash') + ' Excluir</button>' : '') +
         '</div>' +
       '</div>';
-    }).join('') : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('image') + '</div><p class="text text--secondary">Nenhum anúncio enviado ainda.</p></div>';
+    }).join('') : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('image') + '</div><p class="text text--secondary">Nenhuma propaganda solicitada ainda.</p></div>';
     return '<div class="view"><div class="kpi-grid">' + kpi(active,'Ativos') + kpi(pend,'Pendentes') + kpi(max,'Vagas/região') + kpi(PU.formatCurrency(receita),'Receita') + '</div>' +
-      '<div class="section"><div class="section-head"><h2 class="h3">Planos e limites</h2></div><div class="card stack">' + priceInput('local') + priceInput('destaque') + priceInput('premium') + '<label class="field"><span class="field__label">Máximo de anúncios ativos por região</span><input class="input" id="ad-max-slots" type="number" min="1" max="8" value="' + max + '"></label><button class="btn btn--primary" id="salvar-planos-anuncio">Salvar planos</button></div></div>' +
+      '<div class="section"><div class="section-head"><h2 class="h3">Preço e limite</h2></div><div class="card stack">' + priceInput('premium') + '<label class="field"><span class="field__label">Máximo de propagandas no ar ao mesmo tempo</span><input class="input" id="ad-max-slots" type="number" min="1" max="8" value="' + max + '"></label><button class="btn btn--primary" id="salvar-planos-anuncio">Salvar</button></div></div>' +
       '<div class="section"><div class="section-head"><h2 class="h3">Anúncios</h2><span class="text--sm text--secondary">Máximo ' + max + ' ativos</span></div><div class="stack--sm">' + cards + '</div></div></div>';
   };
 
@@ -7837,25 +7863,87 @@ Screens.adminDashboardRender = function () {
     });
   }
 
+  // V11.73: destino do clique de uma propaganda, lido do que está gravado.
+  global.QFAdDestino = function (a) {
+    const l = String((a && a.link) || '').trim();
+    if (/^tel:/i.test(l)) return { tipo: 'ligacao', valor: l.replace(/^tel:\+?/i, '').replace(/^55(?=\d{10,11}$)/, '') };
+    if (/^https?:\/\//i.test(l)) return { tipo: 'site', valor: l };
+    return { tipo: 'whatsapp', valor: String((a && a.whatsapp) || '').replace(/\D/g, '') };
+  };
+  // A foto trocada pelo admin é reduzida no aparelho, como no formulário da empresa.
+  function qfReduzirImagem(file) {
+    return new Promise(function (resolve, reject) {
+      const r = new FileReader();
+      r.onerror = reject;
+      r.onload = function () {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          const k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+          c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+          const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL('image/jpeg', 0.84));
+        };
+        img.src = String(r.result || '');
+      };
+      r.readAsDataURL(file);
+    });
+  }
+  function abrirCorrecaoAnuncio(id) {
+    const a = DB.anuncioById(id); if (!a) return;
+    const d = global.QFAdDestino(a);
+    let nova = '';
+    const opt = function (v, t) { return '<option value="' + v + '"' + (d.tipo === v ? ' selected' : '') + '>' + t + '</option>'; };
+    PU.openSheet('<h3 class="sheet__title">Corrigir propaganda</h3><div class="stack">' +
+      '<label class="field"><span class="field__label">Nome da empresa</span><input class="input" id="qf-adfix-empresa" maxlength="60" value="' + PU.escapeHtml(a.empresa || '') + '"></label>' +
+      '<label class="field"><span class="field__label">Frase da propaganda</span><input class="input" id="qf-adfix-chamada" maxlength="90" value="' + PU.escapeHtml(a.chamada || '') + '"></label>' +
+      '<label class="field"><span class="field__label">Ao clicar, abrir</span><select class="select" id="qf-adfix-tipo">' + opt('whatsapp', 'WhatsApp') + opt('ligacao', 'Ligação') + opt('site', 'Site') + '</select></label>' +
+      '<label class="field"><span class="field__label">Número com DDD ou endereço do site</span><input class="input" id="qf-adfix-valor" maxlength="300" value="' + PU.escapeHtml(d.valor || '') + '"></label>' +
+      '<div class="field"><span class="field__label">Foto ou logotipo</span><div class="row" style="align-items:center;gap:12px;"><div class="ad-admin-thumb" id="qf-adfix-thumb">' + (a.imagem ? '<img src="' + a.imagem + '" alt="">' : '') + '</div><input class="input" type="file" id="qf-adfix-img" accept="image/*"></div><span class="field__hint">Só escolha um arquivo se quiser trocar a imagem.</span></div>' +
+      '<button class="btn btn--primary" id="qf-adfix-salvar">Salvar correção</button></div>');
+    document.getElementById('qf-adfix-img').onchange = async function () {
+      const f = this.files && this.files[0]; if (!f) return;
+      try { nova = await qfReduzirImagem(f); document.getElementById('qf-adfix-thumb').innerHTML = '<img src="' + nova + '" alt="">'; }
+      catch (_) { nova = ''; PU.toast('Não foi possível ler essa imagem.', 'danger'); }
+    };
+    document.getElementById('qf-adfix-salvar').onclick = async function () {
+      const btn = this;
+      const v = { empresa: document.getElementById('qf-adfix-empresa').value.trim(), chamada: document.getElementById('qf-adfix-chamada').value.trim(),
+        destinoTipo: document.getElementById('qf-adfix-tipo').value, destinoValor: document.getElementById('qf-adfix-valor').value.trim(), imagem: nova };
+      if (v.destinoTipo === 'site' && v.destinoValor && !/^https?:\/\//i.test(v.destinoValor)) v.destinoValor = 'https://' + v.destinoValor;
+      const motivos = { empresa_invalida: 'Confira o nome da empresa.', frase_invalida: 'Confira a frase da propaganda.', telefone_invalido: 'Confira o número, com DDD.', site_invalido: 'Confira o endereço do site.', destino_invalido: 'Escolha o que abre ao clicar.', imagem_invalida: 'Não foi possível usar essa imagem.' };
+      btn.disabled = true;
+      try {
+        if (!(global.QFAdminCloud && global.QFAdminCloud.enabled)) throw new Error('sem conexão');
+        const r = await global.QFAdminCloud.editAd(id, v);
+        if (!r.ok) { PU.toast(motivos[r.reason] || 'Não foi possível salvar a correção.', 'danger'); return; }
+        PU.closeSheet(); PU.toast('Propaganda corrigida.', 'success'); global.navigate('/admin/anuncios', true);
+      } catch (err) { PU.toast('Não foi possível salvar: ' + (err.message || err), 'danger'); }
+      finally { btn.disabled = false; }
+    };
+  }
+
   function bindAnuncios(content) {
     const save = content.querySelector('#salvar-planos-anuncio');
     if (save) save.addEventListener('click', async function () {
       const values = {
-        local: PU.parseCurrencyInput(content.querySelector('#ad-price-local').value),
-        destaque: PU.parseCurrencyInput(content.querySelector('#ad-price-destaque').value),
+        // V11.73: só o QuemFaz Premium é vendido; Local e Destaque ficam como estavam.
+        local: Number(((DB.state.settings.adPlans || {}).local || {}).valor || 7900),
+        destaque: Number(((DB.state.settings.adPlans || {}).destaque || {}).valor || 12900),
         premium: PU.parseCurrencyInput(content.querySelector('#ad-price-premium').value),
         maxSlots: Number(content.querySelector('#ad-max-slots').value || 4)
       };
       try {
         if (global.QFAdminCloud && global.QFAdminCloud.enabled) await global.QFAdminCloud.saveConfig(values);
         else DB.setAdPlans(values);
-        PU.toast('Planos de anúncios atualizados.', 'success');
+        PU.toast('Preço do QuemFaz Premium atualizado.', 'success');
         global.navigate('/admin/anuncios', true);
       } catch (err) { PU.toast('Não foi possível salvar: ' + (err.message || err), 'danger'); }
     });
     content.addEventListener('click', async function (e) {
       const b = e.target.closest('[data-ad-action]'); if (!b) return;
       const id = b.getAttribute('data-id'), act = b.getAttribute('data-ad-action');
+      if (act === 'corrigir') { abrirCorrecaoAnuncio(id); return; }
       try {
         if (act === 'aprovar') {
           const r = (global.QFAdminCloud && global.QFAdminCloud.enabled) ? await global.QFAdminCloud.approve(id) : DB.aprovarAnuncio(id);

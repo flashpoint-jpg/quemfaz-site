@@ -13,7 +13,7 @@ assert.ok(/class="qf-brandrot__cta"[^>]*data-nav="\/anuncie"/.test(bloco));
 assert.ok(/pattern: '\/anuncie', anon: true/.test(src));
 // Três textos que vão trocando; altura fixa para a tela não pular; respeita "reduzir movimento".
 for(const t of ['Anuncie sua marca aqui','Sua empresa neste espaço','Quer aparecer aqui?'])assert.ok(src.includes("['"+t+"'"),t);
-assert.ok(/\.qf-brandrot__copy \{[^}]*height: 52px/.test(src));
+assert.ok(/\.qf-brandrot__copy \{[^}]*height: 64px/.test(src));
 assert.ok(src.includes("prefers-reduced-motion: reduce"));
 // Para de trocar quando a pessoa sai da tela inicial.
 assert.ok(src.includes('if(!rot.isConnected){clearInterval(timer);return;}'));

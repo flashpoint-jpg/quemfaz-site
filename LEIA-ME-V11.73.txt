@@ -1,0 +1,25 @@
+QuemFaz 11.73 — propaganda com um plano só: QuemFaz Premium
+
+PLANO
+- Só existe o QuemFaz Premium: R$ 300 por 30 dias (o preço muda no painel). Local e Destaque saíram.
+- O anúncio incluído no plano Premium de chamados do profissional continua (sai em "Empresas da região").
+
+EMPRESA (tela "Anuncie", aberta pelo botão "Ver planos" da faixa da tela inicial)
+- Sem cadastro: nome da empresa, a frase que vai aparecer, foto ou logotipo (obrigatório),
+  o que abre ao clicar (WhatsApp, ligação ou site) e o nome e WhatsApp de quem está contratando.
+- A prévia no topo mostra como a propaganda vai ficar, enquanto a pessoa digita.
+- "Gerar Pix e enviar" mostra o QR Code e o Pix Copia e Cola; a tela avisa sozinha quando o pagamento cai.
+- Quem volta à tela no mesmo aparelho vê em que pé está: aguardando o Pix, em conferência, no ar.
+
+PAINEL (Anúncios)
+- Um preço só. Cada propaganda mostra o que abre ao clicar e quem pediu.
+- "Corrigir" ajusta nome, frase, destino do clique e troca a foto. "Aprovar e publicar" só aparece depois do Pix.
+- Aviso no celular do admin quando o Pix de uma propaganda é confirmado.
+- Visualizações e cliques da faixa agora são contados de verdade.
+
+TELA INICIAL
+- A propaganda aprovada entra na faixa abaixo da foto, com a foto ou o logo, o nome e a frase.
+  O botão vira "Chamar", "Ligar" ou "Ver site". A chamada "Anuncie sua marca aqui" continua no rodízio.
+
+SERVIDOR
+- Função nova quemfaz-anuncio-premium e a migração supabase/2026-10-11-quemfaz-premium-propaganda.sql (já aplicadas).

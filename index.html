@@ -1325,49 +1325,6 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
 #app-shell[data-route="auth-role-cadastro"] .qf-client-signup-ads .ad-card--premium-art{min-height:0}
 .ad-dot { width:6px; height:6px; border-radius:50%; background:var(--border-strong); }
 .ad-dot:first-child { width:18px; border-radius:999px; background:var(--orange-500); }
-.ad-plan-grid { display:grid; grid-template-columns:1fr; gap:10px; }
-.ad-plan { border:2px solid var(--border-subtle); border-radius:18px; padding:14px; cursor:pointer; background:#fff; transition:.15s ease; }
-.ad-plan:has(input:checked) { border-color:var(--orange-500); box-shadow:0 0 0 3px rgba(224,99,15,.09); }
-.ad-plan input { position:absolute; opacity:0; pointer-events:none; }
-.ad-plan__price { font-size:20px; font-weight:900; color:var(--navy-900); }
-.ad-plan__name { font-weight:800; color:var(--navy-900); }
-.ad-preview { width:100%; aspect-ratio:16/9; border-radius:18px; border:1px dashed var(--border-strong); background:var(--bg-sunken); overflow:hidden; display:flex; align-items:center; justify-content:center; color:var(--text-muted); }
-.ad-preview img { width:100%; height:100%; object-fit:cover; }
-.qf-ad-builder-info{border:1px solid rgba(224,99,15,.18);background:linear-gradient(135deg,var(--navy-100),#fff);padding:14px;border-radius:18px}
-.qf-ad-placement{border:1px solid rgba(224,99,15,.22);background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 26px -22px rgba(8,20,40,.55)}
-.qf-ad-placement__head{padding:14px 15px;background:linear-gradient(135deg,#081c3a,#12315c);color:#fff}
-.qf-ad-placement__head .text--sm{color:rgba(255,255,255,.78)}
-.qf-ad-placement__body{padding:14px}
-.qf-ad-placement__mock{border:1px solid var(--border-subtle);border-radius:16px;background:var(--bg-sunken);padding:10px}
-.qf-ad-placement__mock-top{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--text-muted);margin-bottom:8px}
-.qf-ad-placement__mock-card{position:relative;aspect-ratio:16/6;border-radius:13px;overflow:hidden;background:linear-gradient(135deg,#071a35,#153663);border:2px solid var(--orange-500)}
-.qf-ad-placement__mock-card:before{content:'';position:absolute;right:-18px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,137,25,.52),rgba(255,137,25,0) 68%)}
-.qf-ad-placement__mock-copy{position:absolute;left:13px;top:12px;right:12px;color:#fff}
-.qf-ad-placement__badge{display:inline-flex;padding:4px 7px;border:1px solid rgba(255,255,255,.35);border-radius:999px;font-size:8px;font-weight:900;letter-spacing:.05em;text-transform:uppercase}
-.qf-ad-placement__name{font-size:15px;font-weight:900;margin-top:10px;max-width:72%}
-.qf-ad-placement__cta{font-size:10px;font-weight:800;color:#ffb347;margin-top:5px}
-.qf-ad-placement__facts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
-.qf-ad-placement__fact{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border-radius:12px;background:var(--navy-100)}
-.qf-ad-placement__fact svg{width:17px;height:17px;flex:none;color:var(--orange-600);margin-top:1px}
-.qf-ad-placement__fact strong{display:block;font-size:12px;color:var(--navy-900)}
-.qf-ad-placement__fact span{display:block;font-size:12px;color:var(--text-secondary);margin-top:1px;line-height:1.35}
-@media(min-width:700px){.qf-ad-placement__facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.qf-ad-builder-steps{display:grid;grid-template-columns:1fr;gap:8px;margin-top:10px}
-.qf-ad-builder-step{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--text-secondary)}
-.qf-ad-builder-step b{display:grid;place-items:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--orange-600);color:#fff;font-size:11px}
-.qf-ad-mode-box{padding:13px;border:1px solid var(--border-subtle);border-radius:16px;background:var(--bg-sunken)}
-.qf-ad-assets{display:grid;grid-template-columns:1fr;gap:10px}
-.qf-ad-asset{padding:12px;border:1px solid var(--border-subtle);border-radius:14px;background:#fff}
-.qf-ad-preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
-.qf-ad-editing-note{display:none;padding:10px 12px;border-radius:12px;background:var(--warning-100);color:var(--warning-600);font-size:13px;font-weight:700}
-.qf-ad-editing .qf-ad-editing-note{display:block}
-.qf-own-ads{display:grid;grid-template-columns:1fr;gap:10px}
-.qf-own-ad{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:center;padding:11px;border:1px solid var(--border-subtle);border-radius:16px;background:#fff}
-.qf-own-ad__media{width:110px;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:var(--bg-sunken)}
-.qf-own-ad__media img{width:100%;height:100%;object-fit:cover}
-.qf-own-ad__actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-.qf-own-ad__actions .btn{width:auto;min-height:36px;padding:0 11px;font-size:12px}
-@media(min-width:700px){.qf-ad-builder-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.qf-ad-assets{grid-template-columns:repeat(2,minmax(0,1fr))}.qf-own-ads{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ad-admin-thumb { width:76px; height:58px; border-radius:10px; overflow:hidden; background:var(--bg-sunken); flex:none; }
 .ad-admin-thumb img { width:100%; height:100%; object-fit:cover; }
 
@@ -1520,7 +1477,6 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   form.stack, form.stack--lg { max-width: 680px; }
   .ad-carousel { gap: 14px; }
   .ad-card { flex-basis: calc((100% - 14px) / 2); }
-  .ad-plan-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
   .category-tiles { grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
   .category-tile { padding: 16px 8px 14px; }
   .category-tile__label { font-size: 12.5px; }
@@ -1607,7 +1563,6 @@ input, textarea, select { scroll-margin-bottom: calc(var(--tabbar-height) + var(
   #app-shell[data-route="cliente-endereco"] .topbar { max-width: 820px; }
   #app-shell[data-route="cliente-novo-pedido"] form.stack,
   #app-shell[data-route$="anuncie"] form.stack { max-width: none; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 24px 28px; box-shadow: var(--shadow-card); }
-  #app-shell[data-route$="anuncie"] form .ad-plan-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 
   /* Profissional — chamadas */
   #app-shell[data-route="profissional-home"] .view { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 20px 24px; align-items: stretch; }
@@ -2981,10 +2936,10 @@ window.qfGoogleLead = function (requestId) {
 .qf-brandrot__logo .qf-brandmark--services svg { width: 100%; height: 100%; }
 .qf-brandrot__logo .qf-brand-words { font-size: 13px; }
 .qf-brandrot__logo .qf-brand-words small { font-size: 6px; margin-top: 2px; }
-.qf-brandrot__copy { flex: 1; min-width: 0; height: 52px; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; transition: opacity .22s; }
+.qf-brandrot__copy { flex: 1; min-width: 0; height: 64px; display: flex; flex-direction: column; justify-content: center; gap: 2px; overflow: hidden; transition: opacity .22s; }
 .qf-brandrot__copy.is-out { opacity: 0; }
 .qf-brandrot__tag { font-size: 10px; line-height: 1.2; font-weight: 800; letter-spacing: .14em; color: #ffc27a; }
-.qf-brandrot__title { font-size: 14px; line-height: 1.2; font-weight: 800; color: #fff; }
+.qf-brandrot__title { font-size: 14px; line-height: 1.2; font-weight: 800; color: #fff; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 .qf-brandrot__text { display: none; font-size: 13.5px; line-height: 1.3; color: var(--text-on-navy-muted); }
 .qf-brandrot__cta { flex: none; display: inline-flex; align-items: center; gap: 5px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 11px; background: #fff; color: var(--navy-900); font: inherit; font-size: 14px; font-weight: 800; white-space: nowrap; cursor: pointer; }
 .qf-brandrot__cta svg { display: none; width: 15px; height: 15px; flex: none; }
@@ -2994,6 +2949,36 @@ window.qfGoogleLead = function (requestId) {
 .qf-brandrot__dot::before { content: ""; width: 7px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.42); transition: width .2s, background .2s; }
 .qf-brandrot__dot[aria-current="true"]::before { width: 20px; background: var(--orange-400); }
 @media (max-width: 379px) { .qf-brandrot__logo .qf-brand-words { display: none; } }
+/* V11.73 — propaganda de empresa (QuemFaz Premium) na faixa: foto ou logo, nome numa linha e a frase em até duas. */
+.qf-brandrot__logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.qf-brandrot.is-ad .qf-brandrot__logo { width: 58px; height: 58px; padding: 0; overflow: hidden; justify-content: center; text-align: center; font-size: 10px; line-height: 1.15; color: var(--navy-900); }
+.qf-brandrot.is-ad .qf-brandrot__title { -webkit-line-clamp: 1; }
+.qf-brandrot.is-ad .qf-brandrot__text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 12.5px; line-height: 1.25; }
+/* Tela "QuemFaz Premium": formulário de solicitação da propaganda. */
+.qf-prem-head { background: var(--navy-900); border: none; color: #fff; }
+.qf-prem-head .eyebrow { color: var(--orange-400); }
+.qf-prem-head .h2 { color: #fff; margin-top: 4px; }
+.qf-prem-head .text { color: var(--text-on-navy-muted); margin-top: 6px; }
+.qf-prem-price { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+.qf-prem-price strong { font-size: 28px; font-weight: 800; }
+.qf-prem-price span, .qf-prem-pv-label { font-size: 14px; font-weight: 700; color: var(--text-on-navy-muted); }
+.qf-prem-pv-label { margin: 14px 0 6px; font-size: 13px; }
+.qf-prem-pv { margin: 0; order: 0; }
+.qf-prem-pv .qf-brandrot__cta { cursor: default; }
+.qf-prem-req { color: #b42318; font-weight: 800; }
+.qf-prem-upload { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 6px; padding: 18px 14px; border: 2px dashed #8a97ad; border-radius: 14px; background: var(--bg-surface); text-align: center; cursor: pointer; color: #073c91; }
+.qf-prem-upload svg { width: 28px; height: 28px; }
+.qf-prem-upload strong { font-size: 15px; }
+.qf-prem-upload small { font-size: 13px; color: var(--text-secondary); }
+.qf-prem-upload.is-ok { border-style: solid; border-color: #15703c; }
+.qf-prem-file { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.qf-prem-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 6px; }
+.qf-prem-seg button { min-height: 48px; padding: 0 4px; border-radius: 12px; border: 2px solid #8a97ad; background: var(--bg-surface); color: var(--text-primary); font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.qf-prem-seg button.is-active { border-color: #073c91; background: #073c91; color: #fff; }
+.qf-prem-dest-label { display: block; margin: 12px 0 6px; }
+.qf-prem-info, .qf-prem-note { background: var(--navy-100); border: none; }
+.qf-prem-note { font-size: 14px; line-height: 1.45; }
+.qf-prem-status { border: 1.5px solid var(--orange-600); }
 @media (min-width: 900px) {
   /* No computador a ordem é foto, carrossel, título e campo. */
   #app-shell[data-route="inicio"] .qf-hero2 { display: flex; flex-direction: column; }
@@ -3008,7 +2993,9 @@ window.qfGoogleLead = function (requestId) {
   .qf-brandrot__logo .qf-brand-words { font-size: 17px; }
   .qf-brandrot__logo .qf-brand-words small { font-size: 8px; }
   .qf-brandrot__copy { height: 62px; gap: 3px; }
-  .qf-brandrot__title { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .qf-brandrot.is-ad .qf-brandrot__logo { width: 84px; height: 62px; }
+  .qf-brandrot.is-ad .qf-brandrot__text { display: block; font-size: 13.5px; line-height: 1.3; }
+  .qf-brandrot__title { display: block; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .qf-brandrot__text { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .qf-brandrot__cta { padding: 0 18px; font-size: 15px; }
   .qf-brandrot__cta svg { display: block; }
@@ -4100,7 +4087,7 @@ alt=""></noscript>
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'Premium', valor: 19900, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -4125,7 +4112,7 @@ alt=""></noscript>
       state.settings.adPlans = {
         local: { nome: 'Local', valor: 7900, dias: 30 },
         destaque: { nome: 'Destaque', valor: 12900, dias: 30 },
-        premium: { nome: 'Premium', valor: 19900, dias: 30 }
+        premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 }
       };
       changed = true;
     }
@@ -5750,7 +5737,7 @@ alt=""></noscript>
     DB.state.settings.adPlans = DB.state.settings.adPlans || {};
     DB.state.settings.adPlans.local = { nome: 'Local', valor: Number(c.local_centavos || 7900), dias: 30 };
     DB.state.settings.adPlans.destaque = { nome: 'Destaque', valor: Number(c.destaque_centavos || 12900), dias: 30 };
-    DB.state.settings.adPlans.premium = { nome: 'Premium', valor: Number(c.premium_centavos || 19900), dias: 30 };
+    DB.state.settings.adPlans.premium = { nome: 'QuemFaz Premium', valor: Number(c.premium_centavos || 30000), dias: 30 };
     DB.state.settings.adMaxSlots = Number(c.max_slots || 4);
     DB.persist();
     return c;
@@ -5815,6 +5802,25 @@ alt=""></noscript>
     const ad = DB.anuncioById(out.anuncio_id);
     return { ad: ad, pagamento: out };
   }
+
+  // V11.73: propaganda QuemFaz Premium solicitada sem conta (função quemfaz-anuncio-premium).
+  async function chamarAnuncioPremium(body) {
+    if (!client) throw new Error('Conexão indisponível.');
+    const fn = await client.functions.invoke('quemfaz-anuncio-premium', { body: body });
+    let out = fn.data;
+    if (fn.error) { try { if (fn.error.context && typeof fn.error.context.json === 'function') out = await fn.error.context.json(); } catch (_) {} }
+    return out || { ok: false, error: 'falha_interna' };
+  }
+  function requestPremiumAd(d) { return chamarAnuncioPremium(Object.assign({ acao: 'criar' }, d)); }
+  function premiumAdStatus(id, segredo) { return chamarAnuncioPremium({ acao: 'status', id: id, segredo: segredo }); }
+  // Propagandas QuemFaz Premium no ar, para a faixa da tela inicial (o banco só entrega as aprovadas, pagas e dentro do prazo).
+  async function homePremiumAds() {
+    if (!client) return [];
+    const res = await client.from('qf_anuncios').select('id,anunciante_nome,titulo,imagem_data,whatsapp,destino_url')
+      .eq('plano', 'premium').eq('status', 'aprovado').eq('pagamento_status', 'aprovado').order('aprovado_em', { ascending: true }).limit(6);
+    return res.error ? [] : (res.data || []);
+  }
+  function adEvent(id, tipo) { if (client && id) client.rpc('qf_anuncio_evento', { p_id: id, p_tipo: tipo }).then(function () {}, function () {}); }
 
   async function editAd(dados) {
     if (!client) throw new Error('Conexão com o Supabase indisponível.');
@@ -6936,6 +6942,10 @@ alt=""></noscript>
     refreshPublicAds: refreshPublicAdsInBackground,
     submitAd: submitAd,
     editAd: editAd,
+    requestPremiumAd: requestPremiumAd,
+    premiumAdStatus: premiumAdStatus,
+    homePremiumAds: homePremiumAds,
+    adEvent: adEvent,
     saveClientAddress: saveClientAddress,
     saveCpf: saveCpf,
     saveCnpj: saveCnpj,
@@ -7504,7 +7514,7 @@ alt=""></noscript>
       itens: ['Conta criada na hora, sem pagar nada agora', 'Para desbloquear um chamado você precisa adicionar crédito na Carteira', 'Crédito por Pix, cartão ou boleto', 'Bom para começar e testar'] },
     qfCadPlano('mensal', '', function (pct) { return ['Vale para qualquer serviço', pct > 0 ? 'Até ' + pct + '% mais barato que o avulso (pedreiro, frete, mecânico)' : '', 'Sem renovação automática e sem fidelidade']; }),
     qfCadPlano('pro', '', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; }),
-    qfCadPlano('premium', 'MAIS COMPLETO', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Seu anúncio no carrossel do app por 30 dias (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; })
+    qfCadPlano('premium', 'MAIS COMPLETO', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Seu anúncio no carrossel do app por 30 dias', 'Selo Premium no seu perfil, que o cliente vê', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; })
   ];
   global.QFCadPlanos = QF_CAD_PLANOS;
 
@@ -8379,25 +8389,56 @@ alt=""></noscript>
 
   Screens.afterRenderAnon = function (pattern, content, params) {
     if (pattern === '/') {
-      // V11.72: mini carrossel "Anuncie sua marca aqui". Troca sozinho a cada 3 s e para quando a pessoa sai da tela inicial.
+      // V11.72/11.73: faixa abaixo da foto. Troca sozinha a cada 3 s e para quando a pessoa sai da tela inicial.
+      // Mostra as propagandas QuemFaz Premium no ar e, por último, a chamada "Anuncie sua marca aqui".
       (function(){
         const rot=content.querySelector('[data-brandrot]');
         if(!rot||rot.getAttribute('data-brandrot')==='on')return;
         rot.setAttribute('data-brandrot','on');
-        const slides=[['Anuncie sua marca aqui','Este espaço pode ser da sua empresa.'],['Sua empresa neste espaço','Sua loja vista por quem pede serviço.'],['Quer aparecer aqui?','Conheça os planos de divulgação.']];
+        const casa=[['Anuncie sua marca aqui','Este espaço pode ser da sua empresa.'],['Sua empresa neste espaço','Sua loja vista por quem pede serviço.'],['Quer aparecer aqui?','Conheça os planos de divulgação.']].map(function(x){return {t:x[0],x:x[1]};});
+        let slides=casa;
         const copy=rot.querySelector('[data-brandrot-copy]'),titulo=rot.querySelector('[data-brandrot-title]'),texto=rot.querySelector('[data-brandrot-text]');
-        const dots=Array.prototype.slice.call(rot.querySelectorAll('[data-brandrot-dot]'));
+        const logo=rot.querySelector('.qf-brandrot__logo'),cta=rot.querySelector('.qf-brandrot__cta'),ctaLabel=cta.querySelector('span'),dotsBox=rot.querySelector('.qf-brandrot__dots');
+        const logoCasa=logo.innerHTML,vistos={};
         let atual=0,timer=null;
-        function mostrar(n){
-          atual=n;copy.classList.add('is-out');
-          setTimeout(function(){titulo.textContent=slides[atual][0];texto.textContent=slides[atual][1];dots.forEach(function(d,k){if(k===atual)d.setAttribute('aria-current','true');else d.removeAttribute('aria-current');});copy.classList.remove('is-out');},220);
+        function destino(a){
+          const u=String(a.destino_url||'').trim();
+          if(/^https?:\/\//i.test(u)||/^tel:\+?\d+$/i.test(u))return u;
+          const n=String(a.whatsapp||'').replace(/\D/g,'');
+          return n?'https://wa.me/'+(n.indexOf('55')===0&&n.length>=12?n:'55'+n)+'?text='+encodeURIComponent('Olá, vi sua propaganda no QuemFaz e quero saber mais.'):'';
         }
+        function pintar(){
+          const s=slides[atual];
+          titulo.textContent=s.t;texto.textContent=s.x;
+          rot.classList.toggle('is-ad',!!s.ad);
+          if(s.ad){
+            logo.innerHTML='<img src="'+s.img+'" alt="">';ctaLabel.textContent=s.cta;cta.removeAttribute('data-nav');
+            if(!vistos[s.ad]){vistos[s.ad]=1;global.QFCloud.adEvent(s.ad,'visualizacao');}
+          }else{logo.innerHTML=logoCasa;ctaLabel.textContent='Ver planos';cta.setAttribute('data-nav','/anuncie');}
+          Array.prototype.forEach.call(dotsBox.children,function(d,k){if(k===atual)d.setAttribute('aria-current','true');else d.removeAttribute('aria-current');});
+        }
+        function mostrar(n){atual=n;copy.classList.add('is-out');setTimeout(function(){pintar();copy.classList.remove('is-out');},220);}
         function iniciar(){
           if(global.matchMedia&&global.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
           timer=setInterval(function(){if(!rot.isConnected){clearInterval(timer);return;}if(document.hidden)return;mostrar((atual+1)%slides.length);},3000);
         }
-        dots.forEach(function(d,k){d.addEventListener('click',function(){clearInterval(timer);mostrar(k);iniciar();});});
+        dotsBox.addEventListener('click',function(e){const d=e.target.closest('[data-brandrot-dot]');if(!d)return;clearInterval(timer);mostrar(Array.prototype.indexOf.call(dotsBox.children,d));iniciar();});
+        // Na propaganda de uma empresa o botão abre o WhatsApp, a ligação ou o site dela; na chamada do QuemFaz, abre os planos.
+        cta.addEventListener('click',function(e){
+          const s=slides[atual];if(!s.ad)return;
+          e.preventDefault();e.stopPropagation();
+          global.QFCloud.adEvent(s.ad,'clique');
+          if(!s.href)return;
+          if(/^tel:/i.test(s.href))location.href=s.href;else window.open(s.href,'_blank','noopener');
+        });
         iniciar();
+        if(global.QFCloud&&global.QFCloud.enabled&&global.QFCloud.homePremiumAds)global.QFCloud.homePremiumAds().then(function(ads){
+          ads=(ads||[]).filter(function(a){return a&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(String(a.imagem_data||''));});
+          if(!ads.length||!rot.isConnected)return;
+          slides=ads.map(function(a){const h=destino(a);return {ad:a.id,t:String(a.anunciante_nome||''),x:String(a.titulo||''),img:a.imagem_data,href:h,cta:/^tel:/i.test(h)?'Ligar':(/^https:\/\/wa\.me\//.test(h)?'Chamar':'Ver site')};}).concat([casa[0]]);
+          dotsBox.innerHTML=slides.map(function(_,k){return '<button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio '+(k+1)+'"></button>';}).join('');
+          clearInterval(timer);mostrar(0);iniciar();
+        }).catch(function(){});
       })();
       content.querySelectorAll('[data-home-lazy]').forEach(function(el){const f=global.QFHomeExtras&&global.QFHomeExtras[el.getAttribute('data-home-lazy')];if(f&&!el.firstChild)el.innerHTML=f();});
       if(global.QFHomeExtras&&global.QFHomeExtras.stats)global.QFHomeExtras.stats(content);
@@ -9927,7 +9968,7 @@ alt=""></noscript>
 
   function safeAdHref(ad) {
     const raw = String((ad && ad.link) || '').trim();
-    if (/^https?:\/\//i.test(raw)) return raw;
+    if (/^https?:\/\//i.test(raw) || /^tel:\+?\d+$/i.test(raw)) return raw;
     const phone = String((ad && ad.whatsapp) || '').replace(/\D/g, '');
     if (phone) return 'https://wa.me/' + (phone.indexOf('55') === 0 ? phone : '55' + phone) + '?text=' + encodeURIComponent('Olá, vi seu anúncio no QuemFaz e quero saber mais.');
     return '';
@@ -9959,7 +10000,7 @@ alt=""></noscript>
     }).join('') :
       '<button class="ad-card ad-card--empty" type="button" data-nav="/cliente/anuncie"><span class="ad-card__body">' +
         '<span class="ad-card__sponsor">Espaço publicitário</span><span class="ad-card__title">Sua empresa pode aparecer aqui</span>' +
-        '<span class="ad-card__text">Anuncie para clientes da sua região a partir de R$ 79 por 30 dias.</span>' +
+        '<span class="ad-card__text">Anuncie sua marca com o QuemFaz Premium, por 30 dias.</span>' +
         '<span class="ad-card__cta">Ver planos ' + icon('arrowRight') + '</span></span></button>';
     return '<div class="section ad-section"><div class="ad-section__head"><div class="ad-section__label">' + icon('briefcase') + ' Empresas da região</div>' +
       '<button class="topbar__action" type="button" data-nav="/cliente/anuncie" style="padding:4px 0;color:var(--orange-700);">Anuncie aqui</button></div>' +
@@ -9967,78 +10008,43 @@ alt=""></noscript>
       '<div class="ad-dots">' + Array.from({length: Math.max(1, ads.length)}).map(function () { return '<span class="ad-dot"></span>'; }).join('') + '</div></div>';
   }
 
+  // V11.73: um plano só de propaganda, o QuemFaz Premium. A empresa solicita sem cadastro, paga o Pix
+  // e o admin confere e corrige antes de publicar na faixa da tela inicial.
   Screens.anuncieRender = function (params, user) {
-    const plans = DB.state.settings.adPlans;
     const session = DB.getSession();
     const isProfissional = !!(session && session.role === 'profissional');
     const backPath = isProfissional ? '/profissional/home' : (session && session.role === 'cliente' ? '/cliente/home' : '/');
-    const defaultEmpresa = user && user.nome ? user.nome : '';
-    const defaultWhatsapp = user && user.telefone ? user.telefone : '';
-    const userEnd = user && user.enderecos && user.enderecos[0] ? user.enderecos[0] : null;
-    const userCityObj = userEnd && userEnd.cidadeId ? DB.cityById(userEnd.cidadeId) : null;
-    const defaultCidade = userEnd ? (userEnd.cidade || (userCityObj && userCityObj.nome) || '') : '';
-    const defaultUf = userEnd ? (userEnd.uf || (userCityObj && userCityObj.uf) || '') : '';
-    const ownAds = session && user ? (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).slice(0, 12) : [];
-    function planCard(key, desc) {
-      const p = plans[key];
-      return '<label class="ad-plan"><input type="radio" name="plano" value="' + key + '"' + (key === 'local' ? ' checked' : '') + '><div class="row-between"><span class="ad-plan__name">' + PU.escapeHtml(p.nome) + '</span><span class="ad-plan__price">' + PU.formatCurrency(p.valor) + '</span></div><div class="text--sm text--secondary" style="margin-top:4px;">' + desc + ' · 30 dias</div></label>';
-    }
-    function ownAdCard(a) {
-      const status = a.status === 'ativo' ? 'Ativo' : (a.status === 'reprovado' ? 'Reprovado' : (a.status === 'expirado' ? 'Expirado' : 'Em análise'));
-      return '<div class="qf-own-ad">' +
-        '<div class="qf-own-ad__media">' + (a.imagem ? '<img src="' + a.imagem + '" alt="' + PU.escapeHtml(a.empresa) + '">' : '') + '</div>' +
-        '<div><div class="text--strong">' + PU.escapeHtml(a.empresa || 'Anúncio') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(a.chamada || '') + '</div>' +
-        '<div class="text--sm text--muted" style="margin-top:3px;">' + status + ' · ' + PU.escapeHtml((a.plano || 'local').toUpperCase()) + '</div>' +
-        '<div class="qf-own-ad__actions"><button class="btn btn--outline" type="button" data-edit-ad="' + a.id + '">Editar arte</button>' +
-        (a.imagem ? '<button class="btn btn--outline" type="button" data-download-ad="' + a.id + '">Baixar imagem</button>' : '') +
-        '</div></div></div>';
-    }
-    return '<div class="view stack">' +
-      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;"><div class="eyebrow" style="color:var(--orange-400);">Publicidade local</div><div class="h2" style="color:#fff;margin-top:4px;">' + (isProfissional ? 'Divulgue seus serviços no QuemFaz' : 'Coloque sua empresa na frente do QuemFaz') + '</div><p class="text text--sm" style="color:var(--text-on-navy-muted);margin-top:7px;">O cliente envia foto, logo e textos. O QuemFaz monta a arte no padrão profissional e deixa pronta para baixar e publicar.</p></div>' +
-      '<div class="qf-ad-builder-info"><div class="text--strong">Como criar sua arte</div><div class="qf-ad-builder-steps">' +
-        '<div class="qf-ad-builder-step"><b>1</b><span>Escolha o plano e escreva o nome da empresa e a chamada.</span></div>' +
-        '<div class="qf-ad-builder-step"><b>2</b><span>Envie uma foto principal e, se tiver, o logotipo.</span></div>' +
-        '<div class="qf-ad-builder-step"><b>3</b><span>O QuemFaz monta a arte navy + laranja e mostra a prévia.</span></div>' +
-        '<div class="qf-ad-builder-step"><b>4</b><span>Você pode editar, baixar a imagem e só depois publicar.</span></div>' +
-      '</div><div class="text--sm" style="margin-top:9px;color:var(--orange-700);font-weight:800;">No Premium, o anúncio recebe selo Premium e maior destaque no carrossel.</div></div>' +
-      '<div class="qf-ad-placement" id="qf-ad-placement">' +
-        '<div class="qf-ad-placement__head"><div class="text--strong">Onde meu anúncio vai aparecer?</div><div class="text--sm" style="margin-top:3px;">Na tela inicial dos clientes, dentro do carrossel <strong>Empresas da região</strong>.</div></div>' +
-        '<div class="qf-ad-placement__body">' +
-          '<div class="qf-ad-placement__mock"><div class="qf-ad-placement__mock-top"><span>Tela inicial do cliente</span><span>Empresas da região</span></div><div class="qf-ad-placement__mock-card"><div class="qf-ad-placement__mock-copy"><span class="qf-ad-placement__badge" data-placement-badge>Patrocinado</span><div class="qf-ad-placement__name" data-placement-name>Sua empresa aqui</div><div class="qf-ad-placement__cta">Clique para falar conosco →</div></div></div></div>' +
-          '<div class="qf-ad-placement__facts">' +
-            '<div class="qf-ad-placement__fact">' + icon('home') + '<div><strong>Local do anúncio</strong><span>Tela inicial do cliente, no carrossel “Empresas da região”.</span></div></div>' +
-            '<div class="qf-ad-placement__fact">' + icon('mapPin') + '<div><strong>Quem vai ver</strong><span data-placement-region>Clientes de todo o Brasil.</span></div></div>' +
-            '<div class="qf-ad-placement__fact">' + icon('star') + '<div><strong>Posição no carrossel</strong><span data-placement-position>Exibição normal no carrossel.</span></div></div>' +
-            '<div class="qf-ad-placement__fact">' + icon('messageCircle') + '<div><strong>Quando a pessoa clicar</strong><span data-placement-click>Abre seu WhatsApp com uma mensagem pronta, ou seu site se você informar um link.</span></div></div>' +
-          '</div>' +
-        '</div>' +
+    const plano = ((DB.state.settings || {}).adPlans || {}).premium || { valor: 30000, dias: 30 };
+    const preco = PU.formatCurrency(plano.valor);
+    const defNome = user && user.nome ? user.nome : '';
+    const defZap = user && user.telefone ? user.telefone : '';
+    return '<div class="view stack qf-prem">' +
+      '<div class="card qf-prem-head"><div class="eyebrow">Propaganda</div><h1 class="h2">QuemFaz Premium</h1>' +
+        '<p class="text text--sm">Sua marca na primeira tela do QuemFaz, logo abaixo da foto.</p>' +
+        '<div class="qf-prem-price"><strong>' + preco + '</strong><span>por 30 dias</span></div>' +
+        '<div class="qf-prem-pv-label">Como vai aparecer</div>' +
+        '<div class="qf-brandrot is-ad qf-prem-pv"><div class="qf-brandrot__card"><span class="qf-brandrot__logo" data-prem-pv-logo><b>SEU LOGO</b></span><div class="qf-brandrot__copy"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-prem-pv-empresa>Nome da sua empresa</strong><span class="qf-brandrot__text" data-prem-pv-texto>A frase que você escrever aparece aqui.</span></div><span class="qf-brandrot__cta" data-prem-pv-cta>Chamar</span></div></div>' +
       '</div>' +
-      '<form id="anuncio-form" class="stack" novalidate>' +
-        '<input type="hidden" name="editingAdId" value=""><input type="hidden" name="artMode" value="auto">' +
-        '<div class="qf-ad-editing-note">Você está editando um anúncio existente. Plano e região continuam os mesmos; aqui você altera a arte, textos e destino do clique.</div>' +
-        '<div><div class="field__label" style="margin-bottom:8px;">Escolha o plano</div><div class="ad-plan-grid">' +
-          planCard('local','Carrossel da cidade/região') + planCard('destaque','Prioridade no carrossel + selo') + planCard('premium','Primeira posição + destaque maior') +
-        '</div></div>' +
-        '<label class="field"><span class="field__label">' + (isProfissional ? 'Nome profissional / empresa' : 'Empresa') + '</span><input class="input" name="empresa" required maxlength="60" placeholder="Nome da empresa" value="' + PU.escapeHtml(defaultEmpresa) + '"></label>' +
-        '<label class="field"><span class="field__label">Chamada curta</span><input class="input" name="chamada" required maxlength="90" placeholder="Ex.: Qualidade, variedade e estilo para o seu negócio"></label>' +
-        '<label class="field"><span class="field__label">Texto do botão</span><select class="select" name="cta"><option>Fale conosco</option><option>Peça seu catálogo</option><option>Saiba mais</option><option>Ver oferta</option><option>Solicitar orçamento</option></select></label>' +
-        '<div class="field"><span class="field__label">Abrangência do anúncio</span><div class="segmented"><label class="segmented__item is-active" style="display:flex;align-items:center;justify-content:center;gap:6px;"><input type="radio" name="regiaoTipo" value="all" checked> Todo Brasil</label><label class="segmented__item" style="display:flex;align-items:center;justify-content:center;gap:6px;"><input type="radio" name="regiaoTipo" value="cidade"> Cidade específica</label></div></div>' +
-        '<div class="row" style="gap:10px;"><label class="field" style="flex:2;"><span class="field__label">Cidade (se escolher cidade específica)</span><input class="input" name="cidadeAnuncio" value="' + PU.escapeHtml(defaultCidade) + '" placeholder="Ex.: Campinas"></label><label class="field" style="flex:1;"><span class="field__label">UF</span><select class="select" name="ufAnuncio"><option value="">UF</option>' + global.QFGeo.ufOptions(defaultUf) + '</select></label></div>' +
-        '<div class="qf-ad-mode-box"><div class="field__label" style="margin-bottom:8px;">Como quer fazer a arte?</div><div class="segmented" id="ad-art-mode"><button class="segmented__item is-active" type="button" data-art-mode="auto">Montar no QuemFaz</button><button class="segmented__item" type="button" data-art-mode="ready">Enviar arte pronta</button></div><div class="field__hint" style="margin-top:7px;">Montar no QuemFaz mantém o mesmo padrão profissional e deixa a arte editável depois.</div></div>' +
-        '<div data-art-auto class="qf-ad-assets">' +
-          '<div class="qf-ad-asset"><div class="field__label">Foto principal</div><input class="input" type="file" id="ad-photo" accept="image/*" style="margin-top:7px;"><div class="field__hint">Foto do produto, loja ou serviço. O sistema ajusta automaticamente.</div></div>' +
-          '<div class="qf-ad-asset"><div class="field__label">Logotipo (opcional)</div><input class="input" type="file" id="ad-logo" accept="image/png,image/webp,image/jpeg" style="margin-top:7px;"><div class="field__hint">De preferência PNG com fundo transparente.</div></div>' +
-        '</div>' +
-        '<div data-art-ready hidden><div class="field"><span class="field__label">Arte pronta</span><input class="input" type="file" id="ad-image" accept="image/*"><span class="field__hint">Envie uma imagem horizontal 16:9 de até 1,2 MB.</span></div></div>' +
-        '<div class="field"><span class="field__label">Prévia final</span><div class="ad-preview" id="ad-preview"><div class="stack--sm" style="text-align:center;align-items:center;">' + icon('image') + '<span class="text--sm">Preencha os dados e envie uma foto para gerar sua arte.</span></div></div><div class="qf-ad-preview-actions"><button class="btn btn--outline" type="button" id="ad-generate">Atualizar arte</button><button class="btn btn--outline" type="button" id="ad-download" disabled>Baixar imagem</button></div></div>' +
-        '<label class="field"><span class="field__label">WhatsApp</span><input class="input" name="whatsapp" inputmode="tel" required placeholder="(35) 99999-9999" value="' + PU.escapeHtml(defaultWhatsapp) + '"><span class="field__hint">Se não informar site, o clique no anúncio abre este WhatsApp com uma mensagem pronta.</span></label>' +
-        '<label class="field"><span class="field__label">Site ou link (opcional)</span><input class="input" name="link" type="url" placeholder="https://..."><span class="field__hint">Se preencher, o clique vai para este link em vez do WhatsApp.</span></label>' +
-        '<div class="field"><span class="field__label">Pagamento</span><div class="segmented" id="ad-payment"><button class="segmented__item is-active" type="button" data-pay="pix">Pix Efí Bank</button></div><input type="hidden" name="formaPagamento" value="pix"></div>' +
-        '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('shieldCheck') + '</div><div><div class="text--strong">Pagamento real e seguro</div><div class="text--sm text--secondary">Novo anúncio: o Pix é confirmado pela Efí Bank. Edição de uma arte já comprada não gera nova cobrança.</div></div></div></div>' +
-        '<button class="btn btn--primary" type="submit">Gerar Pix e enviar anúncio</button>' +
+      '<div data-prem-status></div>' +
+      (isProfissional ? '<div class="card card--tight qf-prem-note">Tem o plano Premium de chamados com anúncio incluído? Envie por aqui: se o seu anúncio incluído ainda não foi usado, você não paga nada e ele sai no carrossel “Empresas da região”.</div>' : '') +
+      '<form id="qf-prem-form" class="stack" novalidate>' +
+        '<label class="field"><span class="field__label">Nome da empresa</span><input class="input" name="empresa" required maxlength="40" placeholder="Ex.: Casa das Tintas" autocomplete="organization"></label>' +
+        '<label class="field"><span class="field__label">O que vai aparecer na propaganda</span><input class="input" name="chamada" required maxlength="60" placeholder="Ex.: Tintas e acessórios com entrega no mesmo dia"><span class="field__hint">Uma frase curta, até 60 letras.</span></label>' +
+        '<div class="field"><span class="field__label">Foto ou logotipo <b class="qf-prem-req">(obrigatório)</b></span>' +
+          '<label class="qf-prem-upload" for="qf-prem-img">' + icon('image') + '<strong data-prem-img-title>Enviar foto ou logotipo</strong><small data-prem-img-hint>Da galeria ou da câmera. O QuemFaz ajusta o tamanho.</small></label>' +
+          '<input class="qf-prem-file" type="file" id="qf-prem-img" accept="image/*"></div>' +
+        '<div class="field"><span class="field__label" id="qf-prem-dest-title">Quando clicarem na propaganda, abrir:</span>' +
+          '<div class="qf-prem-seg" role="group" aria-labelledby="qf-prem-dest-title"><button type="button" class="is-active" data-prem-dest="whatsapp" aria-pressed="true">WhatsApp</button><button type="button" data-prem-dest="ligacao" aria-pressed="false">Ligação</button><button type="button" data-prem-dest="site" aria-pressed="false">Site</button></div>' +
+          '<label class="field__label qf-prem-dest-label" for="qf-prem-dest" data-prem-dest-label>WhatsApp da empresa</label>' +
+          '<input class="input" id="qf-prem-dest" name="destinoValor" inputmode="tel" placeholder="(11) 99999-9999" maxlength="300"></div>' +
+        '<div class="card card--tight stack--sm qf-prem-you"><div class="text--strong">Seus dados para o QuemFaz falar com você</div>' +
+          '<label class="field"><span class="field__label">Seu nome</span><input class="input" name="nome" required maxlength="80" placeholder="Nome de quem está contratando" autocomplete="name" value="' + PU.escapeHtml(defNome) + '"></label>' +
+          '<label class="field"><span class="field__label">Seu WhatsApp</span><input class="input" name="whatsapp" required inputmode="tel" maxlength="20" placeholder="(11) 99999-9999" autocomplete="tel" value="' + PU.escapeHtml(defZap) + '"></label>' +
+          '<div class="text--sm text--secondary">Sem cadastro. Esses dados não aparecem na propaganda.</div></div>' +
+        '<div class="card card--tight qf-prem-info"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('shieldCheck') + '</div><div class="text--sm">O QuemFaz confere e ajusta a propaganda antes de publicar. Os 30 dias começam a contar quando ela entra no ar.</div></div></div>' +
+        '<button class="btn btn--primary" type="submit" data-prem-submit>Gerar Pix de ' + preco + ' e enviar</button>' +
         '<button class="btn btn--outline" type="button" data-nav="' + backPath + '">Voltar</button>' +
       '</form>' +
-      (ownAds.length ? '<div class="section"><div class="section-head"><h2 class="h3">Meus anúncios</h2><span class="text--sm text--muted">Editar ou baixar</span></div><div class="qf-own-ads">' + ownAds.map(ownAdCard).join('') + '</div></div>' : '') +
       '</div>';
   };
 
@@ -12762,7 +12768,7 @@ alt=""></noscript>
             ['Sai a ' + global.QFPlanos.cada('pro') + ' por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
             assinar('Pro')) +
           cfPlano('Premium', true, global.QFPlanos.preco('premium'), 'por ' + global.QFPlanos.dias('premium') + ' dias', global.QFPlanos.chamados('premium') + ' chamados',
-            ['Sai a ' + global.QFPlanos.cada('premium') + ' por chamado', 'Seu anúncio no carrossel do app por 30 dias incluído (vale R$ 79,00)', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
+            ['Sai a ' + global.QFPlanos.cada('premium') + ' por chamado', 'Seu anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
             assinar('Premium')) +
         '</div>' +
         '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo.</p>' +
@@ -12986,9 +12992,9 @@ alt=""></noscript>
       '</section>' +
 
       '<section class="section" id="planos-divulgacao">' +
-        '<div class="section-head"><div><h2 class="h3">Divulgação</h2><div class="text--sm text--secondary">Seu serviço no carrossel do QuemFaz, para os clientes da sua região.</div></div></div>' +
+        '<div class="section-head"><div><h2 class="h3">Divulgação</h2><div class="text--sm text--secondary">Sua marca na primeira tela do QuemFaz, logo abaixo da foto.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
-          adRow('local', 'Carrossel da cidade/região') + adRow('destaque', 'Prioridade no carrossel + selo') + adRow('premium', 'Primeira posição + destaque maior') +
+          adRow('premium', 'Sua marca na primeira tela do QuemFaz') +
         '</div>' +
         '<button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:12px;">' + icon('megaphone') + ' Divulgar meu serviço</button>' +
         adStatus(ultimoAd) +
@@ -13245,370 +13251,181 @@ alt=""></noscript>
       const id = el.getAttribute('data-ad-click');
       DB.registrarCliqueAnuncio(id);
       const href = el.getAttribute('data-ad-href');
-      if (href && /^https?:\/\//i.test(href)) window.open(href, '_blank', 'noopener');
+      if (href && /^tel:/i.test(href)) location.href = href;
+      else if (href && /^https?:\/\//i.test(href)) window.open(href, '_blank', 'noopener');
     });
   }
 
+  // V11.73: formulário do QuemFaz Premium (sem cadastro) — prévia ao vivo, foto reduzida no aparelho, Pix e acompanhamento.
   function bindAnuncie(content) {
-    const form = content.querySelector('#anuncio-form');
+    const form = content.querySelector('#qf-prem-form');
     if (!form) return;
-    let imageData = '';
-    let photoData = '';
-    let logoData = '';
-    let editingAdId = '';
-    let renderTimer = null;
-    const preview = content.querySelector('#ad-preview');
-    const photoInput = content.querySelector('#ad-photo');
-    const logoInput = content.querySelector('#ad-logo');
-    const readyInput = content.querySelector('#ad-image');
-    const downloadBtn = content.querySelector('#ad-download');
-    const generateBtn = content.querySelector('#ad-generate');
-    const autoBox = content.querySelector('[data-art-auto]');
-    const readyBox = content.querySelector('[data-art-ready]');
-    const modeWrap = content.querySelector('#ad-art-mode');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const placementRegion = content.querySelector('[data-placement-region]');
-    const placementPosition = content.querySelector('[data-placement-position]');
-    const placementBadge = content.querySelector('[data-placement-badge]');
-    const placementName = content.querySelector('[data-placement-name]');
-    const placementClick = content.querySelector('[data-placement-click]');
-
-    function updatePlacementInfo() {
-      const fd = new FormData(form);
-      const plano = selectedPlan();
-      const tipo = String(fd.get('regiaoTipo') || 'all');
-      const cidade = String(fd.get('cidadeAnuncio') || '').trim();
-      const uf = String(fd.get('ufAnuncio') || '').trim();
-      const empresa = String(fd.get('empresa') || '').trim();
-      const link = String(fd.get('link') || '').trim();
-      if (placementName) placementName.textContent = empresa || 'Sua empresa aqui';
-      if (placementRegion) {
-        placementRegion.textContent = tipo === 'cidade'
-          ? (cidade && uf ? 'Clientes que acessarem o QuemFaz em ' + cidade + '/' + uf + '.' : 'Clientes da cidade e UF que você escolher.')
-          : 'Clientes de todo o Brasil.';
-      }
-      if (placementPosition) {
-        placementPosition.textContent = plano === 'premium'
-          ? 'Premium: primeira posição, card maior e selo Premium.'
-          : (plano === 'destaque' ? 'Destaque: prioridade no carrossel e selo de destaque.' : 'Local: exibição normal no carrossel da região escolhida.');
-      }
-      if (placementBadge) placementBadge.textContent = plano === 'premium' ? 'Patrocinado • Premium' : (plano === 'destaque' ? 'Patrocinado • Destaque' : 'Patrocinado');
-      if (placementClick) placementClick.textContent = link
-        ? 'Abre o site ou link que você informar.'
-        : 'Abre seu WhatsApp com uma mensagem pronta para o cliente falar com você.';
+    let imagem = '', tipo = 'whatsapp';
+    const submitBtn = form.querySelector('[data-prem-submit]');
+    const submitLabel = submitBtn.textContent;
+    const pvEmp = content.querySelector('[data-prem-pv-empresa]'), pvTxt = content.querySelector('[data-prem-pv-texto]');
+    const pvCta = content.querySelector('[data-prem-pv-cta]'), pvLogo = content.querySelector('[data-prem-pv-logo]');
+    const destInput = form.elements.destinoValor, destLabel = content.querySelector('[data-prem-dest-label]');
+    const DEST = {
+      whatsapp: ['WhatsApp da empresa', '(11) 99999-9999', 'tel', 'Chamar'],
+      ligacao: ['Telefone da empresa', '(11) 3333-3333', 'tel', 'Ligar'],
+      site: ['Endereço do site', 'www.suaempresa.com.br', 'url', 'Ver site']
+    };
+    const ERROS = {
+      empresa_invalida: 'Escreva o nome da empresa (até 40 letras).',
+      frase_invalida: 'Escreva a frase da propaganda (até 60 letras).',
+      imagem_invalida: 'Não foi possível usar essa imagem. Envie outra foto ou logotipo.',
+      destino_invalido: 'Confira o WhatsApp, telefone ou site que abre ao clicar.',
+      nome_invalido: 'Escreva o seu nome.',
+      whatsapp_invalido: 'Confira o seu WhatsApp, com DDD.',
+      muitas_tentativas: 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.',
+      cobranca_indisponivel: 'Não foi possível gerar o Pix agora. Tente de novo em instantes.'
+    };
+    function digitos(v) { let n = String(v || '').replace(/\D/g, ''); if (n.indexOf('55') === 0 && n.length >= 12) n = n.slice(2); return n; }
+    function telOk(v) { const n = digitos(v); return n.length === 10 || n.length === 11; }
+    function preview() {
+      pvEmp.textContent = form.elements.empresa.value.trim() || 'Nome da sua empresa';
+      pvTxt.textContent = form.elements.chamada.value.trim() || 'A frase que você escrever aparece aqui.';
+      pvCta.textContent = DEST[tipo][3];
     }
-
-    function selectedPlan() {
-      const r = form.querySelector('input[name="plano"]:checked');
-      return r ? r.value : 'local';
-    }
-    function currentMode() { return String(form.elements.artMode.value || 'auto'); }
-    function setMode(mode) {
-      mode = mode === 'ready' ? 'ready' : 'auto';
-      form.elements.artMode.value = mode;
-      if (autoBox) autoBox.hidden = mode !== 'auto';
-      if (readyBox) readyBox.hidden = mode !== 'ready';
-      Array.prototype.forEach.call(modeWrap.querySelectorAll('[data-art-mode]'), function (b) {
-        b.classList.toggle('is-active', b.getAttribute('data-art-mode') === mode);
+    form.addEventListener('input', preview);
+    Array.prototype.forEach.call(content.querySelectorAll('[data-prem-dest]'), function (b) {
+      b.addEventListener('click', function () {
+        tipo = b.getAttribute('data-prem-dest');
+        Array.prototype.forEach.call(content.querySelectorAll('[data-prem-dest]'), function (x) {
+          const on = x === b; x.classList.toggle('is-active', on); x.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        destLabel.textContent = DEST[tipo][0]; destInput.placeholder = DEST[tipo][1]; destInput.setAttribute('inputmode', DEST[tipo][2]); destInput.value = '';
+        preview();
       });
-      if (mode === 'ready' && imageData) showPreview(imageData);
-      if (mode === 'auto') scheduleRender();
-    }
-    function showPreview(src) {
-      if (!src) return;
-      preview.innerHTML = '<img src="' + src + '" alt="Prévia final do anúncio">';
-      if (downloadBtn) downloadBtn.disabled = false;
-    }
-    function readAsDataUrl(file) {
+    });
+    // A foto é reduzida no próprio aparelho: fica leve para enviar e para aparecer na tela inicial.
+    function reduzir(file) {
       return new Promise(function (resolve, reject) {
         const r = new FileReader();
         r.onerror = reject;
-        r.onload = function () { resolve(String(r.result || '')); };
+        r.onload = function () {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = function () {
+            const max = 640, k = Math.min(1, max / Math.max(img.width, img.height));
+            const c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+            let out = c.toDataURL('image/jpeg', 0.84);
+            if (out.length > 600000) out = c.toDataURL('image/jpeg', 0.6);
+            resolve(out);
+          };
+          img.src = String(r.result || '');
+        };
         r.readAsDataURL(file);
       });
     }
-    function loadImage(src) {
-      return new Promise(function (resolve, reject) {
-        const img = new Image();
-        img.onload = function () { resolve(img); };
-        img.onerror = reject;
-        img.src = src;
-      });
-    }
-    function roundRect(ctx,x,y,w,h,r) {
-      r = Math.min(r,w/2,h/2);
-      ctx.beginPath();
-      ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-      ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
-    }
-    function cover(ctx,img,x,y,w,h) {
-      const ir=img.width/img.height, rr=w/h;
-      let sx=0,sy=0,sw=img.width,sh=img.height;
-      if(ir>rr){sw=img.height*rr;sx=(img.width-sw)/2;}else{sh=img.width/rr;sy=(img.height-sh)/2;}
-      ctx.drawImage(img,sx,sy,sw,sh,x,y,w,h);
-    }
-    function wrapLines(ctx,text,maxWidth,maxLines) {
-      const words=String(text||'').trim().split(/\s+/).filter(Boolean);
-      const lines=[]; let line='';
-      words.forEach(function(w){
-        const test=line?line+' '+w:w;
-        if(ctx.measureText(test).width<=maxWidth || !line) line=test;
-        else { lines.push(line); line=w; }
-      });
-      if(line) lines.push(line);
-      if(lines.length>maxLines){
-        const keep=lines.slice(0,maxLines);
-        let last=keep[maxLines-1];
-        while(ctx.measureText(last+'…').width>maxWidth && last.length>3) last=last.slice(0,-1);
-        keep[maxLines-1]=last.replace(/[ ,.;:-]+$/,'')+'…';
-        return keep;
-      }
-      return lines;
-    }
-    async function buildAutomaticArt() {
-      const fd = new FormData(form);
-      const empresa = String(fd.get('empresa') || '').trim() || 'Sua empresa';
-      const chamada = String(fd.get('chamada') || '').trim() || 'Qualidade e atendimento para você';
-      const cta = String(fd.get('cta') || 'Fale conosco').trim();
-      const plano = selectedPlan();
-      const W=1200,H=675;
-      const canvas=document.createElement('canvas'); canvas.width=W; canvas.height=H;
-      const ctx=canvas.getContext('2d');
+    const fileInput = content.querySelector('#qf-prem-img');
+    fileInput.addEventListener('change', async function () {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      try {
+        imagem = await reduzir(f);
+        pvLogo.innerHTML = '<img src="' + imagem + '" alt="">';
+        content.querySelector('[data-prem-img-title]').textContent = 'Imagem enviada';
+        content.querySelector('[data-prem-img-hint]').textContent = 'Toque para trocar a foto ou o logotipo.';
+        content.querySelector('.qf-prem-upload').classList.add('is-ok');
+      } catch (_) { imagem = ''; PU.toast('Não foi possível ler essa imagem. Tente outra.', 'danger'); }
+    });
 
-      const bg=ctx.createLinearGradient(0,0,W,H); bg.addColorStop(0,'#06162f'); bg.addColorStop(.58,'#0c2446'); bg.addColorStop(1,'#101b2e');
-      ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
-
-      if(photoData){
-        try{
-          const p=await loadImage(photoData);
-          cover(ctx,p,560,0,640,H);
-          const shade=ctx.createLinearGradient(420,0,900,0);
-          shade.addColorStop(0,'rgba(6,22,47,1)'); shade.addColorStop(.45,'rgba(6,22,47,.82)'); shade.addColorStop(1,'rgba(6,22,47,.10)');
-          ctx.fillStyle=shade; ctx.fillRect(390,0,570,H);
-        }catch(_){}
-      } else {
-        const glow=ctx.createRadialGradient(930,330,20,930,330,420);
-        glow.addColorStop(0,'rgba(255,122,0,.28)'); glow.addColorStop(1,'rgba(255,122,0,0)');
-        ctx.fillStyle=glow; ctx.fillRect(520,0,680,H);
-      }
-
-      ctx.strokeStyle='rgba(255,132,24,.42)'; ctx.lineWidth=4;
-      ctx.beginPath(); ctx.arc(965,120,360,.72,2.65); ctx.stroke();
-      ctx.strokeStyle='rgba(255,183,92,.22)'; ctx.lineWidth=2;
-      ctx.beginPath(); ctx.arc(1010,160,430,.8,2.72); ctx.stroke();
-
-      const badge = plano === 'premium' ? 'PATROCINADO • PREMIUM' : (plano === 'destaque' ? 'PATROCINADO • DESTAQUE' : 'PATROCINADO');
-      ctx.font='800 20px Arial'; const bw=Math.min(360,ctx.measureText(badge).width+42);
-      roundRect(ctx,68,54,bw,46,23); ctx.fillStyle='rgba(8,20,40,.88)'; ctx.fill(); ctx.strokeStyle='#ff941f'; ctx.lineWidth=2; ctx.stroke();
-      ctx.fillStyle='#ffffff'; ctx.fillText(badge,89,84);
-
-      let titleSize=58;
-      ctx.font='900 '+titleSize+'px Arial';
-      let titleLines=wrapLines(ctx,empresa,490,2);
-      while(titleLines.some(function(l){return ctx.measureText(l).width>490;}) && titleSize>42){titleSize-=2;ctx.font='900 '+titleSize+'px Arial';titleLines=wrapLines(ctx,empresa,490,2);}
-      let ty=175;
-      titleLines.forEach(function(line,idx){
-        ctx.fillStyle=idx===titleLines.length-1 && titleLines.length>1 ? '#ff8518' : '#ffffff';
-        ctx.fillText(line,68,ty); ty+=titleSize*1.06;
-      });
-
-      ctx.font='600 27px Arial'; ctx.fillStyle='#e5edf7';
-      const subLines=wrapLines(ctx,chamada,475,2);
-      let sy=ty+22; subLines.forEach(function(line){ctx.fillText(line,68,sy);sy+=35;});
-      ctx.fillStyle='#ff8518'; ctx.fillRect(68,sy+4,94,5);
-
-      const by=Math.min(505,sy+42), btnW=390, btnH=70;
-      const bgrad=ctx.createLinearGradient(68,by,68+btnW,by); bgrad.addColorStop(0,'#ff7a00'); bgrad.addColorStop(1,'#ffb347');
-      roundRect(ctx,68,by,btnW,btnH,35); ctx.fillStyle=bgrad; ctx.fill();
-      ctx.fillStyle='#0b1d3a'; ctx.font='900 25px Arial';
-      let ctaText=cta; while(ctx.measureText(ctaText).width>285 && ctaText.length>8) ctaText=ctaText.slice(0,-1);
-      if(ctaText!==cta) ctaText=ctaText.replace(/[ ,.;:-]+$/,'')+'…';
-      ctx.fillText(ctaText,103,by+44);
-      ctx.beginPath(); ctx.arc(424,by+35,24,0,Math.PI*2); ctx.fillStyle='#0b1d3a'; ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(415,by+25);ctx.lineTo(427,by+35);ctx.lineTo(415,by+45);ctx.stroke();
-
-      ctx.font='700 20px Arial'; ctx.fillStyle='#ffb347'; ctx.fillText('Clique aqui',68,by+108);
-      ctx.fillStyle='#ffffff'; ctx.fillText('e fale conosco',180,by+108);
-
-      if(logoData){
-        try{
-          const l=await loadImage(logoData); const maxW=220,maxH=90; const sc=Math.min(maxW/l.width,maxH/l.height,1); const lw=l.width*sc,lh=l.height*sc;
-          roundRect(ctx,W-48-lw-22,H-42-lh-20,lw+44,lh+40,18); ctx.fillStyle='rgba(255,255,255,.92)'; ctx.fill();
-          ctx.drawImage(l,W-48-lw,H-42-lh,lw,lh);
-        }catch(_){}
-      } else {
-        ctx.textAlign='right'; ctx.font='900 24px Arial'; ctx.fillStyle='#ffffff'; ctx.fillText(empresa.slice(0,32),W-46,H-44); ctx.textAlign='left';
-      }
-
-      imageData=canvas.toDataURL('image/jpeg',.86);
-      showPreview(imageData);
-      return imageData;
-    }
-    function scheduleRender() {
-      if(currentMode()!=='auto') return;
-      clearTimeout(renderTimer);
-      renderTimer=setTimeout(function(){ buildAutomaticArt().catch(function(){ }); },220);
-    }
-    function currentArtConfig() {
-      if(currentMode()==='ready') return { modelo:'arte_pronta', modo:'pronta', versao:1 };
-      return {
-        modelo:'premium_01', modo:'auto', versao:1,
-        fotoData:photoData || '', logoData:logoData || '',
-        cta:String(form.elements.cta.value || 'Fale conosco')
+    // Quem já enviou vê em que pé está a solicitação (guardada só neste aparelho).
+    function pedidoSalvo() { try { const p = JSON.parse(localStorage.getItem('qf_prem_pedido') || 'null'); return p && p.id && p.segredo && Date.now() - Number(p.at || 0) < 45 * 86400000 ? p : null; } catch (_) { return null; } }
+    function salvarPedido(p) { try { localStorage.setItem('qf_prem_pedido', JSON.stringify(p)); } catch (_) {} }
+    function abrirPix(p, pago) {
+      const valor = PU.formatCurrency(Number(p.valor || 0));
+      const corpoPix = (p.qr ? '<img src="' + PU.escapeHtml(p.qr) + '" alt="QR Code do Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">' : '') +
+        (p.pix ? '<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-prem-pix-code" readonly style="min-height:96px;">' + PU.escapeHtml(p.pix) + '</textarea></label><button class="btn btn--primary" id="qf-prem-copy">' + icon('clipboard') + ' Copiar Pix</button>' : '') +
+        '<div class="card card--tight" style="background:var(--navy-100);border:none;text-align:center;" data-prem-wait>Aguardando o pagamento. Esta tela avisa sozinha quando o Pix cair.</div>';
+      const corpoPago = '<div class="card card--tight" style="background:var(--navy-100);border:none;text-align:center;">O QuemFaz vai conferir sua propaganda e ela entra no ar em seguida. Os 30 dias começam a contar na publicação.</div>';
+      PU.openSheet('<div class="stack" data-prem-sheet><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon(pago ? 'checkCircle' : 'wallet') + '</div>' +
+        '<h3 class="sheet__title" style="text-align:center;" data-prem-sheet-title>' + (pago ? 'Pagamento confirmado' : 'Pague o Pix de ' + valor) + '</h3>' +
+        '<div class="stack" data-prem-sheet-body>' + (pago ? corpoPago : corpoPix) + '</div>' +
+        '<button class="btn btn--outline" id="qf-prem-fechar">' + (pago ? 'Entendi' : 'Fechar') + '</button></div>', { persistent: true });
+      const sheet = document.querySelector('[data-prem-sheet]');
+      const copy = document.getElementById('qf-prem-copy');
+      if (copy) copy.onclick = async function () {
+        try { await navigator.clipboard.writeText(p.pix); PU.toast('Pix copiado.', 'success'); }
+        catch (_) { const a = document.getElementById('qf-prem-pix-code'); if (a) { a.focus(); a.select(); document.execCommand('copy'); PU.toast('Pix copiado.', 'success'); } }
       };
+      document.getElementById('qf-prem-fechar').onclick = function () { PU.closeSheet(); mostrarStatus(); };
+      if (pago) return;
+      let n = 0;
+      const t = setInterval(async function () {
+        if (!sheet || !sheet.isConnected || ++n > 240) { clearInterval(t); return; }
+        try {
+          const s = await global.QFCloud.premiumAdStatus(p.id, p.segredo);
+          if (s && s.ok && s.pagamento === 'aprovado' && sheet.isConnected) {
+            clearInterval(t);
+            sheet.querySelector('[data-prem-sheet-title]').textContent = 'Pagamento confirmado';
+            sheet.querySelector('[data-prem-sheet-body]').innerHTML = corpoPago;
+            document.getElementById('qf-prem-fechar').textContent = 'Entendi';
+          }
+        } catch (_) {}
+      }, 5000);
     }
-    function downloadImage(src,name) {
-      if(!src) return;
-      const a=document.createElement('a');
-      a.href=src; a.download=(String(name||'anuncio').replace(/[^a-z0-9]+/gi,'-').replace(/^-|-$/g,'').toLowerCase()||'anuncio')+'-quemfaz.jpg';
-      document.body.appendChild(a); a.click(); a.remove();
+    async function mostrarStatus() {
+      const box = content.querySelector('[data-prem-status]'), p = pedidoSalvo();
+      if (!box || !p || !(global.QFCloud && global.QFCloud.enabled)) return;
+      let s = null;
+      try { s = await global.QFCloud.premiumAdStatus(p.id, p.segredo); } catch (_) {}
+      if (!s || !s.ok || !box.isConnected) return;
+      const pago = s.pagamento === 'aprovado';
+      let titulo = 'Sua solicitação: aguardando o Pix', texto = 'A propaganda de ' + PU.escapeHtml(p.empresa || 'sua empresa') + ' só vai para a conferência depois do pagamento.', botao = 'Ver o Pix';
+      if (s.status === 'aprovado') { titulo = 'Sua propaganda está no ar'; texto = s.fim_em ? 'Fica na tela inicial até ' + new Date(s.fim_em).toLocaleDateString('pt-BR') + '.' : 'Ela aparece na tela inicial do QuemFaz.'; botao = ''; }
+      else if (s.status === 'reprovado') { titulo = 'Sua propaganda não foi aprovada'; texto = 'O QuemFaz vai falar com você pelo WhatsApp informado.'; botao = ''; }
+      else if (s.status === 'pausado') { titulo = 'Sua propaganda está pausada'; texto = 'O QuemFaz vai falar com você pelo WhatsApp informado.'; botao = ''; }
+      else if (pago) { titulo = 'Pagamento confirmado'; texto = 'O QuemFaz está conferindo sua propaganda. Ela entra no ar em seguida.'; botao = ''; }
+      box.innerHTML = '<div class="card card--tight stack--sm qf-prem-status"><div class="text--strong">' + titulo + '</div><div class="text--sm text--secondary">' + texto + '</div>' + (botao ? '<button class="btn btn--sm btn--outline" type="button" data-prem-ver-pix>' + botao + '</button>' : '') + '</div>';
+      const ver = box.querySelector('[data-prem-ver-pix]');
+      if (ver) ver.onclick = function () { abrirPix(p, false); };
     }
+    mostrarStatus();
 
-    // Recupera rascunho após login/cadastro.
-    try {
-      const saved = JSON.parse(sessionStorage.getItem('qf_pending_ad_draft') || 'null');
-      if (saved && saved.fields) {
-        Array.prototype.forEach.call(form.querySelectorAll('[name]'), function (ctrl) {
-          const name = ctrl.name;
-          if (!name || !(name in saved.fields) || ctrl.type === 'file') return;
-          if (ctrl.type === 'radio') ctrl.checked = String(ctrl.value) === String(saved.fields[name]);
-          else ctrl.value = saved.fields[name] == null ? '' : saved.fields[name];
-        });
-        imageData=String(saved.imageData||''); photoData=String(saved.photoData||''); logoData=String(saved.logoData||'');
-        setMode(String(saved.fields.artMode||'auto'));
-        if(imageData) showPreview(imageData);
-        Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) {
-          const item=r.closest('.segmented__item'); if(item) item.classList.toggle('is-active',r.checked);
-        });
-        PU.toast('Seu anúncio foi recuperado. Continue de onde parou.','success');
-      }
-    } catch (_) {}
-
-    if(modeWrap) modeWrap.addEventListener('click',function(e){const b=e.target.closest('[data-art-mode]');if(!b)return;setMode(b.getAttribute('data-art-mode'));});
-    if(photoInput) photoInput.addEventListener('change',async function(){
-      const f=photoInput.files&&photoInput.files[0]; if(!f)return;
-      try{photoData=await PU.fileToCompressedDataUrl(f,1200);await buildAutomaticArt();}catch(_){PU.toast('Não foi possível ler essa foto.','danger');}
-    });
-    if(logoInput) logoInput.addEventListener('change',async function(){
-      const f=logoInput.files&&logoInput.files[0]; if(!f)return;
-      if(f.size>700*1024){logoInput.value='';PU.toast('O logotipo deve ter no máximo 700 KB.','danger');return;}
-      try{logoData=await readAsDataUrl(f);await buildAutomaticArt();}catch(_){PU.toast('Não foi possível ler o logotipo.','danger');}
-    });
-    if(readyInput) readyInput.addEventListener('change',function(){
-      const f=readyInput.files&&readyInput.files[0]; if(!f)return;
-      if(f.size>1200*1024){readyInput.value='';PU.toast('A arte pronta deve ter no máximo 1,2 MB.','danger');return;}
-      const r=new FileReader();r.onload=function(){imageData=String(r.result||'');showPreview(imageData);};r.readAsDataURL(f);
-    });
-    ['empresa','chamada','cta'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='cta'?'change':'input',function(){scheduleRender();updatePlacementInfo();});});
-    Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(r){r.addEventListener('change',function(){scheduleRender();updatePlacementInfo();});});
-    ['cidadeAnuncio','ufAnuncio','link'].forEach(function(name){const el=form.elements[name];if(el)el.addEventListener(name==='ufAnuncio'?'change':'input',updatePlacementInfo);});
-    if(generateBtn) generateBtn.addEventListener('click',function(){if(currentMode()==='auto')buildAutomaticArt();else if(!imageData)PU.toast('Envie sua arte pronta primeiro.','danger');});
-    if(downloadBtn) downloadBtn.addEventListener('click',function(){downloadImage(imageData,form.elements.empresa.value);});
-
-    Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (radio) {
-      radio.addEventListener('change', function () {
-        Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'), function (r) { r.closest('.segmented__item').classList.toggle('is-active', r.checked); });
-        const cityRow=form.querySelector('[name="cidadeAnuncio"]'); if(cityRow&&radio.value==='cidade'&&radio.checked)cityRow.focus();
-        updatePlacementInfo();
-      });
-    });
-    const pay=content.querySelector('#ad-payment');
-    if(pay) pay.addEventListener('click',function(e){const b=e.target.closest('[data-pay]');if(!b)return;Array.prototype.forEach.call(pay.querySelectorAll('.segmented__item'),function(x){x.classList.remove('is-active');});b.classList.add('is-active');form.elements.formaPagamento.value=b.getAttribute('data-pay');});
-
-    content.addEventListener('click',function(e){
-      const down=e.target.closest('[data-download-ad]');
-      if(down){
-        const ad=DB.anuncioById(down.getAttribute('data-download-ad')); if(ad&&ad.imagem)downloadImage(ad.imagem,ad.empresa); return;
-      }
-      const edit=e.target.closest('[data-edit-ad]');
-      if(!edit)return;
-      const ad=DB.anuncioById(edit.getAttribute('data-edit-ad')); if(!ad)return;
-      editingAdId=ad.id; form.elements.editingAdId.value=ad.id; form.classList.add('qf-ad-editing');
-      form.elements.empresa.value=ad.empresa||''; form.elements.chamada.value=ad.chamada||''; form.elements.whatsapp.value=ad.whatsapp||''; form.elements.link.value=ad.link||'';
-      const plan=form.querySelector('input[name="plano"][value="'+(ad.plano||'local')+'"]'); if(plan)plan.checked=true;
-      Array.prototype.forEach.call(form.querySelectorAll('input[name="plano"]'),function(x){x.disabled=true;});
-      Array.prototype.forEach.call(form.querySelectorAll('input[name="regiaoTipo"]'),function(x){x.disabled=true;});
-      form.elements.cidadeAnuncio.disabled=true; form.elements.ufAnuncio.disabled=true;
-      const cfg=ad.arteConfig||{};
-      if(cfg.modo==='auto' || cfg.modelo==='premium_01'){
-        photoData=String(cfg.fotoData||''); logoData=String(cfg.logoData||''); if(cfg.cta)form.elements.cta.value=cfg.cta; setMode('auto');
-      } else { setMode('ready'); }
-      imageData=ad.imagem||''; if(imageData)showPreview(imageData);
-      submitBtn.textContent='Salvar alterações';
-      try{form.scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}
-      PU.toast('Anúncio aberto para edição.','success');
-    });
-
-    updatePlacementInfo();
-
-    form.addEventListener('submit',async function(e){
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      const fd=new FormData(form);
-      if(!String(fd.get('empresa')||'').trim()||!String(fd.get('chamada')||'').trim()||!String(fd.get('whatsapp')||'').trim()){PU.toast('Preencha empresa, chamada e WhatsApp.','danger');return;}
-      if(currentMode()==='auto'){
-        if(!photoData && !editingAdId){PU.toast('Envie a foto principal para montar a arte.','danger');return;}
-        await buildAutomaticArt();
-      }
-      if(!imageData){PU.toast('Gere a arte ou envie uma imagem pronta.','danger');return;}
-
-      const dadosBase={
-        empresa:fd.get('empresa'), chamada:fd.get('chamada'), imagem:imageData, whatsapp:fd.get('whatsapp'), link:fd.get('link'),
-        arteConfig:currentArtConfig()
-      };
-
-      if(editingAdId){
-        submitBtn.disabled=true; submitBtn.textContent='Salvando...';
-        try{
-          await global.QFCloud.editAd(Object.assign({id:editingAdId},dadosBase));
-          PU.toast('Arte atualizada com sucesso.','success');
-          const sess=DB.getSession(); global.navigate('/'+sess.role+'/anuncie',true);
-        }catch(err){PU.toast((err&&err.message)||'Não foi possível salvar a edição.','danger');}
-        finally{submitBtn.disabled=false;submitBtn.textContent='Salvar alterações';}
-        return;
-      }
-
-      if(!DB.getSession()){
-        const draftFields={}; fd.forEach(function(value,key){if(typeof value==='string')draftFields[key]=value;});
-        try{sessionStorage.setItem('qf_pending_ad_draft',JSON.stringify({fields:draftFields,imageData:imageData,photoData:photoData,logoData:logoData,savedAt:Date.now()}));}catch(_){}
-        PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('user')+'</div><h3 class="sheet__title" style="text-align:center;">Entre para continuar</h3><p class="text text--secondary" style="text-align:center;">Sua arte já está salva neste aparelho. Entre ou crie sua conta e você volta para finalizar sem perder o trabalho.</p><button class="btn btn--primary" id="qf-ad-login-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-ad-login-prof">Entrar como profissional</button><div class="divider-label">primeiro acesso?</div><div class="btn-row"><button class="btn btn--outline" id="qf-ad-cad-cliente">Criar conta cliente</button><button class="btn btn--outline" id="qf-ad-cad-prof">Criar conta profissional</button></div><button class="btn btn--ghost" id="qf-ad-voltar">Continuar editando</button></div>',{persistent:true});
-        document.getElementById('qf-ad-login-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true);};
-        document.getElementById('qf-ad-login-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true);};
-        document.getElementById('qf-ad-cad-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/cadastro',true);};
-        document.getElementById('qf-ad-cad-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/cadastro',true);};
-        document.getElementById('qf-ad-voltar').onclick=function(){PU.closeSheet();};
-        return;
-      }
-
-      submitBtn.disabled=true; submitBtn.textContent='Enviando...';
-      try{
-        const regiaoTipo=fd.get('regiaoTipo')||'all', cidadeAnuncio=String(fd.get('cidadeAnuncio')||'').trim(), ufAnuncio=String(fd.get('ufAnuncio')||'').trim();
-        if(regiaoTipo==='cidade'&&(!cidadeAnuncio||!ufAnuncio)){PU.toast('Informe cidade e UF do anúncio.','danger');return;}
-        const regiao=regiaoTipo==='all'?'all':global.QFGeo.regionKey(cidadeAnuncio,ufAnuncio);
-        const dados=Object.assign({},dadosBase,{cidadeId:regiao,plano:fd.get('plano'),formaPagamento:fd.get('formaPagamento')});
-        const out=await global.QFCloud.submitAd(dados); const ad=out.ad,pagamento=out.pagamento||{};
-        const p=DB.adPlan((ad&&ad.plano)||dados.plano); const valor=Number(pagamento.valor_centavos!=null?pagamento.valor_centavos:p.valor||0);
-        try{sessionStorage.removeItem('qf_pending_ad_draft');}catch(_){}
-        if(pagamento.incluido_no_plano){
-          PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('checkCircle')+'</div><h3 class="sheet__title" style="text-align:center;">Anúncio incluído no seu Premium</h3><p class="text text--secondary" style="text-align:center;">Você não paga nada por este anúncio. Ele vai para a aprovação da equipe QuemFaz e, aprovado, fica 30 dias no carrossel do app.</p><button class="btn btn--primary" id="fechar-anuncio">Entendi</button></div>');
-          document.getElementById('fechar-anuncio').onclick=function(){PU.closeSheet();const sess=DB.getSession();global.navigate(sess&&sess.role==='profissional'?'/profissional/home':'/cliente/home',true);};
-          return;
+      const empresa = form.elements.empresa.value.trim(), chamada = form.elements.chamada.value.trim();
+      const nome = form.elements.nome.value.trim(), zap = form.elements.whatsapp.value.trim();
+      let dest = destInput.value.trim();
+      if (empresa.length < 2) { PU.toast(ERROS.empresa_invalida, 'danger'); form.elements.empresa.focus(); return; }
+      if (chamada.length < 4) { PU.toast(ERROS.frase_invalida, 'danger'); form.elements.chamada.focus(); return; }
+      if (!imagem) { PU.toast('Envie a foto ou o logotipo da empresa.', 'danger'); content.querySelector('.qf-prem-upload').scrollIntoView({ block: 'center' }); return; }
+      if (tipo === 'site') {
+        if (dest && !/^https?:\/\//i.test(dest)) dest = 'https://' + dest;
+        if (!/^https?:\/\/[^\s/]+\.[^\s]+$/i.test(dest)) { PU.toast('Escreva o endereço do site. Ex.: www.suaempresa.com.br', 'danger'); destInput.focus(); return; }
+      } else if (!telOk(dest)) { PU.toast('Confira o número com DDD que abre ao clicar na propaganda.', 'danger'); destInput.focus(); return; }
+      if (nome.length < 2) { PU.toast(ERROS.nome_invalido, 'danger'); form.elements.nome.focus(); return; }
+      if (!telOk(zap)) { PU.toast(ERROS.whatsapp_invalido, 'danger'); form.elements.whatsapp.focus(); return; }
+      if (!(global.QFCloud && global.QFCloud.enabled)) { PU.toast('Sem conexão agora. Tente de novo em instantes.', 'danger'); return; }
+      submitBtn.disabled = true; submitBtn.textContent = 'Enviando...';
+      try {
+        const sess = DB.getSession();
+        if (sess && sess.role === 'profissional') {
+          // Anúncio incluído no plano Premium de chamados: sai sem cobrança, se ainda não foi usado.
+          try {
+            const inc = await global.QFCloud.submitAd({ empresa: empresa, chamada: chamada, cidadeId: 'all', plano: 'local', imagem: imagem,
+              whatsapp: tipo === 'whatsapp' ? digitos(dest) : digitos(zap), link: tipo === 'whatsapp' ? '' : (tipo === 'site' ? dest : 'tel:+55' + digitos(dest)), formaPagamento: 'pix' });
+            if (inc && inc.pagamento && inc.pagamento.incluido_no_plano) {
+              PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('checkCircle') + '</div><h3 class="sheet__title" style="text-align:center;">Anúncio incluído no seu Premium</h3><p class="text text--secondary" style="text-align:center;">Você não paga nada por este anúncio. Ele vai para a conferência do QuemFaz e, aprovado, fica 30 dias no carrossel “Empresas da região”.</p><button class="btn btn--primary" id="qf-prem-inc-ok">Entendi</button></div>');
+              document.getElementById('qf-prem-inc-ok').onclick = function () { PU.closeSheet(); global.navigate('/profissional/home', true); };
+              return;
+            }
+          } catch (_) {}
         }
-        const pixCode=String(pagamento.pix_copy_paste||''),checkoutUrl=String(pagamento.checkout_url||''),qrImage=String(pagamento.qr_image||'');
-        PU.openSheet('<div class="stack"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">'+icon('wallet')+'</div><h3 class="sheet__title" style="text-align:center;">Pix gerado na Efí</h3><p class="text text--secondary" style="text-align:center;">Valor: <strong>'+PU.formatCurrency(valor)+'</strong>. Pague o Pix abaixo. O anúncio só será liberado como pago depois da confirmação bancária.</p>'+(qrImage?'<img src="'+PU.escapeHtml(qrImage)+'" alt="QR Code Pix" style="width:220px;height:220px;object-fit:contain;margin:0 auto;border-radius:16px;background:#fff;padding:8px;">':'')+(pixCode?'<label class="field"><span class="field__label">Pix Copia e Cola</span><textarea class="textarea" id="qf-ad-pix-code" readonly style="min-height:96px;">'+PU.escapeHtml(pixCode)+'</textarea></label><button class="btn btn--primary" id="qf-ad-copy-pix">'+icon('clipboard')+' Copiar Pix</button>':'')+(checkoutUrl?'<button class="btn btn--outline" id="qf-ad-open-pix">Abrir página do Pix</button>':'')+'<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm text--secondary">A confirmação é automática. Depois do pagamento, o sistema verifica a Efí e atualiza o anúncio.</div></div><button class="btn btn--outline" id="fechar-anuncio">Fechar</button></div>',{persistent:true});
-        const copyPix=document.getElementById('qf-ad-copy-pix'); if(copyPix)copyPix.onclick=async function(){try{await navigator.clipboard.writeText(pixCode);PU.toast('Pix copiado.','success');}catch(_){const area=document.getElementById('qf-ad-pix-code');if(area){area.focus();area.select();document.execCommand('copy');PU.toast('Pix copiado.','success');}}};
-        const openPix=document.getElementById('qf-ad-open-pix'); if(openPix)openPix.onclick=function(){location.href=checkoutUrl;};
-        document.getElementById('fechar-anuncio').onclick=function(){PU.closeSheet();const sess=DB.getSession();global.navigate(sess&&sess.role==='profissional'?'/profissional/home':'/cliente/home',true);};
-      }catch(err){
-        const msg=(err&&err.message)?err.message:String(err);
-        if(msg.indexOf('authentication')!==-1||msg.indexOf('JWT')!==-1||msg.indexOf('session')!==-1){
-          try{const retryFields={};new FormData(form).forEach(function(value,key){if(typeof value==='string')retryFields[key]=value;});sessionStorage.setItem('qf_pending_ad_draft',JSON.stringify({fields:retryFields,imageData:imageData,photoData:photoData,logoData:logoData,savedAt:Date.now()}));}catch(_){}
-          PU.openSheet('<div class="stack"><h3 class="sheet__title" style="text-align:center;">Sua sessão expirou</h3><p class="text text--secondary" style="text-align:center;">Sua arte está salva. Entre novamente para continuar.</p><button class="btn btn--primary" id="qf-ad-relogin-cliente">Entrar como cliente</button><button class="btn btn--outline" id="qf-ad-relogin-prof">Entrar como profissional</button></div>');
-          document.getElementById('qf-ad-relogin-cliente').onclick=function(){PU.closeSheet();global.navigate('/auth/cliente/login',true);};
-          document.getElementById('qf-ad-relogin-prof').onclick=function(){PU.closeSheet();global.navigate('/auth/profissional/login',true);};
-        }else PU.toast('Não foi possível enviar o anúncio: '+msg,'danger');
-      }finally{submitBtn.disabled=false;submitBtn.textContent='Gerar Pix e enviar anúncio';}
+        const out = await global.QFCloud.requestPremiumAd({ empresa: empresa, chamada: chamada, imagem: imagem, destino_tipo: tipo, destino_valor: dest, nome: nome, whatsapp: zap });
+        if (!out || !out.ok) { PU.toast(ERROS[out && out.error] || 'Não foi possível enviar agora. Tente de novo em instantes.', 'danger'); return; }
+        const pedido = { id: out.id, segredo: out.segredo, empresa: empresa, valor: out.valor_centavos, pix: out.pix_copy_paste || '', qr: out.qr_image || '', at: Date.now() };
+        salvarPedido(pedido);
+        abrirPix(pedido, false);
+      } catch (err) {
+        PU.toast('Não foi possível enviar agora. Tente de novo em instantes.', 'danger');
+      } finally { submitBtn.disabled = false; submitBtn.textContent = submitLabel; }
     });
   }
 
@@ -14511,7 +14328,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.72';
+  const APP_VERSION = '11.73';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
