@@ -151,7 +151,12 @@
           lastField = field; fieldEvents++;
           track('field_focus', { error_code: field });
         });
-        form.addEventListener('submit', function () { submittedAt = Date.now(); track('submit'); }, true);
+        form.addEventListener('submit', function () {
+          // Enter nas etapas intermediárias apenas avança; ainda não é publicação.
+          var step = form.getAttribute('data-qf-etapa'), sub = form.getAttribute('data-qf-sub');
+          if (step === '1' || sub === 'a' || sub === 'b' || form.dataset.publishing === '1' || form.dataset.resolving === '1') return;
+          submittedAt = Date.now(); track('submit');
+        }, true);
       }
     }
     document.addEventListener('click', function (e) {
