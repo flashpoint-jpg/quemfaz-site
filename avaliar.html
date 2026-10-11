@@ -66,14 +66,14 @@ button:disabled{opacity:.65;cursor:wait}
 <script>
 (function(){
  'use strict';
- const id=new URLSearchParams(location.search).get('prof')||'';
+ const token=new URLSearchParams(location.search).get('token')||'';
  const status=document.getElementById('status');
  const enviar=document.getElementById('enviar');
  const form=document.getElementById('form');
  const stars=[...document.querySelectorAll('[data-nota]')];
  let nota=0, pronto=false, enviando=false;
  function aviso(t){status.textContent=t;}
- if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){aviso('QR Code inválido. Peça outra carteirinha ao profissional.');return;}
+ if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)){aviso('QR Code inválido. Peça outra carteirinha ao profissional.');return;}
  if(!window.supabase){aviso('Sem conexão para enviar a avaliação. Tente novamente.');return;}
  const client=supabase.createClient('https://dczlyrgnzlxmzghzaooz.supabase.co','sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  stars.forEach(function(b){
@@ -100,15 +100,15 @@ button:disabled{opacity:.65;cursor:wait}
  }
  async function load(){
    try{
-     const r=await client.rpc('qf_carteirinha_resumo',{p_profissional_id:id});
+     const r=await client.rpc('qf_carteirinha_publica',{p_token:token});
      if(r.error||!r.data||!r.data.ok)throw new Error('Profissional não disponível para avaliação.');
      const nome=String(r.data.nome||'Profissional Quem Faz').trim();
      document.getElementById('nome').textContent=nome;
      document.getElementById('iniciais').textContent=nome.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
-     if(r.data.foto_url&&/^https:\/\//i.test(r.data.foto_url)){
+     if(r.data.foto&&/^https:\/\//i.test(r.data.foto)){
        const img=document.getElementById('foto');
        img.onload=function(){img.style.display='block';document.getElementById('iniciais').style.display='none';};
-       img.src=r.data.foto_url;
+       img.src=r.data.foto;
      }
      pronto=true;enviar.disabled=!nota;
    }catch(e){aviso(e.message||'Não foi possível abrir a avaliação.');}
@@ -118,11 +118,11 @@ button:disabled{opacity:.65;cursor:wait}
    if(!pronto||!nota||enviando){if(!nota)aviso('Escolha de 1 a 5 estrelas.');return;}
    enviando=true;enviar.disabled=true;enviar.textContent='Enviando...';aviso('');
    try{
-     const r=await client.rpc('qf_carteirinha_registrar',{p_profissional_id:id,p_nota:nota,p_comentario:document.getElementById('comentario').value,p_visitante_token:visitante()});
+     const r=await client.rpc('qf_avaliar_carteirinha',{p_token:token,p_dispositivo:visitante(),p_nota:nota,p_comentario:document.getElementById('comentario').value});
      if(r.error)throw r.error;
      if(!r.data||!r.data.ok){
-       if(r.data&&r.data.reason==='ja_avaliado')throw new Error('Você já avaliou este profissional recentemente.');
-       if(r.data&&r.data.reason==='limite_temporario')throw new Error('Muitas avaliações recebidas agora. Tente mais tarde.');
+       if(r.data&&r.data.reason==='ja_avaliou')throw new Error('Você já avaliou este profissional recentemente.');
+       if(r.data&&r.data.reason==='limite')throw new Error('Muitas avaliações recebidas agora. Tente mais tarde.');
        throw new Error('Não foi possível registrar sua avaliação.');
      }
      document.getElementById('form-wrap').style.display='none';
