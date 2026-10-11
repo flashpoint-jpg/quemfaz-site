@@ -3058,6 +3058,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       '<span class="badge badge--danger">há ' + min + ' min</span></div>' +
       '<div class="text--sm text--secondary" style="margin-top:6px;">' + Number(it.avisados || 0) + (Number(it.avisados) === 1 ? ' profissional avisado' : ' profissionais avisados') + ' · Cliente: ' + PU.escapeHtml(it.cliente_nome || '—') + '</div>' +
       '<div class="btn-row" style="margin-top:10px;">' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' WhatsApp do cliente</a>' : '') +
+      '<button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(it.id) + '">Reenviar aviso</button>' +
       '<button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + PU.escapeHtml(it.id) + '">Ver chamado</button></div></div>';
   }
   function bodyHtml() {
@@ -8245,6 +8246,7 @@ Screens.adminDashboardRender = function () {
       return '<details class="qf-adm-card qf-prox"' + (i === 0 || aberto ? ' open' : '') + '><summary><span class="qf-prox__tit"><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></span>' +
         '<span class="qf-prox__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '<small>' + (total ? admLinhas(total, 'profissional do serviço', 'profissionais do serviço') : 'Nenhum profissional desse serviço') + '</small></span></summary>' +
         admTabela(['Distância', 'Profissional', 'Agora', 'Raio dele', 'Neste pedido', ''], linhas, rodape, 'Ainda não há profissional cadastrado nesse serviço.') +
+        (aberto && c.com_vaga ? '<div style="padding:12px 16px"><button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(c.id) + '">Reenviar aviso</button><p class="text--sm text--secondary">Somente profissionais desse serviço, dentro do raio, online e que ainda não desbloquearam. ' + Number(c.lembrar || 0) + ' elegíveis agora.</p>' + (c.lembrete && c.lembrete.em ? '<p class="text--sm text--secondary">Último reenvio: ' + PU.escapeHtml(new Date(c.lembrete.em).toLocaleString('pt-BR')) + ' · ' + Number(c.lembrete.alvo || 0) + ' profissionais.</p>' : '') + '</div>' : '') +
         '<a class="qf-prox__ver" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</a>' +
       '</details>';
     }).join('');
@@ -9217,5 +9219,48 @@ Screens.adminDashboardRender = function () {
 
 </script>
 <script>/* V11.4: sombra na barra de cima ao rolar */(function(){var on=false;function u(){var s=(window.scrollY||0)>4;if(s!==on){on=s;document.documentElement.classList.toggle("qf-scrolled",s);}}window.addEventListener("scroll",u,{passive:true});u();})();</script>
+
+<script>
+// Reenvio manual: o servidor recalcula destinatários e limita a frequência.
+(function (global) {
+  const pending = new Set();
+  const cooldown = new Map();
+  document.addEventListener('click', async function (event) {
+    const button = event.target && event.target.closest && event.target.closest('[data-admin-remind]');
+    if (!button) return;
+    event.preventDefault();
+    const id = button.getAttribute('data-admin-remind');
+    const pu = global.PU;
+    if (pending.has(id)) return;
+    if ((cooldown.get(id) || 0) > Date.now()) {
+      pu.toast('Aguarde 10 minutos entre reenvios do mesmo pedido.', 'danger'); return;
+    }
+    const cloud = global.QFAdminCloud;
+    if (!cloud || !cloud.enabled || !cloud.client) {
+      pu.toast('Entre no painel para reenviar o aviso.', 'danger'); return;
+    }
+    if (!global.confirm('Reenviar aviso deste pedido? Apenas profissionais da profissão solicitada, dentro do próprio raio, online e que ainda não desbloquearam receberão. O sistema respeita o horário de atendimento e exige 10 minutos entre reenvios.')) return;
+    pending.add(id);
+    button.disabled = true;
+    button.textContent = 'Enviando…';
+    try {
+      const result = await cloud.client.rpc('qf_admin_lembrar_proximos', { p_chamado_id: id });
+      if (result.error) throw result.error;
+      const data = result.data;
+      if (!data || !data.ok) throw new Error(data && data.reason || 'Não foi possível reenviar.');
+      cooldown.set(id, Date.now() + 600000);
+      pu.toast('Aviso enviado no app para ' + Number(data.alvo || 0) + ' profissionais. Notificação solicitada para ' + Number(data.com_aparelho || 0) + ' com aparelho habilitado.', 'success');
+      if (global.QFAdminParados) await global.QFAdminParados.refresh();
+    } catch (error) {
+      pu.toast(error.message || 'Não foi possível confirmar o envio. Confira o último reenvio antes de tentar novamente.', 'danger');
+    } finally {
+      pending.delete(id);
+      button.disabled = false;
+      button.textContent = 'Reenviar aviso';
+    }
+  });
+})(window);
+</script>
+
 </body>
 </html>
