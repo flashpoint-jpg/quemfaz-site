@@ -8720,7 +8720,10 @@ alt=""></noscript>
           box2.hidden = n !== 2;
           if (rotulo) rotulo.textContent = 'Etapa 1 de 4';
           if (barra2) barra2.classList.toggle('is-on', n === 2);
-          if (n === 2) irSub(sub, true); else form.removeAttribute('data-qf-sub');
+          if (n === 2) {
+            if (global.QFClientAcquisition) global.QFClientAcquisition.track('step_service_completed', {}, true);
+            irSub(sub, true);
+          } else form.removeAttribute('data-qf-sub');
           if (n === 2 && resumo) {
             const a = servicoAtual();
             const d = descricaoInput.value.trim();
@@ -8735,19 +8738,50 @@ alt=""></noscript>
         function irSub(s, semRolar) {
           sub = s === 'b' || s === 'c' ? s : 'a';
           form.setAttribute('data-qf-sub', sub);
+          if (global.QFClientAcquisition) {
+            const ev = sub === 'a' ? 'step_location_view' : (sub === 'b' ? 'step_options_view' : 'step_contact_view');
+            global.QFClientAcquisition.track(ev, {}, true);
+          }
           form.querySelectorAll('[data-qf-sub-box]').forEach(function (b) { b.hidden = b.getAttribute('data-qf-sub-box') !== sub; });
           if (rotulo) rotulo.textContent = sub === 'a' ? 'Etapa 2 de 4' : (sub === 'b' ? 'Etapa 3 de 4' : 'Última etapa · falta pouco');
           if (barra3) barra3.classList.toggle('is-on', sub !== 'a');
           if (barra4) barra4.classList.toggle('is-on', sub === 'c');
           if (!semRolar) { try { form.scrollIntoView({ block: 'start' }); } catch (_) {} }
         }
-        function avancarSub() {
+        // V11.72: confirma cidade, UF e bairro antes de sair da etapa de localização.
+        let verificandoLocal = false;
+        async function avancarSub() {
           if (sub === 'a') {
-            const cid = form.querySelector('[name="cidade"]'), bai = form.querySelector('[name="bairro"]');
-            if (cid && !String(cid.value || '').trim()) { PU.toast('Informe a cidade onde o serviço será realizado.', 'danger'); try { cid.focus(); } catch (_) {} return; }
-            if (bai && !String(bai.value || '').trim()) { PU.toast('Informe o bairro onde o serviço será realizado.', 'danger'); try { bai.focus(); } catch (_) {} return; }
-            irSub('b');
-          } else if (sub === 'b') irSub('c');
+            if (verificandoLocal) return;
+            const cid = form.querySelector('[name="cidade"]');
+            const bai = form.querySelector('[name="bairro"]');
+            const uf = form.querySelector('[name="uf"]');
+            if (cid && !String(cid.value || '').trim()) {
+              PU.toast('Informe a cidade onde o serviço será realizado.', 'danger');
+              try { cid.focus(); } catch (_) {} return;
+            }
+            if (bai && !String(bai.value || '').trim()) {
+              PU.toast('Informe o bairro onde o serviço será realizado.', 'danger');
+              try { bai.focus(); } catch (_) {} return;
+            }
+            verificandoLocal = true;
+            try {
+              if (sugestoesPedido && typeof sugestoesPedido.resolveRegion === 'function') {
+                try { await sugestoesPedido.resolveRegion(uf ? uf.value : ''); } catch (_) {}
+              }
+              if (uf && !String(uf.value || '').trim()) {
+                if (form.__qfMostrarUf) form.__qfMostrarUf();
+                PU.toast('Confirme o estado (UF) do serviço antes de continuar.', 'danger');
+                try { uf.focus(); } catch (_) {}
+                return;
+              }
+              if (global.QFClientAcquisition) global.QFClientAcquisition.track('step_location_completed', {}, true);
+              irSub('b');
+            } finally { verificandoLocal = false; }
+          } else if (sub === 'b') {
+            if (global.QFClientAcquisition) global.QFClientAcquisition.track('step_options_completed', {}, true);
+            irSub('c');
+          }
         }
         form.__qfAvancarSub = avancarSub;
         form.addEventListener('click', function (e) {
@@ -8844,6 +8878,7 @@ alt=""></noscript>
         }
         if (cidadePedido && ufPedido) cidadePedido.addEventListener('input', function () { if (!ufManual) { ufPedido.value = ''; ufAuto(); } });
         form.__qfUfAuto = ufAuto;
+        form.__qfMostrarUf = function () { ufManual = true; ufAuto(); };
         form.__qfEtapaDe = function (input, name) {
           if (name === 'uf') { ufManual = true; ufAuto(); }
           if (box1.contains(input)) { if (input === descricaoInput) escrevendo = true; if (etapa !== 1) ir(1); else desenhar(); }

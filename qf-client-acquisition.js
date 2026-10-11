@@ -27,7 +27,8 @@
   } catch (_) { sid = global.crypto.randomUUID(); }
   var seen = {}, submittedAt = 0;
   var services = {
-    pintor: 'cat_pintor', eletricista: 'cat_eletricista', encanador: 'cat_encanador', montador: 'cat_montador',
+    pintor: 'cat_pintor', eletricista: 'cat_eletricista', encanador: 'cat_encanador', montador: 'cat_montador', montagem: 'cat_montador',
+    chaveiro: 'cat_chaveiro', antenista: 'cat_antenista', faxina_pos_obra: 'cat_faxina_pos_obra', limpeza_pos_obra: 'cat_faxina_pos_obra',
     pedreiro: 'cat_pedreiro', desentupidor: 'cat_desentupidor', telhadista: 'cat_telhadista',
     limpeza_sofa: 'cat_limpeza_estofados', marido_aluguel: 'cat_marido_aluguel', diarista: 'cat_diarista',
     azulejista: 'cat_azulejista', gesseiro: 'cat_gesseiro', impermeabilizacao: 'cat_impermeabilizacao', caixa_dagua: 'cat_caixa_dagua'
@@ -46,6 +47,16 @@
     // Links explícitos para formulário e outras telas continuam funcionando normalmente.
     if (!/^#\/(?:calculadora\/?|auth\/cliente\/cadastro\/?|)?$/.test(location.hash || '#/')) return;
     try { sessionStorage.setItem('qf_pending_category', cat); } catch (_) {}
+    // Mantém a home como entrada, mas mostra o serviço pesquisado no campo principal.
+    // O formulário lê a mesma categoria quando o visitante continuar.
+    var selected = global.DB.categoryById(cat);
+    if (selected) {
+      var home = document.querySelector('[data-landing-service-search]');
+      if (home && !String(home.value || '').trim()) {
+        home.value = selected.nome;
+        home.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
   }
   function attribution() {
     var touch = global.QFMarketingTouch || campaign || {};

@@ -43,7 +43,8 @@ test('a regra antiga (exactRegion) continua igual para as outras telas',()=>{
 test('pedido usa a leitura tolerante, mantém o bairro digitado e não deixa aviso antigo na tela',()=>{
  const bind=html.slice(html.indexOf('sugestoesPedido = global.QFLocationAutocomplete.bind('),html.indexOf('const telefoneInput = form.querySelector'));
  assert.match(bind,/tolerant: true/);assert.match(bind,/keepBairro: true/);assert.match(bind,/onPick:/);
- const envio=html.slice(html.indexOf("form.addEventListener('submit', async function (e) {",html.indexOf('V11.37: pedido em 2 etapas')));
+ const cliente=html.indexOf("const form = content.querySelector('#cadastro-cliente-form');");
+ const envio=html.slice(html.indexOf("form.addEventListener('submit', async function (e) {",cliente));
  assert.ok(envio.indexOf("querySelectorAll('[data-qf-validation-for]')")<envio.indexOf('resolveRegion('),'limpa avisos antes de validar');
  assert.ok(envio.indexOf('sugestoesPedido.hasOptions()')<envio.indexOf("showFieldError('uf'"),'lista de cidades vem antes do erro de UF');
  const js=fs.readFileSync('qf-location-autocomplete.js','utf8');

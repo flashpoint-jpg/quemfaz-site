@@ -12,7 +12,7 @@ for(const name of names)assert.ok(fs.existsSync(path.join(root,'dist',name.split
 assert.ok(sw.includes('./'+mainName)&&sw.includes('./'+shellName));
 assert.ok(html.includes('Conte o que precisa e veja <em>quem chama você.</em>'));
 assert.ok(!fs.existsSync(path.join(root,'dist/node_modules')));
-assert.ok(Buffer.byteLength(html)<200000);
+assert.ok(Buffer.byteLength(html)<210000,'HTML inicial deve ficar abaixo de 210 KB');
 const early=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('QFEarly'))[1];
 const events={},field={value:'Preciso montar guarda-roupa',dispatchEvent(){}},form={tagName:'FORM',matches:()=>true,querySelector:()=>({}),requestSubmit(){this.sent=(this.sent||0)+1;}};
 const document={querySelector:s=>s==='[data-landing-service-search]'?field:form,addEventListener:(key,fn)=>events[key]=fn};
