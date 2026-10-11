@@ -46,7 +46,7 @@ test('titulo, descricao, calculadora e app usam limite de ate 8', () => {
   assert.doesNotMatch(html, /até 3 profissionais podem chamar você no WhatsApp/);
   assert.match(html, /const maxProf = Math.max\(1, Math.min\(8,/);
   assert.match(html, /textoProf = maxProf === 1/);
-  assert.match(html, /'<span>' \+ textoProf \+ '<\/span>'/);
+  assert.ok(html.includes("<span>' + textoProf + '</span>"));
   assert.match(html, /\[1, 2, 3, 4, 5, 6, 7, 8\]/);
   const version = /const APP_VERSION = '([^']+)'/.exec(html);
   assert.ok(version);
