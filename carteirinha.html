@@ -71,28 +71,28 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
 (function(){
   'use strict';
   const params=new URLSearchParams(location.search);
-  const id=params.get('prof')||'';
+  const token=params.get('token')||'';
   const erro=document.getElementById('erro');
   const botao=document.getElementById('imprimir');
   function fail(msg){erro.textContent=msg;document.getElementById('nome').textContent='Indisponível';}
-  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)){fail('Link da carteirinha inválido. Abra a carteirinha pelo seu painel.');return;}
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)){fail('Link da carteirinha inválido. Abra a carteirinha pelo seu painel.');return;}
   if(!window.supabase){fail('Não foi possível carregar o serviço. Verifique a conexão.');return;}
   const client=supabase.createClient('https://dczlyrgnzlxmzghzaooz.supabase.co','sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   async function load(){
     try{
-      const r=await client.rpc('qf_carteirinha_resumo',{p_profissional_id:id});
+      const r=await client.rpc('qf_carteirinha_publica',{p_token:token});
       if(r.error||!r.data||!r.data.ok)throw new Error('Carteirinha não disponível. Tente novamente mais tarde.');
       const data=r.data;
       const nome=String(data.nome||'Profissional Quem Faz').trim();
       document.getElementById('nome').textContent=nome;
-      document.getElementById('numero').textContent=String(data.cadastro||'');
+      document.getElementById('numero').textContent=String(data.numero||'');
       document.getElementById('iniciais').textContent=nome.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
-      if(data.foto_url && /^https:\/\//i.test(data.foto_url)){
+      if(data.foto && /^https:\/\//i.test(data.foto)){
         const img=document.getElementById('foto');
         img.onload=function(){img.style.display='block';document.getElementById('iniciais').style.display='none';};
-        img.src=data.foto_url;
+        img.src=data.foto;
       }
-      const target=location.origin+'/avaliar.html?prof='+encodeURIComponent(id);
+      const target=location.origin+'/avaliar.html?token='+encodeURIComponent(token);
       if(!window.QRCode)throw new Error('QR Code indisponível. Verifique sua conexão antes de imprimir.');
       new QRCode(document.getElementById('qr'),{text:target,width:236,height:236,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
       botao.disabled=false;
