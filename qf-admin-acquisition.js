@@ -26,8 +26,14 @@
         landing: 'Visitas medidas', home_cta: 'Tocou em "Pedir grátis" (tela inicial)',
         home_focus: 'Tocou no campo da tela inicial', home_type: 'Digitou na tela inicial',
         home_submit: 'Enviou da tela inicial', form_view: 'Abriu o formulário',
-        form_start: 'Começou a preencher', submit: 'Tentou publicar',
-        published: 'Pedidos publicados · histórico'
+        form_start: 'Começou a preencher',
+        step_service_completed: 'Etapa 1 concluída · serviço',
+        step_location_view: 'Etapa 2 aberta · cidade e bairro',
+        step_location_completed: 'Etapa 2 concluída · cidade e UF validadas',
+        step_options_view: 'Etapa 3 aberta · prazo e orçamentos',
+        step_options_completed: 'Etapa 3 concluída · escolhas',
+        step_contact_view: 'Etapa 4 aberta · nome e WhatsApp',
+        submit: 'Tentou publicar', published: 'Pedidos publicados · histórico'
       };
       var esc = global.PU.escapeHtml;
       var callList = live && !live.error && live.data && Array.isArray(live.data.chamados)
