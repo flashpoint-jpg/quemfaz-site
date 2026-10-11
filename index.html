@@ -14364,7 +14364,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.74';
+  const APP_VERSION = '11.75';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16824,6 +16824,7 @@ alt=""></noscript>
     const existing = Object.create(null);
     current.forEach(function (n) { existing[n.eventKey] = true; });
     const fresh = [];
+    let soLembrete = true;
     (rows || []).forEach(function (r) {
       const eventKey = 'server_notice:' + r.id;
       if (existing[eventKey]) return;
@@ -16837,6 +16838,7 @@ alt=""></noscript>
         createdAt: r.criado_em || new Date().toISOString(),
         read: false
       });
+      if (r.tipo !== 'lembrete_pedido') soLembrete = false;
     });
     if (!fresh.length) return false;
     saveNotices(session, fresh.concat(current));
@@ -16844,8 +16846,9 @@ alt=""></noscript>
       const title = fresh.length === 1 ? fresh[0].title : fresh.length + ' novas atualizações';
       const body = fresh.length === 1 ? fresh[0].body : 'Abra Avisos para conferir.';
       const pushJustRang = PU.pushSoundRecent();
-      if (!pushJustRang) PU.playNotificationSound(true);
-      PU.toast(title + (body ? ' — ' + body : ''), 'warning');
+      // V11.75: lembrete de pedido perto é só a faixinha com um bipe curto, nunca o toque de chamado.
+      if (!pushJustRang) PU.playNotificationSound(!soLembrete);
+      PU.toast(title + (body ? ' — ' + body : ''), soLembrete ? 'info' : 'warning');
       if (!pushJustRang) PU.browserNotification(title, body || 'Abra o QuemFaz para conferir.');
     }
     return true;

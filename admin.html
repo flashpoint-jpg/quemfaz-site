@@ -1608,7 +1608,11 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-prox__nao{color:#b3261e;font-weight:600}
 .qf-prox__ver{display:inline-block;margin-top:12px;font-weight:700;color:var(--navy-700);cursor:pointer}
 .qf-prox .qf-adm-tabela{margin-bottom:0}
-@media (max-width:640px){.qf-prox>summary{flex-direction:column;align-items:flex-start;gap:4px}.qf-prox__meta{text-align:left}}
+.qf-prox__lembrar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa}
+.qf-prox__lembrar .btn{flex:none;width:auto}
+.qf-prox__lembrar .btn svg{width:16px;height:16px}
+.qf-prox__lembrar small{flex:1;min-width:220px;font-size:12.5px;line-height:1.45;color:var(--text-secondary)}
+@media (max-width:640px){.qf-prox>summary{flex-direction:column;align-items:flex-start;gap:4px}.qf-prox__meta{text-align:left}.qf-prox__lembrar .btn{width:100%}}
 
 /* Pedidos sem profissional */
 .qf-semprof__topo{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}
@@ -8236,7 +8240,7 @@ Screens.adminDashboardRender = function () {
           '<td><a class="qf-prox__nome" data-nav="/admin/profissionais/' + PU.escapeHtml(p.id) + '">' + PU.escapeHtml(p.nome || 'Profissional') + '</a>' + (p.verificado ? ' <span class="badge qf-adm-ver__chip">★ Verificado</span>' : '') + '<small class="qf-adm-resumo">' + PU.escapeHtml([p.cidade, p.uf].filter(Boolean).join('/') || 'Cidade não informada') + '</small></td>' +
           '<td>' + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') + '</td>' +
           '<td>' + (temKm ? (dentro ? '<span class="qf-prox__sim">Dentro do raio</span>' : '<span class="qf-prox__nao">Fora do raio</span>') : '—') + '<small class="qf-adm-resumo">atende até ' + Number(p.raio_km || 0) + ' km</small></td>' +
-          '<td>' + (p.desbloqueou ? '<span class="qf-prox__sim">Desbloqueou</span>' : (p.avisado ? 'Foi avisado' : '<span class="qf-prox__nao">Não foi avisado</span>')) + '</td>' +
+          '<td>' + (p.desbloqueou ? '<span class="qf-prox__sim">Desbloqueou</span>' : (p.avisado ? 'Foi avisado' : '<span class="qf-prox__nao">Não foi avisado</span>')) + (p.lembrado && !p.desbloqueou ? '<small class="qf-adm-resumo">Lembrado</small>' : '') + '</td>' +
           '<td>' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener" data-prox-wa>' + icon('whatsapp') + ' WhatsApp</a>' : '') + '</td>' +
         '</tr>';
       });
@@ -8245,10 +8249,45 @@ Screens.adminDashboardRender = function () {
       return '<details class="qf-adm-card qf-prox"' + (i === 0 || aberto ? ' open' : '') + '><summary><span class="qf-prox__tit"><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></span>' +
         '<span class="qf-prox__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '<small>' + (total ? admLinhas(total, 'profissional do serviço', 'profissionais do serviço') : 'Nenhum profissional desse serviço') + '</small></span></summary>' +
         admTabela(['Distância', 'Profissional', 'Agora', 'Raio dele', 'Neste pedido', ''], linhas, rodape, 'Ainda não há profissional cadastrado nesse serviço.') +
+        admProximosLembrarHtml(c, hoje) +
         '<a class="qf-prox__ver" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</a>' +
       '</details>';
     }).join('');
   }
+  // V11.75: "Lembrar quem está perto" — faixinha (aviso comum, sem toque de chamado) para quem é do serviço,
+  // está online, dentro do próprio raio e ainda não desbloqueou. Só aparece em pedido que ainda tem vaga.
+  function admProximosLembrarHtml(c, hoje) {
+    if (!c.com_vaga) return '';
+    const n = Number(c.lembrar || 0), com = Number(c.lembrar_com_aparelho || 0), l = c.lembrete;
+    const partes = [];
+    if (n) partes.push(admLinhas(n, 'profissional online, perto e sem responder', 'profissionais online, perto e sem responder') + ' · ' + (com ? com + ' com notificação no celular' : 'nenhum com notificação no celular') + (n > com ? ', ' + (com ? 'os outros veem' : 'eles veem') + ' o aviso dentro do app' : ''));
+    else partes.push('Ninguém online, perto e sem responder a este pedido agora.');
+    if (l && l.em) partes.push('Último lembrete: ' + (qfDiaChave(l.em) === hoje ? 'hoje' : qfDiaMes(l.em)) + ' às ' + qfHora(l.em) + ', para ' + admLinhas(Number(l.alvo || 0), 'profissional', 'profissionais') + '.');
+    return '<div class="qf-prox__lembrar">' +
+      '<button class="btn btn--primary btn--sm" type="button" data-prox-lembrar="' + PU.escapeHtml(c.id) + '" data-prox-lembrar-n="' + n + '" data-prox-lembrar-titulo="' + PU.escapeHtml(c.titulo || 'Pedido') + '"' + (n ? '' : ' disabled') + '>' + icon('bell') + ' Lembrar quem está perto' + (n ? ' (' + n + ')' : '') + '</button>' +
+      '<small>' + partes.map(PU.escapeHtml).join('<br>') + '</small></div>';
+  }
+  document.addEventListener('click', async function (e) {
+    const btn = e.target && e.target.closest ? e.target.closest('[data-prox-lembrar]') : null;
+    if (!btn || btn.disabled) return;
+    const n = Number(btn.getAttribute('data-prox-lembrar-n') || 0);
+    const ok = await PU.confirmDialog({ title: 'Lembrar ' + admLinhas(n, 'profissional', 'profissionais'),
+      message: 'Manda uma faixinha de aviso, sem o toque de chamado, para quem está online, perto e ainda não respondeu ao pedido "' + (btn.getAttribute('data-prox-lembrar-titulo') || 'Pedido') + '".', okLabel: 'Lembrar agora' });
+    if (!ok) return;
+    btn.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_lembrar_proximos', { p_chamado_id: btn.getAttribute('data-prox-lembrar') });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível lembrar.');
+      const d = r.data;
+      PU.toast('Lembrete enviado para ' + admLinhas(Number(d.alvo || 0), 'profissional', 'profissionais') + '. ' + Number(d.com_aparelho || 0) + ' no celular' + (Number(d.sem_aparelho || 0) ? ' e ' + Number(d.sem_aparelho) + ' dentro do app' : '') + '.', 'success');
+      const tela = document.querySelector('[data-adm-proximos]');
+      if (tela && tela.parentNode) admProximosCarregar(tela.parentNode);
+    } catch (err) {
+      PU.toast((err && err.message) || 'Não foi possível lembrar.', 'danger');
+      btn.disabled = false;
+    }
+  });
   async function admProximosCarregar(content) {
     const box = content.querySelector('[data-adm-proximos]');
     if (!box || !cloudOn()) return;
