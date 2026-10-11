@@ -1,0 +1,22 @@
+QuemFaz 11.75 — painel: "Lembrar quem está perto"
+
+PAINEL > menu da esquerda > Próximos ao pedido
+- Cada pedido que ainda tem vaga ganhou o botão "Lembrar quem está perto (N)".
+- N = profissionais do serviço que estão online, dentro do horário e do próprio raio e que ainda
+  não desbloquearam o pedido. A linha ao lado diz quantos têm notificação no celular.
+- Um clique (com confirmação) manda uma faixinha de aviso comum: "📌 Pedido perto de você: <serviço>".
+  Não é chamado: não toca o toque do QuemFaz nem abre a tela cheia.
+- Quem não tem notificação ativada no celular vê o aviso dentro do app, em Avisos.
+- Tocar no aviso abre "Pedidos perto de você".
+- O mesmo pedido só pode ser lembrado de novo depois de 10 minutos.
+- A tela mostra o último lembrete (hora e para quantos) e marca "Lembrado" em cada profissional.
+- Pedido encerrado ou com as vagas preenchidas não mostra o botão.
+
+APP DO PROFISSIONAL
+- Com o app aberto, o lembrete chega com um bipe curto e a faixinha, sem o toque de chamado.
+
+NÃO MEXE
+- Cascata, carteira, créditos e o pedido continuam iguais. O lembrete só avisa.
+
+SERVIDOR
+- Migração supabase/2026-10-11-lembrar-quem-esta-perto.sql (já aplicada).
