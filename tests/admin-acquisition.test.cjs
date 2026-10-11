@@ -8,7 +8,7 @@ async function report(snapshot){
  const calls=[];
  const window={Screens:{},PU:{escapeHtml:String},QFAdminCloud:{client:{
   from(){throw Error('A consulta direta não tem acesso administrativo');},
-  rpc(name){calls.push(name);return Promise.resolve(name==='qf_client_funnel_summary'?{data:{steps:{published:6}}}:snapshot);}
+  rpc(name){calls.push(name);return Promise.resolve(name==='qf_client_funnel_summary_v2'?{data:{steps:{published:6}}}:snapshot);}
  }}};
  vm.runInNewContext(fs.readFileSync('qf-admin-acquisition.js','utf8'),{window,document:{createElement:()=>section},Date,Promise,Number,Object,Array});
  window.Screens.afterRender('/admin/dashboard',{querySelector:()=>null,appendChild(){}},{},{});

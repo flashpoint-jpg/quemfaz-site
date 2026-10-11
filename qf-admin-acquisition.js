@@ -7,13 +7,13 @@
     if (pattern !== '/admin/dashboard' || !global.QFAdminCloud || !global.QFAdminCloud.client) return;
     var box = document.createElement('section');
     box.className = 'section';
-    box.innerHTML = '<h2 class="h3">Captação de clientes · últimos 7 dias</h2><div class="card" data-qf-funnel-report>Carregando etapas dos pedidos…</div>';
+    box.innerHTML = '<h2 class="h3">Captação de clientes · nova medição</h2><div class="card" data-qf-funnel-report>Carregando etapas dos pedidos…</div>';
     var target = content.querySelector('#admin-fechamento');
     if (target) target.insertAdjacentElement('afterend', box); else content.appendChild(box);
     var report = box.querySelector('[data-qf-funnel-report]');
     var client = global.QFAdminCloud.client;
     var since = new Date(Date.now() - 7 * 86400000).toISOString();
-    var summary = client.rpc('qf_client_funnel_summary', { p_days: 7 });
+    var summary = client.rpc('qf_client_funnel_summary_v2', { p_days: 7 });
     // A leitura direta aplica as permissões de cliente/profissional e pode
     // retornar [] ao administrador. O snapshot verifica a função administrativa.
     var existing = client.rpc('qf_admin_snapshot');
@@ -22,6 +22,7 @@
       var r = responses[0], live = responses[1];
       if (r.error) throw r.error;
       var d = r.data || {}, counts = d.steps || {};
+      var started = d.measurement_started_at ? new Date(d.measurement_started_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '11/10/2026';
       var labels = {
         landing: 'Visitas medidas', home_cta: 'Tocou em "Pedir grátis" (tela inicial)',
         home_focus: 'Tocou no campo da tela inicial', home_type: 'Digitou na tela inicial',
@@ -45,7 +46,7 @@
         telefone: 'WhatsApp', nome: 'Nome'
       };
       var codes = {
-        region: 'Cidade / estado', description: 'Descrição',
+        date: 'Data', region: 'Cidade / estado', description: 'Descrição',
         phone: 'WhatsApp', neighborhood: 'Bairro', service: 'Serviço',
         name: 'Nome', quick_access: 'Acesso rápido'
       };
@@ -55,12 +56,12 @@
         meta_referral: 'Meta · referência não classificada',
         bing_referral: 'Bing · referência não classificada'
       };
-      var html = '<p class="text--sm text--secondary">Etapas medidas desde 06/10/2026. Visitas e etapas contam sessões; publicações contam IDs únicos. Nem todos os acessos podem ser medidos.</p>' +
+      var html = '<p class="text--sm text--secondary">Nova medição desde ' + esc(started) + ' (Brasília), limitada aos últimos 7 dias. Apenas a versão nova entra nestes indicadores; histórico anterior preservado. Visitas e etapas contam sessões; publicações contam pedidos únicos. Eventos são contados independentemente: entrada direta e preenchimento automático podem pular interações. Nem todos os acessos podem ser medidos.</p>' +
         '<div class="stack--sm" style="margin-top:12px;">' + Object.keys(labels).map(function (key) {
           return '<div class="row-between"><span>' + labels[key] + '</span><strong>' + Number(counts[key] || 0) + '</strong></div>';
         }).join('') + '</div>' +
         '<p class="text--sm text--secondary" style="margin-top:8px;">Publicações do histórico continuam contabilizadas mesmo quando um pedido é excluído posteriormente.</p>' +
-        '<hr class="hairline"><h3 class="h3">Pedidos existentes no banco</h3>';
+        '<hr class="hairline"><h3 class="h3">Pedidos existentes no banco · últimos 7 dias</h3>';
       if (liveTotal !== null) {
         html += '<div class="row-between"><span>Criados nos últimos 7 dias e ainda na base</span><strong>' + liveTotal + '</strong></div>';
         if (callList.length) {
@@ -85,12 +86,12 @@
         }).join('') : '<p class="text--sm text--secondary">Nenhuma publicação medida.</p>') +
         '<p class="text--sm text--secondary" style="margin-top:8px;">Origem não identificada não significa necessariamente acesso direto. Sem identificador de campanha ou referência, a origem não pode ser comprovada.</p>' +
         '<hr class="hairline"><h3 class="h3">Último campo acessado · sem pedido publicado</h3>' +
-        '<p class="text--sm text--secondary">Sessões sem publicação e sem atividade há pelo menos 30 minutos. Mostra onde pararam, não a causa. Medição de campos iniciada em 07/10/2026.</p>' +
+        '<p class="text--sm text--secondary">Sessões sem publicação e sem atividade há pelo menos 30 minutos. Mostra onde pararam, não a causa. Somente sessões da nova medição.</p>' +
         ((d.last_fields || []).length ? d.last_fields.map(function (f) {
           return '<div class="row-between"><span>' + esc(names[f.field] || 'Outro campo') + '</span><strong>' + Number(f.sessions || 0) + '</strong></div>';
         }).join('') : '<p class="text--sm text--secondary">Ainda não há sessões encerradas com essa medição.</p>') +
         '<hr class="hairline"><h3 class="h3">Falhas registradas</h3>' +
-        '<p class="text--sm text--secondary">Quantidade de tentativas com erro, não de pessoas. A mesma sessão pode registrar mais de uma falha; o histórico não zera após uma correção.</p>' +
+        '<p class="text--sm text--secondary">Quantidade de tentativas com erro, não de pessoas. A mesma sessão pode registrar mais de uma falha; somente falhas da nova medição aparecem aqui.</p>' +
         ((d.errors || []).length ? d.errors.map(function (e) {
           var label = e.event === 'validation_error' ? 'Validação · ' + (codes[e.code] || e.code || 'sem código') :
             (e.event || 'Erro') + ' · ' + (codes[e.code] || e.code || 'sem código');

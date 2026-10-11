@@ -22,8 +22,8 @@
   var campaign = global.QFMarketingTouch || {};
   var sid;
   try {
-    sid = sessionStorage.getItem('qf_funnel_session');
-    if (!sid) { sid = global.crypto.randomUUID(); sessionStorage.setItem('qf_funnel_session', sid); }
+    sid = sessionStorage.getItem('qf_funnel_session_v2');
+    if (!sid) { sid = global.crypto.randomUUID(); sessionStorage.setItem('qf_funnel_session_v2', sid); }
   } catch (_) { sid = global.crypto.randomUUID(); }
   var seen = {}, submittedAt = 0;
   var services = {
@@ -82,11 +82,9 @@
     var key = event + ':' + (detail.category || '') + ':' + (detail.request_id || '');
     if (once && seen[key]) return;
     seen[key] = true;
-    var client = global.QFCloud && global.QFCloud.client;
-    if (!client) return;
     var origin = attribution();
     var row = {
-      session_id: sid, event: event, category: String(detail.category || '').slice(0, 120) || null,
+      id: global.crypto.randomUUID(), measurement_version: 2, session_id: sid, event: event, category: String(detail.category || '').slice(0, 120) || null,
       source: origin.source || null,
       campaign: origin.campaign || null,
       content: origin.content || null,
@@ -95,18 +93,29 @@
       duration_ms: submittedAt ? Math.min(3600000, Math.max(0, Date.now() - submittedAt)) : null
     };
     // Falha na medição jamais impede o pedido; não envia nomes, telefone ou texto do serviço.
-    Promise.resolve(client.from('qf_client_funnel').insert(row)).then(function (r) {
-      if (r.error) console.warn('QuemFaz: etapa não registrada', event, r.error.code);
-    }).catch(function () {});
+    function send(attempt) {
+      var client = global.QFCloud && global.QFCloud.client;
+      function retry() {
+        if (attempt < 3) global.setTimeout(function () { send(attempt + 1); }, 1000 * (attempt + 1));
+        else delete seen[key];
+      }
+      if (!client) { retry(); return; }
+      // O mesmo UUID torna as retentativas idempotentes, inclusive após resposta perdida.
+      Promise.resolve(client.from('qf_client_funnel').insert(row)).then(function (r) {
+        if (r.error && r.error.code !== '23505') retry();
+      }).catch(retry);
+    }
+    send(0);
   }
+
   function published(req, category) {
     if (!req || !req.id || !(global.QFCloud && global.QFCloud.enabled)) return;
+    track('published', { category: category, request_id: req.id }, true);
     var key = 'qf_conversion_' + req.id;
     if (seen[key]) return;
     try { if (localStorage.getItem(key)) return; } catch (_) {}
     seen[key] = true;
     try { localStorage.setItem(key, '1'); } catch (_) {}
-    track('published', { category: category, request_id: req.id }, true);
     try {
       if (typeof global.fbq === 'function') global.fbq('track', 'Lead', {
         content_name: 'QuemFaz Pedido de Serviço', content_category: category || 'servico', role: 'cliente'
@@ -117,23 +126,24 @@
   global.QFClientAcquisition = { services: services, serviceFromLink: serviceFromLink, applyDestination: applyDestination, attribution: attribution, track: track, published: published };
   global.addEventListener('DOMContentLoaded', function () {
     if (!/profissional|recrutamento/.test(location.hash || '') && !/profissionais/i.test(campaign.campaign || '')) track('landing', {}, true);
-    var observer = new MutationObserver(function () {
+    function bindForms() {
       // V11.43.3: tela inicial. Mede só se a pessoa tocou no campo, digitou ou tentou enviar; nunca o texto digitado.
       var home = document.querySelector('[data-landing-service-form]');
       if (home && !home.dataset.funnelBound) {
         home.dataset.funnelBound = '1';
         home.addEventListener('focusin', function () { track('home_focus', {}, true); });
-        home.addEventListener('input', function () { track('home_type', {}, true); }, { once: true });
+        home.addEventListener('input', function (e) { if (e.isTrusted) track('home_type', {}, true); });
         home.addEventListener('submit', function () { track('home_submit', {}, true); }, true);
-        document.addEventListener('click', function (e) {
-          if (e.target.closest && e.target.closest('[data-home-services]')) track('home_cta', {}, true);
-        }, true);
+
       }
       var form = document.getElementById('cadastro-cliente-form');
       if (form && !form.dataset.funnelBound) {
         form.dataset.funnelBound = '1';
         track('form_view', {}, true);
-        form.addEventListener('input', function () { track('form_start', {}, true); }, { once: true });
+        form.addEventListener('input', function (e) { if (e.isTrusted) track('form_start', {}, true); });
+        form.addEventListener('click', function (e) {
+          if (e.isTrusted && e.target.closest && e.target.closest('[data-qf-opcao]')) track('form_start', {}, true);
+        });
         var lastField = '', fieldEvents = 0;
         form.addEventListener('focusin', function (e) {
           var field = e.target.name || (e.target.hasAttribute('data-servico-edit-input') ? 'servico' : '');
@@ -143,7 +153,13 @@
         });
         form.addEventListener('submit', function () { submittedAt = Date.now(); track('submit'); }, true);
       }
-    });
-    observer.observe(document.getElementById('app-shell'), { childList: true, subtree: true });
+    }
+    document.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('[data-home-services]')) track('home_cta', {}, true);
+    }, true);
+    bindForms();
+    var observer = new MutationObserver(bindForms);
+    var shell = document.getElementById('app-shell');
+    if (shell) observer.observe(shell, { childList: true, subtree: true });
   });
 })(window);
