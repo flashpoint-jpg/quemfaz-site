@@ -10,7 +10,8 @@ const CORE = ['./qf-carteirinha.js?v=11.77.0', './carteirinha.html', './avaliar.
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).catch(() => null));
   // Primeira instalação: ativa na hora. Atualização: espera o app pedir (evita trocar versão no meio de um formulário).
-  if (!self.registration.active) self.skipWaiting();
+  // Atualização do painel sem deixar outra versão esperando pelo fechamento de todas as abas.
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
