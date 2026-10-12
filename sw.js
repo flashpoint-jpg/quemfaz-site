@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.77.0';
+const SW_VERSION = '11.77.1';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./qf-carteirinha.js?v=11.77.0', './carteirinha.html', './avaliar.html', './vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.75.1', './qf-admin-acquisition.js?v=11.75.1', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -98,18 +98,41 @@ self.addEventListener('push', event => {
   })());
 });
 
+// URLs de push Web usam sempre o dominio publico ao abrir uma nova janela.
+// A origem antiga continua apta a receber push durante a migracao; se uma
+// janela antiga ja estiver aberta, reutiliza-a para preservar a sessao.
+const QF_PUBLIC_ORIGIN = 'https://quemfazservico.com.br';
+function qfNotificationTarget(raw) {
+  let parsed;
+  try {
+    parsed = new URL(raw || './index.html#/', self.registration.scope);
+  } catch (_) {
+    parsed = new URL('/index.html#/', QF_PUBLIC_ORIGIN);
+  }
+  // Nao permitir que um payload de push redirecione para dominios externos.
+  if (parsed.origin !== self.location.origin && parsed.origin !== QF_PUBLIC_ORIGIN) {
+    return QF_PUBLIC_ORIGIN + '/index.html#/';
+  }
+  return QF_PUBLIC_ORIGIN + parsed.pathname + parsed.search + parsed.hash;
+}
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const raw = (event.notification.data && event.notification.data.url) || './index.html#/';
-  const target = new URL(raw, self.registration.scope).href;
+  const target = qfNotificationTarget(raw);
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const client of list) {
         if (client.url.indexOf(self.registration.scope) === 0 && 'focus' in client) {
-          client.postMessage({ type: 'QF_NAVIGATE', url: target });
+          // Mantem a aba/PWA aberta na propria origem: evita perder login
+          // do profissional enquanto sua inscricao antiga ainda esta ativa.
+          const local = new URL(raw, self.registration.scope);
+          const localTarget = (local.origin === self.location.origin) ? local.href : target;
+          client.postMessage({ type: 'QF_NAVIGATE', url: localTarget });
           return client.focus();
         }
       }
+      // Sem aba existente, novas aberturas passam a usar o dominio oficial.
       return clients.openWindow ? clients.openWindow(target) : null;
     })
   );
