@@ -62,6 +62,8 @@ new vm.Script(early);
 html=html.slice(0,opening)+landing+'<script>'+early+'</script>\n'+html.slice(closing);
 // Valida CEP digitado no campo de cidade antes do envio do cliente.
 html=html.replace('</body>','<script src="/qf-city-cep-resolver.js"></script></body>');
+// Mostra claramente saldo sem vencimento e créditos de plano com validade.
+html=html.replace('</body>','<script defer src="/qf-wallet-balance-rules.js?v=20261012"></script></body>');
 fs.writeFileSync(path.join(out,'index.html'),html);
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
