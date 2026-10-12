@@ -1641,6 +1641,18 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-semprof__acao{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
 @media (max-width:640px){.qf-semprof__topo{flex-direction:column;gap:4px}.qf-semprof__meta{text-align:left}.qf-semprof__acao .btn{width:100%}}
 </style>
+
+<style>
+/* Admin: alerta visual sem mudar a identidade do painel existente. */
+.qf-pn__online-indicador{display:inline-flex;align-items:center;gap:9px;padding:7px 11px;border:1px solid #cae9d6;border-radius:10px;color:#117443;background:#f0fbf4;font-size:12px;font-weight:750;line-height:1.35;max-width:100%}
+.qf-pn__online-luz{display:inline-block;width:11px;height:11px;min-width:11px;flex:none;border-radius:50%;background:#9cabb7;box-shadow:0 0 0 2px #eff3f5}
+.qf-pn__online-luz.is-piscando{background:#16a34a;box-shadow:0 0 0 3px #b9efd0;animation:qf-aptos-pisca 1.3s ease-in-out infinite}
+@keyframes qf-aptos-pisca{0%,100%{opacity:1;box-shadow:0 0 0 2px #b9efd0}50%{opacity:.38;box-shadow:0 0 0 6px #d1f9de}}
+@media(prefers-reduced-motion:reduce){.qf-pn__online-luz.is-piscando{animation:none}}
+.qf-pn__acoes>.qf-pn__online-indicador{flex:1 1 205px}
+.qf-pn__acoes>button[data-admin-remind]{flex:1 1 205px}
+.qf-pn__acoes>button[data-admin-remind]:disabled{cursor:not-allowed;opacity:.6}
+</style>
 </head>
 <body>
 <div id="app-shell">
@@ -8330,6 +8342,25 @@ Screens.adminDashboardRender = function () {
     return t === 'nao' ? 'Centro da cidade (bairro não encontrado no mapa) — distância aproximada' : 'Centro da cidade — procurando o bairro no mapa…';
   }
   function pnFato(rotulo, valor, extra) { return '<div class="qf-pn__fato"><span>' + rotulo + '</span><b>' + valor + '</b>' + (extra ? '<small>' + extra + '</small>' : '') + '</div>'; }
+
+  // A contagem vem do mesmo filtro do backend que envia o aviso, nao de "online no painel".
+  function pnAvisarOnline(c) {
+    const n = c.aptos_online === null || c.aptos_online === undefined ? null : Math.max(0, Math.trunc(Number(c.aptos_online) || 0));
+    const aptos = n !== null && n > 0;
+    const ultimo = Date.parse(c.lembrete_em || '');
+    const faltaMs = Number.isFinite(ultimo) ? Math.max(0, 600000 - (Date.now() - ultimo)) : 0;
+    const bloqueado = !aptos || faltaMs > 0;
+    const descricao = n === null ? 'Verificacao de profissionais indisponivel' :
+      n === 0 ? 'Nenhum profissional online apto agora' :
+      n + (n === 1 ? ' profissional online apto' : ' profissionais online aptos') + ' agora';
+    const botao = faltaMs > 0 ? 'Aguarde ' + Math.ceil(faltaMs / 60000) + ' min para reenviar' : 'Avisar profissionais online';
+    return '<span class="qf-pn__online-indicador" title="Profissionais online, na categoria, dentro do proprio raio e horario, sem desbloqueio neste pedido">' +
+        '<span class="qf-pn__online-luz' + (aptos ? ' is-piscando' : '') + '"></span>' + PU.escapeHtml(descricao) + '</span>' +
+      '<button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(c.id) +
+      '" ' + (bloqueado ? 'disabled aria-disabled="true" title="' + PU.escapeHtml(
+        faltaMs > 0 ? 'Aguarde 10 minutos entre avisos' : n === null ? 'Nao foi possivel verificar os profissionais aptos' : 'Nao ha profissionais aptos'
+      ) + '"' : '') + '>' + PU.escapeHtml(botao) + '</button>';
+  }
   function admPaineisHtml(d) {
     const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
     const agora = d.agora;
@@ -8375,7 +8406,7 @@ Screens.adminDashboardRender = function () {
         '<p class="qf-pn__nota">' + icon('info') + '<span>' + PU.escapeHtml(pnMotivo(c)) + '</span></p>' +
         '<h3 class="qf-pn__sub">Quem já desbloqueou</h3>' +
         admTabela(['Quando', 'Profissional', 'Valor', 'Distância', 'Situação'], linhas, '', 'Ninguém desbloqueou este pedido ainda.') +
-        '<div class="qf-pn__acoes"><button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(c.id) + '">Reenviar aviso</button>' +
+        '<div class="qf-pn__acoes">' + pnAvisarOnline(c) +
           (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' WhatsApp do cliente</a>' : '') +
           '<button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</button></div>' +
       '</details>';
@@ -8388,6 +8419,26 @@ Screens.adminDashboardRender = function () {
       const r = await global.QFAdminCloud.client.rpc('qf_admin_paineis');
       if (r.error) throw r.error;
       if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
+
+      // Busca a quantidade EXATA que o envio manual alcançaria agora.
+      // Nunca utiliza no_painel_online, pois nem todos os online sao elegiveis.
+      const pedidosPainel = Array.isArray(r.data.pedidos) ? r.data.pedidos : [];
+      pedidosPainel.forEach(function (c) { c.aptos_online = null; });
+      try {
+        const ids = pedidosPainel.map(function (c) { return String(c.id || ''); }).filter(Boolean);
+        const mapa = Object.create(null);
+        for (let offset = 0; offset < ids.length; offset += 100) {
+          const resposta = await global.QFAdminCloud.client.rpc('qf_admin_online_aptos', { p_chamado_ids: ids.slice(offset, offset + 100) });
+          if (resposta.error) throw resposta.error;
+          if (!resposta.data || !resposta.data.ok || !Array.isArray(resposta.data.itens)) {
+            throw new Error((resposta.data && resposta.data.reason) || 'Falha ao verificar profissionais aptos.');
+          }
+          resposta.data.itens.forEach(function (x) { mapa[x.id] = Math.max(0, Number(x.aptos || 0)); });
+        }
+        pedidosPainel.forEach(function (c) { if (Object.prototype.hasOwnProperty.call(mapa, c.id)) c.aptos_online = mapa[c.id]; });
+      } catch (_) {
+        // Se a verificacao falhar, o botao permanece desativado: nao indica online inventado.
+      }
       admPaineisDados = r.data;
       const h = admPaineisHtml(r.data);
       if (box.__qfHtml !== h) {
@@ -9441,6 +9492,7 @@ Screens.adminDashboardRender = function () {
     if (!button) return;
     event.preventDefault();
     const id = button.getAttribute('data-admin-remind');
+    const initialLabel = button.textContent;
     const pu = global.PU;
     if (pending.has(id)) return;
     if ((cooldown.get(id) || 0) > Date.now()) {
@@ -9467,7 +9519,7 @@ Screens.adminDashboardRender = function () {
     } finally {
       pending.delete(id);
       button.disabled = false;
-      button.textContent = 'Reenviar aviso';
+      button.textContent = initialLabel;
     }
   });
 })(window);
