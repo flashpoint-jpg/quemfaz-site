@@ -1595,6 +1595,22 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-ver__sub{font-size:12.5px;color:var(--text-secondary,#6b7890);padding:0 16px 14px}
 
 /* Próximos ao pedido */
+/* V11.76 — Painéis: pedidos parados na tela dos profissionais */
+.qf-pn__fatos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-bottom:14px;background:#e9e9e9;border:1px solid #e9e9e9;border-radius:16px;overflow:hidden}
+.qf-pn__fato{display:flex;flex-direction:column;gap:3px;min-width:0;padding:12px 14px;background:#fff}
+.qf-pn__fato span{font-size:12px;font-weight:600;color:var(--text-secondary)}
+.qf-pn__fato b{font-size:15px;font-weight:700;color:var(--text-primary);overflow-wrap:anywhere}
+.qf-pn__fato small{font-size:12px;color:var(--text-muted);overflow-wrap:anywhere}
+.qf-pn__bolas{display:inline-flex;gap:4px;margin-right:8px;vertical-align:-1px}
+.qf-pn__bolas i{width:11px;height:11px;border-radius:50%;border:2px solid var(--orange-600);box-sizing:border-box}
+.qf-pn__bolas i.is-on{background:var(--orange-600)}
+.qf-pn__nota{display:flex;gap:8px;align-items:flex-start;margin:0 0 8px;font-size:13.5px;color:var(--text-secondary)}
+.qf-pn__nota svg{flex:none;width:17px;height:17px;margin-top:1px}
+.qf-pn__nota.is-aprox{padding:9px 12px;border-radius:12px;background:#fff4e5;color:#8a4b00}
+.qf-pn__sub{margin:16px 0 8px;font-size:14px;font-weight:700}
+.qf-pn__acoes{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+@media (max-width:900px){.qf-pn__fatos{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.qf-pn__acoes .btn{width:100%}}
 .qf-prox__intro{margin:0 0 16px;color:var(--text-secondary);font-size:14px}
 .qf-prox>summary{display:flex;justify-content:space-between;align-items:center;gap:14px;cursor:pointer;list-style:none}
 .qf-prox>summary::-webkit-details-marker{display:none}
@@ -8121,7 +8137,7 @@ Screens.adminDashboardRender = function () {
   }
   document.addEventListener('click', function (e) {
     const b = e.target.closest && e.target.closest('[data-adm-baixar]');
-    if (b) { e.preventDefault(); admBaixarPedidos(); }
+    if (b) { e.preventDefault(); if (b.getAttribute('data-adm-baixar') === 'paineis') admBaixarPaineis(); else admBaixarPedidos(); }
   });
 
   // Quantas coisas pedem ação (mesma conta do "Precisa de você").
@@ -8267,6 +8283,180 @@ Screens.adminDashboardRender = function () {
       '<div data-adm-proximos>' + admCard('Próximos ao pedido', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-proximos');
   };
 
+  // V11.76: Painéis — os pedidos que estão parados na tela dos profissionais (ainda com vaga), com o relatório de cada um.
+  let admPaineisDados = null;
+  function pnHa(iso, agora) {
+    const min = Math.max(0, Math.round(((Date.parse(agora) || Date.now()) - Date.parse(iso)) / 60000));
+    if (!isFinite(min)) return '—';
+    if (min < 60) return min + ' min';
+    if (min < 2880) return Math.floor(min / 60) + ' h';
+    return Math.floor(min / 1440) + ' dias';
+  }
+  function pnQuando(iso) { return Date.parse(iso) ? (qfDiaChave(iso) === qfDiaChave() ? 'Hoje' : qfDiaMes(iso)) + ' às ' + qfHora(iso) : '—'; }
+  function pnKm(v) { return v === null || v === undefined || v === '' ? '' : String(Number(v).toFixed(1)).replace('.', ',') + ' km'; }
+  function pnPrazo(c) {
+    const per = { manha: 'de manhã', tarde: 'à tarde', noite: 'à noite' }[String(c.periodo || '')] || '';
+    if (c.prazo === 'hoje') return 'Pra hoje' + (per ? ', ' + per : '');
+    if (c.prazo === 'data' && c.prazo_dia) { const p = String(c.prazo_dia).split('-'); return 'Dia ' + p[2] + '/' + p[1] + (per ? ', ' + per : ''); }
+    if (c.prazo === 'sem_pressa') return 'Sem pressa';
+    return 'Não informado';
+  }
+  function pnMotivo(c) {
+    if (c.motivo === 'sem_profissional') return 'Nenhum profissional da cidade tem esse serviço: o pedido foi aberto para todos os profissionais do serviço.';
+    if (c.motivo === 'sem_desbloqueio') return 'Passou por todas as etapas de aviso e ainda tem vaga: está aberto para todos os profissionais do serviço.';
+    return 'Ainda na vez dos profissionais da região do pedido.';
+  }
+  function pnLocalTxt(c) {
+    if (c.geo_precisao === 'bairro') return 'Localização do bairro';
+    if (c.geo_precisao === 'cep') return 'Localização pelo CEP';
+    if (c.geo_precisao === 'gps') return 'Localização exata do cliente';
+    if (!String(c.bairro || '').trim()) return 'Centro da cidade (cliente não informou o bairro) — distância aproximada';
+    const t = pnGeoTentado[c.id];
+    return t === 'nao' ? 'Centro da cidade (bairro não encontrado no mapa) — distância aproximada' : 'Centro da cidade — procurando o bairro no mapa…';
+  }
+  function pnFato(rotulo, valor, extra) { return '<div class="qf-pn__fato"><span>' + rotulo + '</span><b>' + valor + '</b>' + (extra ? '<small>' + extra + '</small>' : '') + '</div>'; }
+  function admPaineisHtml(d) {
+    const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
+    const agora = d.agora;
+    let vagas = 0, semNenhum = 0;
+    pedidos.forEach(function (c) { vagas += Math.max(0, Number(c.limite || 0) - Number(c.ocupadas || 0)); if (!Number(c.ocupadas || 0)) semNenhum++; });
+    const numeros = '<section class="qf-adm-numeros">' +
+      '<div class="qf-adm-num__item"><span>Pedidos nos painéis</span><b>' + pedidos.length + '</b></div>' +
+      '<div class="qf-adm-num__item"><span>Vagas ainda livres</span><b>' + vagas + '</b></div>' +
+      '<div class="qf-adm-num__item' + (semNenhum ? ' is-alerta' : '') + '"><span>Sem nenhum desbloqueio</span><b>' + semNenhum + '</b></div>' +
+      '<div class="qf-adm-num__item"><span>Mais antigo parado há</span><b>' + (pedidos.length ? pnHa(pedidos[0].criado_em, agora) : '—') + '</b></div>' +
+    '</section>';
+    if (!pedidos.length) return numeros + admCard('Nenhum pedido parado', '', '<p class="qf-adm-mudo" style="margin:0;">Não há pedido com vaga livre na tela dos profissionais agora.</p>');
+    return numeros + pedidos.map(function (c) {
+      const local = [c.bairro, [c.cidade, c.uf].filter(Boolean).join('/')].filter(Boolean).join(' · ');
+      const lim = Number(c.limite || 0), oc = Number(c.ocupadas || 0);
+      let bolas = '';
+      for (let i = 0; i < lim; i++) bolas += '<i' + (i < oc ? ' class="is-on"' : '') + '></i>';
+      const des = Array.isArray(c.desbloqueios) ? c.desbloqueios : [];
+      const linhas = des.map(function (x) {
+        return '<tr><td><b>' + (Date.parse(x.criado_em) ? qfDiaMes(x.criado_em) : '—') + '</b><small class="qf-adm-resumo"> ' + (Date.parse(x.criado_em) ? qfHora(x.criado_em) : '') + '</small></td>' +
+          '<td><a class="qf-prox__nome" data-nav="/admin/profissionais/' + PU.escapeHtml(x.id) + '">' + PU.escapeHtml(x.nome || 'Profissional') + '</a></td>' +
+          '<td>' + PU.formatCurrency(Number(x.valor_centavos || 0)) + (x.origem === 'plano' ? '<small class="qf-adm-resumo">pelo plano</small>' : '') + '</td>' +
+          '<td>' + (pnKm(x.km) || '<small class="qf-adm-resumo">Sem localização</small>') + '</td>' +
+          '<td>' + (x.desfecho === 'fechado' ? '<span class="qf-prox__sim">Fechou o serviço</span>' : (x.desfecho === 'nao_fechado' ? '<span class="qf-prox__nao">Não fechou</span>' : (x.desfecho ? PU.escapeHtml(String(x.desfecho).replace(/_/g, ' ')) : 'Ainda não informou'))) + '</td></tr>';
+      });
+      const wa = waHref(c.cliente_telefone);
+      const aprox = c.geo_precisao === 'cidade' || c.geo_precisao === 'sem';
+      const perto = c.mais_perto_km !== null && c.mais_perto_km !== undefined;
+      return '<details class="qf-adm-card qf-prox qf-pn" open><summary><span class="qf-prox__tit"><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></span>' +
+        '<span class="qf-prox__meta">Parado há ' + pnHa(c.criado_em, agora) + '<small>Entrou ' + PU.escapeHtml(pnQuando(c.criado_em).replace(/^Hoje/, 'hoje')) + '</small></span></summary>' +
+        (c.descricao ? '<p class="qf-semprof__desc" style="margin:0 0 14px;">“' + PU.escapeHtml(String(c.descricao).slice(0, 400)) + '”</p>' : '') +
+        '<div class="qf-pn__fatos">' +
+          pnFato('Vagas', '<span class="qf-pn__bolas">' + bolas + '</span>' + oc + ' de ' + lim + ' ocupadas', (lim - oc) + (lim - oc === 1 ? ' vaga livre' : ' vagas livres')) +
+          pnFato('Pra quando', PU.escapeHtml(pnPrazo(c))) +
+          pnFato('Valor do desbloqueio', PU.formatCurrency(Number(c.preco_centavos || 0))) +
+          pnFato('Aparece na tela de', admLinhas(Number(c.no_painel || 0), 'profissional', 'profissionais'), Number(c.no_painel_online || 0) + ' online agora') +
+          pnFato('Profissional mais perto', perto ? pnKm(c.mais_perto_km) : '—', (perto && c.mais_perto_nome ? PU.escapeHtml(c.mais_perto_nome) + ' · ' : '') + Number(c.dentro_raio || 0) + ' dentro do próprio raio') +
+          pnFato('Avisos enviados', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda') +
+          pnFato('Cliente', PU.escapeHtml(c.cliente || 'Cliente'), c.cliente_telefone ? PU.escapeHtml(c.cliente_telefone) : '') +
+          pnFato('Último desbloqueio', c.ultimo_desbloqueio_em ? 'há ' + pnHa(c.ultimo_desbloqueio_em, agora) : 'Nenhum', c.ultimo_desbloqueio_em ? PU.escapeHtml(pnQuando(c.ultimo_desbloqueio_em)) : '') +
+        '</div>' +
+        '<p class="qf-pn__nota' + (aprox ? ' is-aprox' : '') + '">' + icon('mapPin') + '<span><b>Quilometragem:</b> ' + PU.escapeHtml(pnLocalTxt(c)) + '</span></p>' +
+        '<p class="qf-pn__nota">' + icon('info') + '<span>' + PU.escapeHtml(pnMotivo(c)) + '</span></p>' +
+        '<h3 class="qf-pn__sub">Quem já desbloqueou</h3>' +
+        admTabela(['Quando', 'Profissional', 'Valor', 'Distância', 'Situação'], linhas, '', 'Ninguém desbloqueou este pedido ainda.') +
+        '<div class="qf-pn__acoes"><button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(c.id) + '">Reenviar aviso</button>' +
+          (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' WhatsApp do cliente</a>' : '') +
+          '<button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</button></div>' +
+      '</details>';
+    }).join('');
+  }
+  async function admPaineisCarregar(content) {
+    const box = content.querySelector('[data-adm-paineis]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_paineis');
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível carregar.');
+      admPaineisDados = r.data;
+      const h = admPaineisHtml(r.data);
+      if (box.__qfHtml !== h) {
+        // guarda quais cartões a pessoa fechou, para a atualização sozinha não reabrir
+        const fechados = {};
+        box.querySelectorAll('details.qf-pn').forEach(function (el) { const b = el.querySelector('[data-admin-remind]'); if (b && !el.open) fechados[b.getAttribute('data-admin-remind')] = 1; });
+        box.__qfHtml = h; box.innerHTML = h;
+        box.querySelectorAll('details.qf-pn').forEach(function (el) { const b = el.querySelector('[data-admin-remind]'); if (b && fechados[b.getAttribute('data-admin-remind')]) el.open = false; });
+      }
+      admPaineisCorrigirLocal(r.data.pedidos || []);
+    } catch (err) { box.innerHTML = admCard('Painéis', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
+  }
+  // Quilometragem: pedido gravado com o centro da cidade ganha a coordenada do bairro (o painel procura no mapa e grava).
+  const pnGeoTentado = {};
+  let pnGeoRodando = false;
+  function pnNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  async function pnGeoBairro(bairro, cidade, uf) {
+    const q = [String(bairro).trim(), String(cidade).trim(), String(uf || '').trim().toUpperCase(), 'Brasil'].filter(Boolean).join(', ');
+    const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = setTimeout(function () { if (ctl) ctl.abort(); }, 8000);
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=br&q=' + encodeURIComponent(q), { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' }, cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+      if (!r.ok) throw new Error('geo_http');
+      const rows = await r.json();
+      const alvo = pnNorm(cidade);
+      const achou = (Array.isArray(rows) ? rows : []).filter(function (x) {
+        const a = x.address || {};
+        return [a.city, a.town, a.village, a.municipality].some(function (n) { return n && pnNorm(n) === alvo; }) && isFinite(Number(x.lat)) && isFinite(Number(x.lon));
+      })[0];
+      return achou ? { latitude: Number(achou.lat), longitude: Number(achou.lon) } : null;
+    } finally { clearTimeout(timer); }
+  }
+  async function admPaineisCorrigirLocal(pedidos) {
+    if (pnGeoRodando) return;
+    const fila = pedidos.filter(function (c) { return (c.geo_precisao === 'cidade' || c.geo_precisao === 'sem') && String(c.bairro || '').trim().length >= 3 && c.cidade && !pnGeoTentado[c.id]; });
+    if (!fila.length) return;
+    pnGeoRodando = true;
+    let corrigidos = 0, tentou = 0;
+    try {
+      for (let i = 0; i < fila.length; i++) {
+        const c = fila[i];
+        try {
+          const loc = await pnGeoBairro(c.bairro, c.cidade, c.uf);
+          tentou++;
+          pnGeoTentado[c.id] = 'nao';
+          if (loc) {
+            const r = await global.QFAdminCloud.client.rpc('qf_admin_corrigir_local_pedido', { p_chamado_id: c.id, p_lat: loc.latitude, p_lng: loc.longitude });
+            if (r && r.data && r.data.ok) { pnGeoTentado[c.id] = 'ok'; corrigidos++; }
+          }
+        } catch (_) { /* sem internet para o mapa agora: tenta de novo na próxima atualização */ }
+        await new Promise(function (ok) { setTimeout(ok, 1200); });
+      }
+    } finally { pnGeoRodando = false; }
+    if (corrigidos) PU.toast('Quilometragem corrigida em ' + admLinhas(corrigidos, 'pedido', 'pedidos') + ': agora usa a localização do bairro.', 'success');
+    const box = document.querySelector('[data-adm-paineis]');
+    if (box && box.parentNode && tentou) { box.__qfHtml = ''; admPaineisCarregar(box.parentNode); }
+  }
+  function admBaixarPaineis() {
+    const d = admPaineisDados;
+    if (!d || !Array.isArray(d.pedidos)) { PU.toast('Espere o relatório carregar para baixar.', 'danger'); return; }
+    const linhas = [['Pedido', 'Descrição', 'Bairro', 'Cidade', 'Cliente', 'WhatsApp do cliente', 'Entrou em', 'Parado há', 'Pra quando', 'Vagas ocupadas', 'Vagas no total', 'Valor do desbloqueio (R$)',
+      'Aparece na tela de (profissionais)', 'Online agora', 'Dentro do raio', 'Mais perto (km)', 'Avisos enviados', 'Reenvios', 'Quem desbloqueou', 'Recebido em desbloqueios (R$)', 'Quilometragem', 'Situação']];
+    d.pedidos.forEach(function (c) {
+      const des = Array.isArray(c.desbloqueios) ? c.desbloqueios : [];
+      let soma = 0;
+      const quem = des.map(function (x) { soma += Number(x.valor_centavos || 0); return (x.nome || 'Profissional') + ' (' + pnQuando(x.criado_em) + ')'; }).join(' | ');
+      linhas.push([c.titulo || 'Pedido', String(c.descricao || '').trim(), c.bairro || '', [c.cidade, c.uf].filter(Boolean).join('/'), c.cliente || '', c.cliente_telefone || '',
+        pnQuando(c.criado_em), pnHa(c.criado_em, d.agora), pnPrazo(c), Number(c.ocupadas || 0), Number(c.limite || 0), (Number(c.preco_centavos || 0) / 100).toFixed(2).replace('.', ','),
+        Number(c.no_painel || 0), Number(c.no_painel_online || 0), Number(c.dentro_raio || 0), c.mais_perto_km === null || c.mais_perto_km === undefined ? '' : String(c.mais_perto_km).replace('.', ','),
+        Number(c.avisados || 0), Number(c.lembretes || 0), quem, (soma / 100).toFixed(2).replace('.', ','), pnLocalTxt(c), pnMotivo(c)]);
+    });
+    const blob = new Blob([admCsv(linhas)], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'quemfaz-paineis-' + qfDiaChave() + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    PU.toast('Relatório com ' + admLinhas(linhas.length - 1, 'pedido', 'pedidos') + ' baixado.', 'success');
+  }
+  Screens.adminPaineisRender = function () {
+    return admPage('<p class="qf-prox__intro">Os pedidos que estão parados na tela dos profissionais agora: ainda têm vaga livre e qualquer profissional do serviço pode desbloquear. Do que está parado há mais tempo para o mais novo.</p>' +
+      '<div data-adm-paineis>' + admCard('Painéis', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-paineis');
+  };
+
   // V11.67: Pedidos sem profissional — pedidos abertos que ninguém recebeu; troca o serviço e reenvia.
   function admSemProfHtml(d) {
     const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
@@ -8314,6 +8504,8 @@ Screens.adminDashboardRender = function () {
     if (prox && prox.parentNode) admProximosCarregar(prox.parentNode);
     const sem = document.querySelector('[data-adm-semprof]');
     if (sem && sem.parentNode && !semProfMexido) admSemProfCarregar(sem.parentNode);
+    const pn = document.querySelector('[data-adm-paineis]');
+    if (pn && pn.parentNode) admPaineisCarregar(pn.parentNode);
   }, 20000);
   Screens.adminSemProfRender = function () {
     semProfMexido = false;
@@ -8708,6 +8900,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
     if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/proximos') admProximosCarregar(content);
+    if (pattern === '/admin/paineis') admPaineisCarregar(content);
     if (pattern === '/admin/sem-profissional') admSemProfCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
@@ -8820,6 +9013,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
     { pattern: '/admin/sem-profissional', role: 'admin', title: 'Pedidos sem profissional', render: function () { return Screens.adminSemProfRender(); } },
     { pattern: '/admin/proximos', role: 'admin', title: 'Profissionais próximos ao pedido', render: function () { return Screens.adminProximosRender(); } },
+    { pattern: '/admin/paineis', role: 'admin', title: 'Painéis: pedidos parados na tela dos profissionais', render: function () { return Screens.adminPaineisRender(); } },
     { pattern: '/admin/por-cidade', role: 'admin', title: 'Por cidade', render: Screens.adminPorCidadeRender },
     { pattern: '/admin/verificacoes', role: 'admin', title: 'Verificações', render: Screens.adminVerificacoesRender },
     { pattern: '/admin/comunicados', role: 'admin', title: 'Comunicados', render: Screens.adminComunicadosRender },
@@ -9018,6 +9212,7 @@ Screens.adminDashboardRender = function () {
   const ADMIN_MENU = [
     { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
     { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
+    { id: 'paineis', label: 'Painéis', icon: 'smartphone', route: '/admin/paineis' },
     { id: 'proximos', label: 'Próximos ao pedido', icon: 'mapPin', route: '/admin/proximos' },
     { id: 'semprof', label: 'Pedidos sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
@@ -9040,6 +9235,7 @@ Screens.adminDashboardRender = function () {
   const ADMIN_ACAO = {
     '/admin/dashboard': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/comunicados">' + icon('megaphone') + 'Enviar comunicado</button>',
     '/admin/servicos': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-adm-baixar="pedidos">' + icon('download') + 'Baixar tudo</button>',
+    '/admin/paineis': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-adm-baixar="paineis">' + icon('download') + 'Baixar relatório</button>',
     '/admin/desbloqueios': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/servicos">' + icon('clipboard') + 'Ver pedidos</button>',
     '/admin/profissionais': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/por-cidade">' + icon('mapPin') + 'Ver por cidade</button>',
     '/admin/por-cidade': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',

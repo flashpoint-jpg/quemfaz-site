@@ -6469,12 +6469,20 @@ alt=""></noscript>
     let loc = hasAddressCoords
       ? { latitude: Number(rawLat), longitude: Number(rawLng) }
       : null;
+    // V11.76: de onde veio a coordenada (gps, cep, bairro ou cidade). Com o bairro informado, o pedido fica
+    // no bairro, não no centro da cidade — é isso que faz a distância mostrada ao profissional ser a certa.
+    let geoPrecisao = loc ? (String(data.endereco.cep || '').replace(/\D/g, '').length === 8 ? 'cep' : 'gps') : null;
     if (!loc && selectedCity && global.QFGeo && typeof global.QFGeo.geocodeCity === 'function') {
+      const okLoc = function (l) { return !!l && Number.isFinite(Number(l.latitude)) && Number.isFinite(Number(l.longitude)); };
       try {
-        const cityLoc = await global.QFGeo.geocodeCity(selectedCity, selectedUf);
-        if (cityLoc && Number.isFinite(Number(cityLoc.latitude)) && Number.isFinite(Number(cityLoc.longitude))) {
-          loc = { latitude: Number(cityLoc.latitude), longitude: Number(cityLoc.longitude) };
-        }
+        const achados = await Promise.all([
+          typeof global.QFGeo.geocodeBairro === 'function' && data.endereco.bairro
+            ? Promise.resolve(global.QFGeo.geocodeBairro(data.endereco.bairro, selectedCity, selectedUf)).catch(function () { return null; })
+            : null,
+          Promise.resolve(global.QFGeo.geocodeCity(selectedCity, selectedUf)).catch(function () { return null; })
+        ]);
+        if (okLoc(achados[0])) { loc = { latitude: Number(achados[0].latitude), longitude: Number(achados[0].longitude) }; geoPrecisao = 'bairro'; }
+        else if (okLoc(achados[1])) { loc = { latitude: Number(achados[1].latitude), longitude: Number(achados[1].longitude) }; geoPrecisao = 'cidade'; }
       } catch (_) {}
     }
     // O chamado nasce NORMAL. Prioridade só é ativada no banco depois de pagamento aprovado.
@@ -6497,6 +6505,7 @@ alt=""></noscript>
       prioridade: false
     };
     // V11.29: prazo do pedido. Se o banco recusar por causa desses campos, publica sem eles: o pedido nunca se perde.
+    if (geoPrecisao) row.geo_precisao = geoPrecisao;
     const comPrazo = !!data.prazo;
     if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }
     // V11.71: quantos orçamentos o cliente quer (1 a 8). Se o banco recusar o campo, publica sem ele (fica 3).
@@ -6504,6 +6513,11 @@ alt=""></noscript>
     const comMax = maxOrc >= 1 && maxOrc <= 8;
     if (comMax) row.max_orcamentos = maxOrc;
     let res = await client.from('qf_chamados').insert(row).select('*').single();
+    if (res.error && row.geo_precisao && /geo_precisao/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz origem da localização não gravada', res.error);
+      delete row.geo_precisao;
+      res = await client.from('qf_chamados').insert(row).select('*').single();
+    }
     if (res.error && comMax && /max_orcamentos/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz quantidade de orçamentos não gravada', res.error);
       delete row.max_orcamentos;
@@ -7423,6 +7437,32 @@ alt=""></noscript>
     } finally { clearTimeout(timer); }
   }
 
+  // V11.76: coordenada do BAIRRO do pedido. Só aceita resultado dentro da cidade informada; senão devolve null
+  // (quem chama cai no centro da cidade). Antes todo pedido ficava no centro da cidade e a distância saía igual em todos.
+  function geoNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  async function geocodeBairro(bairro, cidade, uf) {
+    const b = String(bairro || '').trim();
+    const nome = String(cidade || '').trim();
+    const estado = String(uf || '').trim().toUpperCase();
+    if (b.length < 3 || !nome) return null;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    let timer;
+    try {
+      const q = [b, nome, estado, 'Brasil'].filter(Boolean).join(', ');
+      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=br&q=' + encodeURIComponent(q);
+      const timeout = new Promise(function (_, reject) { timer = setTimeout(function () { if (controller) controller.abort(); reject(new Error('geo_timeout')); }, 4000); });
+      const rows = await Promise.race([fetch(url, { headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' }, cache: 'no-store', signal: controller ? controller.signal : undefined }).then(function (r) { return r.ok ? r.json() : []; }), timeout]);
+      const alvo = geoNorm(nome);
+      const achou = (Array.isArray(rows) ? rows : []).filter(function (x) {
+        const a = (x && x.address) || {};
+        return [a.city, a.town, a.village, a.municipality].some(function (n) { return n && geoNorm(n) === alvo; }) && Number.isFinite(Number(x.lat)) && Number.isFinite(Number(x.lon));
+      })[0];
+      return achou ? { bairro: b, cidade: nome, uf: estado, latitude: Number(achou.lat), longitude: Number(achou.lon) } : null;
+    } catch (_) {
+      return null;
+    } finally { clearTimeout(timer); }
+  }
+
   async function reverseGeocode(latitude, longitude) {
     try {
       const url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=' + encodeURIComponent(latitude) + '&lon=' + encodeURIComponent(longitude);
@@ -7489,7 +7529,7 @@ alt=""></noscript>
     });
   }
   function regionKey(cidade, uf) { const city=String(cidade||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); return city && uf ? 'BR|' + String(uf).toUpperCase() + '|' + city : 'all'; }
-  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, validCnpj: validCnpj, formatCnpj: formatCnpj, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, geocodeCity: geocodeCity, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
+  global.QFGeo = { UF_LIST: UF_LIST, normalizeCep: normalizeCep, formatCep: formatCep, validCpf: validCpf, formatCpf: formatCpf, validCnpj: validCnpj, formatCnpj: formatCnpj, ufOptions: ufOptions, regionKey: regionKey, lookupCep: lookupCep, geocodeCity: geocodeCity, geocodeBairro: geocodeBairro, currentPosition: currentPosition, reverseGeocode: reverseGeocode, fillAddress: fillAddress, bindAddressForm: bindAddressForm };
 })(window);
 
 
@@ -14364,7 +14404,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.75.2';
+  const APP_VERSION = '11.76.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17757,7 +17797,7 @@ alt=""></noscript>
 })(window);
 
 </script>
-<script src="qf-carteirinha.js?v=11.75.2"></script>
+<script src="qf-carteirinha.js?v=11.76.0"></script>
 <script src="qf-card-inline.js?v=1"></script>
 
 <script id="qf-launch-countdown">
