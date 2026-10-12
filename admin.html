@@ -1,6 +1,36 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<meta name="qf-admin-build" content="2026-10-12-cache-fix">
+<script>
+/* Atualiza o painel no computador quando o Service Worker novo assume o controle.
+   Preserva a sessão; não apaga dados, nem interrompe formulários de edição. */
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  var key = 'qf_admin_reload_20261012';
+  function canReload() {
+    var page = location.hash || '';
+    var input = document.activeElement;
+    return (!page || page.indexOf('#/admin/dashboard') === 0 || page.indexOf('#admin/dashboard') === 0) &&
+      !(input && /^(INPUT|TEXTAREA|SELECT)$/.test(input.tagName));
+  }
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!canReload()) return;
+    try {
+      if (sessionStorage.getItem(key) === '1') return;
+      sessionStorage.setItem(key, '1');
+    } catch (_) {}
+    location.reload();
+  });
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.getRegistration().then(function (registration) {
+      if (!registration) return;
+      if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      registration.update().catch(function () {});
+    }).catch(function () {});
+  });
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- Painel administrativo separado do app público -->
