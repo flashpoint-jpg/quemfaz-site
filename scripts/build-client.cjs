@@ -74,4 +74,5 @@ require('./generate-seo-extra.cjs');
 // Falha o build se o sitemap gerado tiver URLs malformadas ou duplicadas.
 require('./generate-seo-sp.cjs');
 require('./improve-local-pages.cjs');
+require('./repair-seo-leads.cjs');
 require('./check-sitemap.cjs');
