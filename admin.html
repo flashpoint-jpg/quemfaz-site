@@ -11,7 +11,7 @@
   function canReload() {
     var page = location.hash || '';
     var input = document.activeElement;
-    return (!page || /#\\/?admin\\/dashboard(?:$|[?\\/])/.test(page)) &&
+    return (!page || page.indexOf('#/admin/dashboard') === 0 || page.indexOf('#admin/dashboard') === 0) &&
       !(input && /^(INPUT|TEXTAREA|SELECT)$/.test(input.tagName));
   }
   navigator.serviceWorker.addEventListener('controllerchange', function () {
