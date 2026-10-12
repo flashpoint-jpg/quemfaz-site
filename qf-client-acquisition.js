@@ -58,6 +58,11 @@
       }
     }
   }
+  // Identifica a página local que iniciou o pedido, sem inventar origem ou campanha.
+  try {
+    var seoPage = new URLSearchParams(location.search).get('seo_page');
+    if (seoPage && /^\/servicos\/[a-z0-9-]+\/[a-z0-9-]+\/$/.test(seoPage)) sessionStorage.setItem('qf_seo_page', seoPage);
+  } catch (_) {}
   function attribution() {
     var touch = global.QFMarketingTouch || campaign || {};
     var out = {};
@@ -74,6 +79,7 @@
         else if (/(^|\.)bing\.com$/.test(host)) out.source = 'bing_referral';
       } catch (_) {}
     }
+    try { if (!out.content) out.content = sessionStorage.getItem('qf_seo_page') || undefined; } catch (_) {}
     return out;
   }
   function track(event, detail, once) {
