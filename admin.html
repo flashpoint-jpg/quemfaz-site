@@ -1080,6 +1080,12 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 .qf-receita__rotulo{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-on-navy-muted)}
 .qf-receita__sub{font-size:12px;color:#c5cfe0}
 .qf-receita__total{font-size:40px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-top:2px}
+.qf-receita__destaques{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.qf-receita__destaque{min-width:0;display:flex;flex-direction:column;gap:6px}
+.qf-receita__destaque + .qf-receita__destaque{border-left:1px solid rgba(255,255,255,.2);padding-left:14px}
+.qf-receita__destaque .qf-receita__rotulo{min-height:2.6em;line-height:1.3}
+.qf-receita__destaque .qf-receita__total{font-size:clamp(26px,7vw,40px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.qf-receita__destaque--dinheiro .qf-receita__total{color:var(--orange-400)}
 .qf-receita__sep{height:1px;background:rgba(255,255,255,.14)}
 .qf-receita__itens{display:flex;flex-direction:column;gap:10px;font-size:14px}
 .qf-receita__item{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--text-on-navy-muted)}
@@ -5838,10 +5844,17 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       return '<div class="qf-receita__item' + (Number(valor) > 0 ? ' qf-receita__item--tem' : '') + '"><span>' + rotulo + '</span><b>' + PU.formatCurrency(valor) + '</b></div>';
     }
     return '<section class="section qf-receita qf-p-receita" aria-label="Entrada do QuemFaz">' +
-      '<div>' +
-        '<div class="qf-receita__topo"><span class="qf-receita__rotulo">Entrada de hoje</span><span class="qf-receita__sub">zera à meia-noite</span></div>' +
+      '<div class="qf-receita__destaques">' +
+      '<div class="qf-receita__destaque">' +
+        '<div class="qf-receita__rotulo">Entrada de hoje</div>' +
         '<div class="qf-receita__total">' + PU.formatCurrency(en.hoje) + '</div>' +
         '<div class="qf-receita__sub">Soma tudo de hoje: dinheiro, créditos e bônus.</div>' +
+      '</div>' +
+      '<div class="qf-receita__destaque qf-receita__destaque--dinheiro">' +
+        '<div class="qf-receita__rotulo">Dinheiro recebido hoje</div>' +
+        '<div class="qf-receita__total">' + PU.formatCurrency(en.dinheiroHoje) + '</div>' +
+        '<div class="qf-receita__sub">Pix, cartão e boleto.</div>' +
+      '</div>' +
       '</div>' +
       '<div class="qf-receita__sep"></div>' +
       '<div class="qf-receita__itens">' +
