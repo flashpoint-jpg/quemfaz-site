@@ -1,0 +1,9 @@
+QuemFaz 11.77 — painel mostra pra quando o cliente marcou o serviço
+
+PAINEL
+- Pedidos (e últimos pedidos do Início): coluna nova "Pra quando", com o dia marcado e o período
+  (manhã, tarde ou noite). Marcado aparece em azul, pra hoje em vermelho, data que já passou em cinza.
+- Detalhe do pedido: linha "Pra quando o cliente marcou".
+- Painéis: o "Pra quando" ganhou o mesmo destaque e passou a dizer "Era pra…" quando o dia já passou.
+- Planilha "Baixar tudo": coluna "Pra quando".
+- O cliente escolhe o dia e o período; o pedido não tem hora exata.

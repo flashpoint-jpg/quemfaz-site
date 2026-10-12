@@ -1595,6 +1595,10 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-ver__sub{font-size:12.5px;color:var(--text-secondary,#6b7890);padding:0 16px 14px}
 
 /* Próximos ao pedido */
+/* V11.77 — pra quando o cliente marcou o serviço */
+.qf-adm-quando{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;background:var(--navy-100);color:var(--navy-700)}
+.qf-adm-quando--hoje{background:#fdecea;color:#b3261e}
+.qf-adm-quando--atrasado{background:#f1f1f1;color:#555}
 /* V11.76 — Painéis: pedidos parados na tela dos profissionais */
 .qf-pn__fatos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-bottom:14px;background:#e9e9e9;border:1px solid #e9e9e9;border-radius:16px;overflow:hidden}
 .qf-pn__fato{display:flex;flex-direction:column;gap:3px;min-width:0;padding:12px 14px;background:#fff}
@@ -3885,6 +3889,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
         endereco: { rua: c.endereco_completo || '', bairro: c.bairro || '', cidade: c.cidade || '', uf: c.uf || '' },
         cidadeId: cityId(c.cidade, c.uf), status: st, profissionalId: c.profissional_id || null,
         criadoEm: c.criado_em, atualizadoEm: c.atualizado_em || c.criado_em, prioridade: !!c.prioridade,
+        prazo: c.prazo || null, prazoDia: c.prazo_dia || null, periodo: c.periodo || null,
         pagamentoPrioridade: c.prioridade_pagamento_status ? { status: c.prioridade_pagamento_status, valor: Number(c.prioridade_valor_centavos || 0), criadoEm: c.atualizado_em || c.criado_em } : null,
         // Receita só quando houve débito real na carteira (desbloqueios antigos grátis não contam).
         leadUnlock: c.profissional_id ? { profissionalId: c.profissional_id, valor: deb ? deb.valor : 0, status: deb && deb.valor > 0 ? 'pago' : 'sem_cobranca', criadoEm: deb ? deb.criadoEm : c.atualizado_em } : null,
@@ -7004,6 +7009,7 @@ Screens.adminDashboardRender = function () {
             rowInfo('Serviço solicitado', pedidoTitulo) +
             rowInfo('Categoria', cat ? cat.nome : '—') +
             rowInfo('Local', endereco) +
+            rowInfo('Pra quando o cliente marcou', admPrazoPedido(r).txt) +
             rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
             rowInfo('Última atualização', PU.formatDateTime(r.atualizadoEm || r.criadoEm)) +
           '</div>' +
@@ -8067,12 +8073,13 @@ Screens.adminDashboardRender = function () {
       '<td><b>' + PU.escapeHtml(qfPedidoTitulo(r)) + '</b>' + (resumo ? '<small class="qf-adm-resumo">' + PU.escapeHtml(resumo.length > 60 ? resumo.slice(0, 57) + '…' : resumo) + '</small>' : '') + '</td>' +
       '<td>' + (PU.escapeHtml(admCidadePedido(r)) || '<span class="qf-adm-mudo">—</span>') + '</td>' +
       '<td class="qf-adm-nowrap">' + (Date.parse(r.criadoEm) ? qfDiaMes(r.criadoEm) + ' · ' + qfHora(r.criadoEm) : '—') + '</td>' +
+      '<td>' + (function () { const z = admPrazoPedido(r); return z.tom === 'livre' ? '<span class="qf-adm-mudo">' + z.txt + '</span>' : '<span class="qf-adm-quando qf-adm-quando--' + z.tom + '">' + z.txt + '</span>'; })() + '</td>' +
       '<td>' + quem + '</td>' +
       '<td><span class="qf-adm-sit qf-adm-sit--' + sit.id + '">' + sit.rotulo + '</span></td>' +
       '<td class="qf-adm-num">' + (valor > 0 ? PU.formatCurrency(valor) : '<span class="qf-adm-mudo">—</span>') + '</td>' +
     '</tr>';
   }
-  const ADM_CAB_PEDIDOS = ['Pedido', 'Cidade', 'Recebido', 'Quem desbloqueou', 'Situação', 'Valor'];
+  const ADM_CAB_PEDIDOS = ['Pedido', 'Cidade', 'Recebido', 'Pra quando', 'Quem desbloqueou', 'Situação', 'Valor'];
   function admUltimosTabela() {
     const lista = admFiltrados();
     const mostra = lista.slice(0, ADM_ULTIMOS_MAX);
@@ -8117,7 +8124,7 @@ Screens.adminDashboardRender = function () {
     }).join('\r\n');
   }
   function admBaixarPedidos() {
-    const linhas = [['Pedido', 'Descrição', 'Cliente', 'Cidade', 'Recebido em', 'Quem desbloqueou', 'Situação', 'Valor (R$)']];
+    const linhas = [['Pedido', 'Descrição', 'Cliente', 'Cidade', 'Recebido em', 'Pra quando', 'Quem desbloqueou', 'Situação', 'Valor (R$)']];
     admOrdenados().forEach(function (r) {
       const cliente = DB.clienteById(r.clienteId);
       const quem = desbloqueiosAtivos(r).map(function (x) {
@@ -8125,7 +8132,7 @@ Screens.adminDashboardRender = function () {
         return ((p && p.nome) || 'Profissional') + (Date.parse(x.criadoEm) ? ' (' + qfDiaMes(x.criadoEm) + ' ' + qfHora(x.criadoEm) + ')' : '');
       }).join(' | ');
       linhas.push([qfPedidoTitulo(r), String(r.titulo || r.descricao || '').trim(), (cliente && cliente.nome) || '', admCidadePedido(r),
-        Date.parse(r.criadoEm) ? qfDiaMes(r.criadoEm) + ' ' + qfHora(r.criadoEm) : '', quem, admSituacao(r).rotulo, (admValorPedido(r) / 100).toFixed(2).replace('.', ',')]);
+        Date.parse(r.criadoEm) ? qfDiaMes(r.criadoEm) + ' ' + qfHora(r.criadoEm) : '', admPrazoPedido(r).txt, quem, admSituacao(r).rotulo, (admValorPedido(r) / 100).toFixed(2).replace('.', ',')]);
     });
     const blob = new Blob([admCsv(linhas)], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
@@ -8294,13 +8301,21 @@ Screens.adminDashboardRender = function () {
   }
   function pnQuando(iso) { return Date.parse(iso) ? (qfDiaChave(iso) === qfDiaChave() ? 'Hoje' : qfDiaMes(iso)) + ' às ' + qfHora(iso) : '—'; }
   function pnKm(v) { return v === null || v === undefined || v === '' ? '' : String(Number(v).toFixed(1)).replace('.', ',') + ' km'; }
-  function pnPrazo(c) {
+  // Pra quando o cliente marcou: dia e período (manhã, tarde ou noite). 'tom' diz se é marcado, hoje, atrasado etc.
+  function pnPrazoInfo(c) {
     const per = { manha: 'de manhã', tarde: 'à tarde', noite: 'à noite' }[String(c.periodo || '')] || '';
-    if (c.prazo === 'hoje') return 'Pra hoje' + (per ? ', ' + per : '');
-    if (c.prazo === 'data' && c.prazo_dia) { const p = String(c.prazo_dia).split('-'); return 'Dia ' + p[2] + '/' + p[1] + (per ? ', ' + per : ''); }
-    if (c.prazo === 'sem_pressa') return 'Sem pressa';
-    return 'Não informado';
+    if (c.prazo === 'sem_pressa') return { txt: 'Sem pressa', tom: 'livre' };
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(c.prazo_dia || ''));
+    if (!m) return c.prazo === 'hoje' ? { txt: 'Pra hoje' + (per ? ', ' + per : ''), tom: 'hoje' } : { txt: 'Não informado', tom: 'livre' };
+    const dia = m[1] + '-' + m[2] + '-' + m[3], hoje = qfDiaChave(), dm = m[3] + '/' + m[2];
+    const sem = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'][new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12).getDay()];
+    const ate = c.prazo === 'semana';
+    if (dia < hoje) return { txt: (ate ? 'Era até ' : 'Era pra ') + sem + ', ' + dm + (per && !ate ? ', ' + per : ''), tom: 'atrasado' };
+    if (dia === hoje) return { txt: (ate ? 'Até hoje' : 'Pra hoje') + (per && !ate ? ', ' + per : ''), tom: 'hoje' };
+    return { txt: (ate ? 'Até ' : 'Marcado: ') + sem + ', ' + dm + (per && !ate ? ', ' + per : ''), tom: 'marcado' };
   }
+  function pnPrazo(c) { return pnPrazoInfo(c).txt; }
+  function admPrazoPedido(r) { return pnPrazoInfo({ prazo: r.prazo, prazo_dia: r.prazoDia, periodo: r.periodo }); }
   function pnMotivo(c) {
     if (c.motivo === 'sem_profissional') return 'Nenhum profissional da cidade tem esse serviço: o pedido foi aberto para todos os profissionais do serviço.';
     if (c.motivo === 'sem_desbloqueio') return 'Passou por todas as etapas de aviso e ainda tem vaga: está aberto para todos os profissionais do serviço.';
@@ -8348,7 +8363,7 @@ Screens.adminDashboardRender = function () {
         (c.descricao ? '<p class="qf-semprof__desc" style="margin:0 0 14px;">“' + PU.escapeHtml(String(c.descricao).slice(0, 400)) + '”</p>' : '') +
         '<div class="qf-pn__fatos">' +
           pnFato('Vagas', '<span class="qf-pn__bolas">' + bolas + '</span>' + oc + ' de ' + lim + ' ocupadas', (lim - oc) + (lim - oc === 1 ? ' vaga livre' : ' vagas livres')) +
-          pnFato('Pra quando', PU.escapeHtml(pnPrazo(c))) +
+          pnFato('Pra quando', (function () { const z = pnPrazoInfo(c); return z.tom === 'livre' ? PU.escapeHtml(z.txt) : '<span class="qf-adm-quando qf-adm-quando--' + z.tom + '">' + PU.escapeHtml(z.txt) + '</span>'; })()) +
           pnFato('Valor do desbloqueio', PU.formatCurrency(Number(c.preco_centavos || 0))) +
           pnFato('Aparece na tela de', admLinhas(Number(c.no_painel || 0), 'profissional', 'profissionais'), Number(c.no_painel_online || 0) + ' online agora') +
           pnFato('Profissional mais perto', perto ? pnKm(c.mais_perto_km) : '—', (perto && c.mais_perto_nome ? PU.escapeHtml(c.mais_perto_nome) + ' · ' : '') + Number(c.dentro_raio || 0) + ' dentro do próprio raio') +
