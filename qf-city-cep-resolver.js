@@ -3,8 +3,8 @@
 (function () {
   function cepFrom(value) {
     var s = String(value || '').trim();
-    if (!/^[0-9Oo.\\-\\s]{8,13}$/.test(s)) return '';
-    var d = s.toUpperCase().replace(/O/g, '0').replace(/\\D/g, '');
+    if (!/^[0-9Oo.\-\s]{8,13}$/.test(s)) return '';
+    var d = s.toUpperCase().replace(/O/g, '0').replace(/\D/g, '');
     return d.length === 8 ? d : '';
   }
   function target(button) {
