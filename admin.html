@@ -6936,7 +6936,36 @@ Screens.adminDashboardRender = function () {
       '<div><strong>' + fechados + '</strong><span>Fechados informados</span></div>' +
       '</div></section>';
   }
+  // Profissionais que atendem o pedido pela distância real (raio + localização), direto do banco.
   function adminProfissionaisElegiveisHtml(r) {
+    const cli = global.QFAdminCloud && global.QFAdminCloud.client;
+    if (!cli || !r || !r.id) return adminProfissionaisElegiveisCidadeHtml(r);
+    const boxId = 'qf-pros-pedido-' + String(r.id).replace(/[^a-z0-9-]/gi, '');
+    setTimeout(async function () {
+      const box = document.getElementById(boxId);
+      if (!box) return;
+      try {
+        const res = await cli.rpc('qf_admin_profissionais_pedido', { p_chamado_id: r.id });
+        if (res.error) throw res.error;
+        const d = res.data || {};
+        if (!d.ok) throw new Error(d.reason || 'erro');
+        const lista = d.lista || [];
+        box.innerHTML = '<div class="qf-control-facts"><span><strong>' + (d.total || 0) + '</strong> atendem pela distância e profissão</span><span><strong>' + (d.online || 0) + '</strong> online agora</span><span><strong>' + (d.avisados || 0) + '</strong> já avisados</span></div>' +
+          '<p class="text--sm text--secondary">Conta a distância até o pedido e o raio que cada profissional escolheu. Só recebe o aviso na hora quem está online e dentro do horário de atendimento.</p>' +
+          (lista.length ? lista.slice(0, 40).map(function (p) {
+            const km = p.distancia_km == null ? 'distância desconhecida' : String(p.distancia_km).replace('.', ',') + ' km';
+            const st = p.desbloqueou ? 'Desbloqueou' : (p.avisado ? 'Avisado' : (!p.online ? 'Offline' : (!p.no_horario ? 'Fora do horário' : (!p.tem_push ? 'Sem notificação ativa' : 'Ainda não avisado'))));
+            return '<div class="qf-control-pro"><div><strong>' + PU.escapeHtml(p.nome || 'Profissional') + '</strong><small>' + (p.online ? 'Online' : 'Offline') + ' · ' + km + ' · raio ' + Number(p.raio_km || 0) + ' km' + (p.tem_gps ? '' : ' · local pela cidade') + '</small></div><span>' + st + '</span></div>';
+          }).join('') : '<p class="text--sm text--secondary">Nenhum profissional dessa profissão tem esse local dentro do raio.</p>') +
+          (lista.length > 40 ? '<p class="text--sm">Mostrando os 40 primeiros de ' + lista.length + '.</p>' : '');
+      } catch (err) {
+        box.innerHTML = adminProfissionaisElegiveisCidadeHtml(r, true);
+      }
+    }, 0);
+    return '<section class="section"><div class="section-head"><h2 class="h3">Profissionais da região e categoria</h2></div>' +
+      '<div class="card stack--sm" id="' + boxId + '"><p class="text--sm text--secondary">Calculando quem atende pela distância…</p></div></section>';
+  }
+  function adminProfissionaisElegiveisCidadeHtml(r, soConteudo) {
     const city = DB.cityById ? DB.cityById(r.cidadeId) : null;
     const cityName = ((r.endereco || {}).cidade || (city && city.nome) || '').toLowerCase().trim();
     const pros = (DB.state.users.profissionais || []).filter(function(p){
@@ -6947,15 +6976,15 @@ Screens.adminDashboardRender = function () {
       return matchesCat && sameCity && !p.bloqueado;
     });
     const online = pros.filter(function(p){return p.online;}).length;
-    return '<section class="section"><div class="section-head"><h2 class="h3">Profissionais da região e categoria</h2></div>' +
-      '<div class="card stack--sm"><div class="qf-control-facts"><span><strong>' + pros.length + '</strong> cadastrados compatíveis</span><span><strong>' + online + '</strong> online no último retrato</span></div>' +
+    const conteudo = '<div class="qf-control-facts"><span><strong>' + pros.length + '</strong> cadastrados compatíveis</span><span><strong>' + online + '</strong> online no último retrato</span></div>' +
       '<p class="text--sm text--secondary">Compatibilidade preliminar por cidade e categoria. Distância exata, raio real, entrega de notificações e aceite exigem dados de geolocalização e eventos; não são confirmados aqui.</p>' +
       (pros.length ? pros.slice(0,30).map(function(p){
         const unlocked = desbloqueiosAtivos(r).some(function(x){return String(x.profissionalId) === String(p.id);});
         return '<div class="qf-control-pro"><div><strong>' + PU.escapeHtml(p.nome || 'Profissional') + '</strong><small>' + (p.online ? 'Online no retrato' : 'Offline no retrato') + ' · Raio configurado: ' + Number(p.raioKm || 0) + ' km</small></div><span>' + (unlocked ? 'Desbloqueou' : 'Não desbloqueou') + '</span></div>';
       }).join('') : '<p class="text--sm text--secondary">Nenhum profissional compatível por cidade e categoria no retrato atual.</p>') +
-      (pros.length > 30 ? '<p class="text--sm">Mostrando os primeiros 30 de ' + pros.length + ' profissionais.</p>' : '') +
-      '</div></section>';
+      (pros.length > 30 ? '<p class="text--sm">Mostrando os primeiros 30 de ' + pros.length + ' profissionais.</p>' : '');
+    if (soConteudo) return conteudo;
+    return '<section class="section"><div class="section-head"><h2 class="h3">Profissionais da região e categoria</h2></div><div class="card stack--sm">' + conteudo + '</div></section>';
   }
   Screens.adminServicosRender = function (params) {
     const activeTab = (params && params.tab) || servicosTabAtual || 'todos';
