@@ -24,7 +24,7 @@ begin
     set envio_status='processando',tentativas=e.tentativas+1,tentativa_em=now(),envio_erro=null,
       com_push=exists(select 1 from public.qf_push_subscriptions s where s.user_id=e.user_id and s.ativo)
     where e.tentativas<3 and (
-      (e.envio_status in ('falhou','sem_inscricao','fora_horario') and e.tentativa_em < now()-interval '5 minutes')
+      (e.envio_status in ('falhou','sem_inscricao','fora_horario','reenvio_solicitado') and e.tentativa_em < now()-interval '5 minutes')
       or (e.envio_status='processando' and e.tentativa_em < now()-interval '10 minutes')
     ) and exists(select 1 from public.qf_push_subscriptions s where s.user_id=e.user_id and s.ativo)
     returning user_id
@@ -61,7 +61,9 @@ begin
     join public.qf_chamados c on c.id=e.chamado_id
     where e.evento='new_call' and e.tentativas<3 and c.status in ('aberto','em_negociacao')
       and c.criado_em>now()-interval '7 days'
-      and ((e.envio_status in ('falhou','sem_inscricao','fora_horario') and e.tentativa_em<now()-interval '5 minutes')
+      and not exists(select 1 from public.qf_orcamentos o where o.chamado_id=c.id and o.status='aceito')
+      and (select count(*) from public.qf_desbloqueios d where d.chamado_id=c.id and coalesce(d.ativo,true))<public.qf_limite_orcamentos(c.id)
+      and ((e.envio_status in ('falhou','sem_inscricao','fora_horario','reenvio_solicitado') and e.tentativa_em<now()-interval '5 minutes')
         or (e.envio_status='processando' and e.tentativa_em<now()-interval '10 minutes'))
       and exists(select 1 from public.qf_push_subscriptions s where s.user_id=e.user_id and s.ativo)
       -- Exact radius and all eligibility rules are checked by sendNewCallStage.
@@ -77,3 +79,4 @@ begin
 end $$;
 revoke all on function private.qf_repetir_push_falhos() from public,anon,authenticated;
 -- Scheduled only after the compatible Edge Function has been deployed.
+
