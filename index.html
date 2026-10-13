@@ -3287,6 +3287,14 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
   #app-shell .qf-landing-topbar .qf-brand-words { font-size: 23px; }
   #app-shell .qf-landing-topbar .qf-launch-mini { padding-inline: 7px; gap: 5px; }
 }
+/* Selo Google Play: visível na home e na seção de instalação, sem bloquear o pedido gratuito. */
+.qf-play-badge{display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-height:50px;border-radius:10px;transition:transform .15s ease;cursor:pointer}
+.qf-play-badge img{display:block;width:190px;max-width:100%;height:auto}
+.qf-play-badge:hover{transform:translateY(-2px)}
+.qf-play-badge:focus-visible{outline:3px solid var(--orange-400);outline-offset:3px}
+.qf-play-badge--hero{display:flex;width:max-content;margin:13px auto 0}
+.qf-play-badge--desk{flex:none}
+@media(prefers-reduced-motion:reduce){.qf-play-badge{transition:none}.qf-play-badge:hover{transform:none}}
 </style>
 </head>
 <body>
@@ -7617,7 +7625,9 @@ alt=""></noscript>
       // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
       '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
       '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
-        '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div></div><div class="qf-tape" aria-hidden="true"></div></section>' +
+        '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div>' +
+        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56"></a>' +
+        '</div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       deskExtra() + mobExtra() +
       '<section class="section">' +
@@ -7699,8 +7709,8 @@ alt=""></noscript>
   }
   function deskList(items) { return '<ul class="qf-desk-list">' + items.map(function (t) { return '<li>' + icon('check') + '<span>' + t + '</span></li>'; }).join('') + '</ul>'; }
   function deskWideInner() {
-    // A página do app na Google Play ainda não abre para o público; por isso o botão usa o "Instalar app" do próprio site.
-    const play = '<button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Instalar app</span></button>';
+    // Selo oficial do Google Play, com destino direto para o app (cliente e profissional).
+    const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" loading="lazy"></a>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 8 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
@@ -14779,15 +14789,14 @@ alt=""></noscript>
     return !!(global.navigator && navigator.standalone === true);
   }
   function isAndroidBrowser() { return /android/i.test(navigator.userAgent || '') && !isNativeApp(); }
-  // Enquanto o app estiver em teste fechado, "Baixar" leva à página de como virar testador.
-  // Quando for para produção, troque por 'https://play.google.com/store/apps/details?id=br.app.quemfaz'.
-  const PLAY_DOWNLOAD_URL = './testar/';
-  // 12.2: a Google Play é para o profissional (chamado tocando alto). Cliente logado não vê "Google Play".
+  // App publicado: direcionamento direto para a página oficial do QuemFaz no Google Play.
+  const PLAY_DOWNLOAD_URL = 'https://play.google.com/store/apps/details?id=br.app.quemfaz';
+  // O acesso ao app na Play Store é para clientes e profissionais, sem exigir login.
   function sessionRole() {
     try { const s = global.DB && global.DB.getSession ? global.DB.getSession() : null; return (s && s.role) || ''; } catch (_) { return ''; }
   }
-  // 12.3: Google Play só para o profissional logado (app em teste fechado). Cliente/visitante no Android ganha atalho do site na tela (PWA).
-  function usePlay() { return isAndroidBrowser() && sessionRole() === 'profissional'; }
+  // Em navegador Android, o botão de instalação leva ao Google Play para qualquer visitante.
+  function usePlay() { return isAndroidBrowser(); }
   function isInAppBrowser() { const ua = navigator.userAgent || ''; return /; wv\)|Instagram|FBAN|FBAV|WhatsApp|Line\//i.test(ua); }
   function canOfferInstall() {
     if (isNativeApp()) return false;     // já é o app
