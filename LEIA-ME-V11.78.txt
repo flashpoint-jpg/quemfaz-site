@@ -1,0 +1,16 @@
+QuemFaz 11.78 — a tela "Painéis" do painel volta a carregar
+
+PROBLEMA
+- Painel > Painéis mostrava "Não foi possível carregar: canceling statement due to statement timeout".
+- Com 20 pedidos abertos e 245 profissionais a consulta levava cerca de 9 segundos, e o painel corta em 8.
+
+CAUSA
+- O banco refazia o cálculo da situação de cada pedido uma vez para cada profissional da lista,
+  e esse cálculo já passa por todos os profissionais. Quanto mais profissionais, mais lento.
+
+CORREÇÃO
+- A situação do pedido passa a ser calculada uma vez por pedido.
+- Tempo da tela: de ~7,9 s para ~0,26 s. O conteúdo da tela é exatamente o mesmo (conferido no banco).
+
+SERVIDOR
+- Migração supabase/2026-10-13-paineis-mais-rapido.sql (já aplicada).
