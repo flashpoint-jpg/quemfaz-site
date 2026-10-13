@@ -64,7 +64,10 @@ begin
       and ((e.envio_status in ('falhou','sem_inscricao','fora_horario') and e.tentativa_em<now()-interval '5 minutes')
         or (e.envio_status='processando' and e.tentativa_em<now()-interval '10 minutes'))
       and exists(select 1 from public.qf_push_subscriptions s where s.user_id=e.user_id and s.ativo)
-      and exists(select 1 from public.qf_chamado_destinatarios_alcance(c.id,200) a where a.user_id=e.user_id)
+      -- Exact radius and all eligibility rules are checked by sendNewCallStage.
+      -- Do not recompute the full candidate set for every delivery row.
+      and exists(select 1 from public.qf_profissionais p where p.user_id=e.user_id and p.online
+        and private.qf_dentro_horario(p.horario_inicio,p.horario_fim))
     limit 25
   loop
     perform private.qf_push_interno('retry_call',r.chamado_id);
