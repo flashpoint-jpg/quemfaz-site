@@ -227,6 +227,7 @@ Screens.afterRender = function(pattern,content,params,user){
    '.qf-outros-vagas{background:#fff1df;color:#a64a0b;border-radius:100px;font-size:12px;padding:5px 9px;font-weight:750;white-space:nowrap}',
    '.qf-outros-request__bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #edf0f4;margin-top:11px;padding-top:10px}',
    '.qf-outros-request__date{font-size:12px;color:#5f6f86}',
+   '.qf-outros-request__bottom .btn{background:#ff760b;border-color:#ff760b;color:#fff;font-weight:750;border-radius:12px}',
    '.qf-outros-request__details{border-top:1px dashed #e0e5ee;margin-top:10px;padding-top:10px;font-size:13px;line-height:1.5;color:#465774}',
    '.qf-outros-request__details p{margin:4px 0 9px}',
    '.qf-outros-request__details[hidden]{display:none!important}',
