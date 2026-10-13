@@ -80,3 +80,12 @@ end $$;
 revoke all on function private.qf_repetir_push_falhos() from public,anon,authenticated;
 -- Scheduled only after the compatible Edge Function has been deployed.
 
+
+-- Allow time for the provider sends; per-person results remain durable if the caller times out.
+do $update$ declare v_definition text; begin
+ select pg_get_functiondef(p.oid) into v_definition from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='qf_push_interno';
+ if v_definition is null then raise exception 'Internal push helper not found'; end if;
+ execute replace(v_definition,'timeout_milliseconds := 5000','timeout_milliseconds := 30000');
+end $update$;
+-- Enable only after deploying the compatible Edge Function:
+select cron.schedule('qf-push-repetir-falhas','*/5 * * * *','select private.qf_repetir_push_falhos();');
