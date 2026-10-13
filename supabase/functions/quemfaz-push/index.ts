@@ -268,7 +268,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
     timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
   }).format(new Date());
   const minutesOfDay = (value: string) => {
-    const match = /^(\\d{1,2}):(\\d{2})/.exec(value || "");
+    const match = /^(\d{1,2}):(\d{2})/.exec(value || "");
     return match ? Number(match[1]) * 60 + Number(match[2]) : null;
   };
   const nowMinutes = minutesOfDay(currentSaoPaulo)!;
