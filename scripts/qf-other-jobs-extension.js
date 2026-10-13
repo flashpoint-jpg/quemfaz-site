@@ -46,6 +46,13 @@ function qfOutrosHomeCard(user) {
     '<strong>Outros pedidos</strong><small>Veja o movimento do Quem Faz</small></button>' +
     '</div><p class="qf-outros-home-note">Outras profissões aparecem apenas para consulta, sem notificações.</p></div>';
 }
+function qfOutrosDistancia(item) {
+  const raw = item && item.distancia_km;
+  const km = raw == null || raw === '' ? NaN : Number(raw);
+  return Number.isFinite(km) && km >= 0
+    ? km.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km'
+    : 'Distância indisponível';
+}
 function qfOutrosStatusBadge(item) {
   const vagas = qfOutrosNum(item.vagas);
   return '<span class="qf-outros-vagas">' + vagas + (vagas === 1 ? ' vaga' : ' vagas') + '</span>';
@@ -62,13 +69,16 @@ function qfOutrosCard(item) {
     '<div class="qf-outros-request__main"><strong>' + qfOutrosEsc(cabecalho) + '</strong>' +
     '<span class="qf-outros-request__place">' + icon('mapPin') + ' ' + qfOutrosEsc(cidade) + '</span>' +
     '<small>' + qfOutrosEsc(cat) + '</small></div>' +
-    '<div class="qf-outros-request__right">' + qfOutrosStatusBadge(item) + '</div></div>' +
+    '<div class="qf-outros-request__right">' +
+    '<span class="qf-outros-km" title="Distância aproximada em linha reta">' + icon('mapPin') + ' ' + qfOutrosEsc(qfOutrosDistancia(item)) + '</span>' +
+    qfOutrosStatusBadge(item) + '</div></div>' +
     '<div class="qf-outros-request__bottom"><span class="qf-outros-request__date">' +
     qfOutrosEsc(item.data_preferida ? 'Previsto: ' + qfOutrosData(item.data_preferida) : 'Data a combinar') +
     '</span><button type="button" class="btn btn--outline btn--sm" data-qf-outros-ver="' + id +
     '" aria-expanded="false">Ver pedido ' + icon('chevronDown') + '</button></div>' +
     '<div class="qf-outros-request__details" data-qf-outros-detalhe="' + id + '" hidden>' +
     '<p><strong>Região:</strong> ' + qfOutrosEsc(local || cidade) + '</p>' +
+    '<p><strong>Distância aproximada:</strong> ' + qfOutrosEsc(qfOutrosDistancia(item)) + (item.distancia_km == null ? '' : ' (em linha reta)') + '</p>' +
     '<p><strong>Vagas disponíveis:</strong> ' + qfOutrosNum(item.vagas) + ' de ' + qfOutrosNum(item.limite) + '</p>' +
     '<p>Este serviço pertence a outra profissão. Para receber chamadas desta categoria, cadastre-a somente se você realmente a realiza. A região de atendimento também deve ser compatível.</p>' +
     '<button type="button" class="btn btn--outline btn--sm" data-nav="/profissional/home">Voltar ao início e ajustar profissões</button>' +
@@ -216,7 +226,7 @@ async function qfOutrosLoad(user,force) {
   const cloud = global.QFCloud;
   if (!cloud || !cloud.client) throw new Error('Conecte-se para consultar os pedidos.');
   const expectedUser=user.id;
-  qfOutrosState.pending=cloud.client.rpc('qf_outros_pedidos_vitrine').then(function(res) {
+  qfOutrosState.pending=cloud.client.rpc('qf_outros_pedidos_vitrine_v2').then(function(res) {
     if (res.error) throw res.error;
     const rows=(Array.isArray(res.data)?res.data:[]).filter(function(r) {
       return r && r.id && qfOutrosNum(r.vagas)>0;
@@ -350,7 +360,11 @@ Screens.afterRender = function(pattern,content,params,user){
    '.qf-outros-request__main strong{font-weight:800;color:#0d2853;font-size:15px}',
    '.qf-outros-request__main small,.qf-outros-request__place{font-size:12px;color:#65728a}',
    '.qf-outros-request__place svg{width:12px;height:12px;vertical-align:middle}',
-   '.qf-outros-request__right{flex:none}',
+   '.qf-outros-request__right{flex:none;display:flex;align-items:flex-end;justify-content:flex-start;flex-direction:column;gap:7px;max-width:47%}',
+   '.qf-outros-km{display:inline-flex;align-items:center;justify-content:center;gap:3px;background:#eaf2ff;color:#0759b8;border-radius:100px;padding:5px 8px;font-size:12px;font-weight:750;white-space:nowrap}',
+   '.qf-outros-km svg{width:13px;height:13px;flex:none}',
+   '.qf-outros-request__main{overflow-wrap:anywhere}',
+   '@media(max-width:380px){.qf-outros-request__right{max-width:45%}.qf-outros-km{font-size:11px;padding:5px}}',
    '.qf-outros-vagas{background:#fff1df;color:#a64a0b;border-radius:100px;font-size:12px;padding:5px 9px;font-weight:750;white-space:nowrap}',
    '.qf-outros-request__bottom{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid #edf0f4;margin-top:11px;padding-top:10px}',
    '.qf-outros-request__date{font-size:12px;color:#5f6f86}',
