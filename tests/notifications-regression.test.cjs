@@ -23,6 +23,7 @@ function setup({ native = false, granted = true, subscription = true, saved = tr
   const window = {
     isSecureContext: true, PushManager: function () {}, Notification,
     QFCloud: { projectUrl: 'https://api.example', client: { auth: { getSession: async () => ({ data: { session: { access_token: 'test-session' } } }) } } },
+    addEventListener() {},
     dispatchEvent() { counts.events++; }
   };
   if (native) window.Capacitor = { isNativePlatform: () => true, Plugins: { PushNotifications: plugin } };
@@ -73,3 +74,4 @@ async function run() {
   console.log('PASS: permissão nativa, restauração sem novos prompts, inscrição expirada, revogação e falha de conexão.');
 }
 run().catch(e => { console.error(e); process.exitCode = 1; });
+

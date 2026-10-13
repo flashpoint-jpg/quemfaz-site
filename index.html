@@ -7093,6 +7093,7 @@ alt=""></noscript>
     const C = global.Capacitor;
     const v12 = !!(C && C.isPluginAvailable && C.isPluginAvailable('QFOnline'));
     const out = await callPushFunction({ action: 'subscribe_fcm', token: token, platform: v12 ? 'android;v=12' : 'android' });
+    if (!out.fcm_ready) { localStorage.removeItem('qf_push_enabled'); throw new Error('O envio para Android está indisponível. Tente novamente em alguns minutos.'); }
     try {
       localStorage.setItem('qf_fcm_token', token);
       localStorage.setItem('qf_push_enabled', '1');
@@ -7251,6 +7252,11 @@ alt=""></noscript>
   }
   async function activate() {
     const NP = nativePush();
+    if (permission() === 'denied') {
+      global.PU.openSheet('<div class="stack"><h3 class="sheet__title">Permita as notificações</h3><p>Abra as configurações do celular, entre em Apps, escolha ' + (NP ? 'QuemFaz' : 'o navegador usado no QuemFaz') + ' e permita Notificações. No navegador, confira também a permissão deste site.</p><p>Depois volte ao QuemFaz e toque em Ativar notificações.</p><button class="btn btn--primary" id="qf-push-help-close">Entendi</button></div>');
+      document.getElementById('qf-push-help-close').onclick = function () { global.PU.closeSheet(); };
+      throw new Error('Permissão bloqueada. Libere as notificações nas configurações e tente novamente.');
+    }
     if (NP) return activateNative(NP);
     if (!supported()) throw new Error('Abra a versão online do QuemFaz e instale o app para ativar notificações com o app fechado.');
     const perm = permission() === 'granted' ? 'granted' : await Notification.requestPermission();
@@ -7346,6 +7352,11 @@ alt=""></noscript>
   setTimeout(function () {
     if (permission() === 'granted' && !isActive()) autoRestorePush();
   }, 5000);
+  let lastRouteRestore = 0;
+  global.addEventListener('hashchange', function () {
+    if (Date.now() - lastRouteRestore < 60000) return;
+    lastRouteRestore = Date.now(); autoRestorePush();
+  });
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) return;
     refreshStatus().then(function () { if (permission() === 'granted') return restore(); }).catch(function () {});
@@ -13547,7 +13558,8 @@ alt=""></noscript>
       if (!btn || btn.disabled) return;
       btn.disabled = true;
       try {
-        await global.QFPush.activate();
+        const activated = await global.QFPush.activate();
+        if (!activated) { pushBannerBtn.disabled = false; return; }
         PU.toast('Notificações ativadas! Você receberá avisos importantes.', 'success');
         global.navigate(location.hash.replace(/^#/, '') || '/', true);
       } catch (err) {
@@ -14414,7 +14426,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.77.0';
+  const APP_VERSION = '11.78.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17303,9 +17315,9 @@ alt=""></noscript>
 
     // V11.1: profissional online sem notificações ativas só recebe chamados com o app aberto — avisa no topo.
     let pushBannerHtml = '';
-    if (session.role === 'profissional' && user && user.online && global.QFPush && !global.QFPush.isActive()) {
+    if (session.role === 'profissional' && user && global.QFPush && global.QFPush.permission() !== 'checking' && !global.QFPush.isActive()) {
       // V11.61: aviso forte (vermelho) — sem notificação o celular não toca quando chega pedido.
-      pushBannerHtml = '<div class="qf-push-banner qf-push-banner--forte" role="alert"><div class="qf-push-banner__txt"><strong>Seu celular NÃO vai tocar quando chegar chamado</strong><span>Você está online, mas as notificações estão desligadas. Toque no botão para ativar agora.</span></div>' +
+      pushBannerHtml = '<div class="qf-push-banner qf-push-banner--forte" role="alert"><div class="qf-push-banner__txt"><strong>Ative os avisos de novos pedidos</strong><span>Ative as notificações deste aparelho. Para receber pedidos compatíveis, fique online e confira seu horário de atendimento.</span></div>' +
         '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes-faixa">' + icon('bell') + ' Ativar notificações agora</button></div>';
     }
 
@@ -17334,7 +17346,8 @@ alt=""></noscript>
     if (pushBannerBtn) pushBannerBtn.addEventListener('click', async function () {
       pushBannerBtn.disabled = true;
       try {
-        await global.QFPush.activate();
+        const activated = await global.QFPush.activate();
+        if (!activated) { pushBannerBtn.disabled = false; return; }
         PU.toast('Notificações ativadas. Você receberá novos chamados mesmo com o app fechado.', 'success');
         navigate(currentPath(), true);
       } catch (err) {
@@ -17779,6 +17792,21 @@ alt=""></noscript>
     el.innerHTML = '<div class="qf-aviso"><div class="qf-aviso__head"><div class="qf-aviso__tag">Aviso do QuemFaz</div><h2 class="qf-aviso__title" id="qf-aviso-title">' + esc(aviso.titulo) + '</h2></div>' +
       '<div class="qf-aviso__body">' + esc(aviso.mensagem) + '</div>' +
       '<div class="qf-aviso__foot"><button type="button" class="btn btn--primary" data-aviso-ok>Entendi</button></div></div>';
+    if (/notifica|celular.*tocando/i.test(String(aviso.titulo) + ' ' + String(aviso.mensagem)) && global.QFPush && !global.QFPush.isActive()) {
+      const activateButton = document.createElement('button');
+      activateButton.type = 'button'; activateButton.className = 'btn btn--primary';
+      activateButton.textContent = 'Ativar notificações';
+      el.querySelector('[data-aviso-ok]').className = 'btn btn--outline';
+      el.querySelector('.qf-aviso__foot').prepend(activateButton);
+      activateButton.addEventListener('click', async function () {
+        activateButton.disabled = true;
+        try {
+          const activated = await global.QFPush.activate();
+          if (activated) { markSeen(aviso.id); markRead(aviso.id); close(); global.PU.toast('Notificações ativadas neste aparelho.', 'success'); }
+        } catch (error) { global.PU.toast(error.message || 'Não foi possível ativar. Tente novamente.', 'danger'); }
+        finally { activateButton.disabled = false; }
+      });
+    }
     el.querySelector('[data-aviso-ok]').addEventListener('click', function () { markSeen(aviso.id); markRead(aviso.id); close(); });
     document.body.appendChild(el);
   }
@@ -17825,3 +17853,4 @@ alt=""></noscript>
 </script>
 </body>
 </html>
+

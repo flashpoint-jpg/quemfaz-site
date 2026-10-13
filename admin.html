@@ -3288,7 +3288,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     const d = phoneDigits(p.whatsapp);
     const key = it.id + ':' + p.user_id;
     const badges = (p.online ? '<span class="badge badge--success">online</span>' : '<span class="badge">offline</span>') +
-      (p.avisado && p.tem_push ? ' <span class="badge">push enviado</span>' : '') + (!p.tem_push ? ' <span class="badge badge--danger">sem app/notificação</span>' : '');
+      (p.avisado && p.tem_push ? ' <span class="badge">push cadastrado</span>' : '') + (!p.tem_push ? ' <span class="badge badge--danger">sem app/notificação</span>' : '');
     const btn = d
       ? '<a class="btn btn--whatsapp btn--sm' + (sent[key] ? ' is-sent' : '') + '" data-semresp-wa="' + esc(key) + '" href="https://wa.me/' + d + '?text=' + encodeURIComponent(waMessage(it)) + '" target="_blank" rel="noopener">' + icon('whatsapp') + (sent[key] ? ' Enviado' : ' WhatsApp') + '</a>'
       : '<span class="text--sm text--muted">sem telefone</span>';
@@ -8470,7 +8470,8 @@ Screens.adminDashboardRender = function () {
           pnFato('Valor do desbloqueio', PU.formatCurrency(Number(c.preco_centavos || 0))) +
           pnFato('Aparece na tela de', admLinhas(Number(c.no_painel || 0), 'profissional', 'profissionais'), Number(c.no_painel_online || 0) + ' online agora') +
           pnFato('Profissional mais perto', perto ? pnKm(c.mais_perto_km) : '—', (perto && c.mais_perto_nome ? PU.escapeHtml(c.mais_perto_nome) + ' · ' : '') + Number(c.dentro_raio || 0) + ' dentro do próprio raio') +
-          pnFato('Avisos enviados', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda') +
+          pnFato('Selecionados para aviso', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda') +
+          pnFato('Envio do push', c.push_resultado ? Number(c.push_resultado.enviados || 0) + ' profissionais com envio confirmado' : 'Sem confirmação de envio', c.push_resultado ? Number(c.push_resultado.sem_inscricao || 0) + ' sem inscrição · ' + Number(c.push_resultado.falhas || 0) + ' com falha · ' + Number(c.push_resultado.sem_confirmacao || 0) + ' registros antigos sem confirmação. Envio aceito pelo serviço; recebimento no celular não confirmado.' : 'A seleção para aviso não confirma entrega no celular.') +
           pnFato('Cliente', PU.escapeHtml(c.cliente || 'Cliente'), c.cliente_telefone ? PU.escapeHtml(c.cliente_telefone) : '') +
           pnFato('Último desbloqueio', c.ultimo_desbloqueio_em ? 'há ' + pnHa(c.ultimo_desbloqueio_em, agora) : 'Nenhum', c.ultimo_desbloqueio_em ? PU.escapeHtml(pnQuando(c.ultimo_desbloqueio_em)) : '') +
         '</div>' +
@@ -8511,6 +8512,15 @@ Screens.adminDashboardRender = function () {
       } catch (_) {
         // Se a verificacao falhar, o botao permanece desativado: nao indica online inventado.
       }
+      try {
+        const deliveryIds = pedidosPainel.map(function (c) { return c.id; });
+        for (let offset = 0; offset < deliveryIds.length; offset += 100) {
+          const delivery = await global.QFAdminCloud.client.rpc('qf_admin_push_resultados', { p_chamado_ids: deliveryIds.slice(offset, offset + 100) });
+          if (!delivery.error && delivery.data && delivery.data.ok) {
+            (delivery.data.itens || []).forEach(function (item) { const call = pedidosPainel.find(function (c) { return c.id === item.id; }); if (call) call.push_resultado = item; });
+          }
+        }
+      } catch (_) {}
       admPaineisDados = r.data;
       const h = admPaineisHtml(r.data);
       if (box.__qfHtml !== h) {
@@ -9599,3 +9609,4 @@ Screens.adminDashboardRender = function () {
 
 </body>
 </html>
+
