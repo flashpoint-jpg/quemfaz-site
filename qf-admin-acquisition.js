@@ -51,8 +51,10 @@
         name: 'Nome', quick_access: 'Acesso rápido'
       };
       var origins = {
-        google: 'Google', meta: 'Meta (Facebook / Instagram)', fb: 'Facebook',
-        ig: 'Instagram', google_referral: 'Google · referência não classificada',
+        // fb/ig são marcados sozinhos pela Meta nos anúncios (campanha vem como número);
+        // meta é o link marcado à mão (quemfaz_clientes). Os três são anúncio pago da Meta.
+        google: 'Google Ads', meta: 'Anúncio Meta · link marcado à mão', fb: 'Anúncio Meta · no Facebook',
+        ig: 'Anúncio Meta · no Instagram', google_referral: 'Google · referência não classificada',
         meta_referral: 'Meta · referência não classificada',
         bing_referral: 'Bing · referência não classificada'
       };
