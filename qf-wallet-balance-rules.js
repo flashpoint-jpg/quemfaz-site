@@ -7,7 +7,7 @@
     'padding:16px;margin:12px 0 0;box-shadow:0 4px 12px rgba(11,29,58,.04)}',
     '#'+CARD_ID+' .qf-balance-rule{display:block;}',
     '#'+CARD_ID+' .qf-balance-rule + .qf-balance-rule{border-top:1px solid #e7ecf3;margin-top:12px;padding-top:12px;}',
-    '#'+CARD_ID+' strong{display:block;color:#0b1d3a;font-size:15px;line-height:1.35;margin-bottom:4px;}',
+    '#'+CARD_ID+' strong{display:block;color:#1458cc;font-size:15px;line-height:1.35;margin-bottom:4px;}',
     '#'+CARD_ID+' p{font-size:13px;line-height:1.5;color:#45516a;margin:0;}'
   ].join('');
   function place() {
