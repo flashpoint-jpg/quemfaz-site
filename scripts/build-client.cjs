@@ -23,7 +23,16 @@ const shell=inline.find(m=>m[1].includes('const QF_BRAND_MARK ='));
 if (!main || !shell) throw Error('Blocos do aplicativo não encontrados');
 const assets=[];
 for (const [kind,script] of [['main',main],['shell',shell]]) {
-  const code=esbuild.transformSync(script[1],{loader:'js',minify:true,keepNames:true,charset:'utf8',target:'es2020',legalComments:'inline'}).code;
+  let source=script[1];
+  if (kind==='shell') {
+    const ext=fs.readFileSync(path.join(__dirname,'qf-other-jobs-extension.js'),'utf8');
+    const routeAnchor='  const routes = [';
+    const existingRoute="    { pattern: '/profissional/servicos/disponiveis', role: 'profissional', tab: 'servicos', title: 'Serviços disponíveis', render: Screens.profServicosDisponiveisRender },";
+    if (!source.includes(routeAnchor) || !source.includes(existingRoute)) throw Error('Rota de servicos do profissional nao encontrada');
+    source=source.replace(routeAnchor,ext+'\n'+routeAnchor);
+    source=source.replace(existingRoute,existingRoute+"\n    { pattern: '/profissional/outros-pedidos', role: 'profissional', tab: 'servicos', title: 'Outros pedidos', render: Screens.profOutrosPedidosRender },");
+  }
+  const code=esbuild.transformSync(source,{loader:'js',minify:true,keepNames:true,charset:'utf8',target:'es2020',legalComments:'inline'}).code;
   const hash=createHash('sha256').update(code).digest('hex').slice(0,12);
   const filename='app-'+kind+'-'+version+'-'+hash+'.js';
   new vm.Script(code,{filename});
