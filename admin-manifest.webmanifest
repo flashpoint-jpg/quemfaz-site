@@ -12,8 +12,8 @@
     "standalone",
     "minimal-ui"
   ],
-  "background_color": "#0b1d3a",
-  "theme_color": "#0b1d3a",
+  "background_color": "#1458cc",
+  "theme_color": "#1458cc",
   "orientation": "portrait",
   "categories": [
     "business",
@@ -22,16 +22,16 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "./icon-192.png?v=20261013",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "src": "./icon-512.png?v=20261013",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -41,9 +41,9 @@
       "url": "./admin.html?source=pwa#/admin/dashboard",
       "icons": [
         {
-          "src": "./icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
+          "src": "./icon-192.png?v=20261013",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }

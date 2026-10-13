@@ -37,7 +37,7 @@
 <title>QuemFaz Admin — Painel de Controle</title>
 <!-- V6 Carteira: 1º chamado grátis + recarga Pix/Cartão/Boleto -->
 <meta name="description" content="Painel administrativo do QuemFaz para acompanhar pedidos, profissionais, clientes, alertas e suporte.">
-<meta name="theme-color" content="#0b1d3a">
+<meta name="theme-color" content="#1458cc">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -52,11 +52,11 @@
 
 :root {
   /* Marca */
-  --navy-950: #081428;
-  --navy-900: #0b1d3a;
-  --navy-800: #122a4c;
-  --navy-700: #1b3a68;
-  --navy-600: #274b82;
+  --navy-950: #1458cc;
+  --navy-900: #1458cc;
+  --navy-800: #1458cc;
+  --navy-700: #1458cc;
+  --navy-600: #1458cc;
   --navy-100: #e7ecf5;
 
   /* Paleta calibrada para manter contraste acessível (AA) sobre fundo
@@ -82,7 +82,7 @@
   --text-secondary: #5b6577;
   --text-muted: #8992a3;
   --text-on-navy: #f4f7fc;
-  --text-on-navy-muted: #aab6cc;
+  --text-on-navy-muted: #e9f1ff;
   --text-on-orange: #2a1200;
 
   /* Estado */
@@ -1618,7 +1618,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 
 /* Perfil do profissional verificado no painel: faixa azul com dourado. */
 .card.qf-adm-ver{padding:0;overflow:hidden}
-.qf-adm-ver__faixa{background:linear-gradient(100deg,#0b1d3a 0%,#16335c 60%,#0b1d3a 100%);color:#fff;display:flex;align-items:center;gap:10px;padding:12px 16px;position:relative}
+.qf-adm-ver__faixa{background:linear-gradient(100deg,#1458cc 0%,#16335c 60%,#1458cc 100%);color:#fff;display:flex;align-items:center;gap:10px;padding:12px 16px;position:relative}
 .qf-adm-ver__faixa:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#b8862b,#f6d77a,#b8862b)}
 .qf-adm-ver__faixa svg{width:24px;height:24px;flex:none}
 .qf-adm-ver__faixa b{font-size:14px;font-weight:800;flex:1;line-height:1.2}
@@ -1689,7 +1689,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-pn__acoes>button[data-admin-remind]{flex:1 1 205px}
 .qf-pn__acoes>button[data-admin-remind]:disabled{cursor:not-allowed;opacity:.6}
 </style>
-</head>
+<style id="qf-approved-brand">.qf-approved-logo{display:block;width:160px;height:54px;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}.tabbar__brand .qf-approved-logo{width:140px;height:48px}@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:116px;height:40px}.topbar__title .qf-approved-logo{width:140px;height:46px}}</style></head>
 <body>
 <div id="app-shell">
   <div class="view" style="padding-top:34vh;text-align:center;color:#8992a3;">
@@ -1699,7 +1699,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
         <path d="M29.8 17.2a7 7 0 0 0-8.9 8.5l-7.2 7.2 4.4 4.4 7.2-7.2a7 7 0 0 0 8.5-8.9l-4.7 4.7-3.5-3.5 4.2-5.2Z" fill="currentColor"/>
       </svg>
     </div>
-    <div style="font-weight:900;font-size:22px;color:#0b1d3a;letter-spacing:-.02em;">QuemFaz</div>
+    <div style="font-weight:900;font-size:22px;color:#1458cc;letter-spacing:-.02em;">QuemFaz</div>
     <div style="font-size:13px;margin-top:6px;">Carregando...</div>
   </div>
 </div>
@@ -5603,7 +5603,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       const pixCode = '00020126QUEMFAZ' + String(valor).padStart(8, '0') + 'BRASILPIX';
       PU.openSheet(
         '<div class="stack"><div class="row"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><h3 class="sheet__title">Pagar com Pix</h3><div class="text--sm text--secondary">' + displayValue + '</div></div></div>' +
-        '<div class="card" style="background:var(--bg-sunken);border:none;text-align:center;padding:22px;"><div style="width:150px;height:150px;margin:0 auto;background:repeating-linear-gradient(45deg,#0b1d3a 0 7px,#fff 7px 14px);border:12px solid #fff;box-shadow:0 0 0 1px var(--border-subtle);"></div><div class="text--sm text--secondary" style="margin-top:10px;">QR Code de demonstração</div></div>' +
+        '<div class="card" style="background:var(--bg-sunken);border:none;text-align:center;padding:22px;"><div style="width:150px;height:150px;margin:0 auto;background:repeating-linear-gradient(45deg,#1458cc 0 7px,#fff 7px 14px);border:12px solid #fff;box-shadow:0 0 0 1px var(--border-subtle);"></div><div class="text--sm text--secondary" style="margin-top:10px;">QR Code de demonstração</div></div>' +
         '<label class="field"><span class="field__label">Pix copia e cola</span><input class="input" id="wallet-pix-code" readonly value="' + pixCode + '"></label>' +
         '<button class="btn btn--outline" id="wallet-copy-pix">Copiar código Pix</button>' +
         '<button class="btn btn--primary" id="wallet-confirm-pix">Simular Pix aprovado</button>' +
@@ -6492,7 +6492,7 @@ Screens.adminDashboardRender = function () {
     return '<div class="view">' +
       // Selo do verificado no perfil: faixa azul com dourado, aro dourado na foto e etiqueta dourada.
       '<div class="card' + (p.verificado ? ' qf-adm-ver' : ' row') + '">' +
-      (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#0b1d3a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
+      (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#1458cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
       '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
       (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
       adminProfAtivHtml(p) +
@@ -9416,7 +9416,7 @@ Screens.adminDashboardRender = function () {
       '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
       '<header class="qf-adm-top">' +
         '<button type="button" class="qf-adm-top__btn qf-adm-top__menu" data-adm-menu aria-label="Abrir menu" aria-controls="qf-adm-side" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>' +
-        '<div class="qf-adm-top__marca"><b>QuemFaz</b><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
+        '<div class="qf-adm-top__marca"><img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
         '<div class="qf-adm-top__acoes">' +
           '<button type="button" class="qf-adm-top__btn" data-adm-avisos aria-label="Avisos' + (pend ? ': ' + pend + ' pendentes' : '') + '">' + icon('bell') + (pend ? '<span class="qf-adm-top__badge">' + (pend > 99 ? '99+' : pend) + '</span>' : '') + '</button>' +
           '<button type="button" class="qf-adm-top__btn" data-nav="/admin/configuracoes" aria-label="Configurações">' + icon('settings') + '</button>' +
