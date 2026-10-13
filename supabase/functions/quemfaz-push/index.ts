@@ -446,7 +446,7 @@ async function newCallPayloads(call: any, userIds: string[]) {
   return out;
 }
 
-async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
+async function sendNewCallStage(callId: string, stageRadiusKm: number | null, onlyUserId?: string) {
   const { data: call, error } = await admin
     .from("qf_chamados")
     .select("id,cliente_id,categoria,titulo,cidade,uf,bairro,status,latitude,longitude,prioridade,criado_em,data_preferida")
@@ -478,7 +478,7 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null) {
   }
 
   const candidates = await recipientsForNewCallAtRadius(call, stageRadiusKm);
-  const candidateIds = candidates.map((x) => x.user_id);
+  const candidateIds = candidates.filter((x) => !onlyUserId || x.user_id === onlyUserId).map((x) => x.user_id);
   if (!candidateIds.length) {
     return { stopped: false, recipients: 0, sent: 0, total: 0 };
   }
@@ -632,6 +632,23 @@ Deno.serve(async (req) => {
     const event = String(body.event || "");
     const callId = String(body.call_id || "");
     if (!callId) return json({ error: "invalid_internal_event" }, 400);
+    
+    // Profissional acaba de entrar no horario: recuperar pedidos ainda abertos.
+    // Reaproveita todos os controles de categoria, distancia, vagas, online e
+    // deduplicacao do mesmo push usado por chamados novos.
+    if (event === "shift_start") {
+      const onlyUserId = String(body.user_id || "");
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(onlyUserId)) {
+        return json({ error: "invalid_professional_id" }, 400);
+      }
+      try {
+        return json({ ok: true, event: "shift_start", ...(await sendNewCallStage(callId, 100, onlyUserId)) });
+      } catch (err) {
+        console.error("shift_start", err);
+        return json({ error: "shift_start_failed" }, 500);
+      }
+    }
+
 
     if (event === "professional_connected") {
       try {
