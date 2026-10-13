@@ -3296,7 +3296,14 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .qf-play-badge--desk{flex:none}
 @media(prefers-reduced-motion:reduce){.qf-play-badge{transition:none}.qf-play-badge:hover{transform:none}}
 </style>
-<style id="qf-approved-brand">.qf-approved-logo{display:block;width:160px;height:54px;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}.tabbar__brand .qf-approved-logo{width:140px;height:48px}@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:116px;height:40px}.topbar__title .qf-approved-logo{width:140px;height:46px}}</style></head>
+<style id="qf-approved-brand">
+.qf-approved-logo{display:block;width:200px;height:auto;aspect-ratio:3/1;max-width:100%;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}
+.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}
+.tabbar__brand .qf-approved-logo{width:180px;height:60px}
+.topbar__title--brand{min-width:0}
+@media(max-width:899px){.qf-landing-brand .qf-approved-logo{width:180px}.topbar__title .qf-approved-logo{width:180px}}
+@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:156px}}
+</style></head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=1124265238584181&ev=PageView&noscript=1"
@@ -14475,7 +14482,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.78.2';
+  const APP_VERSION = '11.78.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17151,8 +17158,14 @@ alt=""></noscript>
     return h;
   }
 
+  let routeRevision = 0;
+  let readySessionKey = '';
+  function sessionKey(session) { return session ? session.role + ':' + session.userId : ''; }
+
   async function route() {
+    const revision = ++routeRevision;
     const path = currentPath();
+    const stale = function () { return revision !== routeRevision || path !== currentPath(); };
     // Antigos links de login do cliente voltam para o pedido gratuito.
     if (path === '/auth/cliente/login') { navigate('/', true); return; }
     const found = matchRoute(path);
@@ -17162,27 +17175,44 @@ alt=""></noscript>
       if (global.QFCloud.refreshPublicAds) global.QFCloud.refreshPublicAds();
       return;
     }
+    // Navegação usa a conta já validada nesta abertura. A rede atualiza depois,
+    // sem deixar o clique esperando dados, push e avisos em sequência.
+    const cachedSession = currentSession();
+    const cachedUser = currentUser();
+    const immediate = !!(found && !found.route.anon && cachedSession && cachedUser &&
+      !cachedUser.bloqueado && found.route.role === cachedSession.role &&
+      readySessionKey === sessionKey(cachedSession));
+    if (immediate) {
+      renderApp(found, cachedUser, cachedSession);
+      await new Promise(function (resolve) { setTimeout(resolve, 0); });
+      if (stale()) return;
+    }
     if (global.QFCloud && global.QFCloud.enabled) {
       try {
         await global.QFConnection.deadline(global.QFCloud.syncForCurrentSession(false), 15000, 'dados da conta');
       } catch (err) {
+        if (stale()) return;
         console.error('QuemFaz sync error', err);
-        renderConnectionError();
+        if (!immediate) renderConnectionError();
         return;
       }
     }
+    if (stale()) return;
     if (global.QFPush) {
       try { await global.QFConnection.deadline(global.QFPush.refreshStatus(), 3000, 'permissão de notificações'); } catch (_) {}
     }
+    if (stale()) return;
     const session = currentSession();
     if (session && session.role === 'profissional') {
       try { await global.QFConnection.deadline(syncPersistentProfessionalNotices(session, false), 5000, 'avisos'); }
       catch (err) { console.warn('QuemFaz avisos persistentes', err); }
     }
 
+    if (stale()) return;
     if (session && global.QFCloud && global.QFCloud.enabled && global.QFCloud.pendingFlow) {
       try {
         const pending = await global.QFConnection.deadline(global.QFCloud.pendingFlow(), 5000, 'serviço pendente');
+        if (stale()) return;
         if (pending && pending.pending && pending.chamado_id) {
           const target = session.role === 'profissional'
             ? '/profissional/pedido/' + pending.chamado_id
@@ -17205,6 +17235,8 @@ alt=""></noscript>
       }
     }
 
+    if (stale()) return;
+    if (immediate && sessionKey(currentSession()) !== sessionKey(cachedSession)) { navigate('/', true); return; }
     if (!found) { navigate('/', true); return; }
 
     if (found.route.anon) {
@@ -17239,7 +17271,17 @@ alt=""></noscript>
       navigate('/', true);
       return;
     }
-    renderApp(found, user, session);
+    readySessionKey = sessionKey(session);
+    if (!immediate) { renderApp(found, user, session); return; }
+    // Não apaga campos, conversas ou janelas abertas enquanto a rede termina.
+    // Abas de consulta recebem dados novos somente quando o conteúdo mudou.
+    if (!found.route.tab || userIsEditing() || document.querySelector('#app-content form')) return;
+    const content = document.getElementById('app-content');
+    if (content && content.qfPath === path && content.qfRenderedHtml !== found.route.render(found.params, user)) {
+      const y = window.scrollY;
+      renderApp(found, user, session, { background: true });
+      window.scrollTo(0, y);
+    }
   }
 
   // V10.6: identifica a tela no #app-shell para o layout de computador/tablet.
