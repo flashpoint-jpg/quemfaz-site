@@ -16,7 +16,7 @@ const bloco = /const QFPlanos = global\.QFPlanos = ([\s\S]*?\n  \}\)\(\));/.exec
 const P = vm.runInNewContext(bloco);
 assert.strictEqual(P.preco('mensal'), 'R$ 49,90');
 assert.strictEqual(P.cada('mensal'), 'R$ 4,99');
-assert.strictEqual(P.pct('mensal'), 61);
+assert.strictEqual(P.pct('mensal'), 62);
 assert.strictEqual(P.aplicar([{ plano: 'mensal', preco_centavos: 5990, chamados: 12, dias: 45 }, { plano: 'outro', preco_centavos: 1, chamados: 1, dias: 1 }, { plano: 'pro', preco_centavos: 0, chamados: 25, dias: 30 }]), true);
 assert.strictEqual(P.preco('mensal'), 'R$ 59,90');
 assert.strictEqual(P.valor('mensal'), 5990);

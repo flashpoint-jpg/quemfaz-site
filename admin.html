@@ -2241,7 +2241,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 500, medio: 800, premium: 1300 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -2434,8 +2434,8 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   function leadFeeForRequest(req) {
     const cat = categoryById(req.categoriaId);
     const tier = (cat && cat.leadTier) || 'padrao';
-    const fees = state.settings.leadFees || { padrao: 490, medio: 790, premium: 1290 };
-    return Number(fees[tier] || fees.padrao || 490);
+    const fees = state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
+    return Number(fees[tier] || fees.padrao || 500);
   }
 
   function reviewsForProfissional(profissionalId) {
@@ -7176,7 +7176,7 @@ Screens.adminDashboardRender = function () {
   // ---------------- Comissão ----------------
 
   Screens.adminComissaoRender = function () {
-    const f = DB.state.settings.leadFees || { padrao: 490, medio: 790, premium: 1290 };
+    const f = DB.state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
     const prioridade = DB.state.settings.prioridadeCliente || 690;
     function moneyInput(id, label, cents, hint) {
       return '<label class="field"><span class="field__label">' + label + '</span><input class="input" id="' + id + '" inputmode="decimal" value="' + (cents / 100).toFixed(2).replace('.', ',') + '"><span class="field__hint">' + hint + '</span></label>';

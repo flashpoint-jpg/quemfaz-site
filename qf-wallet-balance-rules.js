@@ -30,6 +30,8 @@
     panel.innerHTML = 
       '<div class="qf-balance-rule"><strong>Saldo da carteira: não expira</strong>' +
       '<p>O dinheiro colocado por Pix, cartão ou boleto continua disponível mesmo depois de 30 dias sem uso. Você pode utilizá-lo para desbloquear chamados quando quiser.</p></div>' +
+      '<div class="qf-balance-rule"><strong>Bônus de recarga: validade de 30 dias</strong>' +
+      '<p>Recargas a partir de R$ 50 ganham bônus (+10%; +15% a partir de R$ 100; +20% a partir de R$ 200). O bônus é usado primeiro nos desbloqueios e o que sobrar vence em 30 dias.</p></div>' +
       '<div class="qf-balance-rule"><strong>Pacotes: validade de 30 dias</strong>' +
       '<p>Os desbloqueios não utilizados vencem ao final do prazo. Se você renovar antes do vencimento, os desbloqueios restantes são transferidos para o novo pacote.</p></div>';
     walletCard.insertAdjacentElement('afterend', panel);

@@ -4095,7 +4095,7 @@ alt=""></noscript>
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 500, medio: 800, premium: 1300 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -4298,8 +4298,8 @@ alt=""></noscript>
     if (req && Number(req.precoDesbloqueio) > 0) return Number(req.precoDesbloqueio);
     const cat = categoryById(req.categoriaId);
     const tier = (cat && cat.leadTier) || 'padrao';
-    const fees = state.settings.leadFees || { padrao: 490, medio: 790, premium: 1290 };
-    return Number(fees[tier] || fees.padrao || 490);
+    const fees = state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
+    return Number(fees[tier] || fees.padrao || 500);
   }
 
   function reviewsForProfissional(profissionalId) {
@@ -6984,7 +6984,7 @@ alt=""></noscript>
   // Os números abaixo são só o ponto de partida até a resposta chegar (fica guardada para a próxima abertura).
   const PLANOS_KEY = 'qf_planos_catalogo_v1';
   const QFPlanos = global.QFPlanos = (function () {
-    const AVULSO_MAIS_CARO = 1290;
+    const AVULSO_MAIS_CARO = 1300;
     const dados = {
       mensal: { nome: 'Mensal', preco: 4990, chamados: 10, dias: 30 },
       pro: { nome: 'Pro', preco: 9990, chamados: 25, dias: 30 },
@@ -7014,7 +7014,7 @@ alt=""></noscript>
       chamados: function (id) { return get(id).chamados; },
       dias: function (id) { return get(id).dias; },
       cada: function (id) { return brl(cadaCentavos(id)); },
-      // Quanto sai mais barato que o chamado avulso mais caro (R$ 12,90). 0 = não compensa.
+      // Quanto sai mais barato que o chamado avulso mais caro (R$ 13). 0 = não compensa.
       pct: function (id) { return Math.max(0, Math.round((1 - cadaCentavos(id) / AVULSO_MAIS_CARO) * 100)); }
     };
   })();
@@ -7041,6 +7041,47 @@ alt=""></noscript>
     bonusAplicar(r.data);
     try { localStorage.setItem(BONUS_KEY, JSON.stringify(r.data)); } catch (_) {}
   }).catch(function () {});
+
+  // V12.1: preço de desbloqueio por profissão (qf_precos_desbloqueio) e bônus de recarga.
+  // A carteira usa para mostrar "dá para X desbloqueios"; quem cobra continua sendo o banco.
+  const PRECOS_KEY = 'qf_precos_desbloqueio_v1';
+  const QFPrecos = global.QFPrecos = (function () {
+    let tabela = {};
+    function aplicar(rows) {
+      const t = {};
+      (Array.isArray(rows) ? rows : []).forEach(function (r) { if (r && r.categoria && Number(r.preco_centavos) > 0) t[r.categoria] = Number(r.preco_centavos); });
+      if (Object.keys(t).length) tabela = t;
+    }
+    function preco(cat) { return tabela[cat] || tabela.padrao || 800; }
+    return {
+      aplicar: aplicar,
+      // Preços distintos das profissões do profissional, do menor para o maior.
+      daPessoa: function (categorias) {
+        const lista = (Array.isArray(categorias) && categorias.length ? categorias : ['padrao']).map(preco);
+        return Array.from(new Set(lista)).sort(function (a, b) { return a - b; });
+      },
+      // Mesma regra do banco (qf_bonus_recarga_centavos): 10% a partir de R$ 50, 15% de R$ 100, 20% de R$ 200, teto R$ 100.
+      bonus: function (centavos) {
+        const v = Number(centavos) || 0;
+        const pct = v >= 20000 ? 20 : v >= 10000 ? 15 : v >= 5000 ? 10 : 0;
+        return Math.min(10000, Math.floor(v * pct / 100));
+      },
+      // "6 desbloqueios" ou "3 a 6 desbloqueios" para quem tem profissões com preços diferentes.
+      quantos: function (centavos, categorias) {
+        const precos = this.daPessoa(categorias);
+        const max = Math.floor((Number(centavos) || 0) / precos[0]);
+        const min = Math.floor((Number(centavos) || 0) / precos[precos.length - 1]);
+        const n = min === max ? String(max) : min + ' a ' + max;
+        return n + (max === 1 && min === max ? ' desbloqueio' : ' desbloqueios');
+      }
+    };
+  })();
+  try { QFPrecos.aplicar(JSON.parse(localStorage.getItem(PRECOS_KEY) || 'null')); } catch (_) {}
+  if (client) client.from('qf_precos_desbloqueio').select('categoria,preco_centavos').then(function (r) {
+    if (r.error || !Array.isArray(r.data) || !r.data.length) return;
+    QFPrecos.aplicar(r.data);
+    try { localStorage.setItem(PRECOS_KEY, JSON.stringify(r.data)); } catch (_) {}
+  }, function () {});
 })(window);
 
 /* QuemFaz — Web Push real para PWA instalada (HTTPS). */
@@ -7558,7 +7599,7 @@ alt=""></noscript>
       get itens() { const pct = P.pct(id); return extras(pct).filter(Boolean); } };
   }
   const QF_CAD_PLANOS = [
-    { id: 'avulso', nome: 'Avulso', preco: 'R$ 4,90 a R$ 12,90', per: 'por chamado', unit: 'Sem mensalidade',
+    { id: 'avulso', nome: 'Avulso', preco: 'R$ 5 a R$ 13', per: 'por chamado', unit: 'Sem mensalidade',
       itens: ['Conta criada na hora, sem pagar nada agora', 'Para desbloquear um chamado você precisa adicionar crédito na Carteira', 'Crédito por Pix, cartão ou boleto', 'Bom para começar e testar'] },
     qfCadPlano('mensal', '', function (pct) { return ['Vale para qualquer serviço', pct > 0 ? 'Até ' + pct + '% mais barato que o avulso (pedreiro, frete, mecânico)' : '', 'Sem renovação automática e sem fidelidade']; }),
     qfCadPlano('pro', '', function (pct) { return [pct > 0 ? 'Até ' + pct + '% mais barato que o avulso' : '', 'Vale para qualquer serviço', 'Sem renovação automática e sem fidelidade']; }),
@@ -8302,7 +8343,7 @@ alt=""></noscript>
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<div class="qf-cad-planos__ex"><b>Chamados de R$ 7,90</b> (eletricista, encanador, montador):<table>' + global.QFPlanos.ids.map(function (id) { const P = global.QFPlanos; return '<tr><td>' + P.chamados(id) + ' chamados</td><td>avulso ' + P.brl(P.chamados(id) * 790) + '</td><td><b>' + P.nome(id) + ' ' + P.preco(id) + '</b></td></tr>'; }).join('') + '</table></div>' +
+          '<div class="qf-cad-planos__ex"><b>Chamados de R$ 8</b> (eletricista, encanador, montador):<table>' + global.QFPlanos.ids.map(function (id) { const P = global.QFPlanos; return '<tr><td>' + P.chamados(id) + ' chamados</td><td>avulso ' + P.brl(P.chamados(id) * 800) + '</td><td><b>' + P.nome(id) + ' ' + P.preco(id) + '</b></td></tr>'; }).join('') + '</table></div>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Criar conta e pagar · ' + global.QFPlanos.preco('premium') + '</button></div>' +
           '<button class="qf-cad-planos__depois" type="button" data-plano-depois>Prefiro escolher depois</button>' +
@@ -12682,7 +12723,8 @@ alt=""></noscript>
       '<div class="view">' +
         '<div class="card" style="padding:24px 18px;background:var(--navy-900);border:none;">' +
           '<div class="row-between" style="align-items:flex-start;">' +
-            '<div><div class="text--sm" style="color:var(--text-on-navy-muted);">Saldo disponível</div><div class="h1" style="color:#fff;margin-top:4px;">' + PU.formatCurrency(user.creditos || 0) + '</div></div>' +
+            '<div><div class="text--sm" style="color:var(--text-on-navy-muted);">Saldo disponível</div><div class="h1" style="color:#fff;margin-top:4px;">' + PU.formatCurrency(user.creditos || 0) + '</div>' +
+              '<div class="text--sm" style="color:var(--text-on-navy-muted);margin-top:4px;">Dá para ' + global.QFPrecos.quantos(user.creditos || 0, user.categorias) + '</div></div>' +
             '<div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div>' +
           '</div>' +
         '</div>' +
@@ -12692,11 +12734,13 @@ alt=""></noscript>
           '<div class="card stack">' +
             '<div><div class="field__label">Escolha o valor</div>' +
               '<div class="chip-group" id="wallet-values" style="margin-top:8px;">' +
-                '<button type="button" class="chip" data-wallet-value="2000">R$ 20</button>' +
-                '<button type="button" class="chip is-selected" data-wallet-value="5000">R$ 50</button>' +
-                '<button type="button" class="chip" data-wallet-value="10000">R$ 100</button>' +
-                '<button type="button" class="chip" data-wallet-value="20000">R$ 200</button>' +
+                [2000, 5000, 10000, 20000].map(function (v) {
+                  const b = global.QFPrecos.bonus(v);
+                  return '<button type="button" class="chip' + (v === 5000 ? ' is-selected' : '') + '" data-wallet-value="' + v + '">R$ ' + (v / 100) + (b ? ' <b style="color:var(--orange-600,#e8590c);">+R$ ' + (b / 100) + '</b>' : '') + '</button>';
+                }).join('') +
               '</div>' +
+              '<p class="text--sm text--secondary" id="wallet-value-hint" style="margin-top:8px;"></p>' +
+              '<p class="text--sm text--secondary" style="margin-top:4px;">Bônus de recarga: +10% a partir de R$ 50, +15% a partir de R$ 100 e +20% a partir de R$ 200. O bônus vale por 30 dias e é usado primeiro; o valor que você pagou não vence.</p>' +
               '<label class="field" style="margin-top:10px;"><span class="field__label">Outro valor</span><input class="input" id="wallet-custom-value" inputmode="decimal" placeholder="R$ 0,00"></label>' +
             '</div>' +
             '<div><div class="field__label">Como quer pagar?</div>' +
@@ -12788,9 +12832,9 @@ alt=""></noscript>
   // ---------------- Como funciona (V11.10.0) ----------------
   // Tela única que explica o app, preços, planos e diferenciais. Aberta a visitantes, clientes e profissionais.
   const QF_PRECOS_FAIXAS = [
-    { valor: 'R$ 4,90', cats: 'Diarista, jardinagem e outros serviços' },
-    { valor: 'R$ 7,90', cats: 'Montador de móveis, eletricista, encanador, pintor, chaveiro, informática, borracheiro, motorista e entregador' },
-    { valor: 'R$ 12,90', cats: 'Pedreiro, mecânico, frete, soldador e guincho' }
+    { valor: 'R$ 5', cats: 'Diarista, jardinagem e outros serviços' },
+    { valor: 'R$ 8', cats: 'Montador de móveis, eletricista, encanador, pintor, chaveiro, informática, borracheiro, motorista e entregador' },
+    { valor: 'R$ 13', cats: 'Pedreiro, mecânico, frete, soldador e guincho' }
   ];
 
   function cfStep(n, title, sub) {
@@ -12844,11 +12888,11 @@ alt=""></noscript>
       '<section class="section" id="cf-planos">' +
         '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Escolha o jeito que fica melhor para você.</div></div></div>' +
         '<div class="stack">' +
-          cfPlano('Avulso', false, 'R$ 4,90', 'a R$ 12,90', 'por chamado desbloqueado',
+          cfPlano('Avulso', false, 'R$ 5', 'a R$ 13', 'por chamado desbloqueado',
             ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
             role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
           cfPlano('Mensal', false, global.QFPlanos.preco('mensal'), 'por ' + global.QFPlanos.dias('mensal') + ' dias', global.QFPlanos.chamados('mensal') + ' chamados',
-            ['Sai a ' + global.QFPlanos.cada('mensal') + ' por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática e sem fidelidade'],
+            ['Sai a ' + global.QFPlanos.cada('mensal') + ' por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 13', 'Sem renovação automática e sem fidelidade'],
             assinar('Mensal')) +
           cfPlano('Pro', false, global.QFPlanos.preco('pro'), 'por ' + global.QFPlanos.dias('pro') + ' dias', global.QFPlanos.chamados('pro') + ' chamados',
             ['Sai a ' + global.QFPlanos.cada('pro') + ' por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
@@ -13024,7 +13068,7 @@ alt=""></noscript>
       '<div class="section">' +
         (ativo
           ? '<div class="card qf-plan-status" style="background:var(--success-100);border:none;"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div>'
-          : '<div class="card qf-plan-status"><div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div><div class="spacer"><div class="text--strong">Hoje você está no Avulso</div><div class="text--sm text--secondary">Paga de R$ 4,90 a R$ 12,90 por chamado desbloqueado, com o saldo da carteira. Saldo: <strong>' + PU.formatCurrency(user.creditos || 0) + '</strong></div><button class="btn btn--outline btn--sm btn--block-auto" type="button" data-nav="/profissional/carteira" style="margin-top:10px;">' + icon('plus') + ' Colocar saldo</button></div></div>') +
+          : '<div class="card qf-plan-status"><div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div><div class="spacer"><div class="text--strong">Hoje você está no Avulso</div><div class="text--sm text--secondary">Paga de R$ 5 a R$ 13 por chamado desbloqueado, com o saldo da carteira. Saldo: <strong>' + PU.formatCurrency(user.creditos || 0) + '</strong></div><button class="btn btn--outline btn--sm btn--block-auto" type="button" data-nav="/profissional/carteira" style="margin-top:10px;">' + icon('plus') + ' Colocar saldo</button></div></div>') +
       '</div>' +
 
       (function () {
@@ -13038,10 +13082,10 @@ alt=""></noscript>
           texto = 'Nos últimos 30 dias você desbloqueou ' + h.n + ' chamado' + (h.n === 1 ? '' : 's') + ' no avulso. No plano ' + sim.plano.nome + ' teria pago bem menos.';
           avulso = h.total; plano = sim.custo; nomePlano = sim.plano.nome; economia = sim.economia;
         } else {
-          // Exemplo com o valor mais comum de desbloqueio (R$ 7,90): 10 chamados no avulso x Mensal.
-          const ex = 790 * 10, m = PI.planos[0];
+          // Exemplo com o valor mais comum de desbloqueio (R$ 8): 10 chamados no avulso x Mensal.
+          const ex = 800 * 10, m = PI.planos[0];
           titulo = 'Pegue 10 chamados e economize ' + PU.formatCurrency(ex - m.preco);
-          texto = '10 chamados de R$ 7,90 no avulso custam ' + PU.formatCurrency(ex) + '. No plano Mensal saem por ' + PU.formatCurrency(m.preco) + '. Em pedreiro, frete e mecânico (R$ 12,90) a economia é maior.';
+          texto = '10 chamados de R$ 8 no avulso custam ' + PU.formatCurrency(ex) + '. No plano Mensal saem por ' + PU.formatCurrency(m.preco) + '. Em pedreiro, frete e mecânico (R$ 13) a economia é maior.';
           avulso = ex; plano = m.preco; nomePlano = m.nome; economia = ex - m.preco;
         }
         return '<div class="section"><div class="qf-plan-save">' +
@@ -13061,7 +13105,7 @@ alt=""></noscript>
             function linha(id) { return [P.preco(id), 'por ' + P.dias(id) + ' dias', P.chamados(id) + ' chamados · sai a ' + P.cada(id) + ' cada']; }
             const m = linha('mensal'), pr = linha('pro'), pm = linha('premium');
             return cfPlano('Mensal', false, m[0], m[1], m[2],
-              ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 12,90', 'Sem renovação automática'], assinar('mensal', P.valor('mensal'), 'Mensal')) +
+              ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 13', 'Sem renovação automática'], assinar('mensal', P.valor('mensal'), 'Mensal')) +
             cfPlano('Pro', false, pr[0], pr[1], pr[2],
               ['Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', P.valor('pro'), 'Pro')) +
             cfPlano('Premium', true, pm[0], pm[1], pm[2],
@@ -13976,9 +14020,14 @@ alt=""></noscript>
       const customCents = PU.parseCurrencyInput(custom.value);
       return customCents > 0 ? customCents : Number(action.getAttribute('data-wallet-selected-value') || 5000);
     }
+    const hint = content.querySelector('#wallet-value-hint');
     function updateActionLabel() {
-      action.innerHTML = icon('plus') + ' Adicionar ' + PU.formatCurrency(selectedValue());
+      const v = selectedValue();
+      const b = global.QFPrecos.bonus(v);
+      action.innerHTML = icon('plus') + ' Adicionar ' + PU.formatCurrency(v) + (b ? ' + ' + PU.formatCurrency(b) + ' de bônus' : '');
+      if (hint) hint.textContent = v > 0 ? 'Você recebe ' + PU.formatCurrency(v + b) + (b ? ' (' + PU.formatCurrency(b) + ' de bônus)' : '') + ': dá para ' + global.QFPrecos.quantos(v + b, user.categorias) + '.' : '';
     }
+    updateActionLabel();
 
     valuesWrap.addEventListener('click', function (e) {
       const chip = e.target.closest('[data-wallet-value]');
