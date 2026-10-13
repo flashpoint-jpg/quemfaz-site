@@ -45,14 +45,14 @@
       card=document.createElement('section');
       card.id=CARD_ID;
       card.className='qf-bonus-validade';
-      card.setAttribute('aria-label','Prazo de validade do seu bônus promocional');
+      card.setAttribute('aria-label','Prazo de validade do seu bônus');
       card.innerHTML='<div class="qf-bonus-top"><span class="qf-bonus-clockicon" aria-hidden="true"></span>'+
         '<div><strong>Faltam <span data-qf-bonus-days>10</span> dias para o seu bônus acabar</strong>'+
-        '<small>Bônus promocional disponível: <b data-qf-bonus-money></b></small></div></div>'+
+        '<small>Bônus disponível: <b data-qf-bonus-money></b></small></div></div>'+
         '<div class="qf-bonus-timer" data-qf-bonus-timer aria-label="Contagem regressiva"></div>'+
-        '<p>Clientes estão publicando serviços. Aproveite seus créditos promocionais para <b>desbloquear pedidos</b> antes do vencimento.</p>'+
+        '<p>Clientes estão publicando serviços. Aproveite seu bônus para <b>desbloquear pedidos</b> antes do vencimento.</p>'+
         '<button type="button" class="btn btn--primary qf-bonus-cta" data-nav="/profissional/servicos/disponiveis">Ver pedidos disponíveis</button>'+
-        '<small class="qf-bonus-note">Somente o bônus promocional tem prazo. Seu saldo de recargas pagas não expira.</small>';
+        '<small class="qf-bonus-note">Somente o bônus tem prazo. O valor que você pagou nas recargas não expira.</small>';
     }
     if(!card.isConnected){
       if(v.anchor)v.anchor.insertAdjacentElement('afterend',card);

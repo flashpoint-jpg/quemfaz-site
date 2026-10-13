@@ -2241,7 +2241,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 490, medio: 790, premium: 1290 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 500, medio: 800, premium: 1300 }, prioridadeCliente: 690, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -2434,8 +2434,8 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   function leadFeeForRequest(req) {
     const cat = categoryById(req.categoriaId);
     const tier = (cat && cat.leadTier) || 'padrao';
-    const fees = state.settings.leadFees || { padrao: 490, medio: 790, premium: 1290 };
-    return Number(fees[tier] || fees.padrao || 490);
+    const fees = state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
+    return Number(fees[tier] || fees.padrao || 500);
   }
 
   function reviewsForProfissional(profissionalId) {
@@ -3124,7 +3124,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     return '<div class="card qf-parado"><div class="row-between" style="align-items:flex-start;gap:10px;"><div style="min-width:0;"><div class="text--strong">' + PU.escapeHtml(it.titulo || 'Chamado') + '</div>' +
       '<div class="text--sm text--secondary">' + PU.escapeHtml(catName(it.categoria)) + (lugar ? ' · ' + PU.escapeHtml(lugar) : '') + '</div></div>' +
       '<span class="badge badge--danger">há ' + min + ' min</span></div>' +
-      '<div class="text--sm text--secondary" style="margin-top:6px;">' + Number(it.avisados || 0) + (Number(it.avisados) === 1 ? ' profissional avisado' : ' profissionais avisados') + ' · Cliente: ' + PU.escapeHtml(it.cliente_nome || '—') + '</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:6px;">' + Number(it.avisados || 0) + (Number(it.avisados) === 1 ? ' profissional avisado' : ' profissionais avisados') + ' (' + Number(it.avisados_com_push || 0) + ' com notificação ativa)' + ' · Cliente: ' + PU.escapeHtml(it.cliente_nome || '—') + '</div>' +
       '<div class="btn-row" style="margin-top:10px;">' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' WhatsApp do cliente</a>' : '') +
       '<button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(it.id) + '">Reenviar aviso</button>' +
       '<button class="btn btn--outline btn--sm" type="button" data-nav="/admin/servicos/' + PU.escapeHtml(it.id) + '">Ver chamado</button></div></div>';
@@ -7176,7 +7176,7 @@ Screens.adminDashboardRender = function () {
   // ---------------- Comissão ----------------
 
   Screens.adminComissaoRender = function () {
-    const f = DB.state.settings.leadFees || { padrao: 490, medio: 790, premium: 1290 };
+    const f = DB.state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
     const prioridade = DB.state.settings.prioridadeCliente || 690;
     function moneyInput(id, label, cents, hint) {
       return '<label class="field"><span class="field__label">' + label + '</span><input class="input" id="' + id + '" inputmode="decimal" value="' + (cents / 100).toFixed(2).replace('.', ',') + '"><span class="field__hint">' + hint + '</span></label>';
@@ -8344,7 +8344,7 @@ Screens.adminDashboardRender = function () {
           '<td><a class="qf-prox__nome" data-nav="/admin/profissionais/' + PU.escapeHtml(p.id) + '">' + PU.escapeHtml(p.nome || 'Profissional') + '</a>' + (p.verificado ? ' <span class="badge qf-adm-ver__chip">★ Verificado</span>' : '') + '<small class="qf-adm-resumo">' + PU.escapeHtml([p.cidade, p.uf].filter(Boolean).join('/') || 'Cidade não informada') + '</small></td>' +
           '<td>' + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') + '</td>' +
           '<td>' + (temKm ? (dentro ? '<span class="qf-prox__sim">Dentro do raio</span>' : '<span class="qf-prox__nao">Fora do raio</span>') : '—') + '<small class="qf-adm-resumo">atende até ' + Number(p.raio_km || 0) + ' km</small></td>' +
-          '<td>' + (p.desbloqueou ? '<span class="qf-prox__sim">Desbloqueou</span>' : (p.avisado ? 'Foi avisado' : '<span class="qf-prox__nao">Não foi avisado</span>')) + '</td>' +
+          '<td>' + (p.desbloqueou ? '<span class="qf-prox__sim">Desbloqueou</span>' : (p.avisado ? (p.avisado_com_push ? 'Foi avisado' : 'Avisado <span class="qf-prox__nao">sem notificação ativa</span>') : '<span class="qf-prox__nao">Não foi avisado</span>')) + '</td>' +
           '<td>' + (wa ? '<a class="btn btn--whatsapp btn--sm" href="' + wa + '" target="_blank" rel="noopener" data-prox-wa>' + icon('whatsapp') + ' WhatsApp</a>' : '') + '</td>' +
         '</tr>';
       });
@@ -8470,7 +8470,7 @@ Screens.adminDashboardRender = function () {
           pnFato('Valor do desbloqueio', PU.formatCurrency(Number(c.preco_centavos || 0))) +
           pnFato('Aparece na tela de', admLinhas(Number(c.no_painel || 0), 'profissional', 'profissionais'), Number(c.no_painel_online || 0) + ' online agora') +
           pnFato('Profissional mais perto', perto ? pnKm(c.mais_perto_km) : '—', (perto && c.mais_perto_nome ? PU.escapeHtml(c.mais_perto_nome) + ' · ' : '') + Number(c.dentro_raio || 0) + ' dentro do próprio raio') +
-          pnFato('Selecionados para aviso', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda') +
+          pnFato('Selecionados para aviso', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.avisados_com_push || 0) + ' com notificação ativa · ' + (Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda')) +
           pnFato('Envio do push', c.push_resultado ? Number(c.push_resultado.enviados || 0) + ' profissionais com envio confirmado' : 'Sem confirmação de envio', c.push_resultado ? Number(c.push_resultado.sem_inscricao || 0) + ' sem inscrição · ' + Number(c.push_resultado.falhas || 0) + ' com falha · ' + Number(c.push_resultado.sem_confirmacao || 0) + ' registros antigos sem confirmação. Envio aceito pelo serviço; recebimento no celular não confirmado.' : 'A seleção para aviso não confirma entrega no celular.') +
           pnFato('Cliente', PU.escapeHtml(c.cliente || 'Cliente'), c.cliente_telefone ? PU.escapeHtml(c.cliente_telefone) : '') +
           pnFato('Último desbloqueio', c.ultimo_desbloqueio_em ? 'há ' + pnHa(c.ultimo_desbloqueio_em, agora) : 'Nenhum', c.ultimo_desbloqueio_em ? PU.escapeHtml(pnQuando(c.ultimo_desbloqueio_em)) : '') +
@@ -8582,7 +8582,7 @@ Screens.adminDashboardRender = function () {
     const d = admPaineisDados;
     if (!d || !Array.isArray(d.pedidos)) { PU.toast('Espere o relatório carregar para baixar.', 'danger'); return; }
     const linhas = [['Pedido', 'Descrição', 'Bairro', 'Cidade', 'Cliente', 'WhatsApp do cliente', 'Entrou em', 'Parado há', 'Pra quando', 'Vagas ocupadas', 'Vagas no total', 'Valor do desbloqueio (R$)',
-      'Aparece na tela de (profissionais)', 'Online agora', 'Dentro do raio', 'Mais perto (km)', 'Avisos enviados', 'Reenvios', 'Quem desbloqueou', 'Recebido em desbloqueios (R$)', 'Quilometragem', 'Situação']];
+      'Aparece na tela de (profissionais)', 'Online agora', 'Dentro do raio', 'Mais perto (km)', 'Avisos enviados', 'Avisos com notificação ativa', 'Reenvios', 'Quem desbloqueou', 'Recebido em desbloqueios (R$)', 'Quilometragem', 'Situação']];
     d.pedidos.forEach(function (c) {
       const des = Array.isArray(c.desbloqueios) ? c.desbloqueios : [];
       let soma = 0;
@@ -8590,7 +8590,7 @@ Screens.adminDashboardRender = function () {
       linhas.push([c.titulo || 'Pedido', String(c.descricao || '').trim(), c.bairro || '', [c.cidade, c.uf].filter(Boolean).join('/'), c.cliente || '', c.cliente_telefone || '',
         pnQuando(c.criado_em), pnHa(c.criado_em, d.agora), pnPrazo(c), Number(c.ocupadas || 0), Number(c.limite || 0), (Number(c.preco_centavos || 0) / 100).toFixed(2).replace('.', ','),
         Number(c.no_painel || 0), Number(c.no_painel_online || 0), Number(c.dentro_raio || 0), c.mais_perto_km === null || c.mais_perto_km === undefined ? '' : String(c.mais_perto_km).replace('.', ','),
-        Number(c.avisados || 0), Number(c.lembretes || 0), quem, (soma / 100).toFixed(2).replace('.', ','), pnLocalTxt(c), pnMotivo(c)]);
+        Number(c.avisados || 0), Number(c.avisados_com_push || 0), Number(c.lembretes || 0), quem, (soma / 100).toFixed(2).replace('.', ','), pnLocalTxt(c), pnMotivo(c)]);
     });
     const blob = new Blob([admCsv(linhas)], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
