@@ -76,9 +76,9 @@
     var headerDays=Math.ceil(ms/86400000);
     var daysEl=card.querySelector('[data-qf-bonus-days]');
     if(daysEl){
-      daysEl.textContent=String(headerDays);
+      if(daysEl.textContent!==String(headerDays))daysEl.textContent=String(headerDays);
       var strong=daysEl.closest('strong');
-      if(strong)strong.lastChild.textContent=headerDays===1?' dia para o seu bônus acabar':' dias para o seu bônus acabar';
+      if(strong){var suffix=headerDays===1?' dia para o seu bônus acabar':' dias para o seu bônus acabar';if(strong.lastChild&&strong.lastChild.textContent!==suffix)strong.lastChild.textContent=suffix;}
     }
     function pad(x){return String(x).padStart(2,'0');}
     var clock=card.querySelector('[data-qf-bonus-timer]');
