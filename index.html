@@ -4095,7 +4095,7 @@ alt=""></noscript>
 
     return {
       meta: { version: 1, seededAt: nowIso() },
-      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 500, medio: 800, premium: 1300 }, prioridadeCliente: 490, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
+      settings: { nomeApp: 'QuemFaz', leadFees: { padrao: 500, medio: 800, premium: 1300 }, prioridadeCliente: 500, adMaxSlots: 4, adPlans: { local: { nome: 'Local', valor: 7900, dias: 30 }, destaque: { nome: 'Destaque', valor: 12900, dias: 30 }, premium: { nome: 'QuemFaz Premium', valor: 30000, dias: 30 } } },
       categories, cities,
       users: { clientes, profissionais, admins },
       requests, transactions, reviews, ads,
@@ -4367,7 +4367,7 @@ alt=""></noscript>
       prazo: data.prazo || null, prazoDia: data.prazoDia || null, periodo: data.periodo || null,
       // Prioridade nunca é concedida gratuitamente. No modo offline ela fica apenas solicitada/pending.
       prioridade: false,
-      pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: 490, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
+      pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: 500, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
       leadUnlock: null,
       taxaVisita: 0, orcamento: null, pagamento: null, avaliacaoCliente: null, avaliacaoProfissional: null,
       recusadoPor: [], canceladoPor: null, motivoCancelamento: null,
@@ -6550,13 +6550,13 @@ alt=""></noscript>
         p_metodo: data.prioridadeMetodo || 'pix'
       });
       if (pay.error) {
-        req.pagamentoPrioridade = { status: 'erro', valor: 490, erro: pay.error.message };
+        req.pagamentoPrioridade = { status: 'erro', valor: 500, erro: pay.error.message };
       } else {
         const out = pay.data || {};
         req.pagamentoPrioridade = {
           id: out.pagamento_id || null,
           status: out.status || 'pendente',
-          valor: Number(out.valor_centavos || 490),
+          valor: Number(out.valor_centavos || 500),
           checkoutUrl: out.checkout_url || null,
           criadoEm: new Date().toISOString()
         };
@@ -10287,7 +10287,7 @@ alt=""></noscript>
             '<div class="row">' + icon('checkCircle', 'list-item__chevron') + '<div><div class="text--strong" style="color:var(--success-600);">Pedido normal é 100% grátis</div><div class="text--sm" style="color:var(--success-600);">Você não paga para criar o chamado.</div></div></div>' +
           '</div>' +
           '<label class="card row-between" style="cursor:pointer;align-items:flex-start;">' +
-            '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><div class="text--strong">Pacote Prioridade</div><div class="text--sm text--secondary">Opcional · pagamento obrigatório · ' + PU.formatCurrency(490) + '</div><div class="text--sm" style="color:var(--orange-700);margin-top:3px;">A prioridade só fica ativa depois da confirmação do pagamento.</div></div></div>' +
+            '<div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + icon('bolt') + '</div><div><div class="text--strong">Pacote Prioridade</div><div class="text--sm text--secondary">Opcional · pagamento obrigatório · ' + PU.formatCurrency(500) + '</div><div class="text--sm" style="color:var(--orange-700);margin-top:3px;">A prioridade só fica ativa depois da confirmação do pagamento.</div></div></div>' +
             '<input type="checkbox" name="prioridade" value="1" style="width:22px;height:22px;accent-color:var(--orange-600);margin-top:4px;">' +
           '</label>' +
           '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão de crédito</option><option value="boleto">Boleto</option></select></label>' +
@@ -10398,13 +10398,13 @@ alt=""></noscript>
           '</div>' +
           '<div class="qf-call-reach" data-call-reach data-call-id="' + PU.escapeHtml(req.id) + '"><span data-call-reach-copy>Avisando profissionais compatíveis…</span></div>' +
           (!req.prioridade && !(req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente')
-            ? '<div class="qf-radar-priority"><div class="qf-radar-priority__top"><span class="qf-radar-priority__icon">' + icon('bolt') + '</span><div class="qf-radar-priority__copy"><div class="qf-radar-priority__title">Quer encontrar mais rápido?</div><div class="qf-radar-priority__sub">A busca amplia o alcance mais rápido e seu chamado ganha prioridade.</div></div></div><button class="btn btn--primary" type="button" data-action="ativar-busca-prioritaria">' + icon('bolt') + ' Acelerar busca — R$ 4,90</button></div>'
+            ? '<div class="qf-radar-priority"><div class="qf-radar-priority__top"><span class="qf-radar-priority__icon">' + icon('bolt') + '</span><div class="qf-radar-priority__copy"><div class="qf-radar-priority__title">Quer encontrar mais rápido?</div><div class="qf-radar-priority__sub">A busca amplia o alcance mais rápido e seu chamado ganha prioridade.</div></div></div><button class="btn btn--primary" type="button" data-action="ativar-busca-prioritaria">' + icon('bolt') + ' Acelerar busca — R$ 5</button></div>'
             : '') +
           '<div class="qf-still-searching" data-still-searching data-created="' + PU.escapeHtml(String(req.criadoEm || '')) + '" hidden><div class="text--strong">Ainda estamos procurando</div><div class="text--sm">Avisamos mais profissionais perto de você. Você não precisa fazer nada; vamos te avisar quando chegarem novos orçamentos.</div><button class="btn btn--outline btn--sm" type="button" data-support-open>' + icon('info') + ' Falar com o suporte</button></div>' +
           (req.prioridade
             ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade paga e ativa</div>'
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
-              ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || 490) + '</div>'
+              ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || 500) + '</div>'
               : '<div class="badge badge--success" style="margin-top:12px;"><span class="badge__dot"></span>Chamado normal gratuito</div>')) +
           (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.checkoutUrl
             ? '<a class="btn btn--primary btn--block-auto" href="' + PU.escapeHtml(req.pagamentoPrioridade.checkoutUrl) + '" rel="noopener" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade</a>'
@@ -11569,7 +11569,7 @@ alt=""></noscript>
             req.pagamentoPrioridade = {
               id: out.pagamento_id,
               status: out.status || 'pendente',
-              valor: Number(out.valor_centavos || 490),
+              valor: Number(out.valor_centavos || 500),
               checkoutUrl: out.checkout_url || null,
               criadoEm: new Date().toISOString()
             };

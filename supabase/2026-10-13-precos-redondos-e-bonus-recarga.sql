@@ -154,3 +154,17 @@ BEGIN
   RETURN v_expira;
 END;
 $function$;
+
+-- Prioridade do cliente: R$ 4,90 -> R$ 5 (valor no painel e reserva da função).
+UPDATE public.qf_config
+SET valor = jsonb_set(valor, '{valor_centavos}', '500')
+WHERE chave = 'prioridade_cliente' AND (valor->>'valor_centavos')::integer = 490;
+
+DO $do$ DECLARE d text; n text; BEGIN
+  d := pg_get_functiondef('public.qf_solicitar_prioridade'::regproc);
+  n := replace(replace(replace(d,
+    'v_valor integer := 490;', 'v_valor integer := 500;'),
+    '::integer, 490)', '::integer, 500)'),
+    'v_valor := coalesce(v_valor, 490);', 'v_valor := coalesce(v_valor, 500);');
+  IF n <> d THEN EXECUTE n; END IF;
+END $do$;
