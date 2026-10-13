@@ -65,6 +65,7 @@ async function getFcmAccessToken(): Promise<string | null> {
     .sign(key);
   const resp = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
   });
@@ -125,6 +126,7 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
   }
   const resp = await fetch(`https://fcm.googleapis.com/v1/projects/${fcmAccount.project_id}/messages:send`, {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: { "Content-Type": "application/json", Authorization: "Bearer " + access },
     body: JSON.stringify({ message }),
   });
@@ -219,7 +221,9 @@ async function callCanReceiveMore(callId: string, status?: string | null) {
   const accepted = await professionalForCall(callId);
   if (accepted) return false;
   const participants = await participantsForCall(callId);
-  return participants.length < 5;
+  const { data: limit, error } = await admin.rpc("qf_limite_orcamentos", { p_chamado_id: callId });
+  if (error) throw error;
+  return participants.length < Number(limit || 5);
 }
 
 async function actorUnlocked(callId: string, userId: string) {
@@ -253,7 +257,8 @@ async function recipientsForNewCallAtRadius(call: any, stageRadiusKm: number | n
 }
 
 // V11.13: perUser = aviso próprio de cada profissional (distância, tempo e preço dele).
-async function sendToUsers(userIds: string[], payload: any, perUser?: Record<string, any>) {
+type PushOutcome = { user_id: string; status: string; error: string | null };
+async function sendToUsers(userIds: string[], payload: any, perUser?: Record<string, any>, audit?: (outcome: PushOutcome) => Promise<void>) {
   const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
   if (!uniqueIds.length) return { sent: 0, total: 0 };
 
@@ -283,6 +288,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
     if (!inside) outside.add(String(professional.user_id));
   }
   const ids = uniqueIds.filter((uid) => !outside.has(uid));
+  if (audit) for (const uid of outside) await audit({ user_id: uid, status: "fora_horario", error: null });
   if (!ids.length) return { sent: 0, total: 0, skipped_outside_hours: outside.size };
 
   const { data: subs, error } = await admin
@@ -302,48 +308,44 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
   const webOk = await ensureVapid();
   let sent = 0;
   const errors: number[] = [];
-  for (const s of subs || []) {
-    const endpoint = String(s.endpoint || "");
-    if (endpoint.startsWith(FCM_PREFIX)) {
-      if (!fcmAccount) continue;
-      try {
-        // V12: "apk android;v=12" (ou maior) recebe só dados.
-        const m = /^apk android;v=(\d+)/.exec(String(s.user_agent || ""));
-        const soDados = !!m && Number(m[1]) >= 12;
-        const base = (perUser && perUser[String(s.user_id)]) || payload;
-        const userPayload = alertaPorUser[String(s.user_id)] ? { ...base, alerta: alertaPorUser[String(s.user_id)] } : base;
-        const r = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, soDados);
-        if (r === "ok") sent++;
-        if (r === "gone") {
-          await admin.from("qf_push_subscriptions")
-            .update({ ativo: false, atualizado_em: new Date().toISOString() })
-            .eq("id", s.id);
+  // Persist per person as soon as their devices have been attempted. A successful
+  // device makes the person successful, so retries never resend to that person.
+  for (const uid of ids) {
+    const devices = (subs || []).filter((s: any) => String(s.user_id) === uid);
+    let userSent = 0;
+    let reason: string | null = null;
+    for (const s of devices) {
+      const endpoint = String(s.endpoint || "");
+      const base = (perUser && perUser[uid]) || payload;
+      const userPayload = alertaPorUser[uid] ? { ...base, alerta: alertaPorUser[uid] } : base;
+      if (endpoint.startsWith(FCM_PREFIX)) {
+        if (!fcmAccount) { reason = "fcm_not_configured"; continue; }
+        try {
+          const m = /^apk android;v=(\d+)/.exec(String(s.user_agent || ""));
+          const result = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, !!m && Number(m[1]) >= 12);
+          if (result === "ok") { sent++; userSent++; }
+          else reason = result === "gone" ? "subscription_expired" : "fcm_send_failed";
+          if (result === "gone") await admin.from("qf_push_subscriptions")
+            .update({ ativo: false, atualizado_em: new Date().toISOString() }).eq("id", s.id);
+        } catch (_) { reason = "fcm_network_error"; }
+      } else {
+        if (!webOk) { reason = "vapid_not_configured"; continue; }
+        try {
+          await webpush.sendNotification(
+            { endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
+            JSON.stringify(userPayload), { TTL: 300, urgency: payload.strong ? "high" : "normal", timeout: 10000 });
+          sent++; userSent++;
+        } catch (err: any) {
+          const code = Number(err?.statusCode || err?.status || 0);
+          errors.push(code); reason = "web_push_" + code;
+          if ([404, 410, 401, 403].includes(code)) await admin.from("qf_push_subscriptions")
+            .update({ ativo: false, atualizado_em: new Date().toISOString() }).eq("id", s.id);
         }
-      } catch (err) {
-        console.error("FCM", err);
-      }
-      continue;
-    }
-    if (!webOk) continue;
-    try {
-      await webpush.sendNotification(
-        { endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
-        JSON.stringify((perUser && perUser[String(s.user_id)]) || payload),
-        { TTL: 90, urgency: payload.strong ? "high" : "normal" }
-      );
-      sent++;
-    } catch (err: any) {
-      const code = Number(err?.statusCode || err?.status || 0);
-      errors.push(code);
-      // 401/403: inscrição feita com a chave VAPID antiga. Desativa; o app se reinscreve ao abrir.
-      if (code === 404 || code === 410 || code === 401 || code === 403) {
-        await admin.from("qf_push_subscriptions")
-          .update({ ativo: false, atualizado_em: new Date().toISOString() })
-          .eq("id", s.id);
       }
     }
+    if (audit) await audit({ user_id: uid, status: userSent ? "enviado" : (devices.length ? "falhou" : "sem_inscricao"), error: userSent ? null : reason });
   }
-  return errors.length ? { sent, total: (subs || []).length, errors } : { sent, total: (subs || []).length };
+  return { sent, total: (subs || []).length, ...(errors.length ? { errors } : {}) };
 }
 
 function newCallPayload(call: any) {
@@ -532,7 +534,16 @@ async function sendNewCallStage(callId: string, stageRadiusKm: number | null, on
       if (n >= 2) perUser[String(uid)] = groupedNormalPayload(call, n);
     }
   }
-  const result = await sendToUsers(freshIds, newCallPayload(call), perUser);
+  const audit = async (outcome: PushOutcome) => {
+    const { error } = await admin.from("qf_push_entregas").update({
+      envio_status: outcome.status, envio_erro: outcome.error,
+      enviado_em: outcome.status === "enviado" ? new Date().toISOString() : null,
+    }).eq("chamado_id", call.id).eq("user_id", outcome.user_id)
+      .eq("evento", "new_call").eq("envio_status", "processando");
+    if (error) throw error;
+  };
+  const result = await sendToUsers(freshIds, newCallPayload(call), perUser, audit);
+  console.log("qf_push_delivery", JSON.stringify({ call_id: call.id, recipients: freshIds.length, ...result }));
   return { stopped: false, recipients: freshIds.length, ...result };
 }
 
@@ -646,6 +657,10 @@ Deno.serve(async (req) => {
     // Profissional acaba de entrar no horario: recuperar pedidos ainda abertos.
     // Reaproveita todos os controles de categoria, distancia, vagas, online e
     // deduplicacao do mesmo push usado por chamados novos.
+    if (event === "retry_call") {
+      try { return json({ ok: true, event, ...(await sendNewCallStage(callId, 200)) }); }
+      catch (_) { return json({ error: "retry_call_failed" }, 500); }
+    }
     if (event === "shift_start") {
       const onlyUserId = String(body.user_id || "");
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(onlyUserId)) {
@@ -1099,3 +1114,4 @@ Deno.serve(async (req) => {
   const result = await sendToUsers(recipients, payload);
   return json({ ok: true, recipients: recipients.length, ...result });
 });
+
