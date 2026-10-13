@@ -254,8 +254,36 @@ async function recipientsForNewCallAtRadius(call: any, stageRadiusKm: number | n
 
 // V11.13: perUser = aviso próprio de cada profissional (distância, tempo e preço dele).
 async function sendToUsers(userIds: string[], payload: any, perUser?: Record<string, any>) {
-  const ids = Array.from(new Set(userIds.filter(Boolean)));
-  if (!ids.length) return { sent: 0, total: 0 };
+  const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
+  if (!uniqueIds.length) return { sent: 0, total: 0 };
+
+  // Avisos para profissionais respeitam o horario escolhido, inclusive chat.
+  // A consulta do portfolio continua independente do horario; nada e ocultado do app.
+  const { data: professionalHours, error: hoursError } = await admin
+    .from("qf_profissionais")
+    .select("user_id,horario_inicio,horario_fim")
+    .in("user_id", uniqueIds);
+  if (hoursError) throw hoursError;
+  const currentSaoPaulo = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(new Date());
+  const minutesOfDay = (value: string) => {
+    const match = /^(\\d{1,2}):(\\d{2})/.exec(value || "");
+    return match ? Number(match[1]) * 60 + Number(match[2]) : null;
+  };
+  const nowMinutes = minutesOfDay(currentSaoPaulo)!;
+  const outside = new Set<string>();
+  for (const professional of professionalHours || []) {
+    const start = minutesOfDay(String(professional.horario_inicio || ""));
+    const end = minutesOfDay(String(professional.horario_fim || ""));
+    if (start === null || end === null || start === end) continue;
+    const inside = start < end
+      ? nowMinutes >= start && nowMinutes < end
+      : nowMinutes >= start || nowMinutes < end;
+    if (!inside) outside.add(String(professional.user_id));
+  }
+  const ids = uniqueIds.filter((uid) => !outside.has(uid));
+  if (!ids.length) return { sent: 0, total: 0, skipped_outside_hours: outside.size };
 
   const { data: subs, error } = await admin
     .from("qf_push_subscriptions")
@@ -557,30 +585,12 @@ async function sendCascadeStage3(callId: string) {
 // V11.52: pedido virou "aberto a todos" (ninguém pegou depois da etapa 3): aviso comum, SEM toque de
 // chamado, para quem é da mesma profissão em qualquer região e ainda não foi avisado desse pedido.
 // Fica em qf_push_entregas com evento "aberto_todos" (não repete e não conta como aviso de chamado).
+// "Abertos a todos" e somente vitrine no portfolio: nada de push/toque.
+// A busca normal e a rechecagem na abertura do expediente continuam funcionando.
 async function notifyOpenToAll(callId: string) {
-  const { data: ids, error } = await admin.rpc("qf_push_aberto_todos_destinatarios", { p_chamado_id: callId });
-  if (error) { console.error("aberto_todos destinatarios", error); return { recipients: 0, sent: 0, total: 0 }; }
-  const candidates = Array.isArray(ids) ? ids.map(String) : [];
-  if (!candidates.length) return { recipients: 0, sent: 0, total: 0 };
-  const { data: reserved, error: reserveErr } = await admin.rpc("qf_push_reservar_entregas", {
-    p_chamado_id: callId,
-    p_user_ids: candidates,
-    p_evento: "aberto_todos",
-    p_raio_etapa_km: null,
-  });
-  if (reserveErr) { console.error("aberto_todos reserva", reserveErr); return { recipients: 0, sent: 0, total: 0 }; }
-  const fresh = Array.isArray(reserved) ? reserved.map(String) : [];
-  if (!fresh.length) return { recipients: 0, sent: 0, total: 0 };
-  const { data: call } = await admin.from("qf_chamados").select("id,titulo,cidade,uf").eq("id", callId).maybeSingle();
-  const place = [call?.cidade, call?.uf].filter(Boolean).join("/");
-  const result = await sendToUsers(fresh, {
-    title: "Pedido de " + (call?.titulo || "serviço") + " aberto" + (place ? " em " + place : ""),
-    body: "Ninguém da região pegou ainda. Se você atende lá, veja em Abertos a todos.",
-    url: "/#/profissional/servicos/disponiveis",
-    tag: "qf-aberto-todos-" + callId,
-    strong: false,
-  });
-  return { recipients: fresh.length, ...result };
+  const { data: call } = await admin.from("qf_chamados")
+    .select("id,status").eq("id", callId).maybeSingle();
+  return { visible_in_portfolio: !!call && await callCanReceiveMore(callId, call.status), recipients: 0, sent: 0, total: 0 };
 }
 
 async function progressiveNewCallPush(callId: string) {
