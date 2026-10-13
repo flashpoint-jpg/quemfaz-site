@@ -35,6 +35,11 @@ for (const [kind,script] of [['main',main],['shell',shell]]) {
 html=html.replace(/<script src="([^"]+)"/g,'<script defer src="$1"');
 html=html.replace(/<link rel="preload" as="image" href="([^"]+)" fetchpriority="high">/,(_,url)=>'<script>if(!location.hash||location.hash==="#/"){var qfHeroPreload=document.createElement("link");qfHeroPreload.rel="preload";qfHeroPreload.as="image";qfHeroPreload.href='+JSON.stringify(url)+';qfHeroPreload.fetchPriority="high";document.head.appendChild(qfHeroPreload);}</script>');
 html=html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/g,(_,attrs,css)=>'<style'+attrs+'>'+esbuild.transformSync(css,{loader:'css',minify:true}).code+'</style>');
+// Temporario: enquanto a primeira versao publica do app esta em analise,
+// ocultar somente os selos Google Play da home (sem remover seus links do codigo).
+// Para reativar apos a aprovacao, remover apenas este bloco.
+html=html.replace('</head>','<style id="qf-google-play-pendente">.qf-play-badge{display:none!important}</style></head>');
+
 
 // A home já mostra o conteúdo aprovado enquanto os scripts chegam. Não é uma tela de espera.
 const iconStart=main[1].indexOf('(function (global) {');
