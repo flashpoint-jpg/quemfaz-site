@@ -8436,13 +8436,16 @@ Screens.adminDashboardRender = function () {
   function admPaineisHtml(d) {
     const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
     const agora = d.agora;
-    let vagas = 0, semNenhum = 0;
-    pedidos.forEach(function (c) { vagas += Math.max(0, Number(c.limite || 0) - Number(c.ocupadas || 0)); if (!Number(c.ocupadas || 0)) semNenhum++; });
+    let vagas = 0, semNenhum = 0, maisAntigo = null;
+    pedidos.forEach(function (c) {
+      vagas += Math.max(0, Number(c.limite || 0) - Number(c.ocupadas || 0)); if (!Number(c.ocupadas || 0)) semNenhum++;
+      if (!maisAntigo || (Date.parse(c.criado_em) || 0) < (Date.parse(maisAntigo) || 0)) maisAntigo = c.criado_em;
+    });
     const numeros = '<section class="qf-adm-numeros">' +
       '<div class="qf-adm-num__item"><span>Pedidos nos painéis</span><b>' + pedidos.length + '</b></div>' +
       '<div class="qf-adm-num__item"><span>Vagas ainda livres</span><b>' + vagas + '</b></div>' +
       '<div class="qf-adm-num__item' + (semNenhum ? ' is-alerta' : '') + '"><span>Sem nenhum desbloqueio</span><b>' + semNenhum + '</b></div>' +
-      '<div class="qf-adm-num__item"><span>Mais antigo parado há</span><b>' + (pedidos.length ? pnHa(pedidos[0].criado_em, agora) : '—') + '</b></div>' +
+      '<div class="qf-adm-num__item"><span>Mais antigo parado há</span><b>' + (maisAntigo ? pnHa(maisAntigo, agora) : '—') + '</b></div>' +
     '</section>';
     if (!pedidos.length) return numeros + admCard('Nenhum pedido parado', '', '<p class="qf-adm-mudo" style="margin:0;">Não há pedido com vaga livre na tela dos profissionais agora.</p>');
     return numeros + pedidos.map(function (c) {
@@ -8496,6 +8499,8 @@ Screens.adminDashboardRender = function () {
       // Busca a quantidade EXATA que o envio manual alcançaria agora.
       // Nunca utiliza no_painel_online, pois nem todos os online sao elegiveis.
       const pedidosPainel = Array.isArray(r.data.pedidos) ? r.data.pedidos : [];
+      // Pedido que acabou de entrar aparece primeiro.
+      pedidosPainel.sort(function (a, b) { return (Date.parse(b.criado_em) || 0) - (Date.parse(a.criado_em) || 0); });
       pedidosPainel.forEach(function (c) { c.aptos_online = null; });
       try {
         const ids = pedidosPainel.map(function (c) { return String(c.id || ''); }).filter(Boolean);
@@ -8601,7 +8606,7 @@ Screens.adminDashboardRender = function () {
     PU.toast('Relatório com ' + admLinhas(linhas.length - 1, 'pedido', 'pedidos') + ' baixado.', 'success');
   }
   Screens.adminPaineisRender = function () {
-    return admPage('<p class="qf-prox__intro">Os pedidos que estão parados na tela dos profissionais agora: ainda têm vaga livre e qualquer profissional do serviço pode desbloquear. Do que está parado há mais tempo para o mais novo.</p>' +
+    return admPage('<p class="qf-prox__intro">Os pedidos que estão parados na tela dos profissionais agora: ainda têm vaga livre e qualquer profissional do serviço pode desbloquear. Do mais novo para o que está parado há mais tempo.</p>' +
       '<div data-adm-paineis>' + admCard('Painéis', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-paineis');
   };
 
