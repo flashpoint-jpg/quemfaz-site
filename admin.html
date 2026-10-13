@@ -1689,7 +1689,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-pn__acoes>button[data-admin-remind]{flex:1 1 205px}
 .qf-pn__acoes>button[data-admin-remind]:disabled{cursor:not-allowed;opacity:.6}
 </style>
-</head>
+<style id="qf-approved-brand">.qf-approved-logo{display:block;width:160px;height:54px;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}.tabbar__brand .qf-approved-logo{width:140px;height:48px}@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:116px;height:40px}.topbar__title .qf-approved-logo{width:140px;height:46px}}</style></head>
 <body>
 <div id="app-shell">
   <div class="view" style="padding-top:34vh;text-align:center;color:#8992a3;">
@@ -9411,7 +9411,7 @@ Screens.adminDashboardRender = function () {
       '<a href="#app-content" class="skip-link">Pular para conteúdo</a>' +
       '<header class="qf-adm-top">' +
         '<button type="button" class="qf-adm-top__btn qf-adm-top__menu" data-adm-menu aria-label="Abrir menu" aria-controls="qf-adm-side" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>' +
-        '<div class="qf-adm-top__marca"><b>QuemFaz</b><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
+        '<div class="qf-adm-top__marca"><img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
         '<div class="qf-adm-top__acoes">' +
           '<button type="button" class="qf-adm-top__btn" data-adm-avisos aria-label="Avisos' + (pend ? ': ' + pend + ' pendentes' : '') + '">' + icon('bell') + (pend ? '<span class="qf-adm-top__badge">' + (pend > 99 ? '99+' : pend) + '</span>' : '') + '</button>' +
           '<button type="button" class="qf-adm-top__btn" data-nav="/admin/configuracoes" aria-label="Configurações">' + icon('settings') + '</button>' +

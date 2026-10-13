@@ -35,9 +35,9 @@
 <link rel="preload" as="image" href="./assets/qf-approved-2.webp" fetchpriority="high">
 <link rel="preload" as="script" href="vendor/supabase-2.117.2.js">
 <!-- QF_GOOGLE_BRAND_LOGO_20261008: PNG legível para buscadores e navegadores; SVG permanece para PWA -->
-<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=20261013">
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
-<link rel="apple-touch-icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <script src="qf-location-autocomplete.js?v=11.38.0"></script>
 <script>
@@ -3296,7 +3296,7 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .qf-play-badge--desk{flex:none}
 @media(prefers-reduced-motion:reduce){.qf-play-badge{transition:none}.qf-play-badge:hover{transform:none}}
 </style>
-</head>
+<style id="qf-approved-brand">.qf-approved-logo{display:block;width:160px;height:54px;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}.tabbar__brand .qf-approved-logo{width:140px;height:48px}@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:116px;height:40px}.topbar__title .qf-approved-logo{width:140px;height:46px}}</style></head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=1124265238584181&ev=PageView&noscript=1"
@@ -7672,10 +7672,10 @@ alt=""></noscript>
     const cats = DB.categories();
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
-      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></div>' + deskMenu() + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
+      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '</div>' + deskMenu() + '<details class="qf-home-prof"><summary>' + icon('briefcase') + '<span>Sou profissional</span></summary><div class="qf-home-prof-menu"><button type="button" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span><strong>Sou profissional</strong><small>Ofereço meus serviços</small></span>' + icon('chevronRight') + '</button><button type="button" data-nav="/anuncie">' + icon('building') + '<span><strong>Tenho uma empresa</strong><small>Divulgo minha empresa e meus serviços</small></span>' + icon('chevronRight') + '</button></div></details><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div>' +
       // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
-      '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
+      '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '</span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
       '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div>' +
         '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56"></a>' +
@@ -14475,7 +14475,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.78.0';
+  const APP_VERSION = '11.78.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16864,7 +16864,7 @@ alt=""></noscript>
   const DB = global.DB, PU = global.PU, icon = global.icon;
   const Screens = (global.Screens = global.Screens || {});
 
-  const QF_BRAND_MARK = global.QF_BRAND_MARK = '<span class="qf-brandmark qf-brandmark--services" aria-hidden="true"><svg viewBox="0 0 64 68" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="qfRoof" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#04a9f4"/><stop offset="1" stop-color="#003c9e"/></linearGradient><linearGradient id="qfPin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb100"/><stop offset="1" stop-color="#ff6500"/></linearGradient></defs><path d="M9 28 32 7l23 21v19H9Z" fill="#073c9d"/><path d="M5 29 32 5l27 24" fill="none" stroke="url(#qfRoof)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M23 26c0-7 18-7 18 0v3H23Z" fill="#ff9c00"/><circle cx="32" cy="32" r="6" fill="#06458e"/><path d="M20 47c1-14 23-14 24 0" fill="#06458e"/><path d="M32 62c-4-6-13-14-13-23a13 13 0 0 1 26 0c0 9-9 17-13 23Z" fill="url(#qfPin)"/><circle cx="32" cy="39" r="5.5" fill="#fff"/></svg></span>';
+  const QF_BRAND_MARK = global.QF_BRAND_MARK = '<img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços">';
 
   const TABS = {
     cliente: [
@@ -17354,7 +17354,7 @@ alt=""></noscript>
       topbarHtml =
         '<div class="topbar">' +
         (tabTitle === 'QuemFaz'
-          ? '<h1 class="topbar__title topbar__title--brand">' + QF_BRAND_MARK + '<span class="qf-brand-words">Quem<span>Faz</span><small>SERVIÇOS</small></span></h1>'
+          ? '<h1 class="topbar__title topbar__title--brand">' + QF_BRAND_MARK + '</h1>'
           : '<h1 class="topbar__title">' + PU.escapeHtml(tabTitle) + '</h1>') +
         (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') +
         topbarBellHtml(session, found.route.tab) +
@@ -17429,7 +17429,7 @@ alt=""></noscript>
   function renderTabbar(tabs, activeId) {
     if (!tabs.length) return '';
     return '<nav class="tabbar" aria-label="Navegação principal">' +
-      '<button class="tabbar__brand" data-nav="' + tabs[0].route + '" aria-label="QuemFaz — início">' + QF_BRAND_MARK + '<span class="tabbar__brand-word">Quem<span>Faz</span></span></button>' +
+      '<button class="tabbar__brand" data-nav="' + tabs[0].route + '" aria-label="QuemFaz — início">' + QF_BRAND_MARK + '</button>' +
       tabs.map(function (t) {
         const count = t.id === 'avisos' ? unreadNotices(currentSession()) : 0;
         const lbl = t.labelLong ? '<span class="tabbar__lbl-short">' + t.label + '</span><span class="tabbar__lbl-long">' + t.labelLong + '</span>' : '<span>' + t.label + '</span>';

@@ -23,16 +23,16 @@
   "prefer_related_applications": false,
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "src": "./icon-192.png?v=20261013",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "src": "./icon-512.png?v=20261013",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "shortcuts": [
@@ -42,9 +42,9 @@
       "url": "./index.html?source=pwa#/profissional/home",
       "icons": [
         {
-          "src": "./icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
+          "src": "./icon-192.png?v=20261013",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
@@ -54,9 +54,9 @@
       "url": "./index.html?source=pwa#/cliente/pedidos",
       "icons": [
         {
-          "src": "./icon.svg",
-          "sizes": "any",
-          "type": "image/svg+xml"
+          "src": "./icon-192.png?v=20261013",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
