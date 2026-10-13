@@ -6,9 +6,10 @@ const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
 // Já vem pronto no HTML inicial, depois da foto e antes do campo de busca.
 const foto=html.indexOf('class="qf-landing-photo"'),rot=html.indexOf('data-brandrot'),form=html.indexOf('data-landing-service-form');
 assert.ok(foto>0&&rot>foto&&form>rot,'ordem: foto, carrossel, campo');
-// Mostra o logo do QuemFaz e leva para a tela de planos de divulgação, que abre sem login.
+// Mostra o logo do QuemFaz (o aprovado em 13/10) e leva para a tela de planos de divulgação, que abre sem login.
 const bloco=html.slice(rot,form);
-assert.ok(bloco.includes('qf-brandmark')&&bloco.includes('Anuncie sua marca aqui'));
+assert.ok(/class="qf-brandrot__logo"><img class="qf-approved-logo"/.test(bloco),'logo do QuemFaz no carrossel');
+assert.ok(bloco.includes('Anuncie sua marca aqui'));
 assert.ok(/class="qf-brandrot__cta"[^>]*data-nav="\/anuncie"/.test(bloco));
 assert.ok(/pattern: '\/anuncie', anon: true/.test(src));
 // Três textos que vão trocando; altura fixa para a tela não pular; respeita "reduzir movimento".
