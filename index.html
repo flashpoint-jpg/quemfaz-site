@@ -1949,6 +1949,10 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-top-dl svg{width:16px;height:16px;flex:none}
 .qf-top-dl:active{transform:scale(.97)}
 .qf-top-dl:disabled{opacity:.7}
+.qf-top-dl.qf-top-play{padding:0;background:none;box-shadow:none;border-radius:8px;height:44px}
+.qf-top-play img{display:block;height:52px;width:auto;margin:-4px -2px}
+.qf-top-play--txt{padding:0 12px!important;background:#000!important;color:#fff;border:1px solid #a6a6a6!important;font-size:12.5px}
+.qf-top-play--txt::before{content:'Google Play'}
 .topbar .qf-top-dl{margin-left:auto}
 .qf-tabbar-dl{display:none}
 @media (min-width:768px){.qf-tabbar-dl{display:flex;align-items:center;margin-left:12px;flex:none}}
@@ -14693,7 +14697,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.84.2';
+  const APP_VERSION = '11.84.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15098,7 +15102,9 @@ alt=""></noscript>
   function topInstallInner() {
     if (canOfferInstall()) {
       const play = usePlay();
-      const label = play ? 'Google Play' : (isIosDevice() ? 'Criar atalho' : 'Instalar app');
+      // V11.84.3: na barra de cima, o Android mostra o selo oficial do Google Play (no lugar do botão laranja).
+      if (play) return '<button class="qf-top-dl qf-top-play" type="button" data-download-apk aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="646" height="250" onerror="this.parentNode.classList.add(\'qf-top-play--txt\');this.remove()"></button>';
+      const label = isIosDevice() ? 'Criar atalho' : 'Instalar app';
       return '<button class="qf-top-dl" type="button" ' + (play ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + label + '</span></button>';
     }
     if (softEv && softEv.state === 'optional') return '<button class="qf-top-dl" type="button" data-top-update>' + icon('download') + '<span>Atualizar</span></button>';
