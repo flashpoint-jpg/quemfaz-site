@@ -44,10 +44,30 @@ for (const [kind,script] of [['main',main],['shell',shell]]) {
 html=html.replace(/<script src="([^"]+)"/g,'<script defer src="$1"');
 html=html.replace(/<link rel="preload" as="image" href="([^"]+)" fetchpriority="high">/,(_,url)=>'<script>if(!location.hash||location.hash==="#/"){var qfHeroPreload=document.createElement("link");qfHeroPreload.rel="preload";qfHeroPreload.as="image";qfHeroPreload.href='+JSON.stringify(url)+';qfHeroPreload.fetchPriority="high";document.head.appendChild(qfHeroPreload);}</script>');
 html=html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/g,(_,attrs,css)=>'<style'+attrs+'>'+esbuild.transformSync(css,{loader:'css',minify:true}).code+'</style>');
-// Temporario: enquanto a primeira versao publica do app esta em analise,
-// ocultar somente os selos Google Play da home (sem remover seus links do codigo).
-// Para reativar apos a aprovacao, remover apenas este bloco.
-html=html.replace('</head>','<style id="qf-google-play-pendente">.qf-play-badge{display:none!important}</style></head>');
+// Aplicativo oficial publicado na Google Play: manter os selos da home visiveis.
+// Corrigir o destino somente dos selos da Play Store, sem mudar os demais links do site.
+const qfPlayStoreUrl = 'https://play.google.com/store/apps/details?id=br.app.quemfaz';
+const qfPlayStoreLinkFix = `<script>
+(function(){
+  var playStoreUrl = ${JSON.stringify(qfPlayStoreUrl)};
+  function atualizarSelosPlayStore(){
+    document.querySelectorAll('a.qf-play-badge').forEach(function(a){
+      a.href = playStoreUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.removeAttribute('aria-disabled');
+      a.setAttribute('aria-label', 'Baixar QuemFaz na Google Play');
+    });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', atualizarSelosPlayStore);
+  else atualizarSelosPlayStore();
+  document.addEventListener('click', function(event){
+    var badge = event.target.closest && event.target.closest('a.qf-play-badge');
+    if(badge) badge.href = playStoreUrl;
+  }, true);
+})();
+</script>`;
+html=html.replace('</body>',qfPlayStoreLinkFix+'</body>');
 
 
 // A home já mostra o conteúdo aprovado enquanto os scripts chegam. Não é uma tela de espera.
