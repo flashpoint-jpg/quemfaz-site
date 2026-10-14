@@ -7700,6 +7700,158 @@ Screens.adminDashboardRender = function () {
     });
   }
 
+  // ---------------- Instalação do aplicativo (diagnóstico confiável) ----------------
+  // Push ativo é um sinal de comunicação, não prova de instalação pela Play Store.
+  let instalacoesFiltro = 'sem_push';
+  let instalacoesBusca = '';
+  const INSTALACOES_CONVITES_KEY = 'qf_admin_convites_playstore_v1';
+
+  function instalacoesContatos() {
+    try { return JSON.parse(localStorage.getItem(INSTALACOES_CONVITES_KEY) || '{}') || {}; }
+    catch (_) { return {}; }
+  }
+  function instalacoesGuardarContato(id) {
+    try {
+      const enviados = instalacoesContatos();
+      enviados[id] = new Date().toISOString();
+      localStorage.setItem(INSTALACOES_CONVITES_KEY, JSON.stringify(enviados));
+    } catch (_) {}
+  }
+  function instalacoesProfissionais() {
+    return (DB.state.users.profissionais || [])
+      .filter(function (p) { return !p.bloqueado; })
+      .slice().sort(function (a, b) {
+        if (!!a.pushAtivo !== !!b.pushAtivo) return a.pushAtivo ? 1 : -1;
+        return String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR');
+      });
+  }
+  function instalacoesConvite(u) {
+    const primeiro = String(u.nome || '').trim().split(/\s+/)[0];
+    const nome = primeiro ? ' ' + primeiro : '';
+    return 'Olá' + nome + '! Aqui é da equipe Quem Faz.\n\n' +
+      'Para receber oportunidades de serviços pelo celular, baixe ou atualize nosso aplicativo oficial na Google Play:\n' +
+      SEM_PUSH_STORE_LINK + '\n\n' +
+      'Após abrir o app, entre com seu cadastro e habilite as notificações nas configurações do celular. ' +
+      'Assim você poderá receber avisos de novos chamados na sua região.';
+  }
+  function instalacoesCard(p, convites) {
+    const telefone = semPushFone(p.telefone);
+    const nome = PU.escapeHtml(p.nome || 'Profissional');
+    const lugar = [p.cidadeNome, p.uf].filter(Boolean).join('/');
+    const email = String(p.email || '').trim();
+    const contatoAberto = !!convites[p.id];
+    const semPush = !p.pushAtivo;
+    const pesquisa = (String(p.nome || '') + ' ' + String(p.telefone || '') + ' ' + email + ' ' + lugar).toLowerCase();
+    return '<div class="card stack--sm" data-instalacoes-card data-instalacoes-id="' + PU.escapeHtml(p.id) + '" data-instalacoes-search="' + PU.escapeHtml(pesquisa) + '">' +
+      '<div class="row-between" style="align-items:flex-start;gap:12px;flex-wrap:wrap;">' +
+        '<div style="min-width:0;flex:1;">' +
+          '<div class="text--strong">' + nome + '</div>' +
+          '<div class="text--sm text--secondary">' + PU.escapeHtml((p.telefone || '') + (lugar ? ' · ' + lugar : '')) + '</div>' +
+          (email ? '<div class="text--sm text--secondary" style="overflow-wrap:anywhere;">' + PU.escapeHtml(email) + '</div>' : '') +
+        '</div>' +
+        '<span class="badge ' + (semPush ? 'badge--warning' : 'badge--success') + '">' + (semPush ? 'Sem push confirmado' : 'Push ativo') + '</span>' +
+      '</div>' +
+      '<div class="text--sm text--muted">' +
+        (semPush ? 'Instalação não confirmada. Pode estar usando o app sem notificações.' : 'Notificações cadastradas. A origem da instalação (Play Store ou navegador) não foi verificada.') +
+      '</div>' +
+      (semPush ? '<div class="btn-row" style="gap:8px;flex-wrap:wrap;">' +
+        (telefone ? '<button type="button" class="btn btn--primary" data-instalacoes-whatsapp="' + PU.escapeHtml(p.id) + '">' + icon('whatsapp') + (contatoAberto ? ' Reabrir convite Play Store' : ' Enviar Play Store no WhatsApp') + '</button>' :
+          '<span class="text--sm text--muted">WhatsApp não cadastrado</span>') +
+        '</div>' +
+        (contatoAberto ? '<div class="text--sm text--secondary">WhatsApp já aberto para este convite neste navegador. O envio não é confirmado automaticamente.</div>' : '') : '') +
+      '</div>';
+  }
+
+  Screens.adminInstalacoesRender = function () {
+    if (!cloudOn()) return '<div class="view"><div class="card">Disponível com o painel conectado ao banco de dados.</div></div>';
+    const lista = instalacoesProfissionais();
+    const comPush = lista.filter(function (p) { return !!p.pushAtivo; });
+    const semPush = lista.filter(function (p) { return !p.pushAtivo; });
+    const convites = instalacoesContatos();
+    const visiveis = instalacoesFiltro === 'push' ? comPush : instalacoesFiltro === 'sem_push' ? semPush : lista;
+    const filtros = [
+      { id: 'sem_push', rotulo: 'Sem confirmação', n: semPush.length },
+      { id: 'push', rotulo: 'Com push', n: comPush.length },
+      { id: 'todos', rotulo: 'Todos', n: lista.length }
+    ];
+    return '<div class="view stack">' +
+      '<div class="card stack--sm">' +
+        '<div class="h3">Instalação do aplicativo</div>' +
+        '<div class="text--sm text--secondary">Confira quem tem notificações registradas e convide pelo WhatsApp quem ainda não confirmou. A instalação pela Google Play não pode ser identificada individualmente com os dados atuais.</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;">' +
+          '<div style="border:1px solid #dfe5ed;border-radius:12px;padding:12px;"><div class="h2">' + lista.length + '</div><div class="text--sm text--secondary">Profissionais ativos</div></div>' +
+          '<div style="border:1px solid #dfe5ed;border-radius:12px;padding:12px;"><div class="h2">' + comPush.length + '</div><div class="text--sm text--secondary">Com push cadastrado</div></div>' +
+          '<div style="border:1px solid #dfe5ed;border-radius:12px;padding:12px;"><div class="h2">' + semPush.length + '</div><div class="text--sm text--secondary">Sem push confirmado</div></div>' +
+        '</div>' +
+        '<div class="text--sm text--muted">Importante: sem push não significa sem aplicativo. Os convites são individuais e não são enviados automaticamente.</div>' +
+        '<button type="button" class="btn btn--outline" data-instalacoes-atualizar>' + icon('refresh') + ' Atualizar lista</button>' +
+      '</div>' +
+      '<div class="card stack--sm">' +
+        '<div class="row" style="gap:8px;flex-wrap:wrap;">' +
+          filtros.map(function (f) {
+            return '<button type="button" class="chip' + (instalacoesFiltro === f.id ? ' is-selected' : '') + '" data-instalacoes-filtro="' + f.id + '">' + f.rotulo + ' (' + f.n + ')</button>';
+          }).join('') +
+        '</div>' +
+        '<input class="input" type="search" data-instalacoes-busca placeholder="Buscar nome, cidade ou telefone" value="' + PU.escapeHtml(instalacoesBusca) + '" aria-label="Buscar profissional">' +
+      '</div>' +
+      '<div class="stack--sm" data-instalacoes-lista>' +
+        (visiveis.length ? visiveis.map(function (p) { return instalacoesCard(p, convites); }).join('') : '<div class="card text--sm text--secondary">Nenhum profissional nesta categoria.</div>') +
+      '</div>' +
+      '<div class="card text--sm text--secondary" data-instalacoes-vazio hidden>Nenhum profissional corresponde à busca.</div>' +
+    '</div>';
+  };
+
+  function bindInstalacoes(content) {
+    const busca = content.querySelector('[data-instalacoes-busca]');
+    function filtrar() {
+      if (!busca) return;
+      instalacoesBusca = busca.value;
+      const q = instalacoesBusca.trim().toLocaleLowerCase('pt-BR');
+      let exibidos = 0;
+      content.querySelectorAll('[data-instalacoes-card]').forEach(function (el) {
+        const ok = !q || (el.getAttribute('data-instalacoes-search') || '').indexOf(q) >= 0;
+        el.hidden = !ok;
+        if (ok) exibidos++;
+      });
+      const aviso = content.querySelector('[data-instalacoes-vazio]');
+      if (aviso) aviso.hidden = exibidos !== 0;
+    }
+    if (busca) { busca.addEventListener('input', filtrar); filtrar(); }
+    content.addEventListener('click', async function (e) {
+      const filtro = e.target.closest('[data-instalacoes-filtro]');
+      if (filtro) {
+        instalacoesFiltro = filtro.getAttribute('data-instalacoes-filtro');
+        global.navigate('/admin/instalacoes', true);
+        return;
+      }
+      const contato = e.target.closest('[data-instalacoes-whatsapp]');
+      if (contato) {
+        const id = contato.getAttribute('data-instalacoes-whatsapp');
+        const p = instalacoesProfissionais().find(function (u) { return u.id === id; });
+        const fone = p && semPushFone(p.telefone);
+        if (!p || p.pushAtivo || !fone) return;
+        const win = window.open('https://wa.me/' + fone + '?text=' + encodeURIComponent(instalacoesConvite(p)), '_blank');
+        if (!win) { PU.toast('O WhatsApp não abriu. Verifique o bloqueio de pop-ups.', 'danger'); return; }
+        instalacoesGuardarContato(id);
+        contato.innerHTML = icon('whatsapp') + ' Reabrir convite Play Store';
+        PU.toast('WhatsApp aberto. Confirme o envio da mensagem por lá.', 'success');
+        return;
+      }
+      const atualizar = e.target.closest('[data-instalacoes-atualizar]');
+      if (atualizar) {
+        atualizar.disabled = true;
+        try {
+          await global.QFAdminCloud.syncSnapshot(true);
+          PU.toast('Lista atualizada.', 'success');
+          global.navigate('/admin/instalacoes', true);
+        } catch (err) {
+          PU.toast((err && err.message) || 'Erro ao atualizar a lista.', 'danger');
+          atualizar.disabled = false;
+        }
+      }
+    });
+  }
+
   // ---------------- Mais opções ----------------
 
   Screens.adminMaisRender = function () {
@@ -7715,6 +7867,7 @@ Screens.adminDashboardRender = function () {
         maisItem('info', 'Central de suporte', '/admin/suporte') +
         maisItem('users', 'Avisar quem não entrou', '/admin/avisar-acesso') +
         maisItem('bell', 'Profissionais sem notificações', '/admin/sem-push') +
+        maisItem('smartphone', 'Instalação do aplicativo', '/admin/instalacoes') +
         maisItem('smartphone', 'Versão do app e atualização obrigatória', '/admin/versao') +
         (cloudOn() ? '' : '<div class="section">' +
           '<button class="btn btn--outline" data-action="restaurar-demo">' + icon('refresh') + ' Restaurar dados de demonstração</button>' +
@@ -7809,6 +7962,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/suporte') bindSuporteLista(content);
     if (pattern === '/admin/avisar-acesso') bindAvisarAcesso(content);
     if (pattern === '/admin/sem-push') bindSemPush(content);
+    if (pattern === '/admin/instalacoes') bindInstalacoes(content);
     if (pattern === '/admin/suporte/:id') bindSuporteDetalhe(content, params);
     if (pattern === '/admin/dashboard') {
       loadAlertMetrics(content, painelDias || 90);
@@ -8829,6 +8983,7 @@ Screens.adminDashboardRender = function () {
       admCard('Outros comunicados', '', '<div class="qf-adm-itens">' +
         admItem('users', 'Avisar quem não entrou', 'mensagem para quem se cadastrou e não voltou', 'data-nav="/admin/avisar-acesso"') +
         admItem('bellOff', 'Profissionais sem notificações', 'chamar no WhatsApp', 'data-nav="/admin/sem-push"') +
+        admItem('smartphone', 'Instalação do aplicativo', 'conferir notificações e convidar pela Play Store', 'data-nav="/admin/instalacoes"') +
       '</div>'));
   };
   Screens.adminBonusRender = function () {
@@ -9244,6 +9399,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/servicos', render: Screens.adminCancelamentosRender },
     { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/comunicados', render: function(){ return Screens.adminAvisarAcessoRender(); } },
     { pattern: '/admin/sem-push', role: 'admin', title: 'Profissionais sem notificações', back: '/admin/comunicados', render: function(){ return Screens.adminSemPushRender(); } },
+    { pattern: '/admin/instalacoes', role: 'admin', title: 'Instalação do aplicativo', back: '/admin/comunicados', render: Screens.adminInstalacoesRender },
     { pattern: '/admin/suporte', role: 'admin', title: 'Suporte', render: Screens.adminSuporteRender },
     { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
@@ -9463,6 +9619,7 @@ Screens.adminDashboardRender = function () {
     { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
     { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
     { id: 'comunicados', label: 'Comunicados', icon: 'megaphone', route: '/admin/comunicados', also: ['/admin/avisar-acesso', '/admin/sem-push'] },
+    { id: 'instalacoes', label: 'Instalação do app', icon: 'smartphone', route: '/admin/instalacoes' },
     { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
     { id: 'assinaturas', label: 'Planos dos profissionais', icon: 'wallet', route: '/admin/planos' },
     { id: 'planos', label: 'Planos e anúncios', icon: 'image', route: '/admin/anuncios' },
