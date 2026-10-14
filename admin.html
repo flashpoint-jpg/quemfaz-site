@@ -7717,6 +7717,94 @@ Screens.adminDashboardRender = function () {
       localStorage.setItem(INSTALACOES_CONVITES_KEY, JSON.stringify(enviados));
     } catch (_) {}
   }
+
+  // A fila é compartilhada pelo banco. "Aberto" = conversa aberta, NÃO mensagem enviada.
+  let instalacoesFila = [];
+  let instalacoesFilaCarregada = false;
+  let instalacoesFilaErro = '';
+  let instalacoesFilaEmAcao = false;
+
+  async function instalacoesRpc(nome, args) {
+    const cli = global.QFAdminCloud && global.QFAdminCloud.client;
+    if (!cli) throw new Error('Painel desconectado');
+    const res = await cli.rpc(nome, args || {});
+    if (res.error) throw res.error;
+    return res.data;
+  }
+
+  function instalacoesFilaPorId(id) {
+    return instalacoesFila.find(function (i) { return i.user_id === id; });
+  }
+
+  function instalacoesFilaHtml() {
+    if (instalacoesFilaErro) return '<div class="text--sm" style="color:#b3261e;">Não foi possível carregar a campanha: ' + PU.escapeHtml(instalacoesFilaErro) +
+      '</div><button class="btn btn--outline" type="button" data-inst-camp-atualizar>Tentar novamente</button>';
+    if (!instalacoesFilaCarregada) return '<p class="text--sm text--secondary">Carregando primeira campanha...</p>';
+    const profissionais = instalacoesProfissionais();
+    const porId = {};
+    profissionais.forEach(function (p) { porId[p.id] = p; });
+    const ativos = instalacoesFila.filter(function (i) { return porId[i.user_id] && !porId[i.user_id].pushAtivo && !i.push_ativo; });
+    const abertos = ativos.filter(function (i) { return i.status === 'aberto'; });
+    const pendentes = ativos.filter(function (i) { return i.status === 'pendente'; });
+    const enviados = instalacoesFila.filter(function (i) { return i.status === 'enviado'; });
+    const pulados = instalacoesFila.filter(function (i) { return i.status === 'pulado'; });
+    const ativados = instalacoesFila.filter(function (i) { return (!!i.push_ativo || (porId[i.user_id] && porId[i.user_id].pushAtivo)) && i.status !== 'enviado'; });
+    const proximo = pendentes[0];
+    function nome(c) { return PU.escapeHtml((porId[c.user_id] && porId[c.user_id].nome) || 'Profissional'); }
+    return '<div class="h3">Primeiro lote de convites — Google Play</div>' +
+      '<div class="text--sm text--secondary">A lista inicial foi preparada no banco. O WhatsApp exige que você envie a mensagem na conversa aberta. Depois marque como enviado para evitar duplicidade.</div>' +
+      '<div class="row" style="gap:6px;flex-wrap:wrap;">' +
+        '<span class="badge badge--warning">' + pendentes.length + ' pendentes</span>' +
+        '<span class="badge badge--muted">' + abertos.length + ' aguardando confirmação</span>' +
+        '<span class="badge badge--success">' + enviados.length + ' confirmados</span>' +
+        '<span class="badge badge--muted">' + ativados.length + ' ativaram push</span>' +
+        (pulados.length ? '<span class="badge badge--muted">' + pulados.length + ' pulados</span>' : '') +
+      '</div>' +
+      (proximo ? '<button type="button" class="btn btn--primary" data-inst-camp-abrir="' + PU.escapeHtml(proximo.user_id) + '">' +
+        icon('whatsapp') + ' Abrir próximo: ' + nome(proximo) + '</button>' :
+        '<div class="text--sm text--secondary">Nenhum outro convite pendente no primeiro lote.</div>') +
+      (abertos.length ? '<div class="text--strong">Aguardando sua confirmação de envio</div>' +
+        abertos.slice(0,12).map(function (i) {
+          return '<div class="row-between" style="align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid #e5e7eb;padding-top:10px;">' +
+            '<span class="text--sm" style="flex:1;min-width:140px;">' + nome(i) + '</span>' +
+            '<button class="btn btn--outline btn--sm" type="button" data-inst-camp-abrir="' + PU.escapeHtml(i.user_id) + '">Reabrir</button>' +
+            '<button class="btn btn--primary btn--sm" type="button" data-inst-camp-enviado="' + PU.escapeHtml(i.user_id) + '">Confirmar enviado</button>' +
+            '<button class="btn btn--outline btn--sm" type="button" data-inst-camp-pular="' + PU.escapeHtml(i.user_id) + '">Pular</button>' +
+          '</div>';
+        }).join('') +
+        (abertos.length>12 ? '<div class="text--sm text--secondary">Mais ' + (abertos.length-12) + ' conversas aguardando confirmação.</div>' : '') : '') +
+      '<div class="btn-row" style="gap:8px;flex-wrap:wrap;">' +
+        '<button class="btn btn--outline btn--sm" type="button" data-inst-camp-atualizar>' + icon('refresh') + ' Atualizar progresso</button>' +
+        '<button class="btn btn--outline btn--sm" type="button" data-inst-camp-novos>Incluir novos cadastros</button>' +
+      '</div>' +
+      '<div class="text--sm text--muted">Os envios não são automáticos. O histórico de abertura e confirmação fica salvo para você continuar no computador ou celular. Não reenviar a quem já foi confirmado.</div>';
+  }
+
+  function instalacoesPintarFila(content) {
+    const area = content.querySelector('[data-inst-campanha]');
+    if (area) area.innerHTML = instalacoesFilaHtml();
+  }
+
+  async function instalacoesCarregarFila(content) {
+    instalacoesFilaErro = '';
+    instalacoesPintarFila(content);
+    try {
+      const dados = await instalacoesRpc('qf_admin_playstore_listar');
+      instalacoesFila = Array.isArray(dados) ? dados : [];
+      instalacoesFilaCarregada = true;
+    } catch (err) {
+      instalacoesFilaErro = (err && err.message) || 'Falha na comunicação';
+      instalacoesFilaCarregada = false;
+    }
+    if (content.isConnected) instalacoesPintarFila(content);
+  }
+
+  async function instalacoesMarcarNoServidor(id, status) {
+    await instalacoesRpc('qf_admin_playstore_marcar', {p_user_id:id,p_status:status});
+    const row = instalacoesFilaPorId(id);
+    if (row) { row.status = status; if (status === 'enviado') row.enviado_em = new Date().toISOString(); }
+  }
+
   function instalacoesProfissionais() {
     return (DB.state.users.profissionais || [])
       .filter(function (p) { return !p.bloqueado; })
@@ -7732,7 +7820,7 @@ Screens.adminDashboardRender = function () {
       'Para receber oportunidades de serviços pelo celular, baixe ou atualize nosso aplicativo oficial na Google Play:\n' +
       SEM_PUSH_STORE_LINK + '\n\n' +
       'Após abrir o app, entre com seu cadastro e habilite as notificações nas configurações do celular. ' +
-      'Assim você poderá receber avisos de novos chamados na sua região.';
+      'Assim você poderá receber avisos de novos chamados na sua região. Se não desejar novos contatos pelo WhatsApp, responda PARAR.';
   }
   function instalacoesCard(p, convites) {
     const telefone = semPushFone(p.telefone);
@@ -7786,6 +7874,7 @@ Screens.adminDashboardRender = function () {
         '<div class="text--sm text--muted">Importante: sem push não significa sem aplicativo. Os convites são individuais e não são enviados automaticamente.</div>' +
         '<button type="button" class="btn btn--outline" data-instalacoes-atualizar>' + icon('refresh') + ' Atualizar lista</button>' +
       '</div>' +
+      '<div class="card stack--sm" data-inst-campanha>' + instalacoesFilaHtml() + '</div>' +
       '<div class="card stack--sm">' +
         '<div class="row" style="gap:8px;flex-wrap:wrap;">' +
           filtros.map(function (f) {
@@ -7802,6 +7891,7 @@ Screens.adminDashboardRender = function () {
   };
 
   function bindInstalacoes(content) {
+    instalacoesCarregarFila(content);
     const busca = content.querySelector('[data-instalacoes-busca]');
     function filtrar() {
       if (!busca) return;
@@ -7825,17 +7915,60 @@ Screens.adminDashboardRender = function () {
         global.navigate('/admin/instalacoes', true);
         return;
       }
-      const contato = e.target.closest('[data-instalacoes-whatsapp]');
+      const contato = e.target.closest('[data-instalacoes-whatsapp], [data-inst-camp-abrir]');
       if (contato) {
-        const id = contato.getAttribute('data-instalacoes-whatsapp');
+        const id = contato.getAttribute('data-instalacoes-whatsapp') || contato.getAttribute('data-inst-camp-abrir');
         const p = instalacoesProfissionais().find(function (u) { return u.id === id; });
         const fone = p && semPushFone(p.telefone);
+        const anterior = instalacoesFilaPorId(id);
         if (!p || p.pushAtivo || !fone) return;
+        if (anterior && anterior.status === 'enviado') {
+          PU.toast('Convite já marcado como enviado. Evite contato duplicado.', 'danger'); return;
+        }
         const win = window.open('https://wa.me/' + fone + '?text=' + encodeURIComponent(instalacoesConvite(p)), '_blank');
         if (!win) { PU.toast('O WhatsApp não abriu. Verifique o bloqueio de pop-ups.', 'danger'); return; }
         instalacoesGuardarContato(id);
-        contato.innerHTML = icon('whatsapp') + ' Reabrir convite Play Store';
-        PU.toast('WhatsApp aberto. Confirme o envio da mensagem por lá.', 'success');
+        if (contato.hasAttribute('data-instalacoes-whatsapp')) contato.innerHTML = icon('whatsapp') + ' Reabrir convite Play Store';
+        try {
+          if (!anterior) await instalacoesRpc('qf_admin_playstore_adicionar_novos');
+          await instalacoesMarcarNoServidor(id, 'aberto');
+          instalacoesPintarFila(content);
+          PU.toast('WhatsApp aberto. Depois de enviar, toque em "Confirmar enviado" no painel.', 'success');
+        } catch (err) {
+          PU.toast('WhatsApp aberto, mas histórico não salvo: ' + ((err && err.message) || ''), 'danger');
+        }
+        return;
+      }
+      const confirmar = e.target.closest('[data-inst-camp-enviado]');
+      const pular = e.target.closest('[data-inst-camp-pular]');
+      if (confirmar || pular) {
+        if (instalacoesFilaEmAcao) return;
+        instalacoesFilaEmAcao = true;
+        const id = (confirmar || pular).getAttribute(confirmar ? 'data-inst-camp-enviado' : 'data-inst-camp-pular');
+        try {
+          await instalacoesMarcarNoServidor(id, confirmar ? 'enviado' : 'pulado');
+          instalacoesPintarFila(content);
+          PU.toast(confirmar ? 'Envio confirmado e registrado.' : 'Contato pulado.', 'success');
+        } catch (err) {
+          PU.toast((err && err.message) || 'Não foi possível atualizar.', 'danger');
+        } finally { instalacoesFilaEmAcao = false; }
+        return;
+      }
+      if (e.target.closest('[data-inst-camp-atualizar]')) {
+        await instalacoesCarregarFila(content);
+        return;
+      }
+      if (e.target.closest('[data-inst-camp-novos]')) {
+        if (instalacoesFilaEmAcao) return;
+        instalacoesFilaEmAcao = true;
+        try {
+          const qtd = await instalacoesRpc('qf_admin_playstore_adicionar_novos');
+          await global.QFAdminCloud.syncSnapshot(true);
+          await instalacoesCarregarFila(content);
+          PU.toast(Number(qtd) ? qtd + ' novos profissionais incluídos na fila.' : 'Nenhum novo profissional para incluir.', 'success');
+        } catch(err) {
+          PU.toast((err && err.message) || 'Erro ao atualizar os contatos.', 'danger');
+        } finally { instalacoesFilaEmAcao = false; }
         return;
       }
       const atualizar = e.target.closest('[data-instalacoes-atualizar]');
