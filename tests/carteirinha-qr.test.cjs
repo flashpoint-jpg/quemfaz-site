@@ -14,7 +14,7 @@ test('carteirinha aparece somente no painel do profissional',()=>{
   assert.match(js,/token=/);
   assert.doesNotMatch(js,/p_profissional_id:id/);
   new vm.Script(js);
-  assert.match(load('index.html'),/qf-carteirinha\.js\?v=11\.77\.0/);
+  assert.match(load('index.html'),/qf-carteirinha\.js\?v=11\.84\.2/);
 });
 
 test('carteirinha imprime QR pessoal sem profissão ou pontuação',()=>{

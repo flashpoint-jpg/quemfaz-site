@@ -25,7 +25,7 @@
      var acoes=card.querySelector('[data-qf-carteirinha-acoes]');
      if(acoes&&!acoes.querySelector('a')){
        var link='/carteirinha.html?token='+encodeURIComponent(tokenCache.token);
-       acoes.innerHTML='<a class="btn btn--primary qf-carteirinha-home__btn" href="'+link+'&imprimir=1" target="_blank" rel="noopener">Imprimir minha carteirinha</a><a class="qf-carteirinha-home__view" href="'+link+'" target="_blank" rel="noopener">Ver carteirinha</a>';
+       acoes.innerHTML='<a class="btn btn--primary qf-carteirinha-home__btn" href="'+link+'&imprimir=1">Imprimir minha carteirinha</a><a class="qf-carteirinha-home__view" href="'+link+'">Ver carteirinha</a>';
      }
      return;
    }
