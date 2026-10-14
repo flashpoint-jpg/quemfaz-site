@@ -3756,10 +3756,11 @@ alt=""></noscript>
   function aprovado(req) {
     parar();
     req.prioridade = true;
+    req.aguardandoPagamento = false;
     if (req.pagamentoPrioridade) req.pagamentoPrioridade.status = 'aprovado';
     try { global.DB && global.DB.persist && global.DB.persist(); } catch (_) {}
     global.PU.closeSheet();
-    global.PU.toast('Pix recebido! Seu pedido agora é URGENTE.', 'success', 6000);
+    global.PU.toast('Pix recebido! Seu pedido urgente foi publicado.', 'success', 6000);
     const cloud = global.QFCloud;
     Promise.resolve(cloud && cloud.syncForCurrentSession ? cloud.syncForCurrentSession(true) : null)
       .catch(function () {})
@@ -3798,7 +3799,7 @@ alt=""></noscript>
     PU.openSheet(
       '<div class="stack" data-qf-pix-prioridade style="text-align:center;align-items:stretch;gap:12px;">' +
         '<h3 class="sheet__title" style="margin:0;">Pague ' + valor + ' no Pix</h3>' +
-        '<p class="text text--secondary" style="margin:0;">Seu pedido já foi publicado. Assim que o Pix cair, ele vira <strong>URGENTE</strong> e chega na hora aos profissionais perto de você.</p>' +
+        '<p class="text text--secondary" style="margin:0;">Seu pedido só é publicado depois do pagamento. Assim que o Pix cair, ele vai na hora como <strong>URGENTE</strong> para os profissionais perto de você.</p>' +
         qrHtml +
         '<p class="text--sm text--secondary" style="margin:0;">Abra o app do seu banco, escolha Pix copia e cola e cole o código.</p>' +
         codeHtml +
@@ -3990,6 +3991,7 @@ alt=""></noscript>
     pago: 'Concluído — aguardando avaliação',
     finalizado: 'Concluído e avaliado',
     cancelado: 'Cancelado',
+    aguardando_pix: 'Aguardando Pix',
   };
 
   const mem = Object.create(null);
@@ -5445,6 +5447,7 @@ alt=""></noscript>
       distanciaAprox: !!row.distancia_aprox,
       mesmaCidade: !!row.mesma_cidade,
       status: localStatus(row.status),
+      aguardandoPagamento: row.status === 'aguardando_pagamento',
       profissionalId: professionalId || null,
       criadoEm: row.criado_em,
       atualizadoEm: row.atualizado_em || row.criado_em,
@@ -6626,7 +6629,8 @@ alt=""></noscript>
       longitude: loc ? loc.longitude : null,
       fotos: Array.isArray(data.fotos) ? data.fotos.slice(0, 4) : [],
       marketing_origem: global.QFClientAcquisition ? global.QFClientAcquisition.attribution() : {},
-      status: 'aberto',
+      // V11.81: pedido urgente fica guardado (não vai para ninguém) até o Pix ser aprovado.
+      status: data.prioridade ? 'aguardando_pagamento' : 'aberto',
       data_preferida: data.dataPreferida || null,
       prioridade: false
     };
@@ -9201,7 +9205,7 @@ alt=""></noscript>
           const ben = form.querySelector('[data-qf-benefit-max]');
           const campoMax = form.querySelector('[name="maxOrcamentos"]');
           quantos(campoMax ? campoMax.value : 3);
-          if (ben && urgente) ben.textContent = 'Seu pedido é publicado e fica prioritário assim que o Pix cair.';
+          if (ben && urgente) ben.textContent = 'Seu pedido urgente é publicado assim que o Pix cair.';
           if (global.QFClientAcquisition && global.QFClientAcquisition.track) { try { global.QFClientAcquisition.track('urgent_choice', { mode: modo }); } catch (_) {} }
         }
         form.addEventListener('click', function (e) {
@@ -9452,7 +9456,7 @@ alt=""></noscript>
             global.QFPixPrioridade.abrir(pedido);
             return;
           }
-          if (querUrgente) PU.toast('Pedido publicado! Toque em Pagar prioridade para deixar ele urgente.', 'success', 6000);
+          if (querUrgente) PU.toast('Seu pedido urgente só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
           else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
@@ -10098,6 +10102,7 @@ alt=""></noscript>
     // V11.22: para o cliente, "Desbloqueado" aparece como "Profissional em contato".
     const label = DB.STATUS_DESBLOQUEADO.indexOf(status) !== -1 ? 'Profissional em contato' : (DB.STATUS_LABEL[status] || status);
     const map = {
+      aguardando_pix: 'danger',
       buscando: 'orange', sem_profissional: 'danger', aguardando_aceite: 'orange', aguardando_orcamento: 'orange',
       orcamento_enviado: 'orange', orcamento_recusado: 'orange', aprovado: 'orange', em_andamento: 'orange',
       servico_concluido: 'warning', pago: 'navy', finalizado: 'success', cancelado: 'danger',
@@ -10122,7 +10127,7 @@ alt=""></noscript>
         '</div>' +
         '<div class="qf-perf" aria-hidden="true"></div>' +
         '<div class="row-between">' +
-          statusBadge(req.status) +
+          statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
         '</div>' +
       '</button>'
@@ -10524,7 +10529,7 @@ alt=""></noscript>
             '<div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div>' +
             '<div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
           '</div>' +
-          '<div class="row" style="gap:6px;">' + (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') + statusBadge(req.status) + '</div>' +
+          '<div class="row" style="gap:6px;">' + (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') + statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) + '</div>' +
         '</div>' +
 
         buscandoBlock(req) +
@@ -10562,6 +10567,19 @@ alt=""></noscript>
 
   function buscandoBlock(req) {
     if (req.status !== STATUS.BUSCANDO && req.status !== STATUS.AGUARDANDO_ACEITE) return '';
+    // V11.81: pedido urgente ainda não pago não foi publicado. Nenhum profissional recebeu.
+    if (req.aguardandoPagamento) {
+      return (
+        '<div class="section">' +
+          '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 16px;gap:8px;">' +
+            '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('bolt') + '</div>' +
+            '<h2 class="h3" style="margin-top:6px;">Falta pagar o Pix</h2>' +
+            '<p class="text text--secondary text--sm" style="margin:0;">Seu pedido urgente ainda <strong>não foi publicado</strong>. Assim que o Pix de ' + PU.formatCurrency((req.pagamentoPrioridade && req.pagamentoPrioridade.valor) || 990) + ' cair, ele é publicado na hora e chega primeiro aos profissionais perto de você.</p>' +
+            '<button class="btn btn--primary btn--block" type="button" data-action="ativar-busca-prioritaria" style="margin-top:8px;">' + icon('bolt') + ' Pagar Pix e publicar</button>' +
+          '</div>' +
+        '</div>'
+      );
+    }
     return (
       '<div class="section">' +
         '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:30px 16px;">' +
@@ -14639,7 +14657,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.80';
+  const APP_VERSION = '11.81';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

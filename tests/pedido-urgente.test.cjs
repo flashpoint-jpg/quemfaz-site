@@ -30,3 +30,9 @@ test('versão do app e do service worker iguais', () => {
   const sw = /const SW_VERSION = '([^']+)'/.exec(fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8'))[1];
   assert.equal(app, sw);
 });
+
+test('V11.81: pedido urgente só é publicado depois do Pix', () => {
+  assert.match(html, /status: data\.prioridade \? 'aguardando_pagamento' : 'aberto',/);
+  assert.match(html, /aguardandoPagamento: row\.status === 'aguardando_pagamento',/);
+  assert.match(html, /Pagar Pix e publicar/);
+});
