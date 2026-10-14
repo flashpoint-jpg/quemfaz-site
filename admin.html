@@ -7808,13 +7808,14 @@ Screens.adminDashboardRender = function () {
       instalacoesBusca = busca.value;
       const q = instalacoesBusca.trim().toLocaleLowerCase('pt-BR');
       let exibidos = 0;
-      content.querySelectorAll('[data-instalacoes-card]').forEach(function (el) {
+      const cards = content.querySelectorAll('[data-instalacoes-card]');
+      cards.forEach(function (el) {
         const ok = !q || (el.getAttribute('data-instalacoes-search') || '').indexOf(q) >= 0;
-        el.hidden = !ok;
+        el.style.display = ok ? '' : 'none';
         if (ok) exibidos++;
       });
       const aviso = content.querySelector('[data-instalacoes-vazio]');
-      if (aviso) aviso.hidden = exibidos !== 0;
+      if (aviso) aviso.style.display = cards.length && !exibidos ? '' : 'none';
     }
     if (busca) { busca.addEventListener('input', filtrar); filtrar(); }
     content.addEventListener('click', async function (e) {
