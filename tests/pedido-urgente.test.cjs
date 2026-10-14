@@ -15,7 +15,14 @@ test('pedido normal grátis vem marcado e o urgente é opcional', () => {
 test('urgente só pede prioridade com a nuvem ligada e manda para o Pix', () => {
   assert.match(html, /const querUrgente = !!\(global\.QFCloud && global\.QFCloud\.enabled\) && String\(fd\.get\('urgente'\) \|\| ''\) === '1';/);
   assert.match(html, /prioridade: querUrgente,/);
-  assert.match(html, /location\.href = pagUrgente\.checkoutUrl;/);
+  assert.match(html, /global\.QFPixPrioridade\.abrir\(pedido\);/);
+});
+
+test('V11.80: Pix da prioridade aparece dentro do QuemFaz, sem ir para a Efí', () => {
+  assert.match(html, /global\.QFPixPrioridade = \{ abrir: abrir \};/);
+  assert.match(html, /data-qf-pix-copy>Copiar código Pix/);
+  assert.match(html, /from\('qf_prioridade_pagamentos'\)\.select\('status'\)/);
+  assert.doesNotMatch(html, /location\.href = (pagUrgente\.checkoutUrl|checkoutUrl|out\.checkout_url);/);
 });
 
 test('versão do app e do service worker iguais', () => {

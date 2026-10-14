@@ -3739,6 +3739,99 @@ alt=""></noscript>
 })(window);
 
 
+/* QuemFaz V11.80 — Pix do pedido urgente/prioridade DENTRO do QuemFaz.
+   Mostra QR Code e copia e cola numa janela no próprio app (sem ir para a página da Efí) e
+   confere sozinho a cada poucos segundos: quando o Pix cai, o pedido vira prioritário. */
+(function (global) {
+  let timer = null;
+  function parar() { if (timer) { clearInterval(timer); timer = null; } }
+  function aberto() {
+    const ov = document.getElementById('sheet-overlay');
+    return !!(ov && !ov.classList.contains('is-hidden') && ov.querySelector('[data-qf-pix-prioridade]'));
+  }
+  async function copiar(texto, campo) {
+    try { await navigator.clipboard.writeText(texto); return true; } catch (_) {}
+    try { campo.focus(); campo.select(); campo.setSelectionRange(0, 99999); return document.execCommand('copy'); } catch (_) { return false; }
+  }
+  function aprovado(req) {
+    parar();
+    req.prioridade = true;
+    if (req.pagamentoPrioridade) req.pagamentoPrioridade.status = 'aprovado';
+    try { global.DB && global.DB.persist && global.DB.persist(); } catch (_) {}
+    global.PU.closeSheet();
+    global.PU.toast('Pix recebido! Seu pedido agora é URGENTE.', 'success', 6000);
+    const cloud = global.QFCloud;
+    Promise.resolve(cloud && cloud.syncForCurrentSession ? cloud.syncForCurrentSession(true) : null)
+      .catch(function () {})
+      .then(function () { if (global.navigate) global.navigate('/cliente/pedido/' + req.id, true); });
+  }
+  async function abrir(req) {
+    const PU = global.PU;
+    const cloud = global.QFCloud;
+    const pag = req && req.pagamentoPrioridade;
+    if (!pag || !pag.id || !cloud) { PU.toast('Não foi possível gerar o Pix agora.', 'danger'); return; }
+    parar();
+    PU.openSheet('<div class="stack" data-qf-pix-prioridade style="text-align:center;align-items:stretch;">' +
+      '<h3 class="sheet__title">Gerando seu Pix...</h3><p class="text text--secondary">Só um instante.</p></div>');
+    let pix = { pixCopyPaste: pag.pixCopyPaste || null, qrImage: pag.qrImage || null, checkoutUrl: pag.checkoutUrl || null };
+    if (!pix.pixCopyPaste) {
+      try {
+        const out = await cloud.startEfiCheckout('prioridade', pag.id);
+        if (out && out.status === 'aprovado') { aprovado(req); return; }
+        pix = { pixCopyPaste: out.pix_copy_paste || null, qrImage: out.qr_image || null, checkoutUrl: out.checkout_url || pix.checkoutUrl };
+        pag.pixCopyPaste = pix.pixCopyPaste; pag.qrImage = pix.qrImage; pag.checkoutUrl = pix.checkoutUrl;
+      } catch (err) {
+        PU.closeSheet();
+        PU.toast((err && err.message) || 'Não foi possível gerar o Pix agora.', 'danger');
+        return;
+      }
+    }
+    if (!aberto()) return;
+    const valor = PU.formatCurrency(pag.valor || 990);
+    const qrHtml = pix.qrImage
+      ? '<div style="background:#fff;border-radius:16px;padding:12px;margin:0 auto;"><img src="' + PU.escapeHtml(pix.qrImage) + '" alt="QR Code Pix" style="width:min(220px,64vw);height:auto;display:block;margin:0 auto;"></div>'
+      : '';
+    const codeHtml = pix.pixCopyPaste
+      ? '<button class="btn btn--primary btn--block" type="button" data-qf-pix-copy>Copiar código Pix</button>' +
+        '<textarea class="textarea" data-qf-pix-code readonly style="min-height:72px;font-size:12px;word-break:break-all;">' + PU.escapeHtml(pix.pixCopyPaste) + '</textarea>'
+      : (pix.checkoutUrl ? '<a class="btn btn--primary btn--block" href="' + PU.escapeHtml(pix.checkoutUrl) + '" rel="noopener">Abrir o Pix</a>' : '');
+    PU.openSheet(
+      '<div class="stack" data-qf-pix-prioridade style="text-align:center;align-items:stretch;gap:12px;">' +
+        '<h3 class="sheet__title" style="margin:0;">Pague ' + valor + ' no Pix</h3>' +
+        '<p class="text text--secondary" style="margin:0;">Seu pedido já foi publicado. Assim que o Pix cair, ele vira <strong>URGENTE</strong> e chega na hora aos profissionais perto de você.</p>' +
+        qrHtml +
+        '<p class="text--sm text--secondary" style="margin:0;">Abra o app do seu banco, escolha Pix copia e cola e cole o código.</p>' +
+        codeHtml +
+        '<div class="text--sm" data-qf-pix-status style="font-weight:600;color:var(--color-warning,#c2410c);">Aguardando o pagamento...</div>' +
+        '<button class="btn btn--outline btn--block" type="button" data-qf-pix-later>Ver meu pedido</button>' +
+      '</div>'
+    );
+    const box = document.querySelector('[data-qf-pix-prioridade]');
+    const btnCopy = box && box.querySelector('[data-qf-pix-copy]');
+    if (btnCopy) btnCopy.onclick = async function () {
+      const ok = await copiar(pix.pixCopyPaste, box.querySelector('[data-qf-pix-code]'));
+      if (ok) { btnCopy.textContent = 'Código copiado!'; PU.toast('Código Pix copiado. Cole no app do seu banco.', 'success'); setTimeout(function () { btnCopy.textContent = 'Copiar código Pix'; }, 2500); }
+      else PU.toast('Segure no código e copie.', 'warning');
+    };
+    const btnLater = box && box.querySelector('[data-qf-pix-later]');
+    if (btnLater) btnLater.onclick = function () { parar(); PU.closeSheet(); if (global.navigate) global.navigate('/cliente/pedido/' + req.id, true); };
+    const client = cloud.client;
+    if (!client) return;
+    let checando = false;
+    timer = setInterval(async function () {
+      if (!aberto()) { parar(); return; }
+      if (checando) return;
+      checando = true;
+      try {
+        const r = await client.from('qf_prioridade_pagamentos').select('status').eq('id', pag.id).maybeSingle();
+        if (r && r.data && r.data.status === 'aprovado') aprovado(req);
+      } catch (_) {} finally { checando = false; }
+    }, 4000);
+  }
+  global.QFPixPrioridade = { abrir: abrir };
+})(window);
+
+
 /* QuemFaz V11.29 — prazo do pedido ("Pra quando você precisa?").
    O banco guarda o DIA real (prazoDia, AAAA-MM-DD), nunca a palavra "hoje": um pedido feito ontem
    para "hoje" aparece hoje como atrasado. Aqui ficam as contas e os textos, usados pelo formulário
@@ -6586,10 +6679,14 @@ alt=""></noscript>
           criadoEm: new Date().toISOString()
         };
         req.prioridade = !!out.prioridade_ativa;
-        if (!req.prioridade && req.pagamentoPrioridade.id && !req.pagamentoPrioridade.checkoutUrl) {
+        if (!req.prioridade && req.pagamentoPrioridade.id) {
           try {
+            // V11.80: traz o QR Code e o copia e cola para mostrar o Pix dentro do QuemFaz.
             const checkout = await startEfiCheckout('prioridade', req.pagamentoPrioridade.id);
-            req.pagamentoPrioridade.checkoutUrl = checkout.checkout_url || null;
+            req.pagamentoPrioridade.checkoutUrl = checkout.checkout_url || req.pagamentoPrioridade.checkoutUrl || null;
+            req.pagamentoPrioridade.pixCopyPaste = checkout.pix_copy_paste || null;
+            req.pagamentoPrioridade.qrImage = checkout.qr_image || null;
+            if (checkout.status === 'aprovado') { req.prioridade = true; req.pagamentoPrioridade.status = 'aprovado'; }
           } catch (checkoutErr) {
             req.pagamentoPrioridade.erro = checkoutErr && checkoutErr.message ? checkoutErr.message : String(checkoutErr || '');
           }
@@ -9350,9 +9447,9 @@ alt=""></noscript>
 
 
           const pagUrgente = querUrgente && pedido && pedido.pagamentoPrioridade;
-          if (pagUrgente && pagUrgente.checkoutUrl && !pedido.prioridade) {
-            PU.toast('Pedido publicado! Agora pague o Pix para deixar ele urgente.', 'success', 6000);
-            location.href = pagUrgente.checkoutUrl;
+          if (pagUrgente && pagUrgente.id && !pedido.prioridade && global.QFPixPrioridade) {
+            global.navigate('/cliente/pedido/' + pedido.id, true);
+            global.QFPixPrioridade.abrir(pedido);
             return;
           }
           if (querUrgente) PU.toast('Pedido publicado! Toque em Pagar prioridade para deixar ele urgente.', 'success', 6000);
@@ -10490,11 +10587,9 @@ alt=""></noscript>
             : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente'
               ? '<div class="badge badge--orange" style="margin-top:12px;"><span class="badge__dot"></span>Prioridade aguardando pagamento · ' + PU.formatCurrency(req.pagamentoPrioridade.valor || 990) + '</div>'
               : '<div class="badge badge--success" style="margin-top:12px;"><span class="badge__dot"></span>Chamado normal gratuito</div>')) +
-          (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.checkoutUrl
-            ? '<a class="btn btn--primary btn--block-auto" href="' + PU.escapeHtml(req.pagamentoPrioridade.checkoutUrl) + '" rel="noopener" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade</a>'
-            : (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.id
-              ? '<button class="btn btn--primary btn--block-auto" data-action="gerar-pagamento-prioridade" data-payment-id="' + PU.escapeHtml(req.pagamentoPrioridade.id) + '" style="margin-top:12px;">' + icon('bolt') + ' Gerar pagamento</button>'
-              : '')) +
+          (req.pagamentoPrioridade && req.pagamentoPrioridade.status === 'pendente' && req.pagamentoPrioridade.id
+            ? '<button class="btn btn--primary btn--block-auto" data-action="gerar-pagamento-prioridade" data-payment-id="' + PU.escapeHtml(req.pagamentoPrioridade.id) + '" style="margin-top:12px;">' + icon('bolt') + ' Pagar prioridade no Pix</button>'
+            : '') +
         '</div>' +
       '</div>'
     );
@@ -11667,12 +11762,9 @@ alt=""></noscript>
               return;
             }
 
-            const checkout = await global.QFCloud.startEfiCheckout('prioridade', out.pagamento_id);
-            const checkoutUrl = checkout && checkout.checkout_url ? String(checkout.checkout_url) : '';
-            if (!checkoutUrl) throw new Error('Não foi possível abrir o pagamento agora.');
-            req.pagamentoPrioridade.checkoutUrl = checkoutUrl;
-            DB.persist();
-            location.href = checkoutUrl;
+            action.disabled = false;
+            action.innerHTML = oldHtml;
+            global.QFPixPrioridade.abrir(req);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível ativar a prioridade.', 'danger');
             action.disabled = false;
@@ -11689,11 +11781,10 @@ alt=""></noscript>
         action.textContent = 'Gerando pagamento...';
         (async function () {
           try {
-            const out = await global.QFCloud.startEfiCheckout('prioridade', paymentId);
-            if (!out.checkout_url) throw new Error('O link de pagamento não foi gerado.');
-            if (req.pagamentoPrioridade) req.pagamentoPrioridade.checkoutUrl = out.checkout_url;
-            DB.persist();
-            location.href = out.checkout_url;
+            if (!req.pagamentoPrioridade) req.pagamentoPrioridade = { id: paymentId, status: 'pendente', valor: 990 };
+            action.disabled = false;
+            action.innerHTML = oldHtml;
+            await global.QFPixPrioridade.abrir(req);
           } catch (err) {
             PU.toast((err && err.message) || 'Não foi possível gerar o pagamento.', 'danger');
             action.disabled = false;
@@ -14548,7 +14639,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.79.1';
+  const APP_VERSION = '11.80';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
