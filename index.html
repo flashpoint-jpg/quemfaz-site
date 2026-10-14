@@ -4088,6 +4088,7 @@ alt=""></noscript>
       { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_gasista', nome: 'Técnico Gasista', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
       { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
       { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
@@ -4311,6 +4312,7 @@ alt=""></noscript>
       { id: 'cat_antenista', nome: 'Antenista/TV', icon: 'smartphone', leadTier: 'padrao', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_tv_som', nome: 'Técnico de TV e som', icon: 'video', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
       { id: 'cat_fogao_microondas', nome: 'Técnico de fogão e micro-ondas', icon: 'fridge', leadTier: 'medio', grupo: 'Assistência técnica', grupoId: 'tecnica' },
+      { id: 'cat_gasista', nome: 'Técnico Gasista', icon: 'droplet', leadTier: 'medio', grupo: 'Elétrica, hidráulica e gás', grupoId: 'instalacoes' },
       { id: 'cat_piscineiro', nome: 'Piscineiro', icon: 'droplet', leadTier: 'padrao', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
       { id: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
       { id: 'cat_faxina_pos_obra', nome: 'Faxina pós-obra', icon: 'broom', leadTier: 'medio', grupo: 'Limpeza e cuidados da casa', grupoId: 'limpeza' },
@@ -4418,6 +4420,17 @@ alt=""></noscript>
 
   function dismissedKey(pid) { return 'qf_dismissed_calls_' + pid; }
   function dismissedCalls(pid) { try { return JSON.parse(readRaw(dismissedKey(pid)) || '[]') || []; } catch (_) { return []; } }
+  function qfServicoCompatibilidadeGasista(prof, req) {
+    const lista = (prof && Array.isArray(prof.categorias)) ? prof.categorias : [];
+    if (!req) return false;
+    if (lista.indexOf(req.categoriaId) !== -1) return true;
+    if (req.categoriaId !== 'cat_fogao_microondas' || lista.indexOf('cat_gasista') === -1) return false;
+    const texto = String((req.titulo || '') + ' ' + (req.descricao || ''))
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const fogao = /\b(fogao|cooktop)\b/.test(texto);
+    const micro = /\b(microondas|micro[\s-]*ondas)\b/.test(texto);
+    return /\b(fogao|cooktop|gas|glp|gasista|conversao|reversao)\b/.test(texto) && (!micro || fogao);
+  }
   function chamadasPendentes(profissionalId) {
     const prof = profissionalById(profissionalId);
     const ignorados = dismissedCalls(profissionalId);
@@ -4427,7 +4440,7 @@ alt=""></noscript>
     return state.requests.filter(function (r) {
       const recusados = r.recusadoPor || [];
       return r.status === STATUS.BUSCANDO && !r.profissionalId &&
-        (prof.categorias.indexOf(r.categoriaId) !== -1 || !!r.abertoTodos) &&
+        (qfServicoCompatibilidadeGasista(prof, r) || !!r.abertoTodos) &&
         recusados.indexOf(profissionalId) === -1 && ignorados.indexOf(r.id) === -1;
     }).sort(function (a, b) {
       if (!!a.prioridade !== !!b.prioridade) return a.prioridade ? -1 : 1;
@@ -4525,7 +4538,7 @@ alt=""></noscript>
     const excluidos = req.recusadoPor || [];
     const candidatos = state.users.profissionais.filter(function (p) {
       return p.statusAprovacao === 'aprovado' && p.online && !p.bloqueado &&
-        p.categorias.indexOf(req.categoriaId) !== -1 &&
+        qfServicoCompatibilidadeGasista(p, req) &&
         excluidos.indexOf(p.id) === -1;
     });
 
@@ -4547,7 +4560,7 @@ alt=""></noscript>
     const prof = profissionalById(profissionalId);
     if (!req || !prof) return { ok: false, reason: 'nao_encontrado' };
     if (req.status !== STATUS.BUSCANDO || req.profissionalId) return { ok: false, reason: 'indisponivel' };
-    if (prof.statusAprovacao !== 'aprovado' || !prof.online || prof.bloqueado || prof.categorias.indexOf(req.categoriaId) === -1) {
+    if (prof.statusAprovacao !== 'aprovado' || !prof.online || prof.bloqueado || !qfServicoCompatibilidadeGasista(prof, req)) {
       return { ok: false, reason: 'nao_elegivel' };
     }
     const valor = leadFeeForRequest(req);
@@ -5006,7 +5019,7 @@ alt=""></noscript>
   global.DB = {
     STATUS, STATUS_LABEL, storageOk,
     load, persist, resetDemoData, getSession, setSession,
-    categories, categoryById, cities, cityById,
+    categories, categoryById, qfServicoCompatibilidadeGasista, cities, cityById,
     clienteById, profissionalById, adminById, findUserByEmail, emailExists,
     requestsByCliente, requestsByProfissional, requestById, allRequests, chamadasPendentes, leadFeeForRequest,
     reviewsForProfissional, transactionsForProfissional,
@@ -11058,6 +11071,7 @@ alt=""></noscript>
       cat_pintor: 'pintura pintar parede paredes pintores',
       cat_eletricista: 'eletrica eletrico eletricidade instalacao eletrica tomada chuveiro',
       cat_encanador: 'encanamento hidraulica hidraulico vazamento torneira cano',
+      cat_gasista: 'gasista tecnico de gas gas natural gn glp botijao conversao reversao fogao fogao a gas cooktop forno a gas instalacao de gas ponto de gas tubulacao gas ramal aquecedor a gas',
       cat_montador: 'montagem moveis montar movel armario guarda roupa guarda-roupa',
       cat_diarista: 'faxina limpeza domestica casa apartamento',
       cat_jardinagem: 'jardim jardinagem jardineiro grama',
@@ -12698,7 +12712,7 @@ alt=""></noscript>
     const req = DB.requestById(params.id);
     const disponivel = req && req.status === STATUS.BUSCANDO && !req.profissionalId &&
       (user.online || !!(global.QFCloud && global.QFCloud.enabled)) && user.statusAprovacao === 'aprovado' && !user.bloqueado &&
-      (user.categorias.indexOf(req.categoriaId) !== -1 || !!req.abertoTodos) &&
+      (DB.qfServicoCompatibilidadeGasista(user, req) || !!req.abertoTodos) &&
       (req.recusadoPor || []).indexOf(user.id) === -1;
     if (!disponivel) {
       const emNegociacao = req && [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO].indexOf(req.status) !== -1;
