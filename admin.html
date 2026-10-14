@@ -3053,7 +3053,12 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
   function isRecargaPaga(t) { return !!t && (t.tipo === 'recarga' || (t.tipo === 'credito' && t.origem === 'recarga')); }
   function isPaidUnlock(r) { return !!(r.leadUnlock && r.leadUnlock.status === 'pago' && Number(r.leadUnlock.valor || 0) > 0); }
-  function isPaidPriority(r) { return !!(r.pagamentoPrioridade && ['aprovado', 'pago', 'confirmado', 'pago_simulado'].indexOf(String(r.pagamentoPrioridade.status)) !== -1 && Number(r.pagamentoPrioridade.valor || 0) > 0); }
+  // Receita de prioridade so existe com status aprovado + referencia e data do provedor.
+  // Nao contar pagamento pendente, simulado nem registro sem comprovacao.
+  function isPaidPriority(r) {
+    const p = r && r.pagamentoPrioridade;
+    return !!(p && p.status === 'aprovado' && p.aprovadoEm && p.provedorId && Number(p.valor || 0) > 0);
+  }
 
   global.DB = {
     STATUS, STATUS_LABEL, storageOk,
@@ -3938,7 +3943,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
         cidadeId: cityId(c.cidade, c.uf), status: st, profissionalId: c.profissional_id || null,
         criadoEm: c.criado_em, atualizadoEm: c.atualizado_em || c.criado_em, prioridade: !!c.prioridade,
         prazo: c.prazo || null, prazoDia: c.prazo_dia || null, periodo: c.periodo || null,
-        pagamentoPrioridade: c.prioridade_pagamento_status ? { status: c.prioridade_pagamento_status, valor: Number(c.prioridade_valor_centavos || 0), criadoEm: c.atualizado_em || c.criado_em } : null,
+        pagamentoPrioridade: c.prioridade_pagamento_status ? { status: c.prioridade_pagamento_status, valor: Number(c.prioridade_valor_centavos || 0), metodo: c.prioridade_pagamento_metodo || null, provedor: c.prioridade_provedor || null, provedorId: c.prioridade_provedor_id || null, pagamentoId: c.prioridade_pagamento_id || null, aprovadoEm: c.prioridade_aprovado_em || null, criadoEm: c.prioridade_criado_em || c.atualizado_em || c.criado_em } : null,
         // Receita só quando houve débito real na carteira (desbloqueios antigos grátis não contam).
         leadUnlock: c.profissional_id ? { profissionalId: c.profissional_id, valor: deb ? deb.valor : 0, status: deb && deb.valor > 0 ? 'pago' : 'sem_cobranca', criadoEm: deb ? deb.criadoEm : c.atualizado_em } : null,
         taxaVisita: q ? Number(q.taxa_visita_centavos || 0) : 0,
@@ -7117,7 +7122,18 @@ Screens.adminDashboardRender = function () {
           '</div></div>'
         ) : '') +
 
-        (r.pagamentoPrioridade ? '<div class="section card stack--sm" style="background:var(--warning-100);border:none;">' + rowInfo('Prioridade do cliente', PU.formatCurrency(r.pagamentoPrioridade.valor)) + '</div>' : '') +
+        (r.pagamentoPrioridade ? (function (p) {
+          const confirmado = p.status === 'aprovado' && !!p.aprovadoEm && !!p.provedorId;
+          const pendente = p.status === 'pendente';
+          const meio = p.metodo === 'pix' ? 'Pix' : 'Pagamento';
+          const estado = confirmado ? meio + ' confirmado' : (pendente ? 'Aguardando ' + meio.toLowerCase() + ' — NÃO RECEBIDO' : (p.status === 'aprovado' ? 'Confirmação sem comprovante — verificar' : 'Não recebido (' + (p.status || 'sem status') + ')'));
+          return '<div class="section card stack--sm" style="background:var(--warning-100);border:none;">' +
+            rowInfo('Prioridade solicitada', PU.formatCurrency(p.valor)) +
+            rowInfo('Status do pagamento', estado) +
+            (p.provedorId ? rowInfo('Referência do Pix', PU.escapeHtml(p.provedorId)) : '') +
+            (confirmado ? rowInfo('Confirmado em', PU.formatDateTime(p.aprovadoEm)) : '') +
+            '</div>';
+        })(r.pagamentoPrioridade) : '') +
 
         (r.status === STATUS.CANCELADO ? '<div class="section card stack--sm" style="background:var(--danger-100);border:none;">' + rowInfo('Cancelado por', r.canceladoPor || '—') + rowInfo('Motivo', r.motivoCancelamento || '—') + '</div>' : '') +
 
