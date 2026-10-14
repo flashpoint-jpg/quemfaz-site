@@ -7862,7 +7862,7 @@ alt=""></noscript>
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
       '</ol></section>' +
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
-      mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
+      mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
   }
@@ -7913,7 +7913,7 @@ alt=""></noscript>
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 8 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para profissionais</p>' +
-          deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço, as fotos e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
+          deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
           '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro"><span>Quero receber pedidos</span>' + icon('arrowRight') + '</button></div>' +
       '</div></section>' +
       '<section class="qf-desk-card qf-desk-recrut" id="qf-sec-recrut" aria-labelledby="qf-desk-rech"><div class="qf-desk-recrut__intro"><p class="qf-desk-kicker">Para empresas</p><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-rech">Recrutamento: precisa contratar funcionário?</h2>' +
@@ -13086,10 +13086,12 @@ alt=""></noscript>
       '<section class="section" id="cf-profissional">' +
         '<div class="section-head"><div><h2 class="h2">Para o profissional</h2><div class="text--sm text--secondary">Receba clientes da sua região direto no celular.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
-          cfStep(1, 'O chamado chega no seu celular', 'Receber é grátis. Você vê o serviço, a cidade e o bairro antes de decidir.') +
-          cfStep(2, 'Você desbloqueia o chamado', 'Paga um valor pequeno com os créditos da carteira e vê o contato do cliente.') +
-          cfStep(3, 'Combina pelo WhatsApp', 'Acerte o serviço, o preço e o dia direto com o cliente. Depois conte no app se fechou.') +
-          cfStep(4, 'Fecha o serviço', 'O valor do serviço é todo seu. O QuemFaz não cobra comissão.') +
+          cfStep(1, 'Baixe o app na Play Store', 'Procure por QuemFaz na Play Store e instale no seu celular.') +
+          cfStep(2, 'Faça o cadastro grátis', 'Escolha a sua profissão e a região onde você atende.') +
+          cfStep(3, 'Fique online', 'Toque no botão para ficar online (verde). Assim você recebe os pedidos dentro do seu horário de atendimento.') +
+          cfStep(4, 'O pedido chega no seu celular', 'Antes de decidir você vê o serviço, a distância até o cliente, para quando ele precisa e o valor para desbloquear.') +
+          cfStep(5, 'Desbloqueie e chame no WhatsApp', 'Gostou do pedido? Desbloqueie e chame o cliente direto no WhatsApp para passar o orçamento.') +
+          cfStep(6, 'Feche o serviço', 'O valor do serviço é todo seu. O QuemFaz não cobra comissão.') +
         '</div>' +
       '</section>' +
 
@@ -13128,7 +13130,7 @@ alt=""></noscript>
           walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 8), e você vê quantas vagas ainda tem antes de desbloquear.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
-          walletInfoRow('bell', 'Recebe mesmo sem estar online', 'Quem está online recebe o chamado primeiro. Se ninguém pegar em pouco tempo, ele vai para todos os profissionais da região, online ou não. Você escolhe o horário: fora dele, estando offline, ninguém te incomoda.') +
+          walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
           walletInfoRow('creditCard', 'Pagamento seguro', 'Recargas por Pix, cartão ou boleto pelo Efí Bank. O saldo entra assim que o pagamento é confirmado.') +
         '</div>' +
@@ -13137,8 +13139,8 @@ alt=""></noscript>
       '<section class="section">' +
         '<div class="section-head"><h2 class="h3">Dúvidas de profissionais</h2></div>' +
         '<div class="stack--sm">' +
-          cfFaq('Preciso ficar online o tempo todo?', 'Não. Ficar online só faz você ver o chamado antes dos outros. Se ninguém pegar, ele chega também para quem está offline, dentro do horário que você escolheu.') +
-          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Na aba Config. (barra de baixo), em Quando receber chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário, se estiver offline, você não recebe chamado. Se ficar online, recebe a qualquer hora. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
+          cfFaq('Preciso ficar online para receber?', 'Sim. Para receber pedido você precisa estar online (botão verde) e dentro do seu horário de atendimento. Offline você não recebe.') +
+          cfFaq('Posso escolher o horário para receber chamados?', 'Pode. Na aba Config. (barra de baixo), em Quando receber chamados, escolha o horário (por exemplo, das 6:00 às 22:00, que é o padrão). Fora desse horário você não recebe chamado. Para receber o dia todo, coloque o mesmo horário nos dois campos.') +
           cfFaq('Posso deixar o aviso só vibrando?', 'Pode. Na aba Config. (barra de baixo), escolha \u201cSó vibrar\u201d. Recomendamos \u201cTocar e vibrar\u201d para não perder chamado. O modo só vibrar funciona no app da Play Store atualizado.') +
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
           cfFaq('Os créditos de bônus vencem?', 'Não. Bônus que você recebeu fica na sua carteira até você usar.') +
