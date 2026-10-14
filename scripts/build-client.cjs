@@ -115,4 +115,5 @@ require('./generate-seo-extra.cjs');
 require('./generate-seo-sp.cjs');
 require('./improve-local-pages.cjs');
 require('./repair-seo-leads.cjs');
+require('./seo-hub-icons.cjs');
 require('./check-sitemap.cjs');

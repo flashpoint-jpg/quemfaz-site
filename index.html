@@ -37,6 +37,7 @@
 <!-- QF_GOOGLE_BRAND_LOGO_20261008: PNG legível para buscadores e navegadores; SVG permanece para PWA -->
 <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png?v=20261013">
 <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <script src="qf-location-autocomplete.js?v=11.38.0"></script>
@@ -7857,7 +7858,7 @@ alt=""></noscript>
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
-      '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div>' +
+      '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="/servicos/">Serviços</a> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer></div>' +
       deskWide() +
       '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-action="landing-my-orders">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-support-open>' + icon('info') + '<span>Ajuda</span></button></nav></div>';
   };
@@ -7958,7 +7959,7 @@ alt=""></noscript>
       '<section class="qf-desk-card qf-desk-about" id="qf-sec-quem" aria-labelledby="qf-desk-quemh"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-quemh">Quem somos</h2>' +
         '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região: eletricista, encanador, pintor, diarista, montador de móveis e dezenas de outros.</p>' +
         '<p>A ideia é simples: você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação. Para o profissional, é um jeito de receber pedidos de clientes por perto e escolher quais quer atender.</p></section>' +
-      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer>';
+      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="/servicos/">Serviços</a> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p></footer>';
   }
   // O conteúdo abaixo da primeira tela entra depois que o app carrega, para a página abrir leve.
   function deskWide() { return '<div class="qf-desk-wide" data-home-lazy="wide"></div>'; }
