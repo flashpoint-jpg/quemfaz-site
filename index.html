@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="google-site-verification" content="NryNLw-PohY4iFWiT0v9_Ob5hAG02_NZfxrLHVaybfI" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>
+/* Navegador interno do Facebook/Instagram/Messenger no Android: o app já reserva a barra do celular,
+   mas o WebView informa a mesma área como "safe area" e a barra de menu subia ~40px. */
+(function(){try{var ua=navigator.userAgent||'';if(/Android/i.test(ua)&&/FBAN|FBAV|FB_IAB|FB4A|Instagram|Messenger|musical_ly|TikTok|Line\//i.test(ua)){document.documentElement.classList.add('qf-inapp');var m=document.querySelector('meta[name="viewport"]');if(m)m.setAttribute('content','width=device-width, initial-scale=1');}}catch(e){}})();
+</script>
+<style>
+html.qf-inapp{--safe-bottom:0px}
+@media (max-width:899px){html.qf-inapp .qf-home-nav,html.qf-inapp .tabbar{bottom:7px!important}html.qf-inapp body .qf-update-banner.qf-update-float{bottom:102px!important}}
+</style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>Quem Faz | Encontre Profissionais e Receba até 8 Contatos Grátis</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
@@ -14732,7 +14741,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.85';
+  const APP_VERSION = '11.86';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
