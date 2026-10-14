@@ -7577,10 +7577,12 @@ Screens.adminDashboardRender = function () {
   function semPushTexto(u) {
     const primeiro = String(u.nome || '').trim().split(/\s+/)[0] || '';
     const nome = primeiro ? ' ' + primeiro.charAt(0).toUpperCase() + primeiro.slice(1).toLowerCase() : '';
-    return 'Olá' + nome + '! Aqui é do Quem Faz.\n\n' +
-      'Seu cadastro está ativo, mas as notificações de novos chamados ainda não estão habilitadas no seu celular. Para não perder oportunidades, atualize o app aqui:\n' +
+    return 'Olá' + nome + '! Aqui é da equipe Quem Faz.\n\n' +
+      'Seu cadastro está ativo, mas você ainda não está recebendo as notificações de novos pedidos.\n\n' +
+      'BAIXE OU ATUALIZE o aplicativo oficial QuemFaz diretamente na PLAY STORE:\n' +
       SEM_PUSH_STORE_LINK + '\n\n' +
-      'Depois abra o Quem Faz e permita as notificações quando aparecer a solicitação. Quando terminar, me avise por aqui que eu confiro se ficou ativo.';
+      'Depois, abra o aplicativo e permita as notificações. Se o aviso não aparecer, vá em Configurações do celular > Aplicativos > QuemFaz > Notificações e ative.\n\n' +
+      'Quando concluir, me avise por aqui para conferirmos se ficou ativo.';
   }
   function semPushListaAtual() {
     return (DB.state.users.profissionais || [])
@@ -7611,7 +7613,7 @@ Screens.adminDashboardRender = function () {
         (chamado ? '<span class="badge badge--success">Já chamado</span>' : '<span class="badge badge--warning">Sem push</span>') + '</div>' +
         '<div class="btn-row" style="flex-wrap:wrap;">' +
           (fone ? '<button type="button" class="btn ' + (chamado ? 'btn--outline' : 'btn--primary') + '" data-sem-push-wa="' + PU.escapeHtml(u.id) + '">' +
-            icon('whatsapp') + (chamado ? ' Chamar novamente no WhatsApp' : ' Chamar no WhatsApp') + '</button>' :
+            icon('whatsapp') + (chamado ? ' Reenviar Play Store pelo WhatsApp' : ' Enviar Play Store pelo WhatsApp') + '</button>' :
             '<div class="text--sm text--muted">Sem WhatsApp/telefone válido no cadastro.</div>') +
           (email ? '<button type="button" class="btn btn--outline" data-sem-push-copy-email="' + PU.escapeHtml(u.id) + '">Copiar e-mail</button>' : '') +
         '</div>' +
