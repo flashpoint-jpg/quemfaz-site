@@ -2811,6 +2811,24 @@ window.qfGoogleLead = function (requestId) {
 #cadastro-cliente-form[data-qf-etapa="2"]:not([data-qf-sub="c"]) .qf-request-submit,
 #cadastro-cliente-form[data-qf-etapa="2"]:not([data-qf-sub="c"]) .qf-request-benefit { display:none !important; }
 [data-qf-sub-box] { display:flex;flex-direction:column;gap:12px; }
+.qf-envio__opts { display:flex;flex-direction:column;gap:14px;margin-top:4px; }
+.qf-envio__opt { position:relative;display:flex;flex-direction:column;gap:8px;width:100%;text-align:left;padding:14px 14px 14px;border-radius:14px;border:2px solid var(--border, #e2ded8);background:var(--bg-surface, #fff);color:inherit;font:inherit;cursor:pointer; }
+.qf-envio__opt[aria-checked="true"] { border-color:var(--navy-700, #1c2b4a); }
+.qf-envio__opt--urgente { margin-top:6px; }
+.qf-envio__opt--urgente[aria-checked="true"] { border-color:#c92a2a;box-shadow:0 6px 18px rgba(201,42,42,.12); }
+.qf-envio__selo { position:absolute;top:-11px;left:14px;background:#c92a2a;color:#fff;font-size:11px;font-weight:800;letter-spacing:.06em;padding:3px 10px;border-radius:999px; }
+.qf-envio__topo { display:flex;align-items:center;gap:10px;width:100%; }
+.qf-envio__radio { width:20px;height:20px;border-radius:999px;border:2px solid #b8b1a8;box-sizing:border-box;flex-shrink:0;background:#fff; }
+.qf-envio__opt[aria-checked="true"] .qf-envio__radio { border:6px solid var(--navy-700, #1c2b4a); }
+.qf-envio__opt--urgente[aria-checked="true"] .qf-envio__radio { border-color:#c92a2a; }
+.qf-envio__nome { flex:1;font-weight:800;font-size:16px;display:inline-flex;align-items:center;gap:6px; }
+.qf-envio__nome svg { width:16px;height:16px;color:#c92a2a; }
+.qf-envio__preco { font-weight:800;font-size:15px; }
+.qf-envio__preco--gratis { color:var(--success-600, #2b7a3d); }
+.qf-envio__desc { font-size:14px;color:var(--text-secondary, #4a4540);padding-left:30px; }
+.qf-envio__itens { display:flex;flex-direction:column;gap:6px;padding-left:30px;font-size:14px; }
+.qf-envio__itens span { display:flex;gap:6px;align-items:flex-start; }
+.qf-envio__itens svg { width:16px;height:16px;flex-shrink:0;margin-top:2px;color:var(--success-600, #2b7a3d); }
 [data-qf-sub-box][hidden] { display:none; }
 .qf-quantos__opts { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
 .qf-quantos__opt { font-size:17px;font-weight:800;min-height:50px;justify-content:center;text-align:center; }
@@ -8078,6 +8096,27 @@ alt=""></noscript>
             '<p class="qf-prazo__nota">Você escolhe de 1 a 8. Só essa quantidade de profissionais vai ver o seu WhatsApp.</p>' +
             '<input type="hidden" name="maxOrcamentos" value="3">' +
           '</div>' +
+          // V11.79: Pedido urgente opcional. O normal continua grátis e já vem marcado.
+          '<div class="field qf-envio" data-qf-envio>' +
+            '<span class="field__label" id="qf-envio-label">Como enviar seu pedido?</span>' +
+            '<div class="qf-envio__opts" role="radiogroup" aria-labelledby="qf-envio-label">' +
+              '<button type="button" class="qf-envio__opt" role="radio" aria-checked="true" data-qf-envio-opt="normal">' +
+                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Pedido normal</span><span class="qf-envio__preco qf-envio__preco--gratis">Grátis</span></span>' +
+                '<span class="qf-envio__desc">Enviado aos profissionais da sua região, aos poucos.</span>' +
+              '</button>' +
+              '<button type="button" class="qf-envio__opt qf-envio__opt--urgente" role="radio" aria-checked="false" data-qf-envio-opt="urgente">' +
+                '<span class="qf-envio__selo">MAIS RÁPIDO</span>' +
+                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Pedido urgente ' + icon('bolt') + '</span><span class="qf-envio__preco">R$ 5</span></span>' +
+                '<span class="qf-envio__itens">' +
+                  '<span>' + icon('check') + ' Avisa na hora mais profissionais perto de você</span>' +
+                  '<span>' + icon('check') + ' Aparece no topo como PRIORITÁRIO</span>' +
+                  '<span>' + icon('check') + ' Ideal pra cano estourado, falta de luz, porta travada</span>' +
+                '</span>' +
+              '</button>' +
+            '</div>' +
+            '<p class="qf-prazo__nota" data-qf-envio-nota>Seu pedido é publicado grátis. Se escolher urgente, ele vira prioritário assim que o Pix cair.</p>' +
+            '<input type="hidden" name="urgente" value="0">' +
+          '</div>' +
           '<button class="btn btn--primary" type="button" data-qf-sub-ir="c">Continuar ' + icon('arrowRight') + '</button>' +
           '<button class="btn btn--outline" type="button" data-qf-sub-ir="a">Voltar</button>' +
           '</div>' +
@@ -9051,8 +9090,27 @@ alt=""></noscript>
           const ben = form.querySelector('[data-qf-benefit-max]');
           if (ben) ben.textContent = (n === 1 ? '1 orçamento grátis.' : 'Até ' + n + ' orçamentos grátis. Você escolhe.');
           const envio = form.querySelector('.qf-request-submit');
-          if (envio && form.dataset.publishing !== '1') envio.innerHTML = 'Receber ' + (n === 1 ? '1 orçamento' : n + ' orçamentos') + ' grátis ' + icon('arrowRight');
+          const urg = form.querySelector('[name="urgente"]');
+          if (envio && form.dataset.publishing !== '1') envio.innerHTML = (urg && urg.value === '1')
+            ? icon('bolt') + ' Enviar urgente e pagar R$ 5 no Pix'
+            : 'Receber ' + (n === 1 ? '1 orçamento' : n + ' orçamentos') + ' grátis ' + icon('arrowRight');
         }
+        // V11.79: Pedido normal (grátis) ou urgente (Pix). Sem a opção na tela, segue normal.
+        function modoEnvio(modo) {
+          const urgente = modo === 'urgente';
+          const campo = form.querySelector('[name="urgente"]');
+          if (campo) campo.value = urgente ? '1' : '0';
+          form.querySelectorAll('[data-qf-envio-opt]').forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-envio-opt') === modo ? 'true' : 'false'); });
+          const ben = form.querySelector('[data-qf-benefit-max]');
+          const campoMax = form.querySelector('[name="maxOrcamentos"]');
+          quantos(campoMax ? campoMax.value : 3);
+          if (ben && urgente) ben.textContent = 'Seu pedido é publicado e fica prioritário assim que o Pix cair.';
+          if (global.QFClientAcquisition && global.QFClientAcquisition.track) { try { global.QFClientAcquisition.track('urgent_choice', { mode: modo }); } catch (_) {} }
+        }
+        form.addEventListener('click', function (e) {
+          const b = e.target.closest('[data-qf-envio-opt]');
+          if (b && form.contains(b)) modoEnvio(b.getAttribute('data-qf-envio-opt'));
+        });
         form.addEventListener('click', function (e) {
           const b = e.target.closest('[data-qf-quantos-opt]');
           if (b && form.contains(b)) quantos(b.getAttribute('data-qf-quantos-opt'));
@@ -9268,6 +9326,7 @@ alt=""></noscript>
             rua: '', numero: '', bairro: bairro, complemento: '', cep: '',
             cidade: cidade, uf: uf, cidadeId: null, latitude: null, longitude: null
           };
+          const querUrgente = !!(global.QFCloud && global.QFCloud.enabled) && String(fd.get('urgente') || '') === '1';
           const pedido = (global.QFCloud && global.QFCloud.enabled)
             ? await global.QFCloud.createCall(Object.assign({
                 clienteId: user.id,
@@ -9275,7 +9334,7 @@ alt=""></noscript>
                 descricao: descricao,
                 fotos: [],
                 endereco: endereco,
-                prioridade: false,
+                prioridade: querUrgente,
                 prioridadeMetodo: 'pix',
                 maxOrcamentos: Number(fd.get('maxOrcamentos')) || 3
               }, prazoDados))
@@ -9290,7 +9349,14 @@ alt=""></noscript>
               }, prazoDados));
 
 
-          PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
+          const pagUrgente = querUrgente && pedido && pedido.pagamentoPrioridade;
+          if (pagUrgente && pagUrgente.checkoutUrl && !pedido.prioridade) {
+            PU.toast('Pedido publicado! Agora pague o Pix para deixar ele urgente.', 'success', 6000);
+            location.href = pagUrgente.checkoutUrl;
+            return;
+          }
+          if (querUrgente) PU.toast('Pedido publicado! Toque em Pagar prioridade para deixar ele urgente.', 'success', 6000);
+          else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
           if (global.QFClientAcquisition) global.QFClientAcquisition.track('publish_error', { category: cat.id, error_code: err && err.code || 'publish_failed' });
@@ -14482,7 +14548,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.78.4';
+  const APP_VERSION = '11.79.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

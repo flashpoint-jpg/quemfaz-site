@@ -1,0 +1,12 @@
+QuemFaz 11.79 — Pedido urgente opcional para o cliente
+
+CLIENTE (Pedir serviço, tela de escolhas)
+- Nova pergunta "Como enviar seu pedido?" com duas opções em botões:
+  Pedido normal (Grátis, já vem marcado) ou Pedido urgente (R$ 5, selo "MAIS RÁPIDO").
+- Escolhendo urgente, o botão final vira "Enviar urgente e pagar R$ 5 no Pix".
+- O pedido é sempre publicado primeiro (grátis). Depois o cliente vai para o Pix da Efí;
+  quando o pagamento cai, o pedido vira PRIORITÁRIO (mesma prioridade paga que já existia).
+- Se o Pix não abrir, o pedido segue normal e a tela do pedido mostra "Pagar prioridade".
+
+PROFISSIONAL
+- Sem mudança: pedido prioritário já aparece no topo com a etiqueta Prioritário/PRIORITÁRIO.
