@@ -30,7 +30,7 @@
         if((candidates[i].textContent||'').indexOf('Saldo disponível')!==-1){anchor=candidates[i];break;}
       }
     }else anchor=root.querySelector('.qf-services-tabs,.qf-outros-tabs');
-    return {root:root,anchor:anchor};
+    return {root:root,anchor:anchor,compact:!wallet};
   }
   function remove(){var card=document.getElementById(CARD_ID);if(card)card.remove();}
   function display(){
@@ -41,10 +41,26 @@
     var ends=Date.parse(data.expira_em||'');
     if(!Number.isFinite(ends)||ends<=Date.now()){remove();refresh(true);return;}
     var card=document.getElementById(CARD_ID);
+    // V11.85: na tela inicial e em Pedidos o bônus aparece numa faixa de uma linha; o cartão completo fica só na Carteira.
+    var mode=v.compact?'compact':'full';
+    if(card&&card.getAttribute('data-mode')!==mode){card.remove();card=null;}
+    if(!card&&v.compact){
+      card=document.createElement('button');
+      card.type='button';
+      card.id=CARD_ID;
+      card.className='qf-bonus-validade qf-bonus-faixa';
+      card.setAttribute('data-mode','compact');
+      card.setAttribute('data-nav','/profissional/carteira');
+      card.setAttribute('aria-label','Seu bônus e o prazo de validade. Abrir a Carteira');
+      card.innerHTML='<span class="qf-bonus-faixa__icon" aria-hidden="true"></span>'+
+        '<span class="qf-bonus-faixa__txt">Bônus <b data-qf-bonus-money></b> · vence em <span data-qf-bonus-short></span></span>'+
+        '<span class="qf-bonus-faixa__link">Carteira ›</span>';
+    }
     if(!card){
       card=document.createElement('section');
       card.id=CARD_ID;
       card.className='qf-bonus-validade';
+      card.setAttribute('data-mode','full');
       card.setAttribute('aria-label','Prazo de validade do seu bônus');
       card.innerHTML='<div class="qf-bonus-top"><span class="qf-bonus-clockicon" aria-hidden="true"></span>'+
         '<div><strong>Faltam <span data-qf-bonus-days>10</span> dias para o seu bônus acabar</strong>'+
@@ -81,6 +97,8 @@
       if(strong){var suffix=headerDays===1?' dia para o seu bônus acabar':' dias para o seu bônus acabar';if(strong.lastChild&&strong.lastChild.textContent!==suffix)strong.lastChild.textContent=suffix;}
     }
     function pad(x){return String(x).padStart(2,'0');}
+    var short=card.querySelector('[data-qf-bonus-short]');
+    if(short){var st=d>0?d+'d '+h+'h':(h>0?h+'h '+pad(m)+'min':pad(m)+'min '+pad(s)+'s');if(short.textContent!==st)short.textContent=st;}
     var clock=card.querySelector('[data-qf-bonus-timer]');
     var clockText=pad(d)+'d  '+pad(h)+'h  '+pad(m)+'min  '+pad(s)+'s';
     if(clock&&clock.textContent!==clockText)clock.textContent=clockText;
@@ -127,6 +145,15 @@
     'background:#f5821f!important;color:#10203e!important;font-weight:800;width:100%;'+
     'min-height:43px;border-radius:10px}'+
     '#'+CARD_ID+' .qf-bonus-note{display:block;font-size:11px;color:#64748b;line-height:1.45;margin-top:10px}';
+  style.textContent+=
+    '#'+CARD_ID+'.qf-bonus-faixa{display:flex;align-items:center;gap:9px;width:100%;text-align:left;cursor:pointer;'+
+    'background:#fff4e8;border:1px solid #ffd2a6;border-radius:12px;box-shadow:none;padding:9px 12px;margin:10px 0;font:inherit}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__icon{flex:0 0 18px;height:18px;border:2px solid #f5821f;border-radius:50%;position:relative;box-sizing:border-box}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__icon:before{content:"";position:absolute;width:2px;height:5px;background:#8a3f06;left:6px;top:2px}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__icon:after{content:"";position:absolute;width:4px;height:2px;background:#8a3f06;left:6px;top:6px}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__txt{flex:1;min-width:0;font-size:13px;color:#8a3f06;line-height:1.35;font-variant-numeric:tabular-nums}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__txt b{font-weight:800}'+
+    '#'+CARD_ID+' .qf-bonus-faixa__link{flex:none;font-size:12px;font-weight:800;color:#c25a0a}';
   document.head.appendChild(style);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule);
   else schedule();

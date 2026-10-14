@@ -1,0 +1,10 @@
+QuemFaz V11.85
+
+Tela inicial do profissional mais limpa (aprovada no mockup):
+- Bônus: o cartão grande com o relógio virou uma faixa de uma linha ("Bônus R$ X · vence em 9d 23h · Carteira ›"). Tocar abre a Carteira. O cartão completo continua só na Carteira.
+- Horário de atendimento: virou uma linha dentro do cartão de online/offline, com o botão "Ajustar horário" (abre na mesma tela).
+- "Pedidos para você" vem logo depois do status e do bônus.
+- Checklist do perfil (localização, bateria etc.): só aparece se faltar algo, e só com o item que falta, depois dos pedidos.
+- Saíram da tela inicial e foram para o Perfil (funcionando igual): "Ajustar raio", "Adicionar profissão", "Sua nota" e a carteirinha ("Imprimir minha carteirinha").
+- Tirada a frase "Obrigado por fazer parte do Quem Faz" do cartão de status.
+- Nenhuma função removida; Supabase não foi alterado.

@@ -9,12 +9,12 @@ const load=p=>fs.readFileSync(path.join(root,p),'utf8');
 test('carteirinha aparece somente no painel do profissional',()=>{
   const js=load('qf-carteirinha.js');
   assert.match(js,/sess|sessionId/);
-  assert.match(js,/profissional-home/);
+  assert.match(js,/profissional-perfil/); // V11.85: carteirinha no Perfil
   assert.match(js,/qf_minha_carteirinha/);
   assert.match(js,/token=/);
   assert.doesNotMatch(js,/p_profissional_id:id/);
   new vm.Script(js);
-  assert.match(load('index.html'),/qf-carteirinha\.js\?v=11\.84\.2/);
+  assert.match(load('index.html'),/qf-carteirinha\.js\?v=11\.85/);
 });
 
 test('carteirinha imprime QR pessoal sem profissão ou pontuação',()=>{
