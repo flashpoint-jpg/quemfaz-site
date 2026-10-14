@@ -8634,6 +8634,62 @@ Screens.adminDashboardRender = function () {
       '<div data-adm-paineis>' + admCard('Painéis', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-paineis');
   };
 
+  // V11.83: "Você fechou?" — quem desbloqueou e ainda não contou se fechou o serviço.
+  function fcQuando(iso) { return iso && Date.parse(iso) ? (qfDiaChave(iso) === qfDiaChave() ? 'Hoje' : qfDiaMes(iso)) + ' · ' + qfHora(iso) : '—'; }
+  function fcWa(fone) { const d = String(fone || '').replace(/\D/g, ''); return d ? 'https://wa.me/' + (d.length <= 11 ? '55' + d : d) : ''; }
+  function admFechouHtml(d) {
+    const r = d.resumo || {};
+    const itens = Array.isArray(d.itens) ? d.itens : [];
+    const linhas = itens.map(function (x) {
+      const ativo = !x.desfecho && ['em_negociacao', 'confirmado', 'em_andamento'].indexOf(String(x.status_pedido || '')) !== -1;
+      const perguntas = (x.pergunta2_em ? 2 : (x.pergunta1_em ? 1 : 0));
+      let resp;
+      if (x.desfecho === 'fechado') resp = '<b style="color:var(--success-600);">Fechei</b><br><small class="qf-adm-resumo">' + fcQuando(x.desfecho_em) + '</small>';
+      else if (x.desfecho === 'nao_fechado') resp = '<b>Não fechei</b><br><small class="qf-adm-resumo">' + fcQuando(x.desfecho_em) + '</small>';
+      else if (x.desfecho) resp = '<b>' + PU.escapeHtml(String(x.desfecho)) + '</b>';
+      else if (!ativo) resp = '<small class="qf-adm-resumo">Pedido encerrado</small>';
+      else if (x.conversando_em) resp = '<b>Ainda conversando</b><br><small class="qf-adm-resumo">' + fcQuando(x.conversando_em) + '</small>';
+      else resp = '<b style="color:#B4410A;">Sem resposta</b>';
+      const wa = fcWa(x.whatsapp);
+      const acao = ativo && !x.desfecho && wa
+        ? '<a class="btn btn--outline btn--sm" href="' + wa + '" target="_blank" rel="noopener">Chamar no WhatsApp</a>'
+        : '';
+      const local = [x.bairro, x.cidade].filter(Boolean).join(' · ');
+      return '<tr>' +
+        '<td><b>' + PU.escapeHtml(x.profissional || 'Profissional') + '</b>' + (x.whatsapp ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(x.whatsapp) + '</small>' : '') + '</td>' +
+        '<td class="qf-adm-tr-link" data-nav="/admin/servicos/' + PU.escapeHtml(x.chamado_id) + '" tabindex="0">' + PU.escapeHtml(x.titulo || 'Pedido') + (local ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(local) + '</small>' : '') + '</td>' +
+        '<td>' + fcQuando(x.desbloqueou_em) + '</td>' +
+        '<td>' + (perguntas ? perguntas + ' de 2' : '<small class="qf-adm-resumo">Ainda não</small>') + '</td>' +
+        '<td>' + resp + '</td>' +
+        '<td>' + acao + '</td>' +
+      '</tr>';
+    });
+    return '<section class="qf-adm-numeros">' +
+        '<div class="qf-adm-num__item"><span>Desbloqueios ativos</span><b>' + Number(r.ativos || 0) + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Fechei</span><b style="color:var(--success-600);">' + Number(r.fechei || 0) + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Não fechei</span><b>' + Number(r.nao_fechei || 0) + '</b></div>' +
+        '<div class="qf-adm-num__item"><span>Sem resposta</span><b style="color:#B4410A;">' + Number(r.sem_resposta || 0) + '</b></div>' +
+      '</section>' +
+      admTabela(['Profissional', 'Pedido', 'Desbloqueou', 'Perguntas', 'Resposta', ''], linhas,
+        'A pergunta vai 3 horas depois do desbloqueio, das 8h às 21h. Sem resposta, pergunta mais uma vez no dia seguinte e para. Últimos 30 dias.',
+        'Nenhum desbloqueio nos últimos 30 dias.');
+  }
+  async function admFechouCarregar(content) {
+    const box = content.querySelector('[data-adm-fechou]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_fechou_respostas');
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'sem dados');
+      const h = admFechouHtml(r.data);
+      if (box.__qfHtml !== h) { box.__qfHtml = h; box.innerHTML = h; }
+    } catch (err) { box.innerHTML = admCard('Você fechou?', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'); }
+  }
+  Screens.adminFechouRender = function () {
+    return admPage('<p class="qf-prox__intro">Quem desbloqueou um pedido e se já contou se fechou o serviço. Quando o profissional responde “Fechei”, o pedido é encerrado na hora e ninguém mais desbloqueia.</p>' +
+      '<div data-adm-fechou>' + admCard('Você fechou?', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-fechou');
+  };
+
   // V11.67: Pedidos sem profissional — pedidos abertos que ninguém recebeu; troca o serviço e reenvia.
   function admSemProfHtml(d) {
     const pedidos = Array.isArray(d.pedidos) ? d.pedidos : [];
@@ -8683,6 +8739,8 @@ Screens.adminDashboardRender = function () {
     if (sem && sem.parentNode && !semProfMexido) admSemProfCarregar(sem.parentNode);
     const pn = document.querySelector('[data-adm-paineis]');
     if (pn && pn.parentNode) admPaineisCarregar(pn.parentNode);
+    const fc = document.querySelector('[data-adm-fechou]');
+    if (fc && fc.parentNode) admFechouCarregar(fc.parentNode);
   }, 20000);
   Screens.adminSemProfRender = function () {
     semProfMexido = false;
@@ -9078,6 +9136,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/proximos') admProximosCarregar(content);
     if (pattern === '/admin/paineis') admPaineisCarregar(content);
+    if (pattern === '/admin/fechou') admFechouCarregar(content);
     if (pattern === '/admin/sem-profissional') admSemProfCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
     if (pattern === '/admin/servicos') atualizarContas();
@@ -9188,6 +9247,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
+    { pattern: '/admin/fechou', role: 'admin', title: 'Você fechou? · respostas dos profissionais', render: function () { return Screens.adminFechouRender(); } },
     { pattern: '/admin/sem-profissional', role: 'admin', title: 'Pedidos sem profissional', render: function () { return Screens.adminSemProfRender(); } },
     { pattern: '/admin/proximos', role: 'admin', title: 'Profissionais próximos ao pedido', render: function () { return Screens.adminProximosRender(); } },
     { pattern: '/admin/paineis', role: 'admin', title: 'Painéis: pedidos parados na tela dos profissionais', render: function () { return Screens.adminPaineisRender(); } },
@@ -9393,6 +9453,7 @@ Screens.adminDashboardRender = function () {
     { id: 'proximos', label: 'Próximos ao pedido', icon: 'mapPin', route: '/admin/proximos' },
     { id: 'semprof', label: 'Pedidos sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
+    { id: 'fechou', label: 'Fechou? · sem resposta', icon: 'chat', route: '/admin/fechou' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
     { id: 'cidades', label: 'Por cidade', icon: 'mapPin', route: '/admin/por-cidade' },

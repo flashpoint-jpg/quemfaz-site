@@ -295,10 +295,16 @@ Deno.serve(async (req) => {
     const title = String(body.title || "").trim().slice(0, 120);
     const texto = String(body.body || "").trim().slice(0, 400);
     if (!ids.length || !title || !texto) return json({ error: "invalid_notice" }, 400);
+    // V11.83: "Você fechou?" — a faixa leva a chave da pergunta para os botões Fechei / Não fechei
+    // funcionarem direto na notificação do navegador/PWA (o APK abre o pedido ao tocar).
+    const uuid = /^[0-9a-f-]{36}$/i;
+    const fechou = uuid.test(String(body.fechou_id || "")) && uuid.test(String(body.fechou_token || ""))
+      ? { fechou_id: String(body.fechou_id), fechou_token: String(body.fechou_token) }
+      : {};
     try {
       const porUsuario: Record<string, unknown> = {};
       for (const uid of ids) {
-        porUsuario[uid] = await sendToUsers([uid], { title, body: texto, url: String(body.url || "/#/"), tag: String(body.tag || "qf-recado") });
+        porUsuario[uid] = await sendToUsers([uid], { title, body: texto, url: String(body.url || "/#/"), tag: String(body.tag || "qf-recado"), ...fechou });
       }
       return json({ ok: true, recado: porUsuario });
     } catch (err) {

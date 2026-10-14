@@ -6816,6 +6816,15 @@ alt=""></noscript>
     return DB.requestById(chamadoId);
   }
 
+  // V11.83: "Ainda estou conversando" — o QuemFaz pergunta de novo amanhã, uma vez só.
+  async function stillTalkingProfessionalCall(chamadoId) {
+    const res = await client.rpc('qf_fechou_conversando', { p_chamado_id: chamadoId });
+    if (res.error) throw res.error;
+    const out = res.data || {};
+    if (!out.ok) throw new Error(out.reason || 'Não foi possível registrar.');
+    return true;
+  }
+
   async function submitEvaluation(chamadoId, nota, comentario) {
     const res = await client.rpc('qf_enviar_avaliacao', {
       p_chamado_id: chamadoId,
@@ -7078,6 +7087,7 @@ alt=""></noscript>
     respondQuote: respondQuote,
     updateProfessionalCallStatus: updateProfessionalCallStatus,
     closeProfessionalCall: closeProfessionalCall,
+    stillTalkingProfessionalCall: stillTalkingProfessionalCall,
     submitEvaluation: submitEvaluation,
     setOnline: setOnline,
     onlineSemGps: function () { return onlineSemGps; },
@@ -12768,6 +12778,7 @@ alt=""></noscript>
         '</div>' +
         '<div class="qf-perf" aria-hidden="true"></div>' +
         '<div class="row-between">' + statusBadge(req.status) + '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span></div>' +
+        (DB.STATUS_DESBLOQUEADO.indexOf(req.status) !== -1 ? '<div class="text--sm" style="margin-top:8px;color:var(--orange-600,#B4410A);font-weight:800;">Falta sua resposta: você fechou o serviço?</div>' : '') +
       '</button>'
     );
   }
@@ -12848,11 +12859,13 @@ alt=""></noscript>
     // V11.22: sem orçamento, iniciar e concluir. O profissional só conta como terminou.
     if (DB.STATUS_DESBLOQUEADO.indexOf(s) !== -1) {
       return '<div class="section"><div class="card stack qf-ticket" data-qf-fechamento style="gap:14px;">' +
-        '<div><div class="text--strong">Deu certo com este cliente?</div>' +
-        '<div class="text--sm text--secondary">Depois de combinar pelo WhatsApp e fazer o serviço, conte aqui como terminou. Ao fechar, o cliente é convidado a avaliar você.</div></div>' +
+        '<div><div class="text--sm" style="color:var(--orange-600,#B4410A);font-weight:800;letter-spacing:.06em;">FALTA SUA RESPOSTA</div>' +
+        '<div class="text--strong" style="font-size:1.12rem;margin-top:2px;">Você fechou o serviço com esse cliente?</div>' +
+        '<div class="text--sm text--secondary">Depois de combinar pelo WhatsApp, conte aqui como terminou. Ao fechar, o pedido sai da lista dos outros profissionais e o cliente é convidado a avaliar você.</div></div>' +
         '<div class="qf-perf" aria-hidden="true" style="margin:2px 0;"></div>' +
-        '<button class="btn btn--primary" data-action="fechei-servico">' + icon('checkCircle') + ' Fechei o serviço</button>' +
+        '<button class="btn btn--primary" data-action="fechei-servico">' + icon('checkCircle') + ' Sim, fechei</button>' +
         '<button class="btn btn--outline" data-action="nao-fechei-servico">' + icon('xCircle') + ' Não fechei</button>' +
+        '<button class="btn btn--ghost" type="button" data-action="ainda-conversando" style="text-decoration:underline;">Ainda estou conversando</button>' +
         '<div class="text--sm text--muted">Sem resposta em 7 dias, o pedido é encerrado sozinho como “Sem retorno”.</div>' +
       '</div></div>';
     }
@@ -14110,6 +14123,16 @@ alt=""></noscript>
           }
         });
       }
+      if (act === 'ainda-conversando') {
+        (async function () {
+          try {
+            if (global.QFCloud && global.QFCloud.enabled && global.QFCloud.stillTalkingProfessionalCall) await global.QFCloud.stillTalkingProfessionalCall(params.id);
+            PU.toast('Combinado! Amanhã a gente pergunta de novo.', 'success');
+          } catch (err) {
+            PU.toast('Não foi possível registrar. ' + (err && err.message ? err.message : ''), 'danger');
+          }
+        })();
+      }
       if (act === 'cancelar-servico') {
         PU.confirmDialog({ title: 'Cancelar serviço', message: 'Tem certeza que deseja cancelar este serviço?', okLabel: 'Cancelar', danger: true }).then(function (ok) {
           if (!ok) return;
@@ -14657,7 +14680,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.81';
+  const APP_VERSION = '11.83';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

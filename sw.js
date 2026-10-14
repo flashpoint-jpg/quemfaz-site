@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '11.81';
+const SW_VERSION = '11.83';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['./assets/qf-logo-20261013.webp', './icon-192.png?v=20261013', './icon-512.png?v=20261013', './qf-carteirinha.js?v=11.77.0', './carteirinha.html', './avaliar.html', './vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.75.1', './qf-admin-acquisition.js?v=11.75.1', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -82,9 +82,15 @@ self.addEventListener('push', event => {
     data: {
       url: data.url || './index.html#/',
       grouped: !!data.grouped,
-      count: Number(data.count || 0)
+      count: Number(data.count || 0),
+      fechou_id: data.fechou_id || '',
+      fechou_token: data.fechou_token || ''
     }
   };
+  // V11.83: "Você fechou?" — responde direto na notificação.
+  if (data.fechou_id && data.fechou_token) {
+    options.actions = [{ action: 'fechei', title: 'Fechei' }, { action: 'nao_fechei', title: 'Não fechei' }];
+  }
   event.waitUntil((async () => {
     const chegou = qfTesteChegou(data);
     const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -116,8 +122,29 @@ function qfNotificationTarget(raw) {
   return QF_PUBLIC_ORIGIN + parsed.pathname + parsed.search + parsed.hash;
 }
 
+// V11.83: botões "Fechei" / "Não fechei" da pergunta "Você fechou o serviço?".
+function qfResponderFechou(nd, resposta) {
+  return fetch(QF_SUPABASE_URL + '/rest/v1/rpc/qf_fechou_responder_token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: QF_SUPABASE_KEY, Authorization: 'Bearer ' + QF_SUPABASE_KEY },
+    body: JSON.stringify({ p_desbloqueio_id: nd.fechou_id, p_token: nd.fechou_token, p_resposta: resposta })
+  }).then(r => r.json()).catch(() => null).then(out => {
+    const ok = out && out.ok;
+    return self.registration.showNotification('QuemFaz', {
+      body: ok ? (resposta === 'fechei' ? 'Registrado: você fechou o serviço. Obrigado!' : 'Registrado: você não fechou este pedido.') : 'Não deu para registrar agora. Abra o pedido no QuemFaz para responder.',
+      icon: './icon-192.png?v=20261013', badge: './icon.svg', tag: 'qf-fechou-ok', silent: true,
+      data: { url: nd.url || './index.html#/' }
+    });
+  });
+}
+
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  const nd = event.notification.data || {};
+  if ((event.action === 'fechei' || event.action === 'nao_fechei') && nd.fechou_id && nd.fechou_token) {
+    event.waitUntil(qfResponderFechou(nd, event.action));
+    return;
+  }
   const raw = (event.notification.data && event.notification.data.url) || './index.html#/';
   const target = qfNotificationTarget(raw);
   event.waitUntil(
