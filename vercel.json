@@ -87,5 +87,12 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/download/:path*",
+      "destination": "https://play.google.com/store/apps/details?id=br.app.quemfaz",
+      "permanent": false
+    }
   ]
 }
