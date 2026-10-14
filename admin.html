@@ -1487,6 +1487,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-sit{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;white-space:nowrap;font-size:12.5px;font-weight:700}
 .qf-adm-sit::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .qf-adm-sit--aguardando{background:var(--warning-100);color:var(--warning-600)}
+.qf-adm-sit--pix{background:#fde8e8;color:#b42318;border:1px dashed #f3a5a5}
 .qf-adm-sit--desbloqueado{background:var(--navy-100);color:var(--navy-700)}
 .qf-adm-sit--cheio{background:var(--orange-100);color:var(--orange-700)}
 .qf-adm-sit--fechado{background:var(--success-100);color:var(--success-600)}
@@ -2016,6 +2017,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     pago: 'Concluído — aguardando avaliação',
     finalizado: 'Concluído e avaliado',
     cancelado: 'Cancelado',
+    aguardando_pix: 'Aguardando Pix (não publicado)',
   };
 
   const mem = Object.create(null);
@@ -3834,6 +3836,8 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   let snapshotOk = null; // null = ainda não carregado; false = migration ausente
   function statusLocal(st) {
     const S = DB.STATUS;
+    // V11.82: urgente que ainda não pagou o Pix não foi publicado — fica fora de "Abertos" e das contas de busca.
+    if (st === 'aguardando_pagamento') return 'aguardando_pix';
     return ({ aberto: S.BUSCANDO, em_negociacao: S.AGUARDANDO_ORCAMENTO, confirmado: S.APROVADO, em_andamento: S.EM_ANDAMENTO, concluido: S.SERVICO_CONCLUIDO, cancelado: S.CANCELADO, expirado: S.CANCELADO })[st] || S.BUSCANDO;
   }
   function cityId(cidade, uf) {
@@ -4315,6 +4319,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   function statusBadge(status) {
     const label = DB.STATUS_LABEL[status] || status;
     const map = {
+      aguardando_pix: 'danger',
       buscando: 'orange', sem_profissional: 'danger', aguardando_aceite: 'orange', aguardando_orcamento: 'orange',
       orcamento_enviado: 'navy', orcamento_recusado: 'danger', aprovado: 'success', em_andamento: 'success',
       servico_concluido: 'warning', pago: 'navy', finalizado: 'success', cancelado: 'danger',
@@ -4953,6 +4958,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   function statusBadge(status) {
     const label = DB.STATUS_LABEL[status] || status;
     const map = {
+      aguardando_pix: 'danger',
       buscando: 'orange', sem_profissional: 'danger', aguardando_aceite: 'orange', aguardando_orcamento: 'orange',
       orcamento_enviado: 'navy', orcamento_recusado: 'danger', aprovado: 'success', em_andamento: 'success',
       servico_concluido: 'warning', pago: 'navy', finalizado: 'success', cancelado: 'danger',
@@ -5714,6 +5720,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   function statusBadge(status) {
     const label = DB.STATUS_LABEL[status] || status;
     const map = {
+      aguardando_pix: 'danger',
       buscando: 'orange', sem_profissional: 'danger', aguardando_aceite: 'orange', aguardando_orcamento: 'orange',
       orcamento_enviado: 'navy', orcamento_recusado: 'danger', aprovado: 'success', em_andamento: 'success',
       servico_concluido: 'warning', pago: 'navy', finalizado: 'success', cancelado: 'danger',
@@ -6558,7 +6565,7 @@ Screens.adminDashboardRender = function () {
 
   // ---------------- V11.11.9: editar e excluir tudo ----------------
   const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
-  const STATUS_DB = [['aberto','Aberto (buscando profissional)'],['em_negociacao','Desbloqueado'],['confirmado','Desbloqueado (antigo: confirmado)'],['em_andamento','Desbloqueado (antigo: em andamento)'],['concluido','Concluído'],['cancelado','Cancelado'],['expirado','Expirado']];
+  const STATUS_DB = [['aberto','Aberto (buscando profissional)'],['em_negociacao','Desbloqueado'],['confirmado','Desbloqueado (antigo: confirmado)'],['em_andamento','Desbloqueado (antigo: em andamento)'],['concluido','Concluído'],['cancelado','Cancelado'],['expirado','Expirado'],['aguardando_pagamento','Aguardando Pix (urgente não publicado)']];
   function confirm2(btn, fn) {
     if (btn.dataset.confirm !== '1') {
       btn.dataset.confirm = '1'; btn.dataset.label = btn.innerHTML;
@@ -8134,6 +8141,7 @@ Screens.adminDashboardRender = function () {
 
   // Situação do pedido em uma palavra, com cor: aguardando, desbloqueado, vagas preenchidas, fechado, cancelado.
   function admSituacao(r) {
+    if (r.statusDb === 'aguardando_pagamento') return { id: 'pix', rotulo: 'Aguardando Pix' };
     const desb = desbloqueiosAtivos(r);
     if (r.status === STATUS.CANCELADO) return { id: 'cancelado', rotulo: r.desfecho === 'nao_fechado' ? 'Não fechou' : r.desfecho === 'sem_retorno' ? 'Sem retorno' : 'Cancelado' };
     if (desb.some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1) return { id: 'fechado', rotulo: 'Fechado' };
@@ -8141,7 +8149,7 @@ Screens.adminDashboardRender = function () {
     if (desb.length) return { id: 'desbloqueado', rotulo: 'Desbloqueado · ' + desb.length + ' de 3' };
     return { id: 'aguardando', rotulo: 'Aguardando' };
   }
-  const ADM_SITUACOES = [['todas', 'Todas'], ['aguardando', 'Aguardando'], ['desbloqueado', 'Desbloqueado'], ['cheio', 'Vagas preenchidas'], ['fechado', 'Fechado'], ['cancelado', 'Cancelado']];
+  const ADM_SITUACOES = [['todas', 'Todas'], ['aguardando', 'Aguardando'], ['pix', 'Aguardando Pix'], ['desbloqueado', 'Desbloqueado'], ['cheio', 'Vagas preenchidas'], ['fechado', 'Fechado'], ['cancelado', 'Cancelado']];
   function admCidadePedido(r) {
     const e = r.endereco || {}, c = DB.cityById ? DB.cityById(r.cidadeId) : null;
     return [e.cidade || (c && c.nome), e.uf || (c && c.uf)].filter(Boolean).join('/');
