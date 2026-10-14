@@ -3312,6 +3312,11 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .qf-play-badge:hover{transform:translateY(-2px)}
 .qf-play-badge:focus-visible{outline:3px solid var(--orange-400);outline-offset:3px}
 .qf-play-badge--hero{display:flex;width:max-content;margin:6px auto 0}
+.qf-play-link{display:flex;align-items:center;justify-content:center;gap:8px;width:max-content;max-width:100%;margin:10px auto 0;padding:11px 18px;border-radius:12px;background:#fff;color:var(--navy-900);font-size:15px;font-weight:800;text-decoration:none}
+.qf-play-link svg{width:18px;height:18px;color:var(--orange-600)}
+.qf-play-link:focus-visible{outline:3px solid var(--orange-400);outline-offset:3px}
+.qf-play-badge--txt{min-height:52px;padding:0 18px;background:#000;color:#fff;border:1px solid #a6a6a6;font:700 15px/1.1 Arial,sans-serif;text-decoration:none}
+.qf-play-badge--txt::before{content:'Baixar na Google Play'}
 .qf-play-cap{margin:13px 0 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,.92)}
 .qf-play-badge--desk{flex:none}
 @media(prefers-reduced-motion:reduce){.qf-play-badge{transition:none}.qf-play-badge:hover{transform:none}}
@@ -7817,7 +7822,8 @@ alt=""></noscript>
       '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Grátis. Os profissionais costumam chamar em até 1 hora.</p></form></div>' +
         '<p class="qf-play-cap">Baixe seu app direto da Play Store</p>' +
-        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56"></a>' +
+        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()"></a>' +
+        '<a class="qf-play-link" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer">' + icon('download') + '<span>Baixar direto na Play Store</span></a>' +
         '</div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
       deskExtra() + mobExtra() +
@@ -7901,7 +7907,7 @@ alt=""></noscript>
   function deskList(items) { return '<ul class="qf-desk-list">' + items.map(function (t) { return '<li>' + icon('check') + '<span>' + t + '</span></li>'; }).join('') + '</ul>'; }
   function deskWideInner() {
     // Selo oficial do Google Play, com destino direto para o app (cliente e profissional).
-    const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" loading="lazy"></a>';
+    const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()" loading="lazy"></a>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
           deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 8 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
@@ -14686,7 +14692,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.84';
+  const APP_VERSION = '11.84.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
