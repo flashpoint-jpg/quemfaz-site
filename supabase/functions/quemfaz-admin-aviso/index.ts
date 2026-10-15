@@ -36,6 +36,12 @@ async function ensureVapid(): Promise<boolean> {
 }
 
 const FCM_PREFIX = "fcm:";
+// V11.92: inscrição web de endereço fora da lista (ex.: preview da Vercel) não recebe aviso.
+const PUSH_ORIGINS_OK = new Set(["https://quemfazservico.com.br", "https://quemfaz-site.vercel.app"]);
+function webSubOk(s: any): boolean {
+  const o = String(s?.origem || "");
+  return !o || PUSH_ORIGINS_OK.has(o);
+}
 let fcmAccount: any = null;
 try {
   const raw = Deno.env.get("FCM_SERVICE_ACCOUNT") || "";
@@ -103,12 +109,13 @@ async function sendToAdmins(payload: any) {
 
 async function sendToUsers(ids: string[], payload: any) {
   if (!ids.length) return { sent: 0, total: 0 };
-  const { data: subs, error } = await admin
+  const { data: subsRaw, error } = await admin
     .from("qf_push_subscriptions")
-    .select("id,user_id,endpoint,p256dh,auth_key,user_agent")
+    .select("id,user_id,endpoint,p256dh,auth_key,user_agent,origem")
     .in("user_id", ids)
     .eq("ativo", true);
   if (error) throw error;
+  const subs = (subsRaw || []).filter(webSubOk); // V11.92: só endereços oficiais
   const webOk = await ensureVapid();
   let access: string | null = null;
   let sent = 0;

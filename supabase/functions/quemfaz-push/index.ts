@@ -258,6 +258,23 @@ async function recipientsForNewCallAtRadius(call: any, stageRadiusKm: number | n
 
 // V11.13: perUser = aviso próprio de cada profissional (distância, tempo e preço dele).
 type PushOutcome = { user_id: string; status: string; error: string | null };
+
+// V11.92: de onde vem a inscrição web (Origin do navegador).
+const PUSH_ORIGIN_OFICIAL = "https://quemfazservico.com.br";
+const PUSH_ORIGINS_OK = new Set([PUSH_ORIGIN_OFICIAL, "https://www.quemfazservico.com.br", "https://quemfaz-site.vercel.app"]);
+function webPushOrigin(req: Request): string {
+  const o = String(req.headers.get("origin") || "").trim().toLowerCase().replace(/\/+$/, "");
+  return o === "https://www.quemfazservico.com.br" ? PUSH_ORIGIN_OFICIAL : o;
+}
+// Mesmo aparelho/navegador, ignorando a versão do navegador (que muda a cada atualização).
+function deviceSignature(ua: string): string {
+  return String(ua || "").replace(/(Chrome|Edg|Firefox|Version|SamsungBrowser|OPR)\/[\d.]+/g, "$1").trim();
+}
+// Envio: inscrição web de endereço fora da lista não recebe (as antigas sem origem continuam).
+function webSubOk(s: any): boolean {
+  const o = String(s?.origem || "");
+  return !o || PUSH_ORIGINS_OK.has(o);
+}
 async function sendToUsers(userIds: string[], payload: any, perUser?: Record<string, any>, audit?: (outcome: PushOutcome) => Promise<void>) {
   const uniqueIds = Array.from(new Set(userIds.filter(Boolean)));
   if (!uniqueIds.length) return { sent: 0, total: 0 };
@@ -291,12 +308,13 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
   if (audit) for (const uid of outside) await audit({ user_id: uid, status: "fora_horario", error: null });
   if (!ids.length) return { sent: 0, total: 0, skipped_outside_hours: outside.size };
 
-  const { data: subs, error } = await admin
+  const { data: subsRaw, error } = await admin
     .from("qf_push_subscriptions")
-    .select("id,user_id,endpoint,p256dh,auth_key,user_agent")
+    .select("id,user_id,endpoint,p256dh,auth_key,user_agent,origem")
     .in("user_id", ids)
     .eq("ativo", true);
   if (error) throw error;
+  const subs = (subsRaw || []).filter(webSubOk); // V11.92: só endereços oficiais
 
   // V11.11: modo do alerta escolhido por cada profissional (vai junto com o aviso para o app aplicar).
   const alertaPorUser: Record<string, string> = {};
@@ -880,16 +898,43 @@ Deno.serve(async (req) => {
     const authKey = String(sub.keys?.auth || "");
     if (!endpoint || !p256dh || !authKey) return json({ error: "invalid_subscription" }, 400);
 
+    // V11.92: notificação web só pelo domínio oficial. Cada endereço (domínio, quemfaz-site.vercel.app,
+    // preview da Vercel) é um "site" diferente para o navegador: o mesmo aviso chegava repetido e o
+    // Chrome marcava o endereço de preview como spam.
+    const ua = String(req.headers.get("user-agent") || "").slice(0, 500);
+    const origem = webPushOrigin(req);
+    const agora = new Date().toISOString();
+    if (!origem || !PUSH_ORIGINS_OK.has(origem)) {
+      await admin.from("qf_push_subscriptions").update({ ativo: false, atualizado_em: agora }).eq("endpoint", endpoint);
+      return json({ ok: false, wrong_origin: true, error: "Para receber notificações, abra o QuemFaz em quemfazservico.com.br." });
+    }
+    const aparelho = deviceSignature(ua);
+    const { data: outras } = await admin.from("qf_push_subscriptions")
+      .select("id,endpoint,user_agent,origem")
+      .eq("user_id", user.id).eq("ativo", true).not("endpoint", "like", FCM_PREFIX + "%");
+    const mesmoAparelho = (outras || []).filter((o: any) => o.endpoint !== endpoint && deviceSignature(String(o.user_agent || "")) === aparelho);
+    if (origem !== PUSH_ORIGIN_OFICIAL && mesmoAparelho.some((o: any) => o.origem === PUSH_ORIGIN_OFICIAL)) {
+      // Endereço antigo da Vercel num aparelho que já recebe pelo domínio oficial: não duplica.
+      await admin.from("qf_push_subscriptions").update({ ativo: false, atualizado_em: agora }).eq("endpoint", endpoint);
+      return json({ ok: true, skipped: "official_exists", vapid_public_key: VAPID_PUBLIC });
+    }
+
     const { error } = await admin.from("qf_push_subscriptions").upsert({
       user_id: user.id,
       endpoint,
       p256dh,
       auth_key: authKey,
-      user_agent: String(req.headers.get("user-agent") || "").slice(0, 500),
+      user_agent: ua,
+      origem,
       ativo: true,
-      atualizado_em: new Date().toISOString(),
+      atualizado_em: agora,
     }, { onConflict: "endpoint" });
     if (error) return json({ error: error.message }, 400);
+    if (origem === PUSH_ORIGIN_OFICIAL) {
+      // Inscrição pelo domínio oficial substitui as antigas do mesmo aparelho (outros endereços).
+      const velhas = mesmoAparelho.filter((o: any) => o.origem !== PUSH_ORIGIN_OFICIAL).map((o: any) => o.id);
+      if (velhas.length) await admin.from("qf_push_subscriptions").update({ ativo: false, atualizado_em: agora }).in("id", velhas);
+    }
     return json({ ok: true, vapid_public_key: VAPID_PUBLIC });
   }
 

@@ -7553,6 +7553,11 @@ alt=""></noscript>
     }
     if (NP) return activateNative(NP);
     if (!supported()) throw new Error('Abra a versão online do QuemFaz e instale o app para ativar notificações com o app fechado.');
+    // V11.92: notificação web só no domínio oficial (endereço de preview da Vercel gerava aviso repetido e "possível spam").
+    if (/\.vercel\.app$/.test(String(location.hostname || '')) && location.hostname !== 'quemfaz-site.vercel.app') {
+      try { const r0 = await navigator.serviceWorker.getRegistration(); const s0 = r0 && await r0.pushManager.getSubscription(); if (s0) await s0.unsubscribe(); } catch (_) {}
+      throw new Error('Para receber notificações, abra o QuemFaz em quemfazservico.com.br.');
+    }
     const perm = permission() === 'granted' ? 'granted' : await Notification.requestPermission();
     if (perm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Ative nas configurações do navegador/app.');
     const reg = await getRegistration();
@@ -14839,7 +14844,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.91';
+  const APP_VERSION = '11.92';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

@@ -3089,6 +3089,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   const PU = global.PU, icon = global.icon, Screens = global.Screens;
   const VAPID_PUBLIC_KEY = 'BHKGLb0G49jDzmd6zoWU4HYzk8gAF3ilPMBx_-O3SMy1vPELJJZ6euC2XkSRcy8mF9MMYDKY9Lf7039nokcCHqw';
   const PUSH_KEY = 'qf_admin_push_enabled';
+  let pushRestored = false; // V11.92: refaz a inscrição em silêncio ao abrir (limpa as duplicadas de outros endereços)
   let cache = null, timer = null, adminInstallPrompt = null;
 
   function adminStandalone() {
@@ -3179,6 +3180,10 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
   function start() {
     if (timer) return;
+    if (!pushRestored) {
+      pushRestored = true;
+      try { if (localStorage.getItem(PUSH_KEY) === '1' && 'Notification' in window && Notification.permission === 'granted') activatePush().catch(function () {}); } catch (_) {}
+    }
     refresh();
     timer = setInterval(function () {
       if (!document.getElementById('parados')) { clearInterval(timer); timer = null; return; }
@@ -3196,6 +3201,11 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   // mesma inscrição do app (quemfaz-push, action "subscribe"), com a sessão do admin
   async function activatePush() {
     if (!(window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window)) throw new Error('Este navegador não recebe notificações. Use o Chrome no celular ou no computador.');
+    // V11.92: notificação web só no domínio oficial (endereço de preview da Vercel gerava aviso repetido e "possível spam").
+    if (/\.vercel\.app$/.test(String(location.hostname || '')) && location.hostname !== 'quemfaz-site.vercel.app') {
+      try { const r0 = await navigator.serviceWorker.getRegistration(); const s0 = r0 && await r0.pushManager.getSubscription(); if (s0) await s0.unsubscribe(); } catch (_) {}
+      throw new Error('Para receber notificações, abra o QuemFaz em quemfazservico.com.br.');
+    }
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') throw new Error('Permissão de notificações não foi concedida. Libere nas configurações do navegador.');
     let reg = await navigator.serviceWorker.getRegistration();
