@@ -6117,7 +6117,8 @@ alt=""></noscript>
       if (selfie) {
         const uRes = await client.auth.getUser();
         if (uRes && uRes.data && uRes.data.user) {
-          const up = await client.from('qf_profiles').update({ foto_url: selfie, atualizado_em: new Date().toISOString() }).eq('id', uRes.data.user.id);
+          const fotoUrl = await selfieToStorageUrl(uRes.data.user.id, selfie);
+          const up = await client.from('qf_profiles').update({ foto_url: fotoUrl, atualizado_em: new Date().toISOString() }).eq('id', uRes.data.user.id);
           if (up.error) throw up.error;
           localStorage.removeItem(k3);
         }
@@ -7019,13 +7020,36 @@ alt=""></noscript>
     return local;
   }
 
+  // V12.1: a selfie vai como arquivo para o Storage (bucket "fotos") e o perfil guarda só o link.
+  // Antes a foto ficava em base64 dentro de qf_profiles e era baixada a cada consulta (estourava o egress).
+  async function selfieToStorageUrl(uid, dataUrl) {
+    try {
+      const m = /^data:(image\/[a-z0-9.+-]+);base64,(.*)$/i.exec(String(dataUrl || ''));
+      if (!m || !uid) return dataUrl;
+      const mime = m[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : m[1].toLowerCase();
+      const ext = mime === 'image/png' ? 'png' : (mime === 'image/webp' ? 'webp' : 'jpg');
+      const bin = atob(m[2]);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const path = uid + '/selfie-' + Date.now() + '.' + ext;
+      const up = await client.storage.from('fotos').upload(path, new Blob([bytes], { type: mime }), { contentType: mime, cacheControl: '31536000', upsert: true });
+      if (up.error) throw up.error;
+      const pub = client.storage.from('fotos').getPublicUrl(path);
+      return (pub && pub.data && pub.data.publicUrl) || dataUrl;
+    } catch (e) {
+      console.warn('QuemFaz selfie no Storage falhou; salvando no perfil', e);
+      return dataUrl;
+    }
+  }
+
   async function saveProfessionalSelfie(dataUrl) {
     const uRes = await client.auth.getUser();
     if (uRes.error || !uRes.data.user) throw new Error('Sessão expirada.');
     const uid = uRes.data.user.id;
     if (!/^data:image\//i.test(String(dataUrl || ''))) throw new Error('Foto inválida.');
     if (String(dataUrl).length > 900000) throw new Error('A selfie ficou muito grande. Tire outra foto.');
-    const res = await client.from('qf_profiles').update({ foto_url: dataUrl, atualizado_em: new Date().toISOString() }).eq('id', uid);
+    const fotoUrl = await selfieToStorageUrl(uid, dataUrl);
+    const res = await client.from('qf_profiles').update({ foto_url: fotoUrl, atualizado_em: new Date().toISOString() }).eq('id', uid);
     if (res.error) throw res.error;
     const local = await syncLocalUser(uRes.data.user, 'profissional');
     return local;
