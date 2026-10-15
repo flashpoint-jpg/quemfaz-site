@@ -2477,7 +2477,7 @@ window.qfGoogleLead = function (requestId) {
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <style id="qf-skin-comanda">
 /* QuemFaz V11.23 — visual "comanda": títulos grandes, faixa de trena e cartão com picote.
    Vale para o app inteiro, MENOS a tela inicial (data-route="inicio"), que fica como sempre foi.
@@ -3378,6 +3378,324 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .topbar__title--brand{min-width:0}
 @media(max-width:899px){.qf-landing-brand .qf-approved-logo{width:180px}.topbar__title .qf-approved-logo{width:180px}}
 @media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:156px}}
+</style>
+<style id="qf-design-system">
+/* ==========================================================================
+   QuemFaz V12 — Design system único (cliente, profissional, início e demais telas)
+   Fica por último para valer sobre as camadas antigas. Só aparência: nenhuma regra
+   de pedido, pagamento, notificação ou localização depende destas classes.
+   ========================================================================== */
+:root {
+  /* Cores oficiais */
+  --qf-navy: #07162F;        /* cabeçalhos */
+  --qf-blue: #1764D8;        /* botões e títulos */
+  --qf-blue-600: #1257BF;
+  --qf-blue-050: #EAF1FD;
+  --qf-orange: #FF7900;      /* ações importantes e destaques */
+  --qf-orange-600: #E86A00;
+  --qf-orange-text: #C2410C; /* laranja para TEXTO sobre branco (contraste 5,2:1) */
+  --qf-orange-050: #FFF3E8;
+  --qf-white: #FFFFFF;       /* cartões */
+  --qf-bg: #F5F6FA;          /* fundo das páginas */
+  --qf-text: #101828;
+  --qf-text-2: #344054;      /* textos secundários */
+  --qf-text-3: #667085;
+  --qf-border: #E4E7EC;
+  --qf-border-strong: #D0D5DD;
+  --qf-success: #15803D;     /* verde só para status positivo */
+  --qf-success-050: #ECFDF3;
+  --qf-danger: #B42318;
+  --qf-danger-050: #FEF3F2;
+  --qf-warning: #B54708;
+  --qf-warning-050: #FFFAEB;
+  /* Tipografia */
+  --qf-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --qf-fs-xs: 12px; --qf-fs-sm: 13px; --qf-fs-md: 15px; --qf-fs-lg: 17px; --qf-fs-xl: 20px; --qf-fs-2xl: 24px;
+  /* Forma, sombra e espaço */
+  --qf-r-sm: 10px; --qf-r-md: 14px; --qf-r-lg: 18px; --qf-r-pill: 999px;
+  --qf-shadow-1: 0 1px 2px rgba(16, 24, 40, .06);
+  --qf-shadow-2: 0 1px 3px rgba(16, 24, 40, .08), 0 6px 16px -8px rgba(16, 24, 40, .12);
+  --qf-space-1: 4px; --qf-space-2: 8px; --qf-space-3: 12px; --qf-space-4: 16px; --qf-space-5: 20px; --qf-space-6: 24px;
+  --qf-header-h: 60px;
+  --qf-nav-h: 64px;
+  --qf-btn-h: 48px;
+
+  /* Variáveis antigas apontando para a paleta única (o código existente usa estes nomes) */
+  --navy-950: var(--qf-navy); --navy-900: var(--qf-blue); --navy-800: var(--qf-blue-600); --navy-700: var(--qf-blue); --navy-600: var(--qf-blue); --navy-100: var(--qf-blue-050);
+  --orange-700: var(--qf-orange-text); --orange-600: var(--qf-orange-text); --orange-500: var(--qf-orange); --orange-400: var(--qf-orange); --orange-100: var(--qf-orange-050);
+  --bg-page: var(--qf-bg); --bg-surface: var(--qf-white); --bg-sunken: #EEF0F5;
+  --border-subtle: var(--qf-border); --border-strong: var(--qf-border-strong);
+  --text-primary: var(--qf-text); --text-secondary: var(--qf-text-2); --text-muted: var(--qf-text-3);
+  --success-600: var(--qf-success); --success-100: var(--qf-success-050);
+  --radius-sm: var(--qf-r-sm); --radius-md: var(--qf-r-md); --radius-lg: var(--qf-r-lg);
+  --shadow-card: var(--qf-shadow-2);
+  --font-base: var(--qf-font);
+  --qf-display: var(--qf-font);
+  --header-height: var(--qf-header-h);
+  --tabbar-height: var(--qf-nav-h);
+}
+
+/* ---------- Base ---------- */
+body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-text); }
+#app-shell { background: var(--qf-bg); overflow-x: clip; }
+#app-shell .view { overflow-x: clip; }
+.qf-sr-only { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+#app-shell .card, #app-shell .card * { overflow-wrap: anywhere; }
+#app-shell .card img, #app-shell .card svg { overflow-wrap: normal; }
+#app-shell h1, #app-shell h2, #app-shell h3, #app-shell .h1, #app-shell .h2, #app-shell .h3 { font-family: var(--qf-font); letter-spacing: -.015em; }
+#app-shell:not([data-route="inicio"]) .view .h2, #app-shell:not([data-route="inicio"]) .view .section-title,
+#app-shell:not([data-route="inicio"]) .view > .section > .h3, #app-shell:not([data-route="inicio"]) .view .qf-prof-order-heading .h3 { color: var(--qf-blue); }
+#app-shell .text--secondary { color: var(--qf-text-2); }
+
+/* ---------- AppHeader: mesmo topo azul-marinho em todas as telas ---------- */
+#app-shell .topbar, #app-shell .topbar.qf-fixed-bar,
+#app-shell .qf-request-header, #app-shell .qf-request-header.qf-fixed-bar,
+#app-shell .qf-landing-topbar, #app-shell .qf-landing-topbar.qf-fixed-bar {
+  background: var(--qf-navy) !important;
+  color: #fff !important;
+  border-bottom: 3px solid var(--qf-orange) !important;
+  box-shadow: 0 2px 10px rgba(7, 22, 47, .22) !important;
+}
+#app-shell .topbar.qf-app-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-height: calc(var(--qf-header-h) + var(--safe-top));
+  padding: calc(var(--safe-top) + 8px) 12px 8px 16px !important;
+  grid-template-columns: none !important;
+}
+#app-shell .qf-app-header .topbar__title { flex: 1 1 auto; min-width: 0; margin: 0; color: #fff !important; font-size: 18px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; grid-column: auto !important; grid-row: auto !important; }
+#app-shell .qf-app-header .topbar__title--brand { display: flex; align-items: center; flex: 1 1 auto; }
+#app-shell .qf-app-header .qf-approved-logo,
+#app-shell .qf-landing-topbar .qf-approved-logo,
+#app-shell .qf-request-header .qf-approved-logo {
+  content: url(/assets/qf-logo-branco-20261014.webp);
+  background: transparent !important; padding: 0 !important; border-radius: 0 !important;
+  width: auto !important; height: 44px !important; max-width: 100%; aspect-ratio: 3 / 1; object-fit: contain; object-position: left center;
+}
+#app-shell .qf-app-header__actions { display: flex; align-items: center; gap: 4px; flex: none; margin-left: auto; }
+#app-shell .qf-app-header .topbar__back,
+#app-shell .qf-request-header .topbar__back {
+  width: 40px !important; height: 40px !important; flex: none; border-radius: 12px !important;
+  background: rgba(255, 255, 255, .1) !important; color: #fff !important; box-shadow: none !important;
+}
+#app-shell .qf-app-header .qf-topbar-support,
+#app-shell .qf-app-header .qf-topbar-bell {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; margin: 0 !important; padding: 0; border: 0; border-radius: 12px;
+  background: transparent; color: #fff !important; cursor: pointer;
+}
+#app-shell .qf-app-header .qf-topbar-support svg, #app-shell .qf-app-header .qf-topbar-bell svg { width: 22px; height: 22px; }
+#app-shell .qf-app-header .qf-topbar-bell.is-active { background: rgba(255, 255, 255, .12); }
+#app-shell .qf-app-header .qf-topbar-bell__badge,
+.qf-ui-badge-count, #app-shell .tabbar__notice-badge {
+  position: absolute; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+  background: var(--qf-orange) !important; color: var(--qf-navy) !important; border: 2px solid var(--qf-navy) !important;
+  font-size: 10.5px; font-weight: 800; line-height: 14px; text-align: center;
+}
+#app-shell .qf-app-header .qf-topbar-bell__badge { top: 5px; right: 4px; }
+/* Botão "Instalar app" do topo: compacto, laranja, mesma linha dos ícones */
+#app-shell .qf-app-header .qf-top-dl:not(.qf-top-play) {
+  display: inline-flex !important; align-items: center; gap: 6px; height: 36px; min-height: 36px; padding: 0 12px;
+  border: 0 !important; border-radius: var(--qf-r-pill); background: var(--qf-orange) !important; color: var(--qf-navy) !important;
+  font-size: 13px; font-weight: 700; white-space: nowrap; box-shadow: none !important; grid-column: auto !important; grid-row: auto !important;
+}
+#app-shell .qf-app-header .qf-top-dl svg { width: 16px; height: 16px; }
+#app-shell .qf-app-header .qf-top-play { height: 36px; padding: 0; background: none; border: 0; }
+#app-shell .qf-app-header .qf-top-play img { height: 36px; width: auto; }
+@media (max-width: 389px) {
+  #app-shell .qf-app-header .qf-top-dl:not(.qf-top-play) span { display: none; }
+  #app-shell .qf-app-header .qf-top-dl:not(.qf-top-play) { width: 36px; padding: 0; justify-content: center; }
+  #app-shell .qf-app-header .qf-approved-logo { height: 38px !important; }
+}
+/* Título da tela (abaixo do topo nas telas de aba) */
+.qf-ui-page-title { padding: 18px 16px 2px; }
+.qf-ui-page-title__h { margin: 0; color: var(--qf-blue); font-size: var(--qf-fs-2xl); font-weight: 800; line-height: 1.2; letter-spacing: -.02em; }
+.qf-ui-page-title__sub { margin: 4px 0 0; color: var(--qf-text-2); font-size: var(--qf-fs-md); }
+.qf-ui-page-title + #app-content .view { padding-top: 12px; }
+/* Início (visitante): mesmo topo, logo e botões alinhados */
+#app-shell .qf-landing-topbar .btn.qf-landing-login { background: var(--qf-blue) !important; border-color: var(--qf-blue) !important; color: #fff !important; border-radius: var(--qf-r-md) !important; height: 44px; min-height: 44px; font-weight: 700; }
+#app-shell .qf-landing-topbar .qf-home-prof summary { min-height: 44px; border-radius: var(--qf-r-md) !important; background: rgba(255, 255, 255, .06) !important; border: 1px solid rgba(255, 255, 255, .35) !important; color: #fff !important; font-weight: 700; }
+#app-shell .qf-landing-topbar .qf-home-prof summary svg { color: var(--qf-orange); }
+
+/* ---------- BottomNavigation: barra branca encaixada, igual em todas as áreas ---------- */
+@media (max-width: 767px) {
+  #app-shell .tabbar, .qf-home-nav {
+    position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+    transform: none !important; width: 100% !important; max-width: none !important; margin: 0 auto !important;
+    height: calc(var(--qf-nav-h) + env(safe-area-inset-bottom, 0px)) !important;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+    border: 0 !important; border-top: 1px solid var(--qf-border) !important; border-radius: 0 !important;
+    background: #fff !important; box-shadow: 0 -4px 16px rgba(16, 24, 40, .08) !important;
+    display: flex !important; align-items: stretch !important; justify-content: space-around !important; gap: 2px !important;
+    z-index: 110 !important;
+  }
+  #app-shell .tabbar__item, .qf-home-nav > button {
+    position: relative; flex: 1 1 0 !important; min-width: 0 !important; min-height: 0 !important; height: auto !important;
+    display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important;
+    gap: 3px !important; padding: 4px 2px !important; margin: 0 !important; border: 0 !important; border-radius: 12px !important;
+    background: transparent !important; color: var(--qf-text-2) !important;
+    font: 600 11px/1.15 var(--qf-font) !important; letter-spacing: 0 !important; cursor: pointer; touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent; transition: none !important; transform: none !important;
+  }
+  #app-shell .tabbar__item > svg, .qf-home-nav > button > svg { width: 24px !important; height: 24px !important; flex: none; }
+  #app-shell .tabbar__item::before, .qf-home-nav > button::before { content: none !important; display: none !important; }
+  #app-shell .tabbar__item.is-active, .qf-home-nav > button[aria-current="page"] { color: var(--qf-blue) !important; background: transparent !important; font-weight: 700 !important; }
+  #app-shell .tabbar__item.is-active > svg, .qf-home-nav > button[aria-current="page"] > svg { stroke-width: 2.2; }
+  #app-shell .tabbar__item.is-active::after, .qf-home-nav > button[aria-current="page"]::after {
+    content: ""; position: absolute; top: -6px; left: 50%; width: 28px; height: 3px; margin-left: -14px; border-radius: 0 0 3px 3px; background: var(--qf-blue);
+  }
+  #app-shell .tabbar__item > span, .qf-home-nav > button > span:not(.qf-home-nav-plus) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #app-shell .tabbar__notice-badge { top: 1px !important; left: calc(50% + 6px) !important; }
+  /* Botão central laranja para publicar pedido */
+  .qf-home-nav > .qf-home-nav-order { overflow: visible !important; color: var(--qf-text) !important; }
+  .qf-home-nav .qf-home-nav-plus {
+    display: inline-flex !important; align-items: center; justify-content: center;
+    width: 48px !important; height: 48px !important; margin: -22px 0 1px !important; border-radius: 50% !important;
+    border: 3px solid #fff !important; background: var(--qf-orange) !important; color: var(--qf-navy) !important;
+    box-shadow: 0 4px 12px rgba(255, 121, 0, .35) !important;
+  }
+  .qf-home-nav .qf-home-nav-plus svg { width: 24px !important; height: 24px !important; stroke-width: 2.6; }
+  /* Conteúdo e avisos nunca ficam escondidos atrás do menu */
+  #app-shell .view, #app-shell[data-route="profissional-home"] .view { padding-bottom: calc(var(--qf-nav-h) + 28px + env(safe-area-inset-bottom, 0px)) !important; }
+  .qf-landing { padding-bottom: calc(var(--qf-nav-h) + 40px + env(safe-area-inset-bottom, 0px)) !important; }
+  html { scroll-padding-bottom: calc(var(--qf-nav-h) + 24px); }
+  body:has(.qf-home-nav) .qf-update-banner.qf-update-float, body:has(.tabbar) .qf-update-banner.qf-update-float,
+  body:has(.tabbar) .toast-stack, body:has(.qf-home-nav) .toast-stack {
+    bottom: calc(var(--qf-nav-h) + 12px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+/* Computador: o menu vira a barra de cima, também azul-marinho com logo branco */
+@media (min-width: 768px) {
+  #app-shell .tabbar { background: var(--qf-navy) !important; border-bottom: 3px solid var(--qf-orange) !important; box-shadow: 0 2px 10px rgba(7, 22, 47, .22) !important; height: 72px !important; }
+  #app-shell .tabbar__brand .qf-approved-logo { content: url(/assets/qf-logo-branco-20261014.webp); background: transparent !important; padding: 0 !important; width: auto !important; height: 48px !important; }
+  #app-shell .tabbar__item { color: #E4E9F2 !important; font-weight: 600 !important; border-radius: 12px !important; }
+  #app-shell .tabbar__item:hover { background: rgba(255, 255, 255, .08) !important; color: #fff !important; }
+  #app-shell .tabbar__item.is-active { background: rgba(255, 255, 255, .12) !important; color: #fff !important; }
+  #app-shell .tabbar__item.is-active::before { background: var(--qf-orange) !important; }
+  #app-shell .tabbar .qf-top-dl:not(.qf-top-play) { background: var(--qf-orange) !important; color: var(--qf-navy) !important; border: 0 !important; border-radius: var(--qf-r-pill) !important; font-weight: 700; }
+  #app-shell .topbar.qf-app-header--brand { display: none !important; }
+  #app-shell .topbar.qf-app-header--back { position: static !important; max-width: var(--desk-max, 1200px); margin: 16px auto 0; border-radius: var(--qf-r-lg); width: calc(100% - 2 * var(--desk-pad, 32px)) !important; padding: 10px 16px !important; min-height: 60px; }
+  .qf-ui-page-title { width: 100%; max-width: 760px; margin: 0 auto; padding: 28px var(--desk-pad, 32px) 0; }
+  .qf-ui-page-title__h { font-size: 28px; }
+}
+
+/* ---------- Botões ---------- */
+#app-shell .btn { --btn-h: var(--qf-btn-h); height: auto; min-height: var(--btn-h); border-radius: var(--qf-r-md); font-family: var(--qf-font); font-size: var(--qf-fs-md); font-weight: 700; line-height: 1.2; padding-top: 10px; padding-bottom: 10px; white-space: normal; text-align: center; }
+#app-shell .btn--sm { --btn-h: 40px; font-size: var(--qf-fs-sm); padding-top: 6px; padding-bottom: 6px; }
+#app-shell .btn--lg { --btn-h: 54px; font-size: var(--qf-fs-lg); }
+/* PrimaryButton: azul */
+#app-shell .btn--primary, #app-shell .qf-ui-btn--primary { background: var(--qf-blue); border-color: var(--qf-blue); color: #fff; box-shadow: 0 6px 14px -8px rgba(23, 100, 216, .55); }
+#app-shell .btn--primary:hover, #app-shell .qf-ui-btn--primary:hover { background: var(--qf-blue-600); }
+/* SecondaryButton: contorno azul */
+#app-shell .btn--outline, #app-shell .qf-ui-btn--secondary { background: #fff; color: var(--qf-blue); border: 1.5px solid var(--qf-border-strong); }
+#app-shell .btn--outline:hover, #app-shell .qf-ui-btn--secondary:hover { border-color: var(--qf-blue); }
+#app-shell .btn--ghost { color: var(--qf-blue); }
+#app-shell .btn--navy { background: var(--qf-navy); color: #fff; }
+/* Ação principal laranja: fazer/publicar pedido (texto marinho garante contraste 6,9:1) */
+#app-shell .qf-hero-search .btn--primary[type="submit"], #app-shell .qf-request-submit, #app-shell [data-qf-orange-action],
+#app-shell .qf-landing .btn--primary[data-action="landing-all-services"] {
+  background: var(--qf-orange) !important; border-color: var(--qf-orange) !important; color: var(--qf-navy) !important;
+  box-shadow: 0 8px 18px -10px rgba(255, 121, 0, .7) !important;
+}
+#app-shell .qf-hero-search .btn--primary[type="submit"]:hover, #app-shell .qf-request-submit:hover { background: var(--qf-orange-600) !important; }
+/* Laranja sólido antigo com texto branco: mesmo contraste corrigido */
+#app-shell .qf-opt--excl .qf-opt__btn { color: var(--qf-navy) !important; }
+.qf-opt__badge { color: var(--qf-navy) !important; }
+
+/* ---------- Cartões ---------- */
+#app-shell .card { border-radius: var(--qf-r-lg); border: 1px solid var(--qf-border); box-shadow: var(--qf-shadow-1); background: #fff; }
+#app-shell .card--pressable:active { transform: none; background: #FAFBFC; }
+
+/* ---------- Campos de formulário (FormField) ---------- */
+#app-shell .input, #app-shell .textarea, #app-shell .select { min-height: var(--qf-btn-h); border: 1px solid var(--qf-border-strong); border-radius: var(--qf-r-sm); background: #fff; color: var(--qf-text); font-family: var(--qf-font); }
+#app-shell .input::placeholder, #app-shell .textarea::placeholder { color: #98A2B3; }
+#app-shell .input:focus, #app-shell .textarea:focus, #app-shell .select:focus { border-color: var(--qf-blue); box-shadow: 0 0 0 3px rgba(23, 100, 216, .15); }
+#app-shell .field__label { color: var(--qf-text); font-weight: 600; font-size: 14px; }
+#app-shell .field__hint { color: var(--qf-text-3); }
+#app-shell .field__error { color: var(--qf-danger); }
+
+/* ---------- StatusBadge ---------- */
+.qf-ui-status { display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 10px; border-radius: var(--qf-r-pill); font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+.qf-ui-status--success { background: var(--qf-success-050); color: var(--qf-success); }
+.qf-ui-status--warning { background: var(--qf-warning-050); color: var(--qf-warning); }
+.qf-ui-status--danger { background: var(--qf-danger-050); color: var(--qf-danger); }
+.qf-ui-status--info { background: var(--qf-blue-050); color: var(--qf-blue); }
+.qf-ui-status--neutral { background: #F2F4F7; color: var(--qf-text-2); }
+#app-shell .badge, #app-shell .chip { font-family: var(--qf-font); }
+
+/* ---------- ServiceCard e Modal ---------- */
+.qf-ui-service-card__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.qf-ui-service-card__title { color: var(--qf-text); font-size: var(--qf-fs-lg); font-weight: 700; }
+.qf-ui-service-card__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: var(--qf-text-2); font-size: 14px; }
+.qf-ui-service-card__meta li { display: inline-flex; align-items: center; gap: 5px; }
+.qf-ui-service-card__meta svg { width: 16px; height: 16px; color: var(--qf-orange); }
+.qf-ui-modal__title, #sheet-overlay .sheet h2 { color: var(--qf-blue); font-family: var(--qf-font); }
+#sheet-overlay .sheet { border-radius: 22px 22px 0 0; }
+
+/* ---------- Tela do profissional ---------- */
+#app-shell[data-route="profissional-home"] .topbar { background: var(--qf-navy) !important; padding-bottom: 8px !important; }
+#app-shell .qf-prof-status { border-radius: var(--qf-r-lg) !important; }
+#app-shell .qf-prof-welcome__title { color: var(--qf-text); font-weight: 800; }
+#app-shell .qf-prof-estado { border-width: 1.5px; border-radius: var(--qf-r-md); }
+#app-shell .qf-prof-estado:not(.is-offline) { border-color: #86EFAC; background: var(--qf-success-050); }
+#app-shell .qf-prof-estado.is-offline { border-color: #FDA29B; background: var(--qf-danger-050); }
+#app-shell .qf-horario-linha__btn { min-height: 36px; border: 1.5px solid var(--qf-blue); background: #fff; color: var(--qf-blue); font-weight: 700; border-radius: var(--qf-r-pill); padding: 6px 14px; touch-action: manipulation; }
+#app-shell .qf-horario-linha svg { color: var(--qf-orange); }
+#app-shell .qf-prof-order-tabs [aria-current] { border-bottom-color: var(--qf-blue); color: var(--qf-blue); }
+#app-shell .qf-prof-order-heading .btn { color: var(--qf-blue) !important; }
+#app-shell .qf-prof-notifications { color: var(--qf-blue); }
+
+/* ---------- Rodapé institucional e redes sociais ---------- */
+.qf-social { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; margin: 14px 0 4px; }
+.qf-social__link {
+  display: inline-flex !important; align-items: center; gap: 10px; min-height: 48px; padding: 6px 16px 6px 6px !important;
+  border: 1px solid var(--qf-border); border-radius: var(--qf-r-pill); background: #fff;
+  color: var(--qf-text) !important; font: 600 15px/1 var(--qf-font); text-decoration: none !important;
+  box-shadow: var(--qf-shadow-1); touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.qf-social__link:hover { border-color: var(--qf-border-strong); }
+.qf-social__link:focus-visible { outline: 3px solid var(--qf-blue); outline-offset: 2px; }
+.qf-social__icon { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; flex: none; }
+.qf-social__icon svg { width: 20px; height: 20px; display: block; }
+.qf-social__link--ig .qf-social__icon { border-radius: 10px; color: #fff; background: radial-gradient(circle at 30% 107%, #FDF497 0%, #FDF497 5%, #FD5949 45%, #D6249F 60%, #285AEB 90%); }
+.qf-social__link--fb .qf-social__icon { color: #0866FF; background: transparent; }
+.qf-social__link--fb .qf-social__icon svg { width: 36px; height: 36px; }
+.qf-landing-footer, .qf-desk-footer { color: var(--qf-text-2); }
+.qf-landing-footer a:not(.qf-social__link), .qf-desk-footer a:not(.qf-social__link),
+#app-shell[data-route="inicio"] .qf-landing-footer .qf-footer-help, .qf-desk-footer .qf-footer-help { color: var(--qf-blue) !important; font-weight: 600; }
+
+/* ---------- Estados de carregamento, erro e sucesso ---------- */
+#app-shell .empty-state { color: var(--qf-text-2); }
+.toast--success { border-left: 4px solid var(--qf-success); }
+.toast--danger { border-left: 4px solid var(--qf-danger); }
+/* Chips selecionados: texto e destaque internos legíveis sobre o azul */
+#app-shell .chip.is-selected { background: var(--qf-blue); border-color: var(--qf-blue); color: #fff; }
+#app-shell .chip.is-selected b, #app-shell .chip.is-selected strong { color: #fff !important; }
+#app-shell .qf-app-header .qf-topbar-support svg, #app-shell .qf-app-header .qf-topbar-bell svg, #app-shell .qf-app-header .topbar__back svg { color: #fff !important; stroke: currentColor !important; }
+@media (min-width: 768px) { .qf-ui-page-title { max-width: var(--desk-max, 1200px); } }
+.qf-footer-links { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 6px; margin: 10px 0 0; font-size: 14px; }
+.qf-footer-links > a, .qf-footer-links > .qf-footer-help { all: unset; display: inline-flex !important; align-items: center; min-height: 44px; padding: 0 10px !important; border-radius: 10px; color: var(--qf-blue) !important; font: 600 14px/1.2 var(--qf-font); text-decoration: none !important; cursor: pointer; touch-action: manipulation; }
+.qf-footer-links > a:focus-visible, .qf-footer-links > .qf-footer-help:focus-visible { outline: 3px solid var(--qf-blue); outline-offset: 2px; }
+/* Menos verde: verde fica só para status positivo (online, concluído, aprovado) e para o WhatsApp. */
+.qf-request-intro__icon, .qf-home-premium-quote__icon { background: var(--qf-blue-050) !important; color: var(--qf-blue) !important; }
+.qf-request-intro__accent, .qf-home-premium-quote__copy .h3 strong { color: var(--qf-orange-text) !important; }
+.qf-request-intro__badge, .qf-home-premium-quote__badge { background: var(--qf-orange) !important; color: var(--qf-navy) !important; }
+#app-shell .qf-request-intro, #app-shell .qf-home-premium-quote { background: #fff !important; border-color: var(--qf-border) !important; }
+.qf-free-line { background: var(--qf-blue-050) !important; color: var(--qf-blue) !important; }
+.qf-premium-hero__badge svg, .qf-cad-plano__lista svg, .qf-mob-fold .qf-desk-list svg, .qf-desk-list svg { color: var(--qf-blue) !important; }
+.qf-cad-plano--top .qf-cad-plano__unit { background: var(--qf-orange-050) !important; color: var(--qf-orange-text) !important; }
+.qf-cad-planos__ex td:last-child b, .qf-envio__preco--gratis { color: var(--qf-blue) !important; }
+.qf-rules__box--auto { background: var(--qf-blue-050) !important; }
+.qf-plan-save { border-color: var(--qf-border) !important; }
+.qf-plan-save__icon { background: var(--qf-orange) !important; color: var(--qf-navy) !important; }
+.qf-plan-save__big { color: var(--qf-blue) !important; }
+.qf-plan-save__cmp > div.is-plan { background: var(--qf-orange-050) !important; }
+/* Ícones oficiais (Simple Icons, CC0 — mesmo desenho do material de marca da Meta), definidos uma vez só. */
+.qf-social__icon::before { content: ""; display: block; width: 20px; height: 20px; background: currentColor; -webkit-mask: var(--qf-social-mask) center / contain no-repeat; mask: var(--qf-social-mask) center / contain no-repeat; }
+.qf-social__link--ig { --qf-social-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077%22/%3E%3C/svg%3E"); }
+.qf-social__link--fb { --qf-social-mask: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Cpath d=%22M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z%22/%3E%3C/svg%3E"); }
+.qf-social__link--fb .qf-social__icon::before { width: 36px; height: 36px; }
 </style></head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -7969,7 +8287,7 @@ alt=""></noscript>
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
         (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
-      '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p class="text text--sm" style="text-align:center;"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="/servicos/">Serviços</a> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p><p style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px;"><a href="https://www.instagram.com/quem.fazservico/" target="_blank" rel="noopener noreferrer" aria-label="Instagram do Quem Faz Serviços" style="display:inline-flex;align-items:center;min-height:44px;">Instagram</a><a href="https://www.facebook.com/share/1CYCNhgmHg/" target="_blank" rel="noopener noreferrer" aria-label="Facebook do Quem Faz Serviços" style="display:inline-flex;align-items:center;min-height:44px;">Facebook</a></p></footer></div>' +
+      '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><nav class="qf-footer-links" aria-label="Links institucionais"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button><a href="/servicos/">Serviços</a><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir conta</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
       deskWide() +
       '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-action="landing-my-orders">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-support-open>' + icon('info') + '<span>Ajuda</span></button></nav></div>';
   };
@@ -8070,12 +8388,22 @@ alt=""></noscript>
       '<section class="qf-desk-card qf-desk-about" id="qf-sec-quem" aria-labelledby="qf-desk-quemh"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-quemh">Quem somos</h2>' +
         '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região: eletricista, encanador, pintor, diarista, montador de móveis e dezenas de outros.</p>' +
         '<p>A ideia é simples: você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação. Para o profissional, é um jeito de receber pedidos de clientes por perto e escolher quais quer atender.</p></section>' +
-      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><p><button class="qf-footer-help" type="button" data-support-open>Ajuda</button> · <a href="/servicos/">Serviços</a> · <a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir conta</a></p><p style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:12px;"><a href="https://www.instagram.com/quem.fazservico/" target="_blank" rel="noopener noreferrer" aria-label="Instagram do Quem Faz Serviços" style="display:inline-flex;align-items:center;min-height:44px;">Instagram</a><a href="https://www.facebook.com/share/1CYCNhgmHg/" target="_blank" rel="noopener noreferrer" aria-label="Facebook do Quem Faz Serviços" style="display:inline-flex;align-items:center;min-height:44px;">Facebook</a></p></footer>';
+      '<footer class="qf-desk-footer"><p>Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><nav class="qf-footer-links" aria-label="Links institucionais"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button><a href="/servicos/">Serviços</a><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir conta</a></nav>' + global.QFSocialLinksHtml() + '</footer>';
   }
   // O conteúdo abaixo da primeira tela entra depois que o app carrega, para a página abrir leve.
   function deskWide() { return '<div class="qf-desk-wide" data-home-lazy="wide"></div>'; }
   function mobExtra() { return '<div class="qf-mob-extra" data-home-lazy="mob"></div>'; }
   global.QFHomeExtras = { wide: deskWideInner, mob: mobExtraInner, stats: statsStart };
+  // V12 — Rodapé institucional: ícones oficiais (Simple Icons, CC0) do Instagram e do Facebook com o nome ao lado.
+  const QF_SOCIAL = [
+    { name: 'Instagram', url: 'https://www.instagram.com/quem.fazservico/', cls: 'ig' },
+    { name: 'Facebook', url: 'https://www.facebook.com/share/1CYCNhgmHg/', cls: 'fb' },
+  ];
+  global.QFSocialLinksHtml = function () {
+    return '<div class="qf-social" aria-label="Redes sociais do Quem Faz Serviços">' + QF_SOCIAL.map(function (s) {
+      return '<a class="qf-social__link qf-social__link--' + s.cls + '" href="' + s.url + '" target="_blank" rel="noopener noreferrer" aria-label="' + s.name + ' do Quem Faz Serviços (abre em nova aba)"><span class="qf-social__icon" aria-hidden="true"></span><span class="qf-social__name">' + s.name + '</span></a>';
+    }).join('') + '</div>';
+  };
   function roleCard(role) {
     const m = ROLE_META[role];
     return (
@@ -11094,7 +11422,7 @@ alt=""></noscript>
 
         '<div class="section"><button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button></div>' +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
-        '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
+        '<nav class="qf-footer-links" aria-label="Links institucionais"><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir minha conta</a></nav>' + (global.QFSocialLinksHtml ? global.QFSocialLinksHtml() : '') +
       '</div>'
     );
   };
@@ -12934,7 +13262,7 @@ alt=""></noscript>
           const b = global.QFPlanoIncentivo.porChamado(valor);
           if (!b) return '';
           return '<div class="section"><div class="qf-plan-save">' +
-            '<div class="qf-plan-save__top"><div class="icon-tile" style="background:var(--success-600);">' + icon('crown') + '</div><div class="spacer">' +
+            '<div class="qf-plan-save__top"><div class="icon-tile qf-plan-save__icon">' + icon('crown') + '</div><div class="spacer">' +
               '<div class="text--sm text--secondary">Com o plano ' + b.plano.nome + ', este chamado sairia por ' + PU.formatCurrency(b.unit) + '</div>' +
               '<div class="qf-plan-save__big">Economize ' + PU.formatCurrency(b.economia) + ' (' + b.pct + '%)</div>' +
             '</div></div>' +
@@ -13508,7 +13836,7 @@ alt=""></noscript>
           avulso = ex; plano = m.preco; nomePlano = m.nome; economia = ex - m.preco;
         }
         return '<div class="section"><div class="qf-plan-save">' +
-          '<div class="qf-plan-save__top"><div class="icon-tile" style="background:var(--success-600);">' + icon('crown') + '</div><div class="spacer">' +
+          '<div class="qf-plan-save__top"><div class="icon-tile qf-plan-save__icon">' + icon('crown') + '</div><div class="spacer">' +
             '<div class="qf-plan-save__big">' + titulo + '</div>' +
             '<div class="text--sm text--secondary" style="margin-top:4px;">' + texto + '</div>' +
           '</div></div>' +
@@ -13729,7 +14057,7 @@ alt=""></noscript>
           '<button class="btn btn--outline" data-logout>' + icon('logout') + ' Sair da conta</button>' +
         '</div>' +
         '<p class="text--sm text--muted" style="text-align:center;margin-top:14px;">QuemFaz versão ' + (global.QFApp ? global.QFApp.VERSION : '') + '</p>' +
-        '<p class="text--sm" style="text-align:center;margin-top:6px;"><a href="./privacidade/">Política de privacidade</a> · <a href="./excluir-conta/">Excluir minha conta</a></p>' +
+        '<nav class="qf-footer-links" aria-label="Links institucionais"><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir minha conta</a></nav>' + (global.QFSocialLinksHtml ? global.QFSocialLinksHtml() : '') +
       '</div>'
     );
   };
@@ -14912,7 +15240,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.92';
+  const APP_VERSION = '11.93';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17351,6 +17679,62 @@ alt=""></noscript>
   const Screens = (global.Screens = global.Screens || {});
 
   const QF_BRAND_MARK = global.QF_BRAND_MARK = '<img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços">';
+  // V12 — componentes visuais compartilhados. Só montam HTML com as classes do design system
+  // (bloco "qf-design-system"); nenhuma regra de negócio passa por aqui.
+  const QF_BRAND_MARK_DARK = global.QF_BRAND_MARK_DARK = '<img class="qf-approved-logo qf-logo-dark" src="/assets/qf-logo-branco-20261014.webp" alt="Quem Faz Serviços" width="600" height="200">';
+  // Acrescenta ao QFUI existente (WhatsApp, telefone, avatar continuam iguais) — não substitui o objeto.
+  const QFUI = Object.assign(global.QFUI = global.QFUI || {}, (function () {
+    function esc(s) { return PU.escapeHtml(String(s == null ? '' : s)); }
+    function attrs(a) { return Object.keys(a || {}).map(function (k) { return a[k] === true ? ' ' + k : (a[k] == null || a[k] === false ? '' : ' ' + k + '="' + esc(a[k]) + '"'); }).join(''); }
+    function notificationBadge(count, cls) {
+      if (!count) return '';
+      return '<span class="qf-ui-badge-count ' + (cls || '') + '" aria-hidden="true">' + (count > 9 ? '9+' : count) + '</span>';
+    }
+    function statusBadge(text, tone) {
+      // tone: success (só status positivo), warning, danger, info, neutral
+      return '<span class="qf-ui-status qf-ui-status--' + (tone || 'neutral') + '">' + esc(text) + '</span>';
+    }
+    function button(kind, label, a, iconName) {
+      return '<button type="button" class="btn qf-ui-btn qf-ui-btn--' + kind + '"' + attrs(a) + '>' + (iconName ? icon(iconName) : '') + '<span>' + esc(label) + '</span></button>';
+    }
+    function primaryButton(label, a, iconName) { return button('primary', label, a, iconName); }
+    function secondaryButton(label, a, iconName) { return button('secondary', label, a, iconName); }
+    function pageTitle(title, subtitle) {
+      return '<div class="qf-ui-page-title"><h1 class="qf-ui-page-title__h">' + esc(title) + '</h1>' + (subtitle ? '<p class="qf-ui-page-title__sub">' + esc(subtitle) + '</p>' : '') + '</div>';
+    }
+    function pageContainer(inner) { return '<div class="view qf-ui-page">' + inner + '</div>'; }
+    function formField(label, inputHtml, hint) {
+      return '<label class="field qf-ui-field"><span class="field__label">' + esc(label) + '</span>' + inputHtml + (hint ? '<span class="field__hint">' + esc(hint) + '</span>' : '') + '</label>';
+    }
+    function serviceCard(o) {
+      o = o || {};
+      return '<article class="card qf-ui-service-card"' + attrs(o.attrs) + '>' +
+        '<div class="qf-ui-service-card__head"><strong class="qf-ui-service-card__title">' + esc(o.title) + '</strong>' + (o.status ? statusBadge(o.status, o.tone) : '') + '</div>' +
+        (o.meta && o.meta.length ? '<ul class="qf-ui-service-card__meta">' + o.meta.map(function (m) { return '<li>' + (m.icon ? icon(m.icon) : '') + '<span>' + esc(m.text) + '</span></li>'; }).join('') + '</ul>' : '') +
+        (o.actions || '') + '</article>';
+    }
+    // Cabeçalho único (cliente, profissional e demais telas): azul-marinho, logo oficial para fundo escuro.
+    function appHeader(o) {
+      o = o || {};
+      const left = o.back
+        ? '<button class="topbar__back" data-nav="' + esc(o.back) + '" aria-label="Voltar">' + icon('chevronLeft') + '</button><h1 class="topbar__title">' + esc(o.title) + '</h1>'
+        : '<h1 class="topbar__title topbar__title--brand"><span class="qf-sr-only">' + esc(o.title || 'QuemFaz') + '</span>' + QF_BRAND_MARK + '</h1>';
+      return '<div class="topbar qf-app-header' + (o.back ? ' qf-app-header--back' : ' qf-app-header--brand') + '">' + left +
+        '<div class="qf-app-header__actions">' + (o.actionsHtml || '') +
+        '<button class="qf-topbar-support" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button></div></div>';
+    }
+    // Menu inferior único: mesmo tamanho, ícone, rótulo e destaque para cliente, profissional e início.
+    function bottomNavItem(t, active, count) {
+      const lbl = t.labelLong ? '<span class="tabbar__lbl-short">' + t.label + '</span><span class="tabbar__lbl-long">' + t.labelLong + '</span>' : '<span>' + t.label + '</span>';
+      return '<button type="button" class="tabbar__item' + (t.deskOnly ? ' tabbar__item--desk' : '') + (active ? ' is-active' : '') + '" data-nav="' + t.route + '" title="' + (t.labelLong || t.label) + '" aria-label="' + (t.labelLong || t.label) + (count ? ' (' + count + ' não lidos)' : '') + '" aria-current="' + (active ? 'page' : 'false') + '">' +
+        icon(t.icon) + (count ? '<span class="tabbar__notice-badge" aria-hidden="true">' + (count > 9 ? '9+' : count) + '</span>' : '') + lbl + '</button>';
+    }
+    function modal(title, bodyHtml) {
+      return '<div class="qf-ui-modal" role="dialog" aria-modal="true" aria-label="' + esc(title) + '"><h2 class="qf-ui-modal__title">' + esc(title) + '</h2>' + bodyHtml + '</div>';
+    }
+    function socialLinks() { return global.QFSocialLinksHtml ? global.QFSocialLinksHtml() : ''; }
+    return { appHeader: appHeader, bottomNavItem: bottomNavItem, primaryButton: primaryButton, secondaryButton: secondaryButton, serviceCard: serviceCard, statusBadge: statusBadge, pageContainer: pageContainer, pageTitle: pageTitle, formField: formField, modal: modal, notificationBadge: notificationBadge, socialLinks: socialLinks };
+  })());
 
   const TABS = {
     cliente: [
@@ -17862,25 +18246,19 @@ alt=""></noscript>
     const showTabbar = !!found.route.tab || tabs.some(function (t) { return t.route === '/' + session.role + currentPath().replace('/' + session.role, ''); });
     const isTabRoute = !!found.route.tab;
 
+    // V12: cabeçalho único (QFUI.appHeader). Telas de aba mostram o logo oficial no topo azul-marinho
+    // e o nome da tela logo abaixo, como título da página; telas internas mantêm voltar + título.
     let topbarHtml = '';
+    let pageTitleHtml = '';
+    const routeTitle = typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title;
     if (found.route.back) {
-      topbarHtml =
-        '<div class="topbar">' +
-        '<button class="topbar__back" data-nav="' + found.route.back + '" aria-label="Voltar">' + icon('chevronLeft') + '</button>' +
-        '<h1 class="topbar__title">' + PU.escapeHtml(typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title) + '</h1>' +
-        '<button class="qf-topbar-support" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
-        '</div>';
+      topbarHtml = QFUI.appHeader({ back: found.route.back, title: routeTitle });
     } else if (isTabRoute) {
-      const tabTitle = typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title;
-      topbarHtml =
-        '<div class="topbar">' +
-        (tabTitle === 'QuemFaz'
-          ? '<h1 class="topbar__title topbar__title--brand">' + QF_BRAND_MARK + '</h1>'
-          : '<h1 class="topbar__title">' + PU.escapeHtml(tabTitle) + '</h1>') +
-        (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') +
-        topbarBellHtml(session, found.route.tab) +
-        '<button class="qf-topbar-support" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
-        '</div>';
+      topbarHtml = QFUI.appHeader({
+        title: routeTitle,
+        actionsHtml: (global.QFApp && global.QFApp.topInstallHtml ? global.QFApp.topInstallHtml() : '') + topbarBellHtml(session, found.route.tab),
+      });
+      if (routeTitle && routeTitle !== 'QuemFaz') pageTitleHtml = QFUI.pageTitle(routeTitle);
     }
 
     // V11.1: profissional online sem notificações ativas só recebe chamados com o app aberto — avisa no topo.
@@ -17909,6 +18287,7 @@ alt=""></noscript>
       pushBannerHtml +
       topbarHtml +
       clientNotifHtml +
+      pageTitleHtml +
       '<main id="app-content" role="main"></main>' +
       renderTabbar(tabs, found.route.tab);
 
@@ -17934,6 +18313,12 @@ alt=""></noscript>
     content.qfPath = currentPath();
     content.qfUserId = user.id;
     bindGlobalDelegation(content);
+    // V12: se a própria tela já abre com o mesmo título, não repete o título da página.
+    if (pageTitleHtml) {
+      const first = content.querySelector('h1, h2, .h1, .h2, .h3');
+      const norm = function (t) { return String(t || '').replace(/\s+/g, ' ').trim().toLowerCase(); };
+      if (first && norm(first.textContent) === norm(routeTitle)) { const pt = shell.querySelector('.qf-ui-page-title'); if (pt) pt.remove(); }
+    }
     if (Screens.afterRender) Screens.afterRender(found.route.pattern, content, found.params, user);
     if (global.QFApp) { global.QFApp.fillInstallSlots(content); global.QFApp.afterRender(); }
     window.scrollTo(0, 0);
@@ -17952,10 +18337,7 @@ alt=""></noscript>
     return '<nav class="tabbar" aria-label="Navegação principal">' +
       '<button class="tabbar__brand" data-nav="' + tabs[0].route + '" aria-label="QuemFaz — início">' + QF_BRAND_MARK + '</button>' +
       tabs.map(function (t) {
-        const count = t.id === 'avisos' ? unreadNotices(currentSession()) : 0;
-        const lbl = t.labelLong ? '<span class="tabbar__lbl-short">' + t.label + '</span><span class="tabbar__lbl-long">' + t.labelLong + '</span>' : '<span>' + t.label + '</span>';
-        return '<button class="tabbar__item' + (t.deskOnly ? ' tabbar__item--desk' : '') + (t.id === activeId ? ' is-active' : '') + '" data-nav="' + t.route + '" title="' + (t.labelLong || t.label) + '" aria-label="' + (t.labelLong || t.label) + '" aria-current="' + (t.id === activeId ? 'page' : 'false') + '">' +
-          icon(t.icon) + (count ? '<span class="tabbar__notice-badge" aria-label="' + count + ' avisos não lidos">' + (count > 9 ? '9+' : count) + '</span>' : '') + lbl + '</button>';
+        return QFUI.bottomNavItem(t, t.id === activeId, t.id === 'avisos' ? unreadNotices(currentSession()) : 0);
       }).join('') +
       (global.QFApp && global.QFApp.topInstallHtml ? '<span class="qf-tabbar-dl">' + global.QFApp.topInstallHtml() + '</span>' : '') +
       '</nav>';
