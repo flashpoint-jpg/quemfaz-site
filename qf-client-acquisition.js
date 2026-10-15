@@ -116,6 +116,11 @@
 
   function published(req, category) {
     if (!req || !req.id || !(global.QFCloud && global.QFCloud.enabled)) return;
+    // Pedido urgente aguardando Pix ainda não foi publicado: não enviar Lead nem conversão.
+    if (req.aguardandoPagamento) {
+      track('awaiting_payment', { category: category, request_id: req.id }, true);
+      return;
+    }
     track('published', { category: category, request_id: req.id }, true);
     var key = 'qf_conversion_' + req.id;
     if (seen[key]) return;
