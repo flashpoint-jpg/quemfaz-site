@@ -9618,6 +9618,7 @@ alt=""></noscript>
           }
           if (querUrgente) PU.toast('Seu pedido urgente só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
           else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
+          if (!querUrgente) { try { sessionStorage.setItem('qf_cli_app_pos_pedido', String(pedido.id)); } catch (_) {} }
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
           if (global.QFClientAcquisition) global.QFClientAcquisition.track('publish_error', { category: cat.id, error_code: err && err.code || 'publish_failed' });
@@ -11665,6 +11666,7 @@ alt=""></noscript>
         if (global.QFPush && global.QFPush.needsPermission()) {
           try { sessionStorage.setItem('qf_cli_notif_pos_pedido', String(req.id)); } catch (_) {}
         }
+        try { sessionStorage.setItem('qf_cli_app_pos_pedido', String(req.id)); } catch (_) {}
         global.navigate('/cliente/pedido/' + req.id, true);
       } catch (err) {
         PU.toast('Não foi possível criar o chamado. ' + (err && err.message ? err.message : ''), 'danger');
@@ -11696,6 +11698,41 @@ alt=""></noscript>
         catch (err) { PU.closeSheet(); resolve(false); }
       };
     });
+  }
+
+  // V12.2: no navegador Android, logo depois do pedido, convida o cliente a baixar o app
+  // mostrando o código de acesso (WhatsApp + código) para ele entrar e já ver o pedido lá.
+  function clienteNoNavegadorAndroid() {
+    const A = global.QFApp;
+    if (A && A.isNativeApp && A.isNativeApp()) return false;
+    return /android/i.test(navigator.userAgent || '');
+  }
+  async function mostrarAppPosPedido(req) {
+    if (!req) return;
+    let cod = null;
+    try { if (global.QFCloud && global.QFCloud.clienteCodigoAcesso) cod = await global.QFCloud.clienteCodigoAcesso(); } catch (_) {}
+    const codHtml = cod
+      ? '<div class="qf-codigo-acesso" style="border-radius:12px;border:1px dashed #c99400;background:#fff6d6;">' +
+          '<div class="qf-codigo-acesso__label" style="color:#5c4400;">Anote seu código para entrar no app</div>' +
+          '<div class="qf-codigo-acesso__num">' + PU.escapeHtml(cod) + '</div>' +
+          '<div class="qf-codigo-acesso__hint">No app, toque em Entrar como cliente e use seu WhatsApp e este código.</div>' +
+        '</div>'
+      : '';
+    PU.openSheet(
+      '<div class="stack">' +
+        '<div class="icon-tile icon-tile--lg" style="margin:0 auto;background:#1a8f4c;color:#fff;">' + icon('check') + '</div>' +
+        '<h3 class="sheet__title" style="text-align:center;">Pedido enviado!</h3>' +
+        '<p class="text" style="text-align:center;font-weight:700;">Saiba na hora quando um profissional chamar você</p>' +
+        '<p class="text text--secondary" style="text-align:center;">No app você recebe o aviso no celular, vê quem pegou seu pedido e a nota de cada profissional.</p>' +
+        codHtml +
+        '<button class="btn btn--primary" type="button" data-download-apk>' + icon('download') + ' Baixar o app na Play Store</button>' +
+        '<button class="btn btn--outline" type="button" id="qf-cli-app-continuar">Prefiro continuar pelo WhatsApp</button>' +
+        '<div class="text--sm text--secondary" style="text-align:center;">Sem instalar, os profissionais chamam você direto no WhatsApp.</div>' +
+      '</div>',
+      { persistent: true }
+    );
+    const continuar = document.getElementById('qf-cli-app-continuar');
+    if (continuar) continuar.onclick = function () { PU.closeSheet(); };
   }
 
   async function mostrarNotificacaoPosPedido(req) {
@@ -11859,7 +11896,14 @@ alt=""></noscript>
       mostrarPosPedido = sessionStorage.getItem('qf_cli_notif_pos_pedido') === String(req.id);
       if (mostrarPosPedido) sessionStorage.removeItem('qf_cli_notif_pos_pedido');
     } catch (_) {}
-    if (mostrarPosPedido && global.QFPush && global.QFPush.needsPermission()) {
+    let mostrarApp = false;
+    try {
+      mostrarApp = sessionStorage.getItem('qf_cli_app_pos_pedido') === String(req.id);
+      if (mostrarApp) sessionStorage.removeItem('qf_cli_app_pos_pedido');
+    } catch (_) {}
+    if (mostrarApp && clienteNoNavegadorAndroid()) {
+      setTimeout(function () { mostrarAppPosPedido(req); }, 250);
+    } else if (mostrarPosPedido && global.QFPush && global.QFPush.needsPermission()) {
       setTimeout(function () { mostrarNotificacaoPosPedido(req); }, 250);
     }
     startSearchRadar(content, req);
@@ -16983,7 +17027,58 @@ alt=""></noscript>
     if (pattern==='/profissional/pedido/:id') fillProfCompetition(content,params);
     if (pattern==='/profissional/chat/:id') bindChat(content,params,user,'profissional');
     if (pattern==='/cliente/chat/:id/:profId') bindChat(content,params,user,'cliente');
+    if (pattern==='/profissional/home') fillPedidosPerdidos(content);
   };
+
+  // V12.2: profissional usando pelo navegador Android vê os pedidos que perdeu nas últimas 24h
+  // (chegaram para ele e outro profissional pegou) e o convite para instalar o app da Play Store.
+  const QF_PERDIDOS_DIA = 'qf_perdidos_ocultar_dia';
+  function tempoAtras(iso) {
+    const t = Date.parse(iso || '');
+    if (!Number.isFinite(t)) return '';
+    const min = Math.max(1, Math.round((Date.now() - t) / 60000));
+    if (min < 60) return 'há ' + min + ' min';
+    const h = Math.round(min / 60);
+    return 'há ' + h + (h === 1 ? ' hora' : ' horas');
+  }
+  async function fillPedidosPerdidos(content) {
+    try {
+      const A = global.QFApp;
+      if (A && A.isNativeApp && A.isNativeApp()) return;
+      if (!/android/i.test(navigator.userAgent || '')) return;
+      const hoje = new Date().toISOString().slice(0, 10);
+      try { if (localStorage.getItem(QF_PERDIDOS_DIA) === hoje) return; } catch (_) {}
+      const C = global.QFCloud;
+      if (!C || !C.enabled || !C.client) return;
+      const r = await C.client.rpc('qf_meus_pedidos_perdidos');
+      if (r.error || !r.data || !r.data.length) return;
+      if (!content.isConnected || content.querySelector('.qf-perdidos')) return;
+      const lista = r.data;
+      const p = lista[0];
+      const det = [p.distancia_km != null ? String(Number(p.distancia_km).toFixed(1)).replace('.', ',') + ' km de você' : '', tempoAtras(p.enviado_em)].filter(Boolean).join(' · ');
+      const card = document.createElement('div');
+      card.className = 'qf-perdidos card';
+      card.setAttribute('role', 'status');
+      card.style.cssText = 'border:2px solid var(--orange-500);border-radius:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:12px;box-shadow:0 6px 18px rgba(224,99,15,.16);';
+      card.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px;"><div class="icon-tile icon-tile--orange">' + icon('bell') + '</div>' +
+          '<div class="h3" style="margin:0;">Você perdeu ' + lista.length + (lista.length === 1 ? ' pedido' : ' pedidos') + ' hoje</div></div>' +
+        '<div style="background:var(--bg-page);border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+          '<div><div class="text--strong">' + esc(p.titulo || 'Pedido') + '</div>' + (det ? '<div class="text--sm text--secondary">' + esc(det) + '</div>' : '') + '</div>' +
+          '<span class="badge badge--orange">Já pegaram</span></div>' +
+        '<div class="text">Pelo navegador o aviso não toca com a tela apagada. <strong>No app, você é avisado na hora</strong>, mesmo com o celular no bolso.</div>' +
+        '<button class="btn btn--primary btn--block" type="button" data-download-apk>' + icon('download') + ' Instalar o app da Play Store</button>' +
+        '<button class="btn btn--ghost btn--block" type="button" data-qf-perdidos-ocultar>Agora não</button>';
+      const x = card.querySelector('[data-qf-perdidos-ocultar]');
+      if (x) x.onclick = function () {
+        try { localStorage.setItem(QF_PERDIDOS_DIA, hoje); } catch (_) {}
+        card.remove();
+      };
+      const alvo = content.querySelector('#chamados-disponiveis');
+      if (alvo && alvo.parentNode) alvo.parentNode.insertBefore(card, alvo);
+      else { const view = content.querySelector('.view') || content; view.insertBefore(card, view.firstChild); }
+    } catch (e) { console.warn('QuemFaz pedidos perdidos', e); }
+  }
 })(window);
 
 
