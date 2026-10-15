@@ -18026,6 +18026,12 @@ alt=""></noscript>
   let pendingRefresh = false;
   let lastQuickSig = '';
   let lastFullLiveSyncAt = 0;
+  let lastLiveSyncPath = '';
+  // Economiza tráfego: a conversa tem sua própria atualização rápida; não refazer a conta inteira a cada 4s.
+  const QF_LIVE_POLL_MS = 10000;
+  const QF_CLIENT_FULL_MS = 20000;
+  const QF_PRO_FULL_MS = 90000;
+  const QF_WALLET_FULL_MS = 30000;
   // V10.2: não re-renderiza a tela enquanto o usuário digita ou com uma janela aberta
   // (antes, um chamado novo apagava o orçamento/formulário que estava sendo preenchido).
   function userIsEditing() {
@@ -18065,20 +18071,26 @@ alt=""></noscript>
     const path = currentPath();
     const shouldRefresh = path.indexOf('/' + session.role + '/') === 0;
     if (!shouldRefresh) return;
+    // Cliente mantém resposta rápida; evita carregar novamente todo o cadastro sem necessidade.
+    if (session.role === 'cliente' && path === lastLiveSyncPath &&
+        Date.now() - lastFullLiveSyncAt < QF_CLIENT_FULL_MS && !pendingRefresh) return;
 
     liveCallsBusy = true;
     const beforeMap = requestStateMap();
     const before = requestStateSignature();
     const y = window.scrollY;
     try {
-      // V11.1: profissional — primeiro só a consulta leve; sincronização completa se algo mudou ou a cada 30 s.
+      // Profissional: busca leve a cada 10s. Busca completa só se mudou algo,
+      // se entrou em outra tela ou após 90s (30s na Carteira para confirmar Pix).
       if (session.role === 'profissional' && global.QFCloud.professionalQuickSignature) {
         const quick = await global.QFCloud.professionalQuickSignature();
         const quickKey = session.userId + '#' + quick;
-        const due = Date.now() - lastFullLiveSyncAt >= 30000;
+        const fullInterval = /^\/profissional\/carteira(?:$|\/)/.test(path) ? QF_WALLET_FULL_MS : QF_PRO_FULL_MS;
+        const due = path !== lastLiveSyncPath || Date.now() - lastFullLiveSyncAt >= fullInterval;
         if (quickKey === lastQuickSig && !due && !pendingRefresh) return;
         lastQuickSig = quickKey;
       }
+      lastLiveSyncPath = path;
       lastFullLiveSyncAt = Date.now();
       await global.QFCloud.syncForCurrentSession(true);
       let serverNoticesChanged = false;
@@ -18105,7 +18117,11 @@ alt=""></noscript>
     } finally {
       liveCallsBusy = false;
     }
-  }, 4000);
+  }, QF_LIVE_POLL_MS);
+  // Ao voltar ao aplicativo, atualiza a próxima vez sem precisar aguardar 90s.
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) { lastFullLiveSyncAt = 0; lastLiveSyncPath = ''; }
+  });
 
   // Atualiza a tela após os anúncios chegarem sem apagar um formulário em edição.
   global.addEventListener('qf-push-state', function () {
