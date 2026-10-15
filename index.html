@@ -3345,6 +3345,16 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .qf-play-badge--desk{flex:none}
 @media(prefers-reduced-motion:reduce){.qf-play-badge{transition:none}.qf-play-badge:hover{transform:none}}
 </style>
+<style id="qf-header-marinho-laranja">
+/* V11.87 — barra de cima aprovada (opção C): azul-marinho com faixinha laranja, logo com "Quem" branco. */
+#app-shell .qf-landing-topbar,#app-shell .qf-landing-topbar.qf-fixed-bar{background:#061329!important;color:#fff!important;border-bottom:3px solid #ff7914!important;box-shadow:0 2px 10px rgba(6,19,41,.25)!important}
+#app-shell .qf-landing-topbar .qf-approved-logo{content:url(/assets/qf-logo-branco-20261014.webp);background:transparent!important;padding:0}
+#app-shell .qf-landing-topbar .btn.qf-landing-login{background:#1658d0!important;border-color:#1658d0!important;color:#fff!important}
+#app-shell .qf-landing-topbar .qf-home-prof summary{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.35)!important;color:#fff!important}
+#app-shell .qf-landing-topbar .qf-landing-help{color:#fff!important;border-color:rgba(255,255,255,.55)!important}
+#app-shell .qf-landing-topbar .qf-desk-menu button{color:#dfe7f5}
+#app-shell .qf-landing-topbar .qf-desk-menu button:hover{background:rgba(255,255,255,.1);color:#fff}
+</style>
 <style id="qf-approved-brand">
 .qf-approved-logo{display:block;width:200px;height:auto;aspect-ratio:3/1;max-width:100%;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}
 .qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}
@@ -14741,7 +14751,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.86';
+  const APP_VERSION = '11.87';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
