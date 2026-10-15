@@ -6141,21 +6141,36 @@ alt=""></noscript>
             first_seen_at: marketing.first_seen_at || new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
-          const mr = await client.from('qf_marketing_attribution').upsert(row, { onConflict: 'user_id' });
+          // V11.86: guarda só a PRIMEIRA origem (quem já tinha conta e clicou num anúncio de novo não sobrescreve).
+          const mr = await client.from('qf_marketing_attribution').upsert(row, { onConflict: 'user_id', ignoreDuplicates: true });
           if (mr.error) throw mr.error;
           localStorage.removeItem('qf_marketing_attribution');
-          try {
-            if (role === 'profissional' && typeof global.fbq === 'function') {
-              global.fbq('track', 'CompleteRegistration', {
-                content_name: role === 'profissional' ? 'QuemFaz Profissional' : 'QuemFaz Cliente',
-                content_category: role
-              });
-            }
-          } catch (_) {}
+          if (role === 'profissional') trackCompleteRegistrationOnce(uRes.data.user, role);
         }
       }
     } catch (e) { console.warn('QuemFaz origem de marketing pendente', e); }
   }
+
+  // V11.86: CompleteRegistration do pixel dispara UMA vez por profissional e só para conta recém-criada.
+  // Antes disparava também em login de conta antiga que veio por anúncio e em execuções paralelas da sincronização,
+  // inflando os "Registros concluídos" no Meta (~20% a mais que os cadastros reais).
+  const QF_CR_MAX_IDADE_MS = 2 * 60 * 60 * 1000;
+  function trackCompleteRegistrationOnce(user, role) {
+    try {
+      if (!user || !user.id || typeof global.fbq !== 'function') return false;
+      const criadoEm = Date.parse(user.created_at || '');
+      if (!Number.isFinite(criadoEm) || Date.now() - criadoEm > QF_CR_MAX_IDADE_MS) return false;
+      const flag = 'qf_cr_sent:' + user.id;
+      if (localStorage.getItem(flag)) return false;
+      localStorage.setItem(flag, '1');
+      global.fbq('track', 'CompleteRegistration', {
+        content_name: role === 'profissional' ? 'QuemFaz Profissional' : 'QuemFaz Cliente',
+        content_category: role
+      }, { eventID: 'cr-' + user.id });
+      return true;
+    } catch (_) { return false; }
+  }
+  global.QFTrackCompleteRegistrationOnce = trackCompleteRegistrationOnce;
 
   // V11.1: consulta leve para o profissional (só ids/status); a sincronização completa roda quando algo muda.
   async function professionalQuickSignature() {
