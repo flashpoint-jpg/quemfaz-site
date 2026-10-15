@@ -3354,6 +3354,8 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 #app-shell .qf-landing-topbar .qf-landing-help{color:#fff!important;border-color:rgba(255,255,255,.55)!important}
 #app-shell .qf-landing-topbar .qf-desk-menu button{color:#dfe7f5}
 #app-shell .qf-landing-topbar .qf-desk-menu button:hover{background:rgba(255,255,255,.1);color:#fff}
+/* V11.88 — fundo da parte das fotos (opção C aprovada): marinho embaixo das fotos, clareando pro azul perto do "Pedir grátis". */
+#app-shell .qf-landing-hero{--navy-900:#061329;background:linear-gradient(180deg,#061329 0,#061329 45%,#0b3a8f 100%)!important}
 </style>
 <style id="qf-approved-brand">
 .qf-approved-logo{display:block;width:200px;height:auto;aspect-ratio:3/1;max-width:100%;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}
@@ -14751,7 +14753,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.87';
+  const APP_VERSION = '11.88';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
