@@ -48,7 +48,7 @@ test('pedido reúne contato e localização no mesmo cartão, sem bloco separado
   assert.ok(etapa2 > 0 && region > etapa2 && escolhas > region && quantos > escolhas && contact > quantos);
   assert.match(view, /data-qf-prazo-details/);
   assert.ok(!view.includes('<details class="qf-request-schedule"'), 'prazo fica aberto, sem precisar tocar para abrir');
-  assert.ok(view.includes('[1, 2, 3, 4, 5, 6, 7, 8]') && view.includes('name="maxOrcamentos" value="3"'));
+  assert.ok(view.includes('[1, 2, 3, 4]') && view.includes('name="maxOrcamentos" value="3"'));
   assert.ok(view.includes('Para o profissional entrar em contato'));
 });
 

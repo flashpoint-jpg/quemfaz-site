@@ -39,7 +39,7 @@ function visit(dir){
   const inServicos=bits[0]==='servicos',slug=bits[inServicos?1:0];
   if(!categories[slug])continue;
   let html=fs.readFileSync(file,'utf8');
-  html=html.replace(/até 3/gi,m=>m[0]==='A'?'Até 8':'até 8');
+  html=html.replace(/até 3/gi,m=>m[0]==='A'?'Até 4':'até 4');
   if(!inServicos&&duplicated.has(slug)){
    const suffix=bits.join('/')+'/';
    html=html.replace(/<link rel="canonical" href="[^"]+">/,'<link rel="canonical" href="https://quemfazservico.com.br/servicos/'+suffix+'">');

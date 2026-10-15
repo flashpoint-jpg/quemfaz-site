@@ -9123,6 +9123,7 @@ Screens.adminDashboardRender = function () {
   Screens.adminBonusRender = function () {
     const bonus = global.QFAdminBonus ? global.QFAdminBonus.html() : '';
     return admPage(
+      admCard('Desbloqueio exclusivo', 'o profissional paga mais e fica sozinho com o cliente', cloudOn() ? '<div data-exclusivo-cfg><p class="qf-adm-mudo" style="margin:0;">Carregando…</p></div>' : ADM_SO_CONECTADO) +
       admCard('Bônus de cadastro', 'crédito automático para profissional novo', cloudOn() ? '<div data-bonus-cadastro><p class="qf-adm-mudo" style="margin:0;">Carregando…</p></div>' : ADM_SO_CONECTADO) +
       (bonus ? '<div class="qf-adm-embutido">' + bonus + '</div>' : admCard('Bônus para todos', 'só quem ainda não recebeu', ADM_SO_CONECTADO)));
   };
@@ -9139,6 +9140,42 @@ Screens.adminDashboardRender = function () {
       '<p class="qf-adm-mudo" style="margin:0;font-size:13px;">Quem já recebeu continua com o crédito. A mudança vale para os próximos cadastros.</p>' +
     '</form>';
   }
+  // V11.90: desbloqueio exclusivo — liga/desliga e quantas vezes o preço normal (qf_config desbloqueio_exclusivo).
+  function admExclusivoHtml(d) {
+    const ativo = !(d && d.ativo === false), mult = Number((d && d.multiplicador) || 3);
+    const ex = function (c) { return PU.formatCurrency(Math.ceil(c * mult)); };
+    return '<form data-exclusivo-form class="qf-adm-bonus-cad">' +
+      '<div class="qf-adm-bonus-cad__status"><span class="qf-adm-sit qf-adm-sit--' + (ativo ? 'fechado' : 'cancelado') + '">' + (ativo ? 'Ligado' : 'Desligado') + '</span>' +
+        '<span>' + (ativo ? 'Exclusivo custa ' + String(mult).replace('.', ',') + '× o preço: R$ 5 → ' + ex(500) + ', R$ 8 → ' + ex(800) + ', R$ 13 → ' + ex(1300) + '. Só aparece enquanto ninguém desbloqueou.' : 'O profissional só vê o desbloqueio normal (até 4 por pedido).') + '</span></div>' +
+      '<label class="qf-adm-bonus-cad__check"><input type="checkbox" name="ativo"' + (ativo ? ' checked' : '') + '> Mostrar a opção exclusiva</label>' +
+      '<label class="qf-adm-filtro">Quantas vezes o preço normal<input class="input" type="number" name="mult" min="1.5" max="10" step="0.5" value="' + mult + '" style="max-width:160px;"></label>' +
+      '<div><button type="submit" class="btn btn--primary btn--sm qf-adm-head__btn">Salvar</button></div>' +
+    '</form>';
+  }
+  async function admExclusivoCarregar(content) {
+    const box = content.querySelector('[data-exclusivo-cfg]');
+    if (!box || !cloudOn()) return;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_exclusivo_info');
+      if (r.error) throw r.error;
+      box.innerHTML = admExclusivoHtml(r.data);
+    } catch (err) { box.innerHTML = '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>'; }
+  }
+  document.addEventListener('submit', async function (e) {
+    const f = e.target && e.target.closest && e.target.closest('[data-exclusivo-form]');
+    if (!f) return;
+    e.preventDefault();
+    const ativo = f.ativo.checked, mult = Number(String(f.mult.value).replace(',', '.'));
+    if (!(mult >= 1.5 && mult <= 10)) { PU.toast('Use de 1,5× a 10×.', 'danger'); return; }
+    const btn = f.querySelector('[type="submit"]'); if (btn) btn.disabled = true;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_salvar_exclusivo', { p_ativo: ativo, p_multiplicador: mult });
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.reason) || 'Não foi possível salvar.');
+      const box = f.closest('[data-exclusivo-cfg]'); if (box) box.innerHTML = admExclusivoHtml(r.data);
+      PU.toast('Desbloqueio exclusivo salvo.', 'success');
+    } catch (err) { PU.toast((err && err.message) || 'Não foi possível salvar.', 'danger'); if (btn) btn.disabled = false; }
+  });
   async function admBonusCadastroCarregar(content) {
     const box = content.querySelector('[data-bonus-cadastro]');
     if (!box || !cloudOn()) return;
@@ -9423,7 +9460,7 @@ Screens.adminDashboardRender = function () {
   Screens.afterRender = function (pattern, content, params, user) {
     if (prevAfterAdm) prevAfterAdm(pattern, content, params, user);
     if (pattern === '/admin/configuracoes') bindMais(content);
-    if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);
+    if (pattern === '/admin/bonus') { admBonusCadastroCarregar(content); admExclusivoCarregar(content); }
     if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/proximos') admProximosCarregar(content);
     if (pattern === '/admin/paineis') admPaineisCarregar(content);

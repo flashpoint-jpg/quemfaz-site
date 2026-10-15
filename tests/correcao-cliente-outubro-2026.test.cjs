@@ -38,16 +38,16 @@ test('nome e icone do servico escolhido acompanham a troca', () => {
   assert.match(click, /servicoHidden.value=cat.nome;\s*atualizarServicoVisivel\(\)/);
 });
 
-test('titulo, descricao, calculadora e app usam limite de ate 8', () => {
-  assert.match(html, /Receba até 8 Contatos Grátis/);
+test('titulo, descricao, calculadora e app usam limite de ate 4', () => {
+  assert.match(html, /Receba até 4 Contatos Grátis/);
   assert.doesNotMatch(html, /Receba até 3 Contatos Grátis/);
   assert.doesNotMatch(html, /receba até 3 contatos de profissionais/);
-  assert.match(html, /até 8 profissionais podem chamar você no WhatsApp/);
+  assert.match(html, /até 4 profissionais podem chamar você no WhatsApp/);
   assert.doesNotMatch(html, /até 3 profissionais podem chamar você no WhatsApp/);
-  assert.match(html, /const maxProf = Math.max\(1, Math.min\(8,/);
+  assert.match(html, /const maxProf = Math.max\(1, Math.min\(4,/);
   assert.match(html, /textoProf = maxProf === 1/);
   assert.ok(html.includes("<span>' + textoProf + '</span>"));
-  assert.match(html, /\[1, 2, 3, 4, 5, 6, 7, 8\]/);
+  assert.match(html, /\[1, 2, 3, 4\]/);
   const version = /const APP_VERSION = '([^']+)'/.exec(html);
   assert.ok(version);
   assert.equal(version[1], /const SW_VERSION = '([^']+)'/.exec(sw)[1]);

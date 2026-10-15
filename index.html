@@ -14,17 +14,17 @@ html.qf-inapp{--safe-bottom:0px}
 @media (max-width:899px){html.qf-inapp .qf-home-nav,html.qf-inapp .tabbar{bottom:7px!important}html.qf-inapp body .qf-update-banner.qf-update-float{bottom:102px!important}}
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
-<title>Quem Faz | Encontre Profissionais e Receba até 8 Contatos Grátis</title>
+<title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
 <!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
-<meta name="description" content="Precisa de um profissional? Publique seu pedido grátis no Quem Faz e receba até 8 contatos de profissionais da sua região.">
+<meta name="description" content="Precisa de um profissional? Publique seu pedido grátis no Quem Faz e receba até 4 contatos de profissionais da sua região.">
 <link rel="canonical" href="https://quemfazservico.com.br/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Quem Faz">
-<meta property="og:title" content="Quem Faz | Encontre Profissionais e Receba até 8 Contatos Grátis">
-<meta property="og:description" content="Publique seu pedido grátis e receba até 8 contatos de profissionais da sua região.">
+<meta property="og:title" content="Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis">
+<meta property="og:description" content="Publique seu pedido grátis e receba até 4 contatos de profissionais da sua região.">
 <meta property="og:url" content="https://quemfazservico.com.br/">
 <meta name="twitter:card" content="summary">
 <meta property="og:image" content="https://quemfazservico.com.br/quemfaz.png">
@@ -3356,6 +3356,20 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 #app-shell .qf-landing-topbar .qf-desk-menu button:hover{background:rgba(255,255,255,.1);color:#fff}
 /* V11.88 — fundo da parte das fotos (opção C aprovada): marinho embaixo das fotos, clareando pro azul perto do "Pedir grátis". */
 #app-shell .qf-landing-hero{--navy-900:#061329;background:linear-gradient(180deg,#061329 0,#061329 45%,#0b3a8f 100%)!important}
+/* V11.90 — desbloqueio exclusivo x dividido na tela do pedido do profissional. */
+.qf-opts{display:flex;flex-direction:column;gap:14px}
+.qf-opt{position:relative;border:2px solid #d7e1f1;border-radius:16px;padding:14px;background:#fff}
+.qf-opt--excl{border-color:#ff7914;background:#fff7f0;margin-top:6px}
+.qf-opt__badge{position:absolute;top:-11px;left:14px;background:#ff7914;color:#fff;font-size:11px;font-weight:800;letter-spacing:.04em;padding:3px 10px;border-radius:20px}
+.qf-opt__top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px;color:#0f2547}
+.qf-opt__preco{font-size:21px;font-weight:800;color:#0f2547}.qf-opt__preco--azul{color:#0b4fb8}
+.qf-opt p{margin:6px 0 12px;font-size:13.5px;line-height:1.4;color:#4a5d7c}.qf-opt p b{color:#33476a}
+.qf-opt--excl .qf-opt__btn{background:#ff7914!important;border-color:#ff7914!important;color:#fff!important}
+.qf-opt--div .qf-opt__btn{color:#0b4fb8!important;border:2px solid #0b4fb8!important;background:#fff!important}
+.qf-opts__nota{margin:0;text-align:center;font-size:12.5px;color:#5a6b85}
+.qf-opts__nota svg{width:13px;height:13px;vertical-align:-2px;margin-right:3px}
+.qf-excl-hint{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12.5px;font-weight:700;color:#c4530a}
+.qf-excl-hint svg{width:14px;height:14px;flex:none}
 </style>
 <style id="qf-approved-brand">
 .qf-approved-logo{display:block;width:200px;height:auto;aspect-ratio:3/1;max-width:100%;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}
@@ -5201,10 +5215,10 @@ alt=""></noscript>
   }
   function firstName(s) { return String(s || '').trim().split(/\s+/)[0] || 'Usuário'; }
 
-  // V11.71: o cliente escolhe quantos orçamentos quer (1 a 8). Sem escolha (pedidos antigos) vale 3.
+  // V11.90: o cliente escolhe quantos orçamentos quer (1 a 4). Sem escolha (pedidos antigos) vale 3.
   global.QFMaxOrc = function (req) {
     const n = Number(req && (req.maxOrcamentos || req.limiteParticipantes)) || 3;
-    return Math.max(1, Math.min(8, Math.round(n)));
+    return Math.max(1, Math.min(4, Math.round(n)));
   };
   function cloudCustomCatFromName(v) {
     const nome = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 80);
@@ -6694,9 +6708,9 @@ alt=""></noscript>
     if (geoPrecisao) row.geo_precisao = geoPrecisao;
     const comPrazo = !!data.prazo;
     if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }
-    // V11.71: quantos orçamentos o cliente quer (1 a 8). Se o banco recusar o campo, publica sem ele (fica 3).
+    // V11.90: quantos orçamentos o cliente quer (1 a 4). Se o banco recusar o campo, publica sem ele (fica 3).
     const maxOrc = Math.round(Number(data.maxOrcamentos));
-    const comMax = maxOrc >= 1 && maxOrc <= 8;
+    const comMax = maxOrc >= 1 && maxOrc <= 4;
     if (comMax) row.max_orcamentos = maxOrc;
     let res = await client.from('qf_chamados').insert(row).select('*').single();
     if (res.error && row.geo_precisao && /geo_precisao/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
@@ -6766,8 +6780,9 @@ alt=""></noscript>
     return req;
   }
 
-  async function unlockCall(chamadoId, profissionalId) {
-    const res = await client.rpc('qf_desbloquear_chamado', { p_chamado_id: chamadoId });
+  async function unlockCall(chamadoId, profissionalId, exclusivo) {
+    // V11.90: exclusivo = só ele recebe o contato do cliente (paga N× o preço, enquanto ninguém desbloqueou).
+    const res = await client.rpc('qf_desbloquear_chamado', exclusivo ? { p_chamado_id: chamadoId, p_exclusivo: true } : { p_chamado_id: chamadoId });
     if (res.error) return { ok: false, reason: 'erro', error: res.error.message };
     const out = res.data || {};
     if (!out.ok) {
@@ -6780,6 +6795,10 @@ alt=""></noscript>
       }
       if (out.reason === 'avaliacao_pendente') {
         return { ok: false, reason: 'avaliacao_pendente', chamadoId: out.chamado_id || null };
+      }
+      if (out.reason === 'exclusivo_indisponivel' || out.reason === 'exclusivo_desligado') {
+        try { await syncProfessionalCalls(profissionalId); } catch (_) {}
+        return { ok: false, reason: out.reason };
       }
       return { ok: false, reason: out.reason || 'indisponivel' };
     }
@@ -6798,6 +6817,7 @@ alt=""></noscript>
       valorTabela: Number(out.preco_tabela_centavos || out.preco_centavos || 0),
       usouBonus: out.usou_bonus === true || out.origem === 'bonus',
       origem: out.origem || 'saldo',
+      exclusivo: out.exclusivo === true,
       planoRestantes: out.plano_restantes == null ? null : Number(out.plano_restantes),
       participantes: out.participantes == null ? null : Number(out.participantes),
       limite: out.limite == null ? 3 : Number(out.limite),
@@ -7232,6 +7252,30 @@ alt=""></noscript>
     if (r.error || !r.data) return;
     bonusAplicar(r.data);
     try { localStorage.setItem(BONUS_KEY, JSON.stringify(r.data)); } catch (_) {}
+  }).catch(function () {});
+
+  // V11.90: desbloqueio exclusivo (qf_config desbloqueio_exclusivo). Quem cobra é o banco; aqui é só o preço mostrado.
+  const EXCL_KEY = 'qf_exclusivo_v1';
+  const QFExclusivo = global.QFExclusivo = {
+    ativo: true, mult: 3,
+    aplicar: function (d) {
+      if (!d) return;
+      QFExclusivo.ativo = d.ativo !== false;
+      const m = Number(d.multiplicador);
+      QFExclusivo.mult = m >= 1.5 && m <= 10 ? m : 3;
+    },
+    preco: function (valor) { return Math.ceil((Number(valor) || 0) * QFExclusivo.mult); },
+    // Disponível só enquanto ninguém desbloqueou o pedido.
+    disponivel: function (req) {
+      if (!QFExclusivo.ativo || !req) return false;
+      return !(Number(req.participantes) > 0);
+    }
+  };
+  try { QFExclusivo.aplicar(JSON.parse(localStorage.getItem(EXCL_KEY) || 'null')); } catch (_) {}
+  if (client) client.rpc('qf_exclusivo_info').then(function (r) {
+    if (r.error || !r.data) return;
+    QFExclusivo.aplicar(r.data);
+    try { localStorage.setItem(EXCL_KEY, JSON.stringify(r.data)); } catch (_) {}
   }).catch(function () {});
 
   // V12.1: preço de desbloqueio por profissão (qf_precos_desbloqueio) e bônus de recarga.
@@ -7891,13 +7935,13 @@ alt=""></noscript>
       '<div class="qf-stats-slot" data-home-stats></div>' +
       '<section class="qf-desk-card" id="qf-sec-como" aria-labelledby="qf-desk-how"><h2 class="qf-desk-h" id="qf-desk-how">Como funciona</h2><ol class="qf-desk-steps">' +
         '<li><span class="qf-desk-num">1</span><div><strong>Escreva o que você precisa</strong><p>Leva menos de 1 minuto. É grátis e não precisa de cadastro.</p></div></li>' +
-        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 8 profissionais recebem o seu pedido.</p></div></li>' +
+        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 4 profissionais recebem o seu pedido.</p></div></li>' +
         '<li><span class="qf-desk-num qf-desk-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora. Você compara e escolhe com quem fechar.</p></div></li>' +
       '</ol></section>' +
       '<section class="qf-desk-card" id="qf-sec-servicos" aria-labelledby="qf-desk-serv"><h2 class="qf-desk-h" id="qf-desk-serv">Serviços mais pedidos</h2><p class="qf-desk-sub">Clique em um serviço para começar o seu pedido.</p><div class="qf-desk-services">' +
         DESK_SERVICES.map(function (x) { return '<button type="button" data-desk-service="' + (x[2] || x[0]) + '">' + icon(x[1]) + '<span>' + x[0] + '</span></button>'; }).join('') +
       '</div></section>' +
-      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Sem cadastro</span></li><li>' + icon('lock') + '<span>Só até 8 profissionais veem o seu WhatsApp</span></li></ul>' +
+      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Sem cadastro</span></li><li>' + icon('lock') + '<span>Só até 4 profissionais veem o seu WhatsApp</span></li></ul>' +
     '</div>';
   }
 
@@ -7906,10 +7950,10 @@ alt=""></noscript>
   function mobExtraInner() {
     return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
         '<li><span class="qf-mob-num">1</span><div><strong>Escreva o que você precisa</strong><p>Grátis e sem cadastro.</p></div></li>' +
-        '<li><span class="qf-mob-num">2</span><div><strong>Até 8 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
+        '<li><span class="qf-mob-num">2</span><div><strong>Até 4 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
       '</ol></section>' +
-      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
+      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
@@ -7958,7 +8002,7 @@ alt=""></noscript>
     const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()" loading="lazy"></a>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
-          deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 8 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 8 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
+          deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 4 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para profissionais</p>' +
           deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
@@ -8238,7 +8282,7 @@ alt=""></noscript>
           '<div class="card qf-ticket qf-request-ticket qf-request-unified">' +
           '<div data-qf-etapa-box="1">' +
           '<h2 class="qf-etapa1__titulo" data-qf-etapa-titulo>' + PU.escapeHtml((selectedCat && etapasCfg.opcoes[selectedCat.id] && etapasCfg.opcoes[selectedCat.id].titulo) || 'Do que você precisa?') + '</h2>' +
-          '<p class="qf-etapa1__sub">Grátis. Você escolhe quantos orçamentos quer, até 8, direto no seu WhatsApp.</p>' +
+          '<p class="qf-etapa1__sub">Grátis. Você escolhe quantos orçamentos quer, até 4, direto no seu WhatsApp.</p>' +
           servicoField +
           '<div data-qf-opcoes-bloco hidden><div class="qf-etapa1__pergunta">O que precisa ser feito?</div><div class="qf-opcoes" data-qf-opcoes></div><button type="button" class="qf-etapa1__escrever" data-qf-escrever>Prefiro escrever o que preciso</button></div>' +
           '<div data-qf-descricao-bloco class="qf-etapa1__descricao">' +
@@ -8261,10 +8305,10 @@ alt=""></noscript>
           '</div>' +
           '<div class="field qf-quantos" data-qf-quantos>' +
             '<span class="field__label" id="qf-quantos-label">Quantos orçamentos você quer receber?</span>' +
-            '<div class="qf-quantos__opts" role="radiogroup" aria-labelledby="qf-quantos-label">' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) {
+            '<div class="qf-quantos__opts" role="radiogroup" aria-labelledby="qf-quantos-label">' + [1, 2, 3, 4].map(function (n) {
               return '<button type="button" class="qf-prazo__opt qf-quantos__opt" role="radio" aria-checked="' + (n === 3 ? 'true' : 'false') + '" data-qf-quantos-opt="' + n + '">' + n + '</button>';
             }).join('') + '</div>' +
-            '<p class="qf-prazo__nota">Você escolhe de 1 a 8. Só essa quantidade de profissionais vai ver o seu WhatsApp.</p>' +
+            '<p class="qf-prazo__nota">Você escolhe de 1 a 4. Só essa quantidade de profissionais vai ver o seu WhatsApp.</p>' +
             '<input type="hidden" name="maxOrcamentos" value="3">' +
           '</div>' +
           // V11.79: Pedido urgente opcional. O normal continua grátis e já vem marcado.
@@ -9250,9 +9294,9 @@ alt=""></noscript>
           const alvo = b.getAttribute('data-qf-sub-ir');
           if ((sub === 'a' && alvo === 'b') || (sub === 'b' && alvo === 'c')) avancarSub(); else irSub(alvo);
         });
-        // Quantos orçamentos: botões de 1 a 8; o aviso do WhatsApp e o botão final acompanham a escolha.
+        // Quantos orçamentos: botões de 1 a 4; o aviso do WhatsApp e o botão final acompanham a escolha.
         function quantos(n) {
-          n = Math.max(1, Math.min(8, Math.round(Number(n)) || 3));
+          n = Math.max(1, Math.min(4, Math.round(Number(n)) || 3));
           const campo = form.querySelector('[name="maxOrcamentos"]');
           if (campo) campo.value = String(n);
           form.querySelectorAll('[data-qf-quantos-opt]').forEach(function (b) { b.setAttribute('aria-checked', Number(b.getAttribute('data-qf-quantos-opt')) === n ? 'true' : 'false'); });
@@ -12680,6 +12724,7 @@ alt=""></noscript>
             '<div class="qf-unlock-price' + (CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
               icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
+            (global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
             (function () { if (primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
@@ -12776,6 +12821,25 @@ alt=""></noscript>
         '</div>' +
 
         (function () {
+          // V11.90: exclusivo (só ele recebe o contato) ou dividido (até 4). O exclusivo some quando alguém desbloqueia.
+          const EX = global.QFExclusivo;
+          const temExcl = !!(EX && global.QFCloud && global.QFCloud.enabled && EX.disponivel(req));
+          const lim = CallInfo.vagas(req).limite;
+          const btnDiv = primeiraGratis ? 'Desbloquear grátis' : (user.plano && user.plano.restantes > 0 ? 'Desbloquear com o plano (' + user.plano.restantes + ' restantes)' : 'Desbloquear · ' + PU.formatCurrency(valor));
+          const excl = temExcl ? '<div class="qf-opt qf-opt--excl"><span class="qf-opt__badge">EXCLUSIVO</span>' +
+              '<div class="qf-opt__top"><strong>Só você</strong><span class="qf-opt__preco">' + PU.formatCurrency(EX.preco(valor)) + '</span></div>' +
+              '<p><b>Tenha o contato do cliente exclusivamente para você.</b> Nenhum outro profissional recebe esse pedido.</p>' +
+              '<button class="btn btn--primary btn--block qf-opt__btn" type="button" data-action="desbloquear-exclusivo">' + icon('crown') + ' Pegar exclusivo · ' + PU.formatCurrency(EX.preco(valor)) + '</button></div>' : '';
+          const motivo = (!temExcl && EX && EX.ativo && Number(req.participantes) > 0) ? 'O exclusivo não está mais disponível porque outro profissional já pegou. ' : '';
+          const div = '<div class="qf-opt qf-opt--div">' +
+              '<div class="qf-opt__top"><strong>' + (temExcl ? 'Dividido' : 'Desbloquear') + '</strong><span class="qf-opt__preco qf-opt__preco--azul">' + (CallInfo.usaPlano(user) ? 'Plano' : PU.formatCurrency(valor)) + '</span></div>' +
+              '<p>' + motivo + (lim === 1 ? 'Só 1 profissional recebe o contato desse cliente.' : 'Até ' + lim + ' profissionais recebem o contato desse cliente.') + '</p>' +
+              '<button class="btn btn--outline btn--block qf-opt__btn" type="button" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + btnDiv + '</button></div>';
+          return '<div class="section qf-opts">' + excl + div +
+            '<p class="qf-opts__nota">' + icon('lock') + ' O WhatsApp do cliente aparece depois do desbloqueio · sem devolução</p>' +
+            '<button class="btn btn--ghost btn--block" type="button" data-action="recusar-chamada">Agora não</button></div>';
+        })() +
+        (function () {
           if (primeiraGratis || !global.QFPlanoIncentivo || !global.QFPlanoIncentivo.semPlano(user)) return '';
           const b = global.QFPlanoIncentivo.porChamado(valor);
           if (!b) return '';
@@ -12788,10 +12852,6 @@ alt=""></noscript>
             '<button class="btn btn--outline btn--sm" type="button" data-nav="/profissional/planos">' + icon('crown') + ' Ver planos</button>' +
           '</div></div>';
         })() +
-        '<div class="section btn-row">' +
-          '<button class="btn btn--outline" data-action="recusar-chamada">Agora não</button>' +
-          '<button class="btn btn--primary" data-action="desbloquear-chamada">' + icon('unlock') + ' ' + (primeiraGratis ? 'Desbloquear grátis' : (user.plano && user.plano.restantes > 0 ? 'Desbloquear com o plano (' + user.plano.restantes + ' restantes)' : 'Desbloquear ' + PU.formatCurrency(valor))) + '</button>' +
-        '</div>' +
       '</div>'
     );
   };
@@ -13176,7 +13236,7 @@ alt=""></noscript>
       '<section class="section">' +
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
-          walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 8), e você vê quantas vagas ainda tem antes de desbloquear.') +
+          walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 4), e você vê quantas vagas ainda tem antes de desbloquear.') +
           walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
@@ -14084,14 +14144,20 @@ alt=""></noscript>
       const action = e.target.closest('[data-action]');
       if (!action) return;
       const act = action.getAttribute('data-action');
-      if (act === 'desbloquear-chamada') {
+      if (act === 'desbloquear-chamada' || act === 'desbloquear-exclusivo') {
+        const exclusivo = act === 'desbloquear-exclusivo';
         const req = DB.requestById(params.id);
-        const valor = req ? DB.leadFeeForRequest(req) : 0;
+        const valorBase = req ? DB.leadFeeForRequest(req) : 0;
+        const valor = exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase;
         const primeiraGratis = false;
-        const usaPlano = !!(user && user.plano && user.plano.restantes > 0);
+        const usaPlano = !exclusivo && !!(user && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
         const vagasFrase = 'O cliente escolheu receber ' + (vg.limite === 1 ? '1 orçamento' : 'até ' + vg.limite + ' orçamentos') + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' profissional já desbloqueou' : ' profissionais já desbloquearam') : ' e ninguém desbloqueou ainda') + ': você será o ' + (vg.ocupadas + 1) + 'º de ' + vg.limite + '. Sem devolução: se o cliente não te responder ou fechar com outro, o valor não volta. ';
-        PU.confirmDialog({
+        PU.confirmDialog(exclusivo ? {
+          title: 'Pegar exclusivo',
+          message: 'O contato desse cliente fica só para você: o pedido sai da lista dos outros profissionais. Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente é liberado na hora.',
+          okLabel: 'Pagar ' + PU.formatCurrency(valor) + ' e pegar'
+        } : {
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
           message: vagasFrase + (primeiraGratis
             ? 'Nenhum crédito será usado neste primeiro chamado. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
@@ -14102,7 +14168,7 @@ alt=""></noscript>
         }).then(async function (ok) {
           if (!ok) return;
           const result = (global.QFCloud && global.QFCloud.enabled)
-            ? await global.QFCloud.unlockCall(params.id, user.id)
+            ? await global.QFCloud.unlockCall(params.id, user.id, exclusivo)
             : DB.desbloquearChamado(params.id, user.id);
           if (result && result.ok) {
             let msgOk = result.origem === 'plano' ? 'Chat liberado pelo seu plano. Converse com o cliente e combine o serviço.' : 'Chamado desbloqueado. O chat com o cliente está liberado.';
@@ -14111,13 +14177,16 @@ alt=""></noscript>
               if (b) msgOk += ' No plano ' + b.plano.nome + ' teria saído ' + PU.formatCurrency(b.unit) + '.';
             }
             try { sessionStorage.setItem('qf_chat_unlocked_notice', String(params.id)); } catch (_) {}
-            PU.toast('Chamado desbloqueado. Agora chame o cliente no WhatsApp.', 'success', 5000);
+            PU.toast(result.exclusivo ? 'Pedido exclusivo seu. Agora chame o cliente no WhatsApp.' : 'Chamado desbloqueado. Agora chame o cliente no WhatsApp.', 'success', 5000);
             global.navigate('/profissional/chat/' + params.id, true);
             return;
           }
           if (result && result.reason === 'avaliacao_pendente' && result.chamadoId) {
             PU.toast('Finalize e avalie o serviço pendente antes de aceitar outro chamado.', 'danger');
             global.navigate('/profissional/pedido/' + result.chamadoId, true);
+          } else if (result && (result.reason === 'exclusivo_indisponivel' || result.reason === 'exclusivo_desligado')) {
+            PU.toast(result.reason === 'exclusivo_desligado' ? 'O exclusivo não está disponível agora. Você ainda pode desbloquear normal.' : 'Outro profissional acabou de pegar este pedido. Você ainda pode desbloquear normal, se tiver vaga.', 'danger', 5000);
+            global.navigate('/profissional/chamada/' + params.id, true);
           } else if (result && result.reason === 'reservado') {
             PU.toast('As vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.', 'danger');
             global.navigate('/profissional/servicos/disponiveis', true);
@@ -14753,7 +14822,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.89';
+  const APP_VERSION = '11.90';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15689,7 +15758,7 @@ alt=""></noscript>
     return '<div class="view">' +
       qfServiceTabs('disponiveis') +
       '<div class="section" id="chamados-disponiveis">' +
-        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. O cliente escolhe quantos profissionais podem desbloquear (até 8): veja as vagas em cada cartão.</p></div>' +
+        '<div class="section-head"><div><h2 class="h3">Pedidos perto de você</h2><p class="text--sm text--secondary">Os urgentes aparecem primeiro. O cliente escolhe quantos profissionais podem desbloquear (até 4): veja as vagas em cada cartão.</p></div>' +
         (calls.length?'<span class="badge badge--orange">'+calls.length+'</span>':'')+'</div>' +
         '<div class="qf-portfolio-tools" data-qf-portfolio-tools>' +
           '<select class="select" data-qf-portfolio-period aria-label="Filtrar por data"><option value="all">Todos os pedidos</option><option value="today">Hoje</option><option value="tomorrow">Amanhã</option><option value="7d">Próximos 7 dias</option></select>' +
@@ -17070,7 +17139,7 @@ alt=""></noscript>
     box.innerHTML = '<p class="qf-calc-lock__t">Seu resultado está pronto</p>' +
       '<div class="qf-calc-lock__p"><span>' + brl(c.min) + ' a ' + brl(c.max) + '</span></div>' +
       '<p class="qf-calc-lock__s">' + esc(c.resumo) + '</p>' +
-      '<p class="qf-calc-lock__s">Estimativa de mercado. Ao enviar o formulário, seu pedido é publicado grátis e até 8 profissionais podem chamar você no WhatsApp com o valor exato. Você escolhe quantos.</p>';
+      '<p class="qf-calc-lock__s">Estimativa de mercado. Ao enviar o formulário, seu pedido é publicado grátis e até 4 profissionais podem chamar você no WhatsApp com o valor exato. Você escolhe quantos.</p>';
     form.insertBefore(box, form.firstChild);
     const btn = form.querySelector('button[type="submit"]');
     const antes = btn ? btn.innerHTML : '';
@@ -17096,7 +17165,7 @@ alt=""></noscript>
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
     wrap.setAttribute('aria-labelledby', 'qf-calc-result-preco');
-    const maxProf = Math.max(1, Math.min(8, Math.round(Number(req.maxOrcamentos || req.limiteParticipantes) || 3)));
+    const maxProf = Math.max(1, Math.min(4, Math.round(Number(req.maxOrcamentos || req.limiteParticipantes) || 3)));
     const textoProf = maxProf === 1 ? '1 profissional pode chamar você no WhatsApp com o valor exato.' : 'Até ' + maxProf + ' profissionais podem chamar você no WhatsApp com o valor exato.';
     wrap.innerHTML = '<div class="qf-calc-result__card">' +
       '<p class="qf-calc-result__resumo">' + esc(c.resumo) + '</p>' +
