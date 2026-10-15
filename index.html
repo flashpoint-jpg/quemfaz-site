@@ -7252,10 +7252,10 @@ alt=""></noscript>
         const lista = (Array.isArray(categorias) && categorias.length ? categorias : ['padrao']).map(preco);
         return Array.from(new Set(lista)).sort(function (a, b) { return a - b; });
       },
-      // Mesma regra do banco (qf_bonus_recarga_centavos): 10% a partir de R$ 50, 15% de R$ 100, 20% de R$ 200, teto R$ 100.
+      // Mesma regra do banco (qf_bonus_recarga_centavos): 5% a partir de R$ 50, 8% de R$ 100, 10% de R$ 200, teto R$ 100.
       bonus: function (centavos) {
         const v = Number(centavos) || 0;
-        const pct = v >= 20000 ? 20 : v >= 10000 ? 15 : v >= 5000 ? 10 : 0;
+        const pct = v >= 20000 ? 10 : v >= 10000 ? 8 : v >= 5000 ? 5 : 0;
         return Math.min(10000, Math.floor(v * pct / 100));
       },
       // "6 desbloqueios" ou "3 a 6 desbloqueios" para quem tem profissões com preços diferentes.
@@ -13007,7 +13007,7 @@ alt=""></noscript>
                 }).join('') +
               '</div>' +
               '<p class="text--sm text--secondary" id="wallet-value-hint" style="margin-top:8px;"></p>' +
-              '<p class="text--sm text--secondary" style="margin-top:4px;">Bônus de recarga: +10% a partir de R$ 50, +15% a partir de R$ 100 e +20% a partir de R$ 200. O bônus vale por 30 dias e é usado primeiro; o valor que você pagou não vence.</p>' +
+              '<p class="text--sm text--secondary" style="margin-top:4px;">Bônus de recarga: +5% a partir de R$ 50, +8% a partir de R$ 100 e +10% a partir de R$ 200. O bônus vale por 30 dias e é usado primeiro; o valor que você pagou não vence.</p>' +
               '<label class="field" style="margin-top:10px;"><span class="field__label">Outro valor</span><input class="input" id="wallet-custom-value" inputmode="decimal" placeholder="R$ 0,00"></label>' +
             '</div>' +
             '<div><div class="field__label">Como quer pagar?</div>' +
@@ -14753,7 +14753,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.88';
+  const APP_VERSION = '11.89';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

@@ -2,19 +2,19 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert');
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const sql = fs.readFileSync(path.join(root, 'supabase/2026-10-13-precos-redondos-e-bonus-recarga.sql'), 'utf8');
+const sql = fs.readFileSync(path.join(root, 'supabase/2026-10-14-bonus-recarga-menor.sql'), 'utf8');
 
 const bloco = /const QFPrecos = global\.QFPrecos = ([\s\S]*?\n  \}\)\(\));/.exec(html)[1];
 const P = vm.runInNewContext(bloco);
 
-// Mesmas faixas do banco: 10% a partir de R$ 50, 15% de R$ 100, 20% de R$ 200, teto R$ 100.
+// Mesmas faixas do banco (V11.89): 5% a partir de R$ 50, 8% de R$ 100, 10% de R$ 200, teto R$ 100.
 assert.strictEqual(P.bonus(2000), 0);
 assert.strictEqual(P.bonus(4999), 0);
-assert.strictEqual(P.bonus(5000), 500);
-assert.strictEqual(P.bonus(10000), 1500);
-assert.strictEqual(P.bonus(20000), 4000);
+assert.strictEqual(P.bonus(5000), 250);
+assert.strictEqual(P.bonus(10000), 800);
+assert.strictEqual(P.bonus(20000), 2000);
 assert.strictEqual(P.bonus(500000), 10000);
-assert.ok(/>= 20000 then 20[\s\S]*>= 10000 then 15[\s\S]*>= 5000 then 10/.test(sql), 'faixas do banco');
+assert.ok(/>= 20000 then 10[\s\S]*>= 10000 then 8[\s\S]*>= 5000 then 5/.test(sql), 'faixas do banco');
 assert.ok(sql.includes('least(10000,'), 'teto do banco');
 
 // "Dá para X desbloqueios" pelo preço das profissões de cada um.
