@@ -23,6 +23,16 @@ A.published({id:'pedido-1'},'cat_pintor'); A.published({id:'pedido-1'},'cat_pint
 assert.equal(pixels.length,1); assert.equal(google.length,1); assert.equal(rows.length,1);
 assert.equal(pixels[0][3].eventID,'qf_pedido_pedido-1');
 assert.equal(rows[0].event,'published'); assert.equal(rows[0].request_id,'pedido-1');
+
+A.published({id:'pedido-pix', aguardandoPagamento:true},'cat_pintor');
+assert.equal(pixels.length,1,'Pix pendente não pode gerar Lead no Meta');
+assert.equal(google.length,1,'Pix pendente não pode gerar conversão Google');
+A.published({id:'pedido-pix'},'cat_pintor');
+assert.equal(pixels.length,2,'Pix aprovado deve gerar Lead uma vez');
+assert.equal(google.length,2,'Pix aprovado deve gerar conversão uma vez');
+A.published({id:'pedido-pix'},'cat_pintor');
+assert.equal(google.length,2,'Conversão não pode duplicar');
+
 assert.ok(!JSON.stringify(rows).includes('telefone'));
 win.QFCloud.enabled=false; A.published({id:'demo'},'cat_pintor'); assert.equal(pixels.length,1);
 
