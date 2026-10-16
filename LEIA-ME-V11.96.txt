@@ -1,0 +1,10 @@
+QuemFaz V11.96 — medição de pedidos, guias do ABC, formulário e confiança (branch feat/quemfaz-conversao-seo-mobile)
+
+- Medição: eventos pedido_iniciado, pedido_formulario_avancado e pedido_publicado (este só depois que o Supabase grava o pedido, uma vez por pedido). Vão para Google Ads (já ativo), Google Analytics 4 e Microsoft UET (prontos, desligados até colar os IDs em qf-conversao.js). Sem nome, telefone, endereço ou texto do pedido.
+- Aviso de cookies (Aceitar/Recusar) com Consent Mode do Google e consentimento da Meta. Aparece ao rolar a página, nunca por cima da primeira tela nem do formulário.
+- Origem do clique: agora guarda também o msclkid (Microsoft Ads) e o tipo do clique; páginas de serviço repassam UTM/gclid/msclkid para o formulário (antes perdiam a origem).
+- SEO: 7 guias do Grande ABC (/servicos/<servico>/abc/) com conteúdo próprio; 54 páginas finas repetidas do ABC apontam para o guia e saem do sitemap (continuam abrindo); página editorial nova: pintor em Diadema; limpeza de sofá em SBC entrou no sitemap.
+- Formulário: aviso do pedido urgente corrigido (só publica depois do Pix); se a publicação falhar, serviço, descrição e local voltam preenchidos mesmo recarregando.
+- Confiança: "Contratar com segurança" na home (recolhido no celular) e nos guias; política de privacidade atualizada (Google, Microsoft, cookies, domínio novo).
+- Segurança: cabeçalhos nosniff, Referrer-Policy e X-Frame-Options.
+- Banco: nenhuma migração.
