@@ -260,6 +260,11 @@ if (fs.existsSync(hubIndex)) {
   }
 }
 
+// Data da revisão editorial, fixa até que o conteúdo seja alterado novamente.
+for (const key of EDITORIAIS) {
+  const loc = '<loc>' + domain + '/servicos/' + key + '/</loc>';
+  sitemap = sitemap.replace(loc + '</url>', loc + '<lastmod>2026-10-16</lastmod></url>');
+}
 fs.writeFileSync(mapFile, sitemap);
 if (hubs !== SERVICOS.length || consolidadas < 30 || utm < 500) throw Error('SEO ABC: verificação falhou (' + hubs + ' guias, ' + consolidadas + ' consolidadas, ' + utm + ' páginas com UTM)');
 console.log('SEO ABC: ' + hubs + ' guias regionais, ' + consolidadas + ' páginas finas consolidadas, ' + utm + ' páginas passando UTM/gclid/msclkid ao formulário.');
