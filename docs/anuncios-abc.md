@@ -83,11 +83,11 @@ group by 1,2,3 order by 4 desc;
 
 ## 4. Palavras-chave negativas propostas
 
-Arquivo pronto para o Google Ads Editor / Microsoft Ads Editor: `docs/negativas-clientes-abc.csv` (lista compartilhada, aplicar às duas campanhas de clientes). Não aplicar na campanha de profissionais.
+**Aplicado em 16/10/2026** no Google Ads: lista compartilhada "QuemFaz - negativas clientes ABC" (73 termos) ligada às duas campanhas de clientes. A localização já estava como "Presença". Arquivo para o Microsoft Ads Editor: `docs/negativas-clientes-abc.csv`. Não aplicar na campanha de profissionais.
 
-- **Emprego e vagas:** vaga, vagas, emprego, empregos, trabalhe conosco, contrata-se, contratando, currículo, curriculo, salário, salario, carteira assinada, "eu sou", "sou diarista", "sou eletricista", "sou pintor", "sou encanador", "sou marido de aluguel", trabalhar como, quero trabalhar, freelancer, freela.
-- **Cursos e aprendizado:** curso, cursos, senai, apostila, certificado, certificação, aula, aprender, treinamento, nr10, nr 10.
-- **Faça você mesmo:** como fazer, como limpar, como instalar, como montar, como trocar, passo a passo, receita, mistura, caseiro, caseira, tutorial, vídeo, video, youtube, pdf, desenho, esquema elétrico.
+- **Emprego e vagas:** vaga, vagas, emprego, empregos, trabalhe conosco, contrata-se, currículo, curriculo, salário, salario, carteira assinada, "eu sou", "sou diarista", "sou eletricista", "sou pintor", "sou encanador", "sou marido de aluguel", trabalhar como, quero trabalhar, freelancer, freela.
+- **Cursos e aprendizado:** curso, cursos, senai, apostila, aula, aprender, treinamento, nr10, nr 10.
+- **Faça você mesmo:** como fazer, como limpar, como instalar, como montar, como trocar, passo a passo, receita, mistura, caseiro, caseira, tutorial, youtube, pdf, desenho, esquema elétrico.
 - **Fora do ABC (complementa o ajuste de "Presença"):** guarulhos, mogi das cruzes, bauru, limeira, piracicaba, araras, carapicuiba, osasco, sorocaba, santos, sao jose do rio preto, itaquaquecetuba, suzano, varzea paulista, campinas, tatuape, pinheiros, pirituba, zona leste, zona sul, zona norte, zona oeste.
 - **Outros sem intenção de contratar:** grátis download, app download, significado, o que é, salário de, quanto ganha.
 
