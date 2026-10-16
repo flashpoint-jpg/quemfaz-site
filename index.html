@@ -8346,6 +8346,7 @@ alt=""></noscript>
   }
 
   // Prévia do celular: mais conteúdo abaixo do botão, curto, com o resto recolhido em "toque para abrir".
+  const QF_DICAS_SEGURANCA = ['Seu WhatsApp só é liberado para os profissionais que pegarem o pedido, até a quantidade que você escolher (1 a 4)','O selo Verificado pela QuemFaz aparece só em profissionais com documentos conferidos. Nem todos têm: veja o perfil','Peça o orçamento por escrito no WhatsApp e combine o que está incluído antes de começar','Evite pagar o valor total adiantado; o pagamento é combinado direto com o profissional','Depois do serviço, dê sua nota e ajude outros clientes'];
   function mobFold(titulo, corpo) { return '<details class="qf-mob-fold"><summary><span>' + titulo + '</span>' + icon('chevronDown') + '</summary><div class="qf-mob-fold__body">' + corpo + '</div></details>'; }
   function mobExtraInner() {
     return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
@@ -8356,6 +8357,8 @@ alt=""></noscript>
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
+      // V11.96: orientações de contratação segura (só o que o sistema realmente faz).
+      mobFold('Contratar com segurança', deskList(QF_DICAS_SEGURANCA) + '<p class="text--sm"><a href="./privacidade/">Como cuidamos dos seus dados</a></p>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
   }
   // Contador de profissionais por cidade. Os números vêm de qf_home_stats() (só totais, sem dado pessoal)
@@ -8421,6 +8424,7 @@ alt=""></noscript>
       // V11.84: atalho para usar o QuemFaz no computador (abre pelo ícone, como um programa).
       '<div class="qf-desk-app__card qf-desk-app__card--pc">' + icon('laptop') + '<div><strong>No computador</strong><p>Crie o atalho do QuemFaz no seu computador e abra pelo ícone, sem procurar o site.</p></div><button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Criar atalho<small>no computador</small></span></button></div>' +
       '</section>' +
+      '<section class="qf-desk-card" id="qf-sec-seguro" aria-labelledby="qf-desk-seg"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-seg">Contratar com segurança</h2>' + deskList(QF_DICAS_SEGURANCA) + '<p class="qf-desk-sub"><a href="./privacidade/">Como cuidamos dos seus dados</a></p></section>' +
       '<section class="qf-desk-card qf-desk-about" id="qf-sec-quem" aria-labelledby="qf-desk-quemh"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-quemh">Quem somos</h2>' +
         '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região: eletricista, encanador, pintor, diarista, montador de móveis e dezenas de outros.</p>' +
         '<p>A ideia é simples: você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação. Para o profissional, é um jeito de receber pedidos de clientes por perto e escolher quais quer atender.</p></section>' +
