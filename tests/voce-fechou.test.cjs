@@ -38,7 +38,7 @@ assert.ok(html.includes("client.rpc('qf_fechou_conversando'"));
 assert.ok(html.includes('Falta sua resposta: você fechou o serviço?'));
 
 // Painel: aba própria no menu lateral, atualiza sozinha.
-assert.ok(admin.includes("{ id: 'fechou', label: 'Fechou? · sem resposta'"));
+assert.ok(admin.includes("{ id: 'fechou', label: 'Fechou? Sem resposta'"));
 assert.ok(admin.includes("pattern: '/admin/fechou'"));
 assert.ok(admin.includes("rpc('qf_admin_fechou_respostas')"));
 assert.ok(admin.includes("if (fc && fc.parentNode) admFechouCarregar(fc.parentNode);"));

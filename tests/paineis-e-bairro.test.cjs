@@ -7,7 +7,7 @@ const load = (f) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const admin = load('admin.html'), index = load('index.html'), sql = load('supabase/2026-10-11-paineis-e-local-do-bairro.sql');
 
 test('Painéis é uma opção própria do menu, com relatório para baixar', () => {
-  assert.match(admin, /\{ id: 'paineis', label: 'Painéis', icon: 'smartphone', route: '\/admin\/paineis' \}/);
+  assert.match(admin, /\{ id: 'paineis', label: 'Parados na tela', icon: 'smartphone', route: '\/admin\/paineis' \}/); // V11.95: nome mais claro no menu
   assert.match(admin, /\{ pattern: '\/admin\/paineis', role: 'admin'/);
   assert.match(admin, /rpc\('qf_admin_paineis'\)/);
   assert.match(admin, /'\/admin\/paineis': '<button[^']*data-adm-baixar="paineis"/);

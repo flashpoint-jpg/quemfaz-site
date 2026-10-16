@@ -8,11 +8,12 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // Menu na ordem combinada; cada rota do menu existe.
-const menu = ['Início', 'Pedidos', 'Painéis', 'Próximos ao pedido', 'Pedidos sem profissional', 'Desbloqueios', 'Fechou? · sem resposta', 'Finalizados', 'Profissionais', 'Por cidade', 'Clientes', 'Receita', 'Verificações', 'Comunicados', 'Bônus', 'Planos dos profissionais', 'Planos e anúncios', 'Suporte', 'Recrutamento', 'Configurações'];
+const menu = ['Início', 'Todos os pedidos', 'Parados na tela', 'Sem profissional', 'Profissionais próximos', 'Desbloqueios', 'Fechou? Sem resposta', 'Finalizados', 'Cancelamentos', 'Profissionais', 'Verificações', 'Profissionais por cidade', 'Clientes', 'Receita', 'Planos dos profissionais', 'Bônus', 'Anúncios (QuemFaz Premium)', 'Comunicados', 'Avisar quem não entrou', 'Sem notificação', 'Instalação do app', 'Suporte', 'Recrutamento', 'Configurações']; // V11.95: agrupado por assunto, sem repetição
 const bloco = admin.slice(admin.indexOf('const ADMIN_MENU = ['), admin.indexOf('];', admin.indexOf('const ADMIN_MENU = [')));
 const labels = [...bloco.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
 assert.deepEqual(labels, menu);
-assert.ok(bloco.indexOf('{ divider: true }') < bloco.indexOf("label: 'Configurações'") && bloco.indexOf('{ divider: true }') > bloco.indexOf("label: 'Recrutamento'"));
+['Pedidos', 'Pessoas', 'Dinheiro e planos', 'Comunicação', 'Outros'].forEach((t) => assert.ok(bloco.includes("{ section: '" + t + "' }"), 'seção ' + t));
+assert.equal(new Set(labels).size, labels.length, 'nenhum item repetido no menu');
 [...bloco.matchAll(/route: '([^']+)'/g)].forEach((m) => assert.ok(admin.includes("{ pattern: '" + m[1] + "', role: 'admin'"), 'rota ' + m[1]));
 
 // Tudo o que ficava em "Mais" continua alcançável pelo menu ou por Configurações/Comunicados/Pedidos.
@@ -53,7 +54,7 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
 {
   const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   assert.ok(admin.includes("rpc('qf_admin_salvar_bonus_cadastro', { p_ativo: ativo, p_valor_centavos: cents })"));
-  assert.ok(admin.includes("if (pattern === '/admin/bonus') admBonusCadastroCarregar(content);"));
+  assert.ok(admin.includes("if (pattern === '/admin/bonus') { admBonusCadastroCarregar(content);"));
   assert.ok(site.includes("client.rpc('qf_bonus_cadastro_info')"));
   assert.ok(!/R\$ ?25/.test(site), 'o site não pode prometer R$ 25 fixo');
   const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-10-bonus-cadastro-chave.sql'), 'utf8');
@@ -64,7 +65,7 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
 {
   const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   // V11.55: os números do Premium vêm de QFPlanos (painel); 19990 / 60 é só o ponto de partida.
-  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 60, dias: 30 }") && site.includes("qfCadPlano('premium', 'MAIS COMPLETO'"));
+  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 35, dias: 30 }") && site.includes("qfCadPlano('premium', 'MAIS COMPLETO'"));
   assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
   assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
   // V11.50: plano pago vai para o pagamento antes da conta; só o boleto ainda abre na Carteira depois do cadastro.

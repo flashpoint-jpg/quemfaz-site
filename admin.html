@@ -1616,6 +1616,10 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   .qf-adm-head__btn{flex:1 1 auto}
 }
 @media (prefers-reduced-motion:reduce){.qf-adm-side{transition:none!important}}
+/* V11.95: títulos de seção no menu da esquerda */
+.qf-adm-nav__secao{margin:14px 12px 4px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6b7280}
+.qf-adm-nav__secao:first-of-type{margin-top:10px}
+.qf-adm-nav .qf-adm-nav__item{min-height:40px}
 
 /* Perfil do profissional verificado no painel: faixa azul com dourado. */
 .card.qf-adm-ver{padding:0;overflow:hidden}
@@ -6040,7 +6044,7 @@ Screens.adminDashboardRender = function () {
         (cloudOn() && meta.snapshotEm ? '<div class="qf-painel__topo"><span class="text--sm text--secondary">Atualizado em ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
         admNumerosHtml(s) + admUltimosHtml() +
         '<div class="qf-painel__grid">' +
-          '<div class="qf-painel__col">' + receitaHtml(s) + notaAppSecaoHtml() + comoEstaIndoHtml(s) + atalhosHtml(s) + '</div>' +
+          '<div class="qf-painel__col">' + receitaHtml(s) + notaAppSecaoHtml() + comoEstaIndoHtml(s) + '</div>' +
           '<div class="qf-painel__col">' + precisaHtml(s) + '</div>' +
         '</div>' +
       '</div>'
@@ -8508,7 +8512,6 @@ Screens.adminDashboardRender = function () {
       '<div class="qf-adm-secao__head"><h2>Últimos pedidos</h2></div>' +
       '<div class="qf-adm-barra">' +
         '<div class="qf-adm-barra__filtros">' + sel('adm-f-servico', 'Serviço', opcoesServ, admFiltroServico) + sel('adm-f-situacao', 'Situação', ADM_SITUACOES, admFiltroSituacao) + '</div>' +
-        '<button type="button" class="qf-adm-link" data-adm-baixar="pedidos">' + icon('download') + 'Baixar tudo</button>' +
       '</div>' +
       '<div id="adm-ultimos-tabela">' + admUltimosTabela() + '</div>' +
     '</section>';
@@ -9447,10 +9450,9 @@ Screens.adminDashboardRender = function () {
         admItem('unlock', 'Taxas dos chamados', 'valor do desbloqueio', 'data-nav="/admin/comissao"') +
         admItem('smartphone', 'Versão do app e atualização obrigatória', '', 'data-nav="/admin/versao"') +
       '</div>') +
-      admCard('Conta', '', '<div class="qf-adm-itens">' +
-        (cloudOn() ? '' : admItem('refresh', 'Restaurar dados de demonstração', 'apaga os dados atuais deste aparelho', 'data-action="restaurar-demo"')) +
-        admItem('logout', 'Sair da conta', '', 'data-logout') +
-      '</div>'));
+      (cloudOn() ? '' : admCard('Demonstração', '', '<div class="qf-adm-itens">' +
+        admItem('refresh', 'Restaurar dados de demonstração', 'apaga os dados atuais deste aparelho', 'data-action="restaurar-demo"') +
+      '</div>')));
   };
   // Pedidos: chamados parados, sem resposta, cascata e cancelamentos ficam junto da Central.
   function admPedidosExtrasHtml() {
@@ -9460,7 +9462,6 @@ Screens.adminDashboardRender = function () {
       (par ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('parados') + '>' + icon('clock') + 'Chamados parados ' + contaPill(par.count(), 'parados') + '</button>' : '') +
       (cas ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('sem-resposta') + '>' + icon('chat') + 'Sem resposta ' + contaPill(cas.count(), 'sem-resposta') + '</button>' : '') +
       (cascata ? '<button type="button" class="qf-adm-chip" ' + attrGaveta('cascata') + '>' + icon('layers') + 'Cascata do chamado</button>' : '') +
-      '<button type="button" class="qf-adm-chip" data-nav="/admin/cancelamentos">' + icon('alertTriangle') + 'Cancelamentos</button>' +
     '</div>' +
     (par ? gaveta('parados', par.secao()) : '') + (cas ? gaveta('sem-resposta', cas.semResp()) : '') + gaveta('cascata', cascata) +
     '</section>';
@@ -9489,7 +9490,7 @@ Screens.adminDashboardRender = function () {
 
 
 </script>
-<script src="qf-recrutamento.js?v=11.33.1"></script>
+<script src="qf-recrutamento.js?v=11.95"></script>
 <script src="qf-admin-acquisition.js?v=11.75.1"></script>
 <script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
@@ -9575,7 +9576,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/categorias', role: 'admin', title: 'Categorias', back: '/admin/configuracoes', render: Screens.adminCategoriasRender },
     { pattern: '/admin/cidades', role: 'admin', title: 'Cidades e regiões', back: '/admin/configuracoes', render: Screens.adminCidadesRender },
     { pattern: '/admin/comissao', role: 'admin', title: 'Taxas dos chamados', back: '/admin/configuracoes', render: Screens.adminComissaoRender },
-    { pattern: '/admin/anuncios', role: 'admin', title: 'Planos e anúncios', render: Screens.adminAnunciosRender },
+    { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios (QuemFaz Premium)', render: Screens.adminAnunciosRender },
     { pattern: '/admin/pagamentos', role: 'admin', title: 'Receita', render: Screens.adminPagamentosRender },
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/servicos', render: Screens.adminCancelamentosRender },
     { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/comunicados', render: function(){ return Screens.adminAvisarAcessoRender(); } },
@@ -9583,7 +9584,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/instalacoes', role: 'admin', title: 'Instalação do aplicativo', back: '/admin/comunicados', render: Screens.adminInstalacoesRender },
     { pattern: '/admin/suporte', role: 'admin', title: 'Suporte', render: Screens.adminSuporteRender },
     { pattern: '/admin/suporte/:id', role: 'admin', title: 'Atendimento', back: '/admin/suporte', render: Screens.adminSuporteDetalheRender },
-    { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Mais opções', render: Screens.adminMaisRender },
+    { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Início', render: function (p, u) { return Screens.adminDashboardRender(p, u); } }, // V11.95: "Mais opções" repetia o menu da esquerda
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
     { pattern: '/admin/fechou', role: 'admin', title: 'Você fechou? · respostas dos profissionais', render: function () { return Screens.adminFechouRender(); } },
@@ -9785,46 +9786,47 @@ Screens.adminDashboardRender = function () {
   }
 
   // V11.45: menu lateral do painel. Cada rota do admin acende um item (as telas internas acendem o item de origem).
+  // V11.95: menu organizado por assunto, cada função em um lugar só (sem itens repetidos).
   const ADMIN_MENU = [
-    { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard' },
-    { id: 'pedidos', label: 'Pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id', '/admin/cancelamentos'] },
-    { id: 'paineis', label: 'Painéis', icon: 'smartphone', route: '/admin/paineis' },
-    { id: 'proximos', label: 'Próximos ao pedido', icon: 'mapPin', route: '/admin/proximos' },
-    { id: 'semprof', label: 'Pedidos sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
+    { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard', also: ['/admin/mais'] },
+    { section: 'Pedidos' },
+    { id: 'pedidos', label: 'Todos os pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id'] },
+    { id: 'paineis', label: 'Parados na tela', icon: 'smartphone', route: '/admin/paineis' },
+    { id: 'semprof', label: 'Sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
+    { id: 'proximos', label: 'Profissionais próximos', icon: 'mapPin', route: '/admin/proximos' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
-    { id: 'fechou', label: 'Fechou? · sem resposta', icon: 'chat', route: '/admin/fechou' },
+    { id: 'fechou', label: 'Fechou? Sem resposta', icon: 'chat', route: '/admin/fechou' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
+    { id: 'cancelamentos', label: 'Cancelamentos', icon: 'xCircle', route: '/admin/cancelamentos' },
+    { section: 'Pessoas' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
-    { id: 'cidades', label: 'Por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
-    { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
-    { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
     { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
-    { id: 'comunicados', label: 'Comunicados', icon: 'megaphone', route: '/admin/comunicados', also: ['/admin/avisar-acesso', '/admin/sem-push'] },
-    { id: 'instalacoes', label: 'Instalação do app', icon: 'smartphone', route: '/admin/instalacoes' },
-    { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
+    { id: 'cidades', label: 'Profissionais por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
+    { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
+    { section: 'Dinheiro e planos' },
+    { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
     { id: 'assinaturas', label: 'Planos dos profissionais', icon: 'wallet', route: '/admin/planos' },
-    { id: 'planos', label: 'Planos e anúncios', icon: 'image', route: '/admin/anuncios' },
+    { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
+    { id: 'planos', label: 'Anúncios (QuemFaz Premium)', icon: 'image', route: '/admin/anuncios' },
+    { section: 'Comunicação' },
+    { id: 'comunicados', label: 'Comunicados', icon: 'megaphone', route: '/admin/comunicados' },
+    { id: 'avisaracesso', label: 'Avisar quem não entrou', icon: 'bell', route: '/admin/avisar-acesso' },
+    { id: 'sempush', label: 'Sem notificação', icon: 'bell', route: '/admin/sem-push' },
+    { id: 'instalacoes', label: 'Instalação do app', icon: 'smartphone', route: '/admin/instalacoes' },
     { id: 'suporte', label: 'Suporte', icon: 'chat', route: '/admin/suporte', also: ['/admin/suporte/:id'] },
+    { section: 'Outros' },
     { id: 'recrutamento', label: 'Recrutamento', icon: 'briefcase', route: '/admin/recrutamento' },
-    { divider: true },
-    { id: 'config', label: 'Configurações', icon: 'settings', route: '/admin/configuracoes', also: ['/admin/mais', '/admin/categorias', '/admin/cidades', '/admin/comissao', '/admin/versao'] },
+    { id: 'config', label: 'Configurações', icon: 'settings', route: '/admin/configuracoes', also: ['/admin/categorias', '/admin/cidades', '/admin/comissao', '/admin/versao'] },
   ];
   // Botão principal de cada página (à direita do título). Só navegação ou ações que o painel já tinha.
+  // Botão principal de cada página: só ações (baixar, enviar). Atalhos que repetiam o menu da esquerda saíram (V11.95).
   const ADMIN_ACAO = {
     '/admin/dashboard': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/comunicados">' + icon('megaphone') + 'Enviar comunicado</button>',
     '/admin/servicos': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-adm-baixar="pedidos">' + icon('download') + 'Baixar tudo</button>',
     '/admin/paineis': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-adm-baixar="paineis">' + icon('download') + 'Baixar relatório</button>',
-    '/admin/desbloqueios': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/servicos">' + icon('clipboard') + 'Ver pedidos</button>',
-    '/admin/profissionais': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/por-cidade">' + icon('mapPin') + 'Ver por cidade</button>',
-    '/admin/por-cidade': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
-    '/admin/verificacoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
-    '/admin/comunicados': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/avisar-acesso">' + icon('users') + 'Avisar quem não entrou</button>',
-    '/admin/bonus': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/profissionais">' + icon('users') + 'Ver profissionais</button>',
-    '/admin/planos': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/pagamentos">' + icon('money') + 'Ver receita</button>',
-    '/admin/configuracoes': '<button type="button" class="btn btn--primary qf-adm-head__btn" data-nav="/admin/categorias">' + icon('tag') + 'Categorias</button>',
   };
   function adminMenuAtivo(pattern) {
-    const item = ADMIN_MENU.find(function (m) { return m.route === pattern || (m.also && m.also.indexOf(pattern) !== -1); });
+    const item = ADMIN_MENU.find(function (m) { return m.route && m.route === pattern || (m.also && m.also.indexOf(pattern) !== -1); });
     return item ? item.id : '';
   }
   function adminInicial(user) { const n = String((user && user.nome) || 'A').trim(); return (n[0] || 'A').toUpperCase(); }
@@ -9832,7 +9834,7 @@ Screens.adminDashboardRender = function () {
     const shell = document.getElementById('app-shell');
     const pattern = found.route.pattern;
     const ativo = adminMenuAtivo(pattern);
-    const raiz = ADMIN_MENU.some(function (m) { return m.route === pattern; });
+    const raiz = ADMIN_MENU.some(function (m) { return m.route && m.route === pattern; });
     const titulo = typeof found.route.title === 'function' ? found.route.title(found.params) : found.route.title;
     let pend = 0;
     try { pend = global.QFAdminLayout ? global.QFAdminLayout.pendencias() : 0; } catch (_) { pend = 0; }
@@ -9844,7 +9846,6 @@ Screens.adminDashboardRender = function () {
         '<div class="qf-adm-top__marca"><img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"><span aria-hidden="true">|</span><span class="qf-adm-top__sub"><span class="qf-adm-top__longo">Painel do administrador</span><span class="qf-adm-top__curto">Admin</span></span></div>' +
         '<div class="qf-adm-top__acoes">' +
           '<button type="button" class="qf-adm-top__btn" data-adm-avisos aria-label="Avisos' + (pend ? ': ' + pend + ' pendentes' : '') + '">' + icon('bell') + (pend ? '<span class="qf-adm-top__badge">' + (pend > 99 ? '99+' : pend) + '</span>' : '') + '</button>' +
-          '<button type="button" class="qf-adm-top__btn" data-nav="/admin/configuracoes" aria-label="Configurações">' + icon('settings') + '</button>' +
           '<div class="qf-adm-conta"><button type="button" class="qf-adm-top__avatar" data-adm-conta aria-label="Conta do administrador" aria-expanded="false" aria-controls="qf-adm-conta-menu">' + PU.escapeHtml(adminInicial(user)) + '</button>' +
             '<div class="qf-adm-conta__menu" id="qf-adm-conta-menu" hidden><b>' + PU.escapeHtml((user && user.nome) || 'Administrador') + '</b>' + (user && user.email ? '<small>' + PU.escapeHtml(user.email) + '</small>' : '') +
             '<button type="button" class="btn btn--outline btn--sm" data-logout>' + icon('logout') + ' Sair da conta</button></div></div>' +
@@ -9855,6 +9856,7 @@ Screens.adminDashboardRender = function () {
           '<div class="qf-adm-site">' + icon('location') + '<span>quemfazservico.com.br</span></div>' +
           '<nav class="qf-adm-nav">' + ADMIN_MENU.map(function (m) {
             if (m.divider) return '<hr class="qf-adm-nav__sep">';
+            if (m.section) return '<div class="qf-adm-nav__secao" role="presentation">' + m.section + '</div>';
             return '<button type="button" class="qf-adm-nav__item' + (m.id === ativo ? ' is-active' : '') + '" data-nav="' + m.route + '"' + (m.id === ativo ? ' aria-current="page"' : '') + '>' + icon(m.icon) + '<span>' + m.label + '</span></button>';
           }).join('') + '</nav>' +
         '</aside>' +
