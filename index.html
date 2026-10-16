@@ -8739,7 +8739,7 @@ alt=""></noscript>
                 '</span>' +
               '</button>' +
             '</div>' +
-            '<p class="qf-prazo__nota" data-qf-envio-nota>Seu pedido é publicado grátis. Se escolher urgente, ele vira prioritário assim que o Pix cair.</p>' +
+            '<p class="qf-prazo__nota" data-qf-envio-nota>O pedido normal é publicado grátis. O urgente só é publicado depois que o Pix for pago.</p>' +
             '<input type="hidden" name="urgente" value="0">' +
           '</div>' +
           '<button class="btn btn--primary" type="button" data-qf-sub-ir="c">Continuar ' + icon('arrowRight') + '</button>' +
@@ -9983,10 +9983,17 @@ alt=""></noscript>
           if (querUrgente) PU.toast('Seu pedido urgente só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
           else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           if (!querUrgente) { try { sessionStorage.setItem('qf_cli_app_pos_pedido', String(pedido.id)); } catch (_) {} }
+          // V11.96: pedido gravado — o rascunho de segurança não pode reaparecer no próximo pedido.
+          try { sessionStorage.removeItem('qf_repeat_order_draft'); } catch (_) {}
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
           if (global.QFClientAcquisition) global.QFClientAcquisition.track('publish_error', { category: cat.id, error_code: err && err.code || 'publish_failed' });
-          PU.toast('Não foi possível publicar o pedido. ' + (err && err.message ? err.message : ''), 'danger');
+          // V11.96: se a internet cair ou a página recarregar depois do erro, serviço, descrição e local voltam preenchidos.
+          try {
+            sessionStorage.setItem('qf_pending_category', cat.id);
+            sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({ categoriaId: cat.id, descricao: descricao, endereco: { cidade: cidade, uf: uf, bairro: bairro, cep: '' } }));
+          } catch (_) {}
+          PU.toast('Não foi possível publicar o pedido. Seus dados continuam aqui: confira a internet e toque em enviar de novo. ' + (err && err.message ? err.message : ''), 'danger', 8000);
         } finally {
           delete form.dataset.publishing;
           if (btn) { btn.disabled = false; btn.innerHTML = originalBtn; }
