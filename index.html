@@ -51,23 +51,37 @@ html.qf-inapp{--safe-bottom:0px}
 <link rel="manifest" href="./manifest.webmanifest">
 <script src="qf-location-autocomplete.js?v=11.38.0"></script>
 <script>
-/* QF_MARKETING_ATTRIBUTION_V1
-   Guarda a origem do clique até o cadastro ser concluído.
-   Não envia CPF, telefone, e-mail ou selfie. */
+/* QF_MARKETING_ATTRIBUTION_V2
+   Guarda a origem do clique (UTM e identificador do clique) até o pedido ser publicado.
+   Não envia CPF, telefone, e-mail ou selfie. V2: inclui Microsoft Ads (msclkid), o tipo do
+   identificador e mantém o último clique de anúncio por até 30 dias neste aparelho. */
 (function () {
   try {
     var p = new URLSearchParams(window.location.search || '');
-    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || p.get('fbclid') || p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('ttclid');
-    if (!hasCampaign) { window.QFMarketingTouch = JSON.parse(sessionStorage.getItem('qf_marketing_touch') || 'null'); return; }
+    var clickKeys = [['gclid','google'],['gbraid','google'],['wbraid','google'],['msclkid','microsoft'],['fbclid','meta'],['ttclid','tiktok']];
+    var click = null;
+    for (var i = 0; i < clickKeys.length; i++) { if (p.get(clickKeys[i][0])) { click = clickKeys[i]; break; } }
+    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || click;
+    if (!hasCampaign) {
+      var touch = JSON.parse(sessionStorage.getItem('qf_marketing_touch') || 'null');
+      if (!touch) {
+        var saved = JSON.parse(localStorage.getItem('qf_marketing_attribution') || 'null');
+        var age = saved && saved.first_seen_at ? Date.now() - Date.parse(saved.first_seen_at) : Infinity;
+        if (saved && age >= 0 && age < 30 * 86400000) touch = saved;
+      }
+      window.QFMarketingTouch = touch;
+      return;
+    }
     var payload = {
-      source: p.get('utm_source') || (p.get('fbclid') ? 'meta' : (p.get('gclid') || p.get('gbraid') || p.get('wbraid') ? 'google' : (p.get('ttclid') ? 'tiktok' : ''))),
+      source: p.get('utm_source') || (click ? click[1] : ''),
       medium: p.get('utm_medium') || 'paid',
       campaign: p.get('utm_campaign') || '',
       content: p.get('utm_content') || '',
       term: p.get('utm_term') || '',
-      click_id: p.get('fbclid') || p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('ttclid') || '',
-      landing_url: window.location.href,
-      referrer: document.referrer || '',
+      click_id: click ? p.get(click[0]) : '',
+      click_type: click ? click[0] : '',
+      landing_url: window.location.origin + window.location.pathname,
+      referrer: document.referrer ? (function () { try { return new URL(document.referrer).origin; } catch (_) { return ''; } })() : '',
       first_seen_at: new Date().toISOString()
     };
     window.QFMarketingTouch = payload;
@@ -2449,8 +2463,17 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.75.1"></script>
+<script src="qf-client-acquisition.js?v=11.96"></script>
 
+<!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
+     Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
+<script>
+window.QF_CONSENT_PADRAO = 'granted';
+window.QFConsentInicial = (function () {
+  try { var v = JSON.parse(localStorage.getItem('qf_consent_v1') || 'null'); if (v && (v.medicao === 'granted' || v.medicao === 'denied')) return v.medicao; } catch (_) {}
+  return window.QF_CONSENT_PADRAO;
+})();
+</script>
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -2458,6 +2481,7 @@ n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+if (window.QFConsentInicial === 'denied') fbq('consent','revoke');
 fbq('init','1124265238584181');
 fbq('track','PageView');
 </script>
@@ -2467,14 +2491,21 @@ fbq('track','PageView');
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+(function (c) {
+  gtag('consent', 'default', { ad_storage: c, ad_user_data: c, ad_personalization: c, analytics_storage: c, wait_for_update: 500 });
+})(window.QFConsentInicial === 'denied' ? 'denied' : 'granted');
+gtag('set', 'url_passthrough', true);
 gtag('js', new Date());
 gtag('config', 'AW-18273159663');
 window.qfGoogleLead = function (requestId) {
   try {
-    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': String(requestId || '') });
+    var id = String(requestId || '');
+    if (!id) return; // conversão só com pedido confirmado no banco
+    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': id });
   } catch (_) {}
 };
 </script>
+<script src="qf-conversao.js?v=11.96"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -8315,6 +8346,7 @@ alt=""></noscript>
   }
 
   // Prévia do celular: mais conteúdo abaixo do botão, curto, com o resto recolhido em "toque para abrir".
+  const QF_DICAS_SEGURANCA = ['Seu WhatsApp só é liberado para os profissionais que pegarem o pedido, até a quantidade que você escolher (1 a 4)','O selo Verificado pela QuemFaz aparece só em profissionais com documentos conferidos. Nem todos têm: veja o perfil','Peça o orçamento por escrito no WhatsApp e combine o que está incluído antes de começar','Evite pagar o valor total adiantado; o pagamento é combinado direto com o profissional','Depois do serviço, dê sua nota e ajude outros clientes'];
   function mobFold(titulo, corpo) { return '<details class="qf-mob-fold"><summary><span>' + titulo + '</span>' + icon('chevronDown') + '</summary><div class="qf-mob-fold__body">' + corpo + '</div></details>'; }
   function mobExtraInner() {
     return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
@@ -8325,6 +8357,8 @@ alt=""></noscript>
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
+      // V11.96: orientações de contratação segura (só o que o sistema realmente faz).
+      mobFold('Contratar com segurança', deskList(QF_DICAS_SEGURANCA) + '<p class="text--sm"><a href="./privacidade/">Como cuidamos dos seus dados</a></p>') +
       mobFold('Quem somos', '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região. Você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação.</p>');
   }
   // Contador de profissionais por cidade. Os números vêm de qf_home_stats() (só totais, sem dado pessoal)
@@ -8390,6 +8424,7 @@ alt=""></noscript>
       // V11.84: atalho para usar o QuemFaz no computador (abre pelo ícone, como um programa).
       '<div class="qf-desk-app__card qf-desk-app__card--pc">' + icon('laptop') + '<div><strong>No computador</strong><p>Crie o atalho do QuemFaz no seu computador e abra pelo ícone, sem procurar o site.</p></div><button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Criar atalho<small>no computador</small></span></button></div>' +
       '</section>' +
+      '<section class="qf-desk-card" id="qf-sec-seguro" aria-labelledby="qf-desk-seg"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-seg">Contratar com segurança</h2>' + deskList(QF_DICAS_SEGURANCA) + '<p class="qf-desk-sub"><a href="./privacidade/">Como cuidamos dos seus dados</a></p></section>' +
       '<section class="qf-desk-card qf-desk-about" id="qf-sec-quem" aria-labelledby="qf-desk-quemh"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-quemh">Quem somos</h2>' +
         '<p>O QuemFaz é um aplicativo brasileiro que liga quem precisa de um serviço a profissionais da região: eletricista, encanador, pintor, diarista, montador de móveis e dezenas de outros.</p>' +
         '<p>A ideia é simples: você escreve o que precisa uma vez e os profissionais vêm até você, sem ficar procurando telefone nem pedindo indicação. Para o profissional, é um jeito de receber pedidos de clientes por perto e escolher quais quer atender.</p></section>' +
@@ -8708,7 +8743,7 @@ alt=""></noscript>
                 '</span>' +
               '</button>' +
             '</div>' +
-            '<p class="qf-prazo__nota" data-qf-envio-nota>Seu pedido é publicado grátis. Se escolher urgente, ele vira prioritário assim que o Pix cair.</p>' +
+            '<p class="qf-prazo__nota" data-qf-envio-nota>O pedido normal é publicado grátis. O urgente só é publicado depois que o Pix for pago.</p>' +
             '<input type="hidden" name="urgente" value="0">' +
           '</div>' +
           '<button class="btn btn--primary" type="button" data-qf-sub-ir="c">Continuar ' + icon('arrowRight') + '</button>' +
@@ -9952,10 +9987,17 @@ alt=""></noscript>
           if (querUrgente) PU.toast('Seu pedido urgente só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
           else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           if (!querUrgente) { try { sessionStorage.setItem('qf_cli_app_pos_pedido', String(pedido.id)); } catch (_) {} }
+          // V11.96: pedido gravado — o rascunho de segurança não pode reaparecer no próximo pedido.
+          try { sessionStorage.removeItem('qf_repeat_order_draft'); } catch (_) {}
           global.navigate('/cliente/pedido/' + pedido.id, true);
         } catch (err) {
           if (global.QFClientAcquisition) global.QFClientAcquisition.track('publish_error', { category: cat.id, error_code: err && err.code || 'publish_failed' });
-          PU.toast('Não foi possível publicar o pedido. ' + (err && err.message ? err.message : ''), 'danger');
+          // V11.96: se a internet cair ou a página recarregar depois do erro, serviço, descrição e local voltam preenchidos.
+          try {
+            sessionStorage.setItem('qf_pending_category', cat.id);
+            sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({ categoriaId: cat.id, descricao: descricao, endereco: { cidade: cidade, uf: uf, bairro: bairro, cep: '' } }));
+          } catch (_) {}
+          PU.toast('Não foi possível publicar o pedido. Seus dados continuam aqui: confira a internet e toque em enviar de novo. ' + (err && err.message ? err.message : ''), 'danger', 8000);
         } finally {
           delete form.dataset.publishing;
           if (btn) { btn.disabled = false; btn.innerHTML = originalBtn; }
@@ -15245,7 +15287,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.94';
+  const APP_VERSION = '11.96';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

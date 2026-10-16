@@ -7,7 +7,7 @@ const esbuild = require('esbuild');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out);
-const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','.gitignore','package.json','package-lock.json','vercel.json']);
+const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','docs','.gitignore','package.json','package-lock.json','vercel.json']);
 for (const name of fs.readdirSync(root)) {
   if (skip.has(name) || (name.startsWith('.') && name !== '.well-known')) continue;
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
@@ -116,4 +116,6 @@ require('./generate-seo-sp.cjs');
 require('./improve-local-pages.cjs');
 require('./repair-seo-leads.cjs');
 require('./seo-hub-icons.cjs');
+// V11.96: guias do ABC, consolidação de páginas finas e passagem de UTM/gclid/msclkid.
+require('./seo-abc.cjs');
 require('./check-sitemap.cjs');
