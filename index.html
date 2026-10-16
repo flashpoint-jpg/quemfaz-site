@@ -4009,7 +4009,7 @@ alt=""></noscript>
     try {
       a.muted = true;
       const p = a.play();
-      const done = function () { try { a.pause(); a.currentTime = 0; } catch (_) {} a.muted = false; };
+      const done = function () { if (!a.muted) return; try { a.pause(); a.currentTime = 0; } catch (_) {} a.muted = false; };
       if (p && p.then) p.then(done).catch(function () { a.muted = false; qfRingUnlocked = false; }); else done();
     } catch (e) { a.muted = false; qfRingUnlocked = false; }
   }
@@ -4147,7 +4147,7 @@ alt=""></noscript>
   global.PU = {
     uid, formatCurrency, parseCurrencyInput, formatDate, formatDateTime, timeAgo,
     escapeHtml, initials, clamp, fileToCompressedDataUrl,
-    toast, playNotificationSound, browserNotification, unlockNotificationAudio, notePushSound, pushSoundRecent, openSheet, closeSheet, confirmDialog,
+    toast, playNotificationSound, browserNotification, unlockNotificationAudio, callRingAudio: ringAudio, notePushSound, pushSoundRecent, openSheet, closeSheet, confirmDialog,
   };
 })(window);
 
@@ -14592,6 +14592,7 @@ alt=""></noscript>
           if (querOnline) { try { sessionStorage.removeItem('qf_gate_offline'); } catch (_) {} }
           if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.setOnline(querOnline);
           else DB.setOnlineStatus(user.id, querOnline);
+          if (global.QFNativeOnline) global.QFNativeOnline.sync();
           toggle.checked = querOnline;
           const semGps = querOnline && global.QFCloud && global.QFCloud.onlineSemGps && global.QFCloud.onlineSemGps();
           PU.toast(querOnline ? (semGps ? 'Você está online. Ligue a Localização (GPS) do celular para ver a distância até cada chamado.' : 'Você está online.') : 'Você está offline.', querOnline ? 'success' : null);
@@ -15289,7 +15290,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.97';
+  const APP_VERSION = '11.97.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15354,7 +15355,10 @@ alt=""></noscript>
     payload = payload || {};
     // V11.51: chamado de teste — tela cheia de teste com o toque oficial; não vira toast nem atualiza pedidos.
     if (payload.tipo === 'teste' && payload.teste_id && global.QFTeste) { global.QFTeste.abrir(String(payload.teste_id), String(payload.teste_token || '')); return; }
-    const strong = !!payload.strong;
+    // Compatibilidade com alertas agrupados enviados pelo servidor anterior.
+    const callTag = String(payload.tag || "");
+    const strong = payload.strong === true || payload.strong === 1 || payload.strong === "1" ||
+      callTag === "qf-new-calls-group" || callTag.indexOf("qf-new-call-") === 0;
     const rawUrl=String(payload.url||(payload.data&&payload.data.url)||'');
     // V11.16.33: mensagem da conversa que já está aberta na tela — sem aviso por cima, o próprio chat mostra e toca.
     const chatHash=(rawUrl.split('#')[1]||'').split('?')[0];
@@ -16037,22 +16041,35 @@ alt=""></noscript>
       return C && C.isPluginAvailable && C.isPluginAvailable('QFOnline') && C.Plugins ? C.Plugins.QFOnline : null;
     }
     const inicio = Date.now();
-    let enviado = null;
+    let enviado = null, emEnvio = false;
     function desejado() {
       const s = DB.getSession && DB.getSession();
       if (!s || s.role !== 'profissional') return false;
       const p = DB.profissionalById && DB.profissionalById(s.userId);
-      return !!(p && p.online && !p.bloqueado);
+      // O perfil pode estar sendo recarregado. Ausência temporária não é logout
+      // nem uma decisão de desligar o serviço de notificações do Android.
+      if (!p) return null;
+      return !!(p.online && !p.bloqueado);
     }
-    function sync() {
+    async function sync() {
       const P = plugin();
-      if (!P) return;
+      if (!P || emEnvio) return;
       const on = desejado();
+      if (on === null) return;
       // Logo ao abrir a sessão ainda pode estar carregando: não desliga o serviço nesses primeiros segundos.
       if (!on && enviado === null && Date.now() - inicio < 8000) return;
       if (on === enviado) return;
-      enviado = on;
-      try { P.setOnline({ online: on }).catch(function () { enviado = null; }); } catch (_) { enviado = null; }
+      emEnvio = true;
+      let confirmado = false;
+      try {
+        await P.setOnline({ online: on });
+        enviado = on;
+        confirmado = true;
+      } catch (_) { enviado = null; }
+      finally { emEnvio = false; }
+      // Se o usuário saiu ou mudou o estado durante a chamada nativa, aplica
+      // o estado mais recente depois dela, nunca em paralelo.
+      if (confirmado && desejado() !== null && desejado() !== enviado) sync();
     }
     global.QFNativeOnline = { available: function () { return !!plugin(); }, sync: sync };
     // V11.9: online automático. Ao abrir o app, o profissional fica online sozinho (a menos que tenha
@@ -16536,8 +16553,15 @@ alt=""></noscript>
     if(da!==db)return da-db;
     return new Date(a.criadoEm||0)-new Date(b.criadoEm||0);
   }
-  let vibTimer=null;
-  function stopAudio(){if(vibTimer){clearInterval(vibTimer);vibTimer=null;try{if(navigator.vibrate)navigator.vibrate(0);}catch(_){}}if(!audio)return;try{audio.pause();audio.currentTime=0;}catch(_){}audio=null;}
+  let vibTimer=null,audioAttempt=0;
+  function stopAudio(){audioAttempt++;if(vibTimer){clearInterval(vibTimer);vibTimer=null;try{if(navigator.vibrate)navigator.vibrate(0);}catch(_){}}if(!audio)return;try{audio.pause();audio.currentTime=0;audio.loop=false;}catch(_){}audio=null;}
+  function audioBlocked(attempt){
+    if(audioAttempt!==attempt||!document.getElementById('qf-call-overlay'))return;
+    const retry=document.querySelector('#qf-call-overlay [data-call-sound]');
+    if(retry){retry.hidden=false;retry.style.display="";}
+    const pulse=function(){try{if(navigator.vibrate)navigator.vibrate([600,300,600]);}catch(_){}};
+    if(!vibTimer){pulse();vibTimer=setInterval(pulse,3000);}
+  }
   function startAudio(){
     stopAudio();
     // V11.11.3: "Só vibrar" = vibra em loop enquanto a tela do chamado estiver aberta, sem som.
@@ -16545,7 +16569,12 @@ alt=""></noscript>
       const pulse=function(){try{if(navigator.vibrate)navigator.vibrate([600,300,600,300,600]);}catch(_){}};
       pulse();vibTimer=setInterval(pulse,3000);return;
     }
-    try{audio=new Audio('./quemfaz_chamado.mp3');audio.loop=true;audio.volume=1;const p=audio.play();if(p&&p.catch)p.catch(function(){});}catch(_){}
+    const retry=document.querySelector('#qf-call-overlay [data-call-sound]');
+    if(retry){retry.hidden=true;retry.style.display="none";}
+    // Reutiliza o áudio liberado pelo primeiro toque no app. Criar outro
+    // elemento aqui perdia essa liberação em alguns navegadores/WebViews.
+    const attempt=audioAttempt;
+    try{audio=PU.callRingAudio();if(!audio){audioBlocked(attempt);return;}audio.loop=true;audio.volume=1;audio.muted=false;const p=audio.play();if(p&&p.catch)p.catch(function(){audioBlocked(attempt);});}catch(_){audioBlocked(attempt);}
   }
   function stopTimer(){if(countdown){clearInterval(countdown);countdown=null;}}
   function close(clearAll){stopTimer();stopAudio();const el=document.getElementById('qf-call-overlay');if(el)el.remove();if(clearAll)queue=[];activeId='';seconds=30;}
@@ -16592,9 +16621,12 @@ alt=""></noscript>
       (thumbs?'<button class="qf-call-overlay__media" type="button" data-call-accept aria-label="Ver fotos e detalhes">'+thumbs+'</button>':'')+
       '<div class="qf-call-overlay__lock">'+icon('lock')+'Contato do cliente liberado depois do desbloqueio</div>'+
       (reqs.length>1?'<div class="qf-call-overlay__others">+'+(reqs.length-1)+' outro'+(reqs.length-1===1?'':'s')+' chamado'+(reqs.length-1===1?'':'s')+'</div>':'')+
+      '<button class="btn btn--outline" type="button" data-call-sound hidden style="display:none">Ativar som do chamado</button>'+
       '<button class="btn btn--primary qf-call-overlay__accept" type="button" data-call-accept>VER E ACEITAR</button><button class="qf-call-overlay__later" type="button" data-call-later>Agora não</button>'+
       '<div class="qf-call-timer"><div class="qf-call-timer__bar"><div class="qf-call-timer__fill" data-call-fill></div></div><div class="qf-call-timer__txt">Fecha em <span data-call-seconds>30 s</span></div></div></div>';
     const later=el.querySelector('[data-call-later]');
+    const sound=el.querySelector('[data-call-sound]');
+    if(sound)sound.onclick=function(){PU.unlockNotificationAudio();startAudio();};
     Array.prototype.forEach.call(el.querySelectorAll('[data-call-accept]'),function(accept){accept.onclick=function(){close(true);if(global.navigate)global.navigate('/profissional/servicos/disponiveis');};});
     if(later)later.onclick=function(){close(true);};
     if(!countdown){seconds=30;updateTimer();startAudio();countdown=setInterval(function(){seconds--;updateTimer();},1000);}

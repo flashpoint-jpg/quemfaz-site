@@ -1,0 +1,15 @@
+const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),assert=require('node:assert/strict');
+const {chromium}=require('playwright');
+const root=path.resolve(__dirname,'../dist');
+const server=http.createServer((req,res)=>{const file=path.join(root,new URL(req.url,'http://local').pathname);fs.readFile(file,(err,data)=>{if(err){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'application/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(data);});});
+(async()=>{await new Promise(r=>server.listen(0,'127.0.0.1',r));const browser=await chromium.launch({executablePath:process.env.QF_CHROMIUM_PATH||chromium.executablePath(),headless:true,args:['--no-sandbox']});
+try{const page=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('https://**/*',r=>r.abort());
+await page.goto('http://127.0.0.1:'+server.address().port+'/index.html?demo=1');await page.waitForFunction(()=>window.QFCallAlert&&window.DB&&window.PU);
+await page.evaluate(()=>{QFCloud.enabled=false;QFPush.isActive=()=>true;DB.resetDemoData();DB.setSession({role:'profissional',userId:'pro_carlos'});navigate('/profissional/home',true);PU.closeSheet();
+window.ringCounts={plays:0,pauses:0};window.fakeRing={pause(){ringCounts.pauses++;},play(){ringCounts.plays++;return ringCounts.plays===1?Promise.reject(new DOMException('blocked','NotAllowedError')):Promise.resolve();}};PU.callRingAudio=()=>fakeRing;
+const req=DB.state.requests.find(r=>r.status===DB.STATUS.BUSCANDO&&!r.profissionalId);if(!req)throw Error('Missing demo call');QFCallAlert.offer(req.id);});
+const retry=page.locator('[data-call-sound]');await retry.waitFor({state:'visible'});assert.match(await retry.innerText(),/Ativar som/);await retry.click();await retry.waitFor({state:'hidden'});assert.equal(await page.evaluate(()=>ringCounts.plays),2);assert.equal(await page.evaluate(()=>fakeRing.loop),true);
+await page.locator('[data-call-later]').click();assert.equal(await page.locator('#qf-call-overlay').count(),0);assert.equal(await page.evaluate(()=>fakeRing.loop),false);
+await page.evaluate(()=>{DB.profissionalById('pro_carlos').alertaModo='vibrar';const req=DB.state.requests.find(r=>r.status===DB.STATUS.BUSCANDO&&!r.profissionalId);QFCallAlert.offer(req.id);});
+await page.locator('#qf-call-overlay').waitFor();assert.equal(await retry.isVisible(),false);assert.equal(await page.evaluate(()=>ringCounts.plays),2,'Só vibrar não toca');await page.locator('[data-call-later]').click();assert.deepEqual(errors,[]);console.log('PASS navegador móvel: áudio bloqueado, recuperação em um toque, fechamento e modo só vibrar sem erros JS');
+}finally{await browser.close();server.close();}})().catch(e=>{console.error(e);server.close();process.exitCode=1;});
