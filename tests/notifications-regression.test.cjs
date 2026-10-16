@@ -5,14 +5,14 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const source = html.slice(html.indexOf('/* QuemFaz — Web Push real'), html.indexOf('/* QuemFaz — endereço nacional'));
 
-function setup({ native = false, granted = true, subscription = true, saved = true, failServer = false } = {}) {
+function setup({ native = false, granted = true, subscription = true, saved = true, failServer = false, expired = false } = {}) {
   const storage = new Map(saved ? [['qf_push_enabled', '1'], ['qf_fcm_token', 'device-token']] : []);
   const counts = { prompts: 0, subscriptions: 0, registrations: 0, events: 0 };
   const listeners = {};
   const permission = { value: granted ? 'granted' : 'denied' };
   const vapid = source.match(/VAPID_PUBLIC_KEY = '([^']+)'/)[1];
-  const sub = { options: { applicationServerKey: Uint8Array.from(Buffer.from(vapid, 'base64url')).buffer }, toJSON: () => ({ endpoint: 'https://push.example/device' }) };
-  const reg = { pushManager: { getSubscription: async () => subscription ? sub : null, subscribe: async () => { counts.subscriptions++; return sub; } } };
+  const sub = { expirationTime: expired ? 1 : null, unsubscribe: async () => { subscription = false; }, options: { applicationServerKey: Uint8Array.from(Buffer.from(vapid, 'base64url')).buffer }, toJSON: () => ({ endpoint: 'https://push.example/device' }) };
+  const reg = { pushManager: { getSubscription: async () => subscription ? sub : null, subscribe: async () => { counts.subscriptions++; subscription = true; sub.expirationTime = null; return sub; } } };
   const plugin = {
     checkPermissions: async () => { await new Promise(r => setTimeout(r, 15)); return { receive: permission.value }; },
     requestPermissions: async () => { counts.prompts++; return { receive: permission.value }; },
@@ -65,6 +65,13 @@ async function run() {
   assert.equal(lostSubscription.push.isActive(), true);
   assert.equal(lostSubscription.counts.subscriptions, 1);
   assert.equal(lostSubscription.counts.prompts, 0);
+
+  const concurrent = setup({ subscription: false });
+  await Promise.all([concurrent.push.activate(), concurrent.push.restore(), concurrent.push.activate()]);
+  assert.equal(concurrent.counts.subscriptions, 1, 'Ativar e restaurar concorrentemente criam uma única inscrição');
+  const expired = setup({ expired: true });
+  assert.equal(await expired.push.restore(), true);
+  assert.equal(expired.counts.subscriptions, 1, 'Inscrição vencida é renovada mesmo com chave VAPID atual');
 
   const offline = setup({ saved: false, failServer: true });
   assert.equal(await offline.push.restore(), false);

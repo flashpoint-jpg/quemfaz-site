@@ -356,7 +356,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
         } catch (err: any) {
           const code = Number(err?.statusCode || err?.status || 0);
           errors.push(code); reason = "web_push_" + code;
-          if ([404, 410, 401, 403].includes(code)) await admin.from("qf_push_subscriptions")
+          if ([404, 410].includes(code)) await admin.from("qf_push_subscriptions")
             .update({ ativo: false, atualizado_em: new Date().toISOString() }).eq("id", s.id);
         }
       }

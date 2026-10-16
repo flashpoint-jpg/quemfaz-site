@@ -2071,7 +2071,7 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-topbar-bell{position:relative;width:40px;height:40px;min-width:40px;border:none;border-radius:50%;display:grid;place-items:center;background:var(--bg-surface);color:var(--navy-800);cursor:pointer;flex:none}
 .qf-topbar-bell svg{width:20px;height:20px}
 .qf-topbar-bell.is-active{background:var(--orange-100);color:var(--orange-700)}
-.qf-topbar-bell__badge{position:absolute;top:-2px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;border:2px solid var(--bg-page);font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;line-height:1;animation:qf-notice-pulse 1.5s ease-in-out infinite}
+.qf-topbar-bell__badge{position:absolute;top:-2px;right:-3px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;border:2px solid var(--bg-page);font-size:9px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;line-height:1}
 .topbar .qf-top-dl + .qf-topbar-bell{margin-left:0}
 .topbar__title + .qf-topbar-bell{margin-left:auto}
 
@@ -5469,7 +5469,7 @@ alt=""></noscript>
       global.navigator.geolocation.getCurrentPosition(function (pos) {
         const lat = Number(pos && pos.coords && pos.coords.latitude);
         const lng = Number(pos && pos.coords && pos.coords.longitude);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) { lastGeoErrorCode = 2; resolve(null); return; }
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) { lastGeoErrorCode = 2; resolve(null); return; }
         lastGeoErrorCode = 0;
         resolve({ latitude: lat, longitude: lng, accuracy: Number(pos.coords.accuracy || 0) });
       }, function (err) { lastGeoErrorCode = (err && err.code) || 2; resolve(null); }, opts);
@@ -7320,7 +7320,7 @@ alt=""></noscript>
       onlineSemGps = false;
       setTimeout(function () {
         refreshProfessionalLocation(true).then(function (loc) {
-          if (!loc && lastGeoErrorCode === 2 && global.PU) global.PU.toast('Você está online. Ligue a Localização (GPS) do celular para ver a distância até cada chamado.', null, 5000);
+          if (!loc && global.PU) global.PU.toast('Você está online, mas precisa liberar a localização para receber chamados dentro do seu raio. Confira o GPS e a permissão do QuemFaz.', null, 7000);
         }).catch(function (err) { console.warn('QuemFaz localização', err); });
       }, 300);
     }
@@ -7730,7 +7730,7 @@ alt=""></noscript>
     return (C.Plugins && C.Plugins.PushNotifications) || null;
   }
   let nativePerm = 'checking';
-  let statusCheck = null, restoreTask = null, lastPushState = '';
+  let statusCheck = null, restoreTask = null, activationTask = null, lastPushState = '';
   function announcePushState() {
     const state = permission() + ':' + isActive();
     if (state === lastPushState) return;
@@ -7891,7 +7891,7 @@ alt=""></noscript>
         try {
           const reg = await navigator.serviceWorker.getRegistration();
           const sub = reg && await reg.pushManager.getSubscription();
-          if (!sub) localStorage.removeItem('qf_push_enabled');
+          if (!sub && !activationTask) localStorage.removeItem('qf_push_enabled');
         } catch (_) {} // Uma consulta indisponível não apaga uma inscrição confirmada.
       }
       if (permission() === 'denied') {
@@ -7924,7 +7924,12 @@ alt=""></noscript>
     await navigator.serviceWorker.ready;
     return reg;
   }
-  async function activate() {
+  function activate() {
+    if (activationTask) return activationTask;
+    activationTask = activateDevice().finally(function () { activationTask = null; });
+    return activationTask;
+  }
+  async function activateDevice() {
     const NP = nativePush();
     if (permission() === 'denied') {
       global.PU.openSheet('<div class="stack"><h3 class="sheet__title">Permita as notificações</h3><p>Abra as configurações do celular, entre em Apps, escolha ' + (NP ? 'QuemFaz' : 'o navegador usado no QuemFaz') + ' e permita Notificações. No navegador, confira também a permissão deste site.</p><p>Depois volte ao QuemFaz e toque em Ativar notificações.</p><button class="btn btn--primary" id="qf-push-help-close">Entendi</button></div>');
@@ -7943,7 +7948,7 @@ alt=""></noscript>
     const reg = await getRegistration();
     let sub = await reg.pushManager.getSubscription();
     // V11.9.1: a chave VAPID mudou; inscrição feita com a chave antiga é refeita.
-    if (sub && !sameKey(sub.options && sub.options.applicationServerKey, b64ToUint8(VAPID_PUBLIC_KEY))) {
+    if (sub && ((sub.expirationTime && sub.expirationTime <= Date.now()) || !sameKey(sub.options && sub.options.applicationServerKey, b64ToUint8(VAPID_PUBLIC_KEY)))) {
       try { await sub.unsubscribe(); } catch (_) {}
       sub = null;
     }
@@ -8027,6 +8032,12 @@ alt=""></noscript>
       return false;
     }).catch(function () {});
   }
+  if (global.QFCloud && global.QFCloud.client && global.QFCloud.client.auth.onAuthStateChange) {
+    global.QFCloud.client.auth.onAuthStateChange(function (event) {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') setTimeout(autoRestorePush, 0);
+    });
+  }
+  global.addEventListener('online', autoRestorePush);
   setTimeout(autoRestorePush, 1200);
   setTimeout(function () {
     if (permission() === 'granted' && !isActive()) autoRestorePush();
@@ -14438,11 +14449,9 @@ alt=""></noscript>
     const P = global.QFPush;
     if (!P) return true;
     await P.refreshStatus();
+    // Reconfirma a inscrição no servidor ao entrar online, mesmo com marca local antiga.
+    if (P.permission() === 'granted') await P.restore();
     if (P.supported() && pushJaAtivo()) return true;
-    if (P.permission() === 'granted') {
-      await P.restore();
-      if (pushJaAtivo()) return true;
-    }
     return new Promise(function (resolve) {
       const nativo = !!(P.isNative && P.isNative());
       const androidSemApk = /android/i.test(navigator.userAgent || '') && !nativo;
@@ -15290,7 +15299,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.97.1';
+  const APP_VERSION = '11.97.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
