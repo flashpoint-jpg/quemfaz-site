@@ -23,8 +23,8 @@ assert.ok(sql.includes('revoke all on function public.qf_pedidos_abertos_todos()
 assert.ok(sql.includes('revoke all on function public.qf_movimento_pedidos() from public, anon;'));
 
 // App: o pedido aberto a todos passa pelo filtro de categoria, na lista e na tela da oportunidade.
-assert.ok(html.includes('(prof.categorias.indexOf(r.categoriaId) !== -1 || !!r.abertoTodos) &&'));
-assert.ok(html.includes('(user.categorias.indexOf(req.categoriaId) !== -1 || !!req.abertoTodos) &&'));
+assert.ok(html.includes('(qfServicoCompatibilidadeGasista(prof, r) || !!r.abertoTodos) &&'));
+assert.ok(html.includes('(DB.qfServicoCompatibilidadeGasista(user, req) || !!req.abertoTodos) &&'));
 // Seção própria nas duas telas, com o aviso do crédito e sem o destaque de "Novo chamado".
 assert.equal(html.split('global.QFAbertos.secaoHtml(abertos,user)').length - 1, 2);
 assert.ok(html.includes('Só pegue se você faz esse serviço. O crédito não volta.'));

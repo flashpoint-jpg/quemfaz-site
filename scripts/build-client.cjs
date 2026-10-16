@@ -43,7 +43,19 @@ for (const [kind,script] of [['main',main],['shell',shell]]) {
 // Downloads do SDK e dos scripts do app acontecem juntos; a ordem de execução continua preservada.
 html=html.replace(/<script src="([^"]+)"/g,'<script defer src="$1"');
 html=html.replace(/<link rel="preload" as="image" href="([^"]+)" fetchpriority="high">/,(_,url)=>'<script>if(!location.hash||location.hash==="#/"){var qfHeroPreload=document.createElement("link");qfHeroPreload.rel="preload";qfHeroPreload.as="image";qfHeroPreload.href='+JSON.stringify(url)+';qfHeroPreload.fetchPriority="high";document.head.appendChild(qfHeroPreload);}</script>');
-html=html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/g,(_,attrs,css)=>'<style'+attrs+'>'+esbuild.transformSync(css,{loader:'css',minify:true}).code+'</style>');
+html=html.replace(/<style([^>]*)>([\s\S]*?)<\/style>/g,(_,attrs,css)=>{
+  const code=esbuild.transformSync(css,{loader:'css',minify:true}).code;
+  // A folha principal era repetida em cada navegação no HTML sem cache.
+  // Mantém a mesma posição na cascata e os estilos identificados no documento.
+  if (!attrs.trim() && Buffer.byteLength(code)>65536) {
+    const hash=createHash('sha256').update(code).digest('hex').slice(0,12);
+    const filename='app-style-'+version+'-'+hash+'.css';
+    fs.writeFileSync(path.join(out,filename),code);
+    assets.push('./'+filename);
+    return '<link rel="stylesheet" href="'+filename+'">';
+  }
+  return '<style'+attrs+'>'+code+'</style>';
+});
 // Aplicativo oficial publicado na Google Play: manter os selos da home visiveis.
 // Corrigir o destino somente dos selos da Play Store, sem mudar os demais links do site.
 const qfPlayStoreUrl = 'https://play.google.com/store/apps/details?id=br.app.quemfaz';

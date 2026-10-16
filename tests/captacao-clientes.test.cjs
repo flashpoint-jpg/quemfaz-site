@@ -34,7 +34,8 @@ A.published({id:'pedido-pix'},'cat_pintor');
 assert.equal(google.length,2,'Conversão não pode duplicar');
 
 assert.ok(!JSON.stringify(rows).includes('telefone'));
-win.QFCloud.enabled=false; A.published({id:'demo'},'cat_pintor'); assert.equal(pixels.length,1);
+const beforeDemo=pixels.length;
+win.QFCloud.enabled=false; A.published({id:'demo'},'cat_pintor'); assert.equal(pixels.length,beforeDemo);
 
 async function run() {
   const source=html.slice(html.indexOf('  async function geocodeCity('),html.indexOf('  async function reverseGeocode('));
