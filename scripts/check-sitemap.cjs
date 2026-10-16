@@ -4,7 +4,7 @@ const xml = fs.readFileSync(path.join(__dirname, '..', 'dist', 'sitemap.xml'), '
 const domain = 'https://quemfazservico.com.br';
 if (!xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>\n')) throw Error('Sitemap: invalid XML declaration');
 if (!xml.includes('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">') || !xml.trimEnd().endsWith('</urlset>')) throw Error('Sitemap: missing urlset');
-const urls = [...xml.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*<\/url>/g)].map(m => m[1]);
+const urls = [...xml.matchAll(/<url>\s*<loc>([^<]+)<\/loc>\s*(?:<lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>\s*)?<\/url>/g)].map(m => m[1]);
 const count = (xml.match(/<url>/g) || []).length;
 if (urls.length !== count || urls.length < 50) throw Error('Sitemap: malformed entries');
 if (new Set(urls).size !== urls.length) throw Error('Sitemap: duplicate URLs');
