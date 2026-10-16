@@ -38,7 +38,7 @@ function bairrosExemplo(c) {
 }
 
 // Páginas editoriais por cidade que já existem (scripts/improve-local-pages.cjs).
-const EDITORIAIS = new Set(['eletricista/santo-andre', 'eletricista/diadema', 'encanador/sao-bernardo-do-campo', 'diarista/santo-andre', 'pintor/maua', 'pintor/diadema', 'limpeza-de-sofa/sao-bernardo-do-campo']);
+const EDITORIAIS = new Set([...require('./seo-montagem-sofa.cjs').pages.map(([s,c]) => s + '/' + c), 'eletricista/santo-andre', 'eletricista/diadema', 'encanador/sao-bernardo-do-campo', 'diarista/santo-andre', 'pintor/maua', 'pintor/diadema', 'limpeza-de-sofa/sao-bernardo-do-campo']);
 
 const SERVICOS = [
   {
@@ -112,6 +112,8 @@ const SERVICOS = [
     faq: [['O que é marido de aluguel?', 'É o profissional de pequenos reparos e instalações na casa. No QuemFaz você descreve a lista e quem atende a região entra em contato.'], ['Posso juntar várias tarefas num pedido só?', 'Sim, é o ideal. Liste todas no pedido para receber um preço do conjunto.']]
   }
 ];
+
+SERVICOS.push(require('./seo-montagem-sofa.cjs').hub);
 
 const css = `*{box-sizing:border-box}body{margin:0;background:#F5F6FA;color:#07162F;font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}a{color:#1458cc}a:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid #FF7900;outline-offset:3px}
 .top{background:#07162F;border-bottom:4px solid #FF7900}.top div{max-width:1040px;margin:auto;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}.top a{color:#fff;text-decoration:none;font-weight:800;font-size:20px}.top a span{color:#FF9548}.top .alt{font-size:15px;font-weight:600}
