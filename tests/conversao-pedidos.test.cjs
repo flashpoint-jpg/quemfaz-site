@@ -71,7 +71,7 @@ test('nenhum dado pessoal chega às plataformas', () => {
 });
 
 test('sem ID real, GA4 e UET ficam desligados (nada inventado)', () => {
-  const { win, calls } = sandbox();
+  const { win, calls } = sandbox({ config: { ga4: '', uet: '' } });
   vm.runInContext(conv, win);
   assert.strictEqual(win.QFConversao.config.ga4, '');
   assert.strictEqual(win.QFConversao.config.uet, '');
