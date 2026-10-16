@@ -12,7 +12,7 @@
   var CONFIG = global.QF_TRACKING_CONFIG = Object.assign({
     ga4: '',                 // ex.: 'G-XXXXXXXXXX' (Google Analytics 4 → Administrador → Fluxos de dados)
     googleAds: 'AW-18273159663', // já instalado no site (tag QF_GOOGLE_ADS_V1)
-    uet: ''                  // ex.: '343XXXXX' (Microsoft Advertising → Ferramentas → Tags UET)
+    uet: '343279366'                  // ex.: '343XXXXX' (Microsoft Advertising → Ferramentas → Tags UET)
   }, global.QF_TRACKING_CONFIG || {});
 
   var EVENTOS = { pedido_iniciado: 1, pedido_formulario_avancado: 1, pedido_publicado: 1 };
