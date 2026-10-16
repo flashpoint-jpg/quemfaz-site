@@ -1,4 +1,5 @@
-/* QuemFaz 11.36 — anúncios entram na home; atribuição e conversão sem dados pessoais. */
+/* QuemFaz 11.36 — anúncios entram na home; atribuição e conversão sem dados pessoais.
+   11.96: eventos pedido_iniciado / pedido_formulario_avancado / pedido_publicado para as plataformas de anúncio. */
 (function (global) {
   'use strict';
 
@@ -66,7 +67,7 @@
   function attribution() {
     var touch = global.QFMarketingTouch || campaign || {};
     var out = {};
-    ['source', 'medium', 'campaign', 'content', 'term', 'click_id'].forEach(function (key) {
+    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type'].forEach(function (key) {
       if (touch[key]) out[key] = String(touch[key]).slice(0, key === 'click_id' ? 512 : 240);
     });
     // Sem UTM não significa anúncio: registra apenas o referenciador conhecido,
@@ -82,9 +83,20 @@
     try { if (!out.content) out.content = sessionStorage.getItem('qf_seo_page') || undefined; } catch (_) {}
     return out;
   }
+  // Eventos de conversão para Google Ads / GA4 / Microsoft Ads (ver qf-conversao.js). Sem dados pessoais.
+  // Começar pela busca da home também é iniciar o pedido; a etapa 1 concluída garante o "iniciado" antes (ordem do funil).
+  var adEvents = { home_submit: 'pedido_iniciado', form_start: 'pedido_iniciado', step_service_completed: 'pedido_formulario_avancado' };
+  function adEvent(name, detail) {
+    try { if (global.QFConversao) global.QFConversao.evento(name, detail || {}); } catch (_) {}
+  }
   function track(event, detail, once) {
     if (location.search.indexOf('demo=1') !== -1) return;
     detail = detail || {};
+    if (adEvents[event]) {
+      var adCat = detail.category || (function () { try { return sessionStorage.getItem('qf_pending_category'); } catch (_) { return null; } })();
+      if (event === 'step_service_completed') adEvent('pedido_iniciado', { categoria: adCat });
+      adEvent(adEvents[event], { categoria: adCat });
+    }
     var key = event + ':' + (detail.category || '') + ':' + (detail.request_id || '');
     if (once && seen[key]) return;
     seen[key] = true;
@@ -133,6 +145,8 @@
       }, { eventID: 'qf_pedido_' + req.id });
     } catch (_) {}
     try { if (typeof global.qfGoogleLead === 'function') global.qfGoogleLead(req.id); } catch (_) {}
+    // GA4 e Microsoft Ads: mesmo momento e mesma regra (pedido confirmado no Supabase, uma vez por pedido).
+    adEvent('pedido_publicado', { request_id: req.id, categoria: category });
   }
   global.QFClientAcquisition = { services: services, serviceFromLink: serviceFromLink, applyDestination: applyDestination, attribution: attribution, track: track, published: published };
   global.addEventListener('DOMContentLoaded', function () {

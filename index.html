@@ -51,23 +51,37 @@ html.qf-inapp{--safe-bottom:0px}
 <link rel="manifest" href="./manifest.webmanifest">
 <script src="qf-location-autocomplete.js?v=11.38.0"></script>
 <script>
-/* QF_MARKETING_ATTRIBUTION_V1
-   Guarda a origem do clique até o cadastro ser concluído.
-   Não envia CPF, telefone, e-mail ou selfie. */
+/* QF_MARKETING_ATTRIBUTION_V2
+   Guarda a origem do clique (UTM e identificador do clique) até o pedido ser publicado.
+   Não envia CPF, telefone, e-mail ou selfie. V2: inclui Microsoft Ads (msclkid), o tipo do
+   identificador e mantém o último clique de anúncio por até 30 dias neste aparelho. */
 (function () {
   try {
     var p = new URLSearchParams(window.location.search || '');
-    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || p.get('fbclid') || p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('ttclid');
-    if (!hasCampaign) { window.QFMarketingTouch = JSON.parse(sessionStorage.getItem('qf_marketing_touch') || 'null'); return; }
+    var clickKeys = [['gclid','google'],['gbraid','google'],['wbraid','google'],['msclkid','microsoft'],['fbclid','meta'],['ttclid','tiktok']];
+    var click = null;
+    for (var i = 0; i < clickKeys.length; i++) { if (p.get(clickKeys[i][0])) { click = clickKeys[i]; break; } }
+    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || click;
+    if (!hasCampaign) {
+      var touch = JSON.parse(sessionStorage.getItem('qf_marketing_touch') || 'null');
+      if (!touch) {
+        var saved = JSON.parse(localStorage.getItem('qf_marketing_attribution') || 'null');
+        var age = saved && saved.first_seen_at ? Date.now() - Date.parse(saved.first_seen_at) : Infinity;
+        if (saved && age >= 0 && age < 30 * 86400000) touch = saved;
+      }
+      window.QFMarketingTouch = touch;
+      return;
+    }
     var payload = {
-      source: p.get('utm_source') || (p.get('fbclid') ? 'meta' : (p.get('gclid') || p.get('gbraid') || p.get('wbraid') ? 'google' : (p.get('ttclid') ? 'tiktok' : ''))),
+      source: p.get('utm_source') || (click ? click[1] : ''),
       medium: p.get('utm_medium') || 'paid',
       campaign: p.get('utm_campaign') || '',
       content: p.get('utm_content') || '',
       term: p.get('utm_term') || '',
-      click_id: p.get('fbclid') || p.get('gclid') || p.get('gbraid') || p.get('wbraid') || p.get('ttclid') || '',
-      landing_url: window.location.href,
-      referrer: document.referrer || '',
+      click_id: click ? p.get(click[0]) : '',
+      click_type: click ? click[0] : '',
+      landing_url: window.location.origin + window.location.pathname,
+      referrer: document.referrer ? (function () { try { return new URL(document.referrer).origin; } catch (_) { return ''; } })() : '',
       first_seen_at: new Date().toISOString()
     };
     window.QFMarketingTouch = payload;
@@ -2449,8 +2463,17 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 })(window);
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
-<script src="qf-client-acquisition.js?v=11.75.1"></script>
+<script src="qf-client-acquisition.js?v=11.96"></script>
 
+<!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
+     Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
+<script>
+window.QF_CONSENT_PADRAO = 'granted';
+window.QFConsentInicial = (function () {
+  try { var v = JSON.parse(localStorage.getItem('qf_consent_v1') || 'null'); if (v && (v.medicao === 'granted' || v.medicao === 'denied')) return v.medicao; } catch (_) {}
+  return window.QF_CONSENT_PADRAO;
+})();
+</script>
 <!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
 <script>
 !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -2458,6 +2481,7 @@ n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
 n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
 (window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+if (window.QFConsentInicial === 'denied') fbq('consent','revoke');
 fbq('init','1124265238584181');
 fbq('track','PageView');
 </script>
@@ -2467,14 +2491,21 @@ fbq('track','PageView');
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
+(function (c) {
+  gtag('consent', 'default', { ad_storage: c, ad_user_data: c, ad_personalization: c, analytics_storage: c, wait_for_update: 500 });
+})(window.QFConsentInicial === 'denied' ? 'denied' : 'granted');
+gtag('set', 'url_passthrough', true);
 gtag('js', new Date());
 gtag('config', 'AW-18273159663');
 window.qfGoogleLead = function (requestId) {
   try {
-    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': String(requestId || '') });
+    var id = String(requestId || '');
+    if (!id) return; // conversão só com pedido confirmado no banco
+    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': id });
   } catch (_) {}
 };
 </script>
+<script src="qf-conversao.js?v=11.96"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -15245,7 +15276,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.94';
+  const APP_VERSION = '11.96';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
