@@ -30,14 +30,14 @@ const a = html.indexOf("'<section class=\"qf-landing-hero\">");
 assert.ok(a > 0);
 const landing = html.slice(a, html.indexOf('};', a));
 assert.ok(landing.includes('<div class="qf-landing-photo"><img src="\' + heroBanner + \'" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div>'));
-assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">O que você precisa?</label>'));
+assert.ok(landing.includes('<form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Qual serviço você precisa?</label>'));
 assert.ok(landing.includes('data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search">'));
 // V11.30.1: no celular a foto ocupa a largura toda com o título por cima (no computador segue inteira), o campo e o botão
 // ficaram em largura total e a lista de sugestões abre logo abaixo do campo. A arte da foto e a busca
 // automática (mesmo campo, mesmo exemplo, mesmas sugestões) continuam as mesmas.
 // V11.37: o index pede só o serviço; cidade e bairro foram para a etapa 2 do pedido.
 assert.ok(landing.includes('<div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>'));
-assert.ok(landing.includes('<h1 class="qf-hero2-title">Conte o que precisa e veja <em>quem chama você.</em></h1>'));
+assert.ok(landing.includes('<h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1>'));
 // V11.30.1: os atalhos de categoria saíram do início (o cliente escreve no campo).
 assert.ok(!landing.includes('qf-hero2-chip'), 'os atalhos de categoria não voltam para o início');
 // V11.37: selos e "Como funciona" saíram do index (aprovado: o mais simples possível).
