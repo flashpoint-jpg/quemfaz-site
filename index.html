@@ -13282,8 +13282,25 @@ alt=""></noscript>
         '</div>' +
 
         '<div class="section card stack--sm">' +
-          '<div class="text--sm text--strong" style="color:var(--orange-700);text-transform:uppercase;letter-spacing:.06em;">O que o cliente precisa</div>' +
+          '<div class="text--sm text--strong" style="color:var(--orange-700);text-transform:uppercase;letter-spacing:.06em;">Detalhes do pedido</div>' +
           '<div class="qf-call-desc">' + (req.descricao ? PU.escapeHtml(req.descricao) : '<span class="text--secondary">O cliente não escreveu detalhes.</span>') + '</div>' +
+          (String(req.descricao || '').trim().length < 25 ? '<div class="text--sm text--secondary">O cliente escreveu pouco. Depois de desbloquear, pergunte no WhatsApp medidas, material, local exato e peça fotos.</div>' : '') +
+          (function () {
+            // Resumo organizado do pedido: tudo que já é público antes do desbloqueio (sem contato e sem endereço exato).
+            const pz = global.QFPrazo && global.QFPrazo.info ? global.QFPrazo.info(req) : null;
+            const lim = CallInfo.vagas(req).limite;
+            const linha = function (rot, val) {
+              return '<div class="row-between text--sm" style="gap:12px;align-items:flex-start;"><span class="text--secondary">' + rot + '</span><strong style="text-align:right;">' + val + '</strong></div>';
+            };
+            return '<div class="stack--sm qf-call-details" style="margin-top:6px;">' +
+              linha('Serviço', PU.escapeHtml(cat ? cat.nome : 'Serviço')) +
+              linha('Quando precisa', PU.escapeHtml(pz ? pz.texto : 'A combinar com o cliente')) +
+              linha('Local', PU.escapeHtml((req.endereco.bairro || 'Bairro não informado') + ' — ' + ((cidade || {}).nome || req.endereco.cidade || ''))) +
+              linha('Publicado', PU.timeAgo(req.criadoEm)) +
+              linha('Orçamentos pedidos', lim === 1 ? '1' : 'até ' + lim) +
+              (req.prioridade ? linha('Tipo', 'Pedido urgente') : '') +
+            '</div>';
+          })() +
           (CallInfo.midias(req).list.length ? '<div class="text--sm text--secondary">' + CallInfo.midiasTxt(req) + ' do cliente · toque na foto para ampliar</div><div class="qf-call-media">' + CallInfo.midias(req).list.map(renderCallMedia).join('') + '</div>' : '') +
           '<div class="qf-perf" aria-hidden="true" style="margin:6px 0;"></div>' +
           '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + PU.escapeHtml(req.endereco.bairro || 'Bairro não informado') + ' — ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</span></div>' +
