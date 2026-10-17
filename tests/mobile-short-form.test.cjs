@@ -46,8 +46,8 @@ test('pedido reúne contato e localização no mesmo cartão, sem bloco separado
   const quantos = view.indexOf('data-qf-quantos', escolhas);
   const contact = view.indexOf('class="qf-request-contact"', quantos);
   assert.ok(etapa2 > 0 && region > etapa2 && escolhas > region && quantos > escolhas && contact > quantos);
-  assert.match(view, /data-qf-prazo-details/);
-  assert.ok(!view.includes('<details class="qf-request-schedule"'), 'prazo fica aberto, sem precisar tocar para abrir');
+  assert.ok(!view.includes('data-qf-prazo-details'), 'o campo de prazo (sem pressa/agendado) saiu do formulário');
+  assert.ok(view.includes('data-qf-urgencia') && view.includes('name="urgencia" value="normal"'), 'urgência Normal já vem marcada');
   assert.ok(view.includes('[1, 2, 3, 4]') && view.includes('name="maxOrcamentos" value="3"'));
   assert.ok(view.includes('Para o profissional entrar em contato'));
 });

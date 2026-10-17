@@ -4,23 +4,15 @@ const { test } = require('node:test');
 const html = fs.readFileSync('index.html', 'utf8');
 const sw = fs.readFileSync('sw.js', 'utf8');
 
-test('Escolher data exige dia na etapa de opções, antes do contato', () => {
-  const field = html.slice(html.indexOf('function prazoFieldHtml()'), html.indexOf('function bindPrazoField('));
-  assert.match(field, /data-qf-prazo-erro role="alert"/);
+test('etapa de opções não pede mais data/prazo: só Normal ou Urgente', () => {
+  assert.ok(!html.includes('function prazoFieldHtml()'));
+  assert.ok(!html.includes('data-qf-prazo-erro'));
   const start = html.indexOf('async function avancarSub()');
   const end = html.indexOf('form.__qfAvancarSub = avancarSub', start);
   assert.ok(start !== -1 && end > start);
   const code = html.slice(start, end);
-  const optionStart = code.indexOf("} else if (sub === 'b')");
-  const dateValidation = code.indexOf('P.montar(', optionStart);
-  const contact = code.indexOf("irSub('c')", optionStart);
-  const reject = code.indexOf('if (!validacao.ok)', dateValidation);
-  const stop = code.indexOf('return;', reject);
-  assert.ok(optionStart > -1 && dateValidation > optionStart && reject > dateValidation);
-  assert.ok(stop > reject && stop < contact && dateValidation < contact);
-  assert.match(code.slice(reject, contact), /campoDia.setAttribute\('aria-invalid', 'true'\)/);
-  assert.match(code.slice(reject, contact), /erro.hidden = false/);
-  assert.match(html, /if \(validacao.ok\) \{\s*dia.removeAttribute\('aria-invalid'\)/);
+  assert.ok(!code.includes('P.montar('), 'não valida mais data na etapa de opções');
+  assert.ok(code.includes("irSub('c')"));
 });
 
 test('nome e icone do servico escolhido acompanham a troca', () => {

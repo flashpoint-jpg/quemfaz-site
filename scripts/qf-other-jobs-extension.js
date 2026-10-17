@@ -129,7 +129,9 @@ function qfOutrosProCard(req) {
   const uf=String((city&&city.uf)||((req.endereco||{}).uf)||'');
   const category=(c&&c.nome)||'Serviço';
   const title=qfOutrosEsc(category);
-  const urgentePago=!!req.prioridade;
+  // Urgente (grátis) vira etiqueta vermelha; Normal aparece discreto; prioridade paga tem selo próprio.
+  const U=window.QFUrgencia;
+  const tags=U?(U.tagHtml(req)+U.prioridadeHtml(req)):(req.prioridade?'<span class="qf-home-job__badge is-urgent">URGENTE</span>':'');
   const msg=window.QFPedidoMsg?window.QFPedidoMsg.html(req):'';
   const dist=req.distanciaKm==null||!Number.isFinite(Number(req.distanciaKm))?'':qfOutrosEsc(Number(req.distanciaKm).toLocaleString('pt-BR',{maximumFractionDigits:1})+' km');
   const limit=Math.max(1,Number(req.limiteParticipantes||req.maxOrcamentos||3)||3);
@@ -138,7 +140,7 @@ function qfOutrosProCard(req) {
   return '<article class="qf-home-job" data-qf-home-job data-created="'+qfOutrosEsc(req.criadoEm||'')+
     '" data-distance="'+(req.distanciaKm==null?'999999':Number(req.distanciaKm))+'">'+
     '<div class="qf-home-job__symbol">'+icon(c&&c.icon||'briefcase')+'</div>'+
-    '<div class="qf-home-job__copy">'+(urgentePago?'<span class="qf-home-job__badge is-urgent">URGENTE</span>':'')+
+    '<div class="qf-home-job__copy"><span style="display:flex;gap:6px;flex-wrap:wrap;align-self:flex-start">'+tags+'</span>'+
     '<strong>'+title+'</strong><span class="qf-home-job__place">'+icon('mapPin')+' '+qfOutrosEsc(place+(uf?' - '+uf:''))+'</span>'+
     '<small>'+qfOutrosEsc(String(req.descricao||'').slice(0,85))+'</small>'+msg+'</div>'+
     '<div class="qf-home-job__action">'+(dist?'<span class="qf-home-job__distance">'+dist+'</span>':'')+

@@ -25,7 +25,7 @@ assert.ok(admin.includes('data-action="restaurar-demo"') && admin.includes("if (
 ['Receita de hoje', 'Pedidos de hoje', 'Desbloqueios de hoje', 'Precisa de você', "sel('adm-f-servico', 'Serviço'", "sel('adm-f-situacao', 'Situação'", 'data-adm-baixar="pedidos"']
   .forEach((t) => assert.ok(admin.includes(t), t));
 assert.ok(admin.includes("n('Receita de hoje', PU.formatCurrency(en.hoje)"));
-assert.ok(admin.includes("['Pedido', 'Cidade', 'Recebido', 'Pra quando', 'Quem desbloqueou', 'Situação', 'Valor']"));
+assert.ok(admin.includes("['Pedido', 'Cidade', 'Recebido', 'Urgência', 'Quem desbloqueou', 'Situação', 'Valor']"));
 
 // Módulos que antes só carregavam no Início também carregam nas páginas novas.
 assert.equal((admin.match(/if \(pattern !== '\/admin\/dashboard' && pattern !== '\/admin\/servicos'\) return;/g) || []).length, 2);

@@ -45,72 +45,34 @@ assert.deepEqual({ ...P.periodosPassados(new Date(2026, 9, 5, 8, 0).getTime()) }
 assert.deepEqual({ ...P.periodosPassados(new Date(2026, 9, 5, 15, 0).getTime()) }, { manha: true, tarde: false, noite: false });
 assert.deepEqual({ ...P.periodosPassados(new Date(2026, 9, 5, 19, 0).getTime()) }, { manha: true, tarde: true, noite: false });
 
-// Como o profissional vê.
-const ver = (r, quando) => { const i = P.info(r, quando == null ? now : quando); return i && [i.tom, i.urgente, i.selo, i.texto]; };
-assert.deepEqual(ver({ prazo: 'hoje', prazoDia: '2026-10-05', periodo: 'tarde' }), ['hoje', true, 'PRA HOJE', 'Hoje, à tarde']);
-assert.deepEqual(ver({ prazo: 'amanha', prazoDia: '2026-10-06' }), ['amanha', false, 'PRA AMANHÃ', 'Amanhã (ter, 06/10)']);
-assert.deepEqual(ver({ prazo: 'data', prazoDia: '2026-10-10', periodo: 'manha' }), ['data', false, 'DIA 10/10', 'Sáb, 10/10, de manhã']);
-assert.deepEqual(ver({ prazo: 'semana', prazoDia: '2026-10-11' }), ['data', false, 'ATÉ 11/10', 'Até dom, 11/10']);
-assert.deepEqual(ver({ prazo: 'sem_pressa' }), ['sem', false, 'SEM PRESSA', 'Sem pressa']);
-assert.equal(P.info({}, now), null);                                    // pedido antigo
-assert.equal(P.info({ prazo: 'hoje', prazoDia: null }, now), null);     // dado quebrado não inventa prazo
-// O ponto principal: pedido feito para "hoje" não continua "hoje" no dia seguinte.
-const amanha = new Date(2026, 9, 6, 9, 0).getTime();
-assert.deepEqual(ver({ prazo: 'hoje', prazoDia: '2026-10-05' }, amanha), ['atrasado', false, 'ERA PRA 05/10', 'Era pra seg, 05/10']);
-// E o pedido para "amanhã" vira urgente quando o dia chega.
-assert.deepEqual(ver({ prazo: 'amanha', prazoDia: '2026-10-06' }, amanha), ['hoje', true, 'PRA HOJE', 'Hoje']);
-assert.deepEqual(ver({ prazo: 'semana', prazoDia: '2026-10-06' }, amanha), ['hoje', true, 'ATÉ HOJE', 'Até hoje']);
-assert.deepEqual(ver({ prazo: 'semana', prazoDia: '2026-10-05' }, amanha), ['atrasado', false, 'ERA ATÉ 05/10', 'Era até seg, 05/10']);
-// A data com hora (formato que o banco pode devolver) também é lida.
-assert.equal(P.info({ prazo: 'data', prazoDia: '2026-10-10T00:00:00+00:00' }, now).selo, 'DIA 10/10');
+// Outubro/2026: "Sem pressa", "Com pressa" e "Agendado" saíram das telas. O módulo continua montando os dados antigos,
+// mas nada do prazo antigo é mostrado para cliente nem profissional (histórico fica só no banco).
+[
+  { prazo: 'hoje', prazoDia: '2026-10-05', periodo: 'tarde' },
+  { prazo: 'amanha', prazoDia: '2026-10-06' },
+  { prazo: 'data', prazoDia: '2026-10-10', periodo: 'manha' },
+  { prazo: 'semana', prazoDia: '2026-10-11' },
+  { prazo: 'sem_pressa' },
+  {}
+].forEach((r) => {
+  assert.equal(P.info(r, now), null);
+  assert.equal(P.seloHtml(P.info(r, now)), '');
+  assert.equal(P.linhaHtml(P.info(r, now)), '');
+});
 
-// Urgência: pedido antigo segue a regra de antes (sem data = urgente); "sem pressa" não é urgente.
-assert.equal(P.urgente({}, now), true);
-assert.equal(P.urgente({ dataPreferida: new Date(now + 3 * 86400000).toISOString() }, now), false);
-assert.equal(P.urgente({ prazo: 'sem_pressa' }, now), false);
-assert.equal(P.urgente({ prazo: 'hoje', prazoDia: '2026-10-05' }, now), true);
-
-// Ordem da lista: urgentes, depois com dia (o mais próximo antes), por último sem pressa.
-const lista = [
-  { id: 'sem', prazo: 'sem_pressa' },
-  { id: 'sab', prazo: 'data', prazoDia: '2026-10-10' },
-  { id: 'amanha', prazo: 'amanha', prazoDia: '2026-10-06' },
-  { id: 'hoje', prazo: 'hoje', prazoDia: '2026-10-05' },
-  { id: 'ontem', prazo: 'hoje', prazoDia: '2026-10-04' },
-  { id: 'antigo' }
-];
-const ordem = lista.slice().sort((x, y) => P.comparar(x, y, now)).map((r) => r.id);
-assert.deepEqual(ordem.slice(0, 2).sort(), ['antigo', 'hoje']);
-assert.deepEqual(ordem.slice(2), ['ontem', 'amanha', 'sab', 'sem']);
-
-// Selo: só "pra hoje" usa o vermelho piscando; texto do cliente nunca vira HTML.
-assert.ok(P.seloHtml(P.info({ prazo: 'hoje', prazoDia: '2026-10-05' }, now)).includes('qf-urgent-badge'));
-assert.ok(P.seloHtml(P.info({ prazo: 'sem_pressa' }, now)).includes('qf-prazo-selo--sem'));
-assert.equal(P.seloHtml(null), '');
-assert.ok(P.linhaHtml(P.info({ prazo: 'amanha', prazoDia: '2026-10-06', periodo: 'noite' }, now)).includes('<strong>Quando:</strong> Amanhã (ter, 06/10), à noite'));
-
-// Tela do cliente: o campo está no pedido rápido, com "Sem pressa" já marcado.
-assert.ok(html.includes("'<span class=\"field__label\" id=\"qf-prazo-label\">Pra quando você precisa?</span>'"));
-assert.ok(html.includes("opt('hoje', 'Hoje') + opt('amanha', 'Amanhã') + opt('semana', 'Esta semana') + opt('data', 'Escolher data') + opt('sem_pressa', 'Sem pressa', true)"));
-assert.ok(html.includes("per('manha', 'Manhã') + per('tarde', 'Tarde') + per('noite', 'Noite')"));
-assert.ok(html.includes('          prazoFieldHtml() +'));
-assert.ok(html.includes('      bindPrazoField(form);'));
-assert.ok(html.includes('}, prazoDados))'));
-// O pedido nunca se perde por causa do prazo: se o banco recusar os campos, publica sem eles.
-assert.ok(html.includes("delete row.prazo; delete row.prazo_dia; delete row.periodo;"));
-// O prazo não mexe na data que segura o aviso (data_preferida).
-assert.ok(html.includes("if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }"));
-
-// Profissional: cartão, ordem das duas listas, tela do pedido, tela cheia e aviso.
-// V11.97.5: antes do desbloqueio o profissional NÃO vê o prazo (ver tests/pedido-sem-prazo-profissional.test.cjs).
-// O prazo continua existindo para o cliente e depois do desbloqueio.
-assert.ok(html.includes("(urgente ? '<span class=\"qf-urgent-badge\">URGENTE</span>' : '')"));
-assert.equal((html.match(/global\.QFPrazo\.comparar\(a,b\)/g) || []).length, 0);
-assert.ok(html.includes("'Para quando você pediu' : 'Quando o cliente precisa'"));
+// Tela do cliente: o campo "Pra quando você precisa?" não existe mais; a urgência é Normal ou Urgente.
+assert.ok(!html.includes('id="qf-prazo-label"'));
+assert.ok(!html.includes("opt('sem_pressa', 'Sem pressa', true)"));
+assert.ok(!html.includes('prazoFieldHtml'));
+assert.ok(!html.includes('bindPrazoField'));
+assert.ok(html.includes('Qual a urgência do seu serviço?'));
+// Pedido novo não grava mais o prazo antigo; só a urgência grátis.
+assert.ok(!html.includes("if (comPrazo) { row.prazo = data.prazo;"));
+assert.ok(html.includes("if (comUrgencia) row.urgencia = data.urgencia;"));
 
 // O prazo chega pela consulta à parte; se ela falhar, a lista de pedidos segue igual.
 {
-  const i = html.indexOf('  async function attachPrazos(rows) {');
+  const i = html.indexOf('  async function attachUrgencias(rows) {');
   const j = html.indexOf('  function requestFromCloud(row, professionalId) {');
   assert.ok(i > 0 && j > i);
   const run = async (client) => {
@@ -121,13 +83,17 @@ assert.ok(html.includes("'Para quando você pediu' : 'Quando o cliente precisa'"
     return rows;
   };
   (async () => {
-    let pedido = null;
-    const ok = await run({ rpc: async (n, args) => { pedido = [n, args.p_ids.slice()]; return { data: [{ id: 'a', prazo: 'amanha', prazo_dia: '2026-10-06', periodo: 'tarde' }], error: null }; } });
-    assert.deepEqual(pedido, ['qf_chamados_prazos', ['a', 'b']]);          // só pergunta o que ainda não tem
-    assert.deepEqual({ ...ok[0] }, { id: 'a', prazo: 'amanha', prazo_dia: '2026-10-06', periodo: 'tarde' });
+    const chamadas = [];
+    const ok = await run({ rpc: async (n, args) => {
+      chamadas.push([n, args.p_ids.slice()]);
+      if (n === 'qf_chamados_urgencias') return { data: [{ id: 'a', urgencia: 'urgente' }], error: null };
+      return { data: [{ id: 'a', prazo: 'amanha', prazo_dia: '2026-10-06', periodo: 'tarde' }], error: null };
+    } });
+    assert.deepEqual(chamadas, [['qf_chamados_urgencias', ['a', 'b', 'c']], ['qf_chamados_prazos', ['a', 'b']]]);   // só pergunta o que ainda não tem
+    assert.deepEqual({ ...ok[0] }, { id: 'a', urgencia: 'urgente', prazo: 'amanha', prazo_dia: '2026-10-06', periodo: 'tarde' });
     assert.deepEqual({ ...ok[1] }, { id: 'b' });
     const falha = await run({ rpc: async () => ({ data: null, error: { message: 'função não existe' } }) });
-    assert.deepEqual({ ...falha[0] }, { id: 'a' });
+    assert.deepEqual({ ...falha[0] }, { id: 'a' });   // se a consulta falhar, o pedido aparece igual
     const quebra = await run({ rpc: async () => { throw new Error('sem internet'); } });
     assert.deepEqual({ ...quebra[1] }, { id: 'b' });
     console.log('prazo-pedido: ok');

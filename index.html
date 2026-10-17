@@ -2877,6 +2877,17 @@ window.qfGoogleLead = function (requestId) {
 .qf-envio__itens { display:flex;flex-direction:column;gap:6px;padding-left:30px;font-size:14px; }
 .qf-envio__itens span { display:flex;gap:6px;align-items:flex-start; }
 .qf-envio__itens svg { width:16px;height:16px;flex-shrink:0;margin-top:2px;color:var(--success-600, #2b7a3d); }
+.qf-envio__opt--urgencia[data-qf-urgencia-opt="urgente"][aria-checked="true"] { border-color:#c92a2a;box-shadow:0 6px 18px rgba(201,42,42,.12); }
+.qf-envio__opt--urgencia[data-qf-urgencia-opt="urgente"][aria-checked="true"] .qf-envio__radio { border-color:#c92a2a; }
+.qf-prioridade { display:flex;align-items:flex-start;gap:12px;margin-top:14px;padding:14px;border-radius:14px;border:2px dashed var(--border, #e2ded8);background:var(--bg-surface, #fff);cursor:pointer; }
+.qf-prioridade input { width:22px;height:22px;margin-top:2px;flex-shrink:0;accent-color:var(--orange-600, #e8590c); }
+.qf-prioridade__txt { display:flex;flex-direction:column;gap:4px;font-size:14px;color:var(--text-secondary, #4a4540); }
+.qf-prioridade__txt strong { font-size:16px;color:var(--text-primary, #1c1a17); }
+.qf-prioridade__preco { font-weight:800;color:var(--orange-700, #c2410c); }
+.qf-prioridade:has(input:checked) { border-style:solid;border-color:var(--orange-600, #e8590c); }
+.qf-urgente-tag { display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;background:#dc2626;color:#fff;font-size:.8rem;font-weight:900;letter-spacing:.07em;white-space:nowrap; }
+.qf-normal-tag { display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:#eef1f6;color:#6b7280;font-size:.68rem;font-weight:700;letter-spacing:.04em;white-space:nowrap; }
+.qf-prioridade-tag { display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;background:var(--orange-100, #ffedd5);color:var(--orange-800, #9a3412);font-size:.68rem;font-weight:800;letter-spacing:.04em;white-space:nowrap; }
 [data-qf-sub-box][hidden] { display:none; }
 .qf-quantos__opts { display:grid;grid-template-columns:repeat(4,1fr);gap:8px; }
 .qf-quantos__opt { font-size:17px;font-weight:800;min-height:50px;justify-content:center;text-align:center; }
@@ -4181,7 +4192,7 @@ alt=""></noscript>
     try { if (global.QFClientAcquisition) global.QFClientAcquisition.published({ id: req.id }, req.categoriaId); } catch (_) {}
     try { global.DB && global.DB.persist && global.DB.persist(); } catch (_) {}
     global.PU.closeSheet();
-    global.PU.toast('Pix recebido! Seu pedido urgente foi publicado.', 'success', 6000);
+    global.PU.toast('Pix recebido! Seu pedido com prioridade foi publicado.', 'success', 6000);
     const cloud = global.QFCloud;
     Promise.resolve(cloud && cloud.syncForCurrentSession ? cloud.syncForCurrentSession(true) : null)
       .catch(function () {})
@@ -4220,7 +4231,7 @@ alt=""></noscript>
     PU.openSheet(
       '<div class="stack" data-qf-pix-prioridade style="text-align:center;align-items:stretch;gap:12px;">' +
         '<h3 class="sheet__title" style="margin:0;">Pague ' + valor + ' no Pix</h3>' +
-        '<p class="text text--secondary" style="margin:0;">Seu pedido só é publicado depois do pagamento. Assim que o Pix cair, ele vai na hora como <strong>URGENTE</strong> para os profissionais perto de você.</p>' +
+        '<p class="text text--secondary" style="margin:0;">Seu pedido só é publicado depois do pagamento. Assim que o Pix cair, ele vai na hora com <strong>PRIORIDADE</strong> para os profissionais perto de você.</p>' +
         qrHtml +
         '<p class="text--sm text--secondary" style="margin:0;">Abra o app do seu banco, escolha Pix copia e cola e cole o código.</p>' +
         codeHtml +
@@ -4306,6 +4317,10 @@ alt=""></noscript>
 
   // Como o prazo aparece HOJE para quem está olhando. Devolve null em pedido antigo.
   function info(req, now) {
+    // Outubro/2026: "Sem pressa", "Com pressa" e "Agendado" saíram das telas. O prazo antigo continua gravado no banco
+    // (histórico e rotinas internas), mas não aparece mais para cliente nem profissional.
+    return null;
+    // eslint-disable-next-line no-unreachable
     const prazo = req && req.prazo;
     if (!prazo || TIPOS.indexOf(prazo) === -1) return null;
     if (prazo === 'sem_pressa') return { tom: 'sem', urgente: false, selo: 'SEM PRESSA', texto: 'Sem pressa', dia: null };
@@ -4372,13 +4387,24 @@ alt=""></noscript>
   // Só existe um texto para pedido comum e outro para pedido com urgência efetivamente paga (req.prioridade).
   // O prazo continua gravado no banco e aparece depois do desbloqueio.
   const MSG_COMUM = 'Cliente aguardando propostas. Desbloqueie o contato para conversar, apresentar seu orçamento e combinar a melhor data para o serviço.';
-  const MSG_URGENTE = 'PEDIDO URGENTE — Cliente solicitou atendimento prioritário. Desbloqueie para entrar em contato.';
+  const MSG_URGENTE = 'PEDIDO PRIORITÁRIO — Cliente deu prioridade ao pedido. Desbloqueie para entrar em contato.';
   function mensagemPedido(req) { return req && req.prioridade ? MSG_URGENTE : MSG_COMUM; }
   function mensagemHtml(req) {
     const u = !!(req && req.prioridade);
     return '<p class="qf-pedido-msg' + (u ? ' qf-pedido-msg--urgente' : '') + '" data-qf-pedido-msg>' + esc(mensagemPedido(req)) + '</p>';
   }
   global.QFPedidoMsg = { texto: mensagemPedido, html: mensagemHtml, COMUM: MSG_COMUM, URGENTE: MSG_URGENTE };
+
+  // Urgência grátis (Normal/Urgente) escolhida pelo cliente. Pedido antigo sem escolha: se pagou prioridade, segue como urgente
+  // (era o que o selo vermelho já dizia); os demais aparecem como Normal.
+  function ehUrgente(req) { return !!req && (req.urgencia === 'urgente' || (!req.urgencia && !!req.prioridade)); }
+  function urgenciaTagHtml(req) {
+    return ehUrgente(req)
+      ? '<span class="qf-urgente-tag" data-qf-urgencia-tag="urgente">URGENTE</span>'
+      : '<span class="qf-normal-tag" data-qf-urgencia-tag="normal">Normal</span>';
+  }
+  function prioridadeTagHtml(req) { return req && req.prioridade ? '<span class="qf-prioridade-tag">PRIORITÁRIO</span>' : ''; }
+  global.QFUrgencia = { ehUrgente: ehUrgente, tagHtml: urgenciaTagHtml, prioridadeHtml: prioridadeTagHtml };
 })(window);
 
 
@@ -4930,7 +4956,8 @@ alt=""></noscript>
       descricao: data.descricao, fotos: data.fotos || [], endereco: data.endereco, cidadeId: data.endereco.cidadeId,
       status: STATUS.BUSCANDO, profissionalId: null,
       criadoEm: nowIso(), atualizadoEm: nowIso(),
-      prazo: data.prazo || null, prazoDia: data.prazoDia || null, periodo: data.periodo || null,
+      urgencia: data.urgencia === 'urgente' ? 'urgente' : 'normal',
+      prazo: null, prazoDia: null, periodo: null,
       // Prioridade nunca é concedida gratuitamente. No modo offline ela fica apenas solicitada/pending.
       prioridade: false,
       pagamentoPrioridade: data.prioridade ? { status: 'pendente', valor: 990, metodo: data.prioridadeMetodo || 'pix', criadoEm: nowIso() } : null,
@@ -5838,7 +5865,20 @@ alt=""></noscript>
 
   // V11.29: as funções que listam pedidos não trazem o prazo; ele vem por uma consulta curta à parte.
   // Se a consulta falhar, os pedidos aparecem como antes (sem o prazo) e nada mais é afetado.
+  async function attachUrgencias(rows) {
+    const list = (rows || []).filter(function (r) { return r && r.id && r.urgencia === undefined; });
+    if (!client || !list.length) return;
+    try {
+      const res = await client.rpc('qf_chamados_urgencias', { p_ids: list.map(function (r) { return r.id; }).slice(0, 500) });
+      if (res.error) throw res.error;
+      const map = {};
+      (res.data || []).forEach(function (u) { map[u.id] = u; });
+      list.forEach(function (r) { const u = map[r.id]; if (u) r.urgencia = u.urgencia; });
+    } catch (err) { console.warn('QuemFaz urgência dos pedidos', err); }
+  }
+
   async function attachPrazos(rows) {
+    await attachUrgencias(rows);
     const list = (rows || []).filter(function (r) { return r && r.id && r.prazo === undefined; });
     if (!client || !list.length) return;
     try {
@@ -5882,6 +5922,7 @@ alt=""></noscript>
       raioAtualKm: row.raio_atual_km == null ? null : Number(row.raio_atual_km),
       dataPreferida: row.data_preferida || null,
       // V11.29: prazo escolhido pelo cliente (dia real em prazoDia, AAAA-MM-DD).
+      urgencia: row.urgencia === 'urgente' ? 'urgente' : (row.urgencia === 'normal' ? 'normal' : null),
       prazo: row.prazo || null,
       prazoDia: row.prazo_dia || null,
       periodo: row.periodo || null,
@@ -7098,8 +7139,9 @@ alt=""></noscript>
     };
     // V11.29: prazo do pedido. Se o banco recusar por causa desses campos, publica sem eles: o pedido nunca se perde.
     if (geoPrecisao) row.geo_precisao = geoPrecisao;
-    const comPrazo = !!data.prazo;
-    if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }
+    // Outubro/2026: urgência grátis (normal/urgente). Pedido novo não grava mais o prazo antigo.
+    const comUrgencia = data.urgencia === 'urgente' || data.urgencia === 'normal';
+    if (comUrgencia) row.urgencia = data.urgencia;
     // V11.90: quantos orçamentos o cliente quer (1 a 4). Se o banco recusar o campo, publica sem ele (fica 3).
     const maxOrc = Math.round(Number(data.maxOrcamentos));
     const comMax = maxOrc >= 1 && maxOrc <= 4;
@@ -7115,9 +7157,9 @@ alt=""></noscript>
       delete row.max_orcamentos;
       res = await client.from('qf_chamados').insert(row).select('*').single();
     }
-    if (res.error && comPrazo && /prazo|periodo/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz prazo não gravado', res.error);
-      delete row.prazo; delete row.prazo_dia; delete row.periodo;
+    if (res.error && comUrgencia && /urgencia/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz urgência não gravada', res.error);
+      delete row.urgencia;
       res = await client.from('qf_chamados').insert(row).select('*').single();
     }
     if (res.error) throw res.error;
@@ -8568,94 +8610,6 @@ alt=""></noscript>
     '</div>';
   }
 
-  // V11.29: "Pra quando você precisa?" — um toque. "Sem pressa" já vem marcado para ninguém travar aqui.
-  function prazoFieldHtml() {
-    const P = global.QFPrazo;
-    if (!P) return '';
-    const h = P.hoje();
-    function opt(id, txt, on) {
-      return '<button type="button" class="qf-prazo__opt" role="radio" aria-checked="' + (on ? 'true' : 'false') + '" data-qf-prazo-opt="' + id + '">' + txt + '</button>';
-    }
-    function per(id, txt) {
-      return '<button type="button" class="qf-prazo__opt" aria-pressed="false" data-qf-periodo-opt="' + id + '">' + txt + '</button>';
-    }
-    return '<div class="field qf-prazo" data-qf-prazo>' +
-      '<span class="field__label" id="qf-prazo-label">Pra quando você precisa?</span>' +
-      '<div class="qf-prazo__opts" role="radiogroup" aria-labelledby="qf-prazo-label">' +
-        opt('hoje', 'Hoje') + opt('amanha', 'Amanhã') + opt('semana', 'Esta semana') + opt('data', 'Escolher data') + opt('sem_pressa', 'Sem pressa', true) +
-      '</div>' +
-      '<input class="input" type="date" name="prazoDia" data-qf-prazo-dia hidden aria-label="Dia em que você precisa do serviço" min="' + P.ymd(h) + '" max="' + P.ymd(P.somar(h, 365)) + '">' +
-      '<p data-qf-prazo-erro role="alert" hidden style="color:#b42318;font-size:13px;font-weight:600;margin:6px 0 0;"></p>' +
-      '<div class="qf-prazo__periodo" data-qf-prazo-periodo hidden><span>Melhor horário (se quiser)</span><div class="qf-prazo__opts">' +
-        per('manha', 'Manhã') + per('tarde', 'Tarde') + per('noite', 'Noite') +
-      '</div></div>' +
-      '<p class="qf-prazo__nota" data-qf-prazo-nota aria-live="polite">O profissional combina o dia com você.</p>' +
-      '<input type="hidden" name="prazo" value="sem_pressa"><input type="hidden" name="periodo" value="">' +
-    '</div>';
-  }
-  function bindPrazoField(form) {
-    const P = global.QFPrazo;
-    const box = form && form.querySelector('[data-qf-prazo]');
-    if (!P || !box) return;
-    const opts = Array.prototype.slice.call(box.querySelectorAll('[data-qf-prazo-opt]'));
-    const pers = Array.prototype.slice.call(box.querySelectorAll('[data-qf-periodo-opt]'));
-    const dia = box.querySelector('[data-qf-prazo-dia]');
-    const perWrap = box.querySelector('[data-qf-prazo-periodo]');
-    const nota = box.querySelector('[data-qf-prazo-nota]');
-    const hPrazo = box.querySelector('[name="prazo"]');
-    const hPer = box.querySelector('[name="periodo"]');
-    function setPeriodo(v) {
-      hPer.value = v || '';
-      pers.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-qf-periodo-opt') === hPer.value ? 'true' : 'false'); });
-    }
-    function atualizar() {
-      const modo = hPrazo.value;
-      const h = P.hoje();
-      opts.forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-prazo-opt') === modo ? 'true' : 'false'); });
-      dia.hidden = modo !== 'data';
-      const comPeriodo = modo === 'hoje' || modo === 'amanha' || modo === 'data';
-      perWrap.hidden = !comPeriodo;
-      const escolhido = modo === 'data' ? P.parse(dia.value) : null;
-      const ehHoje = modo === 'hoje' || (escolhido && P.ymd(escolhido) === P.ymd(h));
-      const passou = ehHoje ? P.periodosPassados() : {};
-      pers.forEach(function (b) { b.disabled = !!passou[b.getAttribute('data-qf-periodo-opt')]; });
-      if (!comPeriodo || passou[hPer.value]) setPeriodo('');
-      let txt = 'O profissional combina o dia com você.';
-      if (modo === 'hoje') txt = 'Vai como urgente para os profissionais.';
-      else if (modo === 'amanha') txt = 'Para ' + P.curto(P.somar(h, 1)) + '.';
-      else if (modo === 'semana') txt = 'Até ' + P.curto(P.somar(h, 6)) + '.';
-      else if (modo === 'data') txt = escolhido ? 'Para ' + P.curto(escolhido) + '.' : 'Escolha o dia acima.';
-      nota.textContent = txt;
-      const resumo = box.closest('[data-qf-prazo-details]') && box.closest('[data-qf-prazo-details]').querySelector('[data-qf-prazo-resumo]');
-      if (resumo) resumo.textContent = modo === 'sem_pressa' ? 'Sem pressa — opcional' : txt;
-      nota.classList.toggle('is-urgente', modo === 'hoje');
-      const validacao = P.montar(modo, hPer.value, dia.value);
-      const erro = box.querySelector('[data-qf-prazo-erro]');
-      if (validacao.ok) {
-        dia.removeAttribute('aria-invalid');
-        if (erro) { erro.hidden = true; erro.textContent = ''; }
-      } else if (erro && !erro.hidden) erro.textContent = validacao.erro;
-    }
-    opts.forEach(function (b) {
-      b.addEventListener('click', function () {
-        hPrazo.value = b.getAttribute('data-qf-prazo-opt');
-        atualizar();
-        if (hPrazo.value === 'data' && !dia.value) {
-          try { dia.focus(); if (typeof dia.showPicker === 'function') dia.showPicker(); } catch (_) {}
-        }
-      });
-    });
-    pers.forEach(function (b) {
-      b.addEventListener('click', function () {
-        const v = b.getAttribute('data-qf-periodo-opt');
-        setPeriodo(hPer.value === v ? '' : v);
-      });
-    });
-    dia.addEventListener('change', atualizar);
-    dia.addEventListener('input', atualizar);
-    atualizar();
-  }
-
   // V11.37: pedido em 2 etapas. Etapa 1 = toque na opção do serviço; etapa 2 = local, nome e WhatsApp.
   // Serviços sem lista aqui abrem direto o campo de texto.
   global.QFPedidoEtapas = { profissionais: 'Mais de 190 profissionais cadastrados no QuemFaz', opcoes: {
@@ -8745,9 +8699,6 @@ alt=""></noscript>
           '<button class="btn btn--primary" type="button" data-qf-sub-ir="b">Continuar ' + icon('arrowRight') + '</button>' +
           '</div>' +
           '<div data-qf-sub-box="b" hidden>' +
-          '<div class="qf-request-schedule qf-request-schedule--aberto" data-qf-prazo-details>' +
-          prazoFieldHtml() +
-          '</div>' +
           '<div class="field qf-quantos" data-qf-quantos>' +
             '<span class="field__label" id="qf-quantos-label">Quantos orçamentos você quer receber?</span>' +
             '<div class="qf-quantos__opts" role="radiogroup" aria-labelledby="qf-quantos-label">' + [1, 2, 3, 4].map(function (n) {
@@ -8756,27 +8707,27 @@ alt=""></noscript>
             '<p class="qf-prazo__nota">Você escolhe de 1 a 4. Só essa quantidade de profissionais vai ver o seu WhatsApp.</p>' +
             '<input type="hidden" name="maxOrcamentos" value="3">' +
           '</div>' +
-          // V11.79: Pedido urgente opcional. O normal continua grátis e já vem marcado.
-          '<div class="field qf-envio" data-qf-envio>' +
-            '<span class="field__label" id="qf-envio-label">Como enviar seu pedido?</span>' +
-            '<div class="qf-envio__opts" role="radiogroup" aria-labelledby="qf-envio-label">' +
-              '<button type="button" class="qf-envio__opt" role="radio" aria-checked="true" data-qf-envio-opt="normal">' +
-                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Pedido normal</span><span class="qf-envio__preco qf-envio__preco--gratis">Grátis</span></span>' +
-                '<span class="qf-envio__desc">Enviado aos profissionais da sua região, aos poucos.</span>' +
+          // Outubro/2026: urgência grátis (Normal ou Urgente) e, separada, a prioridade paga opcional.
+          '<div class="field qf-envio qf-urgencia" data-qf-urgencia>' +
+            '<span class="field__label" id="qf-urgencia-label">Qual a urgência do seu serviço?</span>' +
+            '<div class="qf-envio__opts" role="radiogroup" aria-labelledby="qf-urgencia-label">' +
+              '<button type="button" class="qf-envio__opt qf-envio__opt--urgencia" role="radio" aria-checked="true" data-qf-urgencia-opt="normal">' +
+                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Normal</span><span class="qf-envio__preco qf-envio__preco--gratis">Grátis</span></span>' +
+                '<span class="qf-envio__desc">Quero receber orçamentos dos profissionais da minha região.</span>' +
               '</button>' +
-              '<button type="button" class="qf-envio__opt qf-envio__opt--urgente" role="radio" aria-checked="false" data-qf-envio-opt="urgente">' +
-                '<span class="qf-envio__selo">MAIS RÁPIDO</span>' +
-                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Pedido urgente ' + icon('bolt') + '</span><span class="qf-envio__preco">R$ 9,90</span></span>' +
-                '<span class="qf-envio__itens">' +
-                  '<span>' + icon('check') + ' Avisa na hora mais profissionais perto de você</span>' +
-                  '<span>' + icon('check') + ' Aparece no topo como PRIORITÁRIO</span>' +
-                  '<span>' + icon('check') + ' Ideal pra cano estourado, falta de luz, porta travada</span>' +
-                '</span>' +
+              '<button type="button" class="qf-envio__opt qf-envio__opt--urgencia" role="radio" aria-checked="false" data-qf-urgencia-opt="urgente">' +
+                '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Urgente ' + icon('bolt') + '</span><span class="qf-envio__preco qf-envio__preco--gratis">Grátis</span></span>' +
+                '<span class="qf-envio__desc">Preciso de atendimento rápido.</span>' +
               '</button>' +
             '</div>' +
-            '<p class="qf-prazo__nota" data-qf-envio-nota>O pedido normal é publicado grátis. O urgente só é publicado depois que o Pix for pago.</p>' +
-            '<input type="hidden" name="urgente" value="0">' +
+            '<input type="hidden" name="urgencia" value="normal">' +
           '</div>' +
+          '<label class="qf-prioridade" data-qf-prioridade>' +
+            '<input type="checkbox" name="prioridade" value="1">' +
+            '<span class="qf-prioridade__txt"><strong>Dar prioridade ao meu pedido</strong>' +
+            '<span>Opcional e pago · <span class="qf-prioridade__preco">R$ 9,90 no Pix</span></span>' +
+            '<span>Aparece no topo como PRIORITÁRIO e avisa mais profissionais perto de você. O pedido só é publicado depois que o Pix for pago.</span></span>' +
+          '</label>' +
           '<button class="btn btn--primary" type="button" data-qf-sub-ir="c">Continuar ' + icon('arrowRight') + '</button>' +
           '<button class="btn btn--outline" type="button" data-qf-sub-ir="a">Voltar</button>' +
           '</div>' +
@@ -9443,7 +9394,6 @@ alt=""></noscript>
       });
 
       const form = content.querySelector('#cadastro-cliente-form');
-      bindPrazoField(form);
       // CTA fixo permanece visível no erro e acompanha o teclado quando necessário.
       const submitFixo = form.querySelector('.qf-request-submit');
       if (submitFixo && global.visualViewport) {
@@ -9712,22 +9662,6 @@ alt=""></noscript>
               irSub('b');
             } finally { verificandoLocal = false; }
           } else if (sub === 'b') {
-            const prazoBox = form.querySelector('[data-qf-prazo]');
-            const P = global.QFPrazo;
-            if (P && prazoBox) {
-              const campoDia = prazoBox.querySelector('[data-qf-prazo-dia]');
-              const modo = prazoBox.querySelector('[name="prazo"]');
-              const periodo = prazoBox.querySelector('[name="periodo"]');
-              const validacao = P.montar(modo ? modo.value : 'sem_pressa', periodo ? periodo.value : '', campoDia ? campoDia.value : '');
-              if (!validacao.ok) {
-                if (global.QFClientAcquisition) global.QFClientAcquisition.track('validation_error', { error_code: 'date' });
-                const erro = prazoBox.querySelector('[data-qf-prazo-erro]');
-                if (erro) { erro.textContent = validacao.erro; erro.hidden = false; }
-                if (campoDia) { campoDia.setAttribute('aria-invalid', 'true'); try { campoDia.focus(); } catch (_) {} }
-                PU.toast(validacao.erro, 'danger');
-                return;
-              }
-            }
             if (global.QFClientAcquisition) global.QFClientAcquisition.track('step_options_completed', {}, true);
             irSub('c');
           }
@@ -9750,26 +9684,32 @@ alt=""></noscript>
           const ben = form.querySelector('[data-qf-benefit-max]');
           if (ben) ben.textContent = (n === 1 ? '1 orçamento grátis.' : 'Até ' + n + ' orçamentos grátis. Você escolhe.');
           const envio = form.querySelector('.qf-request-submit');
-          const urg = form.querySelector('[name="urgente"]');
-          if (envio && form.dataset.publishing !== '1') envio.innerHTML = (urg && urg.value === '1')
-            ? icon('bolt') + ' Enviar urgente e pagar R$ 9,90 no Pix'
+          const urg = form.querySelector('[name="prioridade"]');
+          if (envio && form.dataset.publishing !== '1') envio.innerHTML = (urg && urg.checked)
+            ? icon('bolt') + ' Enviar com prioridade e pagar R$ 9,90 no Pix'
             : 'Receber ' + (n === 1 ? '1 orçamento' : n + ' orçamentos') + ' grátis ' + icon('arrowRight');
         }
-        // V11.79: Pedido normal (grátis) ou urgente (Pix). Sem a opção na tela, segue normal.
-        function modoEnvio(modo) {
-          const urgente = modo === 'urgente';
-          const campo = form.querySelector('[name="urgente"]');
-          if (campo) campo.value = urgente ? '1' : '0';
-          form.querySelectorAll('[data-qf-envio-opt]').forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-envio-opt') === modo ? 'true' : 'false'); });
+        // Urgência (grátis): Normal ou Urgente. A prioridade paga é outra escolha, desmarcada por padrão.
+        function modoUrgencia(modo) {
+          modo = modo === 'urgente' ? 'urgente' : 'normal';
+          const campo = form.querySelector('[name="urgencia"]');
+          if (campo) campo.value = modo;
+          form.querySelectorAll('[data-qf-urgencia-opt]').forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-urgencia-opt') === modo ? 'true' : 'false'); });
+          if (global.QFClientAcquisition && global.QFClientAcquisition.track) { try { global.QFClientAcquisition.track('urgent_choice', { mode: modo }); } catch (_) {} }
+        }
+        function atualizarPrioridade() {
+          const chk = form.querySelector('[name="prioridade"]');
           const ben = form.querySelector('[data-qf-benefit-max]');
           const campoMax = form.querySelector('[name="maxOrcamentos"]');
           quantos(campoMax ? campoMax.value : 3);
-          if (ben && urgente) ben.textContent = 'Seu pedido urgente é publicado assim que o Pix cair.';
-          if (global.QFClientAcquisition && global.QFClientAcquisition.track) { try { global.QFClientAcquisition.track('urgent_choice', { mode: modo }); } catch (_) {} }
+          if (ben && chk && chk.checked) ben.textContent = 'Seu pedido com prioridade é publicado assim que o Pix cair.';
         }
         form.addEventListener('click', function (e) {
-          const b = e.target.closest('[data-qf-envio-opt]');
-          if (b && form.contains(b)) modoEnvio(b.getAttribute('data-qf-envio-opt'));
+          const b = e.target.closest('[data-qf-urgencia-opt]');
+          if (b && form.contains(b)) modoUrgencia(b.getAttribute('data-qf-urgencia-opt'));
+        });
+        form.addEventListener('change', function (e) {
+          if (e.target && e.target.name === 'prioridade') atualizarPrioridade();
         });
         form.addEventListener('click', function (e) {
           const b = e.target.closest('[data-qf-quantos-opt]');
@@ -9935,16 +9875,9 @@ alt=""></noscript>
         if (!uf) { showFieldError('uf', 'Selecione o estado (UF) do atendimento.', 'region'); return; }
         if (!bairro) { showFieldError('bairro', 'Informe o bairro onde o serviço será realizado.', 'neighborhood'); return; }
         if (descricao.length < 3) { atualizarAjudaDescricao(true); showFieldError('descricao', 'Descreva brevemente o que precisa. Exemplo: consertar torneira vazando.', 'description'); return; }
-        // V11.29: prazo do pedido. Sem o campo na tela (versão antiga em cache), o pedido segue sem prazo.
-        const prazoSel = (global.QFPrazo && fd.get('prazo')) ? global.QFPrazo.montar(String(fd.get('prazo')), String(fd.get('periodo') || ''), String(fd.get('prazoDia') || '')) : null;
-        if (prazoSel && !prazoSel.ok) {
-          PU.toast(prazoSel.erro, 'danger');
-          const campoDia = form.querySelector('[data-qf-prazo-dia]');
-          if (campoDia && form.__qfEtapaDe) form.__qfEtapaDe(campoDia, 'prazoDia');
-          if (campoDia) { try { campoDia.scrollIntoView({ block: 'center' }); campoDia.focus(); } catch (_) {} }
-          return;
-        }
-        const prazoDados = prazoSel ? { prazo: prazoSel.prazo, prazoDia: prazoSel.prazoDia, periodo: prazoSel.periodo } : {};
+        // Urgência grátis (normal/urgente). Sem o campo na tela (versão antiga em cache), o pedido segue como normal.
+        const urgenciaEscolhida = String(fd.get('urgencia') || '') === 'urgente' ? 'urgente' : 'normal';
+        const prazoDados = { urgencia: urgenciaEscolhida };
         if (!nome) { showFieldError('nome', 'Informe seu nome para receber os orçamentos.', 'name'); return; }
         if (!validPhone(telefone)) {
           showFieldError('telefone', 'Confira o WhatsApp: use DDD e celular com 9 dígitos. Ex.: (11) 98765-4321.', 'phone');
@@ -9986,7 +9919,7 @@ alt=""></noscript>
             rua: '', numero: '', bairro: bairro, complemento: '', cep: '',
             cidade: cidade, uf: uf, cidadeId: null, latitude: null, longitude: null
           };
-          const querUrgente = !!(global.QFCloud && global.QFCloud.enabled) && String(fd.get('urgente') || '') === '1';
+          const querUrgente = !!(global.QFCloud && global.QFCloud.enabled) && String(fd.get('prioridade') || '') === '1';
           const pedido = (global.QFCloud && global.QFCloud.enabled)
             ? await global.QFCloud.createCall(Object.assign({
                 clienteId: user.id,
@@ -10015,7 +9948,7 @@ alt=""></noscript>
             global.QFPixPrioridade.abrir(pedido);
             return;
           }
-          if (querUrgente) PU.toast('Seu pedido urgente só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
+          if (querUrgente) PU.toast('Seu pedido com prioridade só é publicado depois do Pix. Toque em Pagar Pix e publicar.', 'warning', 7000);
           else PU.toast('Pedido publicado grátis! O profissional que aceitar vai chamar você no WhatsApp.', 'success', 6000);
           if (!querUrgente) { try { sessionStorage.setItem('qf_cli_app_pos_pedido', String(pedido.id)); } catch (_) {} }
           // V11.96: pedido gravado — o rascunho de segurança não pode reaparecer no próximo pedido.
@@ -11096,7 +11029,7 @@ alt=""></noscript>
             '<div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div>' +
             '<div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' +
           '</div>' +
-          '<div class="row" style="gap:6px;">' + (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') + statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) + '</div>' +
+          '<div class="row" style="gap:6px;">' + (global.QFUrgencia && (req.urgencia === 'urgente' || req.urgencia === 'normal') ? global.QFUrgencia.tagHtml(req) : '') + (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') + statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) + '</div>' +
         '</div>' +
 
         buscandoBlock(req) +
@@ -11141,7 +11074,7 @@ alt=""></noscript>
           '<div class="card" style="display:flex;flex-direction:column;align-items:center;text-align:center;padding:26px 16px;gap:8px;">' +
             '<div class="icon-tile icon-tile--lg icon-tile--orange">' + icon('bolt') + '</div>' +
             '<h2 class="h3" style="margin-top:6px;">Falta pagar o Pix</h2>' +
-            '<p class="text text--secondary text--sm" style="margin:0;">Seu pedido urgente ainda <strong>não foi publicado</strong>. Assim que o Pix de ' + PU.formatCurrency((req.pagamentoPrioridade && req.pagamentoPrioridade.valor) || 990) + ' cair, ele é publicado na hora e chega primeiro aos profissionais perto de você.</p>' +
+            '<p class="text text--secondary text--sm" style="margin:0;">Seu pedido com prioridade ainda <strong>não foi publicado</strong>. Assim que o Pix de ' + PU.formatCurrency((req.pagamentoPrioridade && req.pagamentoPrioridade.valor) || 990) + ' cair, ele é publicado na hora e chega primeiro aos profissionais perto de você.</p>' +
             '<button class="btn btn--primary btn--block" type="button" data-action="ativar-busca-prioritaria" style="margin-top:8px;">' + icon('bolt') + ' Pagar Pix e publicar</button>' +
           '</div>' +
         '</div>'
@@ -13193,15 +13126,15 @@ alt=""></noscript>
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     // Antes do desbloqueio o profissional não vê prazo, "sem pressa", agendamento nem data pretendida.
-    // URGENTE aparece só quando o cliente efetivamente contratou a prioridade.
-    const urgente = !!req.prioridade;
+    // URGENTE (vermelho) aparece quando o cliente escolheu Urgente; Normal aparece discreto. Prioridade paga tem selo próprio.
+    const urgente = global.QFUrgencia.ehUrgente(req);
     return (
       '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + (urgente ? ' qf-urgent-card' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
             (req.abertoTodos ? '<div class="qf-aberto-tag">Aberto a todos</div>' : '') +
-            '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + (urgente ? '<span class="qf-urgent-badge">URGENTE</span>' : '') + '</div>' +
+            '<div class="row" style="gap:7px;flex-wrap:wrap;"><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div>' + global.QFUrgencia.tagHtml(req) + global.QFUrgencia.prioridadeHtml(req) + '</div>' +
             '<div class="text--sm text--secondary">' + PU.escapeHtml(req.endereco.bairro || 'Bairro não informado') + ' · ' + PU.escapeHtml((cidade || {}).nome || req.endereco.cidade || '') + '</div>' +
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (global.QFPedidoMsg ? global.QFPedidoMsg.html(req) : '') +
@@ -13310,7 +13243,7 @@ alt=""></noscript>
               linha('Local', PU.escapeHtml((req.endereco.bairro || 'Bairro não informado') + ' — ' + ((cidade || {}).nome || req.endereco.cidade || ''))) +
               linha('Publicado', PU.timeAgo(req.criadoEm)) +
               linha('Orçamentos pedidos', lim === 1 ? '1' : 'até ' + lim) +
-              (req.prioridade ? linha('Tipo', 'Pedido urgente') : '') +
+              linha('Urgência', global.QFUrgencia.ehUrgente(req) ? 'Urgente' : 'Normal') + (req.prioridade ? linha('Prioridade', 'Paga pelo cliente') : '') +
             '</div>';
           })() +
           (CallInfo.midias(req).list.length ? '<div class="text--sm text--secondary">' + CallInfo.midiasTxt(req) + ' do cliente · toque na foto para ampliar</div><div class="qf-call-media">' + CallInfo.midias(req).list.map(renderCallMedia).join('') + '</div>' : '') +
@@ -13438,7 +13371,6 @@ alt=""></noscript>
           (contatoLiberado && (cliente || {}).telefone ? '<a class="btn btn--whatsapp btn--lg" data-contact="whatsapp" href="' + PU.escapeHtml(whatsappHref(cliente.telefone, waMsg)) + '" target="_blank" rel="noopener">' + icon('whatsapp') + ' Chamar no WhatsApp</a>' +
             '<a class="btn btn--outline" data-contact="ligar" href="' + telHref(cliente.telefone) + '">' + icon('phoneCall') + ' Ligar para o cliente</a>' : '') +
           '<div class="text--sm text--secondary">' + PU.escapeHtml(req.descricao) + '</div>' +
-          (function () { const pz = global.QFPrazo ? global.QFPrazo.info(req) : null; return pz ? '<div class="row text--sm text--secondary">' + icon('clock', 'list-item__chevron') + '<span><strong>Quando:</strong> ' + PU.escapeHtml(pz.texto) + '</span></div>' : ''; })() +
           (req.fotos && req.fotos.length ? '<div class="qf-call-media">' + req.fotos.map(renderCallMedia).join('') + '</div>' : '') +
           (contatoAprovado
             ? '<div class="row text--sm text--secondary">' + icon('mapPin', 'list-item__chevron') + '<span>' + (req.endereco.rua ? PU.escapeHtml(req.endereco.rua) + ', ' : '') + PU.escapeHtml(req.endereco.bairro || '') + (req.endereco.complemento ? ' · ' + PU.escapeHtml(req.endereco.complemento) : '') + '</span></div>'
@@ -15329,7 +15261,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.97.5';
+  const APP_VERSION = '11.98';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16646,7 +16578,7 @@ alt=""></noscript>
       '<div class="qf-call-overlay__icon">'+icon(cat?cat.icon:'phoneCall')+'</div><div class="qf-call-overlay__eyebrow">Novo chamado</div>'+
       '<h2 class="qf-call-overlay__title" id="qf-new-call-title">'+PU.escapeHtml(cat?cat.nome:'Serviço')+'</h2>'+
       '<div class="qf-call-overlay__place">'+PU.escapeHtml([bairro,cidade].filter(Boolean).join(' · '))+'</div>'+
-      (req.prioridade?'<div class="qf-call-overlay__priority">URGENTE</div>':'')+
+      (global.QFUrgencia.ehUrgente(req)?'<div class="qf-call-overlay__priority">URGENTE</div>':'')+(req.prioridade?'<div class="qf-call-overlay__priority">PRIORITÁRIO</div>':'')+
       (global.QFPedidoMsg?global.QFPedidoMsg.html(req):'')+
       '<div class="qf-call-overlay__facts qf-call-overlay__facts--3"><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(dist)+'</strong><span>de você</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(tempo)+'</strong><span>de carro</span></div><div class="qf-call-overlay__fact"><strong>'+PU.escapeHtml(priceTxt)+'</strong><span>'+(planoOk?'usa 1 do plano':'desbloqueio')+'</span></div></div>'+
       (desc?'<div class="qf-call-overlay__desc"><small>O que o cliente precisa</small>'+PU.escapeHtml(desc)+'</div>':'')+
@@ -16913,41 +16845,16 @@ alt=""></noscript>
     };
   }
 
-  function scheduleHtml() {
-    return '<div class="qf-schedule-card" data-qf-schedule>' +
-      '<div class="field__label">Quando pretende executar o serviço?</div>' +
-      '<div class="text--sm text--secondary">Serviços futuros ficam no portfólio. O alerta forte aos profissionais só dispara quando faltarem 24 horas.</div>' +
-      '<div class="qf-schedule-options">' +
-        '<button type="button" class="is-active" data-qf-exec="today">Hoje</button>' +
-        '<button type="button" data-qf-exec="tomorrow">Amanhã</button>' +
-        '<button type="button" data-qf-exec="week">Esta semana</button>' +
-        '<button type="button" data-qf-exec="custom">Escolher data</button>' +
-      '</div>' +
-      '<div data-qf-custom-wrap hidden style="margin-top:10px;"><input class="input" type="datetime-local" data-qf-custom-exec></div>' +
-      '<input type="hidden" name="dataPreferida" data-qf-data-preferida value="">' +
-    '</div>';
-  }
-
   const oldNovo = Screens.clienteNovoPedidoRender;
   if (oldNovo) Screens.clienteNovoPedidoRender = function (params,user) {
     let html = oldNovo(params,user);
-    return html.replace('<div class="field qf-order-location">', scheduleHtml() + '<div class="field qf-order-location">');
+    // Outubro/2026: o cliente não escolhe mais "quando pretende executar"; o combinado é direto com o profissional.
+    return html;
   };
 
   function scheduleSummary(req, paraCliente) {
-    // V11.29: prazo escolhido no pedido rápido ("Pra quando você precisa?").
-    const pz = req && global.QFPrazo ? global.QFPrazo.info(req) : null;
-    if (pz) {
-      return '<div class="qf-competition-card qf-execution-summary">' +
-        '<strong>' + icon('clock') + ' ' + (paraCliente ? 'Para quando você pediu' : 'Quando o cliente precisa') + '</strong>' +
-        '<span>' + esc(pz.texto) + (!paraCliente && pz.tom === 'sem' ? ': combine o dia com o cliente' : '') + '</span>' +
-      '</div>';
-    }
-    if (!req || !req.dataPreferida) return '';
-    return '<div class="qf-competition-card qf-execution-summary">' +
-      '<strong>' + icon('clock') + ' Execução prevista</strong>' +
-      '<span>' + esc(execLabel(req.dataPreferida)) + '</span>' +
-    '</div>';
+    // Outubro/2026: "Pra quando", "Sem pressa" e agendamento não aparecem mais. O dia é combinado entre cliente e profissional.
+    return '';
   }
 
   const oldProfHome = Screens.profHomeRender;
@@ -18303,7 +18210,7 @@ alt=""></noscript>
     const avPro = req.avaliacaoProfissional || {};
     return JSON.stringify([
       req.id || '', req.status || '', req.categoriaId || '', req.profissionalId || '',
-      !!req.prioridade, req.dataPreferida || '', req.prazo || '', req.prazoDia || '', req.periodo || '', req.descricao || '',
+      !!req.prioridade, req.urgencia || '', req.dataPreferida || '', req.prazo || '', req.prazoDia || '', req.periodo || '', req.descricao || '',
       Number(req.distanciaKm || 0), Number(req.valorDesbloqueio || req.leadValor || 0),
       end.cep || '', end.rua || '', end.numero || '', end.bairro || '', end.cidade || '', end.uf || '',
       pay.id || '', pay.status || '', Number(pay.valor || 0), pay.checkoutUrl || '',

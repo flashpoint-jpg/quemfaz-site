@@ -1,0 +1,21 @@
+QuemFaz V11.98 — urgência do pedido: só "Normal" ou "Urgente" (as duas grátis)
+
+Cliente (pedido rápido):
+- Saiu "Pra quando você precisa?" (Hoje, Amanhã, Esta semana, Escolher data, Sem pressa). Nenhuma etapa nova: o formulário ficou mais curto.
+- Entrou "Qual a urgência do seu serviço?": Normal — Grátis (já vem marcado) e Urgente — Grátis. Um toque para trocar. Urgente não cobra nada.
+- "Dar prioridade ao meu pedido — Opcional e pago" fica logo abaixo, DESMARCADO por padrão, mostra R$ 9,90 antes de qualquer cobrança e não liga sozinho ao escolher Urgente. Continua usando o mesmo Pix/mecanismo de destaque (prioridade) de antes; preço e integração não mudaram.
+- O dia do atendimento é combinado direto com o profissional depois do desbloqueio (sem agendamento no pedido).
+
+Profissional:
+- Cartão, detalhe, tela cheia de novo chamado e "Outros pedidos": pedido Urgente leva a etiqueta vermelha URGENTE; pedido Normal mostra só "Normal", discreto. Pedido com prioridade paga leva o selo PRIORITÁRIO (separado de Urgente).
+- "Sem pressa", "Com pressa", "Agendado", "Quando:" e "Execução prevista" não aparecem mais nem antes nem depois do desbloqueio.
+- Pedido antigo sem escolha aparece como Normal (se pagou prioridade, continua com URGENTE, como o selo vermelho já dizia).
+- Notificação de novo chamado: pedido urgente começa com "URGENTE:" antes da descrição; o prazo antigo saiu do texto.
+
+Banco (migração aditiva em supabase/2026-10-17-urgencia-normal-urgente.sql):
+- Coluna nova public.qf_chamados.urgencia ('normal' | 'urgente' | nulo). Nenhum pedido existente foi alterado; status e pedidos em negociação intactos.
+- prazo, prazo_dia, periodo e data_preferida continuam gravados (histórico e rotinas internas de expirar/fechar pedido seguem iguais).
+- Função qf_chamados_urgencias (leitura) e qf_push_detalhes_chamado atualizada só no texto do aviso. Nenhum gatilho de aviso novo.
+
+Não mudou: preços de desbloqueio, créditos, limite de 4 profissionais por pedido, Pix/cartão, campanhas, saldo.
+Admin: a coluna "Pra quando" virou "Urgência" (pedidos antigos aparecem com "—").

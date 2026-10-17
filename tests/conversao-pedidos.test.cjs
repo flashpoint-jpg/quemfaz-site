@@ -132,7 +132,7 @@ test('consentimento definido antes das tags do Google e da Meta', () => {
 });
 
 test('formulário: aviso do urgente correto e dados preservados após erro', () => {
-  assert.ok(html.includes('O urgente só é publicado depois que o Pix for pago.'));
+  assert.ok(html.includes('O pedido só é publicado depois que o Pix for pago.'));
   assert.ok(!html.includes('ele vira prioritário assim que o Pix cair.</p>'));
   assert.ok(html.includes("sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({ categoriaId: cat.id, descricao: descricao"));
 });
