@@ -4,12 +4,20 @@ on:
     paths:
       - 'scripts/radar-leads-*.cjs'
       - 'tests/radar-leads-*.test.cjs'
+      - 'qf-radar-classifier.js'
+      - 'qf-admin-radar.js'
+      - 'admin.html'
+      - 'supabase/migrations/*radar_leads_externos*.sql'
       - '.github/workflows/radar-leads-tests.yml'
   push:
     branches: [feature/radar-leads-externos-piloto]
     paths:
       - 'scripts/radar-leads-*.cjs'
       - 'tests/radar-leads-*.test.cjs'
+      - 'qf-radar-classifier.js'
+      - 'qf-admin-radar.js'
+      - 'admin.html'
+      - 'supabase/migrations/*radar_leads_externos*.sql'
       - '.github/workflows/radar-leads-tests.yml'
 permissions:
   contents: read
@@ -21,5 +29,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Testar classificador e validação de fontes
+      - name: Testar classificador, conectores, executor, segurança e painel
         run: node --test tests/radar-leads-*.test.cjs

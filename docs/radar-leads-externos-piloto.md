@@ -1,32 +1,54 @@
-# Radar de Leads Externos — piloto Grande ABC
+# Radar de Leads Externos — Grande ABC
 
 ## Objetivo
-Localizar oportunidades reais de contratação fora do Quem Faz e converter interessados em pedidos confirmados, sem criar chamados falsos nem cobrar créditos por leads não confirmados.
+Localizar pessoas que procuram um serviço **fora** do Quem Faz, convidá-las a publicar o pedido de graça e, se (e só se) elas publicarem, deixar o pedido seguir o fluxo normal: profissionais compatíveis desbloqueiam com os créditos de sempre. O radar **não** cria pedidos, **não** notifica profissionais e **não** cobra nada a partir de uma publicação externa.
+
+## Como funciona
+1. **Captura** (`scripts/radar-leads-run.cjs`, a cada 3 h via GitHub Actions): lê só fontes habilitadas em `qf_lead_sources` (API/feed público e documentado), respeitando o intervalo mínimo de cada fonte. Qualquer bloqueio (401/403/429/5xx) interrompe a fonte naquela rodada e fica registrado; não há nova tentativa nem contorno.
+2. **Classificação** (`qf-radar-classifier.js`, mesma regra no servidor e no painel): serviço, cidade/bairro do Grande ABC, intenção (procura × oferta), urgência, confiança. Ofertas de serviço, textos sem pedido e cidades fora da região são descartados e não são gravados.
+3. **Minimização**: o trecho guardado passa por remoção de telefone, e-mail, CPF e @usuário (no executor **e** de novo no banco). Nenhum nome ou perfil é salvo; o link da publicação é a origem.
+4. **Staging** (`qf_leads_externos`, `qf_lead_events`): deduplicação por (fonte, URL) e por conteúdo; histórico de eventos; validade de 30 dias.
+5. **Painel** (`/admin.html` → *Radar de Leads Externos*): indicadores, fontes, lista com filtros, histórico, registro manual e preparação de convite.
+6. **Convite**: gera link rastreável `https://quemfazservico.com.br/?servico=<serviço>&utm_source=radar&utm_medium=convite&utm_campaign=radar_abc_<serviço>&utm_content=<token>`. O painel **só prepara** a mensagem; o envio é manual (copiar e enviar pelo canal permitido) e depois se marca “enviado”. Não existe envio automático porque nenhum canal com permissão foi configurado.
+7. **Conversão**: o link abre o formulário existente (o serviço já vem selecionado). Quando o cliente publica, o formulário grava `utm_source=radar` e o token em `qf_chamados.marketing_origem`; `private.qf_radar_sync_pedidos()` (a cada 10 min e ao abrir o painel) apenas **lê** essa origem e liga o lead ao pedido. A distribuição, o raio, o horário, o limite de profissionais e o desbloqueio com créditos são exatamente os de qualquer outro pedido.
 
 ## Fontes
-Usar apenas APIs, feeds, sites e comunidades com acesso e coleta autorizados. Nunca contornar login, CAPTCHA, bloqueios, restrições de plataformas ou coletar telefones privados. Facebook e OLX exigem verificação de permissões antes de qualquer integração; buscas do Google não fornecem contatos pessoais.
+| Tipo | Situação |
+|---|---|
+| `manual` (administrador registra uma publicação pública que encontrou) | Ativa |
+| `bluesky` (busca pública oficial; senha de app opcional) | Conector pronto, **desabilitado** até haver autorização registrada |
+| `mastodon` (hashtags públicas da instância) | Conector pronto, **desabilitado** |
+| `rss` (feed de um site que permita a coleta) | Conector pronto, **desabilitado** |
+| Facebook (grupos/Marketplace), Instagram, OLX, WhatsApp, Nextdoor, Google | **Não conectados**: sem API/permissão para coleta; não serão contornados |
 
-## Pipeline
-1. Conector autorizado recebe URL, texto público permitido, data, origem e localização aproximada.
-2. Valida política da fonte, deduplica por hash de URL + texto, classifica intenção, serviço, cidade e confiança.
-3. Salva oportunidade em tabela privada de staging, com origem, URL, status, horário, base legal, retenção e trilha de auditoria.
-4. Painel admin exibe novos, revisados, convite permitido, convite enviado, confirmado, convertido e descartado. Não expor dados pessoais a profissionais.
-5. Preparar resposta/convite com link rastreável. Envio automático somente se API/canal e consentimento ou outra base legal adequada permitirem. Caso contrário, revisão e envio manual.
-6. Cliente abre o link e confirma dados e vontade de publicar, pelo formulário existente.
-7. Apenas após criação bem-sucedida de qf_chamados, associar lead externo ao ID do pedido e usar distribuição normal por profissão, raio e horário.
-8. Acompanhar convite -> clique -> publicação -> desbloqueio, sem alterar preços, carteiras, bônus ou limite de 4 contatos.
+Habilitar uma fonte exige prova de autorização (o banco recusa sem ela):
 
-## Implementação técnica proposta
-- Migração aditiva: qf_leads_externos (id, source, source_url, source_item_id, service, city, neighborhood, excerpt, classification, confidence, status, first_seen_at, last_seen_at, expires_at, consent_status, confirmed_chamado_id, metadata), qf_lead_events e qf_lead_sources.
-- RLS habilitada e sem acesso anon/authenticated por padrão; acesso administrativo somente por backend autenticado e autorização validada no servidor. Segredos exclusivamente server-side.
-- Ingestão idempotente com rate limiting, retry, logs, controle de exclusão/retention, opt-out e respeito à LGPD.
-- Job periódico configurável; sem conectores fictícios nem leads simulados misturados aos reais.
-- Painel /admin.html: aba Radar de Leads com filtros, link original, fonte, classificação, histórico e métricas.
-- Testes: ingestão duplicada, origem não autorizada, cliente não confirmado, privacidade/RLS, conversão confirmada, vínculo ao pedido e não cobrança antes de confirmação.
+```sql
+insert into public.qf_lead_sources (id, label, kind, config, allowed_host, authorization_note, terms_url, enabled)
+values ('bluesky_abc', 'Bluesky · busca pública', 'bluesky',
+        '{"queries":["preciso de pintor Santo André","procuro eletricista São Bernardo"],"lang":"pt","limit":25}',
+        'bsky.app', 'API pública oficial (app.bsky.feed.searchPosts); termos conferidos em <data> por <quem>.',
+        'https://bsky.social/about/support/tos', true);
+```
 
-## Critérios de aceite
-- Zero publicação automática de qf_chamados a partir de uma postagem externa.
-- Zero notificação ou débito de créditos por lead em staging.
-- Dados demonstrativos identificados como simulação.
-- Captura automática somente após configurar pelo menos uma fonte real com permissão comprovada.
-- Primeiro executar em ambiente de teste; validar métricas e segurança antes de merge/deploy.
+Segredos do executor (GitHub → Settings → Secrets): `RADAR_SUPABASE_URL`, `RADAR_SUPABASE_SERVICE_ROLE_KEY` e, opcionalmente, `RADAR_BSKY_HANDLE` / `RADAR_BSKY_APP_PASSWORD`. Sem eles o job termina sem coletar nada.
+
+## Indicadores do painel
+- **Leads encontrados**: oportunidades reais (testes e duplicados ficam de fora).
+- **Qualificados**: confiança ≥ 70% ou revisados por um administrador, ainda não descartados.
+- **Convites enviados**: marcados como enviados pelo administrador.
+- **Clientes confirmados**: o cliente publicou pelo link **ou** o administrador marcou “cliente confirmou”.
+- **Pedidos publicados**: pedidos em `qf_chamados` cuja origem é o token do convite.
+- **Profissionais que desbloquearam / créditos usados**: desbloqueios ativos desses pedidos (`qf_desbloqueios`).
+- **Recargas atribuíveis**: recargas aprovadas de profissionais que desbloquearam um pedido do radar, feitas **depois** do primeiro desbloqueio desse tipo (atribuição por proximidade, não prova de causa).
+
+## Segurança e LGPD
+- RLS ligada e fechada para `anon`/`authenticated` nas quatro tabelas; acesso só por funções `qf_radar_*`, as do painel exigem `private.qf_is_admin()`, as de ingestão são exclusivas do `service_role`.
+- Base legal registrada por lead (`legitimo_interesse`), sem consentimento presumido (`consent_status = nao_verificado`).
+- **Retenção**: lead sem pedido é apagado em 30 dias; lead que virou pedido é anonimizado (trecho e URL removidos) após 180 dias; registros de teste somem em 7 dias (rotina diária `qf-radar-manutencao`).
+- **Exclusão / opt-out**: botões no painel removem o lead e o histórico e guardam apenas o hash da URL em `qf_lead_supressao` para não recapturar.
+- Registros de teste (`is_test`) ficam fora dos indicadores e usam domínios `.invalid`.
+
+## Validação
+- `node --test tests/radar-leads-*.test.cjs` — classificador, conectores (sem rede), executor, segurança estática e tela.
+- `docs/validation/radar-leads-externos-sql-test.sql` — teste de integração no banco dentro de uma transação que sempre é revertida (ingestão, deduplicação, redação, convite, vínculo ao pedido, desbloqueio/recarga, LGPD, retenção, acessos negados).
