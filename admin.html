@@ -8685,12 +8685,12 @@ Screens.adminDashboardRender = function () {
       const total = Number(c.total || 0);
       // Pedido em "Outros" sem profissional no serviço: a lista é de quem tem Outros / atividade escrita.
       const outros = !!c.outros;
-      const grupoUm = outros ? 'profissional de Outros' : 'profissional desse serviço';
-      const grupoVarios = outros ? 'profissionais de Outros' : 'profissionais desse serviço';
+      const grupoUm = (outros ? 'profissional de Outros' : 'profissional desse serviço') + ' dentro do raio';
+      const grupoVarios = (outros ? 'profissionais de Outros' : 'profissionais desse serviço') + ' dentro do raio';
       const rodape = total ? (total > pros.length ? 'Mostrando os ' + pros.length + ' mais perto de ' + total + ' ' + grupoVarios : admLinhas(total, grupoUm, grupoVarios)) : '';
       return '<details class="qf-adm-card qf-prox"' + (i === 0 || aberto ? ' open' : '') + '><summary><span class="qf-prox__tit"><b>' + PU.escapeHtml(c.titulo || 'Pedido') + '</b><small>' + PU.escapeHtml(local || 'Local não informado') + '</small></span>' +
-        '<span class="qf-prox__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '<small>' + (total ? admLinhas(total, outros ? 'profissional de Outros' : 'profissional do serviço', outros ? 'profissionais de Outros' : 'profissionais do serviço') : 'Nenhum profissional desse serviço') + '</small></span></summary>' +
-        admTabela(['Distância', 'Profissional', 'Agora', 'Raio dele', 'Neste pedido', ''], linhas, rodape, 'Ainda não há profissional cadastrado nesse serviço.') +
+        '<span class="qf-prox__meta">' + PU.escapeHtml(quando) + (c.cliente ? ' · ' + PU.escapeHtml(c.cliente) : '') + '<small>' + (total ? admLinhas(total, outros ? 'profissional de Outros' : 'profissional do serviço', outros ? 'profissionais de Outros' : 'profissionais do serviço') + ' dentro do raio' : 'Nenhum profissional desse serviço dentro do raio') + '</small></span></summary>' +
+        admTabela(['Distância', 'Profissional', 'Agora', 'Raio dele', 'Neste pedido', ''], linhas, rodape, 'Nenhum profissional desse serviço dentro do raio deste pedido.') +
         (aberto && c.com_vaga ? '<div style="padding:12px 16px"><button class="btn btn--primary btn--sm" type="button" data-admin-remind="' + PU.escapeHtml(c.id) + '">Reenviar aviso</button><p class="text--sm text--secondary">' + (outros ? 'Somente profissionais de Outros ou com atividade escrita' : 'Somente profissionais desse serviço') + ', dentro do raio, online e que ainda não desbloquearam. ' + Number(c.lembrar || 0) + ' elegíveis agora.</p>' + (c.lembrete && c.lembrete.em ? '<p class="text--sm text--secondary">Último reenvio: ' + PU.escapeHtml(new Date(c.lembrete.em).toLocaleString('pt-BR')) + ' · ' + Number(c.lembrete.alvo || 0) + ' profissionais.</p>' : '') + '</div>' : '') +
         '<a class="qf-prox__ver" data-nav="/admin/servicos/' + PU.escapeHtml(c.id) + '">Abrir o pedido</a>' +
       '</details>';
