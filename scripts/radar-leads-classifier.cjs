@@ -17,9 +17,9 @@ function classifyLead(record) {
   if (!record || record.authorizedSource !== true || !/^https:\/\//i.test(record.url || '')) return { accepted: false, reason: 'fonte_nao_autorizada' };
   const body = String(record.text || '').slice(0, 3000);
   const plain = normalize(body);
-  const service = SERVICES.find(([, rx]) => rx.test(plain));
+  const service = SERVICES.find(([, rx]) => rx.test(body));
   const city = CITIES.find(name => plain.includes(normalize(name)));
-  const intent = INTENT.test(plain);
+  const intent = INTENT.test(body);
   return {
     accepted: Boolean(service && city && intent),
     reason: !service ? 'servico_nao_identificado' : !city ? 'fora_da_regiao' : !intent ? 'sem_intencao_clara' : 'oportunidade',
