@@ -73,7 +73,7 @@ function qfOutrosCard(item) {
     '<span class="qf-outros-km" title="Distância aproximada em linha reta">' + icon('mapPin') + ' ' + qfOutrosEsc(qfOutrosDistancia(item)) + '</span>' +
     qfOutrosStatusBadge(item) + '</div></div>' +
     '<div class="qf-outros-request__bottom"><span class="qf-outros-request__date">' +
-    qfOutrosEsc(item.data_preferida ? 'Previsto: ' + qfOutrosData(item.data_preferida) : 'Data a combinar') +
+    qfOutrosEsc('Pedido aberto') +
     '</span><button type="button" class="btn btn--outline btn--sm" data-qf-outros-ver="' + id +
     '" aria-expanded="false">Ver pedido ' + icon('chevronDown') + '</button></div>' +
     '<div class="qf-outros-request__details" data-qf-outros-detalhe="' + id + '" hidden>' +
@@ -122,16 +122,6 @@ function qfOutrosHorario(user) {
     ? 'Você está recebendo pedidos da sua profissão e região.'
     : 'Você está online. Notificações de novos pedidos pausadas até ' + start + '. Você pode consultar os pedidos no app.';
 }
-function qfOutrosPrazo(req) {
-  const value=String(req.prazo||'').toLowerCase();
-  if(value.includes('sem'))return ['SEM PRESSA','normal'];
-  if(value.includes('hoje')||value.includes('imediato'))return ['PRA HOJE','urgente'];
-  if(value.includes('amanh'))return ['AMANHÃ','normal'];
-  if(value.includes('semana'))return ['ESTA SEMANA','normal'];
-  if(req.prazoDia)return [qfOutrosData(req.prazoDia+'T12:00:00'),'normal'];
-  if(req.dataPreferida)return [qfOutrosData(req.dataPreferida),'normal'];
-  return ['A COMBINAR','normal'];
-}
 function qfOutrosProCard(req) {
   const c=DB.categoryById(req.categoriaId);
   const city=DB.cityById(req.cidadeId);
@@ -139,7 +129,8 @@ function qfOutrosProCard(req) {
   const uf=String((city&&city.uf)||((req.endereco||{}).uf)||'');
   const category=(c&&c.nome)||'Serviço';
   const title=qfOutrosEsc(category);
-  const when=qfOutrosPrazo(req);
+  const urgentePago=!!req.prioridade;
+  const msg=window.QFPedidoMsg?window.QFPedidoMsg.html(req):'';
   const dist=req.distanciaKm==null||!Number.isFinite(Number(req.distanciaKm))?'':qfOutrosEsc(Number(req.distanciaKm).toLocaleString('pt-BR',{maximumFractionDigits:1})+' km');
   const limit=Math.max(1,Number(req.limiteParticipantes||req.maxOrcamentos||3)||3);
   const occupied=Math.max(0,Number(req.participantes||0)||0);
@@ -147,9 +138,9 @@ function qfOutrosProCard(req) {
   return '<article class="qf-home-job" data-qf-home-job data-created="'+qfOutrosEsc(req.criadoEm||'')+
     '" data-distance="'+(req.distanciaKm==null?'999999':Number(req.distanciaKm))+'">'+
     '<div class="qf-home-job__symbol">'+icon(c&&c.icon||'briefcase')+'</div>'+
-    '<div class="qf-home-job__copy"><span class="qf-home-job__badge'+(when[1]==='urgente'?' is-urgent':'')+'">'+qfOutrosEsc(when[0])+'</span>'+
+    '<div class="qf-home-job__copy">'+(urgentePago?'<span class="qf-home-job__badge is-urgent">URGENTE</span>':'')+
     '<strong>'+title+'</strong><span class="qf-home-job__place">'+icon('mapPin')+' '+qfOutrosEsc(place+(uf?' - '+uf:''))+'</span>'+
-    '<small>'+qfOutrosEsc(String(req.descricao||'').slice(0,85))+'</small></div>'+
+    '<small>'+qfOutrosEsc(String(req.descricao||'').slice(0,85))+'</small>'+msg+'</div>'+
     '<div class="qf-home-job__action">'+(dist?'<span class="qf-home-job__distance">'+dist+'</span>':'')+
     '<button class="btn btn--primary" type="button" data-nav="/profissional/chamada/'+qfOutrosEsc(req.id)+'">Ver pedido</button>'+
     '<span class="qf-home-job__vagas">'+free+(free===1?' vaga':' vagas')+'</span></div></article>';

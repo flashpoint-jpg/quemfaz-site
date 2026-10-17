@@ -102,11 +102,11 @@ assert.ok(html.includes("delete row.prazo; delete row.prazo_dia; delete row.peri
 assert.ok(html.includes("if (comPrazo) { row.prazo = data.prazo; row.prazo_dia = data.prazoDia || null; row.periodo = data.periodo || null; }"));
 
 // Profissional: cartão, ordem das duas listas, tela do pedido, tela cheia e aviso.
-assert.ok(html.includes("(prazoInfo ? global.QFPrazo.seloHtml(prazoInfo) : (urgente ? '<span class=\"qf-urgent-badge\">URGENTE</span>' : ''))"));
-assert.equal((html.match(/global\.QFPrazo\.comparar\(a,b\)/g) || []).length, 2);
+// V11.97.5: antes do desbloqueio o profissional NÃO vê o prazo (ver tests/pedido-sem-prazo-profissional.test.cjs).
+// O prazo continua existindo para o cliente e depois do desbloqueio.
+assert.ok(html.includes("(urgente ? '<span class=\"qf-urgent-badge\">URGENTE</span>' : '')"));
+assert.equal((html.match(/global\.QFPrazo\.comparar\(a,b\)/g) || []).length, 0);
 assert.ok(html.includes("'Para quando você pediu' : 'Quando o cliente precisa'"));
-assert.ok(html.includes('qf-call-overlay__prazo'));
-assert.ok(html.includes("[detail, pz ? pz.texto : '', CI.kmTxt(r), CI.tempoTxt(r), CI.precoTxt(r, currentUser())]"));
 
 // O prazo chega pela consulta à parte; se ela falhar, a lista de pedidos segue igual.
 {

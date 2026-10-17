@@ -369,7 +369,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
 function newCallPayload(call: any) {
   const priority = !!call.prioridade;
   return {
-    title: priority ? "Chamado PRIORITÁRIO: " + (call.titulo || "serviço") : "Novo chamado: " + (call.titulo || "serviço"),
+    title: priority ? "PEDIDO URGENTE: " + (call.titulo || "serviço") : "Novo chamado: " + (call.titulo || "serviço"),
     body: [call.bairro, call.cidade, call.uf].filter(Boolean).join(" · ") + " — toque para ver",
     url: "/#/profissional/servicos/disponiveis",
     // Cada pedido mantém seu próprio alerta forte. A reserva de entregas já
@@ -391,18 +391,7 @@ function fmtBRL(c: number) { return "R$ " + (c / 100).toFixed(2).replace(".", ",
 
 function newCallBody(call: any, d: any) {
   const parts: string[] = [];
-  if (call?.data_preferida) {
-    try {
-      const when = new Date(call.data_preferida);
-      if (!Number.isNaN(when.getTime())) {
-        const label = when.toLocaleString("pt-BR", {
-          timeZone: "America/Sao_Paulo",
-          day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"
-        });
-        parts.push("Execução " + label);
-      }
-    } catch (_) {}
-  }
+  // O prazo/data pretendida pelo cliente não aparece no aviso antes do desbloqueio.
   const km = d.distancia_km == null ? null : Number(d.distancia_km);
   const min = d.tempo_min == null ? null : Number(d.tempo_min);
   if (km != null && Number.isFinite(km)) parts.push(fmtKm(km) + (min != null && Number.isFinite(min) ? " (" + fmtMin(min) + ")" : ""));
