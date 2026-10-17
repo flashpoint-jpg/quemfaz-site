@@ -2501,6 +2501,8 @@ window.qfGoogleLead = function (requestId) {
   try {
     var id = String(requestId || '');
     if (!id) return; // conversão só com pedido confirmado no banco
+    if (!/^[0-9a-f-]{36}$/i.test(id) || /[?&]demo=1(&|$)/.test(location.search || '')) return;
+    if (window.QFConversao && window.QFConversao.consentimento() !== 'granted') return;
     gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': id });
   } catch (_) {}
 };
@@ -14692,6 +14694,7 @@ alt=""></noscript>
               '<div class="text--sm text--secondary" style="text-align:center;">Pix, cartão ou boleto</div></div>'
             );
             document.getElementById('ir-carteira').onclick = function () {
+              if (global.QFRechargeReturn) global.QFRechargeReturn.remember(params.id, user.id);
               PU.closeSheet();
               global.navigate('/profissional/carteira', true);
             };
@@ -15316,7 +15319,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.97.3';
+  const APP_VERSION = '11.97.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -18911,6 +18914,7 @@ alt=""></noscript>
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
 <script src="qf-card-inline.js?v=1"></script>
+<script src="qf-recharge-return.js?v=1"></script>
 
 <script id="qf-launch-countdown">
 (function(){
