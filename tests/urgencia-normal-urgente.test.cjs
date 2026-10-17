@@ -79,3 +79,8 @@ test('migração: aditiva, sem tocar em pedidos, sem aviso novo', () => {
   assert.ok(!/create (or replace )?trigger[\s\S]*after insert/i.test(sql), 'nenhum gatilho de aviso novo');
   ['qf_disparar_push_novo_chamado', 'qf_cascata_iniciar', 'qf_expirar_chamados', 'qf_fechar_sem_retorno'].forEach((f) => assert.ok(!sql.includes(f)));
 });
+
+test('pedido antigo com prazo hoje/amanhã aparece como urgente; demais, Normal', () => {
+  const html = require('fs').readFileSync(require('path').join(__dirname, '..', 'index.html'), 'utf8');
+  assert.ok(html.includes("req.prazo === 'hoje' || req.prazo === 'amanha'"));
+});

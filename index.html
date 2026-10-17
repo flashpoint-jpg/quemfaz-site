@@ -4395,9 +4395,9 @@ alt=""></noscript>
   }
   global.QFPedidoMsg = { texto: mensagemPedido, html: mensagemHtml, COMUM: MSG_COMUM, URGENTE: MSG_URGENTE };
 
-  // Urgência grátis (Normal/Urgente) escolhida pelo cliente. Pedido antigo sem escolha: se pagou prioridade, segue como urgente
-  // (era o que o selo vermelho já dizia); os demais aparecem como Normal.
-  function ehUrgente(req) { return !!req && (req.urgencia === 'urgente' || (!req.urgencia && !!req.prioridade)); }
+  // Urgência grátis (Normal/Urgente) escolhida pelo cliente. Pedido antigo sem escolha: se pagou prioridade ou tinha prazo hoje/amanhã, segue como urgente;
+  // os demais aparecem como Normal. Só exibição — o banco não é alterado.
+  function ehUrgente(req) { return !!req && (req.urgencia === 'urgente' || (!req.urgencia && (!!req.prioridade || req.prazo === 'hoje' || req.prazo === 'amanha'))); }
   function urgenciaTagHtml(req) {
     return ehUrgente(req)
       ? '<span class="qf-urgente-tag" data-qf-urgencia-tag="urgente">URGENTE</span>'
@@ -15261,7 +15261,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.98';
+  const APP_VERSION = '11.98.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
