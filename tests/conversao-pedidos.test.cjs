@@ -151,10 +151,10 @@ test('guias do ABC: canonical, sitemap, schema e link direto para o formulário'
     assert.ok(!/todos os profissionais (são )?verificados/i.test(page), 'sem promessa de verificação');
     assert.ok(/<meta name="description" content="[^"]{60,170}">/.test(page), slug + ' description');
   }
-  // Página fina do ABC aponta para o guia e sai do sitemap; fora do ABC não muda.
+  // Conteúdo municipal próprio mantém canonical local e volta ao sitemap.
   const fina = fs.readFileSync(path.join(dist, 'servicos', 'eletricista', 'maua', 'index.html'), 'utf8');
-  assert.ok(fina.includes('<link rel="canonical" href="https://quemfazservico.com.br/servicos/eletricista/abc/">'));
-  assert.ok(!sitemap.includes('/servicos/eletricista/maua/</loc>'));
+  assert.ok(fina.includes('<link rel="canonical" href="https://quemfazservico.com.br/servicos/eletricista/maua/">'));
+  assert.ok(sitemap.includes('/servicos/eletricista/maua/</loc>'));
   assert.ok(sitemap.includes('/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc>'), 'editorial de sofá no sitemap');
   assert.ok(sitemap.includes('/servicos/eletricista/guarulhos/</loc>'));
   // UTM e identificadores de clique seguem para o formulário.

@@ -42,7 +42,7 @@ const EDITORIAIS = new Set([...require('./seo-montagem-sofa.cjs').pages.map(([s,
 
 const SERVICOS = [
   {
-    slug: 'limpeza-de-sofa', cat: 'cat_limpeza_estofados', nome: 'Limpeza e higienização de sofá', curto: 'limpeza de sofá',
+    slug: 'limpeza-de-sofa', cat: 'cat_limpeza_estofados', nome: 'Limpeza de sofá', curto: 'limpeza de sofá',
     duplicados: ['limpeza-de-sofa', 'higienizacao-de-sofa'],
     lead: 'Mancha, cheiro de xixi de pet, poeira acumulada ou só a limpeza do ano? Descreva o seu sofá e receba contatos de quem faz limpeza e higienização no ABC.',
     quando: ['Manchas de bebida, gordura ou caneta', 'Odor de suor, mofo ou urina de animais', 'Sofá retrátil ou reclinável com sujeira nas dobras', 'Antes de mudar, vender ou depois de reforma', 'Alergias: ácaros e poeira acumulada no tecido'],
@@ -52,7 +52,7 @@ const SERVICOS = [
     faq: [['Higienização e limpeza de sofá são a mesma coisa?', 'Na prática os profissionais usam os dois nomes. Higienização costuma incluir produto para reduzir ácaros, bactérias e odores, além da limpeza da sujeira visível. Pergunte o que está incluído.'], ['Quanto tempo o sofá leva para secar?', 'Depende do tecido, do método e da ventilação do ambiente. Pergunte a estimativa ao profissional antes de agendar.']]
   },
   {
-    slug: 'limpeza-de-estofados-e-tapetes', cat: 'cat_limpeza_estofados', nome: 'Limpeza de estofados', curto: 'limpeza de estofados',
+    slug: 'limpeza-de-estofados-e-tapetes', cat: 'cat_limpeza_estofados', nome: 'Limpeza de estofados e tapetes', curto: 'limpeza de estofados e tapetes',
     duplicados: ['limpeza-de-estofado'],
     lead: 'Poltronas, cadeiras de jantar, colchão, banco de carro ou tapete: descreva as peças e encontre quem faz limpeza de estofados no ABC.',
     quando: ['Cadeiras estofadas da sala de jantar encardidas', 'Colchão com manchas ou odor', 'Poltrona, puff ou cabeceira de cama', 'Tapete com pelos de animais ou manchas', 'Estofado de escritório ou consultório'],
@@ -95,8 +95,8 @@ const SERVICOS = [
     slug: 'diarista', cat: 'cat_diarista', nome: 'Diarista e limpeza residencial', curto: 'diarista',
     duplicados: ['faxineira'],
     lead: 'Faxina de rotina, limpeza pesada, pós-mudança ou casa vazia? Conte o tamanho do imóvel e as tarefas e encontre diaristas que atendem o ABC.',
-    quando: ['Faxina semanal ou quinzenal', 'Limpeza pesada antes de receber visitas', 'Imóvel vazio para entrar ou entregar (mudança)', 'Limpeza de vidros, armários por dentro e eletrodomésticos', 'Passar roupa junto com a faxina'],
-    informar: ['Quantos quartos, banheiros e se é casa ou apartamento', 'Se é limpeza de rotina, pesada ou de imóvel vazio', 'Tarefas extras: vidros, armários, geladeira, forno, passar roupa', 'Se você fornece os produtos e equipamentos'],
+    quando: ['Faxina semanal ou quinzenal', 'Limpeza de rotina antes de receber visitas', 'Organização das prioridades da diária', 'Limpeza de vidros, armários por dentro e eletrodomésticos'],
+    informar: ['Quantos quartos, banheiros e se é casa ou apartamento', 'Frequência e duração pretendida da limpeza de rotina', 'Prioridades da diária: vidros, armários, geladeira e forno', 'Se você fornece os produtos e equipamentos'],
     comparar: 'Combine as tarefas incluídas, o horário de início e fim, quem fornece produtos e se transporte está no valor. Para limpeza pesada, peça o preço antes, pela descrição ou fotos.',
     cuidados: ['Diarista que trabalha até 2 dias por semana na mesma casa não é empregada doméstica pela Lei Complementar 150/2015; acima disso, a relação muda.', 'Deixe claro o que não deve ser mexido e guarde objetos de valor.', 'Combine a forma de pagamento (Pix, dinheiro) no fim do dia.'],
     faq: [['Diarista leva os produtos de limpeza?', 'Algumas levam, outras usam os seus. Informe no pedido o que você já tem em casa.'], ['Posso contratar a mesma diarista toda semana?', 'Sim. Depois do primeiro atendimento, você combina a frequência direto com a profissional.']]
