@@ -15,11 +15,13 @@ for (const name of fs.readdirSync(root)) {
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
-// Insere o favicon ICO oficial no HTML inicial, sem alterar outros metadados.
-if (!html.includes('href="/favicon.ico"')) {
-  if (!html.includes('</head>')) throw Error('Fechamento head ausente');
-  html=html.replace('</head>','<link rel="icon" type="image/x-icon" href="/favicon.ico">\\n</head>');
-}
+// Declara apenas ICO e PNG derivados da mesma arte oficial, evitando ícones conflitantes.
+const headEnd=html.indexOf('</head>');
+if (headEnd<0) throw Error('Fechamento head ausente');
+const head=html.slice(0,headEnd);
+const tail=html.slice(headEnd);
+const cleanHead=head.replace(/<link\b[^>]*\brel\s*=\s*(?:"icon"|'icon')[^>]*>/gi,'');
+html=cleanHead+'<link rel="icon" type="image/x-icon" href="/favicon.ico">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">\n'+tail;
 for (const file of ['favicon.ico','favicon.png']) {
   if (!fs.existsSync(path.join(out,file))) throw Error('Favicon ausente no dist: '+file);
 }
