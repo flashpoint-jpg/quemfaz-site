@@ -7261,7 +7261,10 @@ alt=""></noscript>
   async function unlockCall(chamadoId, profissionalId, exclusivo) {
     // V11.90: exclusivo = só ele recebe o contato do cliente (paga N× o preço, enquanto ninguém desbloqueou).
     const res = await client.rpc('qf_desbloquear_chamado', exclusivo ? { p_chamado_id: chamadoId, p_exclusivo: true } : { p_chamado_id: chamadoId });
-    if (res.error) return { ok: false, reason: 'erro', error: res.error.message };
+    if (res.error) {
+      if (/confirmacao_contato_pendente/.test(String(res.error.message || ''))) return { ok: false, reason: 'confirmacao_pendente' };
+      return { ok: false, reason: 'erro', error: res.error.message };
+    }
     const out = res.data || {};
     if (!out.ok) {
       if (out.reason === 'reservado') {
@@ -14761,6 +14764,9 @@ alt=""></noscript>
               PU.closeSheet();
               global.navigate('/profissional/carteira', true);
             };
+          } else if (out && out.reason === 'confirmacao_pendente') {
+            PU.toast(global.QFValor.mensagemDesbloqueio(out), 'danger', 6000);
+            global.QFValor.abrirConfirmacoes();
           } else if (out && out.reason === 'taxa_mudou') {
             try { await global.QFCloud.afterValorUnlock(user.id); } catch (_) {}
             PU.toast(global.QFValor.mensagemDesbloqueio(out), 'danger');
@@ -14818,6 +14824,9 @@ alt=""></noscript>
           } else if (result && (result.reason === 'exclusivo_indisponivel' || result.reason === 'exclusivo_desligado')) {
             PU.toast(result.reason === 'exclusivo_desligado' ? 'O exclusivo não está disponível agora. Você ainda pode desbloquear normal.' : 'Outro profissional acabou de pegar este pedido. Você ainda pode desbloquear normal, se tiver vaga.', 'danger', 5000);
             global.navigate('/profissional/chamada/' + params.id, true);
+          } else if (result && result.reason === 'confirmacao_pendente' && global.QFValor) {
+            PU.toast(global.QFValor.mensagemDesbloqueio({ reason: 'confirmacao_pendente' }), 'danger', 6000);
+            global.QFValor.abrirConfirmacoes();
           } else if (result && result.reason === 'reservado') {
             PU.toast('As vagas deste pedido já foram preenchidas. Veja os outros serviços disponíveis.', 'danger');
             global.navigate('/profissional/servicos/disponiveis', true);
@@ -15454,7 +15463,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.99.0';
+  const APP_VERSION = '11.99.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -17563,6 +17572,7 @@ alt=""></noscript>
     if (pattern==='/profissional/home' || pattern==='/profissional/servicos/disponiveis') bindPortfolio(content);
     if (pattern==='/cliente/pedido/:id') bindClientDetailFeature(content,params);
     if (pattern==='/profissional/pedido/:id') fillProfCompetition(content,params);
+    if ((pattern==='/profissional/home' || pattern==='/profissional/servicos/disponiveis' || pattern==='/profissional/chamada/:id') && global.QFValor) { try { global.QFValor.carregarConfig().then(function () { global.QFValor.montarConfirmacoes(content); }); } catch (_) {} }
     if ((pattern==='/profissional/pedido/:id' || pattern==='/profissional/chat/:id') && global.QFValor) { try { global.QFValor.carregarConfig().then(function () { global.QFValor.montarBaixa(content, params.id); }); } catch (_) {} }
     if (pattern==='/profissional/chat/:id') bindChat(content,params,user,'profissional');
     if (pattern==='/cliente/chat/:id/:profId') bindChat(content,params,user,'cliente');
@@ -19013,7 +19023,7 @@ alt=""></noscript>
 
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
-<script src="qf-valor-definido.js?v=1"></script>
+<script src="qf-valor-definido.js?v=2"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>
 

@@ -112,7 +112,8 @@
       indisponivel: 'Este pedido não está mais disponível.',
       reservado: 'Outro profissional acabou de desbloquear este pedido.',
       nao_elegivel: 'Este pedido não é da sua profissão ou está fora da sua região.',
-      taxa_mudou: 'A taxa mudou. Confira o novo valor antes de continuar.'
+      taxa_mudou: 'A taxa mudou. Confira o novo valor antes de continuar.',
+      confirmacao_pendente: 'Confirme se o cliente respondeu nos pedidos liberados há mais de 24 h para desbloquear novos.'
     };
     if (out.reason === 'saldo_insuficiente') {
       return 'Faltam ' + formatBRL(out.falta != null ? out.falta : Math.max(0, Number(out.taxa || 0) - Number(out.saldo || 0))) + ' em créditos para pagar a taxa de ' + formatBRL(out.taxa) + '.';
@@ -272,6 +273,61 @@
     };
   }
 
+  // ---------- Confirmação de contato (24 h) ----------
+  function confirmacoesHtml(lista) {
+    var itens = (Array.isArray(lista) ? lista : []);
+    if (!itens.length) return '';
+    return '<div class="stack" data-qf-confirmar-contato><h3 class="sheet__title">O cliente respondeu?</h3>' +
+      '<p class="text text--secondary">Você liberou estes pedidos há mais de 24 horas. Enquanto não responder, não é possível desbloquear novos pedidos.</p>' +
+      itens.map(function (i) {
+        var cat = String(i.categoria || '').replace(/^cat_/, '').replace(/_/g, ' ');
+        return '<div class="card card--tight" data-qf-cc-item="' + esc(i.chamado_id) + '"><strong>' + esc(cat || 'Serviço') + (i.cidade ? ' · ' + esc(i.cidade) : '') + '</strong>' +
+          (i.valor_oferecido_centavos ? '<div class="text--sm text--secondary">Valor do cliente: ' + esc(formatBRL(i.valor_oferecido_centavos)) + '</div>' : '') +
+          '<button class="btn btn--primary btn--block" type="button" data-qf-cc="' + esc(i.chamado_id) + '" data-r="cliente_respondeu">Sim, o cliente respondeu</button>' +
+          '<button class="btn btn--ghost btn--block" type="button" data-qf-cc="' + esc(i.chamado_id) + '" data-r="cliente_nao_respondeu">Não respondeu — liberar o pedido para outro profissional</button></div>';
+      }).join('') +
+      '<p class="text--sm text--secondary">Ao liberar o pedido, o seu contato com este cliente é encerrado e o crédito não volta automaticamente. Se o contato era falso ou inválido, abra uma contestação.</p></div>';
+  }
+
+  function abrirConfirmacoes(aoTerminar) {
+    var PU = global.PU;
+    return api.contatosPendentes().then(function (lista) {
+      if (!Array.isArray(lista) || !lista.length) { if (aoTerminar) aoTerminar(); return; }
+      PU.openSheet(confirmacoesHtml(lista));
+      var raiz = document.querySelector('[data-qf-confirmar-contato]');
+      if (!raiz) return;
+      raiz.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-qf-cc]'); if (!b) return;
+        b.disabled = true;
+        api.confirmarContato(b.getAttribute('data-qf-cc'), b.getAttribute('data-r')).then(function (out) {
+          if (out && out.ok) {
+            var item = raiz.querySelector('[data-qf-cc-item="' + b.getAttribute('data-qf-cc') + '"]');
+            if (item && item.parentNode) item.parentNode.removeChild(item);
+            PU.toast(out.pedido_reaberto ? 'Pedido liberado para outro profissional.' : 'Obrigado! Contato confirmado.', 'success');
+            if (!raiz.querySelector('[data-qf-cc-item]')) { PU.closeSheet(); if (aoTerminar) aoTerminar(); }
+          } else { b.disabled = false; PU.toast('Não foi possível registrar agora. Tente de novo.', 'danger'); }
+        });
+      });
+    });
+  }
+
+  // Aviso no topo da área do profissional enquanto houver confirmação pendente.
+  function montarConfirmacoes(content) {
+    if (!ativo() || !content || content.querySelector('[data-qf-cc-aviso]')) return;
+    api.contatosPendentes().then(function (lista) {
+      if (!Array.isArray(lista) || !lista.length || !content.isConnected || content.querySelector('[data-qf-cc-aviso]')) return;
+      var view = content.querySelector('.view') || content;
+      var box = document.createElement('div');
+      box.className = 'section card stack--sm';
+      box.setAttribute('data-qf-cc-aviso', '');
+      box.innerHTML = '<strong>Confirme o contato com o cliente</strong>' +
+        '<p class="text--sm text--secondary">Você tem ' + lista.length + (lista.length === 1 ? ' pedido liberado há mais de 24 h' : ' pedidos liberados há mais de 24 h') + ' sem resposta registrada. Enquanto não confirmar, não consegue desbloquear novos pedidos.</p>' +
+        '<button class="btn btn--primary btn--block" type="button">Responder agora</button>';
+      view.insertBefore(box, view.firstChild);
+      box.querySelector('button').onclick = function () { abrirConfirmacoes(function () { if (box.parentNode) box.parentNode.removeChild(box); }); };
+    });
+  }
+
   var MOTIVOS_CONTESTACAO = [
     { id: 'contato_falso', texto: 'O contato é falso' },
     { id: 'contato_invalido', texto: 'O número não existe / não atende' },
@@ -359,10 +415,12 @@
     etiquetaHtml: etiquetaHtml, resumoValorHtml: resumoValorHtml, seletorModalidadeHtml: seletorModalidadeHtml,
     cancelamentoHtml: cancelamentoHtml, contestacaoHtml: contestacaoHtml, MOTIVOS_CONTESTACAO: MOTIVOS_CONTESTACAO, baixaHtml: baixaHtml, linkConfirmacao: linkConfirmacao, tokenDoHash: tokenDoHash,
     carregarConfig: carregarConfig, ativo: ativo, enriquecer: enriquecer,
-    abrirCancelamento: abrirCancelamento, montarBaixa: montarBaixa,
+    abrirCancelamento: abrirCancelamento, montarBaixa: montarBaixa, montarConfirmacoes: montarConfirmacoes, abrirConfirmacoes: abrirConfirmacoes, confirmacoesHtml: confirmacoesHtml,
     config: function () { return cfgOf(state.cfg); },
     desbloquear: function (id, taxa) { return rpc('qf_desbloquear_chamado_valor', { p_chamado_id: id, p_taxa_confirmada_centavos: taxa }); },
     cancelar: function (id, motivo, detalhe) { return rpc('qf_cliente_cancelar_pedido', { p_chamado_id: id, p_motivo: motivo, p_detalhe: detalhe || null }); },
+    contatosPendentes: function () { var c = client(); if (!c) return Promise.resolve([]); return Promise.resolve(c.rpc('qf_contatos_pendentes')).then(function (r) { return r && !r.error && Array.isArray(r.data) ? r.data : []; }).catch(function () { return []; }); },
+    confirmarContato: function (id, resposta) { return rpc('qf_confirmar_contato', { p_chamado_id: id, p_resposta: resposta }); },
     solicitarBaixa: function (id) { return rpc('qf_solicitar_baixa', { p_chamado_id: id }); },
     pendentes: function (token, carteirinha) { return rpc('qf_cliente_conclusoes_pendentes', { p_token: token || null, p_carteirinha: carteirinha || null }); },
     responder: function (id, resposta, nota, comentario, problema, token) {

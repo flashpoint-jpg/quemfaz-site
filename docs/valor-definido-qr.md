@@ -44,3 +44,14 @@ Backups dos arquivos alterados: `docs/backup-pre-valor-qr/`.
 * **Notificações**: a distribuição (profissão, raio, horário) reutiliza as regras atuais sem alteração; não foi testada ponta a ponta com push real.
 * O ambiente de desenvolvimento não alcançava o registro npm: `npm test`/build (esbuild) e o wrapper PGlite não puderam ser executados aqui. Seis testes já falhavam na `main` por depender do build.
 * A migração foi validada contra um schema reduzido espelhando as constraints de produção, não contra o banco real.
+
+## Confirmação de contato após 24 h
+
+Como muitos profissionais não usam o chat, o profissional que desbloqueou um pedido com **valor definido** precisa, depois de 24 h (`confirmacao_horas` em `qf_config`), confirmar se o cliente respondeu.
+
+- Sem resposta registrada no chat, sem finalização pendente/concluída e sem confirmação, o pedido vira "contato pendente" (`qf_contatos_pendentes`).
+- Enquanto houver pendência, **nenhum novo desbloqueio** é permitido (valor definido ou tradicional): RPC retorna `confirmacao_pendente` / trigger levanta `confirmacao_contato_pendente`. Admin não é bloqueado.
+- "Sim, respondeu": registra e mantém o pedido.
+- "Não respondeu": libera a vaga (desbloqueio `ativo=false`, pedido volta a `aberto`) para outro profissional. **Não há reembolso automático**; contestação segue valendo.
+- Limitação: o bloqueio é no desbloqueio; notificações push ao profissional não são suprimidas.
+- Migração: `supabase/2026-10-18-confirmacao-contato-24h.sql` (rollback incluso). Testes: `tests/valor-definido-confirmacao.sql`.

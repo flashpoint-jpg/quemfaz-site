@@ -128,3 +128,25 @@ test('falha na configuração mantém tudo desligado', async () => {
   await V.carregarConfig(true);
   assert.equal(V.ativo(), false);
 });
+
+test('confirmação 24h: html lista pedidos com as duas respostas', () => {
+  const h = V.confirmacoesHtml([{ chamado_id: 'abc', categoria: 'cat_eletricista', cidade: 'Muzambinho', valor_oferecido_centavos: 15000 }]);
+  assert.match(h, /O cliente respondeu\?/);
+  assert.match(h, /data-r="cliente_respondeu"/);
+  assert.match(h, /data-r="cliente_nao_respondeu"/);
+  assert.match(h, /R\$\s*150,00/);
+  assert.equal(V.confirmacoesHtml([]), '');
+});
+
+test('confirmação 24h: mensagem de bloqueio e escape de html', () => {
+  assert.match(V.mensagemDesbloqueio({ reason: 'confirmacao_pendente' }), /24 h/);
+  assert.doesNotMatch(V.confirmacoesHtml([{ chamado_id: '"><script>', categoria: 'x' }]), /<script>/);
+});
+
+test('confirmação 24h: RPCs corretas', async () => {
+  const calls = [];
+  global.QFCloud = { client: { rpc(n, a) { calls.push([n, a]); return Promise.resolve({ data: n === 'qf_contatos_pendentes' ? [{ chamado_id: 'z' }] : { ok: true }, error: null }); } } };
+  assert.equal((await V.contatosPendentes()).length, 1);
+  await V.confirmarContato('z', 'cliente_nao_respondeu');
+  assert.deepEqual(calls[1], ['qf_confirmar_contato', { p_chamado_id: 'z', p_resposta: 'cliente_nao_respondeu' }]);
+});
