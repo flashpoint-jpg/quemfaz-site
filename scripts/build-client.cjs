@@ -112,6 +112,8 @@ html=html.replace('</body>','<script src="/qf-city-cep-resolver.js"></script></b
 html=html.replace('</body>','<script defer src="/qf-wallet-balance-rules.js?v=20261014"></script></body>');
 // Relogio da validade do bonus, consultando o valor promocional no Supabase.
 html=html.replace('</body>','<script defer src="/qf-bonus-clock.js?v=20261014"></script></body>');
+// Monitoramento de como o profissional acessa (app Android, PWA ou navegador). So grava com sessao de profissional.
+html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=20261018"></script></body>');
 fs.writeFileSync(path.join(out,'index.html'),html);
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
