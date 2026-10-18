@@ -78,7 +78,8 @@
     var c = global.QFAdminCloud.client, PU = global.PU;
     var box = document.createElement('section'); box.className = 'section';
     box.innerHTML = '<h2 class="h3">Pedidos com valor definido, baixas e cancelamentos</h2><div class="card stack--sm" data-qf-valor-admin>Carregando…</div>';
-    content.appendChild(box);
+    // No topo do painel: no fim da página ficava escondido atrás do relatório comercial.
+    content.insertBefore(box, content.firstChild);
     var raiz = box.querySelector('[data-qf-valor-admin]');
     var filtro = null;
     function rpc(n, a) { return Promise.resolve(c.rpc(n, a || {})).then(function (r) { if (r.error) throw r.error; return r.data; }); }
