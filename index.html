@@ -2507,7 +2507,7 @@ window.qfGoogleLead = function (requestId) {
   } catch (_) {}
 };
 </script>
-<script src="qf-conversao.js?v=11.96"></script>
+<script src="qf-conversao.js?v=12.0.1"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
@@ -2845,7 +2845,7 @@ window.qfGoogleLead = function (requestId) {
   .qf-client-request .qf-request-schedule .qf-prazo { margin-top: 3px; }
   .qf-client-request .qf-request-schedule .qf-prazo > .field__label { display: none; }
   .qf-client-request .qf-request-unified .qf-location-caption { margin: 4px 0 0 !important; font-size: 12px; }
-  .qf-client-request .qf-request-unified [data-cliente-gps] { padding: 4px 10px; min-height: 38px !important; font-size: 12px; }
+  .qf-client-request .qf-request-unified [data-cliente-gps] { padding: 4px 10px; min-height: 44px !important; font-size: 12px; }
   .qf-client-request .field input,
   .qf-client-request .field textarea,
   .qf-client-request .field select { scroll-margin-bottom: 110px; }
@@ -3391,6 +3391,8 @@ input,textarea,[contenteditable="true"]{-webkit-user-select:text;user-select:tex
 .qf-play-badge--hero{display:flex;width:max-content;margin:14px auto 0}
 .qf-play-link{display:flex;align-items:center;justify-content:center;gap:6px;width:max-content;max-width:100%;margin:4px auto 0;padding:4px 8px;background:none;color:rgba(255,255,255,.9);font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .qf-play-link svg{width:15px;height:15px;color:currentColor}
+.qf-play-link{min-height:44px}
+body .btn[data-cliente-gps],body .btn[data-descricao-rapida],body .btn[data-qf-voltar-etapa],body .btn[data-action="alterar-servico-cliente"],body .btn[data-qf-sub-ir],body .btn[data-step-back]{min-height:44px !important;height:auto !important}
 .qf-play-link:focus-visible{outline:3px solid var(--orange-400);outline-offset:3px}
 .qf-play-badge--txt{min-height:52px;padding:0 18px;background:#000;color:#fff;border:1px solid #a6a6a6;font:700 15px/1.1 Arial,sans-serif;text-decoration:none}
 .qf-play-badge--txt::before{content:'Baixar na Google Play'}
@@ -9789,13 +9791,26 @@ alt=""></noscript>
         if (global.QFValor) {
           const alvoOrc = form.querySelector('[data-qf-quantos]');
           if (alvoOrc && !form.querySelector('[data-qf-orcamento]')) {
-            alvoOrc.insertAdjacentHTML('beforebegin', global.QFValor.campoOrcamentoHtml());
+            alvoOrc.insertAdjacentHTML('afterend', global.QFValor.campoOrcamentoHtml());
             const inpOrc = form.querySelector('[data-qf-orcamento-input]');
-            if (inpOrc) inpOrc.addEventListener('input', function () {
+            const mostrarErroOrc = function () {
               const erro = form.querySelector('[data-qf-orcamento-erro]');
               const v = global.QFValor.validarOrcamento(inpOrc.value);
               if (erro) erro.textContent = v.ok ? '' : v.mensagem;
-            });
+              inpOrc.setAttribute('aria-invalid', v.ok ? 'false' : 'true');
+              return v;
+            };
+            if (inpOrc) {
+              // Só avisa e formata quando a pessoa termina de digitar; enquanto digita, o aviso some.
+              inpOrc.addEventListener('input', function () {
+                const erro = form.querySelector('[data-qf-orcamento-erro]');
+                if (erro) erro.textContent = '';
+                inpOrc.setAttribute('aria-invalid', 'false');
+              });
+              inpOrc.addEventListener('blur', function () {
+                if (mostrarErroOrc().ok) inpOrc.value = global.QFValor.formatarOrcamento(inpOrc.value);
+              });
+            }
           }
         }
         quantos(3);
@@ -15360,7 +15375,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.0.0';
+  const APP_VERSION = '12.0.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15381,7 +15396,7 @@ alt=""></noscript>
     const C = global.Capacitor;
     if (!(C && C.isNativePlatform && C.isNativePlatform() && C.isPluginAvailable && C.isPluginAvailable('QFOnline'))) return Promise.resolve(null);
     const ask = C.Plugins.QFOnline.getStatus().then(function (r) {
-      const v = r && (r.appVersion || (Number(r.version) >= 12 ? '12.0.0' : null));
+      const v = r && (r.appVersion || (Number(r.version) >= 12 ? '12.0.1' : null));
       if (v) { try { localStorage.setItem('qf_apk_version', String(v)); } catch (_) {} }
       return v || null;
     }).catch(function () { return null; });
@@ -18919,7 +18934,7 @@ alt=""></noscript>
 
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
-<script src="qf-valor-definido.js?v=3"></script>
+<script src="qf-valor-definido.js?v=4"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>
 

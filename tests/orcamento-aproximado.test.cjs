@@ -25,8 +25,9 @@ test('campo do formulário: texto pedido, aviso de valor aproximado, sem contrat
   const h = V.campoOrcamentoHtml();
   assert.match(h, /Quanto você está disposto a gastar aproximadamente com esse serviço\?/);
   assert.match(h, /Ex\.: R\$ 1\.500,00/);
-  assert.match(h, /valor aproximado/i);
+  assert.match(h, /estimativa/i);
   assert.match(h, /não está contratando/i);
+  assert.match(h, /aria-describedby="qf-orc-ajuda qf-orc-erro"/);
   assert.match(h, /grátis/i);
   assert.doesNotMatch(h, /type="checkbox"|confirmo|valor definido|taxa|6%/i);
   assert.match(h, /name="orcamentoAprox"/);
@@ -58,7 +59,7 @@ test('enriquecerOrcamento anexa só o que o banco devolve e falha em silêncio',
 
 test('index.html: um único fluxo, orçamento sem depender de chave, sem 6% e sem seletor A/B', () => {
   const html = load('index.html');
-  assert.match(html, /qf-valor-definido\.js\?v=3/);
+  assert.match(html, /qf-valor-definido\.js\?v=4/);
   assert.match(html, /global\.QFValor\.campoOrcamentoHtml\(\)/);
   assert.match(html, /global\.QFValor\.validarOrcamento\(fd\.get\('orcamentoAprox'\)\)/);
   assert.match(html, /orcamentoAproxCentavos: orcamentoAprox/);
@@ -83,4 +84,11 @@ test('migração corretiva: orçamento, 4x, sem percentual e sem tocar preços, 
 
 test('o formulário e o desbloqueio não citam percentual de taxa', () => {
   assert.doesNotMatch(load('qf-valor-definido.js'), /percentual|6%|calcularTaxa|taxa de indica/i);
+});
+
+test('formatarOrcamento: formata ao sair do campo e preserva texto inválido ou vazio', () => {
+  assert.equal(V.formatarOrcamento('1500'), 'R$ 1.500,00');
+  assert.equal(V.formatarOrcamento('90,5'), 'R$ 90,50');
+  assert.equal(V.formatarOrcamento('abc'), 'abc');
+  assert.equal(V.formatarOrcamento(''), '');
 });
