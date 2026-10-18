@@ -114,6 +114,9 @@ html=html.replace('</body>','<script defer src="/qf-wallet-balance-rules.js?v=20
 html=html.replace('</body>','<script defer src="/qf-bonus-clock.js?v=20261014"></script></body>');
 // Monitoramento de como o profissional acessa (app Android, PWA ou navegador). So grava com sessao de profissional.
 html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=20261018"></script></body>');
+fs.copyFileSync(path.join(__dirname,'qf-seo-consent-widget.js'),path.join(out,'qf-seo-consent-widget.js'));
+// Consentimento opcional: telas de cadastro e perfil profissional, sem bloquear fluxos existentes.
+html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></script></body>');
 fs.writeFileSync(path.join(out,'index.html'),html);
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
