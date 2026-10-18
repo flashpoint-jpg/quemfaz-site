@@ -175,6 +175,9 @@ test('painel: estimativa nunca aparece como confirmada',()=>{
 test('integração: scripts publicados e nenhuma regra financeira alterada',()=>{
   const admin=fs.readFileSync('admin.html','utf8');
   assert.match(admin,/<script src="qf-admin-monitoramento\.js\?v=1"><\/script>/);
+  assert.match(admin,/id: 'acessos',[^}]*route: '\/admin\/acessos'/,'opção no menu lateral');
+  assert.match(admin,/pattern: '\/admin\/acessos', role: 'admin'/,'rota do painel');
+  assert.match(fs.readFileSync('qf-admin-monitoramento.js','utf8'),/pattern !== '\/admin\/acessos'/);
   assert.match(fs.readFileSync('scripts/build-client.cjs','utf8'),/qf-acesso-profissional\.js/);
   const sql=fs.readFileSync('supabase/migrations/20261018003000_profissional_acessos.sql','utf8');
   assert.doesNotMatch(sql,/\b(alter|drop|delete from|update|truncate)\s+(table\s+)?public\.qf_(carteiras|recargas|movimentacoes|desbloqueios|chamados|bonus|planos|profissionais|profiles)/i);

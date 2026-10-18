@@ -1,4 +1,4 @@
-/* QuemFaz — monitoramento de acesso dos profissionais no painel administrativo.
+/* QuemFaz — monitoramento de acesso dos profissionais no painel administrativo (menu Pessoas → Como acessam, rota /admin/acessos).
    Dados consolidados vêm de qf_admin_monitoramento_profissionais(), que só responde a administradores
    (qf_admins). Tipo "estimado" = sem confirmação técnica; nunca é apresentado como fato. */
 (function (global) {
@@ -75,7 +75,6 @@
     var linhas = Array.isArray(dados && dados.linhas) ? dados.linhas : [];
     var r = resumir(linhas);
     secao.innerHTML =
-      '<h2 class="h3">Como os profissionais acessam</h2>' +
       '<p class="text--sm text--secondary">Registro automático a cada acesso autenticado, a partir desta versão. Quem ainda não abriu o app depois disso aparece sem registro. "Estimado" indica que não há confirmação técnica; "confirmado" vem da ponte nativa do app Android (a origem da instalação na Play Store não é verificável). Atualizado em ' + esc(fmtData(dados && dados.gerado_em)) + '.</p>' +
       '<div class="kpi-grid" data-mon-kpis>' +
         kpi(r.total, 'Profissionais') + kpi(r.com_registro, 'Com acesso registrado') +
@@ -119,19 +118,20 @@
     var anterior = global.Screens.afterRender;
     global.Screens.afterRender = function (pattern, content, params, user) {
       if (anterior) anterior(pattern, content, params, user);
-      if (pattern !== '/admin/profissionais' || !global.QFAdminCloud || !global.QFAdminCloud.client) return;
+      if (pattern !== '/admin/acessos' || !global.QFAdminCloud || !global.QFAdminCloud.client) return;
       var secao = document.createElement('section');
       secao.className = 'section';
       secao.setAttribute('data-mon-acesso', '1');
-      secao.innerHTML = '<h2 class="h3">Como os profissionais acessam</h2><div class="card">Carregando acessos reais…</div>';
-      content.appendChild(secao);
+      secao.innerHTML = '<div class="card">Carregando acessos reais…</div>';
+      var raiz = content.querySelector('[data-mon-raiz]') || content;
+      raiz.appendChild(secao);
       var esc = global.PU.escapeHtml;
       global.QFAdminCloud.client.rpc('qf_admin_monitoramento_profissionais').then(function (res) {
         if (!secao.isConnected) return;
         if (res.error) throw res.error;
         montar(secao, res.data, esc);
       }).catch(function () {
-        if (secao.isConnected) secao.innerHTML = '<h2 class="h3">Como os profissionais acessam</h2><div class="card">Não foi possível carregar agora. Somente administradores autorizados veem estes dados.</div>';
+        if (secao.isConnected) secao.innerHTML = '<div class="card">Não foi possível carregar agora. Somente administradores autorizados veem estes dados.</div>';
       });
     };
   }

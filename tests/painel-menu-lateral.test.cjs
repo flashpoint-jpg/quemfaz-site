@@ -8,7 +8,7 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // Menu na ordem combinada; cada rota do menu existe.
-const menu = ['Início', 'Todos os pedidos', 'Parados na tela', 'Sem profissional', 'Profissionais próximos', 'Desbloqueios', 'Fechou? Sem resposta', 'Finalizados', 'Cancelamentos', 'Profissionais', 'Verificações', 'Profissionais por cidade', 'Clientes', 'Receita', 'Planos dos profissionais', 'Bônus', 'Anúncios (QuemFaz Premium)', 'Comunicados', 'Avisar quem não entrou', 'Sem notificação', 'Instalação do app', 'Suporte', 'Recrutamento', 'Configurações']; // V11.95: agrupado por assunto, sem repetição
+const menu = ['Início', 'Todos os pedidos', 'Parados na tela', 'Sem profissional', 'Profissionais próximos', 'Desbloqueios', 'Fechou? Sem resposta', 'Finalizados', 'Cancelamentos', 'Profissionais', 'Como acessam (app/PWA/site)', 'Verificações', 'Profissionais por cidade', 'Clientes', 'Receita', 'Planos dos profissionais', 'Bônus', 'Anúncios (QuemFaz Premium)', 'Comunicados', 'Avisar quem não entrou', 'Sem notificação', 'Instalação do app', 'Suporte', 'Recrutamento', 'Configurações']; // V11.95: agrupado por assunto, sem repetição
 const bloco = admin.slice(admin.indexOf('const ADMIN_MENU = ['), admin.indexOf('];', admin.indexOf('const ADMIN_MENU = [')));
 const labels = [...bloco.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
 assert.deepEqual(labels, menu);
