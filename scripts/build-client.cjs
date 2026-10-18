@@ -15,9 +15,10 @@ for (const name of fs.readdirSync(root)) {
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
-// O Google recebe um favicon ICO explícito no HTML inicial; preserva o SVG e PNG oficiais.
-html=html.replace('<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">','<link rel="icon" type="image/x-icon" href="/favicon.ico">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">\n<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">');
-if (!html.includes('<link rel="icon" type="image/x-icon" href="/favicon.ico">')) throw Error('Referência ICO não gerada no HTML');
+// Referência explícita ao favicon ICO oficial, sem depender de JavaScript.
+if (!/<link\\s+rel="icon"\\s+type="image\\/x-icon"\\s+href="\\/favicon.ico">/.test(html)) {
+  html=html.replace('</head>','<link rel="icon" type="image/x-icon" href="/favicon.ico">\\n</head>');
+}
 for (const file of ['favicon.ico','favicon.png']) {
   if (!fs.existsSync(path.join(out,file))) throw Error('Favicon ausente no dist: '+file);
 }
