@@ -48,6 +48,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
   .footer{padding:4mm 0;font-size:10pt}
 }
 </style>
+<style>.profissao{margin:0 0 4px;font-weight:800;font-size:15px;color:#0c2448}.toolbar .btn[hidden]{display:none}</style>
 <style id="qf-approved-brand">.qf-approved-logo{display:block;width:160px;height:54px;object-fit:contain;flex:none;background:#fff;border-radius:7px;padding:2px;box-sizing:border-box}.qf-brandrot__logo .qf-approved-logo{width:112px;height:40px}.tabbar__brand .qf-approved-logo{width:140px;height:48px}@media(max-width:430px){.qf-landing-brand .qf-approved-logo{width:116px;height:40px}.topbar__title .qf-approved-logo{width:140px;height:46px}}</style></head>
 <body>
 <main>
@@ -63,6 +64,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
   <header class="header"><img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"></header>
   <div class="avatar"><img id="foto" alt="Foto do profissional"><span class="fallback" id="iniciais">QF</span></div>
   <h1 id="nome">Carregando...</h1>
+  <p id="profissao" class="profissao" hidden></p>
   <p id="numero"></p>
   <div id="qr" role="img" aria-label="QR Code para o cliente avaliar o atendimento"></div>
   <div class="question">Como foi meu atendimento?</div>
@@ -73,6 +75,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
  <div id="erro" role="alert"></div>
 </main>
 <script src="/vendor/supabase-2.117.2.js"></script>
+<script src="/qf-carteirinha-extras.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script>
 (function(){
@@ -93,6 +96,49 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)){fail('Link da carteirinha inválido. Abra a carteirinha pelo seu painel.');return;}
   if(!window.supabase){fail('Não foi possível carregar o serviço. Verifique a conexão.');return;}
   const client=supabase.createClient('https://dczlyrgnzlxmzghzaooz.supabase.co','sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+  // Profissão, compartilhar e PDF: só aparecem com a chave `pedidos_valor_definido` ligada. Desligada, a carteirinha segue como era.
+  async function ativarExtras(nome,numero,alvo){
+    const E=window.QFCarteirinhaExtras; if(!E)return;
+    const cfg=await client.rpc('qf_pedidos_valor_config');
+    if(cfg.error||!cfg.data||cfg.data.ativo!==true)return;
+    const v2=await client.rpc('qf_carteirinha_publica_v2',{p_token:token});
+    const prof=v2.data&&v2.data.ok?E.profissaoTexto(v2.data.especialidades):'';
+    if(prof){const el=document.getElementById('profissao');el.textContent=prof;el.hidden=false;}
+    const helper=document.querySelector('.helper');
+    if(helper)helper.textContent='Aponte a câmera do celular para o QR Code e avalie o atendimento.';
+    const bar=document.querySelector('.toolbar'); if(!bar)return;
+    function botaoNovo(txt,fn){const b=document.createElement('button');b.type='button';b.className='btn btn--light';b.textContent=txt;b.addEventListener('click',fn);bar.insertBefore(b,bar.lastElementChild);return b;}
+    const texto='Minha carteirinha Quem Faz Serviços. Avalie meu atendimento: '+alvo;
+    botaoNovo('Compartilhar',async function(){
+      try{if(navigator.share){await navigator.share({title:'Carteirinha Quem Faz Serviços',text:'Avalie meu atendimento',url:alvo});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+      window.open(E.linkWhatsapp(texto),'_blank','noopener');
+    });
+    botaoNovo('Copiar link',async function(){
+      try{await navigator.clipboard.writeText(alvo);erro.style.color='#0a6b3a';erro.textContent='Link copiado.';}catch(_){erro.style.color='';erro.textContent='Não foi possível copiar. Use Compartilhar.';}
+    });
+    botaoNovo('Baixar PDF',async function(){
+      try{
+        const W=600,H=840,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
+        g.fillStyle='#fff';g.fillRect(0,0,W,H);g.textAlign='center';
+        g.fillStyle='#0c2448';g.font='800 34px Arial,sans-serif';g.fillText('Quem Faz Serviços',W/2,70);
+        let y=130;
+        const foto=await new Promise(function(ok){const im=new Image();im.crossOrigin='anonymous';im.onload=function(){ok(im);};im.onerror=function(){ok(null);};const f=document.getElementById('foto').src;if(f&&/^https:/i.test(f))im.src=f;else ok(null);});
+        if(foto){g.save();g.beginPath();g.arc(W/2,y+60,60,0,Math.PI*2);g.clip();g.drawImage(foto,W/2-60,y,120,120);g.restore();y+=150;}else y+=20;
+        g.fillStyle='#0c2448';g.font='800 36px Arial,sans-serif';g.fillText(nome,W/2,y);y+=44;
+        if(prof){g.font='700 26px Arial,sans-serif';g.fillText(prof,W/2,y);y+=40;}
+        g.font='600 22px Arial,sans-serif';g.fillStyle='#586377';g.fillText(numero,W/2,y);y+=30;
+        const qc=document.querySelector('#qr canvas'); if(!qc)throw new Error('qr');
+        const q=300;g.drawImage(qc,W/2-q/2,y,q,q);y+=q+46;
+        g.fillStyle='#0c2448';g.font='800 30px Arial,sans-serif';g.fillText('Como foi meu atendimento?',W/2,y);y+=36;
+        g.font='600 22px Arial,sans-serif';g.fillStyle='#586377';g.fillText('Escaneie e me avalie',W/2,y);
+        g.font='600 18px Arial,sans-serif';g.fillText('quemfazservico.com.br',W/2,H-24);
+        const pdf=E.jpegToPdf(E.dataUrlToBytes(cv.toDataURL('image/jpeg',0.92)),W,H);
+        const url=URL.createObjectURL(new Blob([pdf],{type:'application/pdf'}));
+        const a=document.createElement('a');a.href=url;a.download=E.nomeArquivo(nome);document.body.appendChild(a);a.click();a.remove();
+        setTimeout(function(){URL.revokeObjectURL(url);},4000);
+      }catch(_){erro.style.color='';erro.textContent='Não foi possível gerar o PDF agora. Use Imprimir e escolha "Salvar como PDF".';}
+    });
+  }
   async function load(){
     try{
       const r=await client.rpc('qf_carteirinha_publica',{p_token:token});
@@ -111,6 +157,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
       if(!window.QRCode)throw new Error('QR Code indisponível. Verifique sua conexão antes de imprimir.');
       new QRCode(document.getElementById('qr'),{text:target,width:236,height:236,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
       botao.disabled=false;
+      ativarExtras(nome,String(data.numero||''),target).catch(function(){});
       botao.addEventListener('click',function(){window.print();});
       if(params.get('imprimir')==='1'){
         if(document.fonts&&document.fonts.ready)await document.fonts.ready;
