@@ -51,12 +51,12 @@ const server = http.createServer((req, res) => {
       await page.evaluate(() => window.scrollTo(0, 400));
       assert.equal(await bar.evaluate(node => Math.round(node.getBoundingClientRect().top)), 0);
       await page.evaluate(() => window.scrollTo(0, 0));
-      for (const target of ['/auth/profissional/login', '/anuncie']) {
-        await bar.locator('.qf-home-prof summary').click();
-        const menu = bar.locator('.qf-home-prof-menu');
-        const rect = await menu.boundingBox();
-        assert.ok(rect.x >= 0 && rect.x + rect.width <= width + 1, 'Menu dentro da tela em ' + width);
-        await menu.locator('[data-nav="' + target + '"]').click();
+      {
+        const target = '/auth/profissional/login';
+        const btn = bar.locator('.qf-home-prof .qf-home-prof-btn');
+        const rect = await btn.boundingBox();
+        assert.ok(rect.x >= 0 && rect.x + rect.width <= width + 1, 'Botão Área de profissionais dentro da tela em ' + width);
+        await btn.click();
         await page.waitForFunction(target => location.hash === '#' + target, target);
         await page.locator('[data-nav="/"]').first().click(); await bar.waitFor();
       }
