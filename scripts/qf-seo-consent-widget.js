@@ -66,7 +66,7 @@
  }
  function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(scan);}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{
-   new MutationObserver(schedule).observe(document.getElementById('app-shell')||document.body,{childList:true,subtree:true});schedule();
- });else{new MutationObserver(schedule).observe(document.getElementById('app-shell')||document.body,{childList:true,subtree:true});schedule();}
+   new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});schedule();
+ });else{new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});schedule();}
  global.QFSeoConsent={statement:STATEMENT,scan};
 })(window);
