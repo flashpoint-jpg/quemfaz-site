@@ -1640,6 +1640,41 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
 .qf-adm-quando{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12.5px;font-weight:700;white-space:nowrap;background:var(--navy-100);color:var(--navy-700)}
 .qf-adm-quando--hoje{background:#fdecea;color:#b3261e}
 .qf-adm-quando--atrasado{background:#f1f1f1;color:#555}
+/* V12.1 — Movimentações: tudo que entra, quem desbloqueou e planos, numa página só */
+.qf-mov-topo{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.qf-mov-vivo{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--success-600)}
+.qf-mov-vivo i{width:9px;height:9px;border-radius:50%;background:var(--success-600);animation:qfmovpulse 1.8s infinite}
+@keyframes qfmovpulse{0%{box-shadow:0 0 0 0 rgba(28,143,92,.5)}70%{box-shadow:0 0 0 7px rgba(28,143,92,0)}100%{box-shadow:0 0 0 0 rgba(28,143,92,0)}}
+.qf-mov-sub{display:block;font-size:12px;font-weight:500;color:var(--text-muted);margin-top:2px}
+.qf-mov-barra{display:flex;height:16px;border-radius:8px;overflow:hidden;gap:2px;margin:4px 0 12px}
+.qf-mov-barra i{display:block;min-width:4px}
+.qf-mov-leg{display:flex;flex-wrap:wrap;gap:8px 24px;font-size:14px}
+.qf-mov-leg span{display:inline-flex;align-items:center;gap:8px}
+.qf-mov-leg i{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.qf-mov-cols{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:16px;align-items:start}
+.qf-mov-cols>div{min-width:0;display:flex;flex-direction:column;gap:16px}
+@media (max-width:980px){.qf-mov-cols{grid-template-columns:minmax(0,1fr)}}
+.qf-mov-t{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.qf-mov-t--desb{background:#e3eeff;color:#0b3e91}
+.qf-mov-t--exc{background:#eadffb;color:#4b1d91}
+.qf-mov-t--plano{background:#0a1f4d;color:#fff}
+.qf-mov-t--urg{background:#ffd9b0;color:#6b2c00}
+.qf-mov-t--anu{background:#d6f1f1;color:#0b4f50}
+.qf-mov-t--rec{background:#e7eaf1;color:#34405a}
+.qf-mov-v{text-align:right;white-space:nowrap;font-weight:800}
+.qf-mov-v--in{color:var(--success-600)}
+.qf-mov-lista>*{border-top:1px solid #ecedf1;padding:12px 0}
+.qf-mov-lista>*:first-child{border-top:0;padding-top:0}
+.qf-mov-linha{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.qf-mov-rk{all:unset;box-sizing:border-box;display:block;width:100%;cursor:pointer}
+.qf-mov-bar{height:8px;border-radius:4px;background:#ecedf1;overflow:hidden;margin-top:8px}
+.qf-mov-bar i{display:block;height:100%;background:var(--navy-900);border-radius:4px}
+.qf-adm-mov .qf-adm-tabela table{min-width:0}
+.qf-adm-mov .qf-adm-tabela td:first-child{min-width:0}
+.qf-adm-mov .qf-adm-tabela th:nth-child(1),.qf-adm-mov .qf-adm-tabela td:nth-child(1),.qf-adm-mov .qf-adm-tabela th:nth-child(2),.qf-adm-mov .qf-adm-tabela td:nth-child(2),.qf-adm-mov .qf-adm-tabela th:nth-child(4),.qf-adm-mov .qf-adm-tabela td:nth-child(4){width:1%;white-space:nowrap}
+.qf-adm-mov .qf-adm-tabela th:nth-child(4){text-align:right}
+.qf-mov-so-cel{display:none}
+@media (max-width:640px){.qf-adm-mov .qf-adm-tabela th:nth-child(2),.qf-adm-mov .qf-adm-tabela td:nth-child(2){display:none}.qf-mov-so-cel{display:block;width:fit-content;margin-bottom:4px}.qf-adm-mov .qf-adm-tabela th,.qf-adm-mov .qf-adm-tabela td{padding-left:12px;padding-right:12px}}
 /* V11.76 — Painéis: pedidos parados na tela dos profissionais */
 .qf-pn__fatos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-bottom:14px;background:#e9e9e9;border:1px solid #e9e9e9;border-radius:16px;overflow:hidden}
 .qf-pn__fato{display:flex;flex-direction:column;gap:3px;min-width:0;padding:12px 14px;background:#fff}
@@ -9077,6 +9112,137 @@ Screens.adminDashboardRender = function () {
       '<div data-adm-paineis>' + admCard('Painéis', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-paineis');
   };
 
+  // V12.1: Movimentações — o que entrou, quem desbloqueou e quanto de plano, numa página só.
+  // Os dados vêm de uma consulta só (qf_admin_movimentacoes). Atualiza sozinha a cada 10 segundos, sem F5:
+  // a tela só é redesenhada se algo mudou, então não pisca.
+  let admMovDias = 1, admMovSeq = 0;
+  const MOV_TIPOS = {
+    desbloqueio: ['Desbloqueio', 'qf-mov-t--desb'],
+    desbloqueio_exclusivo: ['Desbloqueio exclusivo', 'qf-mov-t--exc'],
+    plano: ['Plano', 'qf-mov-t--plano'],
+    pedido_urgente: ['Pedido urgente', 'qf-mov-t--urg'],
+    anuncio: ['Anúncio', 'qf-mov-t--anu'],
+    recarga: ['Recarga de carteira', 'qf-mov-t--rec']
+  };
+  function admMovQuando(iso) {
+    if (!iso || !Date.parse(iso)) return '—';
+    return qfDiaChave(iso) === qfDiaChave() ? qfHora(iso) : qfDiaMes(iso) + ' ' + qfHora(iso);
+  }
+  function admMovHtml(d) {
+    const r = d.resumo || {};
+    const dias = Number(d.dias || 1);
+    const periodo = dias === 1 ? 'hoje' : 'nos últimos ' + dias + ' dias';
+    const mon = function (c) { return PU.formatCurrency(Number(c || 0)); };
+    const desb = Number(r.desbloqueios_centavos || 0), plan = Number(r.planos_centavos || 0), urg = Number(r.urgentes_centavos || 0), anu = Number(r.anuncios_centavos || 0);
+    const entrada = desb + plan + urg + anu;
+    const tabs = [[1, 'Hoje'], [7, '7 dias'], [30, '30 dias']].map(function (t) {
+      return '<button type="button" class="segmented__item' + (dias === t[0] ? ' is-active' : '') + '" data-adm-mov-dias="' + t[0] + '">' + t[1] + '</button>';
+    }).join('');
+    const topo = '<div class="qf-mov-topo"><div class="segmented" role="group" aria-label="Período">' + tabs + '</div>' +
+      '<span class="qf-mov-vivo"><i aria-hidden="true"></i>Ao vivo · <span data-adm-mov-hora></span></span></div>';
+    function n(rotulo, valor, sub) {
+      return '<div class="qf-adm-num__item"><span>' + rotulo + '</span><b>' + valor + '</b><small class="qf-mov-sub">' + sub + '</small></div>';
+    }
+    const numeros = '<section class="qf-adm-numeros" aria-label="Resumo do período">' +
+      n('Entrou ' + periodo, mon(entrada), 'Desbloqueios + planos + pedidos urgentes' + (Number(r.anuncios_qtd || 0) ? ' + anúncios' : '')) +
+      n('Desbloqueios', mon(desb), admLinhas(Number(r.desbloqueios_qtd || 0), 'desbloqueio feito', 'desbloqueios feitos')) +
+      n('Planos vendidos', mon(plan), admLinhas(Number(r.planos_qtd || 0), 'plano assinado', 'planos assinados')) +
+      n('Carteiras carregadas', mon(r.recargas_centavos), 'Vira desbloqueio depois, por isso não soma em "Entrou"') +
+    '</section>';
+
+    const segs = [['Desbloqueios', desb, '#1458cc'], ['Planos', plan, '#0a1f4d'], ['Pedidos urgentes', urg, '#e8710a'], ['Anúncios', anu, '#0f8b8d']].filter(function (x) { return x[1] > 0; });
+    const barra = admCard('De onde vem o dinheiro', '', entrada > 0 ?
+      '<div class="qf-mov-barra" role="img" aria-label="Divisão do que entrou ' + periodo + '">' + segs.map(function (x) { return '<i style="flex:' + x[1] + ' 1 0;background:' + x[2] + '"></i>'; }).join('') + '</div>' +
+      '<div class="qf-mov-leg">' + segs.map(function (x) {
+        return '<span><i style="background:' + x[2] + '"></i>' + x[0] + ' <b>' + mon(x[1]) + '</b> <small class="qf-adm-resumo">(' + Math.round(x[1] / entrada * 100) + '%)</small></span>';
+      }).join('') + '</div>' :
+      '<p class="qf-adm-mudo" style="margin:0;">Nada entrou ' + periodo + ' ainda.</p>');
+
+    const movs = Array.isArray(d.movimentos) ? d.movimentos : [];
+    const linhas = movs.map(function (m) {
+      const t = MOV_TIPOS[m.tipo] || [m.tipo, 'qf-mov-t--rec'];
+      const c = Number(m.centavos || 0);
+      const valor = m.tipo === 'recarga' ? '<td class="qf-mov-v">' + mon(c) + '</td>' :
+        (c > 0 ? '<td class="qf-mov-v qf-mov-v--in">+ ' + mon(c) + '</td>' : '<td class="qf-mov-v"><small class="qf-adm-resumo">—</small></td>');
+      return '<tr><td><b>' + admMovQuando(m.em) + '</b></td>' +
+        '<td><span class="qf-mov-t ' + t[1] + '">' + t[0] + '</span></td>' +
+        '<td><span class="qf-mov-t ' + t[1] + ' qf-mov-so-cel">' + t[0] + '</span><b>' + PU.escapeHtml(m.quem || '') + '</b>' + (m.detalhe ? '<br><small class="qf-adm-resumo">' + PU.escapeHtml(m.detalhe) + '</small>' : '') + '</td>' + valor + '</tr>';
+    });
+    const total = Number(d.movimentos_total || movs.length);
+    const extrato = admCard('Movimentações ao vivo', 'mais novas primeiro',
+      admTabela(['Hora', 'Tipo', 'Quem · detalhe', 'Valor'], linhas,
+        total > movs.length ? 'Mostrando as ' + movs.length + ' mais novas de ' + total + '.' : admLinhas(total, 'movimentação', 'movimentações'),
+        'Nenhuma movimentação ' + periodo + ' ainda.'));
+
+    const planos = Array.isArray(d.planos) ? d.planos : [];
+    const linhaPlano = function (nome, preco, desc, ativos, vendido) {
+      return '<div><div class="qf-mov-linha"><b>' + PU.escapeHtml(nome) + '</b><b>' + preco + '</b></div>' +
+        '<div class="qf-adm-resumo">' + desc + '</div>' +
+        '<div class="qf-mov-linha" style="font-size:13px;margin-top:4px"><span class="qf-adm-resumo">' + ativos + '</span><b>' + vendido + '</b></div></div>';
+    };
+    const cardPlanos = admCard('Planos', 'quem está em cada um e quanto vendeu ' + periodo,
+      '<div class="qf-mov-lista">' +
+        linhaPlano('Avulso', 'Sem mensalidade', 'Paga por desbloqueio', admLinhas(Number(d.avulso_profissionais || 0), 'profissional', 'profissionais'), '—') +
+        planos.map(function (p) {
+          const q = Number(p.vendidos_qtd || 0);
+          return linhaPlano(p.nome || p.plano, mon(p.preco_centavos), Number(p.chamados || 0) + ' chamados por plano',
+            admLinhas(Number(p.ativos || 0), 'ativo', 'ativos'), q === 0 ? 'Nenhum vendido' : q + (q === 1 ? ' vendido · ' : ' vendidos · ') + mon(p.vendidos_centavos));
+        }).join('') +
+      '</div>');
+
+    const rk = Array.isArray(d.ranking) ? d.ranking : [];
+    const maxC = rk.reduce(function (a, x) { return Math.max(a, Number(x.centavos || 0)); }, 0);
+    const maxQ = rk.reduce(function (a, x) { return Math.max(a, Number(x.qtd || 0)); }, 0);
+    const cardRank = admCard('Quem desbloqueou ' + periodo, 'quem mais gastou primeiro', rk.length ?
+      '<div class="qf-mov-lista">' + rk.map(function (u) {
+        const c = Number(u.centavos || 0), q = Number(u.qtd || 0);
+        const w = maxC > 0 ? Math.round(c / maxC * 100) : (maxQ > 0 ? Math.round(q / maxQ * 100) : 0);
+        return '<button type="button" class="qf-mov-rk" data-nav="/admin/profissionais/' + PU.escapeHtml(u.profissional_id || '') + '">' +
+          '<div class="qf-mov-linha"><b>' + PU.escapeHtml(u.nome || 'Profissional') + '</b><b>' + (c > 0 ? mon(c) : 'pelo plano') + '</b></div>' +
+          '<div class="qf-adm-resumo">' + admLinhas(q, 'desbloqueio', 'desbloqueios') + ' · último ' + (qfDiaChave(u.ultimo_em) === qfDiaChave() ? 'às ' : 'em ') + admMovQuando(u.ultimo_em) + '</div>' +
+          '<div class="qf-mov-bar"><i style="width:' + Math.max(w, 4) + '%"></i></div></button>';
+      }).join('') + '</div>' :
+      '<p class="qf-adm-mudo" style="margin:0;">Ninguém desbloqueou ' + periodo + ' ainda.</p>');
+
+    return topo + numeros + barra + '<div class="qf-mov-cols"><div>' + extrato + '</div><div>' + cardPlanos + cardRank + '</div></div>';
+  }
+  async function admMovCarregar(content) {
+    const box = content.querySelector('[data-adm-mov]');
+    if (!box || !cloudOn()) return;
+    const meu = ++admMovSeq;
+    try {
+      const r = await global.QFAdminCloud.client.rpc('qf_admin_movimentacoes', { p_dias: admMovDias });
+      if (meu !== admMovSeq) return; // chegou uma consulta mais nova (troca de período)
+      if (r.error) throw r.error;
+      if (!r.data || !r.data.ok) throw new Error(r.data && r.data.reason === 'sem_permissao' ? 'Esta conta não tem permissão de administrador.' : 'Não foi possível carregar.');
+      const h = admMovHtml(r.data);
+      if (box.__qfHtml !== h) { box.__qfHtml = h; box.innerHTML = h; }
+      const hora = box.querySelector('[data-adm-mov-hora]');
+      if (hora) hora.textContent = 'atualizado às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: QF_TZ });
+    } catch (err) {
+      if (meu !== admMovSeq) return;
+      box.__qfHtml = '';
+      box.innerHTML = admCard('Movimentações', '', '<p class="qf-adm-mudo" style="margin:0;">Não foi possível carregar: ' + PU.escapeHtml((err && err.message) || String(err)) + '</p>');
+    }
+  }
+  Screens.adminMovimentacoesRender = function () {
+    return admPage('<p class="qf-prox__intro">Tudo que entra, quem desbloqueou e quanto de plano, numa página só. Atualiza sozinha, sem apertar F5.</p>' +
+      '<div data-adm-mov>' + admCard('Movimentações', '', cloudOn() ? '<p class="qf-adm-mudo" style="margin:0;">Carregando…</p>' : ADM_SO_CONECTADO) + '</div>', 'qf-adm-mov');
+  };
+  document.addEventListener('click', function (e) {
+    const b = e.target.closest && e.target.closest('[data-adm-mov-dias]');
+    if (!b) return;
+    e.preventDefault();
+    admMovDias = Number(b.getAttribute('data-adm-mov-dias')) || 1;
+    const box = document.querySelector('[data-adm-mov]');
+    if (box && box.parentNode) { box.__qfHtml = ''; admMovCarregar(box.parentNode); }
+  });
+  setInterval(function () {
+    if (document.hidden) return;
+    const box = document.querySelector('[data-adm-mov]');
+    if (box && box.parentNode) admMovCarregar(box.parentNode);
+  }, 10000);
+
   // V11.83: "Você fechou?" — quem desbloqueou e ainda não contou se fechou o serviço.
   function fcQuando(iso) { return iso && Date.parse(iso) ? (qfDiaChave(iso) === qfDiaChave() ? 'Hoje' : qfDiaMes(iso)) + ' · ' + qfHora(iso) : '—'; }
   function fcWa(fone) { const d = String(fone || '').replace(/\D/g, ''); return d ? 'https://wa.me/' + (d.length <= 11 ? '55' + d : d) : ''; }
@@ -9615,6 +9781,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/planos') admPlanosCarregar(content);
     if (pattern === '/admin/proximos') admProximosCarregar(content);
     if (pattern === '/admin/paineis') admPaineisCarregar(content);
+    if (pattern === '/admin/movimentacoes') admMovCarregar(content);
     if (pattern === '/admin/fechou') admFechouCarregar(content);
     if (pattern === '/admin/sem-profissional') admSemProfCarregar(content);
     if (pattern === '/admin/desbloqueios') { const d = content.querySelector('#extrato-desbloqueios'); if (d) d.open = true; }
@@ -9722,6 +9889,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/cidades', role: 'admin', title: 'Cidades e regiões', back: '/admin/configuracoes', render: Screens.adminCidadesRender },
     { pattern: '/admin/comissao', role: 'admin', title: 'Taxas dos chamados', back: '/admin/configuracoes', render: Screens.adminComissaoRender },
     { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios (QuemFaz Premium)', render: Screens.adminAnunciosRender },
+    { pattern: '/admin/movimentacoes', role: 'admin', title: 'Movimentações', render: function () { return Screens.adminMovimentacoesRender(); } },
     { pattern: '/admin/pagamentos', role: 'admin', title: 'Receita', render: Screens.adminPagamentosRender },
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/servicos', render: Screens.adminCancelamentosRender },
     { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/comunicados', render: function(){ return Screens.adminAvisarAcessoRender(); } },
@@ -9951,6 +10119,7 @@ Screens.adminDashboardRender = function () {
     { id: 'cidades', label: 'Profissionais por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
     { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
     { section: 'Dinheiro e planos' },
+    { id: 'movimentacoes', label: 'Movimentações', icon: 'dashboard', route: '/admin/movimentacoes' },
     { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
     { id: 'assinaturas', label: 'Planos dos profissionais', icon: 'wallet', route: '/admin/planos' },
     { id: 'bonus', label: 'Bônus', icon: 'gift', route: '/admin/bonus' },
