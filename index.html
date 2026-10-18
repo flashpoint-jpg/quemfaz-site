@@ -6300,7 +6300,7 @@ alt=""></noscript>
 
     const txRes = await client.from('qf_movimentacoes_carteira').select('*').eq('profissional_id', userId).order('criado_em', { ascending: false }).limit(100);
     const recRes = await client.from('qf_recargas')
-      .select('id,profissional_id,valor_centavos,metodo,status,checkout_url,criado_em,aprovado_em')
+      .select('id,profissional_id,valor_centavos,metodo,status,checkout_url,criado_em,aprovado_em,plano')
       .eq('profissional_id', userId)
       .neq('status', 'aprovado')
       .order('criado_em', { ascending: false })
@@ -6320,6 +6320,8 @@ alt=""></noscript>
       });
       if (!recRes.error) {
         (recRes.data || []).forEach(function (r) {
+          // Pagamento de PLANO não é recarga de créditos: aparece só em "Meus planos", nunca na carteira.
+          if (r.plano) return;
           const label = r.metodo === 'cartao' ? 'Cartão' : (r.metodo === 'boleto' ? 'Boleto' : 'Pix');
           DB.state.transactions.push({
             id: r.id,
@@ -6337,6 +6339,23 @@ alt=""></noscript>
         DB.state.transactions.sort(function (a, b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
       }
     }
+    // "Meus planos": planos contratados e histórico de compras de plano (todas as situações do pagamento).
+    // Se a consulta falhar, a carteira continua igual e "Meus planos" mostra só o plano ativo.
+    try {
+      const results = await Promise.all([
+        client.from('qf_planos_profissional')
+          .select('id,plano,chamados_total,chamados_restantes,valido_ate,criado_em,recarga_id')
+          .eq('profissional_id', userId).order('criado_em', { ascending: false }).limit(20),
+        client.from('qf_recargas')
+          .select('id,plano,valor_centavos,metodo,status,criado_em,aprovado_em')
+          .eq('profissional_id', userId).not('plano', 'is', null).order('criado_em', { ascending: false }).limit(30)
+      ]);
+      DB.state.carteiraPlanos = {
+        userId: userId,
+        planos: results[0].error ? [] : (results[0].data || []),
+        compras: results[1].error ? [] : (results[1].data || [])
+      };
+    } catch (_) { DB.state.carteiraPlanos = { userId: userId, planos: [], compras: [] }; }
     DB.persist();
   }
 
@@ -13603,13 +13622,15 @@ alt=""></noscript>
       '<div class="view">' +
         '<div class="card" style="padding:24px 18px;background:var(--navy-900);border:none;">' +
           '<div class="row-between" style="align-items:flex-start;">' +
-            '<div><div class="text--sm" style="color:var(--text-on-navy-muted);">Saldo disponível</div><div class="h1" style="color:#fff;margin-top:4px;">' + PU.formatCurrency(user.creditos || 0) + '</div>' +
+            '<div><div class="text--sm" style="color:var(--text-on-navy-muted);">Minha carteira · saldo disponível</div><div class="h1" style="color:#fff;margin-top:4px;">' + PU.formatCurrency(user.creditos || 0) + '</div>' +
               '<div class="text--sm" style="color:var(--text-on-navy-muted);margin-top:4px;">Dá para ' + global.QFPrecos.quantos(user.creditos || 0, user.categorias) + '</div></div>' +
             '<div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div>' +
           '</div>' +
+          '<button class="btn btn--primary btn--sm" type="button" data-action="rolar-recarga" style="margin-top:14px;width:auto;">' + icon('plus') + ' Recarregar</button>' +
+          '<div class="text--sm" style="color:var(--text-on-navy-muted);margin-top:10px;">Saldo em reais é só das recargas de créditos. Plano não vira saldo: ele fica em <b>Meus planos</b>.</div>' +
         '</div>' +
 
-        '<div class="section">' +
+        '<div class="section" id="carteira-recarga">' +
           '<div class="section-head"><h2 class="h3">Adicionar créditos</h2></div>' +
           '<div class="card stack">' +
             '<div><div class="field__label">Escolha o valor</div>' +
@@ -13635,6 +13656,11 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
+        '<div class="section">' +
+          '<div class="section-head"><h2 class="h3">Histórico de créditos e débitos</h2></div>' +
+          walletMovimentacoesHtml(txs) +
+        '</div>' +
+
         walletPlanosSection(user) +
 
         '<div class="section">' +
@@ -13647,10 +13673,13 @@ alt=""></noscript>
             walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda. Por isso, chame o cliente no WhatsApp assim que desbloquear.') +
           '</div>' +
         '</div>' +
+      '</div>'
+    );
+  };
 
-        '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Movimentações</h2></div>' +
-          (txs.length
+  // Histórico da carteira: só créditos e débitos em reais (recargas, desbloqueios, bônus, ajustes).
+  function walletMovimentacoesHtml(txs) {
+    return (txs.length
             ? '<div class="card qf-tx-list" style="padding:4px 16px;">' + txs.map(function (t) {
                 const debit = t.tipo === 'debito';
                 const bonusTx = t.tipo === 'bonus';
@@ -13666,11 +13695,8 @@ alt=""></noscript>
               }).join('') + '</div>' +
               // V11.16.30: mostra só as 5 últimas; o botão libera mais 20 por vez.
               (txs.length > 5 ? '<button class="btn btn--outline btn--sm qf-tx-more" type="button" data-tx-more>Ver mais movimentações (' + (txs.length - 5) + ')</button>' : '')
-            : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('wallet') + '</div><p class="text text--secondary">Nenhuma movimentação ainda.</p></div>') +
-        '</div>' +
-      '</div>'
-    );
-  };
+            : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('wallet') + '</div><p class="text text--secondary">Nenhuma movimentação ainda.</p></div>');
+  }
 
   function walletMethodButton(id, iconName, title, subtitle, selected) {
     return '<button type="button" class="card card--pressable row" style="width:100%;text-align:left;padding:12px 14px;' + (selected ? 'border-color:var(--orange-500);box-shadow:0 0 0 1px var(--orange-500);' : '') + '" data-wallet-method="' + id + '">' +
@@ -13680,10 +13706,67 @@ alt=""></noscript>
     '</button>';
   }
 
+  // "Meus planos": plano contratado, situação, chamados contratados/restantes, validade e histórico de compras.
+  // Plano é produto separado do saldo da carteira: nunca soma em reais.
+  function planoNomeCurto(id) { return id === 'premium' ? 'Premium' : (id === 'pro' ? 'Pro' : 'Mensal'); }
+  function planoSituacao(row, agora) {
+    if (new Date(row.valido_ate).getTime() <= agora) return { texto: 'Expirado', classe: 'badge--muted' };
+    if (Number(row.chamados_restantes || 0) <= 0) return { texto: 'Chamados esgotados', classe: 'badge--muted' };
+    return { texto: 'Ativo', classe: 'badge--success' };
+  }
+  function compraPlanoSituacao(status, ativado) {
+    if (status === 'aprovado') return { texto: ativado ? 'Pago · plano ativado' : 'Pago · ativando seu plano', classe: 'badge--success' };
+    if (status === 'pendente') return { texto: 'Aguardando pagamento', classe: 'badge--warning' };
+    if (status === 'estornado') return { texto: 'Estornado', classe: 'badge--danger' };
+    if (status === 'cancelado') return { texto: 'Cancelado', classe: 'badge--muted' };
+    return { texto: 'Expirado', classe: 'badge--muted' };
+  }
+  function walletPlanosAtualHtml(user, dados) {
+    const agora = Date.now();
+    const planos = dados.planos || [];
+    const atual = planos.find(function (x) { return planoSituacao(x, agora).texto === 'Ativo'; }) || planos[0] || null;
+    if (!atual) {
+      const ativo = user && user.plano && user.plano.restantes > 0 ? user.plano : null;
+      if (ativo) {
+        return '<div class="card"><div class="row-between"><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + '</div><span class="badge badge--success">Ativo</span></div>' +
+          '<div class="text--sm" style="margin-top:6px;">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') +
+          (ativo.validoAte ? ' · vale até ' + new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '') + '</div></div>';
+      }
+      return '<div class="card card--tight"><div class="text--sm text--secondary">Você ainda não tem plano. Os chamados são descontados do saldo da carteira.</div></div>';
+    }
+    const sit = planoSituacao(atual, agora);
+    const total = Number(atual.chamados_total || 0), resta = Number(atual.chamados_restantes || 0);
+    const usados = Math.max(0, total - resta);
+    return '<div class="card" style="' + (sit.texto === 'Ativo' ? 'border:2px solid var(--success-500, #2f9e44);' : '') + '">' +
+      '<div class="row-between"><div class="text--strong">Plano ' + planoNomeCurto(atual.plano) + '</div><span class="badge ' + sit.classe + '">' + sit.texto + '</span></div>' +
+      '<div class="text--sm" style="margin-top:8px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">' +
+        '<div><div class="h3">' + total + '</div><div class="text--secondary">contratados</div></div>' +
+        '<div><div class="h3">' + usados + '</div><div class="text--secondary">usados</div></div>' +
+        '<div><div class="h3">' + resta + '</div><div class="text--secondary">restantes</div></div>' +
+      '</div>' +
+      '<div class="text--sm text--secondary" style="margin-top:8px;">' + (sit.texto === 'Expirado' ? 'Venceu em ' : 'Vale até ') + new Date(atual.valido_ate).toLocaleDateString('pt-BR') +
+        (sit.texto === 'Ativo' ? '. Os chamados do plano são usados antes do saldo.' : '.') + '</div></div>';
+  }
+  function walletPlanosHistoricoHtml(dados) {
+    const compras = dados.compras || [];
+    if (!compras.length) return '';
+    const ativados = {};
+    (dados.planos || []).forEach(function (x) { if (x.recarga_id) ativados[x.recarga_id] = true; });
+    return '<div class="section-head" style="margin-top:14px;"><h3 class="h3">Histórico de compras de plano</h3></div>' +
+      '<div class="card" style="padding:4px 16px;">' + compras.slice(0, 8).map(function (c) {
+        const sit = compraPlanoSituacao(c.status, !!ativados[c.id]);
+        const forma = c.metodo === 'cartao' ? 'Cartão' : (c.metodo === 'boleto' ? 'Boleto' : 'Pix');
+        return '<div class="list-item"><div class="icon-tile icon-tile--ghost">' + icon('crown') + '</div>' +
+          '<div class="list-item__body"><div class="list-item__title">Plano ' + planoNomeCurto(c.plano) + ' · ' + PU.formatCurrency(Number(c.valor_centavos || 0)) + '</div>' +
+          '<div class="list-item__sub">' + PU.formatDateTime(c.aprovado_em || c.criado_em) + ' · ' + forma + '</div></div>' +
+          '<span class="badge ' + sit.classe + '" style="white-space:normal;text-align:center;">' + sit.texto + '</span></div>';
+      }).join('') + '</div>';
+  }
+
   // V11.10.1: planos Mensal e Pro na carteira (compra e liberação 100% automáticas).
   function walletPlanosSection(user) {
-    const ativo = user && user.plano && user.plano.restantes > 0 ? user.plano : null;
-    const validade = ativo && ativo.validoAte ? new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '';
+    const guardado = DB.state && DB.state.carteiraPlanos;
+    const dados = guardado && guardado.userId === (user && user.id) ? guardado : { planos: [], compras: [] };
     function buy(plano, nome, preco, valor, detalhe, destaque) {
       return '<div class="card row-between" style="gap:12px;' + (destaque ? 'border:2px solid var(--orange-500);' : '') + '">' +
         '<div><div class="text--strong">' + nome + ' · ' + preco + '<span class="text--sm text--secondary" style="font-weight:600;"> por ' + global.QFPlanos.dias(plano) + ' dias</span></div><div class="text--sm text--secondary">' + detalhe + '</div></div>' +
@@ -13691,10 +13774,10 @@ alt=""></noscript>
       '</div>';
     }
     return '<div class="section" id="carteira-planos">' +
-      '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
-      (ativo
-        ? '<div class="card card--tight" style="background:var(--success-100);border:none;margin-bottom:10px;"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--ghost">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div></div>'
-        : '') +
+      '<div class="section-head"><div><h2 class="h3">Meus planos</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade. Plano não é saldo em reais.</div></div></div>' +
+      walletPlanosAtualHtml(user, dados) +
+      walletPlanosHistoricoHtml(dados) +
+      '<div class="section-head" style="margin-top:14px;"><h3 class="h3">Contratar ou renovar</h3></div>' +
       '<div class="stack stack--sm">' +
         global.QFPlanos.ids.map(function (id) {
           const P = global.QFPlanos;
@@ -14974,6 +15057,12 @@ alt=""></noscript>
       const badge = btn.querySelector('.badge');
       badge.className = 'badge badge--success';
       badge.textContent = 'Selecionado';
+    });
+
+    content.addEventListener('click', function (e) {
+      if (!e.target.closest('[data-action="rolar-recarga"]')) return;
+      const alvo = content.querySelector('#carteira-recarga');
+      if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     content.addEventListener('click', function (e) {

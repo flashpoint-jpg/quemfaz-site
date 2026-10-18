@@ -3879,8 +3879,13 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       client.rpc('qf_admin_snapshot'),
       global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas').catch(function (err) {
         console.warn('[QuemFaz] Não foi possível carregar categorias personalizadas:', err.message);
-      })
+      }),
+      // Planos dos profissionais; sem a migration, volta vazio e a tela segue normal.
+      Promise.resolve(client.rpc('qf_admin_planos_profissionais')).then(function (pl) {
+        return pl && !pl.error && Array.isArray(pl.data) ? pl.data : [];
+      }, function () { return []; })
     ]);
+    DB.state.planosProf = results[2] || [];
     const res = results[0];
     if (res.error) {
       if (/function|does not exist|not find|schema cache/i.test(res.error.message || '')) { snapshotOk = false; clearLocalData(); return null; }
@@ -3985,6 +3990,12 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     DB.state.avaliacoesAdmin = (d.avaliacoes || []).map(function (a) { return { requestId: a.chamado_id, profissionalId: a.profissional_id, autor: a.autor_tipo === 'profissional' ? 'profissional' : 'cliente', nota: Number(a.nota || 0), comentario: a.comentario || '', criadoEm: a.criado_em }; });
     DB.state.meta = Object.assign({}, DB.state.meta, { snapshotEm: d.gerado_em, pushInscritos: Number(d.push_inscritos || 0), cloud: true });
     try { DB.persist(); } catch (_) { /* dados ficam em memória se o armazenamento local estiver cheio */ }
+    // Alerta de pagamento aprovado sem benefício: consulta leve, em segundo plano. Se a migration ainda não foi aplicada, some em silêncio.
+    try {
+      client.rpc('qf_admin_contabilidade', { p_dias: 7 }).then(function (ct) {
+        DB.state.alertasPagamento = ct && !ct.error && ct.data && ct.data.alertas ? ct.data.alertas : null;
+      }, function () { DB.state.alertasPagamento = null; });
+    } catch (_) { DB.state.alertasPagamento = null; }
     return d;
   }
   function clearLocalData() {
@@ -4120,6 +4131,10 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     nuncaEntraram: async function(){ const r = await client.rpc('qf_admin_nunca_entraram'); if (r.error) throw r.error; return r.data || []; },
     marcarBoasVindas: async function(id){ const r = await client.rpc('qf_admin_marcar_boas_vindas', { p_user: id }); if (r.error) throw r.error; return true; },
     marcarAvisado: async function(id){ const r = await client.rpc('qf_admin_marcar_avisado', { p_user: id }); if (r.error) throw r.error; return true; },
+    // Contabilidade: dinheiro recebido x créditos consumidos x uso de planos (só pagamentos aprovados entram como recebido).
+    contabilidade: async function(dias){ const r = await client.rpc('qf_admin_contabilidade', { p_dias: dias || 30 }); if (r.error) throw r.error; return r.data || {}; },
+    eventosPagamento: async function(limite){ const r = await client.rpc('qf_admin_pagamento_eventos', { p_limite: limite || 20 }); if (r.error) throw r.error; return r.data || []; },
+    reconciliarRecargas: async function(aplicar){ const r = await client.rpc('qf_admin_reconciliar_recargas', { p_aplicar: !!aplicar }); if (r.error) throw r.error; return r.data || {}; },
     get supportTickets() { return supportTicketsCache; },
     get snapshotOk() { return snapshotOk; } };
 })(window);
@@ -5904,7 +5919,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       '<div class="qf-receita__destaque">' +
         '<div class="qf-receita__rotulo">Entrada de hoje</div>' +
         '<div class="qf-receita__total">' + PU.formatCurrency(en.hoje) + '</div>' +
-        '<div class="qf-receita__sub">Soma tudo de hoje: dinheiro, créditos e bônus.</div>' +
+        '<div class="qf-receita__sub">Dinheiro recebido + créditos consumidos hoje. Só o dinheiro é receita nova.</div>' +
       '</div>' +
       '<div class="qf-receita__destaque qf-receita__destaque--dinheiro">' +
         '<div class="qf-receita__rotulo">Dinheiro recebido hoje</div>' +
@@ -5914,11 +5929,11 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       '</div>' +
       '<div class="qf-receita__sep"></div>' +
       '<div class="qf-receita__itens">' +
-        item('Desbloqueios' + (en.desbloqueiosHojeQtd ? ' (' + en.desbloqueiosHojeQtd + ')' : ''), en.desbloqueiosHoje) +
+        item('Créditos consumidos em desbloqueios' + (en.desbloqueiosHojeQtd ? ' (' + en.desbloqueiosHojeQtd + ')' : ''), en.desbloqueiosHoje) +
         item('Prioridades de clientes', en.prioridadeHoje) +
-        item('Anúncios e planos', en.anunciosPlanosHoje) +
+        item('Anúncios e planos vendidos', en.anunciosPlanosHoje) +
       '</div>' +
-      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Total geral</div><div class="qf-receita__sub">desde o lançamento · dinheiro, créditos e bônus</div></div><b>' + PU.formatCurrency(en.geral) + '</b></div>' +
+      '<div class="qf-receita__recargas"><div><div class="qf-receita__recargas-titulo">Total geral</div><div class="qf-receita__sub">desde o lançamento · dinheiro + créditos consumidos (veja a divisão em Receita)</div></div><b>' + PU.formatCurrency(en.geral) + '</b></div>' +
       '<div class="qf-receita__sub">Dinheiro real (Pix, cartão e boleto): hoje ' + PU.formatCurrency(en.dinheiroHoje) + ' · total ' + PU.formatCurrency(s.dinheiroEntrou) + '</div>' +
       '<button type="button" class="qf-receita__link" data-nav="/admin/pagamentos">Ver todas as receitas' + icon('chevronRight') + '</button>' +
     '</section>';
@@ -5932,6 +5947,9 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
     let linhas = precisaLinha('bellOff', 'Profissionais sem notificação', 'chamar no WhatsApp', contaPill(semPush), 'data-nav="/admin/sem-push"');
     if (par) linhas += precisaLinha('clock', 'Chamados parados', 'ninguém desbloqueou ainda', contaPill(par.count(), 'parados'), attrGaveta('parados'), 'chevronDown');
     if (cas) linhas += precisaLinha('chat', 'Chamados sem resposta', 'avisar por WhatsApp', contaPill(cas.count(), 'sem-resposta'), attrGaveta('sem-resposta'), 'chevronDown');
+    const ap = (DB.state && DB.state.alertasPagamento) || null;
+    const nPag = ap ? Number(ap.aprovados_sem_beneficio || 0) + Number(ap.plano_creditado_como_saldo || 0) : 0;
+    if (nPag) linhas += precisaLinha('alertTriangle', 'Pagamentos aprovados sem benefício', 'crédito ou plano que não entrou · ver em Receita', contaPill(nPag), 'data-nav="/admin/pagamentos"');
     linhas += precisaLinha('info', 'Central de suporte', 'atendimentos aguardando', contaPill(suporte), 'data-nav="/admin/suporte"');
     if (s.profissionaisPendentes) linhas += precisaLinha('id', 'Cadastros para aprovar', 'profissionais aguardando análise', contaPill(s.profissionaisPendentes), 'data-nav="/admin/profissionais"');
     if (cloudOn() && s.profissionaisSemSelfie) linhas += precisaLinha('camera', 'Profissionais sem selfie', 'ver os cadastros', contaPill(s.profissionaisSemSelfie), 'data-nav="/admin/profissionais"');
@@ -6172,6 +6190,23 @@ Screens.adminDashboardRender = function () {
       gasto: gasto, notas: notas, media: notas.length ? soma / notas.length : 0 };
   }
   function adminProfNotaTxt(a) { return a.notas.length ? a.media.toFixed(1).replace('.', ',') + ' (' + a.notas.length + (a.notas.length === 1 ? ' nota' : ' notas') + ')' : 'sem nota'; }
+  function adminPlanoDoProf(id) {
+    const agora = Date.now();
+    const lista = (DB.state.planosProf || []).filter(function (x) { return String(x.profissional_id) === String(id); });
+    if (!lista.length) return null;
+    const vigente = lista.find(function (x) { return Date.parse(x.valido_ate) > agora && Number(x.chamados_restantes) > 0; });
+    return { p: vigente || lista[0], vigente: !!vigente };
+  }
+  function adminPlanoHtml(id) {
+    const r = adminPlanoDoProf(id);
+    if (!r) return '';
+    const x = r.p, nome = { mensal: 'Mensal', pro: 'Pro', premium: 'Premium' }[x.plano] || x.plano;
+    const ate = new Date(x.valido_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const rest = Number(x.chamados_restantes), tot = Number(x.chamados_total);
+    const txt = r.vigente ? 'Plano ' + nome + ' · ' + rest + ' de ' + tot + ' chamados · até ' + ate
+      : 'Plano ' + nome + (Date.parse(x.valido_ate) <= Date.now() ? ' expirado em ' + ate : ' · chamados esgotados');
+    return '<div class="qf-prof-ativ"><span class="badge ' + (r.vigente ? 'badge--success' : '') + '">' + PU.escapeHtml(txt) + '</span></div>';
+  }
   function adminProfAtivLinha(p) {
     const a = adminProfAtividade(p.id);
     if (!a.total) return '<div class="qf-prof-ativ is-zero">Nenhum desbloqueio ainda</div>';
@@ -6197,7 +6232,7 @@ Screens.adminDashboardRender = function () {
         '<span class="qf-extrato__vl' + (pg.valor > 0 ? '' : ' is-zero') + '">' + PU.formatCurrency(pg.valor) + '<small>' + pg.rotulo + '</small></span>' +
       '</button>';
     }).join('');
-    return numeros +
+    return adminPlanoHtml(p.id) + numeros +
       '<div class="section"><div class="section-head"><h2 class="h3">Pedidos que ele desbloqueou</h2></div>' +
         (a.total ? '<div class="qf-prof-hist">' + lista + '</div>' : '<div class="card card--tight"><div class="text--sm text--secondary">Este profissional ainda não desbloqueou nenhum pedido.</div></div>') +
       '</div>';
@@ -6213,7 +6248,7 @@ Screens.adminDashboardRender = function () {
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-      (cloudOn() ? adminProfAtivLinha(p) : '') +
+      (cloudOn() ? adminPlanoHtml(p.id) + adminProfAtivLinha(p) : '') +
     '</button>' + testeLinhaHtml(p.id) + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
 
@@ -7285,19 +7320,117 @@ Screens.adminDashboardRender = function () {
 
   Screens.adminPagamentosRender = function () {
     const list = DB.pagamentos();
-    if (!list.length) return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><p class="text text--secondary">Nenhuma receita registrada ainda.</p></div></div>';
+    const contab = '<div id="qf-contab" class="qf-contab"><div class="text--sm text--secondary">Carregando a contabilidade…</div></div>';
+    if (!list.length) return admPage(contab + '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('money') + '</div><p class="text text--secondary">Nenhuma receita registrada ainda.</p></div>');
     // V11.45: mesma informação de antes, em tabela (origem, cliente ou anunciante, profissional, valor e data).
-    return admPage(admTabela(['Origem', 'Cliente / anunciante', 'Profissional', 'Valor', 'Data'], list.map(function (e) {
+    return admPage(contab + '<div class="section-head" style="margin-top:18px;"><h2 class="h3">Lançamentos</h2></div>' + admTabela(['Origem', 'Cliente / anunciante', 'Profissional', 'Valor', 'Data'], list.map(function (e) {
       const r = e.request || null;
       const cliente = r ? DB.clienteById(r.clienteId) : null;
       const prof = e.profissionalId ? DB.profissionalById(e.profissionalId) : null;
       const quem = e.ad ? e.ad.empresa : (r ? (cliente || {}).nome || '—' : '—');
       return '<tr><td><b>' + PU.escapeHtml(e.tipo) + '</b></td><td>' + PU.escapeHtml(quem) + (e.ad ? '<small class="qf-adm-resumo">anunciante</small>' : '') + '</td>' +
         '<td>' + (prof ? PU.escapeHtml(prof.nome) : '<span class="qf-adm-mudo">—</span>') + '</td>' +
-        '<td class="qf-adm-num"><b>' + PU.formatCurrency(e.valor) + '</b><small class="qf-adm-resumo">' + (e.creditos ? 'créditos usados' : 'dinheiro que entrou') + '</small></td>' +
+        '<td class="qf-adm-num"><b>' + PU.formatCurrency(e.valor) + '</b><small class="qf-adm-resumo">' + (e.creditos ? 'créditos usados (não é dinheiro novo)' : 'dinheiro que entrou') + '</small></td>' +
         '<td class="qf-adm-nowrap">' + PU.escapeHtml(PU.formatDateTime(e.criadoEm)) + '</td></tr>';
     }), admLinhas(list.length, 'lançamento', 'lançamentos')));
   };
+
+  // ---------------- Contabilidade (recebido x créditos consumidos x planos) ----------------
+  const CONTAB_STATUS = { aprovado: 'Aprovado', pendente: 'Pendente', cancelado: 'Recusado/cancelado', expirado: 'Expirado', estornado: 'Estornado' };
+  const CONTAB_EVENTOS = {
+    credito_lancado: 'Crédito lançado', plano_ativado: 'Plano ativado', credito_ja_lancado: 'Repetido ignorado (crédito)',
+    plano_ja_ativado: 'Repetido ignorado (plano)', plano_nao_resolvido: 'Plano não encontrado no catálogo',
+    erro_beneficio: 'Erro ao entregar o benefício', erro_reconciliacao: 'Erro na reconciliação', reconciliacao: 'Reconciliação', ajuste_manual: 'Ajuste manual de saldo'
+  };
+  function contabCartao(titulo, valor, linhas, nota) {
+    return '<div class="card stack--sm"><div class="text--sm text--secondary">' + titulo + '</div><div class="h2">' + valor + '</div>' +
+      (linhas || []).map(function (l) { return '<div class="row-between text--sm"><span>' + l[0] + '</span><b>' + l[1] + '</b></div>'; }).join('') +
+      (nota ? '<div class="text--sm text--secondary">' + nota + '</div>' : '') + '</div>';
+  }
+  function contabilidadeHtml(c, dias) {
+    const rec = c.recebido || {}, per = rec.periodo || {}, tot = rec.total || {}, des = c.desbloqueios || {}, pl = c.planos || {}, al = c.alertas || {};
+    const R = function (v) { return PU.formatCurrency(Number(v || 0)); };
+    const recebidoPeriodo = Number(per.creditos_centavos || 0) + Number(per.planos_centavos || 0);
+    const recebidoTotal = Number(tot.creditos_centavos || 0) + Number(tot.planos_centavos || 0);
+    let alertas = '';
+    if (Number(al.aprovados_sem_beneficio) > 0) alertas += '<div class="card" style="border:2px solid var(--danger-500,#e03131);"><div class="text--strong">' + al.aprovados_sem_beneficio + ' pagamento(s) aprovado(s) sem benefício entregue</div><div class="text--sm text--secondary">O pagamento foi confirmado, mas o crédito ou o plano não entrou. A entrega é feita uma única vez, sem duplicar.</div><button class="btn btn--primary btn--sm" type="button" data-contab-reconciliar style="margin-top:8px;width:auto;">Entregar agora</button></div>';
+    if (Number(al.plano_creditado_como_saldo) > 0) alertas += '<div class="card" style="border:2px solid var(--warning-500,#f08c00);"><div class="text--strong">' + al.plano_creditado_como_saldo + ' plano(s) pago(s) que entraram como saldo</div><div class="text--sm text--secondary">Falha antiga: o profissional recebeu saldo em vez do plano. Não é corrigido sozinho — confira o pagamento e ajuste com comprovação.</div></div>';
+    if (Number(al.erros_recentes) > 0) alertas += '<div class="card card--tight"><div class="text--sm"><b>' + al.erros_recentes + '</b> erro(s) de processamento nos últimos 7 dias. Veja o histórico abaixo.</div></div>';
+    if (Number(al.pendentes_antigos) > 0) alertas += '<div class="card card--tight"><div class="text--sm"><b>' + al.pendentes_antigos + '</b> pagamento(s) pendente(s) há mais de 2 dias (Pix não pago ou expirado). Pendente nunca conta como recebido.</div></div>';
+    const situacao = (c.situacao || []).map(function (x) {
+      return '<tr><td>' + (x.tipo === 'plano' ? 'Plano' : 'Recarga de créditos') + '</td><td>' + (CONTAB_STATUS[x.status] || PU.escapeHtml(x.status)) + '</td><td class="qf-adm-num">' + x.qtd + '</td><td class="qf-adm-num"><b>' + R(x.valor_centavos) + '</b></td></tr>';
+    });
+    const porDia = ((rec.por_dia) || []).map(function (d) {
+      const cr = Number(d.creditos_centavos || 0), pp = Number(d.planos_centavos || 0);
+      return '<tr><td class="qf-adm-nowrap">' + PU.escapeHtml(String(d.dia).split('-').reverse().join('/')) + '</td><td class="qf-adm-num">' + R(cr) + '</td><td class="qf-adm-num">' + R(pp) + '</td><td class="qf-adm-num"><b>' + R(cr + pp) + '</b></td></tr>';
+    });
+    const bonus = (c.bonus_ajustes || []).map(function (b) {
+      const nome = b.tipo === 'bonus' ? 'Bônus (' + (b.origem || '—').replace(/_/g, ' ') + ')' : (b.origem === 'admin' ? (b.tipo === 'debito' ? 'Desconto do administrador' : 'Crédito do administrador') : 'Ajuste');
+      return '<tr><td>' + PU.escapeHtml(nome) + '</td><td class="qf-adm-num">' + b.qtd + '</td><td class="qf-adm-num"><b>' + R(b.valor_centavos) + '</b></td></tr>';
+    });
+    return '<div class="section-head"><div><h2 class="h3">Contabilidade</h2><div class="text--sm text--secondary">Só pagamento aprovado pelo Efí conta como dinheiro recebido.</div></div>' +
+        '<div class="row" style="gap:6px;">' + [7, 30, 90].map(function (n) { return '<button type="button" class="btn btn--sm ' + (n === dias ? 'btn--primary' : 'btn--outline') + '" data-contab-dias="' + n + '" style="width:auto;">' + n + ' dias</button>'; }).join('') + '</div></div>' +
+      (alertas ? '<div class="stack--sm" style="margin-bottom:12px;">' + alertas + '</div>' : '') +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;">' +
+        contabCartao('1 · Dinheiro recebido (últimos ' + dias + ' dias)', R(recebidoPeriodo),
+          [['Recargas de créditos (' + (per.creditos_qtd || 0) + ')', R(per.creditos_centavos)], ['Planos vendidos (' + (per.planos_qtd || 0) + ')', R(per.planos_centavos)]],
+          'Desde o início: ' + R(recebidoTotal) + ' (' + (Number(tot.creditos_qtd || 0) + Number(tot.planos_qtd || 0)) + ' pagamentos).') +
+        contabCartao('2 · Créditos consumidos', R(des.saldo_centavos),
+          [['Desbloqueios com saldo', String(des.saldo_qtd || 0)], ['Sem cobrança (bônus/grátis)', String(des.sem_cobranca_qtd || 0)]],
+          'Não é dinheiro novo: já entrou quando o profissional recarregou.') +
+        contabCartao('3 · Uso de planos', String(des.plano_qtd || 0) + ' desbloqueio(s)',
+          [['Planos vendidos / ativados', (pl.vendidos || 0) + ' / ' + (pl.ativados || 0)], ['Planos ativos agora', String(pl.ativos_agora || 0)], ['Chamados restantes', String(pl.chamados_restantes || 0)]],
+          'Desbloqueio por plano não gera dinheiro novo; o plano foi pago na compra.') +
+      '</div>' +
+      '<div class="section-head" style="margin-top:16px;"><h3 class="h3">Situação dos pagamentos</h3></div>' +
+      admTabela(['Tipo', 'Situação', 'Qtd', 'Valor'], situacao, 'Pendente, recusado, expirado e estornado nunca entram como recebido.', 'Nenhum pagamento.') +
+      '<div class="section-head" style="margin-top:16px;"><h3 class="h3">Recebido por dia</h3></div>' +
+      admTabela(['Dia', 'Créditos', 'Planos', 'Total'], porDia, null, 'Nenhum recebimento no período.') +
+      '<div class="section-head" style="margin-top:16px;"><h3 class="h3">Bônus e ajustes (não são dinheiro recebido)</h3></div>' +
+      admTabela(['Tipo', 'Qtd', 'Valor'], bonus, null, 'Nenhum bônus ou ajuste no período.') +
+      '<details style="margin-top:16px;"><summary class="text--strong" style="cursor:pointer;">Histórico de processamento dos pagamentos</summary><div id="qf-contab-eventos" class="text--sm text--secondary" style="margin-top:8px;">Carregando…</div></details>';
+  }
+  global.QFAdminContab = { html: contabilidadeHtml };
+  function bindPagamentos(content) {
+    const host = content.querySelector('#qf-contab');
+    if (!host) return;
+    if (!cloudOn()) { host.innerHTML = '<div class="text--sm text--secondary">A contabilidade detalhada está disponível com o painel conectado ao Supabase.</div>'; return; }
+    let dias = 30;
+    async function carregar() {
+      try {
+        const c = await global.QFAdminCloud.contabilidade(dias);
+        host.innerHTML = contabilidadeHtml(c, dias);
+        try {
+          const ev = await global.QFAdminCloud.eventosPagamento(20);
+          const alvo = host.querySelector('#qf-contab-eventos');
+          if (alvo) alvo.innerHTML = ev.length ? admTabela(['Quando', 'Evento', 'Pagamento', 'Detalhe'], ev.map(function (e) {
+            const d = e.detalhe || {};
+            const resumo = d.erro ? PU.escapeHtml(String(d.erro).slice(0, 120)) : (d.plano ? 'Plano ' + PU.escapeHtml(String(d.plano)) : (d.valor_centavos != null ? R2(d.valor_centavos) : ''));
+            return '<tr><td class="qf-adm-nowrap">' + PU.escapeHtml(PU.formatDateTime(e.criado_em)) + '</td><td>' + (CONTAB_EVENTOS[e.evento] || PU.escapeHtml(e.evento)) + '</td><td>' + (e.referencia_id ? PU.escapeHtml(String(e.referencia_id).slice(0, 8)) : '—') + '</td><td>' + resumo + '</td></tr>';
+          })) : 'Nenhum registro ainda.';
+        } catch (_) { /* o histórico é opcional */ }
+      } catch (err) {
+        host.innerHTML = '<div class="text--sm text--secondary">' + (/function|does not exist|schema cache|forbidden/i.test((err && err.message) || '')
+          ? 'Para ver a contabilidade detalhada, aplique no Supabase a migration 20261018190000_pagamentos_auditoria_contabilidade.'
+          : 'Não foi possível carregar a contabilidade agora. Tente novamente.') + '</div>';
+      }
+    }
+    function R2(v) { return PU.formatCurrency(Number(v || 0)); }
+    host.addEventListener('click', async function (e) {
+      const d = e.target.closest('[data-contab-dias]');
+      if (d) { dias = Number(d.getAttribute('data-contab-dias')) || 30; await carregar(); return; }
+      const rb = e.target.closest('[data-contab-reconciliar]');
+      if (!rb) return;
+      rb.disabled = true;
+      try {
+        const r = await global.QFAdminCloud.reconciliarRecargas(true);
+        const x = r.resultado || {};
+        PU.toast((x.aplicados || 0) + ' benefício(s) entregue(s)' + (x.erros ? ', ' + x.erros + ' com erro' : '') + '.', x.erros ? 'danger' : 'success');
+      } catch (err) { PU.toast((err && err.message) || 'Não foi possível entregar agora.', 'danger'); }
+      await carregar();
+    });
+    carregar();
+  }
 
   // ---------------- Cancelamentos ----------------
 
@@ -8107,6 +8240,7 @@ Screens.adminDashboardRender = function () {
     if (pattern === '/admin/anuncios') bindAnuncios(content);
     if (pattern === '/admin/mais') bindMais(content);
     if (pattern === '/admin/versao') bindVersao(content);
+    if (pattern === '/admin/pagamentos') bindPagamentos(content);
     if (pattern === '/admin/suporte') bindSuporteLista(content);
     if (pattern === '/admin/avisar-acesso') bindAvisarAcesso(content);
     if (pattern === '/admin/sem-push') bindSemPush(content);
