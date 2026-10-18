@@ -3108,7 +3108,6 @@ window.qfGoogleLead = function (requestId) {
 
 :where(.qf-home-prof-btn){font-family:inherit;background:transparent;-webkit-appearance:none;appearance:none;margin:0}
 .qf-home-prof-btn .qf-prof-short{display:none}
-@media(max-width:400px){.qf-home-prof-btn .qf-prof-full{display:none}.qf-home-prof-btn .qf-prof-short{display:inline}}
 </style>
 
 <style id="qf-prof-home-approved">
@@ -3755,7 +3754,31 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 #app-shell[data-route="profissional-chamada"] .qf-opts__nota svg { color: #fff; stroke: currentColor; }
 #app-shell .qf-taxa-aviso { display: block !important; line-height: 1.45; }
 #app-shell .qf-taxa-aviso svg { display: inline-block; width: 16px; height: 16px; vertical-align: -3px; margin-right: 4px; }
-</style></head>
+</style><style id="qf-login-prof-botoes-topo">
+/* V11.98.3 — login do profissional igual ao mockup aprovado + botões do topo lado a lado, mesma cor. */
+.qf-login-prof .qf-lp-hero{background:#07162f;border-radius:22px;padding:24px 22px 84px;display:flex;flex-direction:column;gap:16px}
+.qf-login-prof .qf-lp-logo{width:176px;height:auto;display:block;background:transparent}
+.qf-login-prof .qf-lp-badge{align-self:flex-start;background:rgba(255,121,0,.16);color:#ffb066;font-weight:700;font-size:12px;letter-spacing:.6px;text-transform:uppercase;padding:6px 12px;border-radius:999px}
+.qf-login-prof .qf-lp-title{margin:0;font-size:28px;line-height:1.15;font-weight:800;color:#fff;text-align:left}
+.qf-login-prof .qf-lp-card{position:relative;margin:-60px 14px 0;background:#fff;border-radius:20px;box-shadow:0 10px 30px rgba(7,22,47,.14);padding:24px 20px;display:flex;flex-direction:column;gap:16px}
+.qf-login-prof .qf-lp-form{display:flex;flex-direction:column;gap:16px}
+.qf-login-prof .qf-lp-label{display:block;font-size:14px;font-weight:700;color:#07162f;margin:0 0 8px}
+.qf-login-prof .qf-lp-form .input{height:52px;border-radius:12px;background:#f5f6fa}
+.qf-login-prof .qf-lp-pass{position:relative}
+.qf-login-prof .qf-lp-pass .input{padding-right:56px;width:100%}
+.qf-login-prof .qf-lp-eye{position:absolute;right:4px;top:4px;width:44px;height:44px;border:0;background:transparent;color:#4a5468;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.qf-login-prof .qf-lp-signup{border:2px solid #ff7900!important;color:#c25a00!important;font-weight:800}
+.qf-login-prof .qf-lp-foot{display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;font-size:14px;color:#4a5468;padding:18px 0 18px}
+.qf-login-prof .qf-lp-foot .btn{font-weight:800}
+@media (max-width:899px){
+  #app-shell .qf-landing-topbar{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"brand brand" "professional login";gap:10px}
+  #app-shell .qf-landing-topbar .qf-home-prof{grid-area:professional;min-width:0}
+  #app-shell .qf-landing-topbar .btn.qf-landing-login{grid-area:login;justify-self:stretch;width:100%;padding:0 8px;height:44px;min-height:44px;border-radius:var(--qf-r-md)!important;background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.35)!important;color:#fff!important;font-size:13px;font-weight:700;white-space:nowrap}
+  #app-shell .qf-landing-topbar .qf-home-prof :is(summary,.qf-home-prof-btn){width:100%;box-sizing:border-box;min-height:44px;padding:0 8px;gap:6px;font-size:13px;white-space:nowrap;justify-content:center}
+}
+@media (max-width:374px){.qf-home-prof-btn .qf-prof-full{display:none}.qf-home-prof-btn .qf-prof-short{display:inline}}
+</style>
+</head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=1124265238584181&ev=PageView&noscript=1"
@@ -8542,6 +8565,31 @@ alt=""></noscript>
     const role = params.role;
     const m = ROLE_META[role];
     if (!m) return Screens.landing();
+    if (role === 'profissional') {
+      const olho = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+      return (
+        '<div class="view stack--lg qf-auth-login-view qf-login-prof">' +
+          backRow('/', null) +
+          '<div class="qf-lp-wrap">' +
+            '<div class="qf-lp-hero"><img class="qf-lp-logo" src="/assets/qf-logo-branco-20261014.webp" alt="Quem Faz Serviços" width="600" height="200">' +
+              '<span class="qf-lp-badge">Área do profissional</span>' +
+              '<h1 class="qf-lp-title">Entre e receba pedidos perto de você</h1></div>' +
+            '<div class="qf-lp-card">' +
+              '<form id="login-form" class="qf-lp-form" novalidate>' +
+                '<div><label class="qf-lp-label" for="qf-lp-email">E-mail</label><input id="qf-lp-email" class="input" type="email" name="email" autocomplete="email" inputmode="email" required placeholder="seuemail@exemplo.com"></div>' +
+                '<div><label class="qf-lp-label" for="qf-lp-senha">Senha</label><div class="qf-lp-pass"><input id="qf-lp-senha" class="input" type="password" name="senha" autocomplete="current-password" required placeholder="Digite sua senha">' +
+                  '<button type="button" class="qf-lp-eye" data-toggle-senha aria-label="Mostrar senha">' + olho + '</button></div>' +
+                  '<button class="btn btn--ghost btn--block-auto" type="button" id="qf-forgot-password" style="align-self:flex-end;padding:6px 0;margin-left:auto;display:flex;">Esqueci minha senha</button></div>' +
+                '<button class="btn btn--primary" type="submit">Entrar</button>' +
+              '</form>' +
+              '<div class="divider-label">ou</div>' +
+              '<button class="btn btn--outline qf-lp-signup" type="button" data-nav="/auth/profissional/cadastro">Quero me cadastrar como profissional</button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="qf-lp-foot"><span>Precisa de um serviço?</span><button class="btn btn--ghost" type="button" data-nav="/">Peça grátis como cliente</button></div>' +
+        '</div>'
+      );
+    }
     return (
       '<div class="view stack--lg qf-auth-login-view">' +
         backRow('/', null) +
@@ -9334,6 +9382,14 @@ alt=""></noscript>
       });
     }
     if (pattern === '/auth/:role/login') {
+      const olhoBtn = content.querySelector('[data-toggle-senha]');
+      if (olhoBtn) olhoBtn.addEventListener('click', function () {
+        const campo = content.querySelector('input[name="senha"]');
+        if (!campo) return;
+        const mostrar = campo.type === 'password';
+        campo.type = mostrar ? 'text' : 'password';
+        olhoBtn.setAttribute('aria-label', mostrar ? 'Ocultar senha' : 'Mostrar senha');
+      });
       const form = content.querySelector('#login-form');
       const forgot = content.querySelector('#qf-forgot-password');
       if (forgot) forgot.addEventListener('click', function () {
@@ -15263,7 +15319,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.98.2';
+  const APP_VERSION = '11.98.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

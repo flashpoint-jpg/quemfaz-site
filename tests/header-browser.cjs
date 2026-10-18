@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
       if (width < 900) {
         const rows = Object.fromEntries(boxes.map(box => [box.name, box.top]));
         assert.ok(rows['qf-launch-mini'] > rows['qf-landing-brand']);
-        assert.ok(rows['qf-home-prof'] > rows['btn btn--primary qf-landing-login']);
+        assert.ok(Math.abs(rows['qf-home-prof'] - rows['btn btn--primary qf-landing-login']) < 2, 'Botões do topo lado a lado em ' + width);
       }
       await page.evaluate(() => window.scrollTo(0, 400));
       assert.equal(await bar.evaluate(node => Math.round(node.getBoundingClientRect().top)), 0);
