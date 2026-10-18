@@ -41,16 +41,19 @@
     return eventos.map(function (e) { return '<div class="text--sm">' + esc(dt(e.criado_em)) + ' · <strong>' + esc(e.tipo) + '</strong> · ' + esc(e.ator_papel || '') + '</div>'; }).join('');
   }
 
+  function modoSel(m) { return '<select class="input" data-f="modo" aria-label="Modo da taxa"><option value="percentual"' + (m === 'fixa' ? '' : ' selected') + '>Porcentagem</option><option value="fixa"' + (m === 'fixa' ? ' selected' : '') + '>Taxa única</option></select>'; }
+
   function taxasHtml(t) {
-    var h = '<table class="table" style="width:100%"><thead><tr><th>Profissão</th><th>%</th><th>Teto (R$)</th><th></th></tr></thead><tbody>';
+    var h = '<table class="table" style="width:100%"><thead><tr><th>Profissão</th><th>Modo</th><th>%</th><th>Teto (R$)</th><th>Taxa única (R$)</th><th></th></tr></thead><tbody>';
     (t.taxas || []).forEach(function (x) {
       h += '<tr data-qf-taxa-linha="' + esc(x.categoria) + '"><td>' + esc(x.categoria === 'padrao' ? 'Padrão (todas as profissões)' : x.categoria) + '</td>' +
-        '<td><input class="input" inputmode="decimal" size="4" value="' + esc(String(Number(x.percentual_bps) / 100).replace('.', ',')) + '" data-f="pct" aria-label="Percentual"></td>' +
+        '<td>' + modoSel(x.modo) + '</td><td><input class="input" inputmode="decimal" size="4" value="' + esc(String(Number(x.percentual_bps) / 100).replace('.', ',')) + '" data-f="pct" aria-label="Percentual"></td>' +
         '<td><input class="input" inputmode="decimal" size="8" value="' + (x.teto_centavos == null ? '' : esc(String(Number(x.teto_centavos) / 100).replace('.', ','))) + '" data-f="teto" aria-label="Teto em reais" placeholder="sem teto"></td>' +
+        '<td><input class="input" inputmode="decimal" size="8" value="' + (x.taxa_fixa_centavos == null ? '' : esc(String(Number(x.taxa_fixa_centavos) / 100).replace('.', ','))) + '" data-f="fixa" aria-label="Taxa única em reais"></td>' +
         '<td><button class="btn btn--ghost btn--sm" type="button" data-qf-salvar-taxa>Salvar</button></td></tr>';
     });
     h += '<tr data-qf-taxa-nova><td><input class="input" data-f="cat" placeholder="id da categoria (ex.: cat_eletricista)" aria-label="Categoria"></td>' +
-      '<td><input class="input" inputmode="decimal" size="4" value="6" data-f="pct"></td><td><input class="input" inputmode="decimal" size="8" data-f="teto" placeholder="sem teto"></td>' +
+      '<td>' + modoSel('percentual') + '</td><td><input class="input" inputmode="decimal" size="4" value="6" data-f="pct"></td><td><input class="input" inputmode="decimal" size="8" data-f="teto" placeholder="sem teto"></td><td><input class="input" inputmode="decimal" size="8" data-f="fixa" placeholder="ex.: 15"></td>' +
       '<td><button class="btn btn--ghost btn--sm" type="button" data-qf-salvar-taxa>Adicionar</button></td></tr></tbody></table>';
     return h;
   }
@@ -106,8 +109,10 @@
       else if (b.hasAttribute('data-qf-salvar-taxa')) {
         var tr = b.closest('tr'), cat = tr.getAttribute('data-qf-taxa-linha') || String((tr.querySelector('[data-f="cat"]') || {}).value || '').trim();
         var bps = pctParaBps(tr.querySelector('[data-f="pct"]').value), teto = reaisParaCentavos(tr.querySelector('[data-f="teto"]').value);
+        var modo = tr.querySelector('[data-f="modo"]').value, fixa = reaisParaCentavos(tr.querySelector('[data-f="fixa"]').value);
+        if (modo === 'fixa' && (fixa == null || fixa === undefined)) { PU.toast('Informe o valor da taxa única.', 'danger'); return; }
         if (!cat || bps == null || teto === undefined) { PU.toast('Confira categoria, percentual e teto.', 'danger'); return; }
-        rpc('qf_admin_salvar_taxa_indicacao', { p_categoria: cat, p_percentual_bps: bps, p_teto_centavos: teto, p_ativo: true }).then(function (o) { if (o && o.ok) { PU.toast('Taxa salva.', 'success'); carregar(); } else PU.toast('Não foi possível salvar (' + ((o && o.reason) || 'erro') + ').', 'danger'); }).catch(function () { PU.toast('Não foi possível salvar.', 'danger'); });
+        rpc('qf_admin_salvar_taxa_indicacao', { p_categoria: cat, p_percentual_bps: bps, p_teto_centavos: teto, p_ativo: true, p_modo: modo, p_taxa_fixa_centavos: modo === 'fixa' ? fixa : null }).then(function (o) { if (o && o.ok) { PU.toast('Taxa salva.', 'success'); carregar(); } else PU.toast('Não foi possível salvar (' + ((o && o.reason) || 'erro') + ').', 'danger'); }).catch(function () { PU.toast('Não foi possível salvar.', 'danger'); });
       } else if (b.hasAttribute('data-qf-historico')) {
         var alvo = b.closest('[data-qf-admin-pedido]').querySelector('[data-qf-hist]');
         rpc('qf_admin_pedido_historico', { p_chamado_id: b.getAttribute('data-qf-historico') }).then(function (ev) { alvo.innerHTML = historicoHtml(ev); alvo.hidden = false; });

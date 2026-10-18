@@ -55,3 +55,7 @@ Como muitos profissionais não usam o chat, o profissional que desbloqueou um pe
 - "Não respondeu": libera a vaga (desbloqueio `ativo=false`, pedido volta a `aberto`) para outro profissional. **Não há reembolso automático**; contestação segue valendo.
 - Limitação: o bloqueio é no desbloqueio; notificações push ao profissional não são suprimidas.
 - Migração: `supabase/2026-10-18-confirmacao-contato-24h.sql` (rollback incluso). Testes: `tests/valor-definido-confirmacao.sql`.
+
+## Taxa única (valor fixo) ou porcentagem
+
+Cada profissão (ou o "Padrão") pode usar **porcentagem com teto** (padrão 6%) ou **taxa única** em reais. A taxa única nunca passa do valor do próprio serviço. Configuração no painel admin (tabela de taxas, coluna "Modo"). Migração: `supabase/2026-10-18-taxa-unica.sql` (+ rollback). O profissional continua vendo o valor exato antes de desbloquear.

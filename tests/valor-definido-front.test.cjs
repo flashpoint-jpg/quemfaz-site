@@ -150,3 +150,12 @@ test('confirmação 24h: RPCs corretas', async () => {
   await V.confirmarContato('z', 'cliente_nao_respondeu');
   assert.deepEqual(calls[1], ['qf_confirmar_contato', { p_chamado_id: 'z', p_resposta: 'cliente_nao_respondeu' }]);
 });
+
+test('admin: tabela de taxas oferece porcentagem ou taxa única', () => {
+  const A = require('../qf-admin-valor.js');
+  const h = A.taxasHtml({ taxas: [{ categoria: 'padrao', percentual_bps: 600, teto_centavos: 2000, modo: 'fixa', taxa_fixa_centavos: 1500 }] });
+  assert.match(h, /Taxa única/);
+  assert.match(h, /data-f="fixa"[^>]*>/);
+  assert.match(h, /value="15"/);
+  assert.match(h, /<option value="fixa" selected>/);
+});
