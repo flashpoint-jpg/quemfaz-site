@@ -38,7 +38,7 @@ test('separa quem procura de quem oferece serviço', () => {
 
 test('não confunde compra de móvel com limpeza de sofá nem cidade fora do ABC', () => {
   assert.equal(classify('Preciso comprar um sofá novo em Mauá').accepted, false);
-  assert.equal(classify('Preciso de pintor em Campinas').reason, 'fora_da_regiao');
+  assert.equal(classify('Preciso de pintor em Pequenópolis').reason, 'fora_da_regiao');
   assert.equal(classify('Bom dia a todos de Santo André').reason, 'servico_nao_identificado');
 });
 
@@ -78,4 +78,11 @@ test('todo slug de serviço existe no formulário atual (parâmetro ?servico=)',
   for (const s of SERVICES) {
     assert.ok(new RegExp(`\\b${s.slug}\\s*:\\s*'cat_`).test(acquisition), `slug sem categoria no formulário: ${s.slug}`);
   }
+});
+
+test('aceita pedidos de outras regiões atendidas, além do Grande ABC', () => {
+  const r = classify('Preciso de eletricista urgente em Campinas, alguém indica?');
+  assert.equal(r.accepted, true);
+  assert.equal(r.city, 'Campinas');
+  assert.equal(classify('Procuro diarista em Curitiba').city, 'Curitiba');
 });

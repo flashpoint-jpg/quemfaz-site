@@ -14,6 +14,6 @@ test('não aceita oferta de serviços como pedido', () => {
  assert.equal(r.accepted, false);
 });
 test('não aceita cidade fora do ABC', () => {
- const r = classifyLead({ authorizedSource: true, url: 'https://example.org/p/4', text: 'Preciso de pintor em Campinas' });
+ const r = classifyLead({ authorizedSource: true, url: 'https://example.org/p/4', text: 'Preciso de pintor em Pequenópolis' });
  assert.equal(r.accepted, false);
 });
