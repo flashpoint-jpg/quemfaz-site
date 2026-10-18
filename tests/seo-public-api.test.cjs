@@ -1,0 +1,10 @@
+const test=require('node:test');const assert=require('node:assert/strict');const api=require('../api-inactive/profissionais-publicos.cjs');
+const base={profissional_id:'fake-1',nome_profissional:'Profissional Exemplo',servicos:['pintor'],cidade_atendida:'Santo André',uf:'SP',ativo:true,autorizado:true,autorizado_em:'2026-01-01',revogado:false,atendimento_verificado:true,cpf:'00000000000',email:'privado@example.invalid',telefone:'11900000000',endereco:'Rua Fictícia',saldo:900,pedido:'segredo'};
+const f={categoria:'pintor',cidade:'Santo André',uf:'SP'};
+test('sem consentimento não aparece',()=>assert.deepEqual(api.project([{...base,autorizado:false}],f),[]));
+test('revogado não aparece',()=>assert.deepEqual(api.project([{...base,revogado:true}],f),[]));
+test('sem timestamp não aparece',()=>assert.deepEqual(api.project([{...base,autorizado_em:null}],f),[]));
+test('categoria e cidade precisam coincidir',()=>{assert.deepEqual(api.project([base],{...f,categoria:'eletricista'}),[]);assert.deepEqual(api.project([base],{...f,cidade:'Mauá'}),[]);});
+test('atendimento sem validação de raio não aparece',()=>assert.deepEqual(api.project([{...base,atendimento_verificado:false}],f),[]));
+test('projeção nunca devolve informações privadas',()=>{const [r]=api.project([base],f);assert.deepEqual(Object.keys(r),api.allowed);for(const k of ['cpf','email','telefone','endereco','saldo','pedido','latitude','longitude'])assert.equal(k in r,false);});
+test('API fica desativada sem verificação de segurança',async()=>{const r=await api.list({from(){throw Error('não deveria consultar o banco');}},f);assert.equal(r.status,503);});

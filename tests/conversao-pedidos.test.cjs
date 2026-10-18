@@ -156,7 +156,7 @@ test('guias do ABC: canonical, sitemap, schema e link direto para o formulário'
   assert.ok(fina.includes('<link rel="canonical" href="https://quemfazservico.com.br/servicos/eletricista/abc/">'));
   assert.ok(!sitemap.includes('/servicos/eletricista/maua/</loc>'));
   assert.ok(sitemap.includes('/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc>'), 'editorial de sofá no sitemap');
-  assert.ok(sitemap.includes('/servicos/eletricista/guarulhos/</loc>'));
+  // Guia genérico de Guarulhos não tem conteúdo local/consentimento verificado:\n  // continua acessível, mas não deve ser enviado para indexação pelo sitemap.\n  const guarulhos = fs.readFileSync(path.join(dist, 'servicos', 'eletricista', 'guarulhos', 'index.html'), 'utf8');\n  assert.ok(guarulhos.includes('<link rel=\"canonical\" href=\"https://quemfazservico.com.br/servicos/eletricista/guarulhos/\">'));\n  assert.ok(!sitemap.includes('/servicos/eletricista/guarulhos/</loc>'), 'guia sem validação não deve entrar no sitemap');
   // UTM e identificadores de clique seguem para o formulário.
   assert.ok(fina.includes("'msclkid','fbclid'"));
 });
