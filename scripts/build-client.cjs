@@ -15,7 +15,12 @@ for (const name of fs.readdirSync(root)) {
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
-html=html.replace('<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">','<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">');
+// O Google recebe um favicon ICO explícito no HTML inicial; preserva o SVG e PNG oficiais.
+html=html.replace('<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">','<link rel="icon" type="image/x-icon" href="/favicon.ico">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">\n<link rel="icon" type="image/svg+xml" href="/icon.svg" sizes="any">');
+if (!html.includes('<link rel="icon" type="image/x-icon" href="/favicon.ico">')) throw Error('Referência ICO não gerada no HTML');
+for (const file of ['favicon.ico','favicon.png']) {
+  if (!fs.existsSync(path.join(out,file))) throw Error('Favicon ausente no dist: '+file);
+}
 const version=/const APP_VERSION = '([^']+)'/.exec(html)[1];
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 const main=inline.find(m=>m[1].includes('biblioteca de ícones'));
