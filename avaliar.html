@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="/manifest.webmanifest">
 <title>Avaliar atendimento | Quem Faz Serviços</title>
 <style>
 :root{font-family:Inter,system-ui,-apple-system,Arial,sans-serif;color:#0c2448;color-scheme:light}
@@ -63,6 +64,8 @@ button:disabled{opacity:.65;cursor:wait}
  <a class="home" href="/">Conhecer o Quem Faz</a>
 </main>
 <script src="/vendor/supabase-2.117.2.js"></script>
+<script src="/play-links.js"></script>
+<script src="/qf-pos-avaliacao.js?v=1"></script>
 <script>
 (function(){
  'use strict';
@@ -98,6 +101,25 @@ button:disabled{opacity:.65;cursor:wait}
    }
    return token;
  }
+
+ // Com a chave `pedidos_valor_definido` ligada: se quem escaneou é o cliente logado com uma finalização pendente
+ // deste profissional, segue para a confirmação do pedido (a nota vira avaliação do serviço, uma só vez).
+ // Sem conta, a avaliação rápida abaixo continua igual e aparece um link para finalizar o serviço.
+ async function finalizacaoPorQr(){
+   const cfg=await client.rpc('qf_pedidos_valor_config');
+   if(cfg.error||!cfg.data||cfg.data.ativo!==true)return;
+   const destino='/confirmar-servico.html#p='+encodeURIComponent(token);
+   try{
+     const logado=supabase.createClient('https://dczlyrgnzlxmzghzaooz.supabase.co','sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+     const sess=await logado.auth.getSession();
+     if(sess.data&&sess.data.session){
+       const p=await logado.rpc('qf_cliente_conclusoes_pendentes',{p_token:null,p_carteirinha:token});
+       if(p.data&&p.data.ok&&(p.data.itens||[]).length){location.replace(destino);return;}
+     }
+   }catch(_){}
+   const a=document.createElement('a');a.className='home';a.href=destino;a.textContent='Contratei este profissional: finalizar o serviço';a.setAttribute('data-finalizar-servico','');
+   form.insertAdjacentElement('afterend',a);
+ }
  async function load(){
    try{
      const r=await client.rpc('qf_carteirinha_publica',{p_token:token});
@@ -111,6 +133,7 @@ button:disabled{opacity:.65;cursor:wait}
        img.src=r.data.foto;
      }
      pronto=true;enviar.disabled=!nota;
+     finalizacaoPorQr().catch(function(){});
    }catch(e){aviso(e.message||'Não foi possível abrir a avaliação.');}
  }
  form.addEventListener('submit',async function(e){
@@ -127,6 +150,7 @@ button:disabled{opacity:.65;cursor:wait}
      }
      document.getElementById('form-wrap').style.display='none';
      document.getElementById('sucesso').style.display='block';
+     if(window.QFPosAvaliacao)window.QFPosAvaliacao.mostrar(document.getElementById('sucesso'),'concluido');
    }catch(err){aviso(err.message||'Não foi possível enviar. Tente novamente.');}
    finally{enviando=false;enviar.textContent='Enviar avaliação';enviar.disabled=!pronto;}
  });

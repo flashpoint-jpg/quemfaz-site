@@ -175,7 +175,7 @@
   }
 
   function baixaHtml(link, expira) {
-    return '<div class="stack" data-qf-baixa><h3 class="sheet__title">Solicitar baixa do serviço</h3>' +
+    return '<div class="stack" data-qf-baixa><h3 class="sheet__title">Solicitar finalização do serviço</h3>' +
       '<p class="text text--secondary">Peça ao cliente para ler este QR Code ou abrir o link. Só ele, logado na conta dele, confirma.</p>' +
       '<div class="qf-baixa__qr" data-qf-baixa-qr></div>' +
       '<input class="input" readonly value="' + esc(link) + '" data-qf-baixa-link aria-label="Link de confirmação">' +
@@ -325,7 +325,7 @@
     sec.className = 'section card stack--sm';
     sec.innerHTML = '<div class="text--strong">Atendimento feito?</div>' +
       '<p class="text--sm text--secondary">Peça ao cliente para confirmar. Só ele confirma, e a avaliação é dele.</p>' +
-      '<button class="btn btn--primary btn--block" type="button" data-qf-baixa-btn>Solicitar baixa do serviço</button>' +
+      '<button class="btn btn--primary btn--block" type="button" data-qf-baixa-btn>Solicitar finalização do serviço</button>' +
       '<button class="btn btn--ghost btn--block" type="button" data-qf-contestar-btn>Contato falso ou inválido? Contestar desbloqueio</button>';
     view.appendChild(sec);
     sec.querySelector('[data-qf-contestar-btn]').onclick = function () { abrirContestacao(chamadoId); };

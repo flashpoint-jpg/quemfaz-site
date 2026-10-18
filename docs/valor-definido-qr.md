@@ -16,6 +16,13 @@ Branch `feature/quemfaz-pedidos-valor-qr` · especificação: issue #87 · **tud
 | Carteirinha | `carteirinha.html`, `qf-carteirinha-extras.js`, `qf_carteirinha_publica_v2` | Com a chave ligada: profissão, Compartilhar (share nativo/WhatsApp), Copiar link, Baixar PDF (gerado no aparelho), Imprimir (já existia). O QR continua identificando só o profissional. |
 | Painel admin | `qf-admin-valor.js` (dashboard) | Liga/desliga, taxa e teto por profissão, lista de pedidos (valor, taxa, quem desbloqueou, pagamento, baixa, nota, cancelamento, contestação), histórico completo, suspeitos. |
 
+## Pós-avaliação: instalar o app e pedir outro serviço
+`qf-pos-avaliacao.js`, usado por `confirmar-servico.html` (link/QR do pedido) e `avaliar.html` (QR da carteirinha). Depois de avaliar mostra "Serviço finalizado com sucesso!" com:
+* **Instalar aplicativo grátis**: Android → link oficial já configurado (`play-links.js` → `LINK_DA_LOJA`, só aceita https da Play Store); navegador com `beforeinstallprompt` → instalação PWA; iPhone → instrução. Escondido se o app já está instalado (modo standalone, APK/Capacitor, marca `qf_pwa_installed`, `getInstalledRelatedApps`) e, se o cliente tocar "Agora não", não volta por 30 dias.
+* **Solicitar outro serviço**: abre o formulário normal na raiz do site, sem exigir instalação ou cadastro; modalidades e profissões vêm do próprio formulário (nada específico por categoria).
+* O botão do profissional chama-se "Solicitar finalização do serviço".
+* QR da carteirinha: com a chave ligada e o cliente logado com finalização pendente daquele profissional, `avaliar.html` segue para a confirmação do pedido; sem conta, mantém a avaliação rápida atual e mostra o link "finalizar o serviço".
+
 ## Migração (NÃO aplicada em produção)
 `supabase/2026-10-18-pedidos-valor-definido-qr.sql` — aditiva (tabelas/colunas novas, funções novas, 2 triggers, 1 constraint). Única função existente reescrita: `qf_private.devolver_lead` (mesmo corpo de produção + retorno 0 para pedidos com valor definido).
 Reversão: `...-rollback.sql` (preserva tabelas e dados). Para só desligar: `update public.qf_config set valor = valor || '{"ativo": false}' where chave='pedidos_valor_definido'`.
