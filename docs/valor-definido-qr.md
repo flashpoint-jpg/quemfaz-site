@@ -1,3 +1,17 @@
+# CORREÇÃO (issue #92): o que vale hoje
+
+A modalidade "Já tenho um valor para pagar" (6% de taxa, 1 profissional, preço fechado) **foi retirada**. O que vale:
+
+- **Um único fluxo de publicação**, sempre gratuito, com o campo opcional "Quanto você está disposto a gastar aproximadamente com esse serviço?" (valor aproximado, sem contratação nem confirmação de preço). Salvo em `qf_chamados.orcamento_aproximado_centavos`; o profissional vê antes de desbloquear (`qf_orcamento_info_chamados`, sem dado pessoal).
+- **Desbloqueio normal:** preço vigente por categoria, créditos da carteira, até 4 profissionais (regra já existente de `qf_desbloquear_chamado`).
+- **Desbloqueio exclusivo:** exatamente 4x o preço normal vigente (`qf_config.desbloqueio_exclusivo.multiplicador = 4`), só se ninguém desbloqueou, trava o pedido para os demais. A cobrança é atômica (trava o pedido e a carteira na mesma transação).
+- Nenhum percentual ou comissão sobre o valor do serviço. `valor_definido` não pode mais ser criado (`modalidade_descontinuada`).
+- Cancelamento com motivo, baixa por QR e contestação (abaixo) continuam atrás da chave `pedidos_valor_definido`.
+- Migração: `supabase/2026-10-18-orcamento-aproximado-exclusivo-4x.sql` (+ rollback). Testes: `tests/orcamento-exclusivo-db.sql`, `tests/orcamento-exclusivo-concorrencia.sh`, `tests/orcamento-aproximado.test.cjs`.
+
+---
+(Histórico — a parte de taxa/percentual abaixo está descontinuada.)
+
 # Pedidos com valor definido, baixa por QR e cancelamento — guia de revisão
 
 Branch `feature/quemfaz-pedidos-valor-qr` · especificação: issue #87 · **tudo nasce DESLIGADO** (`qf_config.pedidos_valor_definido.ativo = false`).

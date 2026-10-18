@@ -1,12 +1,14 @@
-/* QuemFaz — Pedidos com valor definido, cancelamento, baixa por QR e confirmação do cliente.
-   TUDO fica atrás da chave `pedidos_valor_definido` (qf_config). Com a chave desligada nada muda na tela.
-   A parte pura (valor, taxa, textos, HTML) é testada em tests/valor-definido-front.test.cjs.
-   A regra de verdade (valor, taxa, teto, débito, limite de 1 profissional) vive no banco; aqui só mostramos. */
+/* QuemFaz — orçamento aproximado do pedido + cancelamento, baixa por QR e confirmação do cliente.
+   O orçamento aproximado vale para TODOS os pedidos (campo opcional, sempre gratuito): é só uma estimativa
+   do cliente, mostrada ao profissional antes do desbloqueio. Nunca é preço fechado nem comissão.
+   Cancelamento com motivo, baixa por QR e contestação seguem atrás da chave `pedidos_valor_definido` (qf_config).
+   A parte pura (valor, textos, HTML) é testada em tests/valor-definido-front.test.cjs e orcamento-aproximado.test.cjs.
+   A regra de verdade (cobrança do desbloqueio normal/exclusivo) vive no banco; aqui só mostramos. */
 (function (global) {
   'use strict';
 
-  var DEFAULTS = { ativo: false, percentual_bps: 600, valor_min_centavos: 2000, valor_max_centavos: 50000000 };
-  var ROTULO = 'Valor confirmado pelo cliente';
+  var DEFAULTS = { ativo: false, valor_min_centavos: 2000, valor_max_centavos: 50000000 };
+  var ORC_MIN = 1000, ORC_MAX = 50000000; // R$ 10,00 a R$ 500.000,00 (o banco aceita de R$ 1,00)
 
   function esc(v) {
     return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
@@ -45,45 +47,30 @@
 
   function cfgOf(c) { return Object.assign({}, DEFAULTS, c || {}); }
 
-  function validarValor(cents, cfg) {
-    var c = cfgOf(cfg);
-    if (cents == null || !isFinite(cents) || cents <= 0) return { ok: false, motivo: 'obrigatorio', mensagem: 'Informe quanto você pode pagar pelo serviço.' };
-    if (cents < c.valor_min_centavos) return { ok: false, motivo: 'minimo', mensagem: 'O valor mínimo é ' + formatBRL(c.valor_min_centavos) + '.' };
-    if (cents > c.valor_max_centavos) return { ok: false, motivo: 'maximo', mensagem: 'O valor máximo é ' + formatBRL(c.valor_max_centavos) + '.' };
-    return { ok: true };
+  // Orçamento aproximado: opcional. Vazio é válido (pedido sem estimativa). Nunca exige preço fechado.
+  function validarOrcamento(texto) {
+    var vazio = String(texto == null ? '' : texto).trim() === '';
+    if (vazio) return { ok: true, centavos: null };
+    var c = parseBRL(texto);
+    if (c == null || c <= 0) return { ok: false, mensagem: 'Digite um valor válido. Exemplo: R$ 1.500,00.' };
+    if (c < ORC_MIN) return { ok: false, mensagem: 'O valor mínimo é ' + formatBRL(ORC_MIN) + '.' };
+    if (c > ORC_MAX) return { ok: false, mensagem: 'O valor máximo é ' + formatBRL(ORC_MAX) + '.' };
+    return { ok: true, centavos: c };
   }
 
-  // Mesma regra do banco (arredonda meio para cima, aplica teto). É só PRÉVIA: quem cobra é o banco.
-  function calcularTaxa(valorCents, bps, tetoCents) {
-    var v = Math.round(Number(valorCents) || 0);
-    if (v <= 0) return 0;
-    var t = Math.floor((v * Number(bps == null ? 600 : bps) + 5000) / 10000);
-    if (tetoCents != null && Number(tetoCents) > 0) t = Math.min(t, Number(tetoCents));
-    return Math.max(t, 0);
+  function campoOrcamentoHtml() {
+    return '<label class="field qf-orcamento" data-qf-orcamento>' +
+      '<span class="field__label">Quanto você está disposto a gastar aproximadamente com esse serviço? <small>(opcional)</small></span>' +
+      '<input class="input" inputmode="decimal" autocomplete="off" name="orcamentoAprox" placeholder="Ex.: R$ 1.500,00" data-qf-orcamento-input>' +
+      '<small class="field__hint" data-qf-orcamento-erro role="alert"></small>' +
+      '<small class="field__hint">É um valor aproximado, só para o profissional entender o seu orçamento. Você não está contratando nem fechando preço, e o preço final é combinado entre vocês. Publicar continua grátis.</small></label>';
   }
 
-  // Valida o que o formulário vai enviar para o pedido B. Devolve a linha extra do insert ou o erro.
-  function montarCamposPedido(entrada, cfg, agora) {
-    var e = entrada || {};
-    if (e.modalidade !== 'valor_definido') return { ok: true, campos: { modalidade: 'contatos' } };
-    var cents = typeof e.valorCentavos === 'number' ? e.valorCentavos : parseBRL(e.valorTexto);
-    var v = validarValor(cents, cfg);
-    if (!v.ok) return { ok: false, campo: 'valor', mensagem: v.mensagem };
-    if (e.materialIncluso !== true && e.materialIncluso !== false) return { ok: false, campo: 'material', mensagem: 'Diga se o material está incluso no valor.' };
-    if (!e.confirmou) return { ok: false, campo: 'confirmacao', mensagem: 'Confirme que pretende contratar pelo valor informado.' };
-    if (String(e.descricao || '').trim().length < 10) return { ok: false, campo: 'descricao', mensagem: 'Descreva o serviço (mínimo de 10 letras).' };
-    var cond = String(e.condicoes || '').trim().slice(0, 500);
-    return {
-      ok: true,
-      campos: {
-        modalidade: 'valor_definido',
-        valor_oferecido_centavos: cents,
-        material_incluso: e.materialIncluso,
-        valor_confirmado_em: (agora || new Date()).toISOString(),
-        condicoes_valor: cond || null,
-        max_orcamentos: 1
-      }
-    };
+  function orcamentoHtml(centavos) {
+    var c = Number(centavos);
+    if (!isFinite(c) || c <= 0) return '';
+    return '<div class="qf-orcamento-box" data-qf-orcamento-box><small>Orçamento aproximado do cliente</small><strong>' + esc(formatBRL(c)) + '</strong>' +
+      '<span>Valor estimado pelo cliente, não é preço fechado. O preço final é combinado entre vocês.</span></div>';
   }
 
   var MOTIVOS_CANCELAMENTO = [
@@ -100,69 +87,7 @@
     { id: 'nao_realizado', texto: 'Serviço não realizado' }
   ];
 
-  function mensagemDesbloqueio(out) {
-    out = out || {};
-    var m = {
-      desativado: 'Este tipo de pedido ainda não está disponível.',
-      avaliacao_pendente: 'Finalize e avalie o serviço pendente antes de aceitar outro chamado.',
-      selfie_obrigatoria: 'Envie sua selfie de verificação para desbloquear pedidos.',
-      modalidade_invalida: 'Este pedido não tem valor definido.',
-      sem_permissao: 'Você não pode desbloquear este pedido.',
-      ja_participou: 'Você já desbloqueou este pedido.',
-      indisponivel: 'Este pedido não está mais disponível.',
-      reservado: 'Outro profissional acabou de desbloquear este pedido.',
-      nao_elegivel: 'Este pedido não é da sua profissão ou está fora da sua região.',
-      taxa_mudou: 'A taxa mudou. Confira o novo valor antes de continuar.'
-    };
-    if (out.reason === 'saldo_insuficiente') {
-      return 'Faltam ' + formatBRL(out.falta != null ? out.falta : Math.max(0, Number(out.taxa || 0) - Number(out.saldo || 0))) + ' em créditos para pagar a taxa de ' + formatBRL(out.taxa) + '.';
-    }
-    return m[out.reason] || 'Não foi possível desbloquear este pedido.';
-  }
-
   // ---------- HTML (strings puras, escapadas) ----------
-  function etiquetaHtml() {
-    return '<span class="badge badge--success qf-valor-etiqueta" data-qf-valor-etiqueta>' + esc(ROTULO) + '</span>';
-  }
-
-  function resumoValorHtml(info) {
-    if (!info || info.modalidade !== 'valor_definido') return '';
-    var linhas = '<div class="qf-valor-box" data-qf-valor-box>' +
-      etiquetaHtml() +
-      '<div class="qf-valor-box__valor"><small>Valor que o cliente quer pagar</small><strong>' + esc(formatBRL(info.valor)) + '</strong></div>' +
-      '<div class="qf-valor-box__linha">' + (info.materialIncluso ? 'Material incluso no valor' : 'Material por conta do cliente') + '</div>';
-    if (info.taxa != null) {
-      linhas += '<div class="qf-valor-box__linha">Taxa de indicação para liberar o contato: <strong>' + esc(formatBRL(info.taxa)) + '</strong></div>' +
-        '<div class="qf-valor-box__nota">Você paga só a taxa. O combinado do serviço é direto com o cliente, sujeito à confirmação do escopo.</div>';
-    }
-    return linhas + '</div>';
-  }
-
-  function seletorModalidadeHtml(cfg) {
-    var c = cfgOf(cfg);
-    return '<div class="field qf-modalidade" data-qf-modalidade role="radiogroup" aria-labelledby="qf-modalidade-label">' +
-      '<span class="field__label" id="qf-modalidade-label">Como você quer contratar?</span>' +
-      '<button type="button" class="qf-envio__opt" role="radio" aria-checked="true" data-qf-modalidade-opt="contatos">' +
-        '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Receber até 4 contatos</span><span class="qf-envio__preco qf-envio__preco--gratis">Grátis</span></span>' +
-        '<span class="qf-envio__desc">Profissionais da região chamam você e cada um passa o preço.</span></button>' +
-      '<button type="button" class="qf-envio__opt" role="radio" aria-checked="false" data-qf-modalidade-opt="valor_definido">' +
-        '<span class="qf-envio__topo"><span class="qf-envio__radio" aria-hidden="true"></span><span class="qf-envio__nome">Já tenho um valor para pagar</span></span>' +
-        '<span class="qf-envio__desc">Você diz quanto pode pagar e só 1 profissional recebe o seu contato.</span></button>' +
-      '<input type="hidden" name="modalidade" value="contatos">' +
-      '<div data-qf-valor-campos hidden>' +
-        '<label class="field"><span class="field__label">Quanto você pode pagar pelo serviço? (R$)</span>' +
-          '<input class="input" inputmode="decimal" autocomplete="off" name="valorTexto" placeholder="Ex.: 1.500,00" data-qf-valor-input>' +
-          '<small class="field__hint" data-qf-valor-erro role="alert"></small>' +
-          '<small class="field__hint">Entre ' + esc(formatBRL(c.valor_min_centavos)) + ' e ' + esc(formatBRL(c.valor_max_centavos)) + '.</small></label>' +
-        '<div class="field"><span class="field__label">O material está incluso no valor?</span>' +
-          '<label><input type="radio" name="materialIncluso" value="1"> Sim, material incluso</label> ' +
-          '<label><input type="radio" name="materialIncluso" value="0"> Não, o material é à parte</label></div>' +
-        '<label class="field"><span class="field__label">Condições (opcional)</span>' +
-          '<textarea class="input" name="condicoesValor" maxlength="500" rows="2" placeholder="Ex.: pagamento após a conclusão"></textarea></label>' +
-        '<label class="qf-valor-confirma"><input type="checkbox" name="confirmaValor" value="1"> Confirmo que pretendo contratar o serviço pelo valor informado.</label>' +
-      '</div></div>';
-  }
-
   function cancelamentoHtml() {
     return '<div class="stack" data-qf-cancelar><h3 class="sheet__title">Cancelar pedido</h3>' +
       '<p class="text text--secondary">Conte o motivo. Os profissionais envolvidos serão avisados.</p>' +
@@ -208,21 +133,17 @@
   }
   function ativo() { return !!(state.cfg && state.cfg.ativo === true); }
 
-  // Anexa valor/taxa nos pedidos já carregados. Falha em silêncio: sem a camada, o app segue como era.
-  function enriquecer(reqs) {
+  // Anexa o orçamento aproximado nos pedidos já carregados. Falha em silêncio: sem ele o app segue como era.
+  function enriquecerOrcamento(reqs) {
     var c = client();
-    if (!ativo() || !c || !reqs || !reqs.length) return Promise.resolve(reqs);
-    var ids = reqs.map(function (r) { return r.id; }).filter(Boolean).slice(0, 100);
-    return Promise.resolve(c.rpc('qf_valor_info_chamados', { p_ids: ids })).then(function (r) {
+    if (!c || !reqs || !reqs.length) return Promise.resolve(reqs);
+    var ids = reqs.filter(function (r) { return r && r.id && r.orcamentoAproxCentavos == null; }).map(function (r) { return r.id; }).slice(0, 100);
+    if (!ids.length) return Promise.resolve(reqs);
+    return Promise.resolve(c.rpc('qf_orcamento_info_chamados', { p_ids: ids })).then(function (r) {
       if (!r || r.error || !Array.isArray(r.data)) return reqs;
       var mapa = {};
-      r.data.forEach(function (i) { mapa[i.chamado_id] = i; });
-      reqs.forEach(function (q) {
-        var i = mapa[q.id];
-        if (!i) return;
-        q.modalidade = 'valor_definido';
-        q.valorDefinido = { modalidade: 'valor_definido', valor: Number(i.valor_oferecido_centavos), materialIncluso: !!i.material_incluso, taxa: i.taxa_centavos == null ? null : Number(i.taxa_centavos), vagas: Number(i.vagas) };
-      });
+      r.data.forEach(function (i) { mapa[i.chamado_id] = Number(i.orcamento_aproximado_centavos); });
+      reqs.forEach(function (q) { if (q && mapa[q.id] > 0) q.orcamentoAproxCentavos = mapa[q.id]; });
       return reqs;
     }).catch(function () { return reqs; });
   }
@@ -353,15 +274,13 @@
   }
 
   var api = {
-    ROTULO: ROTULO, MOTIVOS_CANCELAMENTO: MOTIVOS_CANCELAMENTO, RESPOSTAS_CONCLUSAO: RESPOSTAS_CONCLUSAO,
-    esc: esc, parseBRL: parseBRL, formatBRL: formatBRL, validarValor: validarValor, calcularTaxa: calcularTaxa,
-    montarCamposPedido: montarCamposPedido, mensagemDesbloqueio: mensagemDesbloqueio,
-    etiquetaHtml: etiquetaHtml, resumoValorHtml: resumoValorHtml, seletorModalidadeHtml: seletorModalidadeHtml,
+    MOTIVOS_CANCELAMENTO: MOTIVOS_CANCELAMENTO, RESPOSTAS_CONCLUSAO: RESPOSTAS_CONCLUSAO,
+    esc: esc, parseBRL: parseBRL, formatBRL: formatBRL, 
+    validarOrcamento: validarOrcamento, campoOrcamentoHtml: campoOrcamentoHtml, orcamentoHtml: orcamentoHtml,
     cancelamentoHtml: cancelamentoHtml, contestacaoHtml: contestacaoHtml, MOTIVOS_CONTESTACAO: MOTIVOS_CONTESTACAO, baixaHtml: baixaHtml, linkConfirmacao: linkConfirmacao, tokenDoHash: tokenDoHash,
-    carregarConfig: carregarConfig, ativo: ativo, enriquecer: enriquecer,
+    carregarConfig: carregarConfig, ativo: ativo, enriquecerOrcamento: enriquecerOrcamento,
     abrirCancelamento: abrirCancelamento, montarBaixa: montarBaixa,
     config: function () { return cfgOf(state.cfg); },
-    desbloquear: function (id, taxa) { return rpc('qf_desbloquear_chamado_valor', { p_chamado_id: id, p_taxa_confirmada_centavos: taxa }); },
     cancelar: function (id, motivo, detalhe) { return rpc('qf_cliente_cancelar_pedido', { p_chamado_id: id, p_motivo: motivo, p_detalhe: detalhe || null }); },
     solicitarBaixa: function (id) { return rpc('qf_solicitar_baixa', { p_chamado_id: id }); },
     pendentes: function (token, carteirinha) { return rpc('qf_cliente_conclusoes_pendentes', { p_token: token || null, p_carteirinha: carteirinha || null }); },
