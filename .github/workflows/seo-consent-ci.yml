@@ -1,0 +1,21 @@
+name: SEO consent checks
+on:
+  pull_request:
+    paths:
+      - 'docs/seo-public-consent-proposal.sql'
+      - 'tests/seo-consent-proposal.test.cjs'
+      - '.github/workflows/seo-consent-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  consent-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Consent SQL static regression checks
+        run: node --test tests/seo-consent-proposal.test.cjs
