@@ -8012,7 +8012,6 @@ Screens.adminDashboardRender = function () {
         maisItem('image', 'Anúncios do carrossel', '/admin/anuncios') +
         maisItem('money', 'Receitas do app', '/admin/pagamentos') +
         maisItem('alertTriangle', 'Cancelamentos', '/admin/cancelamentos') +
-        maisItem('search', 'Radar de Leads Externos', '/admin/radar-leads') +
         maisItem('info', 'Central de suporte', '/admin/suporte') +
         maisItem('users', 'Avisar quem não entrou', '/admin/avisar-acesso') +
         maisItem('bell', 'Profissionais sem notificações', '/admin/sem-push') +
@@ -9499,8 +9498,6 @@ Screens.adminDashboardRender = function () {
 <script src="qf-recrutamento.js?v=11.95"></script>
 <script src="qf-admin-acquisition.js?v=11.75.1"></script>
 <script src="qf-admin-commercial.js?v=1"></script>
-<script src="qf-radar-classifier.js?v=1"></script>
-<script src="qf-admin-radar.js?v=1"></script>
 <script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
@@ -9588,7 +9585,6 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/anuncios', role: 'admin', title: 'Anúncios (QuemFaz Premium)', render: Screens.adminAnunciosRender },
     { pattern: '/admin/pagamentos', role: 'admin', title: 'Receita', render: Screens.adminPagamentosRender },
     { pattern: '/admin/cancelamentos', role: 'admin', title: 'Cancelamentos', back: '/admin/servicos', render: Screens.adminCancelamentosRender },
-    { pattern: '/admin/radar-leads', role: 'admin', title: 'Radar de Leads Externos', back: '/admin/mais', render: Screens.adminRadarRender },
     { pattern: '/admin/avisar-acesso', role: 'admin', title: 'Avisar quem não entrou', back: '/admin/comunicados', render: function(){ return Screens.adminAvisarAcessoRender(); } },
     { pattern: '/admin/sem-push', role: 'admin', title: 'Profissionais sem notificações', back: '/admin/comunicados', render: function(){ return Screens.adminSemPushRender(); } },
     { pattern: '/admin/instalacoes', role: 'admin', title: 'Instalação do aplicativo', back: '/admin/comunicados', render: Screens.adminInstalacoesRender },
@@ -9808,7 +9804,6 @@ Screens.adminDashboardRender = function () {
     { id: 'fechou', label: 'Fechou? Sem resposta', icon: 'chat', route: '/admin/fechou' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
     { id: 'cancelamentos', label: 'Cancelamentos', icon: 'xCircle', route: '/admin/cancelamentos' },
-    { id: 'radar', label: 'Radar de Leads Externos', icon: 'search', route: '/admin/radar-leads' },
     { section: 'Pessoas' },
     { id: 'profissionais', label: 'Profissionais', icon: 'users', route: '/admin/profissionais', also: ['/admin/profissionais/:id'] },
     { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
