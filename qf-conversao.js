@@ -137,18 +137,18 @@
     box.setAttribute('role', 'region');
     box.setAttribute('aria-label', 'Aviso de cookies');
     box.innerHTML =
-      '<p>Usamos cookies para medir os anúncios, sem enviar nome ou telefone. <a href="/privacidade/#medicao">Saiba mais</a></p>' +
+      '<p>Cookies só para medir anúncios, sem nome ou telefone. <a href="/privacidade/#medicao">Saiba mais</a></p>' +
       '<div class="qf-consent__acoes"><button type="button" data-qf-consent="denied">Recusar</button>' +
       '<button type="button" data-qf-consent="granted" class="is-primary">Aceitar</button></div>';
     var css = document.createElement('style');
     css.id = 'qf-consent-css';
     css.textContent =
       '#qf-consent{position:fixed;left:10px;right:10px;bottom:calc(var(--qf-consent-bottom,10px) + env(safe-area-inset-bottom));z-index:2147483000;max-width:560px;margin:0 auto;' +
-      'background:#07162F;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 12px;box-shadow:0 8px 28px rgba(0,0,0,.3);font:13.5px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;' +
+      'background:#07162F;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:7px 10px;box-shadow:0 8px 28px rgba(0,0,0,.3);font:13.5px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;' +
       'display:flex;gap:8px 10px;align-items:center;flex-wrap:wrap}' +
-      '#qf-consent p{margin:0;flex:1 1 200px}#qf-consent a{color:#FFB47F;text-decoration:underline}' +
+      '#qf-consent p{margin:0;flex:1 1 150px;font-size:12.5px}#qf-consent a{color:#FFB47F;text-decoration:underline}' +
       '.qf-consent__acoes{display:flex;gap:8px;margin-left:auto}' +
-      '#qf-consent button{min-height:44px;min-width:88px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:0 14px;cursor:pointer}' +
+      '#qf-consent button{min-height:44px;min-width:74px;border-radius:10px;border:1px solid rgba(255,255,255,.55);background:transparent;color:#fff;font:600 14px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:0 14px;cursor:pointer}' +
       '#qf-consent button.is-primary{background:#FF7900;border-color:#FF7900;color:#1a0c00}' +
       '#qf-consent button:focus-visible,#qf-consent a:focus-visible{outline:3px solid #FFB47F;outline-offset:2px}';
     document.head.appendChild(css);

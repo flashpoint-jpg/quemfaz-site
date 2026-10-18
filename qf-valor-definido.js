@@ -58,12 +58,18 @@
     return { ok: true, centavos: c };
   }
 
+  // Ao sair do campo: "1500" vira "R$ 1.500,00". Texto inválido fica como está (o erro aparece).
+  function formatarOrcamento(texto) {
+    var v = validarOrcamento(texto);
+    return v.ok && v.centavos ? formatBRL(v.centavos) : String(texto == null ? '' : texto);
+  }
+
   function campoOrcamentoHtml() {
     return '<label class="field qf-orcamento" data-qf-orcamento>' +
-      '<span class="field__label">Quanto você está disposto a gastar aproximadamente com esse serviço? <small>(opcional)</small></span>' +
-      '<input class="input" inputmode="decimal" autocomplete="off" name="orcamentoAprox" placeholder="Ex.: R$ 1.500,00" data-qf-orcamento-input>' +
-      '<small class="field__hint" data-qf-orcamento-erro role="alert"></small>' +
-      '<small class="field__hint">É um valor aproximado, só para o profissional entender o seu orçamento. Você não está contratando nem fechando preço, e o preço final é combinado entre vocês. Publicar continua grátis.</small></label>';
+      '<span class="field__label">Quanto você está disposto a gastar aproximadamente com esse serviço? <small>(valor estimado, opcional)</small></span>' +
+      '<input class="input" inputmode="decimal" autocomplete="off" name="orcamentoAprox" placeholder="Ex.: R$ 1.500,00" data-qf-orcamento-input aria-describedby="qf-orc-ajuda qf-orc-erro">' +
+      '<small class="field__hint" id="qf-orc-erro" data-qf-orcamento-erro role="alert"></small>' +
+      '<small class="field__hint" id="qf-orc-ajuda">Só uma estimativa para o profissional. Você não está contratando e o preço final é combinado entre vocês. Publicar é grátis.</small></label>';
   }
 
   function orcamentoHtml(centavos) {
@@ -276,7 +282,7 @@
   var api = {
     MOTIVOS_CANCELAMENTO: MOTIVOS_CANCELAMENTO, RESPOSTAS_CONCLUSAO: RESPOSTAS_CONCLUSAO,
     esc: esc, parseBRL: parseBRL, formatBRL: formatBRL, 
-    validarOrcamento: validarOrcamento, campoOrcamentoHtml: campoOrcamentoHtml, orcamentoHtml: orcamentoHtml,
+    validarOrcamento: validarOrcamento, formatarOrcamento: formatarOrcamento, campoOrcamentoHtml: campoOrcamentoHtml, orcamentoHtml: orcamentoHtml,
     cancelamentoHtml: cancelamentoHtml, contestacaoHtml: contestacaoHtml, MOTIVOS_CONTESTACAO: MOTIVOS_CONTESTACAO, baixaHtml: baixaHtml, linkConfirmacao: linkConfirmacao, tokenDoHash: tokenDoHash,
     carregarConfig: carregarConfig, ativo: ativo, enriquecerOrcamento: enriquecerOrcamento,
     abrirCancelamento: abrirCancelamento, montarBaixa: montarBaixa,
