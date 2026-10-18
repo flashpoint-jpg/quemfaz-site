@@ -52,6 +52,14 @@ test('admin: contabilidade separa dinheiro, créditos consumidos e planos', () =
   assert.ok(admin.includes('Entregar agora'));
 });
 
+test('admin: plano do profissional aparece na lista e no perfil', () => {
+  assert.match(mig, /qf_admin_planos_profissionais/);
+  assert.match(mig, /revoke execute on function public\.qf_admin_planos_profissionais\(\) from public, anon/i);
+  assert.ok(admin.includes("qf_admin_planos_profissionais"));
+  assert.match(admin, /adminPlanoHtml\(p\.id\) \+ adminProfAtivLinha\(p\)/);
+  assert.match(admin, /chamados · até/);
+});
+
 test('banco: cenários de pagamento passam no Postgres isolado (opcional)', { skip: !process.env.QF_TEST_PG }, () => {
   const r = spawnSync('bash', [path.join(root, 'tests/pagamentos-db.sh')], { encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);

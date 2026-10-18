@@ -415,3 +415,25 @@ begin
   return jsonb_build_object('ok', true);
 end;
 $$;
+
+-- Planos dos profissionais para o painel admin (lista e perfil): plano vigente, chamados restantes e validade.
+create or replace function public.qf_admin_planos_profissionais()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = pg_catalog, public, private, auth
+as $$
+begin
+  if not private.qf_is_admin() then raise exception 'forbidden'; end if;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'profissional_id', pp.profissional_id, 'plano', pp.plano,
+      'chamados_total', pp.chamados_total, 'chamados_restantes', pp.chamados_restantes,
+      'valido_ate', pp.valido_ate, 'criado_em', pp.criado_em, 'recarga_id', pp.recarga_id)
+      order by pp.criado_em desc)
+    from public.qf_planos_profissional pp), '[]'::jsonb);
+end;
+$$;
+revoke execute on function public.qf_admin_planos_profissionais() from public, anon;
+grant execute on function public.qf_admin_planos_profissionais() to authenticated;

@@ -3879,8 +3879,13 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       client.rpc('qf_admin_snapshot'),
       global.QFConnection.deadline(syncAdminCategories(), 8000, 'categorias administrativas').catch(function (err) {
         console.warn('[QuemFaz] Não foi possível carregar categorias personalizadas:', err.message);
-      })
+      }),
+      // Planos dos profissionais; sem a migration, volta vazio e a tela segue normal.
+      Promise.resolve(client.rpc('qf_admin_planos_profissionais')).then(function (pl) {
+        return pl && !pl.error && Array.isArray(pl.data) ? pl.data : [];
+      }, function () { return []; })
     ]);
+    DB.state.planosProf = results[2] || [];
     const res = results[0];
     if (res.error) {
       if (/function|does not exist|not find|schema cache/i.test(res.error.message || '')) { snapshotOk = false; clearLocalData(); return null; }
@@ -6185,6 +6190,23 @@ Screens.adminDashboardRender = function () {
       gasto: gasto, notas: notas, media: notas.length ? soma / notas.length : 0 };
   }
   function adminProfNotaTxt(a) { return a.notas.length ? a.media.toFixed(1).replace('.', ',') + ' (' + a.notas.length + (a.notas.length === 1 ? ' nota' : ' notas') + ')' : 'sem nota'; }
+  function adminPlanoDoProf(id) {
+    const agora = Date.now();
+    const lista = (DB.state.planosProf || []).filter(function (x) { return String(x.profissional_id) === String(id); });
+    if (!lista.length) return null;
+    const vigente = lista.find(function (x) { return Date.parse(x.valido_ate) > agora && Number(x.chamados_restantes) > 0; });
+    return { p: vigente || lista[0], vigente: !!vigente };
+  }
+  function adminPlanoHtml(id) {
+    const r = adminPlanoDoProf(id);
+    if (!r) return '';
+    const x = r.p, nome = { mensal: 'Mensal', pro: 'Pro', premium: 'Premium' }[x.plano] || x.plano;
+    const ate = new Date(x.valido_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+    const rest = Number(x.chamados_restantes), tot = Number(x.chamados_total);
+    const txt = r.vigente ? 'Plano ' + nome + ' · ' + rest + ' de ' + tot + ' chamados · até ' + ate
+      : 'Plano ' + nome + (Date.parse(x.valido_ate) <= Date.now() ? ' expirado em ' + ate : ' · chamados esgotados');
+    return '<div class="qf-prof-ativ"><span class="badge ' + (r.vigente ? 'badge--success' : '') + '">' + PU.escapeHtml(txt) + '</span></div>';
+  }
   function adminProfAtivLinha(p) {
     const a = adminProfAtividade(p.id);
     if (!a.total) return '<div class="qf-prof-ativ is-zero">Nenhum desbloqueio ainda</div>';
@@ -6210,7 +6232,7 @@ Screens.adminDashboardRender = function () {
         '<span class="qf-extrato__vl' + (pg.valor > 0 ? '' : ' is-zero') + '">' + PU.formatCurrency(pg.valor) + '<small>' + pg.rotulo + '</small></span>' +
       '</button>';
     }).join('');
-    return numeros +
+    return adminPlanoHtml(p.id) + numeros +
       '<div class="section"><div class="section-head"><h2 class="h3">Pedidos que ele desbloqueou</h2></div>' +
         (a.total ? '<div class="qf-prof-hist">' + lista + '</div>' : '<div class="card card--tight"><div class="text--sm text--secondary">Este profissional ainda não desbloqueou nenhum pedido.</div></div>') +
       '</div>';
@@ -6226,7 +6248,7 @@ Screens.adminDashboardRender = function () {
         icon('chevronRight', 'list-item__chevron') +
       '</div>' +
       '<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap;">' + cadastroTag(p) + (cloudOn() ? profBadges(p) : aprovacaoBadge(p.statusAprovacao)) + '</div>' +
-      (cloudOn() ? adminProfAtivLinha(p) : '') +
+      (cloudOn() ? adminPlanoHtml(p.id) + adminProfAtivLinha(p) : '') +
     '</button>' + testeLinhaHtml(p.id) + (cloudOn() ? '<div data-prof-acoes style="margin:8px 0 6px;">' + acoesHtml('profissional', p.id, null, p.telefone, p) + '</div>' : '') + '</div>';
   }
 
