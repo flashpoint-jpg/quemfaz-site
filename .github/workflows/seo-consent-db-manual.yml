@@ -1,0 +1,43 @@
+name: SEO consent isolated DB (manual only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postgres-rls:
+    # SAFETY: Keep disabled until Actions billing/limits are confirmed by account owner,
+    # and the migration has been reviewed against the disposable fixture.
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local_only_dummy
+          POSTGRES_DB: seo_consent_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d seo_consent_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable Supabase-compatible fixture
+        env:
+          PGPASSWORD: local_only_dummy
+        run: |
+          psql -h localhost -U postgres -d seo_consent_test -v ON_ERROR_STOP=1 -f tests/seo-consent-db-fixture.sql
+      - name: Apply proposal to disposable database
+        env:
+          PGPASSWORD: local_only_dummy
+        run: |
+          psql -h localhost -U postgres -d seo_consent_test -v ON_ERROR_STOP=1 -f docs/seo-public-consent-proposal.sql
+      - name: Assert RLS and anonymous access
+        env:
+          PGPASSWORD: local_only_dummy
+        run: |
+          psql -h localhost -U postgres -d seo_consent_test -v ON_ERROR_STOP=1 -f tests/seo-consent-rls.integration.sql
