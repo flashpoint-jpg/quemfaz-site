@@ -1,13 +1,16 @@
 name: SEO consent isolated DB (manual only)
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/seo-consent-db-manual.yml'
 permissions:
   contents: read
 jobs:
   postgres-rls:
-    # SAFETY: Keep disabled until Actions billing/limits are confirmed by account owner,
-    # and the migration has been reviewed against the disposable fixture.
-    if: ${{ false }}
+    # Disposable PostgreSQL only; no repository secrets, production credentials or deployment.
+    if: github.event_name == 'pull_request' && github.head_ref == 'seo/implementacao-local-20261017'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
