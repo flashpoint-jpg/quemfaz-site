@@ -1,4 +1,4 @@
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 -- Only disposable fixture. Test RLS with fake JWT identity.
 begin;
 set local role anon;
