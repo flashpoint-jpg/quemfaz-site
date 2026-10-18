@@ -15,8 +15,9 @@ for (const name of fs.readdirSync(root)) {
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
-// Referência explícita ao favicon ICO oficial, sem depender de JavaScript.
-if (!/<link\\s+rel="icon"\\s+type="image\\/x-icon"\\s+href="\\/favicon.ico">/.test(html)) {
+// Insere o favicon ICO oficial no HTML inicial, sem alterar outros metadados.
+if (!html.includes('href="/favicon.ico"')) {
+  if (!html.includes('</head>')) throw Error('Fechamento head ausente');
   html=html.replace('</head>','<link rel="icon" type="image/x-icon" href="/favicon.ico">\\n</head>');
 }
 for (const file of ['favicon.ico','favicon.png']) {
