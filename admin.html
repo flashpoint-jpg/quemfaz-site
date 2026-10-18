@@ -8806,6 +8806,7 @@ Screens.adminDashboardRender = function () {
           pnFato('Aparece na tela de', admLinhas(Number(c.no_painel || 0), 'profissional', 'profissionais'), Number(c.no_painel_online || 0) + ' online agora') +
           pnFato('Profissional mais perto', perto ? pnKm(c.mais_perto_km) : '—', (perto && c.mais_perto_nome ? PU.escapeHtml(c.mais_perto_nome) + ' · ' : '') + Number(c.dentro_raio || 0) + ' dentro do próprio raio') +
           pnFato('Selecionados para aviso', admLinhas(Number(c.avisados || 0), 'profissional', 'profissionais'), Number(c.avisados_com_push || 0) + ' com notificação ativa · ' + (Number(c.lembretes || 0) ? admLinhas(Number(c.lembretes), 'reenvio', 'reenvios') + ' · último ' + PU.escapeHtml(pnQuando(c.lembrete_em)) : 'Nenhum reenvio ainda')) +
+          pnFato('Detalhe do envio', '<button class="btn btn--outline btn--sm" type="button" data-push-diag="' + PU.escapeHtml(c.id) + '">Ver quem recebeu e por quê</button>', 'Mostra os profissionais elegíveis, quem recebeu, falhas e o motivo de quem ficou de fora.') +
           pnFato('Envio do push', c.push_resultado ? Number(c.push_resultado.enviados || 0) + ' profissionais com envio confirmado' : 'Sem confirmação de envio', c.push_resultado ? Number(c.push_resultado.sem_inscricao || 0) + ' sem inscrição · ' + Number(c.push_resultado.falhas || 0) + ' com falha · ' + Number(c.push_resultado.sem_confirmacao || 0) + ' registros antigos sem confirmação. Envio aceito pelo serviço; recebimento no celular não confirmado.' : 'A seleção para aviso não confirma entrega no celular.') +
           pnFato('Cliente', PU.escapeHtml(c.cliente || 'Cliente'), c.cliente_telefone ? PU.escapeHtml(c.cliente_telefone) : '') +
           pnFato('Último desbloqueio', c.ultimo_desbloqueio_em ? 'há ' + pnHa(c.ultimo_desbloqueio_em, agora) : 'Nenhum', c.ultimo_desbloqueio_em ? PU.escapeHtml(pnQuando(c.ultimo_desbloqueio_em)) : '') +
@@ -9499,6 +9500,8 @@ Screens.adminDashboardRender = function () {
 <script src="qf-admin-acquisition.js?v=11.75.1"></script>
 <script src="qf-admin-commercial.js?v=1"></script>
 <script src="qf-admin-monitoramento.js?v=1"></script>
+<script src="qf-admin-devolucao.js?v=1"></script>
+<script src="qf-admin-push-diagnostico.js?v=1"></script>
 <script src="qf-admin-valor.js?v=4"></script>
 <script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
