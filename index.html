@@ -4914,8 +4914,6 @@ alt=""></noscript>
   }
 
   function leadFeeForRequest(req) {
-    // Valor definido: a taxa oficial (6% com teto) vem do banco; nunca cai na tabela de preços tradicional.
-    if (req && req.valorDefinido && req.valorDefinido.taxa != null) return Number(req.valorDefinido.taxa);
     if (req && Number(req.precoDesbloqueio) > 0) return Number(req.precoDesbloqueio);
     const cat = categoryById(req.categoriaId);
     const tier = (cat && cat.leadTier) || 'padrao';
@@ -5958,10 +5956,8 @@ alt=""></noscript>
       participantes: row.participantes == null ? null : Number(row.participantes),
       limiteParticipantes: row.limite == null ? (Number(row.max_orcamentos) || 3) : Number(row.limite),
       maxOrcamentos: Number(row.max_orcamentos || row.limite) || 3,
-      // Pedidos com valor definido: só leitura; a taxa e o valor oficiais vêm do banco (qf_valor_info_chamados).
-      modalidade: row.modalidade === 'valor_definido' ? 'valor_definido' : 'contatos',
-      valorOferecidoCentavos: row.valor_oferecido_centavos == null ? null : Number(row.valor_oferecido_centavos),
-      materialIncluso: row.material_incluso == null ? null : !!row.material_incluso,
+      // Orçamento aproximado do cliente (estimativa opcional; não é preço fechado). Profissionais recebem por qf_orcamento_info_chamados.
+      orcamentoAproxCentavos: row.orcamento_aproximado_centavos == null ? null : Number(row.orcamento_aproximado_centavos),
       // V11.32: pedido aberto a todos (motivo) e distância aproximada quando o profissional não tem localização salva.
       abertoTodos: row.aberto_todos || null,
       distanciaAprox: !!row.distancia_aprox,
@@ -6296,7 +6292,7 @@ alt=""></noscript>
     await attachCallPhotos(reqs);
     await attachLatestQuotes(reqs);
     await attachEvaluations(reqs);
-    if (global.QFValor) { try { await global.QFValor.carregarConfig(); await global.QFValor.enriquecer(reqs); } catch (_) {} }
+    if (global.QFValor) { try { await global.QFValor.enriquecerOrcamento(reqs); } catch (_) {} }
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
 
@@ -7180,8 +7176,10 @@ alt=""></noscript>
     const maxOrc = Math.round(Number(data.maxOrcamentos));
     const comMax = maxOrc >= 1 && maxOrc <= 4;
     if (comMax) row.max_orcamentos = maxOrc;
-    // Valor definido: campos já validados na tela; o banco valida de novo (trigger) e recusa se a chave estiver desligada.
-    if (data.valorDefinido && typeof data.valorDefinido === 'object') Object.assign(row, data.valorDefinido);
+    // Orçamento aproximado (opcional). Se o banco recusar o campo, publica sem ele: o pedido nunca se perde.
+    const orcAprox = Math.round(Number(data.orcamentoAproxCentavos));
+    const comOrc = orcAprox >= 100 && orcAprox <= 50000000;
+    if (comOrc) row.orcamento_aproximado_centavos = orcAprox;
     let res = await client.from('qf_chamados').insert(row).select('*').single();
     if (res.error && row.geo_precisao && /geo_precisao/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz origem da localização não gravada', res.error);
@@ -7191,6 +7189,11 @@ alt=""></noscript>
     if (res.error && comMax && /max_orcamentos/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz quantidade de orçamentos não gravada', res.error);
       delete row.max_orcamentos;
+      res = await client.from('qf_chamados').insert(row).select('*').single();
+    }
+    if (res.error && comOrc && /orcamento_aproximado/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz orçamento aproximado não gravado', res.error);
+      delete row.orcamento_aproximado_centavos;
       res = await client.from('qf_chamados').insert(row).select('*').single();
     }
     if (res.error && comUrgencia && /urgencia/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
@@ -7248,14 +7251,6 @@ alt=""></noscript>
       catch (pushErr) { console.warn('QuemFaz push do novo chamado', pushErr); }
     }
     return req;
-  }
-
-  // Depois de pagar a taxa de um pedido com valor definido: atualiza usuário (créditos) e lista de chamados.
-  async function afterValorUnlock(profissionalId) {
-    const uRes = await client.auth.getUser();
-    if (uRes.error || !uRes.data || !uRes.data.user) return;
-    await syncLocalUser(uRes.data.user, 'profissional');
-    await syncProfessionalCalls(profissionalId);
   }
 
   async function unlockCall(chamadoId, profissionalId, exclusivo) {
@@ -7660,7 +7655,6 @@ alt=""></noscript>
     preCadastroResgatar: preCadastroResgatar,
     createCall: createCall,
     unlockCall: unlockCall,
-    afterValorUnlock: afterValorUnlock,
     sendQuote: sendQuote,
     respondQuote: respondQuote,
     updateProfessionalCallStatus: updateProfessionalCallStatus,
@@ -7759,18 +7753,17 @@ alt=""></noscript>
   // V11.90: desbloqueio exclusivo (qf_config desbloqueio_exclusivo). Quem cobra é o banco; aqui é só o preço mostrado.
   const EXCL_KEY = 'qf_exclusivo_v1';
   const QFExclusivo = global.QFExclusivo = {
-    ativo: true, mult: 3,
+    ativo: true, mult: 4,
     aplicar: function (d) {
       if (!d) return;
       QFExclusivo.ativo = d.ativo !== false;
       const m = Number(d.multiplicador);
-      QFExclusivo.mult = m >= 1.5 && m <= 10 ? m : 3;
+      QFExclusivo.mult = m >= 1.5 && m <= 10 ? m : 4;
     },
     preco: function (valor) { return Math.ceil((Number(valor) || 0) * QFExclusivo.mult); },
     // Disponível só enquanto ninguém desbloqueou o pedido.
     disponivel: function (req) {
       if (!QFExclusivo.ativo || !req) return false;
-      if (req.valorDefinido || req.modalidade === 'valor_definido') return false; // pedido com valor: já é 1 profissional só
       return !(Number(req.participantes) > 0);
     }
   };
@@ -9792,41 +9785,18 @@ alt=""></noscript>
           const b = e.target.closest('[data-qf-quantos-opt]');
           if (b && form.contains(b)) quantos(b.getAttribute('data-qf-quantos-opt'));
         });
-        // Pedido com valor definido: o seletor A/B só aparece com a chave `pedidos_valor_definido` ligada.
-        // Desligada (padrão), o formulário continua exatamente como era.
+        // Orçamento aproximado (opcional): um único fluxo de publicação, sempre gratuito.
         if (global.QFValor) {
-          global.QFValor.carregarConfig().then(function (cfg) {
-            if (!global.QFValor.ativo() || !form.isConnected || form.querySelector('[data-qf-modalidade]')) return;
-            const alvo = form.querySelector('[data-qf-quantos]');
-            if (!alvo) return;
-            alvo.insertAdjacentHTML('beforebegin', global.QFValor.seletorModalidadeHtml(cfg));
-            const campoModalidade = form.querySelector('[name="modalidade"]');
-            const camposValor = form.querySelector('[data-qf-valor-campos]');
-            function modalidade(m) {
-              m = m === 'valor_definido' ? 'valor_definido' : 'contatos';
-              campoModalidade.value = m;
-              form.querySelectorAll('[data-qf-modalidade-opt]').forEach(function (b) { b.setAttribute('aria-checked', b.getAttribute('data-qf-modalidade-opt') === m ? 'true' : 'false'); });
-              camposValor.hidden = m !== 'valor_definido';
-              alvo.hidden = m === 'valor_definido';
-              if (m === 'valor_definido') {
-                const mx = form.querySelector('[name="maxOrcamentos"]'); if (mx) mx.value = '1';
-                const envio = form.querySelector('.qf-request-submit');
-                if (envio) envio.innerHTML = 'Publicar pedido com valor ' + icon('arrowRight');
-              } else {
-                quantos(3);
-              }
-            }
-            form.addEventListener('click', function (e) {
-              const b = e.target.closest('[data-qf-modalidade-opt]');
-              if (b && form.contains(b)) modalidade(b.getAttribute('data-qf-modalidade-opt'));
+          const alvoOrc = form.querySelector('[data-qf-quantos]');
+          if (alvoOrc && !form.querySelector('[data-qf-orcamento]')) {
+            alvoOrc.insertAdjacentHTML('beforebegin', global.QFValor.campoOrcamentoHtml());
+            const inpOrc = form.querySelector('[data-qf-orcamento-input]');
+            if (inpOrc) inpOrc.addEventListener('input', function () {
+              const erro = form.querySelector('[data-qf-orcamento-erro]');
+              const v = global.QFValor.validarOrcamento(inpOrc.value);
+              if (erro) erro.textContent = v.ok ? '' : v.mensagem;
             });
-            const inp = form.querySelector('[data-qf-valor-input]');
-            if (inp) inp.addEventListener('input', function () {
-              const erro = form.querySelector('[data-qf-valor-erro]');
-              const v = global.QFValor.validarValor(global.QFValor.parseBRL(inp.value), global.QFValor.config());
-              if (erro) erro.textContent = inp.value && !v.ok ? v.mensagem : '';
-            });
-          });
+          }
         }
         quantos(3);
         function continuar() {
@@ -9991,22 +9961,12 @@ alt=""></noscript>
         // Urgência grátis (normal/urgente). Sem o campo na tela (versão antiga em cache), o pedido segue como normal.
         const urgenciaEscolhida = String(fd.get('urgencia') || '') === 'urgente' ? 'urgente' : 'normal';
         const prazoDados = { urgencia: urgenciaEscolhida };
-        // Valor definido: valida tudo antes de criar o acesso/pedido. O banco confere de novo.
-        let valorExtra = null;
-        if (global.QFValor && global.QFValor.ativo() && String(fd.get('modalidade') || '') === 'valor_definido') {
-          const mat = String(fd.get('materialIncluso') || '');
-          const mv = global.QFValor.montarCamposPedido({
-            modalidade: 'valor_definido', valorTexto: fd.get('valorTexto'),
-            materialIncluso: mat === '1' ? true : (mat === '0' ? false : undefined),
-            confirmou: String(fd.get('confirmaValor') || '') === '1',
-            descricao: descricao, condicoes: fd.get('condicoesValor')
-          }, global.QFValor.config());
-          if (!mv.ok) {
-            const campoErro = { valor: 'valorTexto', material: 'materialIncluso', confirmacao: 'confirmaValor', descricao: 'descricao' }[mv.campo] || 'valorTexto';
-            showFieldError(campoErro, mv.mensagem, 'value_' + mv.campo);
-            return;
-          }
-          valorExtra = mv.campos;
+        // Orçamento aproximado: opcional, mas se foi digitado precisa ser um valor válido.
+        let orcamentoAprox = null;
+        if (global.QFValor) {
+          const vo = global.QFValor.validarOrcamento(fd.get('orcamentoAprox'));
+          if (!vo.ok) { showFieldError('orcamentoAprox', vo.mensagem, 'budget'); return; }
+          orcamentoAprox = vo.centavos;
         }
         if (!nome) { showFieldError('nome', 'Informe seu nome para receber os orçamentos.', 'name'); return; }
         if (!validPhone(telefone)) {
@@ -10059,8 +10019,8 @@ alt=""></noscript>
                 endereco: endereco,
                 prioridade: querUrgente,
                 prioridadeMetodo: 'pix',
-                maxOrcamentos: valorExtra ? 1 : (Number(fd.get('maxOrcamentos')) || 3),
-                valorDefinido: valorExtra
+                maxOrcamentos: Number(fd.get('maxOrcamentos')) || 3,
+                orcamentoAproxCentavos: orcamentoAprox
               }, prazoDados))
             : DB.criarPedido(Object.assign({
                 clienteId: user.id,
@@ -13163,7 +13123,7 @@ alt=""></noscript>
       return '~' + m + ' min';
     },
     usaPlano: function (user) { return !!(user && user.plano && user.plano.restantes > 0); },
-    precoTxt: function (req, user) { return (!req.valorDefinido && CallInfo.usaPlano(user)) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
+    precoTxt: function (req, user) { return (CallInfo.usaPlano(user)) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
     midias: function (req) {
       const list = (req && Array.isArray(req.fotos) ? req.fotos : []).map(function (x) { return String(x || ''); }).filter(Boolean);
       const videos = list.filter(function (x) { return /^data:video\//i.test(x) || /\.(mp4|webm|mov)(\?|$)/i.test(x); });
@@ -13255,18 +13215,6 @@ alt=""></noscript>
   }
 
   // Pedido com valor definido (só aparece com a chave ligada): um único botão, taxa exata e aviso de que o contato só abre após o pagamento.
-  function valorPainelPro(req) {
-    const vd = req.valorDefinido;
-    const livre = Number(vd.vagas) > 0;
-    return '<div class="section card stack--sm" data-qf-valor-painel>' +
-      global.QFValor.resumoValorHtml(vd) +
-      (livre
-        ? '<button class="btn btn--primary btn--block" type="button" data-action="desbloquear-valor">' + icon('unlock') + ' Pagar taxa de ' + PU.escapeHtml(PU.formatCurrency(vd.taxa || 0)) + ' e liberar contato</button>' +
-          '<p class="qf-opts__nota">' + icon('lock') + ' O WhatsApp do cliente só aparece depois do pagamento · sem devolução automática</p>'
-        : '<div class="text--sm text--secondary">Outro profissional já liberou este pedido.</div>') +
-      '<button class="btn btn--ghost btn--block" type="button" data-action="recusar-chamada">Agora não</button></div>';
-  }
-
   function chamadaCard(req, user) {
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
@@ -13288,7 +13236,7 @@ alt=""></noscript>
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (global.QFPedidoMsg ? global.QFPedidoMsg.html(req) : '') +
             (req.abertoTodos ? CallInfo.abertoMotivoHtml(req) : '') +
-            (req.valorDefinido ? global.QFValor.resumoValorHtml(Object.assign({}, req.valorDefinido, { taxa: null })) : '') +
+            (global.QFValor ? global.QFValor.orcamentoHtml(req.orcamentoAproxCentavos) : '') +
             CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
               (CallInfo.kmTxt(req) ? '<span>' + icon('mapPin') + CallInfo.kmTxt(req) + '</span>' : '') +
@@ -13296,11 +13244,11 @@ alt=""></noscript>
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
               (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
             '</div>' +
-            '<div class="qf-unlock-price' + ((!req.valorDefinido && CallInfo.usaPlano(user)) ? ' is-plan' : '') + '">' +
-              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : ((!req.valorDefinido && CallInfo.usaPlano(user)) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
+            '<div class="qf-unlock-price' + (CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
+              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
             (global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
-            (function () { if (primeiraGratis || (!req.valorDefinido && CallInfo.usaPlano(user))) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
+            (function () { if (primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
@@ -13375,7 +13323,7 @@ alt=""></noscript>
         '<div class="section qf-call-facts">' +
           '<div class="qf-call-fact"><strong>' + (CallInfo.kmTxt(req) || '—') + '</strong><span>de você</span></div>' +
           '<div class="qf-call-fact"><strong>' + (CallInfo.tempoTxt(req) || '—') + '</strong><span>de carro (estimado)</span></div>' +
-          '<div class="qf-call-fact"><strong>' + CallInfo.precoTxt(req, user) + '</strong><span>' + ((!req.valorDefinido && CallInfo.usaPlano(user)) ? 'usa 1 do plano' : (req.valorDefinido ? 'taxa de indicação' : 'para desbloquear')) + '</span></div>' +
+          '<div class="qf-call-fact"><strong>' + CallInfo.precoTxt(req, user) + '</strong><span>' + (CallInfo.usaPlano(user) ? 'usa 1 do plano' : 'para desbloquear') + '</span></div>' +
         '</div>' +
 
         '<div class="section card stack--sm">' +
@@ -13392,7 +13340,7 @@ alt=""></noscript>
               linha('Serviço', PU.escapeHtml(cat ? cat.nome : 'Serviço')) +
               linha('Local', PU.escapeHtml((req.endereco.bairro || 'Bairro não informado') + ' — ' + ((cidade || {}).nome || req.endereco.cidade || ''))) +
               linha('Publicado', PU.timeAgo(req.criadoEm)) +
-              (req.valorDefinido ? linha('Valor do cliente', PU.escapeHtml(PU.formatCurrency(req.valorDefinido.valor))) : linha('Orçamentos pedidos', lim === 1 ? '1' : 'até ' + lim)) +
+              (req.orcamentoAproxCentavos > 0 ? linha('Orçamento aproximado', PU.escapeHtml(PU.formatCurrency(req.orcamentoAproxCentavos))) : '') + linha('Orçamentos pedidos', lim === 1 ? '1' : 'até ' + lim) +
               linha('Urgência', global.QFUrgencia.ehUrgente(req) ? 'Urgente' : 'Normal') + (req.prioridade ? linha('Prioridade', 'Paga pelo cliente') : '') +
             '</div>';
           })() +
@@ -13404,7 +13352,7 @@ alt=""></noscript>
           '<div class="row"><div class="avatar avatar--sm">' + icon('whatsapp') + '</div><div><div class="text--strong">WhatsApp do cliente liberado ao desbloquear</div><div class="text--sm text--muted">Você chama o cliente no WhatsApp na hora, com a mensagem pronta. O endereço exato aparece quando o cliente escolher você.</div></div></div>' +
         '</div>' +
 
-        (req.valorDefinido ? valorPainelPro(req) : '') + (req.valorDefinido ? '' : (
+        (global.QFValor ? global.QFValor.orcamentoHtml(req.orcamentoAproxCentavos) : '') + ((
         '<div class="section card qf-unlock-simple" style="background:var(--navy-900);border:none;">' +
           '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div>' +
           '<p class="text--sm qf-taxa-aviso" style="color:#fff;margin:8px 0 0;">' + (primeiraGratis ? icon('shieldCheck') + ' Primeiro desbloqueio grátis.' : icon('info') + ' <strong>Sem devolução:</strong> chame o cliente no WhatsApp assim que desbloquear.') + '</p></div>' +
@@ -14733,48 +14681,6 @@ alt=""></noscript>
       const action = e.target.closest('[data-action]');
       if (!action) return;
       const act = action.getAttribute('data-action');
-      if (act === 'desbloquear-valor') {
-        const reqV = DB.requestById(params.id);
-        const vd = reqV && reqV.valorDefinido;
-        if (!vd || !global.QFValor) return;
-        const taxaTxt = PU.formatCurrency(vd.taxa || 0);
-        PU.confirmDialog({
-          title: 'Pagar taxa de indicação',
-          message: 'O cliente quer pagar ' + PU.formatCurrency(vd.valor) + ' pelo serviço (' + (vd.materialIncluso ? 'material incluso' : 'material à parte') + '). A taxa de indicação é ' + taxaTxt + ', debitada dos seus créditos, sem devolução automática. O contato só é liberado depois do pagamento e o escopo ainda é combinado com o cliente.',
-          okLabel: 'Pagar ' + taxaTxt + ' e liberar contato'
-        }).then(async function (ok) {
-          if (!ok) return;
-          action.disabled = true;
-          const out = await global.QFValor.desbloquear(params.id, vd.taxa);
-          if (out && out.ok) {
-            try { await global.QFCloud.afterValorUnlock(user.id); } catch (_) {}
-            try { sessionStorage.setItem('qf_chat_unlocked_notice', String(params.id)); } catch (_) {}
-            PU.toast('Contato liberado. Agora chame o cliente no WhatsApp.', 'success', 5000);
-            global.navigate('/profissional/chat/' + params.id, true);
-            return;
-          }
-          action.disabled = false;
-          if (out && out.reason === 'saldo_insuficiente') {
-            PU.openSheet('<div class="stack"><h3 class="sheet__title">Créditos insuficientes</h3><p class="text text--secondary">' + PU.escapeHtml(global.QFValor.mensagemDesbloqueio(out)) + '</p><button class="btn btn--primary" id="ir-carteira">Adicionar créditos por Pix</button></div>');
-            document.getElementById('ir-carteira').onclick = function () {
-              if (global.QFRechargeReturn) global.QFRechargeReturn.remember(params.id, user.id);
-              PU.closeSheet();
-              global.navigate('/profissional/carteira', true);
-            };
-          } else if (out && out.reason === 'taxa_mudou') {
-            try { await global.QFCloud.afterValorUnlock(user.id); } catch (_) {}
-            PU.toast(global.QFValor.mensagemDesbloqueio(out), 'danger');
-            global.navigate('/profissional/chamada/' + params.id, true);
-          } else if (out && out.reason === 'avaliacao_pendente' && out.chamado_id) {
-            PU.toast(global.QFValor.mensagemDesbloqueio(out), 'danger');
-            global.navigate('/profissional/pedido/' + out.chamado_id, true);
-          } else {
-            PU.toast(global.QFValor.mensagemDesbloqueio(out), 'danger');
-            if (out && (out.reason === 'reservado' || out.reason === 'indisponivel')) global.navigate('/profissional/servicos/disponiveis', true);
-          }
-        }).catch(function (err) { PU.toast('Não foi possível desbloquear. ' + (err && err.message ? err.message : ''), 'danger'); });
-        return;
-      }
       if (act === 'desbloquear-chamada' || act === 'desbloquear-exclusivo') {
         const exclusivo = act === 'desbloquear-exclusivo';
         const req = DB.requestById(params.id);
@@ -15454,7 +15360,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '11.99.0';
+  const APP_VERSION = '12.0.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -19013,7 +18919,7 @@ alt=""></noscript>
 
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
-<script src="qf-valor-definido.js?v=1"></script>
+<script src="qf-valor-definido.js?v=3"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>
 

@@ -41,20 +41,6 @@
     return eventos.map(function (e) { return '<div class="text--sm">' + esc(dt(e.criado_em)) + ' · <strong>' + esc(e.tipo) + '</strong> · ' + esc(e.ator_papel || '') + '</div>'; }).join('');
   }
 
-  function taxasHtml(t) {
-    var h = '<table class="table" style="width:100%"><thead><tr><th>Profissão</th><th>%</th><th>Teto (R$)</th><th></th></tr></thead><tbody>';
-    (t.taxas || []).forEach(function (x) {
-      h += '<tr data-qf-taxa-linha="' + esc(x.categoria) + '"><td>' + esc(x.categoria === 'padrao' ? 'Padrão (todas as profissões)' : x.categoria) + '</td>' +
-        '<td><input class="input" inputmode="decimal" size="4" value="' + esc(String(Number(x.percentual_bps) / 100).replace('.', ',')) + '" data-f="pct" aria-label="Percentual"></td>' +
-        '<td><input class="input" inputmode="decimal" size="8" value="' + (x.teto_centavos == null ? '' : esc(String(Number(x.teto_centavos) / 100).replace('.', ','))) + '" data-f="teto" aria-label="Teto em reais" placeholder="sem teto"></td>' +
-        '<td><button class="btn btn--ghost btn--sm" type="button" data-qf-salvar-taxa>Salvar</button></td></tr>';
-    });
-    h += '<tr data-qf-taxa-nova><td><input class="input" data-f="cat" placeholder="id da categoria (ex.: cat_eletricista)" aria-label="Categoria"></td>' +
-      '<td><input class="input" inputmode="decimal" size="4" value="6" data-f="pct"></td><td><input class="input" inputmode="decimal" size="8" data-f="teto" placeholder="sem teto"></td>' +
-      '<td><button class="btn btn--ghost btn--sm" type="button" data-qf-salvar-taxa>Adicionar</button></td></tr></tbody></table>';
-    return h;
-  }
-
   function suspeitosHtml(lista) {
     if (!lista || !lista.length) return '<div class="text--sm text--secondary">Nenhum cliente com cancelamentos repetidos após desbloqueio no período.</div>';
     return '<p class="text--sm text--secondary">Somente para revisão humana. Nada é bloqueado automaticamente.</p>' + lista.map(function (c) {
@@ -66,7 +52,7 @@
   function pctParaBps(t) { var n = Number(String(t == null ? '' : t).replace(',', '.')); return isFinite(n) && String(t).trim() !== '' ? Math.round(n * 100) : null; }
   function reaisParaCentavos(t) { var s = String(t == null ? '' : t).trim(); if (!s) return null; var n = Number(s.replace(/\./g, '').replace(',', '.')); return isFinite(n) && n >= 0 ? Math.round(n * 100) : undefined; }
 
-  var api = { esc: esc, brl: brl, pedidoHtml: pedidoHtml, historicoHtml: historicoHtml, taxasHtml: taxasHtml, suspeitosHtml: suspeitosHtml, pctParaBps: pctParaBps, reaisParaCentavos: reaisParaCentavos };
+  var api = { esc: esc, brl: brl, pedidoHtml: pedidoHtml, historicoHtml: historicoHtml, suspeitosHtml: suspeitosHtml, pctParaBps: pctParaBps, reaisParaCentavos: reaisParaCentavos };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   global.QFAdminValor = api;
 
@@ -77,21 +63,20 @@
     if (pattern !== '/admin/dashboard' || !global.QFAdminCloud || !global.QFAdminCloud.client) return;
     var c = global.QFAdminCloud.client, PU = global.PU;
     var box = document.createElement('section'); box.className = 'section';
-    box.innerHTML = '<h2 class="h3">Pedidos com valor definido, baixas e cancelamentos</h2><div class="card stack--sm" data-qf-valor-admin>Carregando…</div>';
+    box.innerHTML = '<h2 class="h3">Baixas, cancelamentos e pedidos</h2><div class="card stack--sm" data-qf-valor-admin>Carregando…</div>';
     // No topo do painel: no fim da página ficava escondido atrás do relatório comercial.
     content.insertBefore(box, content.firstChild);
     var raiz = box.querySelector('[data-qf-valor-admin]');
     var filtro = null;
     function rpc(n, a) { return Promise.resolve(c.rpc(n, a || {})).then(function (r) { if (r.error) throw r.error; return r.data; }); }
     function carregar() {
-      Promise.all([rpc('qf_admin_taxas_indicacao'), rpc('qf_admin_pedidos_valor', { p_modalidade: filtro, p_limit: 100, p_offset: 0 }), rpc('qf_admin_cancelamentos_suspeitos')]).then(function (r) {
+      Promise.all([rpc('qf_pedidos_valor_config'), rpc('qf_admin_pedidos_valor', { p_modalidade: filtro, p_limit: 100, p_offset: 0 }), rpc('qf_admin_cancelamentos_suspeitos')]).then(function (r) {
         if (!raiz.isConnected) return;
-        var cfg = (r[0] && r[0].config) || {};
+        var cfg = r[0] || {};
         raiz.innerHTML =
-          '<div class="row-between"><div><strong>Novas funcionalidades (pedido com valor, baixa por QR, cancelamento com motivo)</strong><div class="text--sm text--secondary">Estado: ' + (cfg.ativo ? 'LIGADO' : 'desligado') + '</div></div>' +
+          '<div class="row-between"><div><strong>Baixa por QR e cancelamento com motivo</strong><div class="text--sm text--secondary">Estado: ' + (cfg.ativo ? 'LIGADO' : 'desligado') + '</div></div>' +
           '<button class="btn ' + (cfg.ativo ? 'btn--ghost' : 'btn--primary') + ' btn--sm" type="button" data-qf-flag="' + (cfg.ativo ? '0' : '1') + '">' + (cfg.ativo ? 'Desligar' : 'Ligar') + '</button></div>' +
-          '<hr class="hairline"><h3 class="h3">Taxa de indicação e teto por profissão</h3>' + taxasHtml(r[0] || {}) +
-          '<hr class="hairline"><h3 class="h3">Pedidos</h3><div class="row"><button class="btn btn--ghost btn--sm" data-qf-filtro="">Todos</button> <button class="btn btn--ghost btn--sm" data-qf-filtro="contatos">Tradicionais</button> <button class="btn btn--ghost btn--sm" data-qf-filtro="valor_definido">Valor definido</button></div>' +
+          '<hr class="hairline"><h3 class="h3">Pedidos</h3><div class="row"><button class="btn btn--ghost btn--sm" data-qf-filtro="">Todos</button> <button class="btn btn--ghost btn--sm" data-qf-filtro="contatos">Tradicionais</button></div>' +
           ((r[1] || []).map(pedidoHtml).join('') || '<div class="text--sm text--secondary">Nenhum pedido neste filtro.</div>') +
           '<hr class="hairline"><h3 class="h3">Cancelamentos repetitivos (revisão humana)</h3>' + suspeitosHtml(r[2]);
       }).catch(function () { raiz.textContent = 'Painel indisponível. Aplique a migração e atualize a página.'; });
@@ -100,15 +85,10 @@
       var b = e.target.closest('button'); if (!b) return;
       if (b.hasAttribute('data-qf-flag')) {
         var ligar = b.getAttribute('data-qf-flag') === '1';
-        PU.confirmDialog({ title: ligar ? 'Ligar novas funcionalidades?' : 'Desligar novas funcionalidades?', message: ligar ? 'Clientes e profissionais passam a ver pedidos com valor definido, baixa por QR e cancelamento com motivo.' : 'Volta ao funcionamento anterior. Pedidos e histórico continuam guardados.', okLabel: ligar ? 'Ligar' : 'Desligar' })
+        PU.confirmDialog({ title: ligar ? 'Ligar novas funcionalidades?' : 'Desligar novas funcionalidades?', message: ligar ? 'Clientes e profissionais passam a ver a baixa por QR e o cancelamento com motivo.' : 'Volta ao funcionamento anterior. Pedidos e histórico continuam guardados.', okLabel: ligar ? 'Ligar' : 'Desligar' })
           .then(function (ok) { if (ok) rpc('qf_admin_pedidos_valor_ativar', { p_ativo: ligar }).then(carregar).catch(function () { PU.toast('Não foi possível alterar.', 'danger'); }); });
       } else if (b.hasAttribute('data-qf-filtro')) { filtro = b.getAttribute('data-qf-filtro') || null; carregar(); }
-      else if (b.hasAttribute('data-qf-salvar-taxa')) {
-        var tr = b.closest('tr'), cat = tr.getAttribute('data-qf-taxa-linha') || String((tr.querySelector('[data-f="cat"]') || {}).value || '').trim();
-        var bps = pctParaBps(tr.querySelector('[data-f="pct"]').value), teto = reaisParaCentavos(tr.querySelector('[data-f="teto"]').value);
-        if (!cat || bps == null || teto === undefined) { PU.toast('Confira categoria, percentual e teto.', 'danger'); return; }
-        rpc('qf_admin_salvar_taxa_indicacao', { p_categoria: cat, p_percentual_bps: bps, p_teto_centavos: teto, p_ativo: true }).then(function (o) { if (o && o.ok) { PU.toast('Taxa salva.', 'success'); carregar(); } else PU.toast('Não foi possível salvar (' + ((o && o.reason) || 'erro') + ').', 'danger'); }).catch(function () { PU.toast('Não foi possível salvar.', 'danger'); });
-      } else if (b.hasAttribute('data-qf-historico')) {
+      else if (b.hasAttribute('data-qf-historico')) {
         var alvo = b.closest('[data-qf-admin-pedido]').querySelector('[data-qf-hist]');
         rpc('qf_admin_pedido_historico', { p_chamado_id: b.getAttribute('data-qf-historico') }).then(function (ev) { alvo.innerHTML = historicoHtml(ev); alvo.hidden = false; });
       } else if (b.hasAttribute('data-qf-encerrar')) {

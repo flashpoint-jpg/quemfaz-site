@@ -44,30 +44,6 @@ test('admin: pedido tradicional não mostra valor; suspeitos só listam (sem aç
   assert.ok(s.includes('revisão humana') && s.includes('Nada é bloqueado automaticamente') && !/data-qf-bloquear/.test(s));
 });
 
-test('admin: tabela de taxas permite padrão, teto por profissão e nova profissão', () => {
-  const h = A.taxasHtml({ taxas: [{ categoria: 'padrao', percentual_bps: 600, teto_centavos: null }, { categoria: 'cat_eletricista', percentual_bps: 500, teto_centavos: 20000 }] });
-  assert.ok(h.includes('Padrão (todas as profissões)') && h.includes('value="5"') && h.includes('value="200"') && h.includes('data-qf-taxa-nova'));
-});
-
-test('index.html: tudo atrás da chave e nada muda para pedidos tradicionais', () => {
-  const html = load('index.html');
-  assert.match(html, /qf-valor-definido\.js\?v=1/);
-  // formulário só ganha o seletor quando a chave está ligada
-  assert.match(html, /if \(!global\.QFValor\.ativo\(\) \|\| !form\.isConnected/);
-  // validação do pedido B só roda com a chave ligada e modalidade escolhida
-  assert.match(html, /global\.QFValor\.ativo\(\) && String\(fd\.get\('modalidade'\)/);
-  // pedido tradicional continua mandando a quantidade escolhida pelo cliente
-  assert.match(html, /maxOrcamentos: valorExtra \? 1 : \(Number\(fd\.get\('maxOrcamentos'\)\) \|\| 3\)/);
-  // desbloqueio de valor definido usa a função própria, com a taxa confirmada
-  assert.match(html, /global\.QFValor\.desbloquear\(params\.id, vd\.taxa\)/);
-  // o desbloqueio tradicional continua chamando a função antiga
-  assert.match(html, /client\.rpc\('qf_desbloquear_chamado'/);
-  // exclusivo não existe para pedido com valor
-  assert.match(html, /req\.valorDefinido \|\| req\.modalidade === 'valor_definido'\) return false/);
-  // cancelamento: com a chave ligada usa o modal com motivos; senão, o diálogo anterior
-  assert.match(html, /act === 'cancelar-pedido' && global\.QFValor && global\.QFValor\.ativo\(\)/);
-});
-
 test('versões do app e do service worker continuam iguais', () => {
   const app = /const APP_VERSION = '([^']+)'/.exec(load('index.html'))[1];
   const sw = /const SW_VERSION = '([^']+)'/.exec(load('sw.js'))[1];
