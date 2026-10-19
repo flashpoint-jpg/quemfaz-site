@@ -6970,6 +6970,8 @@ Screens.adminDashboardRender = function () {
   // Categorias da tela Pedidos. "Novo" = sem desbloqueio e criado nas últimas 24h.
   const PEDIDO_NOVO_MS = 24 * 3600 * 1000;
   function qfPedFechado(r) { return desbloqueiosAtivos(r).some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1; }
+  // Urgente = urgência marcada OU cliente que pagou a prioridade (Pix de R$ 9,90).
+  function qfPedPrioridade(r) { return !!r.prioridade || r.urgencia === 'urgente'; }
   function qfPedAtivo(r) { return r.status !== 'aguardando_pix' && r.status !== STATUS.CANCELADO && !qfPedFechado(r); }
   function qfPedNovo(r) { return qfPedAtivo(r) && !desbloqueiosAtivos(r).length && (Date.now() - (Date.parse(r.criadoEm) || 0)) < PEDIDO_NOVO_MS; }
   // Cada pedido cai em UM grupo (ordem de prioridade) — usado na visão "Todos" separada por seções.
@@ -6977,12 +6979,12 @@ Screens.adminDashboardRender = function () {
     if (r.status === 'aguardando_pix') return 'pix';
     if (r.status === STATUS.CANCELADO) return 'cancelado';
     if (qfPedFechado(r)) return 'fechado';
-    if (r.urgencia === 'urgente') return 'urgente';
+    if (qfPedPrioridade(r)) return 'urgente';
     if (!desbloqueiosAtivos(r).length) return qfPedNovo(r) ? 'novo' : 'sem';
     return 'desb';
   }
   const GRUPOS_SERVICOS = [
-    { id: 'urgente', titulo: 'Urgentes' },
+    { id: 'urgente', titulo: 'Urgentes · Cliente prioridade' },
     { id: 'novo', titulo: 'Pedidos novos (últimas 24h)' },
     { id: 'sem', titulo: 'Sem desbloqueio' },
     { id: 'desb', titulo: 'Desbloqueados' },
@@ -6992,7 +6994,7 @@ Screens.adminDashboardRender = function () {
   ];
   const TABS_SERVICOS = [
     { id: 'todos', label: 'Todos', filter: function () { return true; } },
-    { id: 'urgente', label: 'Urgente', filter: function (r) { return qfPedAtivo(r) && r.urgencia === 'urgente'; } },
+    { id: 'urgente', label: 'Urgente', filter: function (r) { return qfPedAtivo(r) && qfPedPrioridade(r); } },
     { id: 'novo', label: 'Pedido novo', filter: qfPedNovo },
     { id: 'sem', label: 'Sem desbloqueio', filter: function (r) { return qfPedAtivo(r) && !desbloqueiosAtivos(r).length; } },
     { id: 'desb', label: 'Desbloqueado', filter: function (r) { return qfPedAtivo(r) && desbloqueiosAtivos(r).length > 0; } },
@@ -7230,7 +7232,7 @@ Screens.adminDashboardRender = function () {
             '<div style="flex:none;">' + adminStatusBadge(r) + '</div>' +
           '</div>' +
           '<div class="qf-ped__meta">' +
-            (r.urgencia === 'urgente' ? '<span class="qf-ped__urg">URGENTE</span>' : '') +
+            (r.prioridade ? '<span class="qf-ped__urg">CLIENTE PRIORIDADE' + (r.pagamentoPrioridade && r.pagamentoPrioridade.valor ? ' · ' + PU.formatCurrency(r.pagamentoPrioridade.valor) : '') + '</span>' : (r.urgencia === 'urgente' ? '<span class="qf-ped__urg">URGENTE</span>' : '')) +
             (qfPedNovo(r) ? '<span class="qf-ped__novo">NOVO</span>' : '') +
             '<span>Pedido <strong>' + PU.escapeHtml(qfDiaMes(r.criadoEm) + ' às ' + qfHora(r.criadoEm)) + '</strong></span>' +
             '<span>Cliente <strong>' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</strong></span>' +
