@@ -2931,6 +2931,14 @@ window.qfGoogleLead = function (requestId) {
 .qf-zap-seguro svg { flex:none;width:22px;height:22px;margin-top:1px; }
 .qf-zap-seguro strong { display:block;font-size:14.5px;font-weight:800;color:#07472a; }
 .qf-zap-seguro span { font-weight:600; }
+.qf-interesse { border:0;margin:0;padding:0;min-width:0;display:flex;flex-direction:column;gap:8px; }
+.qf-interesse legend { padding:0;margin-bottom:2px; }
+.qf-interesse__opt { display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:14px;border:2px solid var(--border, #e2ded8);background:var(--bg-surface, #fff);font-size:15px;font-weight:600;line-height:1.35;cursor:pointer;min-height:48px; }
+.qf-interesse__opt input { flex:none;width:22px;height:22px;margin:1px 0 0;accent-color:var(--navy-700, #1c2b4a); }
+.qf-interesse__opt:has(input:checked) { border-color:var(--navy-700, #1c2b4a); }
+.qf-interesse[aria-invalid="true"] .qf-interesse__opt { border-color:#b42318; }
+.qf-interesse [data-qf-interesse-erro]:not(:empty) { color:#b42318;font-weight:700; }
+.qf-interesse-selo { display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:4px 10px;border-radius:999px;background:#e9f7ef;color:#0b5c36;font-size:12.5px;font-weight:800;line-height:1.2;margin:4px 0; }
 .qf-uf-auto { margin-top:-6px;font-size:13px;font-weight:600;color:var(--text-secondary); }
 .qf-uf-auto[hidden] { display:none; }
 .qf-uf-auto strong { color:var(--text-primary); }
@@ -5960,6 +5968,9 @@ alt=""></noscript>
       maxOrcamentos: Number(row.max_orcamentos || row.limite) || 3,
       // Orçamento aproximado do cliente (estimativa opcional; não é preço fechado). Profissionais recebem por qf_orcamento_info_chamados.
       orcamentoAproxCentavos: row.orcamento_aproximado_centavos == null ? null : Number(row.orcamento_aproximado_centavos),
+      // Interesse confirmado pelo cliente: só vale com data/hora registrada pelo banco. Profissionais recebem por qf_interesse_info_chamados.
+      interesseCliente: (row.interesse_cliente === 'contratar' || row.interesse_cliente === 'pesquisando') ? row.interesse_cliente : null,
+      interesseConfirmadoEm: row.interesse_confirmado_em || null,
       // V11.32: pedido aberto a todos (motivo) e distância aproximada quando o profissional não tem localização salva.
       abertoTodos: row.aberto_todos || null,
       distanciaAprox: !!row.distancia_aprox,
@@ -6295,6 +6306,7 @@ alt=""></noscript>
     await attachLatestQuotes(reqs);
     await attachEvaluations(reqs);
     if (global.QFValor) { try { await global.QFValor.enriquecerOrcamento(reqs); } catch (_) {} }
+    if (global.QFValor && global.QFValor.enriquecerInteresse) { try { await global.QFValor.enriquecerInteresse(reqs); } catch (_) {} }
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
 
@@ -7201,6 +7213,9 @@ alt=""></noscript>
     const orcAprox = Math.round(Number(data.orcamentoAproxCentavos));
     const comOrc = orcAprox >= 100 && orcAprox <= 50000000;
     if (comOrc) row.orcamento_aproximado_centavos = orcAprox;
+    // Interesse do cliente ('contratar' ou 'pesquisando'). A data e hora são gravadas pelo banco; nunca marcamos por conta própria.
+    const comInteresse = data.interesseCliente === 'contratar' || data.interesseCliente === 'pesquisando';
+    if (comInteresse) row.interesse_cliente = data.interesseCliente;
     let res = await client.from('qf_chamados').insert(row).select('*').single();
     if (res.error && row.geo_precisao && /geo_precisao/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz origem da localização não gravada', res.error);
@@ -7215,6 +7230,11 @@ alt=""></noscript>
     if (res.error && comOrc && /orcamento_aproximado/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
       console.warn('QuemFaz orçamento aproximado não gravado', res.error);
       delete row.orcamento_aproximado_centavos;
+      res = await client.from('qf_chamados').insert(row).select('*').single();
+    }
+    if (res.error && comInteresse && /interesse_/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
+      console.warn('QuemFaz interesse do cliente não gravado', res.error);
+      delete row.interesse_cliente;
       res = await client.from('qf_chamados').insert(row).select('*').single();
     }
     if (res.error && comUrgencia && /urgencia/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
@@ -8823,6 +8843,8 @@ alt=""></noscript>
             field('WhatsApp / celular', '<input class="input" name="telefone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="(11) 91234-5678">') +
             '<div class="qf-zap-seguro">' + icon('shieldCheck') + '<div><strong>Seu WhatsApp fica protegido</strong><span data-qf-zap-max>No máximo 3 profissionais verão seu número. Ele não fica público no site.</span></div></div>' +
           '</div>' +
+          // Pergunta obrigatória no fim do formulário (última tela, antes do botão de enviar). Nenhuma opção vem marcada.
+          (global.QFValor && global.QFValor.campoInteresseHtml ? global.QFValor.campoInteresseHtml() : '') +
           '<button class="btn btn--outline" type="button" data-qf-sub-ir="b">Voltar</button>' +
           '</div>' +
           '</div>' +
@@ -9831,7 +9853,20 @@ alt=""></noscript>
               });
             }
           }
+          // Interesse do cliente: se a tela não trouxe a pergunta, ela entra no fim da última tela (antes do botão de enviar).
+          if (global.QFValor.campoInteresseHtml && !form.querySelector('[data-qf-interesse]')) {
+            const alvoInt = form.querySelector('.qf-request-contact');
+            if (alvoInt) alvoInt.insertAdjacentHTML('afterend', global.QFValor.campoInteresseHtml());
+          }
         }
+        // Ao escolher uma opção, o aviso de "escolha uma opção" some.
+        form.addEventListener('change', function (e) {
+          if (!e.target || e.target.name !== 'interesseContratar') return;
+          const erroInt = form.querySelector('[data-qf-interesse-erro]');
+          if (erroInt) erroInt.textContent = '';
+          const boxInt = form.querySelector('[data-qf-interesse]');
+          if (boxInt) boxInt.removeAttribute('aria-invalid');
+        });
         quantos(3);
         function continuar() {
           const a = servicoAtual();
@@ -10007,6 +10042,24 @@ alt=""></noscript>
           showFieldError('telefone', 'Confira o WhatsApp: use DDD e celular com 9 dígitos. Ex.: (11) 98765-4321.', 'phone');
           return;
         }
+        // Interesse do cliente: o cliente PRECISA escolher uma das duas opções antes de publicar (nunca marcado por nós).
+        let interesseCliente = null;
+        const campoInteresse = form.querySelector('[data-qf-interesse]');
+        if (global.QFValor && global.QFValor.validarInteresse && campoInteresse) {
+          const vi = global.QFValor.validarInteresse(fd.get('interesseContratar'));
+          if (!vi.ok) {
+            invalid('interest');
+            const primeiraOpcao = campoInteresse.querySelector('input[type="radio"]');
+            if (primeiraOpcao && form.__qfEtapaDe) form.__qfEtapaDe(primeiraOpcao, 'interesseContratar');
+            campoInteresse.setAttribute('aria-invalid', 'true');
+            const erroInt = campoInteresse.querySelector('[data-qf-interesse-erro]');
+            if (erroInt) erroInt.textContent = vi.mensagem;
+            try { campoInteresse.scrollIntoView({ block: 'center', behavior: 'smooth' }); if (primeiraOpcao) primeiraOpcao.focus({ preventScroll: true }); } catch (_) {}
+            PU.toast(vi.mensagem, 'danger', 5500);
+            return;
+          }
+          interesseCliente = vi.valor;
+        }
 
         let cat = DB.categories().find(function (x) {
           return x.id !== 'cat_outros' && catNorm(x.nome).trim() === catNorm(servico).trim();
@@ -10054,7 +10107,8 @@ alt=""></noscript>
                 prioridade: querUrgente,
                 prioridadeMetodo: 'pix',
                 maxOrcamentos: Number(fd.get('maxOrcamentos')) || 3,
-                orcamentoAproxCentavos: orcamentoAprox
+                orcamentoAproxCentavos: orcamentoAprox,
+                interesseCliente: interesseCliente
               }, prazoDados))
             : DB.criarPedido(Object.assign({
                 clienteId: user.id,
@@ -11103,6 +11157,8 @@ alt=""></noscript>
           '</label>' +
           '<label class="field"><span class="field__label">Forma de pagamento da prioridade</span><select class="select" name="prioridadeMetodo"><option value="pix">Pix</option><option value="cartao">Cartão de crédito</option><option value="boleto">Boleto</option></select></label>' +
           '<div data-coverage aria-live="polite"></div>' +
+          // Mesma pergunta obrigatória do pedido principal (antes do botão de publicar). Nenhuma opção vem marcada.
+          (global.QFValor && global.QFValor.campoInteresseHtml ? global.QFValor.campoInteresseHtml() : '') +
           '<button class="btn btn--primary" type="submit" style="margin-top:4px;">' + icon('search') + ' Publicar chamado</button>' +
         '</form>' +
       '</div>'
@@ -12078,9 +12134,31 @@ alt=""></noscript>
         PU.toast('Pedido anterior carregado. Revise e publique quando quiser.', 'success');
       })();
 
+      form.addEventListener('change', function (e) {
+        if (!e.target || e.target.name !== 'interesseContratar') return;
+        const erroInt = form.querySelector('[data-qf-interesse-erro]');
+        if (erroInt) erroInt.textContent = '';
+        const boxInt = form.querySelector('[data-qf-interesse]');
+        if (boxInt) boxInt.removeAttribute('aria-invalid');
+      });
       form.addEventListener('submit', async function (e) {
       e.preventDefault();
       const fd = new FormData(form);
+      // Interesse do cliente: precisa escolher uma das duas opções antes de publicar (nunca marcado automaticamente).
+      let interesseCliente = null;
+      const campoInteresse = form.querySelector('[data-qf-interesse]');
+      if (global.QFValor && global.QFValor.validarInteresse && campoInteresse) {
+        const vi = global.QFValor.validarInteresse(fd.get('interesseContratar'));
+        if (!vi.ok) {
+          campoInteresse.setAttribute('aria-invalid', 'true');
+          const erroInt = campoInteresse.querySelector('[data-qf-interesse-erro]');
+          if (erroInt) erroInt.textContent = vi.mensagem;
+          try { campoInteresse.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (_) {}
+          PU.toast(vi.mensagem, 'danger', 5500);
+          return;
+        }
+        interesseCliente = vi.valor;
+      }
       let cep = String(fd.get('cep') || '').trim();
       let cidade = String(fd.get('cidade') || '').trim();
       let uf = String(fd.get('uf') || '').trim().toUpperCase();
@@ -12115,7 +12193,7 @@ alt=""></noscript>
       const btnHtml = btn ? btn.innerHTML : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Publicando chamado…'; }
       try {
-        const dados = { clienteId: user.id, categoriaId: params.catId, descricao: fd.get('descricao').trim(), fotos: fotos, endereco: endereco, dataPreferida: fd.get('dataPreferida') || null, prioridade: prioridade, prioridadeMetodo: prioridadeMetodo };
+        const dados = { clienteId: user.id, categoriaId: params.catId, descricao: fd.get('descricao').trim(), fotos: fotos, endereco: endereco, dataPreferida: fd.get('dataPreferida') || null, prioridade: prioridade, prioridadeMetodo: prioridadeMetodo, interesseCliente: interesseCliente };
         const req = (global.QFCloud && global.QFCloud.enabled)
           ? await global.QFCloud.createCall(dados)
           : DB.criarPedido(dados);
@@ -13270,6 +13348,7 @@ alt=""></noscript>
             (req.descricao ? '<div class="qf-card-snippet">' + PU.escapeHtml(req.descricao) + '</div>' : '') +
             (global.QFPedidoMsg ? global.QFPedidoMsg.html(req) : '') +
             (req.abertoTodos ? CallInfo.abertoMotivoHtml(req) : '') +
+            (global.QFValor && global.QFValor.seloInteresseHtml ? global.QFValor.seloInteresseHtml(req) : '') +
             (global.QFValor ? global.QFValor.orcamentoHtml(req.orcamentoAproxCentavos) : '') +
             CallInfo.vagasHtml(req) +
             '<div class="qf-card-meta">' +
@@ -13386,6 +13465,7 @@ alt=""></noscript>
           '<div class="row"><div class="avatar avatar--sm">' + icon('whatsapp') + '</div><div><div class="text--strong">WhatsApp do cliente liberado ao desbloquear</div><div class="text--sm text--muted">Você chama o cliente no WhatsApp na hora, com a mensagem pronta. O endereço exato aparece quando o cliente escolher você.</div></div></div>' +
         '</div>' +
 
+        (global.QFValor && global.QFValor.seloInteresseHtml ? global.QFValor.seloInteresseHtml(req) : '') +
         (global.QFValor ? global.QFValor.orcamentoHtml(req.orcamentoAproxCentavos) : '') + ((
         '<div class="section card qf-unlock-simple" style="background:var(--navy-900);border:none;">' +
           '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(valor)) + '</div>' +
@@ -15464,7 +15544,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.0.1';
+  const APP_VERSION = '12.0.3';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -19023,7 +19103,7 @@ alt=""></noscript>
 
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
-<script src="qf-valor-definido.js?v=4"></script>
+<script src="qf-valor-definido.js?v=5"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>
 

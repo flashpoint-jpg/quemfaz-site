@@ -79,6 +79,34 @@
       '<span>Valor estimado pelo cliente, não é preço fechado. O preço final é combinado entre vocês.</span></div>';
   }
 
+  // ---------- Confirmação de interesse do cliente (selo "Interesse confirmado pelo cliente") ----------
+  // Pergunta obrigatória no fim do pedido. Nenhuma opção vem marcada: interesse nunca é marcado automaticamente.
+  // O selo só aparece ao profissional quando o cliente escolheu "contratar" E o banco registrou data e hora.
+  // Não é garantia de contratação e o cliente não fica obrigado a contratar.
+  var INTERESSE_CONTRATAR = 'contratar', INTERESSE_PESQUISANDO = 'pesquisando';
+
+  function campoInteresseHtml() {
+    return '<fieldset class="field qf-interesse" data-qf-interesse aria-describedby="qf-interesse-erro">' +
+      '<legend class="field__label">Você pretende contratar um profissional?</legend>' +
+      '<label class="qf-interesse__opt"><input type="radio" name="interesseContratar" value="' + INTERESSE_CONTRATAR + '" required> <span>Sim, quero receber propostas para contratar.</span></label>' +
+      '<label class="qf-interesse__opt"><input type="radio" name="interesseContratar" value="' + INTERESSE_PESQUISANDO + '" required> <span>Estou apenas pesquisando preços.</span></label>' +
+      '<small class="field__hint" id="qf-interesse-erro" data-qf-interesse-erro role="alert"></small></fieldset>';
+  }
+
+  // Só 'contratar' e 'pesquisando' valem; vazio ou qualquer outra coisa = ainda não respondeu (bloqueia a publicação).
+  function validarInteresse(valor) {
+    var v = String(valor == null ? '' : valor);
+    if (v === INTERESSE_CONTRATAR || v === INTERESSE_PESQUISANDO) return { ok: true, valor: v };
+    return { ok: false, valor: null, mensagem: 'Escolha uma opção: você pretende contratar um profissional?' };
+  }
+
+  // Selo verde e discreto, visível antes do desbloqueio. Sem confirmação registrada (data/hora), nada aparece.
+  function seloInteresseHtml(req) {
+    if (!req || req.interesseCliente !== INTERESSE_CONTRATAR || !req.interesseConfirmadoEm) return '';
+    return '<div class="qf-interesse-selo" data-qf-interesse-selo title="O cliente disse que pretende contratar. Não é garantia de contratação.">' +
+      '<span aria-hidden="true">&#10003;</span> Interesse confirmado pelo cliente</div>';
+  }
+
   var MOTIVOS_CANCELAMENTO = [
     { id: 'imprevisto', texto: 'Imprevisto pessoal ou familiar' },
     { id: 'financeiro', texto: 'Problema financeiro' },
@@ -150,6 +178,22 @@
       var mapa = {};
       r.data.forEach(function (i) { mapa[i.chamado_id] = Number(i.orcamento_aproximado_centavos); });
       reqs.forEach(function (q) { if (q && mapa[q.id] > 0) q.orcamentoAproxCentavos = mapa[q.id]; });
+      return reqs;
+    }).catch(function () { return reqs; });
+  }
+
+  // Anexa o selo de interesse nos pedidos já carregados. O banco só devolve quem confirmou 'contratar'.
+  // Falha em silêncio: sem ele o app segue como era (e nenhum selo é mostrado).
+  function enriquecerInteresse(reqs) {
+    var c = client();
+    if (!c || !reqs || !reqs.length) return Promise.resolve(reqs);
+    var ids = reqs.filter(function (r) { return r && r.id && !r.interesseConfirmadoEm; }).map(function (r) { return r.id; }).slice(0, 100);
+    if (!ids.length) return Promise.resolve(reqs);
+    return Promise.resolve(c.rpc('qf_interesse_info_chamados', { p_ids: ids })).then(function (r) {
+      if (!r || r.error || !Array.isArray(r.data)) return reqs;
+      var mapa = {};
+      r.data.forEach(function (i) { if (i && i.chamado_id && i.interesse_confirmado_em) mapa[i.chamado_id] = i.interesse_confirmado_em; });
+      reqs.forEach(function (q) { if (q && mapa[q.id]) { q.interesseCliente = INTERESSE_CONTRATAR; q.interesseConfirmadoEm = mapa[q.id]; } });
       return reqs;
     }).catch(function () { return reqs; });
   }
@@ -284,6 +328,8 @@
     esc: esc, parseBRL: parseBRL, formatBRL: formatBRL, 
     validarOrcamento: validarOrcamento, formatarOrcamento: formatarOrcamento, campoOrcamentoHtml: campoOrcamentoHtml, orcamentoHtml: orcamentoHtml,
     cancelamentoHtml: cancelamentoHtml, contestacaoHtml: contestacaoHtml, MOTIVOS_CONTESTACAO: MOTIVOS_CONTESTACAO, baixaHtml: baixaHtml, linkConfirmacao: linkConfirmacao, tokenDoHash: tokenDoHash,
+    INTERESSE_CONTRATAR: INTERESSE_CONTRATAR, INTERESSE_PESQUISANDO: INTERESSE_PESQUISANDO,
+    campoInteresseHtml: campoInteresseHtml, validarInteresse: validarInteresse, seloInteresseHtml: seloInteresseHtml, enriquecerInteresse: enriquecerInteresse,
     carregarConfig: carregarConfig, ativo: ativo, enriquecerOrcamento: enriquecerOrcamento,
     abrirCancelamento: abrirCancelamento, montarBaixa: montarBaixa,
     config: function () { return cfgOf(state.cfg); },

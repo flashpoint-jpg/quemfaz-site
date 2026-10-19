@@ -59,7 +59,7 @@ test('enriquecerOrcamento anexa só o que o banco devolve e falha em silêncio',
 
 test('index.html: um único fluxo, orçamento sem depender de chave, sem 6% e sem seletor A/B', () => {
   const html = load('index.html');
-  assert.match(html, /qf-valor-definido\.js\?v=4/);
+  assert.match(html, /qf-valor-definido\.js\?v=5/);
   assert.match(html, /global\.QFValor\.campoOrcamentoHtml\(\)/);
   assert.match(html, /global\.QFValor\.validarOrcamento\(fd\.get\('orcamentoAprox'\)\)/);
   assert.match(html, /orcamentoAproxCentavos: orcamentoAprox/);
