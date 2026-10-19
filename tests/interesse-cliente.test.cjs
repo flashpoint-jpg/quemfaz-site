@@ -108,7 +108,7 @@ test('versão do app e do service worker foram atualizadas juntas', () => {
   const app = /const APP_VERSION = '([^']+)'/.exec(html)[1];
   const swv = /const SW_VERSION = '([^']+)'/.exec(sw)[1];
   assert.equal(app, swv);
-  assert.equal(app, '12.0.3');
+  assert.equal(app, '12.0.4');
 });
 
 test('migração: aditiva, sem tocar pedidos antigos, preços, saldos, recargas nem desbloqueios', () => {
