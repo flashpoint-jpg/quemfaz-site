@@ -1191,6 +1191,20 @@ html { scroll-padding-bottom: calc(var(--tabbar-height) + var(--safe-bottom) + 1
 .qf-admin-support-list{display:flex;flex-direction:column;gap:10px}
 #servicos-segmented{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 #servicos-segmented .segmented__item{flex:0 0 auto;white-space:nowrap}
+.qf-tab-n{display:inline-block;min-width:20px;padding:1px 6px;margin-left:4px;border-radius:999px;background:rgba(11,29,58,.1);font-size:11px;font-weight:800;line-height:1.5}
+.segmented__item.is-active .qf-tab-n{background:var(--navy-900,#0a1f4d);color:#fff}
+.qf-tab--urg .qf-tab-n{background:#d92d20;color:#fff}
+.qf-ped-grupo{margin-bottom:18px}
+.qf-ped-grupo__cab{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 8px;padding:8px 12px;border-radius:8px;background:var(--bg-sunken,#eef1f6);border-left:4px solid #64748b;font-size:13px;font-weight:800;color:var(--navy-900,#0a1f4d);text-transform:uppercase;letter-spacing:.02em}
+.qf-ped-grupo__cab b{font-size:13px}
+.qf-ped-grupo--urgente .qf-ped-grupo__cab{border-left-color:#d92d20;background:#fef3f2;color:#b42318}
+.qf-ped-grupo--novo .qf-ped-grupo__cab{border-left-color:#f97316;background:#fff4ed;color:#c4320a}
+.qf-ped-grupo--sem .qf-ped-grupo__cab{border-left-color:#eab308;background:#fefbe8;color:#854d0e}
+.qf-ped-grupo--desb .qf-ped-grupo__cab{border-left-color:#1764d8;background:#eff6ff;color:#1849a9}
+.qf-ped-grupo--fechado .qf-ped-grupo__cab{border-left-color:#16a34a;background:#ecfdf3;color:#067647}
+.qf-ped__urg,.qf-ped__novo{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;color:#fff}
+.qf-ped__urg{background:#d92d20}
+.qf-ped__novo{background:#f97316}
 .qf-crud-row{display:flex;gap:8px;flex-wrap:wrap}
 .qf-wa-link{display:inline-flex;align-items:center;gap:4px;color:#128C4A;font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
 .qf-wa-link svg{width:14px;height:14px;flex:0 0 auto}
@@ -6953,19 +6967,48 @@ Screens.adminDashboardRender = function () {
 
   // ---------------- Serviços ----------------
 
+  // Categorias da tela Pedidos. "Novo" = sem desbloqueio e criado nas últimas 24h.
+  const PEDIDO_NOVO_MS = 24 * 3600 * 1000;
+  function qfPedFechado(r) { return desbloqueiosAtivos(r).some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1; }
+  function qfPedAtivo(r) { return r.status !== 'aguardando_pix' && r.status !== STATUS.CANCELADO && !qfPedFechado(r); }
+  function qfPedNovo(r) { return qfPedAtivo(r) && !desbloqueiosAtivos(r).length && (Date.now() - (Date.parse(r.criadoEm) || 0)) < PEDIDO_NOVO_MS; }
+  // Cada pedido cai em UM grupo (ordem de prioridade) — usado na visão "Todos" separada por seções.
+  function qfPedGrupo(r) {
+    if (r.status === 'aguardando_pix') return 'pix';
+    if (r.status === STATUS.CANCELADO) return 'cancelado';
+    if (qfPedFechado(r)) return 'fechado';
+    if (r.urgencia === 'urgente') return 'urgente';
+    if (!desbloqueiosAtivos(r).length) return qfPedNovo(r) ? 'novo' : 'sem';
+    return 'desb';
+  }
+  const GRUPOS_SERVICOS = [
+    { id: 'urgente', titulo: 'Urgentes' },
+    { id: 'novo', titulo: 'Pedidos novos (últimas 24h)' },
+    { id: 'sem', titulo: 'Sem desbloqueio' },
+    { id: 'desb', titulo: 'Desbloqueados' },
+    { id: 'fechado', titulo: 'Fechados' },
+    { id: 'cancelado', titulo: 'Cancelados' },
+    { id: 'pix', titulo: 'Aguardando Pix (urgente não publicado)' },
+  ];
   const TABS_SERVICOS = [
     { id: 'todos', label: 'Todos', filter: function () { return true; } },
-    { id: 'solicitados', label: 'Abertos', filter: function (r) { return [STATUS.BUSCANDO, STATUS.SEM_PROFISSIONAL, STATUS.AGUARDANDO_ACEITE].indexOf(r.status) !== -1; } },
-    { id: 'andamento', label: 'Desbloqueados', filter: function (r) { return ST_DESBLOQUEADO.indexOf(r.status) !== -1; } },
-    { id: 'concluidos', label: 'Concluídos', filter: function (r) { return [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO].indexOf(r.status) !== -1; } },
-    { id: 'cancelados', label: 'Cancelados', filter: function (r) { return r.status === STATUS.CANCELADO; } },
+    { id: 'urgente', label: 'Urgente', filter: function (r) { return qfPedAtivo(r) && r.urgencia === 'urgente'; } },
+    { id: 'novo', label: 'Pedido novo', filter: qfPedNovo },
+    { id: 'sem', label: 'Sem desbloqueio', filter: function (r) { return qfPedAtivo(r) && !desbloqueiosAtivos(r).length; } },
+    { id: 'desb', label: 'Desbloqueado', filter: function (r) { return qfPedAtivo(r) && desbloqueiosAtivos(r).length > 0; } },
+    { id: 'fechado', label: 'Fechado', filter: function (r) { return r.status !== STATUS.CANCELADO && qfPedFechado(r); } },
+    { id: 'cancelado', label: 'Cancelado', filter: function (r) { return r.status === STATUS.CANCELADO; } },
+    { id: 'pix', label: 'Aguardando Pix', filter: function (r) { return r.status === 'aguardando_pix'; } },
   ];
+  // Nomes antigos das abas (quadros do resumo) apontam para as novas categorias.
+  const TAB_SERVICOS_ALIAS = { solicitados: 'sem', andamento: 'desb', concluidos: 'fechado', cancelados: 'cancelado' };
+  function qfTabServicos(id) { return TAB_SERVICOS_ALIAS[id] || id; }
 
   // Aba atual da lista de serviços: definida pelos quadros do resumo e mantida ao voltar do detalhe.
   let servicosTabAtual = 'todos';
   document.addEventListener('click', function (e) {
     const el = e.target.closest('[data-servicos-tab]');
-    if (el) { servicosTabAtual = el.getAttribute('data-servicos-tab'); return; }
+    if (el) { servicosTabAtual = qfTabServicos(el.getAttribute('data-servicos-tab')); return; }
     const nav = e.target.closest('.tabbar [data-nav], .topbar [data-nav]');
     if (nav && nav.getAttribute('data-nav') === '/admin/servicos') servicosTabAtual = 'todos';
   }, true);
@@ -7132,7 +7175,7 @@ Screens.adminDashboardRender = function () {
     return '<section class="section"><div class="section-head"><h2 class="h3">Profissionais da região e categoria</h2></div><div class="card stack--sm">' + conteudo + '</div></section>';
   }
   Screens.adminServicosRender = function (params) {
-    const activeTab = (params && params.tab) || servicosTabAtual || 'todos';
+    const activeTab = qfTabServicos((params && params.tab) || servicosTabAtual || 'todos');
     const all = DB.allRequests();
     return (
       '<div class="view qf-control-page">' +
@@ -7140,7 +7183,8 @@ Screens.adminDashboardRender = function () {
         '<div class="qf-ped-cols qf-ped-cols--so-lista">' +
           '<div class="qf-ped-cols__lista">' +
             '<div class="segmented" id="servicos-segmented">' + TABS_SERVICOS.map(function (t) {
-              return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + '" data-tab="' + t.id + '">' + t.label + '</button>';
+              const n = all.filter(t.filter).length;
+              return '<button class="segmented__item' + (t.id === activeTab ? ' is-active' : '') + (t.id === 'urgente' && n ? ' qf-tab--urg' : '') + '" data-tab="' + t.id + '">' + t.label + ' <span class="qf-tab-n">' + n + '</span></button>';
             }).join('') + '</div>' +
             '<div class="section" id="servicos-lista">' + renderServicosLista(all, activeTab) + '</div>' +
           '</div>' +
@@ -7154,7 +7198,20 @@ Screens.adminDashboardRender = function () {
     const list = all.filter(tab.filter);
     if (!list.length) return '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('clipboard') + '</div><p class="text text--secondary">Nenhum serviço nesta categoria.</p></div>';
     const bulk = cloudOn() ? '<div class="row-between" style="margin-bottom:10px;gap:8px;"><span class="text--sm text--secondary">' + list.length + ' serviço(s)</span><button type="button" class="btn btn--outline btn--sm btn--block-auto qf-crud-del" data-crud-bulk="' + list.map(function (r) { return r.id; }).join(',') + '">' + icon('trash') + ' Excluir ' + (tab.id === 'todos' ? 'todos' : 'todos desta aba') + '</button></div>' : '';
-    return bulk + '<div class="stack--sm">' + list.map(function (r) {
+    // Visão "Todos": separada em seções por categoria (urgente, novo, sem desbloqueio, desbloqueado…).
+    if (tab.id === 'todos') {
+      return bulk + GRUPOS_SERVICOS.map(function (g) {
+        const itens = list.filter(function (r) { return qfPedGrupo(r) === g.id; });
+        if (!itens.length) return '';
+        return '<div class="qf-ped-grupo qf-ped-grupo--' + g.id + '"><div class="qf-ped-grupo__cab"><span>' + g.titulo + '</span><b>' + itens.length + '</b></div>' +
+          '<div class="stack--sm">' + itens.map(qfPedCard).join('') + '</div></div>';
+      }).join('');
+    }
+    return bulk + '<div class="stack--sm">' + list.map(qfPedCard).join('') + '</div>';
+  }
+
+  function qfPedCard(r) {
+    {
       const cat = DB.categoryById(r.categoriaId);
       const cliente = DB.clienteById(r.clienteId);
       const lugar = [r.endereco && r.endereco.bairro, [r.endereco && r.endereco.cidade, r.endereco && r.endereco.uf].filter(Boolean).join('/')].filter(Boolean).join(', ');
@@ -7173,6 +7230,8 @@ Screens.adminDashboardRender = function () {
             '<div style="flex:none;">' + adminStatusBadge(r) + '</div>' +
           '</div>' +
           '<div class="qf-ped__meta">' +
+            (r.urgencia === 'urgente' ? '<span class="qf-ped__urg">URGENTE</span>' : '') +
+            (qfPedNovo(r) ? '<span class="qf-ped__novo">NOVO</span>' : '') +
             '<span>Pedido <strong>' + PU.escapeHtml(qfDiaMes(r.criadoEm) + ' às ' + qfHora(r.criadoEm)) + '</strong></span>' +
             '<span>Cliente <strong>' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</strong></span>' +
             (lugar ? '<span>' + PU.escapeHtml(lugar) + '</span>' : '') +
@@ -7182,7 +7241,7 @@ Screens.adminDashboardRender = function () {
         adminPedidoQuemHtml(r, cancelado || fechado) +
         (cloudOn() ? '<div style="padding:12px 16px 14px;">' + acoesHtml('servico', r.id) + '</div>' : '') +
       '</div>';
-    }).join('') + '</div>';
+    }
   }
 
   Screens.adminServicoDetalheRender = function (params) {
