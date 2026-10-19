@@ -3918,9 +3918,19 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       // Planos dos profissionais; sem a migration, volta vazio e a tela segue normal.
       Promise.resolve(client.rpc('qf_admin_planos_profissionais')).then(function (pl) {
         return pl && !pl.error && Array.isArray(pl.data) ? pl.data : [];
+      }, function () { return []; }),
+      // Indicações (quem indicou quem e se o bônus está pendente ou pago); sem a migration, volta vazio e a tela segue normal.
+      Promise.resolve(client.rpc('qf_admin_indicacoes')).then(function (ind) {
+        return ind && !ind.error && Array.isArray(ind.data) ? ind.data : [];
       }, function () { return []; })
     ]);
     DB.state.planosProf = results[2] || [];
+    const indicadoPor = {}, indicouLista = {};
+    (results[3] || []).forEach(function (r) {
+      if (!r || !r.indicado_id) return;
+      indicadoPor[r.indicado_id] = r;
+      (indicouLista[r.indicador_id] = indicouLista[r.indicador_id] || []).push(r);
+    });
     const res = results[0];
     if (res.error) {
       if (/function|does not exist|not find|schema cache/i.test(res.error.message || '')) { snapshotOk = false; clearLocalData(); return null; }
@@ -3955,6 +3965,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
           areasLista: (areas[p.id] || []).map(function (x) { return { cidade: x.cidade, uf: String(x.uf || '').trim() }; }),
           horarioInicio: String(pr.horario_inicio || '06:00').slice(0, 5), horarioFim: String(pr.horario_fim || '22:00').slice(0, 5),
           alertaModo: pr.alerta_modo === 'vibrar' ? 'vibrar' : 'toque', descricao: pr.descricao || '', nomeFantasia: p.nome_fantasia || '',
+          indicadoPor: indicadoPor[p.id] || null, indicacoesFeitas: indicouLista[p.id] || [],
           statusAprovacao: 'aprovado', online: !!pr.online, saldo: wallets[p.id] || 0, creditos: wallets[p.id] || 0,
           avaliacaoMedia: Number(pr.avaliacao_media || 0), totalAvaliacoes: Number(pr.total_avaliacoes || 0), documentos: {}
         }));
@@ -6185,6 +6196,7 @@ Screens.adminDashboardRender = function () {
   function profBadges(p) {
     return (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
       (p.verificado ? '<span class="badge badge--success">Verificado</span>' : '') +
+      (p.indicadoPor ? '<span class="badge badge--orange">Indicado</span>' : '') +
       (p.temFoto === false ? '<span class="badge badge--warning">Sem selfie</span>' : '') +
       (p.bloqueado ? '<span class="badge badge--danger">Bloqueado</span>' : '') +
       '<span class="badge badge--navy">' + PU.formatCurrency(p.saldo || 0) + '</span>';
@@ -6241,6 +6253,42 @@ Screens.adminDashboardRender = function () {
     const txt = r.vigente ? 'Plano ' + nome + ' · ' + rest + ' de ' + tot + ' chamados · até ' + ate
       : 'Plano ' + nome + (Date.parse(x.valido_ate) <= Date.now() ? ' expirado em ' + ate : ' · chamados esgotados');
     return '<div class="qf-prof-ativ"><span class="badge ' + (r.vigente ? 'badge--success' : '') + '">' + PU.escapeHtml(txt) + '</span></div>';
+  }
+  // Indicação: avisa no perfil quando o profissional veio por indicação (e se o bônus de quem indicou está pendente ou pago),
+  // e mostra para quem indica o resumo das indicações dele.
+  function adminIndicacaoHtml(p) {
+    let h = '';
+    const ind = p.indicadoPor;
+    if (ind) {
+      const quem = PU.escapeHtml(ind.indicador_nome || 'Profissional');
+      const cents = Number(ind.bonus_centavos || 0);
+      const valor = PU.formatCurrency(cents);
+      const pago = ind.status === 'pago';
+      const msg = pago
+        ? quem + ' recebeu ' + valor + ' de bônus de indicação' + (ind.pago_em ? ' em ' + PU.formatDateTime(ind.pago_em) : '') + '.'
+        : (cents > 0
+          ? 'Ao marcar como verificado, ' + quem + ' ganha ' + valor + ' de bônus de indicação (cai sozinho na carteira e ele recebe um aviso no celular).'
+          : 'O bônus de indicação está desligado no momento, então ninguém será pago ao verificar.');
+      h += '<div class="section"><div class="card stack--sm" style="border-left:4px solid var(--orange-500);">' +
+        '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;"><span class="badge badge--orange">Indicado</span><span class="text--strong">Veio por indicação de ' + quem + '</span></div>' +
+        '<div class="text--sm text--secondary">' + msg + '</div></div></div>';
+    }
+    const feitas = p.indicacoesFeitas || [];
+    if (feitas.length) {
+      const pagas = feitas.filter(function (r) { return r.status === 'pago'; });
+      const totalPago = pagas.reduce(function (s, r) { return s + Number(r.bonus_centavos || 0); }, 0);
+      const linhas = feitas.slice(0, 6).map(function (r) {
+        const x = DB.profissionalById(r.indicado_id);
+        return rowInfoHtml(PU.escapeHtml(x ? x.nome : 'Profissional'), r.status === 'pago'
+          ? '<span class="badge badge--success">Bônus pago · ' + PU.formatCurrency(Number(r.bonus_centavos || 0)) + '</span>'
+          : '<span class="badge badge--warning">Aguardando verificação</span>');
+      }).join('');
+      h += '<div class="section"><div class="section-head"><h2 class="h3">Indicações feitas</h2></div><div class="card stack--sm">' +
+        rowInfo('Indicou', feitas.length + (feitas.length === 1 ? ' profissional' : ' profissionais')) +
+        rowInfo('Bônus pagos', pagas.length ? pagas.length + ' · ' + PU.formatCurrency(totalPago) : 'nenhum ainda') +
+        linhas + '</div></div>';
+    }
+    return h;
   }
   function adminProfAtivLinha(p) {
     const a = adminProfAtividade(p.id);
@@ -6591,6 +6639,7 @@ Screens.adminDashboardRender = function () {
       (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#1458cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
       '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
       (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
+      adminIndicacaoHtml(p) +
       adminProfAtivHtml(p) +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
         '<div class="card row" style="align-items:center;">' +
@@ -8324,7 +8373,12 @@ Screens.adminDashboardRender = function () {
           el.disabled = true;
           try {
             if (act === 'toggle-bloqueio') { await global.QFAdminCloud.setBlocked(params.id, !p.bloqueado); PU.toast(p.bloqueado ? 'Profissional desbloqueado.' : 'Profissional bloqueado.', null); }
-            if (act === 'toggle-verificado') { await global.QFAdminCloud.setVerified(params.id, !p.verificado); PU.toast(p.verificado ? 'Selo removido.' : 'Profissional marcado como verificado.', 'success'); }
+            if (act === 'toggle-verificado') {
+              const indPendente = !p.verificado && p.indicadoPor && p.indicadoPor.status === 'pendente' ? p.indicadoPor : null;
+              await global.QFAdminCloud.setVerified(params.id, !p.verificado);
+              const pagou = indPendente && Number(indPendente.bonus_centavos || 0) > 0;
+              PU.toast(p.verificado ? 'Selo removido.' : (pagou ? 'Verificado. ' + (indPendente.indicador_nome || 'Quem indicou') + ' ganhou ' + PU.formatCurrency(Number(indPendente.bonus_centavos)) + ' de bônus de indicação.' : 'Profissional marcado como verificado.'), 'success');
+            }
             if (act === 'add-creditos') {
               const cents = PU.parseCurrencyInput(content.querySelector('#credito-valor').value);
               if (!cents) { PU.toast('Informe o valor dos créditos.', 'danger'); return; }
