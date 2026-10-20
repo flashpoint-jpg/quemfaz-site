@@ -3791,6 +3791,18 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
   #app-shell .qf-landing-topbar .qf-home-prof :is(summary,.qf-home-prof-btn){width:100%;box-sizing:border-box;min-height:44px;padding:0 8px;gap:6px;font-size:13px;white-space:nowrap;justify-content:center}
 }
 @media (max-width:374px){.qf-home-prof-btn .qf-prof-full{display:none}.qf-home-prof-btn .qf-prof-short{display:inline}}
+/* Corrige sobreposicao dos atalhos no cabecalho mobile (Google Play/PWA). */
+@media (max-width:600px){
+  #app-shell .qf-landing-topbar{min-width:0;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  #app-shell .qf-landing-topbar .qf-home-prof,
+  #app-shell .qf-landing-topbar .qf-home-prof-btn,
+  #app-shell .qf-landing-topbar .btn.qf-landing-login{min-width:0;max-width:100%;box-sizing:border-box}
+  #app-shell .qf-landing-topbar .qf-home-prof-btn{overflow:hidden;font-size:clamp(11px,3.2vw,13px);gap:4px;padding-inline:6px}
+  #app-shell .qf-landing-topbar .qf-home-prof-btn .qf-prof-full{display:none}
+  #app-shell .qf-landing-topbar .qf-home-prof-btn .qf-prof-short{display:inline;min-width:0;white-space:nowrap}
+  #app-shell .qf-landing-topbar .btn.qf-landing-login{overflow:hidden;white-space:nowrap;font-size:clamp(11px,3.2vw,13px);padding-inline:6px}
+}
+
 </style>
 </head>
 <body>
