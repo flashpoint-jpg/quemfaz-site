@@ -83,8 +83,9 @@ test('index.html: pergunta na última tela antes do botão, obrigatória, gravad
   assert.match(html, /if \(comInteresse\) row\.interesse_cliente = data\.interesseCliente;/);
   assert.doesNotMatch(html, /interesse_confirmado_em\s*[:=]\s*(?!row\.)/, 'o aparelho nunca grava a data de confirmação');
   assert.doesNotMatch(html, /interesse_cliente\s*=\s*['"]contratar['"]|interesseCliente\s*=\s*['"]contratar['"]/, 'nunca marca "contratar" por conta própria');
-  // pedido que o banco recusa o campo continua sendo publicado, sem selo
-  assert.match(html, /delete row\.interesse_cliente;/);
+  // New publication is atomic and cannot drop consent/interest on schema mismatch.
+  assert.match(html, /client\.rpc\('qf_publicar_atendimento'/);
+  assert.doesNotMatch(html, /delete row\.interesse_cliente;/);
   // leitura
   assert.match(html, /interesseCliente: \(row\.interesse_cliente === 'contratar' \|\| row\.interesse_cliente === 'pesquisando'\)/);
   assert.match(html, /global\.QFValor\.enriquecerInteresse\(reqs\)/);
@@ -108,7 +109,7 @@ test('versão do app e do service worker foram atualizadas juntas', () => {
   const app = /const APP_VERSION = '([^']+)'/.exec(html)[1];
   const swv = /const SW_VERSION = '([^']+)'/.exec(sw)[1];
   assert.equal(app, swv);
-  assert.equal(app, '12.0.4');
+  assert.equal(app, '12.1.0');
 });
 
 test('migração: aditiva, sem tocar pedidos antigos, preços, saldos, recargas nem desbloqueios', () => {

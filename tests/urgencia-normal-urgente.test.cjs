@@ -47,7 +47,8 @@ test('classificações antigas não aparecem para cliente nem profissional', () 
 
 test('pedido novo grava só a urgência e o pedido nunca se perde se o banco recusar', () => {
   assert.ok(html.includes("if (comUrgencia) row.urgencia = data.urgencia;"));
-  assert.ok(html.includes("delete row.urgencia;"));
+  assert.ok(html.includes("client.rpc('qf_publicar_atendimento'"));
+  assert.ok(!html.includes("delete row.urgencia;"));
   assert.ok(html.includes("const prazoDados = { urgencia: urgenciaEscolhida };"));
   assert.ok(html.includes("urgencia: data.urgencia === 'urgente' ? 'urgente' : 'normal',"));
   // A prioridade paga continua sendo a única que cria cobrança.

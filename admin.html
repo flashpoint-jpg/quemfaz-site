@@ -4021,7 +4021,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       else if (c.status === 'cancelado') hist.push({ texto: 'Chamado cancelado', quando: c.atualizado_em });
       if (revCli) hist.push({ texto: 'Cliente avaliou com ' + revCli.nota + ' estrela(s)', quando: revCli.criado_em });
       return {
-        id: c.id, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
+        id: c.id, atendimentoTipo: c.atendimento_tipo || null, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
         endereco: { rua: c.endereco_completo || '', bairro: c.bairro || '', cidade: c.cidade || '', uf: c.uf || '' },
         cidadeId: cityId(c.cidade, c.uf), status: st, profissionalId: c.profissional_id || null,
         criadoEm: c.criado_em, atualizadoEm: c.atualizado_em || c.criado_em, prioridade: !!c.prioridade,
@@ -7296,12 +7296,14 @@ Screens.adminDashboardRender = function () {
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Detalhes do pedido</h2></div>' +
           '<div class="card stack--sm">' +
+            (r.atendimentoTipo ? rowInfo('Atendimento automático', r.atendimentoTipo === 'garante' ? 'Quem Faz Garante · 1 profissional · 4× o desbloqueio normal' : 'Tradicional · até 4 profissionais') : '') +
             rowInfo('Serviço solicitado', pedidoTitulo) +
             rowInfo('Categoria', cat ? cat.nome : '—') +
             rowInfo('Local', endereco) +
             rowInfo('Urgência', admPrazoPedido(r).txt) +
             rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
             rowInfo('Última atualização', PU.formatDateTime(r.atualizadoEm || r.criadoEm)) +
+            (r.atendimentoTipo ? '<button class="btn btn--outline" type="button" data-at-admin="' + PU.escapeHtml(r.id) + '">Ver respostas e autorização</button>' : '') +
           '</div>' +
           '<div class="card" style="margin-top:10px;"><div class="text--sm text--secondary" style="margin-bottom:5px;">Descrição do cliente</div><p class="text text--sm" style="white-space:pre-wrap;">' + PU.escapeHtml(r.descricao || 'Sem descrição informada.') + '</p></div>' +
         '</div>' +
@@ -10470,6 +10472,7 @@ Screens.adminDashboardRender = function () {
 })(window);
 </script>
 
+<script src="qf-atendimento.js?v=1"></script>
 </body>
 </html>
 
