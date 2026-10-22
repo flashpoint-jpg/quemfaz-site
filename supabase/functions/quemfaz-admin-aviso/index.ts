@@ -77,16 +77,17 @@ async function sendFcm(access: string, token: string, payload: any, soDados: boo
   const title = String(payload.title || "QuemFaz");
   const body = String(payload.body || "");
   const tag = String(payload.tag || "quemfaz");
-  const channel = "quemfaz_avisos";
+  const strong = payload.strong === true;
+  const channel = strong ? "quemfaz_chamados" : "quemfaz_avisos";
   const message: any = {
     token,
-    data: { title, body, url: String(payload.url || "/#/"), tag, strong: "0", channel, alerta: "toque", grouped: "0", count: "0", tipo: "chamado" },
+    data: { title, body, url: String(payload.url || "/#/"), tag, strong: strong ? "1" : "0", channel, alerta: "toque", grouped: "0", count: "0", tipo: "chamado" },
     android: { priority: "HIGH", ttl: "3600s" },
   };
   if (!soDados) {
     message.notification = { title, body };
     message.android.notification = {
-      channel_id: channel, tag, notification_priority: "PRIORITY_HIGH", visibility: "PUBLIC",
+      channel_id: channel, tag, notification_priority: strong ? "PRIORITY_MAX" : "PRIORITY_HIGH", visibility: "PUBLIC",
       default_vibrate_timings: true, default_light_settings: true,
     };
   }
@@ -311,7 +312,7 @@ Deno.serve(async (req) => {
     try {
       const porUsuario: Record<string, unknown> = {};
       for (const uid of ids) {
-        porUsuario[uid] = await sendToUsers([uid], { title, body: texto, url: String(body.url || "/#/"), tag: String(body.tag || "qf-recado"), ...fechou });
+        porUsuario[uid] = await sendToUsers([uid], { title, body: texto, url: String(body.url || "/#/"), tag: String(body.tag || "qf-recado"), strong: body.strong === true, ...fechou });
       }
       return json({ ok: true, recado: porUsuario });
     } catch (err) {
