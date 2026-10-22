@@ -1,5 +1,3 @@
--- Campanha pontual autorizada: um desbloqueio por profissional existente.
--- Snapshot ja executado em producao; nao repetir a concessao.
 
 create table if not exists private.qf_reativacao_20261022_pedidos (
  chamado_id uuid primary key references public.qf_chamados(id), categoria text not null, criado_em timestamptz not null default now()
@@ -305,7 +303,23 @@ and not exists(select 1 from public.qf_desbloqueios d where d.chamado_id=c.id an
 order by c.prioridade desc,public.qf_distancia_km(p.pro_latitude,p.pro_longitude,g.latitude,g.longitude) asc nulls last,c.criado_em desc
 $function$;
 
--- Concessao inicial idempotente:
+
+create or replace function public.qf_usar_cortesia_reativacao(p_chamado_id uuid)
+returns jsonb language plpgsql security definer set search_path='' as $fn$
+begin
+ if auth.uid() is null then raise exception 'authentication required'; end if;
+ -- Same lock order as the regular unlock avoids deadlocks.
+ perform 1 from public.qf_chamados where id=p_chamado_id for update;
+ perform 1 from private.qf_reativacao_20261022_profissionais where profissional_id=auth.uid() for update;
+ if not private.qf_cortesia_reativacao_20261022(p_chamado_id) then
+   return jsonb_build_object('ok',false,'reason','cortesia_indisponivel');
+ end if;
+ return public.qf_desbloquear_chamado(p_chamado_id,false);
+end $fn$;
+revoke all on function public.qf_usar_cortesia_reativacao(uuid) from public,anon;
+grant execute on function public.qf_usar_cortesia_reativacao(uuid) to authenticated;
+
+-- Snapshot inicial: executado uma unica vez em 22/10/2026.
 
 select pg_advisory_xact_lock(hashtext('qf_reativacao_20261022'));
 insert into private.qf_reativacao_20261022_pedidos(chamado_id,categoria)
@@ -323,7 +337,7 @@ and not exists(select 1 from private.qf_reativacao_20261022_profissionais);
 select (select count(*) from private.qf_reativacao_20261022_pedidos) pedidos,
 (select count(*) from private.qf_reativacao_20261022_profissionais) profissionais;
 
--- Validacao transacional sem consumir cortesias reais:
+-- Testes sem consumo permanente:
 
 begin;
 do $test$
@@ -336,11 +350,13 @@ begin
  if v_call is null then raise exception 'No courtesy request visible'; end if;
  select to_jsonb(w) into v_wallet from public.qf_carteiras w where profissional_id=v_uid;
  select jsonb_agg(to_jsonb(p)) into v_plans from public.qf_planos_profissional p where profissional_id=v_uid;
- v_result:=public.qf_desbloquear_chamado(v_call,false);
+ v_result:=public.qf_usar_cortesia_reativacao(v_call);
  if v_result->>'origem'<>'cortesia_admin' or (v_result->>'preco_centavos')::integer<>0 or not (v_result->>'ok')::boolean then raise exception 'Courtesy failed: %',v_result; end if;
  if v_wallet is distinct from (select to_jsonb(w) from public.qf_carteiras w where profissional_id=v_uid) then raise exception 'Wallet changed'; end if;
  if v_plans is distinct from (select jsonb_agg(to_jsonb(p)) from public.qf_planos_profissional p where profissional_id=v_uid) then raise exception 'Plan changed'; end if;
  if exists(select 1 from public.qf_listar_chamados_disponiveis() where preco_centavos=0) then raise exception 'Second free unlock available'; end if;
+ v_result:=public.qf_usar_cortesia_reativacao(v_call);
+ if v_result->>'reason'<>'cortesia_indisponivel' then raise exception 'Stale courtesy guard failed'; end if;
  v_result:=public.qf_desbloquear_chamado(v_call,false);
  if not coalesce((v_result->>'already_unlocked')::boolean,false) then raise exception 'Idempotency failed'; end if;
  if (select count(*) from public.qf_desbloqueios where profissional_id=v_uid and chamado_id=v_call)<>1 then raise exception 'Duplicate unlock'; end if;
@@ -351,3 +367,27 @@ begin
 end $test$;
 rollback;
 select 'PASS: zero charge, unchanged wallet/plan, single use, idempotency, snapshot-only, rollback' test;
+
+-- Avisos idempotentes:
+
+alter table private.qf_reativacao_20261022_profissionais add column if not exists aviso_id uuid, add column if not exists push_request_id bigint, add column if not exists avisado_em timestamptz;
+do $notify$
+declare b record; v_aviso uuid; v_req bigint; v_secret text;
+v_title text:='Você ganhou um desbloqueio grátis';
+v_body text:='Use 1 desbloqueio grátis em um dos pedidos participantes da sua profissão. Cortesia nos pedidos já publicados, conforme região e vagas. Abra o app e confira. Não garante contratação.';
+begin
+ select decrypted_secret into v_secret from vault.decrypted_secrets where name='qf_push_internal' limit 1;
+ if length(coalesce(v_secret,''))<32 then raise exception 'Push internal not configured'; end if;
+ for b in select profissional_id from private.qf_reativacao_20261022_profissionais where avisado_em is null for update loop
+ insert into public.qf_profissional_avisos(user_id,chamado_id,tipo,titulo,corpo,rota)
+ values(b.profissional_id,(select cp.chamado_id from private.qf_reativacao_20261022_pedidos cp join public.qf_profissionais pr on pr.user_id=b.profissional_id and cp.categoria=any(pr.especialidades) order by private.qf_pro_recebe_chamado(b.profissional_id,cp.chamado_id) desc,cp.criado_em limit 1),'cortesia_reativacao_20261022',v_title,v_body,'/profissional/home') returning id into v_aviso;
+ select net.http_post(
+ url:='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-admin-aviso',
+ headers:=jsonb_build_object('Content-Type','application/json','x-qf-internal',v_secret),
+ body:=jsonb_build_object('action','user_notice','user_ids',jsonb_build_array(b.profissional_id),
+ 'title',v_title,'body',v_body,'url','/#/profissional/home','tag','qf-cortesia-20261022'),
+ timeout_milliseconds:=60000) into v_req;
+ update private.qf_reativacao_20261022_profissionais set aviso_id=v_aviso,push_request_id=v_req,avisado_em=now() where profissional_id=b.profissional_id;
+ end loop;
+end $notify$;
+select count(*) profissionais,count(*) filter(where aviso_id is not null) avisos_no_app,count(*) filter(where push_request_id is not null) pushes_enfileirados from private.qf_reativacao_20261022_profissionais;
