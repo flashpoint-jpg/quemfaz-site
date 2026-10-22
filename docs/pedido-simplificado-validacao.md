@@ -64,3 +64,9 @@ Trabalho salvo somente em branch separada. Nenhuma migração foi aplicada a pro
 Antes de integrar, exigir aprovação do usuário, resultado do CI com concorrência/pagamentos e homologação completa em ambiente separado. Verificar eventual drift da definição da RPC antes de aplicar. A migração preserva os payloads anteriores e deve preceder a liberação do módulo v2: publicar o frontend sem ela perderia a faixa no Tradicional e recusaria Garante com faixa. Não fazer esse corte parcial.
 
 A confirmação de interesse é declaração do cliente, não garantia de contratação. Não se declara funcionamento integral em produção com base em fixtures locais.
+
+## Evidência adicional no GitHub Actions
+
+Após salvar o código no commit `d6dfb53c8e2fce6af92fb55f7f4e50f24b9c87ee`, o job `concorrencia-postgres` passou no GitHub Actions: publicação concorrente, limite de quatro débitos tradicionais, um débito Garante de 4×, recargas, planos e reconciliação. Evidência: https://github.com/flashpoint-jpg/quemfaz-site/actions/runs/39714959762/job/119614738486 . Isso resolve no CI os bloqueios locais de PostgreSQL e pagamentos, sem executar cobranças reais.
+
+Na conferência, o job separado `regressao-e-navegador` ainda estava em andamento na instalação de dependências. Os resultados locais permanecem os registrados acima; não se declara o CI inteiro aprovado. A homologação no Supabase completo segue pendente. Este acréscimo altera apenas a documentação, sem mudar o código já testado.
