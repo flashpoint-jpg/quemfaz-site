@@ -180,7 +180,20 @@
           const codigo=emissao&&emissao.ok&&/^[0-9]{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
           area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
             (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
-            '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p></section>';
+            '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p><button type="button" class="btn btn--outline" data-at-cancelar>Cancelar pedido</button><p role="status" data-at-cancelar-status></p></section>';
+          const cancelar=area.querySelector('[data-at-cancelar]');
+          if(cancelar)cancelar.onclick=async()=>{
+            if(!root.confirm('Cancelar este pedido? Ele deixará de aparecer para novos profissionais.'))return;
+            cancelar.disabled=true;
+            const aviso=area.querySelector('[data-at-cancelar-status]');
+            aviso.textContent='Cancelando pedido…';
+            try{
+              const resposta=await Cloud.client.rpc('qf_cancelar_pedido_cliente_teste',{p_chamado_id:req.id});
+              if(resposta.error)throw resposta.error;
+              if(!resposta.data?.ok)throw Error(resposta.data?.reason==='ja_desbloqueado'?'Um profissional já desbloqueou este pedido. Solicite cancelamento à equipe Quem Faz.':'Não foi possível cancelar. Tente novamente.');
+              area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido cancelado</h1><p>Seu pedido foi cancelado e não está mais disponível para novos desbloqueios.</p></section>';
+            }catch(error){aviso.textContent=error.message||'Não foi possível cancelar.';cancelar.disabled=false;}
+          };
           const copiar=area.querySelector('[data-at-copiar]');
           if(copiar)copiar.onclick=async()=>{try{await root.navigator.clipboard.writeText(codigo);copiar.textContent='Código copiado!';}catch(_){copiar.textContent='Anote o código acima';}};
 
