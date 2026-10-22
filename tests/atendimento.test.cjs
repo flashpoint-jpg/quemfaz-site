@@ -82,3 +82,13 @@ test('banco: preparação da implantação mantém legado até o corte explícit
  assert.equal((await pub(d)).atendimento_tipo,'tradicional');
  }finally{await d.close();}
 });
+
+test('banco: geocodificador indisponível usa referência da cidade; cidade sem referência não vira pedido invisível',async()=>{
+ const d=await db();try{
+ await assert.rejects(d.query('select public.qf_publicar_atendimento($1::jsonb)',[JSON.stringify(answers())]),/localizacao_indisponivel/);
+ await d.exec('reset role');await d.exec("insert into public.qf_cidades_coord values('santoandre','SP','Santo André',-23.6639,-46.5383)");
+ await as(d,1);const r=(await d.query('select public.qf_publicar_atendimento($1::jsonb) r',[JSON.stringify(answers())])).rows[0].r;
+ assert.equal(Number(r.latitude),-23.66);assert.equal(Number(r.longitude),-46.54);
+ assert.equal(r.geo_precisao,'cidade');
+ }finally{await d.close();}
+});

@@ -26,7 +26,7 @@ const server=http.createServer((req,res)=>{
   await context.route('**/*',route=>{const u=new URL(route.request().url());if(u.origin===origin||u.origin===target.origin)return route.continue();return route.abort();});
   await page.goto(origin+'/#/auth/cliente/cadastro');await page.waitForSelector('#at-answer');
   const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const fields=['Pintor','Pintar paredes externas da oficina de homologacao '+tipo,'80 metros quadrados','Santo André','SP','Centro','normal','300','profissional',date,'Manhã','Cliente Homologacao API','11967012483','contratar','sim',tipo];if(tipo==='garante')fields.push('sim');
+  const fields=['Pintor','Pintar paredes externas da oficina de homologacao final '+tipo,'80 metros quadrados','Santo André','SP','Centro','normal','300','profissional',date,'Manhã','Cliente Homologacao API','11967012483','contratar','sim',tipo];if(tipo==='garante')fields.push('sim');
   for(const value of fields){const input=page.locator('#at-answer');if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);await page.getByRole('button',{name:'Continuar',exact:true}).click();}
   await page.getByRole('heading',{name:'Revise antes de publicar'}).waitFor();
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
@@ -34,8 +34,8 @@ const server=http.createServer((req,res)=>{
   const error=await page.locator('[data-at-error]').textContent().catch(()=>null);assert.ok(!error,'publication must navigate without an error: '+error);
   order=await page.evaluate(()=>location.hash.split('/').pop());assert.match(order,/^[\da-f-]{36}$/);
   await page.waitForTimeout(1500);
-  const cloud=await page.evaluate(async id=>{const c=QFCloud.client;const call=await c.from('qf_chamados').select('id,atendimento_tipo,max_orcamentos,descricao').eq('id',id).single();const details=await c.rpc('qf_atendimento_respostas',{p_id:id});return{call:call.data,error:call.error?.message||null,detailsAllowed:!!details.data,authenticated:!!(await c.auth.getSession()).data.session};},order);
-  assert.equal(cloud.error,null);assert.equal(cloud.authenticated,true);assert.equal(cloud.call.atendimento_tipo,tipo);assert.equal(cloud.call.max_orcamentos,tipo==='garante'?1:4);assert.equal(cloud.detailsAllowed,true);
+  const cloud=await page.evaluate(async id=>{const c=QFCloud.client;const call=await c.from('qf_chamados').select('id,atendimento_tipo,max_orcamentos,descricao,latitude,longitude').eq('id',id).single();const details=await c.rpc('qf_atendimento_respostas',{p_id:id});return{call:call.data,error:call.error?.message||null,detailsAllowed:!!details.data,authenticated:!!(await c.auth.getSession()).data.session};},order);
+  assert.equal(cloud.error,null);assert.equal(cloud.authenticated,true);assert.equal(cloud.call.atendimento_tipo,tipo);assert.equal(cloud.call.max_orcamentos,tipo==='garante'?1:4);assert.equal(cloud.detailsAllowed,true);assert.ok(cloud.call.latitude!==null&&cloud.call.longitude!==null,'request must be routable even with external geocoder blocked');
   assert.doesNotMatch(cloud.call.descricao,/11967012483|Cliente Homologacao API/);
   await page.reload();
   await page.waitForFunction(id=>Boolean(window.DB?.requestById(id)?.atendimentoTipo),order,{timeout:60000});

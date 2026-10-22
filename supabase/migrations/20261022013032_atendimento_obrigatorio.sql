@@ -112,6 +112,16 @@ begin
   if lat is not null and lng is not null and abs(lat)<=90 and abs(lng)<=180 then
     lat:=round(lat,2);lng:=round(lng,2);
   else lat:=null;lng:=null; end if;
+  -- Keep routing functional when the browser geocoder is unavailable: use the existing city reference.
+  if lat is null or lng is null then
+    select round(gc.latitude,2),round(gc.longitude,2) into lat,lng
+    from public.qf_cidades_coord gc
+    where private.qf_norm_txt(gc.cidade)=private.qf_norm_txt(a->>'cidade') and gc.uf=a->>'uf'
+      and gc.latitude between -90 and 90 and gc.longitude between -180 and 180
+      and not (gc.latitude=0 and gc.longitude=0)
+    limit 1;
+  end if;
+  if lat is null or lng is null then raise exception 'localizacao_indisponivel: Não foi possível localizar sua cidade agora. Suas respostas continuam aqui; tente novamente.'; end if;
   insert into private.qf_atendimentos(chave,cliente_id,chamado_id,respostas,fingerprint) values(k,u,cid,a,fp);
   descricao_segura:=concat_ws(E'\n',a->>'detalhes','Escopo: '||(a->>'escopo'),'Materiais: '||(a->>'materiais'),'Disponibilidade: '||(a->>'disponibilidade'));
   descricao_segura:=replace(descricao_segura,a->>'nome','[nome protegido]');

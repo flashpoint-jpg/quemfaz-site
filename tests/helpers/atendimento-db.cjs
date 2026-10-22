@@ -17,6 +17,7 @@ async function db(d=new PGlite()){
  `);
  await d.exec(fs.readFileSync('supabase/2026-10-19-interesse-do-cliente.sql','utf8'));
  await d.exec('alter table public.qf_chamados add column orcamento_aproximado_centavos integer;');
+ await d.exec("create table public.qf_cidades_coord(chave text,uf text,cidade text,latitude numeric,longitude numeric);create or replace function private.qf_norm_txt(text) returns text language sql immutable as $$select lower(trim($1))$$;");
  await d.exec(fs.readFileSync('tests/fixtures/atendimento-production-functions.sql','utf8'));
  await d.exec(migration);
  // Existing notification integration is represented by a transactional outbox fixture, not a real push.
