@@ -117,3 +117,13 @@ Validação desta continuação: suíte completa e testes específicos executado
 
 ### Concorrência validada em PostgreSQL independente
 O CI `Piloto 13% — banco isolado e concorrência` passou no GitHub Actions (execução `39841482257`). Foi utilizado PostgreSQL 16 descartável, sem credenciais de produção: seis conexões independentes competiram pelas duas vagas restantes após um desbloqueio pago e um gratuito. O resultado foi exatamente quatro participantes, sem débito no gratuito, saldos consistentes e reserva única para dois emissores concorrentes do mesmo push. Assim, a pendência de teste de concorrência entre sessões está resolvida. Permanecem a gravação/implantação no Supabase, a homologação financeira real e o fluxo completo no celular/desktop com os serviços externos configurados.
+
+### Atualização da implantação — 22/10/2026, retomada final
+
+O erro de requestState foi resolvido na nova sessão. As migrações `comissao13_qr_notificacoes` e `comissao13_financeiro_seguro` foram aplicadas e conferidas no projeto de produção. A função `quemfaz-comissao13` foi publicada na versão 2 e `quemfaz-push` na versão 47. O cron de notificações existe; o anúncio permanece condicionado à prontidão, sem disparo de lançamento.
+
+A consulta real de status confirmou credenciais legadas Efí Pix/cartão presentes, mas `otp_configurado=false`, `financeiro_servicos_integrado=false` e `ativo=false`. A base não contém recebedores nem tarifas validados. A função financeira não foi implantada. Não foram geradas cobranças ou repasses para testes.
+
+Os testes locais voltaram a passar (277 aprovados, 0 falhas, 2 ignorados). O teste de navegador antigo ainda esperava campos simultâneos/select e opção manual Garante, enquanto o formulário existente utiliza perguntas individuais/radio e classificação por orçamento. O teste foi atualizado para a interface efetiva, preservando as verificações de publicação via RPC, privacidade, idempotência, débito Garante e tradicional. Inclui também interface do cliente em 390px e 1440px, com serviços externos substituídos por respostas de teste: QR somente consulta, confirmação exige aceite, contestação bloqueia pagamento. Estes testes de interface não comprovam entrega real de OTP ou liquidação bancária.
+
+Para liberar de fato, continuam necessários: configurar o remetente/conta SMS e segredo OTP no Supabase, validar recebedores Efí e tarifas reais, configurar chave/webhook separados para os serviços e executar a homologação financeira real (inclusive estorno e evidência do repasse em cartão). Não alterar as três flags de prontidão antes dessas evidências.

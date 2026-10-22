@@ -20,6 +20,10 @@ const server=http.createServer(async(req,res)=>{
 });
 (async()=>{
  database=await db();
+ await database.exec('reset role');
+ await database.exec('alter table public.qf_chamados add column if not exists valor_oferecido_centavos integer');
+ for(const migration of ['20261022142812_garante_por_orcamento.sql','20261022144845_garante_apenas_novos_com_intencao.sql'])await database.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
+ await as(database,1);
  await database.exec("update public.qf_profiles set telefone='11988887776',whatsapp='11988887776' where tipo='cliente'");
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true,...(process.env.QF_CHROMIUM_EXECUTABLE?{executablePath:process.env.QF_CHROMIUM_EXECUTABLE}:{}),args:['--no-sandbox','--disable-dev-shm-usage']});
@@ -101,7 +105,7 @@ const server=http.createServer(async(req,res)=>{
    const content=document.querySelector('main');content.innerHTML=QFAtendimento.html();
    Screens.afterRender('/cliente/novo-pedido/:catId',content,{catId:'cat_pintor'},{id:'fixture-client'});
   });
-  await page.waitForSelector('[data-qf-atendimento] #at-servico');
+  await page.waitForSelector('[data-qf-atendimento] input[name="at-detalhes"]');
   assert.equal(await page.locator('#novo-pedido-form').count(),0);
   assert.match(await page.locator('label[for="at-detalhes"]').innerText(),/pintar/);
   // Traditional assessment, denied consent, timeout after commit, and double click retry.
@@ -131,5 +135,45 @@ const server=http.createServer(async(req,res)=>{
   assert.deepEqual(errors,[]);
   console.log('PASS browser: actual built router, four stages with individual radio questions, adapted profession, complete Garante → real createCall → RPC → isolated Postgres → exclusive debit, review, mobile, privacy and both entry points');
   await context.close();
+  // UI fixtures only: real server-side OTP/security rules are tested separately against Postgres.
+  for(const viewport of [{width:390,height:844},{width:1440,height:900}]){
+   const clientContext=await browser.newContext({viewport,serviceWorkers:'block'});
+   let state='contratado';const actions=[];
+   await clientContext.route('**/*',async route=>{
+    const u=new URL(route.request().url());
+    if(u.hostname==='dczlyrgnzlxmzghzaooz.supabase.co'){
+     const body=route.request().postDataJSON();actions.push(body);
+     let response;
+     if(body.action==='info')response={ok:true,profissional:'Profissional Fixture',pedido:'Pedido Fixture',valor_centavos:50000,agendado_em:'2020-01-01T12:00:00Z',status:state,telefone_final:'0000',financeiro_disponivel:false};
+     else if(body.action==='enviar_codigo')response={ok:true};
+     else if(body.action==='confirmar'){assert.equal(body.confirmar,true);assert.equal(body.codigo,'123456');state=body.finalidade==='contestar'?'contestado':'concluido';response={ok:true};}
+     else throw Error('Unexpected client action '+body.action);
+     return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(response)});
+    }
+    return u.origin===origin?route.continue():route.abort();
+   });
+   const clientPage=await clientContext.newPage();
+   await clientPage.goto(origin+'/comissao13.html#token=00000000-0000-4000-8000-000000000123&carteirinha=00000000-0000-4000-8000-000000000124');
+   await clientPage.locator('#acoes').waitFor({state:'visible'});
+   assert.equal(actions.length,1,'QR only reads the agreement');
+   assert.match(await clientPage.locator('#resumo').innerText(),/Profissional Fixture[\s\S]*500,00/);
+   assert.equal(await clientPage.locator('#form').isVisible(),false);
+   assert.equal(await clientPage.locator('#pagamento').isVisible(),false);
+   await clientPage.locator('#enviar').click();await clientPage.locator('#form').waitFor({state:'visible'});
+   await clientPage.locator('#codigo').fill('123456');await clientPage.locator('#confirmar').click();
+   assert.equal(actions.filter(a=>a.action==='confirmar').length,0,'explicit checkbox required');
+   await clientPage.locator('#confirmo').check();await clientPage.locator('#confirmar').click();
+   await clientPage.waitForFunction(()=>document.querySelector('#status').textContent.includes('Conclusão registrada'));
+   assert.equal(state,'concluido');assert.equal(actions.filter(a=>a.action==='confirmar').length,1);
+   await clientPage.locator('#finalidade').selectOption('contestar');await clientPage.locator('#enviar').click();
+   await clientPage.locator('#form').waitFor({state:'visible'});await clientPage.locator('#codigo').fill('123456');
+   await clientPage.locator('#motivo').fill('Serviço ainda não concluído');await clientPage.locator('#confirmo').check();await clientPage.locator('#confirmar').click();
+   await clientPage.waitForFunction(()=>document.querySelector('#status').textContent.includes('Contestação registrada'));
+   assert.equal(state,'contestado');assert.equal(await clientPage.locator('#pagamento').isVisible(),false);
+   assert.equal(await clientPage.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+   assert.ok(actions.every(a=>a.carteirinha==='00000000-0000-4000-8000-000000000124'));
+   await clientContext.close();
+  }
+  console.log('PASS client UI at 390px and 1440px: QR read only, agreement and amount, explicit OTP consent, dispute and financial gate (isolated fixtures)');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{server.close();if(database)await database.close();});
