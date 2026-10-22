@@ -169,7 +169,21 @@
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:at.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
-          root.navigate('/cliente/pedido/'+req.id,true);
+          // O código aparece na própria confirmação, sem exigir acompanhamento ou app.
+          // Somente o cliente autenticado que publicou pode emiti-lo; nunca gerar código falso.
+          let emissao;
+          try {
+            const resultado=await Cloud.client.rpc('qf13_codigo_cliente',{p_chamado_id:req.id});
+            if(resultado.error)throw resultado.error;
+            emissao=resultado.data;
+          }catch(error){emissao={ok:false,reason:'indisponivel'};}
+          const codigo=emissao&&emissao.ok&&/^\\d{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
+          area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
+            (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
+            '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p></section>';
+          const copiar=area.querySelector('[data-at-copiar]');
+          if(copiar)copiar.onclick=async()=>{try{await root.navigator.clipboard.writeText(codigo);copiar.textContent='Código copiado!';}catch(_){copiar.textContent='Anote o código acima';}};
+
         }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
         finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
     };
