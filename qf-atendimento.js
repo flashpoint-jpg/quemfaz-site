@@ -29,31 +29,31 @@
   }
   function questions(a) {
     const service = norm(a.servico);
-    let detail = 'O que precisa ser feito? Descreva o problema e o resultado esperado, sem nome, telefone ou endereço.';
-    let scope = 'Pode contar um pouco mais sobre o serviço?';
-    if (/faxin|limpeza|higien|sofa|estof|colch|tapet|carpet/.test(service)) {
-      detail = 'O que precisa de limpeza e qual é o tipo de sujeira ou dificuldade? Não informe dados pessoais.';
-      scope = 'Quantos itens precisam de limpeza? Se souber, diga o tamanho.';
-    } else if (/pint|pedreir|reforma|impermeab/.test(service)) {
-      detail = 'Qual reparo ou acabamento você precisa e como está a superfície? Não informe dados pessoais.';
-      scope = 'É uma área pequena, média ou grande? Conte como é o local.';
-    } else if (/eletric|encan|chaveir|ar.cond|tecnic/.test(service)) {
-      detail = 'Qual é o defeito e em qual equipamento ou instalação? Não informe dados pessoais.';
-      scope = 'É um ou mais lugares ou aparelhos? Conte o que souber.';
-    } else if (/mont|movel|moveis/.test(service)) {
-      detail = 'Quais móveis precisam de montagem ou reparo? Não informe dados pessoais.';
-      scope = 'Quantos móveis são? Já estão desmontados?';
-    }
-    let detailChoices=[['instalacao','Instalar'],['conserto','Consertar'],['manutencao','Fazer manutenção'],['outro','Outro serviço']];
+    // Cada profissão tem perguntas e quantidades compatíveis com o serviço.
+    let detailChoices=[['visita','Avaliar no local'],['instalacao','Instalar'],['conserto','Consertar'],['manutencao','Fazer manutenção'],['outro','Outro serviço']];
     let scopeChoices=[['um','Um item ou local'],['alguns','Alguns itens ou locais'],['varios','Vários itens ou locais'],['avaliar','Preciso de avaliação']];
-    if (/pint/.test(service)) { detailChoices=[['paredes','Pintar paredes'],['casa','Pintar casa ou apartamento'],['portao','Pintar portão ou grades'],['retoque','Fazer retoques'],['outro','Outro serviço']]; scopeChoices=[['pequena','Área pequena'],['media','Área média'],['grande','Área grande'],['avaliar','Preciso de avaliação']]; }
-    else if (/faxin|limpeza|higien|sofa|estof|colch|tapet|carpet/.test(service)) { detailChoices=[['sofa','Limpar sofá'],['colchao','Limpar colchão'],['tapete','Limpar tapete ou carpete'],['faxina','Fazer faxina'],['outro','Outro serviço']]; }
-    else if (/eletric|encan|chaveir|ar.cond|tecnic/.test(service)) { detailChoices=[['conserto','Consertar'],['instalacao','Instalar'],['manutencao','Fazer manutenção'],['outro','Outro serviço']]; }
-    else if (/mont|movel|moveis/.test(service)) { detailChoices=[['montagem','Montar móveis'],['desmontagem','Desmontar móveis'],['reparo','Consertar móveis'],['outro','Outro serviço']]; }
+    let detailLabel='O que você precisa fazer?',scopeLabel='Qual o tamanho do serviço?';
+    const categories=[
+      [/diarist|faxin|empregad|domestic|limpeza residencial|limpeza comercial|pos.obra|p[oó]s.obra/,[['comum','Faxina comum'],['pesada','Faxina pesada'],['pos_obra','Limpeza pós-obra'],['mudanca','Limpeza de mudança'],['outro','Outro tipo de faxina']],[['ate2','Até 2 cômodos'],['3a4','3 a 4 cômodos'],['5mais','5 ou mais cômodos'],['avaliar','Preciso de avaliação']],'Qual tipo de faxina você precisa?','Quantos cômodos precisam de limpeza?'],
+      [/sofa|estof|colch|tapet|carpet|cortina|persiana|higien|lavagem/,[['sofa','Sofá ou poltrona'],['colchao','Colchão'],['tapete','Tapete ou carpete'],['cortina','Cortina ou persiana'],['automotivo','Estofado automotivo'],['outro','Outro item']],[['um','1 item'],['dois','2 itens'],['tresmais','3 ou mais itens'],['avaliar','Preciso de avaliação']],'O que precisa de higienização?','Quantos itens precisam de limpeza?'],
+      [/pint/,[['paredes','Pintar paredes'],['casa','Pintar casa ou apartamento'],['portao','Pintar portão ou grades'],['retoque','Fazer retoques'],['outro','Outro serviço']],[['pequena','Área pequena'],['media','Área média'],['grande','Área grande'],['avaliar','Preciso de avaliação']],'O que precisa pintar?','Qual o tamanho da área?'],
+      [/eletric|chuveiro|tomada|disjuntor/,[['tomada','Tomadas ou interruptores'],['chuveiro','Chuveiro elétrico'],['disjuntor','Disjuntor ou quadro'],['fiacao','Fiação ou instalação'],['outro','Outro serviço elétrico']],null,'Qual serviço elétrico você precisa?'],
+      [/encan|hidraul|vazamento|desentup/,[['vazamento','Consertar vazamento'],['torneira','Torneira ou registro'],['descarga','Descarga ou vaso sanitário'],['tubulacao','Tubulação ou encanamento'],['entupimento','Desentupimento'],['outro','Outro serviço hidráulico']],null,'Qual problema hidráulico precisa resolver?'],
+      [/mont|movel|moveis|marcen/,[['montagem','Montar móveis'],['desmontagem','Desmontar móveis'],['reparo','Consertar móveis'],['ajuste','Ajustar portas ou gavetas'],['outro','Outro serviço']],[['um','1 móvel'],['dois','2 móveis'],['tresmais','3 ou mais móveis'],['avaliar','Preciso de avaliação']],'O que precisa fazer com os móveis?','Quantos móveis?'],
+      [/informat|computador|notebook|tecnic|celular|impressora/,[['computador','Computador ou notebook'],['impressora','Impressora'],['rede','Internet ou rede Wi-Fi'],['software','Programa ou sistema'],['outro','Outro equipamento']],[['um','1 equipamento'],['dois','2 equipamentos'],['varios','3 ou mais equipamentos'],['avaliar','Preciso de avaliação']],'Qual equipamento ou sistema precisa de atendimento?','Quantos equipamentos?'],
+      [/chaveir|fechadura|portao automatic/,[['porta','Abrir porta'],['fechadura','Trocar ou reparar fechadura'],['chave','Fazer ou copiar chave'],['portao','Consertar portão'],['outro','Outro serviço']],null,'Qual serviço de chaveiro você precisa?'],
+      [/ar.cond|refrigera|climatiz/,[['instalacao','Instalar ar-condicionado'],['limpeza','Limpar ou higienizar'],['conserto','Consertar defeito'],['carga','Verificar refrigeração'],['outro','Outro serviço']],[['um','1 aparelho'],['dois','2 aparelhos'],['varios','3 ou mais aparelhos'],['avaliar','Preciso de avaliação']],'Qual serviço de ar-condicionado?','Quantos aparelhos?'],
+      [/pedreir|reforma|alvenar|azulej|piso|telhad|impermeab/,[['reparo','Pequeno reparo'],['piso','Assentar piso ou revestimento'],['parede','Construir ou reformar parede'],['telhado','Telhado ou infiltração'],['outro','Outro serviço de obra']],[['pequena','Área pequena'],['media','Área média'],['grande','Área grande'],['avaliar','Preciso de avaliação']],'Qual serviço de obra você precisa?','Qual o tamanho da área?'],
+      [/jardin|paisag|poda/,[['grama','Cortar grama'],['poda','Podar plantas ou árvores'],['limpeza','Limpar jardim'],['plantio','Plantar ou cuidar de plantas'],['outro','Outro serviço']],[['pequena','Jardim pequeno'],['media','Jardim médio'],['grande','Jardim grande'],['avaliar','Preciso de avaliação']],'O que precisa fazer no jardim?','Qual o tamanho do jardim?'],
+      [/dedetiz|praga|cupim/,[['barata','Baratas ou formigas'],['rato','Ratos'],['cupim','Cupins'],['mosquito','Mosquitos'],['outro','Outras pragas']],[['um','Um cômodo'],['alguns','Alguns cômodos'],['varios','Imóvel inteiro'],['avaliar','Preciso de avaliação']],'Qual praga precisa controlar?','Qual área precisa de tratamento?'],
+      [/frete|mudanc|carreto|transporte/,[['movel','Transportar móveis'],['eletro','Transportar eletrodomésticos'],['mudanca','Mudança residencial'],['carga','Transportar mercadorias'],['outro','Outro transporte']],[['pequena','Poucos itens'],['media','Uma carga média'],['grande','Mudança completa'],['avaliar','Preciso de avaliação']],'O que precisa transportar?','Qual o volume aproximado?']
+    ];
+    const match=categories.find(c=>c[0].test(service));
+    if(match){detailChoices=match[1];if(match[2])scopeChoices=match[2];detailLabel=match[3];if(match[4])scopeLabel=match[4];}
     const list = [
       {key:'servico',label:'Qual serviço você precisa?',catalog:true},
-      options('detalhes','O que você precisa fazer?',detailChoices),
-      options('escopo','Qual o tamanho do serviço?',scopeChoices),
+      options('detalhes',detailLabel,detailChoices),
+      options('escopo',scopeLabel,scopeChoices),
       {key:'cidade',label:'Em qual cidade será o serviço?'},
       options('uf','Qual é o estado (UF)?','AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>[x,x])),
       {key:'bairro',label:'Em qual bairro? O endereço exato será combinado após o desbloqueio.'},
