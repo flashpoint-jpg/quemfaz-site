@@ -8,8 +8,9 @@ async function upgrade(d){await d.exec('reset role');await d.exec('alter table p
 
 test('orçamento define modalidade, inclusive faixa até 500 e materiais a combinar',()=>{
  for(const orcamento of ['0:50000','50000:150000','500']){
-  const a={orcamento,materiais:'combinar',intencao:'pesquisando',tipo:'tradicional'};
+  const a={orcamento,materiais:'combinar',intencao:'contratar',tipo:'tradicional'};
   assert.equal(A.tipoPorOrcamento(a),'garante');
+  assert.equal(A.tipoPorOrcamento({...a,intencao:'pesquisando'}),'tradicional');
   assert.ok(!A.questions(a).some(q=>['tipo','qualificacao'].includes(q.key)));
  }
  for(const orcamento of ['avaliacao','a combinar',undefined,'abc'])assert.equal(A.tipoPorOrcamento({orcamento}),'tradicional');
