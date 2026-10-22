@@ -29,9 +29,9 @@ const server=http.createServer(async(req,res)=>{
   const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
   // Actual built router: anonymous client registration is now the mandatory assistant.
   await page.goto(origin+'/#/auth/cliente/cadastro');
-  await page.waitForSelector('[data-qf-atendimento] #at-answer');
+  await page.waitForSelector('[data-qf-atendimento] #at-servico');
   assert.equal(await page.locator('#cadastro-cliente-form').count(),0);
-  assert.equal(await page.locator('#at-answer:visible').count(),1);
+  assert.equal(await page.locator('[data-at-progress]').innerText(),'Etapa 1 de 4 — Serviço');
   // Replace connector in the page only, before any contact is collected. No signups/requests reach production.
   await page.evaluate(()=>{
    window.__submissions=[];window.__nav=[];window.QFCloud.enabled=true;
@@ -45,14 +45,25 @@ const server=http.createServer(async(req,res)=>{
    window.QFPush={notify:async()=>{}};
    window.navigate=url=>window.__nav.push(url);
   });
-  const values=['Faxina','Limpeza pesada de sala comercial','51 a 100 m²','Santo André','SP','Jardim do Estádio','urgente','300','profissional','2099-10-22','Manhã','Cliente Teste','11988887776','contratar','sim','garante','sim'];
-  for(const value of values){
-   assert.equal(await page.locator('#at-answer:visible').count(),1);
-   const input=page.locator('#at-answer');if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);
-   await page.getByRole('button',{name:'Continuar',exact:true}).click();
-  }
+  fs.mkdirSync('/tmp/qf-mockup',{recursive:true});
+  const fill=async(key,value)=>{const input=page.locator('#at-'+key);if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);};
+  await fill('servico','Faxina');await fill('detalhes','Limpeza pesada de sala comercial');await fill('escopo','51 a 100 m²');
+  await page.screenshot({path:'/tmp/qf-mockup/etapa-1.png',fullPage:true});
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 2 de 4/);
+  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã'}))await fill(k,v);
+  await page.screenshot({path:'/tmp/qf-mockup/etapa-2.png',fullPage:true});
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 3 de 4/);
+  assert.equal(await page.locator('#at-orcamento option').filter({hasText:'Preciso de uma avaliação'}).count(),1);
+  await fill('materiais','profissional');await fill('orcamento','15000:30000');
+  await page.screenshot({path:'/tmp/qf-mockup/etapa-3.png',fullPage:true});
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 4 de 4/);
+  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar',tipo:'garante',qualificacao:'sim',autorizacao:'sim'}))await fill(k,v);
+  await page.screenshot({path:'/tmp/qf-mockup/etapa-4.png',fullPage:true});
   await page.getByRole('heading',{name:'Revise antes de publicar'}).waitFor();
-  assert.equal(await page.locator('#at-answer').count(),0);
+  assert.equal(await page.locator('#at-orcamento').count(),0);
   assert.match(await page.locator('[data-qf-atendimento]').innerText(),/Não é garantia de contratação/);
   assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)>innerWidth),false,'mobile has no horizontal overflow');
   await page.screenshot({path:'/tmp/qf-atendimento-review.png',fullPage:true});
@@ -73,8 +84,16 @@ const server=http.createServer(async(req,res)=>{
    const req=DB.state.requests.find(r=>r.atendimentoTipo==='garante');
    const prof={id:'fixture-pro',nome:'Profissional Teste',categorias:[req.categoriaId],online:true,statusAprovacao:'aprovado',bloqueado:false,creditos:100000};
    const doc=document.createElement('div');doc.innerHTML=Screens.profChamadaRender({id:req.id},prof);
-   return {fee:doc.querySelector('.qf-unlock-simple .h1')?.textContent,expected:PU.formatCurrency(DB.leadFeeForRequest(req)*4),normalButton:!!doc.querySelector('[data-action="desbloquear-chamada"]'),exclusiveButton:!!doc.querySelector('[data-action="desbloquear-exclusivo"]'),planUpsell:!!doc.querySelector('.qf-plan-save')};
+   window.__professionalHTML=doc.innerHTML;
+   return {text:doc.textContent,fact:doc.querySelector('.qf-call-facts .qf-call-fact:last-child strong')?.textContent,fee:doc.querySelector('.qf-unlock-simple .h1')?.textContent,expected:PU.formatCurrency(DB.leadFeeForRequest(req)*4),normalButton:!!doc.querySelector('[data-action="desbloquear-chamada"]'),exclusiveButton:!!doc.querySelector('[data-action="desbloquear-exclusivo"]'),planUpsell:!!doc.querySelector('.qf-plan-save')};
   });
+  assert.match(professionalPreview.text,/Orçamento estimado: R\$ 150,00 a R\$ 300,00/);
+  assert.match(professionalPreview.text,/Prazo: Agendado — 22\/10\/2099/);
+  assert.doesNotMatch(professionalPreview.text,/11988887776|Cliente Teste/);
+  await page.evaluate(()=>document.querySelector('#app') ? document.querySelector('#app').innerHTML=window.__professionalHTML : document.body.innerHTML=window.__professionalHTML);
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('.view')).opacity==='1');
+  await page.screenshot({path:'/tmp/qf-mockup/profissional.png',fullPage:true});
+  assert.equal(professionalPreview.fact,professionalPreview.expected);
   assert.equal(professionalPreview.fee,professionalPreview.expected);assert.equal(professionalPreview.normalButton,false);assert.equal(professionalPreview.exclusiveButton,true);assert.equal(professionalPreview.planUpsell,false);
   // Logged-in route also uses the same assistant and cannot render the old form.
   await page.evaluate(()=>{
@@ -82,13 +101,38 @@ const server=http.createServer(async(req,res)=>{
    const content=document.querySelector('main');content.innerHTML=QFAtendimento.html();
    Screens.afterRender('/cliente/novo-pedido/:catId',content,{catId:'cat_pintor'},{id:'fixture-client'});
   });
-  await page.waitForSelector('[data-qf-atendimento] #at-answer');
+  await page.waitForSelector('[data-qf-atendimento] #at-servico');
   assert.equal(await page.locator('#novo-pedido-form').count(),0);
-  assert.equal(await page.locator('#at-answer').inputValue(),'Pintor');
+  assert.equal(await page.locator('#at-servico').inputValue(),'Pintor');
+  assert.match(await page.locator('label[for="at-detalhes"]').innerText(),/superfície/);
+  // Traditional assessment, denied consent, timeout after commit, and double click retry.
   await page.getByRole('button',{name:'Continuar',exact:true}).click();
-  assert.match(await page.locator('label[for="at-answer"]').innerText(),/superfície/);
+  assert.match(await page.locator('[data-error="detalhes"]').innerText(),/Responda/);
+  await fill('detalhes','Pintar sala de reunião interna');await fill('escopo','40 metros quadrados');
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Tarde'}))await fill(k,v);
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  await fill('materiais','combinar');await fill('orcamento','avaliacao');
+  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar',tipo:'tradicional',autorizacao:'nao'}))await fill(k,v);
+  await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
+  assert.match(await page.locator('[data-error="autorizacao"]').innerText(),/Sem autorização/);
+  assert.equal(await page.evaluate(()=>window.__submissions.length),1);
+  await fill('autorizacao','sim');
+  await page.evaluate(()=>{const real=QFCloud.createCall;let first=true;QFCloud.createCall=async args=>{const result=await real(args);if(first){first=false;throw Error('Timeout simulado após gravar');}return result;};});
+  await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('[data-at-error]')?.textContent==='Timeout simulado após gravar');
+  await page.evaluate(()=>{const b=document.querySelector('[data-at-publish]');b.click();b.click();});
+  await page.waitForFunction(()=>window.__nav.length===2);
+  const retry=await page.evaluate(()=>window.__submissions.slice(1));assert.equal(retry.length,2);
+  assert.equal(retry[0].atendimento.chave,retry[1].atendimento.chave);
+  assert.equal(retry[1].atendimento.orcamento_centavos,null);assert.equal(retry[1].atendimento.orcamento_faixa,'avaliacao');
+  await database.exec('reset role');
+  assert.equal(Number(await scalar(database,"select count(*) from private.test_dispatch where evento='new_call'")),2);
+  const traditional=(await database.query("select * from public.qf_chamados where atendimento_tipo='tradicional'")).rows[0];
+  assert.equal(traditional.max_orcamentos,4);assert.match(traditional.descricao,/Preciso de uma avaliação/);
   assert.deepEqual(errors,[]);
-  console.log('PASS browser: actual built router, one question, adapted profession, complete Garante → real createCall → RPC → isolated Postgres → exclusive debit, review, mobile, privacy and both entry points');
+  console.log('PASS browser: actual built router, four stages, adapted profession, complete Garante → real createCall → RPC → isolated Postgres → exclusive debit, review, mobile, privacy and both entry points');
   await context.close();
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{server.close();if(database)await database.close();});

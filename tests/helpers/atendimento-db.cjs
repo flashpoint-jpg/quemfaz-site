@@ -20,6 +20,7 @@ async function db(d=new PGlite()){
  await d.exec("create table public.qf_cidades_coord(chave text,uf text,cidade text,latitude numeric,longitude numeric);create or replace function private.qf_norm_txt(text) returns text language sql immutable as $$select lower(trim($1))$$;");
  await d.exec(fs.readFileSync('tests/fixtures/atendimento-production-functions.sql','utf8'));
  await d.exec(migration);
+ await d.exec(fs.readFileSync('supabase/migrations/20261022025533_pedido_simplificado_faixas.sql','utf8'));
  // Existing notification integration is represented by a transactional outbox fixture, not a real push.
  await d.exec(`create function private.test_new_call() returns trigger language plpgsql security definer set search_path='' as $$ begin insert into private.test_dispatch values('new_call',new.id);return new;end $$;
  create trigger test_new after insert on public.qf_chamados for each row execute function private.test_new_call();`);
