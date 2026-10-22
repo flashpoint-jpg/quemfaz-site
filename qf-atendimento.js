@@ -177,7 +177,7 @@
             if(resultado.error)throw resultado.error;
             emissao=resultado.data;
           }catch(error){emissao={ok:false,reason:'indisponivel'};}
-          const codigo=emissao&&emissao.ok&&/^\\d{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
+          const codigo=emissao&&emissao.ok&&/^[0-9]{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
           area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
             (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
             '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p></section>';

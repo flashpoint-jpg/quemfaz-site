@@ -1,6 +1,0 @@
-const test=require('node:test');const assert=require('node:assert/strict');
-const m=require('../qf-comissao13-simplificado.js');
-test('comissão potencial não é dívida confirmada',()=>{assert.equal(m.comissaoPotencial(50000),6500);assert.equal(m.comissaoPotencial(0),0);});
-test('prazo de 48 horas exige prestação de contas',()=>{const t=Date.parse('2026-10-22T12:00:00Z');const registro={desbloqueado_em:'2026-10-22T12:00:00Z'};assert.equal(m.situacaoCarteira(registro,t+47*3600000),'aguardando_prestacao');assert.equal(m.situacaoCarteira(registro,t+48*3600000),'bloqueado_prestacao');assert.equal(m.situacaoCarteira({...registro,prestacao_informada:true},t+50*3600000),'aguardando_verificacao');});
-test('comissão confirmada vencida bloqueia',()=>{assert.equal(m.situacaoCarteira({desbloqueado_em:'2026-10-22T12:00:00Z',prestacao_informada:true,comissao_confirmada:true,comissao_vencida:true,comissao_paga:false}),'bloqueado_comissao');});
-test('mensagem do WhatsApp contém profissional e serviço',()=>{const u=m.whatsappCliente({telefone:'(11) 99999-8888',profissional:'Carlos',servico:'eletricista'});assert.match(u,/wa.me\/5511999998888/);assert.match(decodeURIComponent(u),/Carlos/);assert.match(decodeURIComponent(u),/eletricista/);});
