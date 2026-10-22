@@ -95,7 +95,7 @@
     return {versao:1,chave:id,categoria,servico:a.servico,detalhes:a.detalhes,escopo:a.escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
   }
   function html() {
-    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Quem Faz Garante oferece exclusividade de contato. Não é garantia de contratação ou execução. Você decide se contrata.</p></section></div>';
+    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Seus dados ficam protegidos. Você decide se contrata.</p></section></div>';
   }
   function category(service) {
     const DB=root.DB, found=DB.categories().find(c=>c.id!=='cat_outros' && norm(c.nome)===norm(service));
@@ -117,30 +117,32 @@
     const a={}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) a.servico=cat.nome;
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
-    let step=0,busy=false,currentUser=user;
+    let step=0,questionIndex=0,busy=false,currentUser=user;
     const field=q=>{
       const value=a[q.key]||'', id='at-'+q.key;
       const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
-      const input=q.choices ? '<div class="stack--sm" role="radiogroup" aria-label="'+esc(q.label)+'">'+q.choices.map(c=>'<label class="card" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;border:1px solid var(--border,#d9e2ef);border-radius:12px"><input type="radio" name="'+id+'" value="'+esc(c[0])+'"'+(c[0]===value?' checked':'')+' required style="width:20px;height:20px;accent-color:#1769d5"><span>'+esc(c[1])+'</span></label>').join('')+'</div>' : q.multiline ? '<textarea class="input" id="'+id+'" maxlength="2000" rows="2" required>'+esc(value)+'</textarea>' : '<input class="input" id="'+id+'" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'"'+disabled+' required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
+      const input=q.key==='uf' ? '<input class="input" id="'+id+'" maxlength="2" placeholder="Ex.: SP" value="'+esc(value)+'" required>' : q.choices ? '<div class="stack--sm" role="radiogroup" aria-label="'+esc(q.label)+'">'+q.choices.map(c=>'<label class="card" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;border:1px solid var(--border,#d9e2ef);border-radius:12px"><input type="radio" name="'+id+'" value="'+esc(c[0])+'"'+(c[0]===value?' checked':'')+' required style="width:20px;height:20px;accent-color:#1769d5"><span>'+esc(c[1])+'</span></label>').join('')+'</div>' : q.multiline ? '<textarea class="input" id="'+id+'" maxlength="2000" rows="2" required>'+esc(value)+'</textarea>' : '<input class="input" id="'+id+'" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'"'+disabled+' required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
       return '<div class="stack--sm" style="min-width:0"><label class="text--strong" for="'+id+'">'+esc(q.label)+'</label>'+input+'<p class="text--sm" role="alert" data-error="'+q.key+'"></p></div>';
     };
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key);if(el)a[q.key]=el.value.trim();}};
     const draw=()=>{
       const stage=stages(a)[step];
-      area.innerHTML='<p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+stage.questions.map(field).join('')+(step===3?'<p>Contato protegido até o desbloqueio. Você decide se contrata.</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+(step===0?' disabled':'')+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3?'data-at-publish':'')+'>'+(step===3?'Publicar grátis':'Continuar')+'</button></div></form>';
+      questionIndex=Math.min(questionIndex,stage.questions.length-1);
+      const active=stage.questions[questionIndex];
+      area.innerHTML='<p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+' · pergunta '+(questionIndex+1)+' de '+stage.questions.length+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+field(active)+(step===3?'<p>Contato protegido até o desbloqueio. Você decide se contrata.</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+(step===0&&questionIndex===0?' disabled':'')+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3&&questionIndex===stage.questions.length-1?'data-at-publish':'')+'>'+(step===3&&questionIndex===stage.questions.length-1?'Publicar grátis':'Continuar')+'</button></div></form>';
       area.querySelector('form').onsubmit=e=>{
         e.preventDefault();if(busy)return;area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
-        const list=step===3?questions(a):stages(a)[step].questions;
+        const list=[active];
         for(const q of list){const error=validate(q,a[q.key],a);if(error){const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
-        if(step<3){step++;draw();}else publish();
+        if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
       };
-      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();step--;draw();};
+      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
       for(const key of ['servico','tipo','urgencia']){
         const inputs=area.querySelectorAll('#at-'+key+', input[name="at-'+key+'"]');inputs.forEach(input=>input.addEventListener('change',()=>{
           if(busy)return;read();if(key==='servico'){delete a.orcamento;for(const q of questions(a)){const label=area.querySelector('label[for="at-'+q.key+'"]');if(label)label.textContent=q.label;}return;}
           if(key==='urgencia'&&['hoje','urgente'].includes(a.urgencia))a.data=today();
           if(key==='tipo'&&a.tipo!=='garante')delete a.qualificacao;
-          draw();area.querySelector('#at-'+key)?.focus();
+          draw();
         }));
       }
     };
