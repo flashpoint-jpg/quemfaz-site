@@ -5,6 +5,8 @@ const vm = require('node:vm');
 const {createHash}=require('node:crypto');
 const esbuild = require('esbuild');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
+// Impede publicar um atendimento cujo arquivo JavaScript tenha erro de sintaxe.
+new vm.Script(fs.readFileSync(path.join(root, 'qf-atendimento.js'), 'utf8'), {filename:'qf-atendimento.js'});
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out);
 const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','docs','.gitignore','package.json','package-lock.json','vercel.json']);
@@ -13,6 +15,8 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
+html=html.replace('qf-atendimento.js?v=2','qf-atendimento.js?v=20261022');
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
 // Declara apenas ICO e PNG derivados da mesma arte oficial, evitando ícones conflitantes.
@@ -110,7 +114,7 @@ const early=`(function(w){
   var saved='',fields={},pending=null,loading=${JSON.stringify(placeholder)},ready=false;
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;['data-landing-location','data-landing-neighborhood'].forEach(function(k){var el=document.querySelector('['+k+']');if(el)fields[k]=el.value;});},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search]');Object.keys(fields).forEach(function(k){var el=content.querySelector('['+k+']');if(el)el.value=fields[k];});if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};
   if(location.hash&&location.hash!=='#/')document.getElementById('app-shell').outerHTML=loading;
-  document.addEventListener('submit',function(e){if(ready)return;early.capture();if(e.target.matches('[data-landing-service-form]')){e.preventDefault();pending='[data-landing-service-form]';var b=e.target.querySelector('[type="submit"]');if(b)b.textContent='Abrindo pedido…';}},true);
+  document.addEventListener('submit',function(e){if(ready)return;if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();early.capture();pending=null;w.QFHomeDraft={service:(saved||'').trim()};try{sessionStorage.removeItem('qf_pending_category');}catch(_){}location.hash='#/auth/cliente/cadastro';var shell=document.getElementById('app-shell');if(shell)shell.outerHTML=loading;w.setTimeout(function(){if(ready||location.hash!=='#/auth/cliente/cadastro')return;var content=document.getElementById('app-content');if(content)content.innerHTML='<div class="card stack" style="max-width:560px;margin:32px auto;padding:24px"><h2>Não foi possível abrir o pedido</h2><p>Verifique sua conexão e toque em tentar novamente.</p><button class="btn btn--primary" onclick="location.reload()">Tentar novamente</button></div>';},12000);},true);
   document.addEventListener('click',function(e){if(ready)return;var b=e.target.closest('[data-nav],[data-action="landing-login"],[data-support-open]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;}else pending=b.hasAttribute('data-support-open')?'[data-support-open]':'[data-action="landing-login"]';},true);
 })(window);`;
 new vm.Script(early);
@@ -128,6 +132,7 @@ fs.copyFileSync(path.join(__dirname,'qf-seo-consent-widget.js'),path.join(out,'q
 html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></script></body>');
 fs.writeFileSync(path.join(out,'index.html'),html);
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
+sw=sw.replace('./qf-atendimento.js?v=2','./qf-atendimento.js?v=20261022');
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');
