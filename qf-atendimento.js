@@ -115,11 +115,14 @@
     if(!id) {id=root.crypto.randomUUID();try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
-    const a={}, cat=categoryId && root.DB.categoryById(categoryId);
+    const oldDraft=root.__qfAtendimentoInMemory;
+    const homeService=root.QFHomeDraft&&root.QFHomeDraft.service;
+    const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService)));
+    const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) a.servico=cat.nome;
     else if(root.QFHomeDraft && root.QFHomeDraft.service) a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
-    let step=0,questionIndex=0,busy=false,currentUser=user;
+    let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,currentUser=user;
     const field=q=>{
       const value=a[q.key]||'', id='at-'+q.key;
       const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
@@ -128,6 +131,8 @@
     };
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.key==='uf'?area.querySelector('#at-'+q.key):(q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key));if(el)a[q.key]=q.key==='uf'?el.value.trim().toUpperCase():el.value.trim();}};
     const draw=()=>{
+      // Preserva o atendimento na memória caso banners ou dados públicos remontem a tela.
+      root.__qfAtendimentoInMemory={answers:a,step,questionIndex,categoryId};
       const stage=stages(a)[step];
       questionIndex=Math.min(questionIndex,stage.questions.length-1);
       const active=stage.questions[questionIndex];
@@ -157,6 +162,7 @@
           const c=category(a.servico),at=payload(a,id,c.id);
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:a.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
+          root.__qfAtendimentoInMemory=null;
           root.navigate('/cliente/pedido/'+req.id,true);
         }catch(e){area.querySelector('[data-at-error]').textContent=e.message||'Não foi possível publicar. Tente novamente; seu pedido não será duplicado.';}
         finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
