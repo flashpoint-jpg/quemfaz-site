@@ -13482,7 +13482,7 @@ alt=""></noscript>
 
         (function () {
           // V11.90: exclusivo (só ele recebe o contato) ou dividido (até 4). O exclusivo some quando alguém desbloqueia.
-          if (req.atendimentoTipo === 'garante') return '<div class="section card stack"><h2 class="h3">Quem Faz Garante</h2><p>Contato exclusivo para 1 profissional verificado. Cliente informou escopo, orçamento e disponibilidade. Não é garantia de contratação.</p><strong>' + PU.formatCurrency(valor * 4) + ' (4× o desbloqueio normal)</strong><p>Pagamento com saldo, sem usar chamado do plano. O contato fica disponível após o desbloqueio.</p><button class="btn btn--primary" type="button" data-action="desbloquear-exclusivo">Desbloquear exclusivo · ' + PU.formatCurrency(valor * 4) + '</button></div>';
+          if (req.atendimentoTipo === 'garante') return '<div class="section card stack"><h2 class="h3">Quem Faz Garante</h2><p>Contato exclusivo para 1 profissional verificado. Cliente informou quanto pretende gastar. Não é garantia de contratação.</p><strong>' + PU.formatCurrency(valor * 4) + ' (4× o desbloqueio normal)</strong><p>Pagamento com saldo, sem usar chamado do plano. O contato fica disponível após o desbloqueio.</p><button class="btn btn--primary" type="button" data-action="desbloquear-exclusivo">Desbloquear exclusivo · ' + PU.formatCurrency(valor * 4) + '</button></div>';
           const EX = global.QFExclusivo;
           const temExcl = !!(EX && global.QFCloud && global.QFCloud.enabled && EX.disponivel(req));
           const lim = CallInfo.vagas(req).limite;
@@ -15554,7 +15554,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.1';
+  const APP_VERSION = '12.1.2';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

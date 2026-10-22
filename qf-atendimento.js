@@ -20,11 +20,9 @@
       .concat([['avaliacao','Preciso de uma avaliação']]);
   }
   function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
-  function garanteElegivel(a) {
-    return a.intencao==='contratar' && budget(a.orcamento)!==null && !Number.isNaN(budget(a.orcamento)) && (!materialsApplicable(a.servico) || (a.materiais && !['combinar','nao_aplica'].includes(a.materiais)));
-  }
+  function tipoPorOrcamento(a) { const valor=budget(a.orcamento); return Number.isFinite(valor) && valor>0 ? 'garante' : 'tradicional'; }
   function stages(a) {
-    const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data','disponibilidade']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','tipo','qualificacao','autorizacao']]];
+    const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data','disponibilidade']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
     return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled)))}));
   }
   function questions(a) {
@@ -66,11 +64,9 @@
       {key:'nome',label:'Seu nome',autocomplete:'name'},
       {key:'contato',label:'Celular com DDD',type:'tel',autocomplete:'tel'},
       options('intencao','Pretende contratar?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
-      options('autorizacao','Podemos mostrar seu telefone ao profissional que aceitar seu pedido?',[['sim','Sim, autorizo'],['nao','Não autorizo']]),
-      options('tipo','Quer conversar com até 4 profissionais ou somente 1?',[['tradicional','Tradicional — até 4 profissionais'],['garante','Quem Faz Garante — 1 profissional']])
+      options('autorizacao','Podemos mostrar seu telefone ao profissional que aceitar seu pedido?',[['sim','Sim, autorizo'],['nao','Não autorizo']])
     ];
-    if (a.tipo === 'garante' && garanteElegivel(a)) list.push(options('qualificacao','Você pode conversar com o profissional e decidir sobre a contratação?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
-    return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal') && (q.key!=='tipo'||garanteElegivel(a)));
+    return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal'));
   }
   function budget(v) {
     if (['a combinar','avaliacao','preciso de uma avaliacao'].includes(norm(v))) return null;
@@ -92,8 +88,6 @@
     if (q.key==='data' && ['hoje','urgente'].includes(a.urgencia) && v!==today()) return 'Para este prazo, selecione a data de hoje ou altere o prazo.';
     if (q.key==='data' && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))) return 'Escolha hoje ou uma data futura.';
     if (q.key==='autorizacao' && v==='nao') return 'Sem autorização não podemos publicar nem compartilhar o pedido. Você pode voltar ou encerrar.';
-    if (q.key==='tipo' && v==='garante' && (a.intencao!=='contratar' || budget(a.orcamento)===null || a.materiais==='combinar')) return 'Para o Garante, confirme intenção de contratar, uma faixa de orçamento definida e quem fornece os materiais. Você pode voltar e ajustar ou escolher Tradicional.';
-    if (q.key==='qualificacao' && v!=='sim') return 'Volte e escolha Tradicional para continuar.';
     return '';
   }
   function validAll(a) { for (const q of questions(a)) {const e=validate(q,a[q.key],a);if(e) return e;} return ''; }
@@ -104,7 +98,7 @@
     const detalhes=answerLabel('detalhes');
     const escopo=answerLabel('escopo');
     if(detalhes.length<8||escopo.length<3)throw Error('Escolha o tipo e o tamanho do serviço antes de publicar.');
-    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
+    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:tipoPorOrcamento(a)};
   }
   function html() {
     return '<div class="view" data-qf-atendimento-layout><section class="card stack" style="max-width:620px;margin:0 auto;width:100%" data-qf-atendimento><h1 class="h2"><span style="color:#1769d5">Quem </span><span style="color:#f47b20">Faz</span> Serviços</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Seus dados ficam protegidos. Você decide se contrata.</p></section></div>';
@@ -142,13 +136,13 @@
     };
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.key==='uf'?area.querySelector('#at-'+q.key):(q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key));if(el)a[q.key]=q.key==='uf'?el.value.trim().toUpperCase():el.value.trim();}};
     const draw=()=>{
-      if (!garanteElegivel(a)) {a.tipo='tradicional';delete a.qualificacao;}
+      a.tipo=tipoPorOrcamento(a);delete a.qualificacao;
       // Preserva o atendimento na memória caso banners ou dados públicos remontem a tela.
       inMemoryDraft={answers:a,step,questionIndex,categoryId};
       const stage=stages(a)[step];
       questionIndex=Math.min(questionIndex,stage.questions.length-1);
       const active=stage.questions[questionIndex];
-      area.innerHTML='<style>[data-qf-atendimento-layout]{min-height:100dvh!important;display:flex!important;flex-direction:column;justify-content:center!important;padding:clamp(16px,3vh,36px) 12px!important;box-sizing:border-box;width:100%;margin:0 auto!important}[data-qf-atendimento-layout] [data-qf-atendimento]{width:100%;flex-shrink:0}@media(max-height:650px){[data-qf-atendimento-layout]{min-height:auto;justify-content:flex-start}}[data-qf-atendimento]{border-radius:22px!important;box-shadow:0 10px 32px rgba(22,82,154,.09);border:1px solid #e5ecf6!important}[data-qf-atendimento] h1{color:#1769d5;font-weight:800}[data-qf-atendimento] progress{accent-color:#f47b20;height:8px}[data-qf-atendimento] label.card{background:#fff!important;border:1.5px solid #dce6f3!important;border-radius:14px!important;box-shadow:none!important}[data-qf-atendimento] label.card:has(input:checked){border-color:#f47b20!important;background:#fff6ed!important}[data-qf-atendimento] .btn--primary{background:#f47b20!important;border-color:#f47b20!important;color:#fff!important;border-radius:12px!important;min-height:48px}[data-qf-atendimento] .btn--outline{border-radius:12px!important;min-height:48px}</style><p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+field(active)+(step===3?'<p>Contato protegido até o desbloqueio. Você decide se contrata.</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3&&questionIndex===stage.questions.length-1?'data-at-publish':'')+'>'+(step===3&&questionIndex===stage.questions.length-1?'Publicar grátis':'Continuar')+'</button></div></form>';
+      area.innerHTML='<style>[data-qf-atendimento-layout]{min-height:100dvh!important;display:flex!important;flex-direction:column;justify-content:center!important;padding:clamp(16px,3vh,36px) 12px!important;box-sizing:border-box;width:100%;margin:0 auto!important}[data-qf-atendimento-layout] [data-qf-atendimento]{width:100%;flex-shrink:0}@media(max-height:650px){[data-qf-atendimento-layout]{min-height:auto;justify-content:flex-start}}[data-qf-atendimento]{border-radius:22px!important;box-shadow:0 10px 32px rgba(22,82,154,.09);border:1px solid #e5ecf6!important}[data-qf-atendimento] h1{color:#1769d5;font-weight:800}[data-qf-atendimento] progress{accent-color:#f47b20;height:8px}[data-qf-atendimento] label.card{background:#fff!important;border:1.5px solid #dce6f3!important;border-radius:14px!important;box-shadow:none!important}[data-qf-atendimento] label.card:has(input:checked){border-color:#f47b20!important;background:#fff6ed!important}[data-qf-atendimento] .btn--primary{background:#f47b20!important;border-color:#f47b20!important;color:#fff!important;border-radius:12px!important;min-height:48px}[data-qf-atendimento] .btn--outline{border-radius:12px!important;min-height:48px}</style><p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+field(active)+(step===3?'<p><strong>'+ (a.tipo==='garante'?'Quem Faz Garante':'Tradicional') +'</strong> · '+(a.tipo==='garante'?'Com orçamento informado, seu pedido será exclusivo para 1 profissional.':'Receba contato de até 4 profissionais.')+' Você decide se contrata. Contato protegido até o desbloqueio.</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3&&questionIndex===stage.questions.length-1?'data-at-publish':'')+'>'+(step===3&&questionIndex===stage.questions.length-1?'Publicar grátis':'Continuar')+'</button></div></form>';
       area.querySelector('form').onsubmit=e=>{
         e.preventDefault();if(busy)return;area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
         const list=[active];
@@ -172,7 +166,7 @@
           let current=currentUser;
           if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;currentUser=current;}
           const c=category(a.servico),at=payload(a,id,c.id);
-          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
+          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:at.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
           root.navigate('/cliente/pedido/'+req.id,true);
@@ -207,5 +201,5 @@
       root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc((q.key==='orcamento'&&a.orcamento_faixa?budgetLabel(a.orcamento_faixa,a.servico):a[q.key])??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
     }catch(error){root.PU.toast(error.message,'danger');}finally{button.disabled=false;}
   });
-  return {questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install};
+  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install};
 });

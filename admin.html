@@ -4022,7 +4022,7 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
       else if (c.status === 'cancelado') hist.push({ texto: 'Chamado cancelado', quando: c.atualizado_em });
       if (revCli) hist.push({ texto: 'Cliente avaliou com ' + revCli.nota + ' estrela(s)', quando: revCli.criado_em });
       return {
-        id: c.id, atendimentoTipo: c.atendimento_tipo || null, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
+        id: c.id, atendimentoTipo: c.atendimento_tipo || null, atendimentoId: c.atendimento_id || null, maxOrcamentos: Number(c.max_orcamentos) || 4, clienteId: c.cliente_id, categoriaId: c.categoria, descricao: c.descricao || '', fotos: [], statusDb: c.status, titulo: c.titulo || '',
         endereco: { rua: c.endereco_completo || '', bairro: c.bairro || '', cidade: c.cidade || '', uf: c.uf || '' },
         cidadeId: cityId(c.cidade, c.uf), status: st, profissionalId: c.profissional_id || null,
         criadoEm: c.criado_em, atualizadoEm: c.atualizado_em || c.criado_em, prioridade: !!c.prioridade,
@@ -6995,6 +6995,7 @@ Screens.adminDashboardRender = function () {
   ];
   const TABS_SERVICOS = [
     { id: 'todos', label: 'Todos', filter: function () { return true; } },
+    { id: 'garante', label: 'Quem Faz Garante', filter: function (r) { return r.atendimentoTipo === 'garante'; } },
     { id: 'urgente', label: 'Urgente', filter: function (r) { return qfPedAtivo(r) && qfPedPrioridade(r); } },
     { id: 'novo', label: 'Pedido novo', filter: qfPedNovo },
     { id: 'sem', label: 'Sem desbloqueio', filter: function (r) { return qfPedAtivo(r) && !desbloqueiosAtivos(r).length; } },
@@ -7003,6 +7004,7 @@ Screens.adminDashboardRender = function () {
     { id: 'cancelado', label: 'Cancelado', filter: function (r) { return r.status === STATUS.CANCELADO; } },
     { id: 'pix', label: 'Aguardando Pix', filter: function (r) { return r.status === 'aguardando_pix'; } },
   ];
+  function qfPedLimite(r) { return r.atendimentoTipo === 'garante' ? 1 : Math.max(1,Math.min(4,Number(r.maxOrcamentos)||4)); }
   // Nomes antigos das abas (quadros do resumo) apontam para as novas categorias.
   const TAB_SERVICOS_ALIAS = { solicitados: 'sem', andamento: 'desb', concluidos: 'fechado', cancelados: 'cancelado' };
   function qfTabServicos(id) { return TAB_SERVICOS_ALIAS[id] || id; }
@@ -7103,7 +7105,7 @@ Screens.adminDashboardRender = function () {
       return '<div class="qf-ped__quem"><h3>Quem desbloqueou</h3><div class="qf-ped__vazio">' +
         (fechadoOuCancelado ? 'Ninguém desbloqueou' : 'Ninguém ainda' + (t0 ? ' · aberto há ' + qfDuracao(Date.now() - t0) : '')) + '</div></div>';
     }
-    return '<div class="qf-ped__quem"><h3>Quem desbloqueou · ' + desb.length + ' de 3</h3>' + desb.map(function (x, n) {
+    return '<div class="qf-ped__quem"><h3>Quem desbloqueou · ' + desb.length + ' de ' + qfPedLimite(r) + '</h3>' + desb.map(function (x, n) {
       const p = DB.profissionalById(x.profissionalId);
       const nome = (p && p.nome) || 'Profissional';
       const t = Date.parse(x.criadoEm) || 0;
@@ -7224,7 +7226,7 @@ Screens.adminDashboardRender = function () {
       const cancelado = r.status === STATUS.CANCELADO;
       const fechado = desb.some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1;
       const cor = cancelado ? 'can' : fechado ? 'fec' : desb.length ? 'des' : 'sem';
-      const vagas = [0, 1, 2].map(function (n) { return '<i' + (n < desb.length ? ' class="on"' : '') + '></i>'; }).join('');
+      const vagas = Array.from({length:qfPedLimite(r)}, function (_,i) { return i; }).map(function (n) { return '<i' + (n < desb.length ? ' class="on"' : '') + '></i>'; }).join('');
       return '<div class="card qf-ped qf-ped--' + cor + '">' +
         '<button type="button" class="qf-crud-open" data-nav="/admin/servicos/' + r.id + '">' +
           '<div class="qf-ped__topo">' +
@@ -7239,7 +7241,7 @@ Screens.adminDashboardRender = function () {
             '<span>Pedido <strong>' + PU.escapeHtml(qfDiaMes(r.criadoEm) + ' às ' + qfHora(r.criadoEm)) + '</strong></span>' +
             '<span>Cliente <strong>' + PU.escapeHtml((cliente || {}).nome || 'Não identificado') + '</strong></span>' +
             (lugar ? '<span>' + PU.escapeHtml(lugar) + '</span>' : '') +
-            '<span><span class="qf-vagas">' + vagas + '</span><strong>' + desb.length + ' de 3</strong> ' + (desb.length >= 3 ? '· lotado' : 'vagas') + '</span>' +
+            '<span><span class="qf-vagas">' + vagas + '</span><strong>' + desb.length + ' de ' + qfPedLimite(r) + '</strong> ' + (desb.length >= qfPedLimite(r) ? '· lotado' : 'vagas') + '</span>' +
           '</div>' +
         '</button>' +
         adminPedidoQuemHtml(r, cancelado || fechado) +
@@ -7280,7 +7282,7 @@ Screens.adminDashboardRender = function () {
         '</div>' +
 
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Quem desbloqueou' + (desb.length ? ' (' + desb.length + ' de 3)' : '') + '</h2></div>' +
+          '<div class="section-head"><h2 class="h3">Quem desbloqueou' + (desb.length ? ' (' + desb.length + ' de ' + qfPedLimite(r) + ')' : '') + '</h2></div>' +
           (desb.length ? desb.map(function (x) {
             const p = DB.profissionalById(x.profissionalId);
             return '<div class="card stack--sm" style="border-left:4px solid var(--success-600,#16a34a);">' +
@@ -7299,14 +7301,14 @@ Screens.adminDashboardRender = function () {
         '<div class="section">' +
           '<div class="section-head"><h2 class="h3">Detalhes do pedido</h2></div>' +
           '<div class="card stack--sm">' +
-            (r.atendimentoTipo ? rowInfo('Atendimento automático', r.atendimentoTipo === 'garante' ? 'Quem Faz Garante · 1 profissional · 4× o desbloqueio normal' : 'Tradicional · até 4 profissionais') : '') +
+            (r.atendimentoTipo ? rowInfo('Modalidade do pedido', r.atendimentoTipo === 'garante' ? 'Quem Faz Garante · 1 profissional · 4× o desbloqueio normal' : 'Tradicional · até 4 profissionais') : '') +
             rowInfo('Serviço solicitado', pedidoTitulo) +
             rowInfo('Categoria', cat ? cat.nome : '—') +
             rowInfo('Local', endereco) +
             rowInfo('Urgência', admPrazoPedido(r).txt) +
             rowInfo('Criado em', PU.formatDateTime(r.criadoEm)) +
             rowInfo('Última atualização', PU.formatDateTime(r.atualizadoEm || r.criadoEm)) +
-            (r.atendimentoTipo ? '<button class="btn btn--outline" type="button" data-at-admin="' + PU.escapeHtml(r.id) + '">Ver respostas e autorização</button>' : '') +
+            (r.atendimentoId ? '<button class="btn btn--outline" type="button" data-at-admin="' + PU.escapeHtml(r.id) + '">Ver respostas e autorização</button>' : '') +
           '</div>' +
           '<div class="card" style="margin-top:10px;"><div class="text--sm text--secondary" style="margin-bottom:5px;">Descrição do cliente</div><p class="text text--sm" style="white-space:pre-wrap;">' + PU.escapeHtml(r.descricao || 'Sem descrição informada.') + '</p></div>' +
         '</div>' +
@@ -8739,7 +8741,7 @@ Screens.adminDashboardRender = function () {
     if (r.status === STATUS.CANCELADO) return { id: 'cancelado', rotulo: r.desfecho === 'nao_fechado' ? 'Não fechou' : r.desfecho === 'sem_retorno' ? 'Sem retorno' : 'Cancelado' };
     if (desb.some(function (x) { return x.desfecho === 'fechado'; }) || ST_CONCLUIDO.indexOf(r.status) !== -1) return { id: 'fechado', rotulo: 'Fechado' };
     if (desb.length >= 3) return { id: 'cheio', rotulo: 'Vagas preenchidas' };
-    if (desb.length) return { id: 'desbloqueado', rotulo: 'Desbloqueado · ' + desb.length + ' de 3' };
+    if (desb.length) return { id: 'desbloqueado', rotulo: 'Desbloqueado · ' + desb.length + ' de ' + (r.atendimentoTipo === 'garante' ? 1 : (Number(r.maxOrcamentos)||4)) };
     return { id: 'aguardando', rotulo: 'Aguardando' };
   }
   const ADM_SITUACOES = [['todas', 'Todas'], ['aguardando', 'Aguardando'], ['pix', 'Aguardando Pix'], ['desbloqueado', 'Desbloqueado'], ['cheio', 'Vagas preenchidas'], ['fechado', 'Fechado'], ['cancelado', 'Cancelado']];
@@ -10475,7 +10477,7 @@ Screens.adminDashboardRender = function () {
 })(window);
 </script>
 
-<script src="qf-atendimento.js?v=2"></script>
+<script src="qf-atendimento.js?v=20261022-garante"></script>
 </body>
 </html>
 

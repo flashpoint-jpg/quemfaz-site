@@ -11,9 +11,11 @@
 
   function pedidoHtml(p) {
     var valor = p.modalidade === 'valor_definido';
+    var pedido = global.DB && global.DB.requestById ? global.DB.requestById(p.id) : null;
+    var garante = p.atendimento_tipo === 'garante' || !!(pedido && pedido.atendimentoTipo === 'garante');
     var h = '<div class="card card--tight" data-qf-admin-pedido="' + esc(p.id) + '">' +
       '<div class="row-between"><strong>' + esc(String(p.categoria || '').replace(/^cat_/, '').replace(/_/g, ' ')) + ' · ' + esc(String(p.id).slice(0, 8)) + '</strong>' +
-      '<span class="badge ' + (valor ? 'badge--success' : '') + '">' + (valor ? 'Valor definido' : 'Tradicional') + '</span></div>' +
+      '<span class="badge ' + (garante ? 'qf-garante-badge' : (valor ? 'badge--success' : '')) + '">' + (garante ? 'QUEM FAZ GARANTE' : (valor ? 'Valor definido' : 'Tradicional')) + '</span></div>' +
       '<div class="text--sm text--secondary">' + esc(p.cidade || '') + (p.uf ? '/' + esc(p.uf) : '') + ' · ' + esc(p.status) + ' · ' + esc(dt(p.criado_em)) + '</div>';
     if (valor) h += '<div class="text--sm">Valor do cliente: <strong>' + esc(brl(p.valor_oferecido_centavos)) + '</strong> · ' + (p.material_incluso ? 'material incluso' : 'material à parte') + '</div>';
     (p.desbloqueios || []).forEach(function (d) {
