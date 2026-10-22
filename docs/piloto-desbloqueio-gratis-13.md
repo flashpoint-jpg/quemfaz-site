@@ -24,3 +24,11 @@ Estado: especificação de implementação; **não ativado em produção**.
 
 ## Próxima etapa técnica
 Adicionar tabelas de acordos, aceite do cliente, eventos financeiros e repasses com RLS; RPCs transacionais; interface de escolha por pedido; páginas públicas de confirmação por token; integração com provedor de pagamentos; testes E2E em sandbox.
+## Carteirinha digital obrigatória e comunicação
+- Avisar no painel profissional sobre a nova modalidade gratuita com comissão de 13%, com aceite explícito das condições antes do primeiro uso.
+- Para optar pelo desbloqueio gratuito, o profissional deve possuir carteirinha digital ativa no aplicativo; não é necessário imprimir.
+- Exibir a carteirinha com QR Code na tela do celular ao cliente, presencialmente, para identificação e acesso ao fluxo seguro de confirmação da execução.
+- Oferecer link seguro como alternativa à leitura do QR Code, sem exigir impressão nem instalação de aplicativo pelo cliente.
+- Não usar a simples leitura do QR Code como prova automática de execução: exigir confirmação explícita do cliente e validação no servidor.
+- O desbloqueio tradicional continua disponível mesmo para profissionais que ainda não tenham aderido à modalidade gratuita.
+- Registrar aviso e aceite no backend; push é complemento, não substitui registro persistido no painel.
