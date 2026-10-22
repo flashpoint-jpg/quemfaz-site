@@ -1,0 +1,13 @@
+QuemFaz V11.93 — padronização visual (prévia para aprovação; não publicada em produção)
+
+- Cabeçalho único azul-marinho (#07162F) com faixa laranja em todas as telas: início, cliente, profissional, telas internas e páginas de privacidade/excluir conta.
+- Logo oficial para fundo escuro (assets/qf-logo-branco-20261014.webp) no topo de cliente e profissional; nada foi redesenhado.
+- Telas de aba: logo no topo e o nome da tela logo abaixo (antes o nome era cortado pelo botão "Instalar app"). Telas internas: voltar + título.
+- "Instalar app", sino e ajuda na mesma linha, ícones brancos. Em telas com menos de 390 px o "Instalar app" vira só o ícone.
+- Menu inferior igual para início, cliente e profissional: barra branca encaixada embaixo, respeita a barra do Android, item ativo em azul, botão central laranja "Fazer pedido". No computador o menu continua no topo, agora azul-marinho com logo branco.
+- Cores únicas: azul #1764D8 nos botões principais e títulos, laranja #FF7900 nos destaques e no pedido, fundo #F5F6FA, texto secundário #344054. Verde ficou só para status positivo (online, concluído, aprovado) e WhatsApp.
+- Botões laranja com texto azul-marinho (contraste 6,9:1; branco sobre #FF7900 fica abaixo do mínimo de leitura).
+- Fonte Inter. Cartões, campos, botões e selos com o mesmo arredondamento, sombra e altura.
+- Rodapé: ícones oficiais do Instagram e do Facebook com o nome ao lado, área inteira clicável, abrindo os perfis oficiais. Também no fim do Perfil (cliente e profissional). Links do rodapé sem o "·" sobrando.
+- Componentes compartilhados em QFUI (appHeader, bottomNavItem, pageTitle, primaryButton, secondaryButton, serviceCard, statusBadge, notificationBadge, formField, pageContainer, modal, socialLinks) e tokens no bloco <style id="qf-design-system">.
+- Não mudou: pedidos, desbloqueio, pagamentos, carteira, notificações, localização, Supabase, Meta/Google, links oficiais e painel admin.

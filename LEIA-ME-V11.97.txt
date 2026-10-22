@@ -1,0 +1,5 @@
+QuemFaz V11.97 — chamada da tela inicial
+
+- Título: "Precisando de um profissional perto de você?" (antes: "Conte o que precisa e veja quem chama você.").
+- Campo: "Qual serviço você precisa?". Linha embaixo do botão: "Sem cadastro obrigatório · Pedido gratuito".
+- Celular de tela baixa (até 760px de altura): espaços menores para o "Pedir grátis" não ficar atrás do menu de baixo. Foto e rostos não mudam.

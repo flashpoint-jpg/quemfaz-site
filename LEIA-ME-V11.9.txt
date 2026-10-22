@@ -1,0 +1,25 @@
+QuemFaz 11.9.0 — chamado chega em quem está offline (cascata)
+==============================================================
+
+O QUE MUDOU
+- Cascata do chamado (roda no servidor: pg_cron "qf-cascata-chamados" a cada 10 s + edge quemfaz-push v20):
+  Etapa 1: push + toque só para quem está ONLINE (igual antes).
+  Etapa 2: X s sem aceite (padrão 60) -> push + toque para TODOS os profissionais ativos da região/categoria,
+           online ou offline (função qf_cascata_destinatarios).
+  Etapa 3: Y min sem aceite (padrão 5) -> o chamado entra em "Chamados sem resposta" no admin, com botão de
+           WhatsApp por profissional (mensagem pronta + link direto do chamado), e o admin recebe push.
+  Quando alguém aceita (desbloqueia), a cascata para na hora; a etapa do aceite fica em qf_chamado_cascata.
+- X e Y: painel admin > "Cascata do chamado" (qf_config.cascata_chamados). Sem deploy.
+- Profissional offline que foi avisado (ou da região, a partir da etapa 2) vê e pode aceitar o chamado
+  (qf_listar_chamados_disponiveis / qf_desbloquear_chamado). Selfie e saldo continuam obrigatórios.
+- Online automático: ao abrir o app o profissional fica online sozinho, a menos que tenha tocado em
+  "ficar offline" (coluna qf_profissionais.offline_manual). Heartbeat a cada 60 s e envio de posição
+  reafirmam online=true (RPC qf_profissional_heartbeat). Nada desliga ninguém por tempo.
+- Link do chamado sem sessão: abre o login do profissional e, depois de entrar, vai direto para o chamado.
+
+NÃO MUDOU
+- Preços, créditos, bônus (R$ 25 do cadastro), Efí/pagamentos, APK.
+
+ARQUIVOS DO BANCO
+- supabase/2026-09-26-cascata-chamados.sql (já aplicado no projeto dczlyrgnzlxmzghzaooz)
+- supabase/functions/quemfaz-push/index.ts (publicado como v20)

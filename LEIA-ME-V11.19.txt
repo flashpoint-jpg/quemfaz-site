@@ -1,0 +1,7 @@
+QuemFaz V11.19.0 — Bônus para todos (painel admin)
+
+- Nova seção "Bônus para todos" no painel, logo abaixo de "Aviso geral na tela".
+- "Ver quem falta receber" mostra quantos profissionais ainda não receberam o bônus e a lista.
+- "Enviar" manda os créditos de uma vez só para quem falta. Quem já recebeu fica de fora.
+- Opções: R$ 25 do cadastro (bônus de lançamento) ou outro bônus com nome e valor (R$ 1 a R$ 100).
+- Banco: supabase/2026-10-02-bonus-em-massa.sql (já aplicada).

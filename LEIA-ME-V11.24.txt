@@ -1,0 +1,22 @@
+QuemFaz V11.24.0 — Tela inicial e "Pedir serviço" no visual novo
+
+TELA INICIAL
+- A foto dos profissionais e a busca automática ("Do que você precisa?" + Buscar + sugestões)
+  ficam exatamente como eram. Testado: digitar "montador" sugere e leva ao pedido.
+- Topo só com "Instalar app" e "Entrar". A ajuda ("?") foi para o rodapé, como "Ajuda".
+- Linha "Pedir é grátis. O QuemFaz acha a categoria sozinho." embaixo da busca.
+- Faixa de trena fechando o bloco azul.
+- "Como funciona" em etiqueta com picote; passo 3 agora é "Ele chama você no WhatsApp".
+- "Sou profissional" virou botão grande, com os R$ 25 em créditos (saiu de dentro do bloco azul).
+- "Tem uma empresa?" e "Preços, planos e dúvidas" logo abaixo.
+
+PEDIR SERVIÇO
+- Passos no topo (1. Serviço, 2. Detalhes, 3. Contato) e a faixa de trena.
+- Etiqueta com o serviço escolhido e, abaixo do picote, "O que precisa ser feito?".
+- Depois: cidade, WhatsApp e nome. Mesmos campos e mesmas validações.
+- Aviso curto embaixo do WhatsApp: "O profissional chama você neste número. Só ele vê."
+- Anúncios patrocinados passam para depois do botão "Publicar pedido grátis".
+- Saiu a faixa "Receba até 5 orçamentos grátis" (não vale mais: um profissional por pedido).
+
+BANCO
+- Nada a aplicar.

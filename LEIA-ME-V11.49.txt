@@ -1,0 +1,20 @@
+QuemFaz site 11.49 — plano Premium e escolha do plano no cadastro do profissional
+
+BANCO (já aplicado no Supabase em 10/10/2026: supabase/2026-10-10-plano-premium.sql)
+- Novo plano Premium no catálogo: R$ 199,90 · 60 chamados · 30 dias (R$ 3,33 por chamado).
+  A compra e a ativação usam o mesmo caminho do Mensal e do Pro.
+- Anúncio incluído: com o Premium valendo, o 1º anúncio "local" do profissional entra pago
+  (R$ 0,00), sem Pix. Continua indo para aprovação no painel. Um anúncio por plano comprado.
+- Selo Premium: qf_profissionais_premium(ids) diz quem tem Premium valendo.
+- Testado no banco com desfazer automático: plano de 60 chamados criado ao aprovar o
+  pagamento, 1º anúncio incluído (R$ 0), 2º anúncio cobrado (R$ 79), selo ativo.
+
+CADASTRO DO PROFISSIONAL
+- Nova Etapa 5 de 5 "Escolha seu plano": Avulso, Mensal, Pro e Premium (marcado, selo
+  "MAIS COMPLETO"), com benefícios e tabela de economia. O botão segue a escolha.
+- Plano pago: a conta é criada e a Carteira abre o pagamento do plano (Pix, cartão ou boleto).
+  Avulso ou "Prefiro escolher depois": conta criada sem plano.
+
+APP
+- Premium na Carteira, em "Como funciona" e na tela Planos. Selo "Premium" no perfil do
+  profissional e no cartão que o cliente vê. Painel: receita mostra "Plano Premium".

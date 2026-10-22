@@ -1,0 +1,35 @@
+QuemFaz V11.28.0 — Até 3 profissionais por pedido, com as vagas à vista
+
+REGRA
+- Cada pedido pode ser desbloqueado por até 3 profissionais (antes: 1, que reservava o pedido).
+- O 4º profissional vê "As 3 vagas deste pedido já foram preenchidas" e não é cobrado.
+- "Fechei o serviço": conclui o pedido. Os outros profissionais passam a ver "Não selecionado".
+- "Não fechei": vale só para quem respondeu. O pedido segue para os outros e só é encerrado
+  quando as 3 vagas foram usadas e ninguém mais está em conversa.
+- Sem resposta por 7 dias: o pedido encerra sozinho, como antes.
+- Sem devolução, como antes.
+
+PROFISSIONAL — as vagas aparecem ANTES do desbloqueio
+- Cartão do pedido (Início e Pedidos perto de você): selo "N de 3 vagas ocupadas".
+- Tela da oportunidade: bloco grande no topo com as vagas e a explicação.
+- Confirmação do desbloqueio: "Este pedido aceita até 3 profissionais e N já desbloquearam."
+- Depois de desbloquear: quantos profissionais desbloquearam o mesmo pedido.
+
+CLIENTE
+- Um cartão para cada profissional que desbloqueou, com "Conversar" e "Fechei com este".
+- Saiu o botão "Ainda não" (voltar ao portfólio): o pedido já continua disponível enquanto
+  houver vaga.
+
+PAINEL
+- Últimos pedidos e detalhe do serviço mostram todos os que desbloquearam, o valor em
+  créditos e o resultado de cada um.
+- "Está dando certo?": total de desbloqueios e conta por profissional considerando cada um.
+- "Desbloqueios com créditos" soma todos os desbloqueios do pedido.
+
+BANCO
+- supabase/2026-10-05-ate-3-profissionais-por-pedido.sql (já aplicado).
+- Também resolve o defeito do "continuar procurando": havia um índice único que impedia um
+  segundo desbloqueio no mesmo pedido.
+
+TESTE
+- tests/ate-3-por-pedido.test.cjs

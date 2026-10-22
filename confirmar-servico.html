@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Confirmar serviço | Quem Faz Serviços</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Arial,sans-serif;color:#0c2448;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:#f4f6fa;min-height:100dvh}
+header{background:#fff;border-bottom:1px solid #e5eaf2;text-align:center;padding:18px}
+header img{height:54px;width:160px;object-fit:contain}
+main{width:min(100%,460px);padding:22px 17px 40px;margin:0 auto}
+.card{background:#fff;border:1px solid #e5eaf2;border-radius:23px;padding:24px 18px;box-shadow:0 6px 23px #0e2b4c0d;text-align:center;margin-bottom:16px}
+.avatar{width:92px;height:92px;border-radius:100px;background:#ecf0f6;margin:0 auto 12px;overflow:hidden;display:grid;place-items:center;font-size:34px;font-weight:900}
+.avatar img{height:100%;width:100%;object-fit:cover}
+h1{font-size:22px;line-height:1.25;margin:3px 0 6px}
+p{color:#586377;line-height:1.5}
+.opt{display:block;width:100%;text-align:left;border:2px solid #cbd4e1;background:#fff;border-radius:14px;padding:14px;margin:10px 0;font:inherit;font-weight:750;font-size:16px;cursor:pointer;color:#0c2448}
+.opt[aria-pressed="true"]{border-color:#ff790a;background:#fff4e8}
+.stars{display:flex;justify-content:space-between;max-width:340px;margin:8px auto}
+.stars button{appearance:none;cursor:pointer;border:0;background:transparent;color:#ff790a;font-size:42px;line-height:1;padding:4px 0;width:20%;min-height:52px}
+textarea{display:block;width:100%;min-height:90px;border:1px solid #cbd4e1;border-radius:13px;padding:12px;font:inherit;font-size:15px;margin-top:10px}
+button.go{width:100%;border:0;border-radius:13px;min-height:54px;background:#ff790a;color:#101d38;font:inherit;font-weight:850;font-size:16px;margin-top:16px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.erro{color:#a12929;font-weight:650;min-height:22px;margin-top:10px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><img src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"></header>
+<main id="app"><div class="card"><p id="carregando">Carregando…</p></div></main>
+<script src="/vendor/supabase-2.117.2.js"></script>
+<script src="/play-links.js"></script>
+<script src="/qf-pos-avaliacao.js?v=1"></script>
+<script>
+/* Confirmação do serviço pelo CLIENTE. O link/QR leva um código secreto de uso único (no # da URL, que não vai para o servidor).
+   Mesmo com o código, só a conta do cliente dono do pedido consegue responder (o banco confere auth.uid()). */
+(function(){
+  'use strict';
+  var app=document.getElementById('app');
+  var hash=location.hash||'';
+  var mt=/(?:^|[#&])t=([0-9a-f]{64})(?:&|$)/i.exec(hash);
+  var mp=/(?:^|[#&])p=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:&|$)/i.exec(hash);
+  var token=mt?mt[1].toLowerCase():null, cart=mp?mp[1].toLowerCase():null;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function tela(h){app.innerHTML=h;}
+  function msg(t,extra){tela('<div class="card"><h1>'+esc(t)+'</h1>'+(extra||'')+'</div>');}
+  if(!token&&!cart){msg('Link inválido','<p>Peça ao profissional para solicitar a baixa de novo.</p>');return;}
+  try{history.replaceState(null,'',location.pathname);}catch(_){}
+  if(!window.supabase){msg('Sem conexão','<p>Verifique a internet e abra o link de novo.</p>');return;}
+  var client=supabase.createClient('https://dczlyrgnzlxmzghzaooz.supabase.co','sb_publishable_-WiYw_1QTzW0l9o0d4ZU9Q_kSadNA2A',{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  var nota=0, resposta=null, enviando=false;
+
+  function entrar(){
+    try{sessionStorage.setItem('qf_confirmar_pendente',JSON.stringify({t:token,p:cart}));}catch(_){}
+    msg('Entre na sua conta','<p>Para confirmar, entre no Quem Faz com a mesma conta do cliente que fez o pedido. Depois, abra este link de novo.</p><a class="go" style="display:block;text-decoration:none;line-height:54px" href="/">Abrir o Quem Faz</a>');
+  }
+
+  async function iniciar(){
+    var s=await client.auth.getSession();
+    if(!s.data||!s.data.session){
+      // Volta do login: o código fica só nesta aba.
+      if(!token&&!cart){try{var r=JSON.parse(sessionStorage.getItem('qf_confirmar_pendente')||'null');if(r){token=r.t;cart=r.p;}}catch(_){}}
+      return entrar();
+    }
+    var r=await client.rpc('qf_cliente_conclusoes_pendentes',{p_token:token,p_carteirinha:cart});
+    if(r.error||!r.data||!r.data.ok){return msg('Não foi possível abrir','<p>Tente novamente em instantes.</p>');}
+    var itens=r.data.itens||[];
+    if(!itens.length){return msg('Nada para confirmar','<p>Este pedido não é da sua conta, o link já foi usado ou venceu. Peça ao profissional uma nova solicitação.</p>');}
+    mostrar(itens[0]);
+  }
+
+  function mostrar(it){
+    var ini=esc((it.profissional||'?').trim().charAt(0).toUpperCase());
+    tela('<div class="card">'+
+      '<div class="avatar">'+(it.foto?'<img alt="" src="'+esc(it.foto)+'">':ini)+'</div>'+
+      '<h1>Como foi o serviço?</h1><p>'+esc(it.profissional||'Profissional')+(it.cidade?' · '+esc(it.cidade):'')+'</p>'+
+      '<div role="group" aria-label="Resultado do serviço">'+
+        '<button class="opt" type="button" data-r="concluido" aria-pressed="false">Serviço concluído</button>'+
+        '<button class="opt" type="button" data-r="com_problema" aria-pressed="false">Serviço realizado com problema</button>'+
+        '<button class="opt" type="button" data-r="nao_realizado" aria-pressed="false">Serviço não realizado</button></div>'+
+      '<div id="nota-box" hidden><p>Dê uma nota ao profissional</p><div class="stars" role="radiogroup" aria-label="Nota de 1 a 5">'+
+        [1,2,3,4,5].map(function(n){return '<button type="button" data-n="'+n+'" aria-label="'+n+' estrela'+(n>1?'s':'')+'">☆</button>';}).join('')+'</div></div>'+
+      '<textarea id="txt" maxlength="500" placeholder="Comentário (opcional)" hidden></textarea>'+
+      '<div class="erro" id="erro" role="alert"></div>'+
+      '<button class="go" id="enviar" type="button">Enviar</button></div>');
+    var box=document.getElementById('nota-box'), txt=document.getElementById('txt'), erro=document.getElementById('erro');
+    app.querySelectorAll('[data-r]').forEach(function(b){b.onclick=function(){
+      resposta=b.getAttribute('data-r');
+      app.querySelectorAll('[data-r]').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false');});
+      box.hidden=resposta!=='concluido'; txt.hidden=false;
+      txt.placeholder=resposta==='com_problema'?'Conte o que aconteceu (obrigatório)':(resposta==='nao_realizado'?'Conte o motivo (opcional)':'Comentário (opcional)');
+    };});
+    app.querySelectorAll('[data-n]').forEach(function(b){b.onclick=function(){
+      nota=Number(b.getAttribute('data-n'));
+      app.querySelectorAll('[data-n]').forEach(function(x){x.textContent=Number(x.getAttribute('data-n'))<=nota?'★':'☆';});
+    };});
+    document.getElementById('enviar').onclick=async function(){
+      if(enviando)return; erro.textContent='';
+      if(!resposta){erro.textContent='Escolha como foi o serviço.';return;}
+      if(resposta==='concluido'&&!(nota>=1&&nota<=5)){erro.textContent='Dê uma nota de 1 a 5 estrelas.';return;}
+      var texto=txt.value.trim();
+      if(resposta==='com_problema'&&texto.length<5){erro.textContent='Conte o que aconteceu.';return;}
+      enviando=true; this.disabled=true;
+      var out=await client.rpc('qf_conclusao_responder',{
+        p_conclusao_id:it.conclusao_id,p_resposta:resposta,p_nota:resposta==='concluido'?nota:null,
+        p_comentario:resposta==='concluido'?(texto||null):null,
+        p_problema:resposta==='concluido'?null:(texto||null),p_token:token});
+      enviando=false; this.disabled=false;
+      var d=out.data;
+      if(out.error||!d||!d.ok){erro.textContent={ja_respondida:'Este serviço já foi respondido.',expirada:'Este link venceu. Peça uma nova solicitação.',sem_permissao:'Esta conta não pode confirmar este serviço.'}[d&&d.reason]||'Não foi possível enviar agora. Tente novamente.';return;}
+      tela('<div class="card" id="pos"></div>');
+      if(window.QFPosAvaliacao)window.QFPosAvaliacao.mostrar(document.getElementById('pos'),resposta);
+      else msg('Obrigado!','<p>Sua resposta foi registrada.</p>');
+    };
+  }
+  iniciar().catch(function(){msg('Não foi possível abrir','<p>Tente novamente em instantes.</p>');});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+QuemFaz 11.71 — cliente escolhe quantos orçamentos quer (1 a 8) e pedido em telas separadas
+
+PEDIDO DO CLIENTE
+- A etapa 2 virou três telas, cada uma com pouca coisa:
+  Etapa 2 de 4: onde é o serviço (cidade, bairro, GPS).
+  Etapa 3 de 4: "Pra quando você precisa?" e "Quantos orçamentos você quer receber?" abertos em botões (1 a 8).
+  Última etapa: "Para o profissional entrar em contato" (nome e WhatsApp).
+- O aviso do WhatsApp e o botão final acompanham a escolha ("No máximo 5 profissionais verão seu número",
+  "Receber 5 orçamentos grátis"). Sem escolha, vale 3.
+- Na tela do pedido: "Você pediu até N orçamentos", com uma barrinha por vaga e "X de N profissionais já pegaram".
+
+PROFISSIONAL
+- Antes de desbloquear: faixa "Escolha do cliente: até N orçamentos · restam X vagas" e aviso vermelho
+  "O desbloqueio não é devolvido se o cliente não te responder ou escolher outro profissional".
+- A confirmação do desbloqueio diz "você será o Yº de N" e "Sem devolução".
+
+BANCO
+- qf_chamados.max_orcamentos (1 a 8, padrão 3). Todas as regras de vaga passam a usar o número do pedido.
+- Pedidos antigos e os feitos pela calculadora continuam com 3.
+
+TAMBÉM
+- Link do "Esqueci minha senha" pedido de dentro do app Android abre o site (antes abria "localhost").

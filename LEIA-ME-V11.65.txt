@@ -1,0 +1,10 @@
+QuemFaz 11.65 — serviço digitado com outras palavras cai no serviço certo (banco)
+
+- Antes: o cliente escrevia "Pinturas" e o sistema criava um serviço novo, sem profissional; o pedido não
+  era avisado a ninguém, mesmo havendo 76 pintores.
+- Agora o banco reconhece o serviço pelo que foi escrito (pintura, pintar, elétrica, chuveiro, vazamento,
+  faxina, sofá, ar-condicionado...) e grava o pedido no serviço oficial. Vale para qualquer caminho de entrada.
+- Profissional que se cadastrou com serviço digitado ("Pintor residencial", "Elétrica") também passa a ter o
+  serviço oficial equivalente, sem perder o que digitou. 24 profissionais já cadastrados foram ajustados.
+- Serviço que não se parece com nenhum oficial (ex.: Cartomante) continua como foi digitado.
+- Arquivo: supabase/2026-10-10-servico-digitado-vira-servico-oficial.sql (já aplicado).

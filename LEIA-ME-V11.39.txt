@@ -1,0 +1,30 @@
+QuemFaz 11.39.0 — Tela inicial com mais conteúdo (computador e celular)
+
+Motivo: no computador a coluna da direita ficava quase vazia e a página passava pouca confiança.
+
+Computador (a partir de 900px):
+- Menu no topo (a partir de 1180px): Como funciona, Serviços, Benefícios, Recrutamento,
+  Baixar o app e Quem somos. Cada item desce até a seção.
+- Coluna da direita: "Como funciona" em 3 passos, "Serviços mais pedidos" (9 botões que abrem
+  o pedido com o serviço escolhido) e linha de confiança.
+- Seções de largura inteira: "O que o QuemFaz oferece" (cliente e profissional),
+  "Recrutamento" para empresas em 4 passos, "Instale o app" e "Quem somos".
+- A foto da esquerda deixou de acompanhar a rolagem, por causa das seções abaixo dela.
+
+Celular: abaixo de "Quanto custa?", "Como funciona" em 3 passos e quatro itens recolhidos
+(Benefícios para o cliente, Sou profissional, Recrutamento para empresas, Quem somos).
+Foto, título, busca e "Pedir grátis" não mudaram.
+
+Busca: "limpeza de sofá" agora leva a "Limpeza de estofados e tapetes" (antes caía em Diarista).
+
+Google Play: a faixa "Instale o app" usa o "Instalar app" do próprio site, porque a página
+br.app.quemfaz na loja ainda não abre para o público. Quando abrir, trocar o botão em
+deskWideInner() pelo link da loja (window.QF_PLAY.LINK_DA_LOJA).
+
+Recrutamento: sem preços na página, para não ficarem desatualizados.
+
+Peso: o conteúdo abaixo da primeira tela entra depois que o app carrega (data-home-lazy),
+mantendo o HTML abaixo de 200 KB.
+
+Validação: npm test (61 testes, 1 novo em tests/home-conteudo.test.cjs). Conferido no navegador
+em 320, 390, 1024, 1366 e 1920px: menu, botões de serviço, itens recolhidos e instalação.

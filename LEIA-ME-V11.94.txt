@@ -1,0 +1,6 @@
+QuemFaz V11.94 — planos com menos desconto e textos legíveis na oportunidade de serviço
+
+- Planos (mesmo preço, menos chamados): Mensal R$ 49,90 = 7 chamados (R$ 7,13 cada), Pro R$ 99,90 = 15 (R$ 6,66), Premium R$ 199,90 = 35 (R$ 5,71). Antes: 10, 25 e 60 chamados.
+- Valores trocados no catálogo do Supabase (qf_planos_catalogo), que é a fonte usada no app, no painel e na ativação do plano.
+- Exemplo "Pegue X chamados e economize" usa o número de chamados do plano Mensal (não fica mais fixo em 10).
+- Oportunidade de serviço: frase "O WhatsApp do cliente aparece depois do desbloqueio · sem devolução" em branco (antes cinza sobre azul) e "Sem devolução" em uma linha normal (antes quebrava letra por letra).
