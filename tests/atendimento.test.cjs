@@ -101,7 +101,7 @@ test('quatro etapas: avaliação sem preço, faixas por profissão e materiais p
  assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Pedreiro'));
  assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Eletricista'));
  for(const servico of ['Faxina','Pedreiro','Eletricista']){
-  for(const [orcamento] of A.budgetChoices(servico))assert.equal(A.validAll({...a,servico,detalhes:servico==='Faxina'?'comum':servico==='Pedreiro'?'reparo':'tomada',orcamento}),'');
+  for(const [orcamento] of A.budgetChoices(servico))assert.equal(A.validAll({...a,servico,detalhes:servico==='Faxina'?'comum':servico==='Pedreiro'?'reparo':'tomada',escopo:servico==='Faxina'?'3a4':servico==='Pedreiro'?'pequena':'um',orcamento}),'');
  }
  assert.equal(A.validAll({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined}),'');
  assert.equal(A.payload({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
