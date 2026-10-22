@@ -5,6 +5,8 @@
   else root.QFAtendimento = api;
 })(typeof window !== 'undefined' ? window : globalThis, function (root) {
   'use strict';
+  // Respostas pessoais ficam somente na memória privada deste módulo, nunca em window ou storage.
+  let inMemoryDraft=null;
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const options = (key, label, choices) => ({key, label, choices});
@@ -115,7 +117,7 @@
     if(!id) {id=root.crypto.randomUUID();try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
-    const oldDraft=root.__qfAtendimentoInMemory;
+    const oldDraft=inMemoryDraft;
     const homeService=root.QFHomeDraft&&root.QFHomeDraft.service;
     const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService)));
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
@@ -132,7 +134,7 @@
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.key==='uf'?area.querySelector('#at-'+q.key):(q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key));if(el)a[q.key]=q.key==='uf'?el.value.trim().toUpperCase():el.value.trim();}};
     const draw=()=>{
       // Preserva o atendimento na memória caso banners ou dados públicos remontem a tela.
-      root.__qfAtendimentoInMemory={answers:a,step,questionIndex,categoryId};
+      inMemoryDraft={answers:a,step,questionIndex,categoryId};
       const stage=stages(a)[step];
       questionIndex=Math.min(questionIndex,stage.questions.length-1);
       const active=stage.questions[questionIndex];
@@ -162,7 +164,7 @@
           const c=category(a.servico),at=payload(a,id,c.id);
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:a.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
-          root.__qfAtendimentoInMemory=null;
+          inMemoryDraft=null;
           root.navigate('/cliente/pedido/'+req.id,true);
         }catch(e){area.querySelector('[data-at-error]').textContent=e.message||'Não foi possível publicar. Tente novamente; seu pedido não será duplicado.';}
         finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
