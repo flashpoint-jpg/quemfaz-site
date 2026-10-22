@@ -12,6 +12,7 @@
 <style>
 html.qf-inapp{--safe-bottom:0px}
 @media (max-width:899px){html.qf-inapp .qf-home-nav,html.qf-inapp .tabbar{bottom:7px!important}html.qf-inapp body .qf-update-banner.qf-update-float{bottom:102px!important}}
+.qf-garante-badge{display:inline-flex;align-items:center;width:fit-content;max-width:100%;box-sizing:border-box;padding:6px 10px;margin:6px 0;border-radius:8px;background:#fff3e8;color:#174878;border:1px solid #ed9a4d;font-size:12px;font-weight:800;line-height:1.4;letter-spacing:.03em;white-space:normal;}
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
@@ -13342,6 +13343,7 @@ alt=""></noscript>
     const urgente = global.QFUrgencia.ehUrgente(req);
     return (
       '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + (urgente ? ' qf-urgent-card' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
+        (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
@@ -13431,6 +13433,7 @@ alt=""></noscript>
     const primeiraGratis = false;
     return (
       '<div class="view">' +
+        (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
         '<div class="row-between">' +
           '<div class="row"><div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h2">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--secondary">Solicitado ' + PU.timeAgo(req.criadoEm) + '</div></div></div>' +
           (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') +
@@ -13550,6 +13553,7 @@ alt=""></noscript>
     const cliente = DB.clienteById(req.clienteId);
     return (
       '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/profissional/pedido/' + req.id + '">' +
+        (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
         '<div class="row-between">' +
           '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cliente || {}).nome || '') + '</div></div></div>' +
@@ -13575,6 +13579,7 @@ alt=""></noscript>
       : global.QFUI.primeiroContatoMsg(cliente, user, cat);
     return (
       '<div class="view">' +
+        (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
         '<div class="row-between qf-title-row">' +
           '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div></div>' +
           statusBadge(req.status) +
@@ -15549,7 +15554,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.0';
+  const APP_VERSION = '12.1.1';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

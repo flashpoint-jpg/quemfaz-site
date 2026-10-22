@@ -1359,6 +1359,7 @@ html.qf-scrolled .topbar{box-shadow:0 2px 10px rgba(11,29,58,.12)}
 
 .qf-control-dashboard-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px;background:#fff;border:1px solid #dce6f1;border-radius:16px;margin:12px 0}.qf-control-dashboard-link span{font-size:12px;color:#64748b}
 .qf-control-pro{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #e2e8f0}.qf-control-pro strong{display:block;font-size:13px;color:#12335c}.qf-control-pro small{display:block;font-size:11px;color:#64748b;margin-top:3px}.qf-control-pro>span{font-size:11px;font-weight:700;color:#0754b8;white-space:nowrap}
+.qf-garante-badge{display:inline-flex;align-items:center;width:fit-content;max-width:100%;box-sizing:border-box;padding:6px 10px;margin:6px 0;border-radius:8px;background:#fff3e8;color:#174878;border:1px solid #ed9a4d;font-size:12px;font-weight:800;line-height:1.4;letter-spacing:.03em;white-space:normal;}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
@@ -7231,6 +7232,7 @@ Screens.adminDashboardRender = function () {
               '<div class="qf-ped__sub">' + PU.escapeHtml(resumo) + '</div></div>' +
             '<div style="flex:none;">' + adminStatusBadge(r) + '</div>' +
           '</div>' +
+          (r.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
           '<div class="qf-ped__meta">' +
             (r.prioridade ? '<span class="qf-ped__urg">CLIENTE PRIORIDADE' + (r.pagamentoPrioridade && r.pagamentoPrioridade.valor ? ' · ' + PU.formatCurrency(r.pagamentoPrioridade.valor) : '') + '</span>' : (r.urgencia === 'urgente' ? '<span class="qf-ped__urg">URGENTE</span>' : '')) +
             (qfPedNovo(r) ? '<span class="qf-ped__novo">NOVO</span>' : '') +
@@ -7261,6 +7263,7 @@ Screens.adminDashboardRender = function () {
 
     return (
       '<div class="view">' +
+        (r.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
         '<div class="row-between" style="gap:10px;align-items:flex-start;">' +
           '<div class="row" style="align-items:flex-start;"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--muted" style="margin-top:2px;">Pedido ' + PU.escapeHtml(r.id) + '</div></div></div>' +
           adminStatusBadge(r) +
