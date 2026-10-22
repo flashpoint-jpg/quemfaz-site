@@ -20,6 +20,9 @@
       .concat([['avaliacao','Preciso de uma avaliação']]);
   }
   function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
+  function garanteElegivel(a) {
+    return a.intencao==='contratar' && budget(a.orcamento)!==null && !Number.isNaN(budget(a.orcamento)) && (!materialsApplicable(a.servico) || (a.materiais && !['combinar','nao_aplica'].includes(a.materiais)));
+  }
   function stages(a) {
     const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data','disponibilidade']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','tipo','qualificacao','autorizacao']]];
     return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key))}));
@@ -65,8 +68,12 @@
       options('autorizacao','Podemos mostrar seu telefone ao profissional que aceitar seu pedido?',[['sim','Sim, autorizo'],['nao','Não autorizo']]),
       options('tipo','Quer conversar com até 4 profissionais ou somente 1?',[['tradicional','Tradicional — até 4 profissionais'],['garante','Quem Faz Garante — 1 profissional']])
     ];
-    if (a.tipo === 'garante') list.push(options('qualificacao','Você pode conversar com o profissional e decidir sobre a contratação?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
-    return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal'));
+    if (a.tipo === 'garante' && garanteElegivel(a)) list.push(options('qualificacao','Você pode conversar com o profissional e decidir sobre a contratação?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
+    if (!garanteElegivel(a)) {
+      a.tipo='tradicional';
+      delete a.qualificacao;
+    }
+    return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal') && (q.key!=='tipo'||garanteElegivel(a)));
   }
   function budget(v) {
     if (['a combinar','avaliacao','preciso de uma avaliacao'].includes(norm(v))) return null;
