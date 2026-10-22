@@ -8,10 +8,10 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.match(A.questions({servico:'Eletricista'})[2].label,/equipamentos/);
  assert.match(A.questions({servico:'Montador de móveis'})[2].label,/peças/);
  assert.equal(A.budget('1.500,90'),150090);assert.equal(A.budget('a combinar'),null);assert.ok(Number.isNaN(A.budget('abc')));
- const a={servico:'Faxina',detalhes:'Limpeza de sala comercial',escopo:'51 a 100 m²',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'urgente',orcamento:'300',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
- assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,30000);
+ const a={servico:'Faxina',detalhes:'Limpeza de sala comercial',escopo:'51 a 100 m²',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'15000:30000',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
+ assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
  assert.match(A.validAll({...a,autorizacao:'nao'}),/Sem autorização/);
- assert.match(A.validAll({...a,orcamento:'a combinar'}),/Garante/);
+ assert.match(A.validAll({...a,orcamento:'avaliacao'}),/Garante/);
  assert.match(A.validAll({...a,intencao:'pesquisando'}),/Garante/);
  assert.match(A.validAll({...a,materiais:'combinar'}),/Garante/);
 });
@@ -90,5 +90,49 @@ test('banco: geocodificador indisponível usa referência da cidade; cidade sem 
  await as(d,1);const r=(await d.query('select public.qf_publicar_atendimento($1::jsonb) r',[JSON.stringify(answers())])).rows[0].r;
  assert.equal(Number(r.latitude),-23.66);assert.equal(Number(r.longitude),-46.54);
  assert.equal(r.geo_precisao,'cidade');
+ }finally{await d.close();}
+});
+
+test('quatro etapas: avaliação sem preço, faixas por profissão e materiais pertinentes',()=>{
+ const a={servico:'Faxina',detalhes:'Limpeza de sala comercial',escopo:'51 a 100 m²',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'avaliacao',materiais:'combinar',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+ assert.equal(A.stages(a).length,4);
+ assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
+ assert.equal(A.payload(a,uid(200),'faxina').orcamento_faixa,'avaliacao');
+ assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Pedreiro'));
+ assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Eletricista'));
+ for(const servico of ['Faxina','Pedreiro','Eletricista']){
+  for(const [orcamento] of A.budgetChoices(servico))assert.equal(A.validAll({...a,servico,orcamento}),'');
+ }
+ assert.equal(A.validAll({...a,servico:'Professor',materiais:undefined}),'');
+ assert.equal(A.payload({...a,servico:'Professor',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
+ assert.match(A.validAll({...a,urgencia:'hoje'}),/hoje/);
+ assert.match(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),/Garante/);
+ assert.match(A.validAll({...a,servico:'Pedreiro',orcamento:'15000:30000'}),/opções/);
+});
+
+test('banco: faixa não vira preço exato; avaliação publica, preserva privacidade e retry',async()=>{
+ const d=await db();try{
+ const a=answers({orcamento_faixa:'avaliacao',orcamento_centavos:null,prazo:'normal'});
+ const r=await pub(d,a);assert.match(r.descricao,/Orçamento estimado: Preciso de uma avaliação/);
+ assert.equal(r.orcamento_aproximado_centavos,null);assert.equal(r.max_orcamentos,4);
+ assert.equal((await pub(d,a)).id,r.id);
+ await assert.rejects(pub(d,{...a,chave:uid(201),orcamento_faixa:'15000:30000'}),/pedido_duplicado_com_outros_dados/);
+ await as(d,11);assert.equal(await scalar(d,`select public.qf_atendimento_respostas('${r.id}')`),null);
+ assert.doesNotMatch(r.descricao,/Cliente Teste|11988887777/);
+ await as(d,1);
+ const g=await pub(d,answers({chave:uid(202),detalhes:'Pintar outra parede interna',orcamento_faixa:'50000:150000',orcamento_centavos:null,tipo:'garante',qualificacao:'sim'}));
+ assert.match(g.descricao,/Orçamento estimado: R\$ 500,00 a R\$ 1500,00/);
+ assert.equal(g.orcamento_aproximado_centavos,null);
+ await as(d,11);assert.equal((await unlock(d,g.id,true)).preco_centavos,4000);
+ }finally{await d.close();}
+});
+
+test('banco: rejeita faixas inválidas, preço inventado na avaliação e Garante não qualificado',async()=>{
+ const d=await db();try{
+ for(const orcamento_faixa of [null,'','0:0','30000:15000','0:50000001','telefone 11988887777'])await assert.rejects(pub(d,answers({orcamento_faixa,orcamento_centavos:null})),/faixa_invalida/);
+ await assert.rejects(pub(d,answers({orcamento_faixa:'avaliacao'})),/avaliacao_sem_valor/);
+ await assert.rejects(pub(d,answers({orcamento_faixa:'avaliacao',orcamento_centavos:null,tipo:'garante',qualificacao:'sim'})),/garante_nao_qualificado/);
+ await assert.rejects(pub(d,answers({prazo:'hoje'})),/prazo_invalido/);
+ await d.exec('reset role');assert.equal(await scalar(d,'select count(*) from private.test_dispatch'),0);
  }finally{await d.close();}
 });

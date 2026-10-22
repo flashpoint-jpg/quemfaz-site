@@ -24,10 +24,15 @@ const server=http.createServer((req,res)=>{
   page.on('pageerror',e=>errors.push(e.message));
   page.on('requestfailed',req=>{const u=new URL(req.url());if(u.origin===target.origin)console.error('staging network:',u.pathname,req.failure()?.errorText);});
   await context.route('**/*',route=>{const u=new URL(route.request().url());if(u.origin===origin||u.origin===target.origin)return route.continue();return route.abort();});
-  await page.goto(origin+'/#/auth/cliente/cadastro');await page.waitForSelector('#at-answer');
+  await page.goto(origin+'/#/auth/cliente/cadastro');await page.waitForSelector('#at-servico');
   const date=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const fields=['Pintor','Pintar paredes externas da oficina de homologacao final '+tipo,'80 metros quadrados','Santo André','SP','Centro','normal','300','profissional',date,'Manhã','Cliente Homologacao API','11967012483','contratar','sim',tipo];if(tipo==='garante')fields.push('sim');
-  for(const value of fields){const input=page.locator('#at-answer');if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);await page.getByRole('button',{name:'Continuar',exact:true}).click();}
+  const fill=async(key,value)=>{const input=page.locator('#at-'+key);if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);};
+  const groups=[{servico:'Pintor',detalhes:'Pintar paredes externas da oficina de homologacao final '+tipo,escopo:'80 metros quadrados'},{cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:date,disponibilidade:'Manhã'},{materiais:'profissional',orcamento:tipo==='garante'?'50000:150000':'avaliacao'},{nome:'Cliente Homologacao API',contato:'11967012483',intencao:'contratar',tipo,...(tipo==='garante'?{qualificacao:'sim'}:{}),autorizacao:'sim'}];
+  for(let step=0;step<groups.length;step++){
+    assert.match(await page.locator('[data-at-progress]').innerText(),new RegExp('Etapa '+(step+1)+' de 4'));
+    for(const [key,value] of Object.entries(groups[step]))await fill(key,value);
+    if(step<3)await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  }
   await page.getByRole('heading',{name:'Revise antes de publicar'}).waitFor();
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
   await page.waitForFunction(()=>location.hash.startsWith('#/cliente/pedido/')||Boolean(document.querySelector('[data-at-error]')?.textContent),{},{timeout:60000});

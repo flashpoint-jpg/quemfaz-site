@@ -2464,7 +2464,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
 <script src="qf-client-acquisition.js?v=11.96"></script>
-<script src="qf-atendimento.js?v=1"></script>
+<script src="qf-atendimento.js?v=2"></script>
 
 <!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
      Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
@@ -13237,7 +13237,7 @@ alt=""></noscript>
       return '~' + m + ' min';
     },
     usaPlano: function (user) { return !!(user && user.plano && user.plano.restantes > 0); },
-    precoTxt: function (req, user) { return (CallInfo.usaPlano(user)) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
+    precoTxt: function (req, user) { if (req.atendimentoTipo === 'garante') return PU.formatCurrency(DB.leadFeeForRequest(req) * 4); return (CallInfo.usaPlano(user)) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
     midias: function (req) {
       const list = (req && Array.isArray(req.fotos) ? req.fotos : []).map(function (x) { return String(x || ''); }).filter(Boolean);
       const videos = list.filter(function (x) { return /^data:video\//i.test(x) || /\.(mp4|webm|mov)(\?|$)/i.test(x); });
@@ -13440,7 +13440,7 @@ alt=""></noscript>
         '<div class="section qf-call-facts">' +
           '<div class="qf-call-fact"><strong>' + (CallInfo.kmTxt(req) || '—') + '</strong><span>de você</span></div>' +
           '<div class="qf-call-fact"><strong>' + (CallInfo.tempoTxt(req) || '—') + '</strong><span>de carro (estimado)</span></div>' +
-          '<div class="qf-call-fact"><strong>' + CallInfo.precoTxt(req, user) + '</strong><span>' + (CallInfo.usaPlano(user) ? 'usa 1 do plano' : 'para desbloquear') + '</span></div>' +
+          '<div class="qf-call-fact"><strong>' + CallInfo.precoTxt(req, user) + '</strong><span>' + (req.atendimentoTipo !== 'garante' && CallInfo.usaPlano(user) ? 'usa 1 do plano' : 'para desbloquear') + '</span></div>' +
         '</div>' +
 
         '<div class="section card stack--sm">' +

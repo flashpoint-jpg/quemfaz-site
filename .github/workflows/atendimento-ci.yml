@@ -2,7 +2,7 @@ name: Atendimento obrigatório
 on:
   pull_request:
   push:
-    branches: ['feature/atendimento-obrigatorio']
+    branches: ['feature/atendimento-obrigatorio', 'feat/pedido-simplificado-4-etapas']
   workflow_dispatch:
 permissions:
   contents: read

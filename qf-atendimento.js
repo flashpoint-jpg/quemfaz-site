@@ -1,4 +1,4 @@
-/* Atendimento determinístico: uma pergunta por vez, sem custo de API de IA. */
+/* Atendimento simplificado em quatro etapas, sem custo de API de IA. */
 (function (root, factory) {
   const api = factory(root);
   if (typeof module === 'object' && module.exports) module.exports = api;
@@ -8,6 +8,20 @@
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const options = (key, label, choices) => ({key, label, choices});
+  function materialsApplicable(service) { return !/advog|aula|consultor|contador|contabil|tradutor|professor/.test(norm(service)); }
+  function budgetChoices(service) {
+    const large=/pint|pedreir|reforma|impermeab|telhad/.test(norm(service));
+    const cleaning=/faxin|limpeza|higien|sofa|estof|colch|tapet|carpet/.test(norm(service));
+    const limits=large ? [0,50000,150000,300000,1000000] : cleaning ? [0,15000,30000,60000,150000] : [0,20000,50000,100000,300000];
+    const money=n=>'R$ '+(n/100).toLocaleString('pt-BR');
+    return limits.slice(1).map((max,i)=>[limits[i]+':'+max,(i?money(limits[i])+' a ':'Até ')+money(max)])
+      .concat([['avaliacao','Preciso de uma avaliação']]);
+  }
+  function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
+  function stages(a) {
+    const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data','disponibilidade']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','tipo','qualificacao','autorizacao']]];
+    return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key))}));
+  }
   function questions(a) {
     const service = norm(a.servico);
     let detail = 'O que precisa ser feito? Descreva o problema e o resultado esperado, sem nome, telefone ou endereço.';
@@ -32,27 +46,29 @@
       {key:'cidade',label:'Em qual cidade será o serviço?'},
       options('uf','Qual é o estado (UF)?','AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>[x,x])),
       {key:'bairro',label:'Em qual bairro? O endereço exato será combinado após o desbloqueio.'},
-      options('urgencia','Qual é a urgência?',[['normal','Pode ser agendado'],['urgente','Preciso com urgência']]),
-      {key:'orcamento',label:'Qual é seu orçamento máximo em reais? Digite o valor ou “a combinar”.',budget:true},
+      options('urgencia','Quando precisa?',[['normal','Quero agendar'],['hoje','Ainda hoje'],['urgente','Preciso com urgência']]),
+      {...options('orcamento','Quanto pretende investir? É uma estimativa, sem compromisso de pagamento.',budgetChoices(a.servico)),budget:true},
       options('materiais','Quem fornece os materiais ou ferramentas?',[['profissional','O profissional leva tudo'],['cliente','Eu forneço'],['combinar','Vamos combinar'],['nao_aplica','Não se aplica']]),
       {key:'data',label:'Em qual data você pretende realizar o serviço?',type:'date'},
       {key:'disponibilidade',label:'Em quais horários você pode receber o profissional?',min:3},
-      {key:'nome',label:'Qual é seu nome?',autocomplete:'name'},
-      {key:'contato',label:'Qual é seu celular com DDD para contato?',type:'tel',autocomplete:'tel'},
-      options('intencao','Você pretende contratar um profissional?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
-      options('autorizacao','Autoriza compartilhar seu nome, contato e detalhes do pedido com quem desbloquear?',[['sim','Sim, autorizo'],['nao','Não autorizo']]),
-      options('tipo','Como deseja receber o atendimento?',[['tradicional','Tradicional: até 4 profissionais'],['garante','Quem Faz Garante: contato exclusivo com 1 profissional']])
+      {key:'nome',label:'Seu nome',autocomplete:'name'},
+      {key:'contato',label:'Celular com DDD',type:'tel',autocomplete:'tel'},
+      options('intencao','Pretende contratar?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
+      options('autorizacao','Autoriza compartilhar seu nome e contato após o desbloqueio?',[['sim','Sim, autorizo'],['nao','Não autorizo']]),
+      options('tipo','Como prefere receber contatos?',[['tradicional','Tradicional — até 4 profissionais'],['garante','Quem Faz Garante — 1 profissional']])
     ];
-    if (a.tipo === 'garante') list.push(options('qualificacao','Você confirma que definiu o escopo, pode decidir a contratação e estará disponível para responder ao profissional?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
-    return list;
+    if (a.tipo === 'garante') list.push(options('qualificacao','Confirma o escopo, pode decidir a contratação e estará disponível para responder?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
+    return list.filter(q=>q.key!=='materiais'||materialsApplicable(a.servico));
   }
   function budget(v) {
-    if (norm(v) === 'a combinar') return null;
+    if (['a combinar','avaliacao','preciso de uma avaliacao'].includes(norm(v))) return null;
+    if (/^\d+:\d+$/.test(String(v))) { const [min,max]=String(v).split(':').map(Number); return min>=0 && max>min && max<=50000000 ? max : NaN; }
     const s=String(v || '').replace(/^R\$\s*/i,'').trim();
     if (!/^\d+(?:\.\d{3})*(?:,\d{1,2})?$/.test(s)) return NaN;
     const n=Math.round(Number(s.replace(/\./g,'').replace(',','.'))*100);
     return n>=100 && n<=50000000 ? n : NaN;
   }
+  function today() { return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
   function validate(q,v,a) {
     v=String(v || '').trim();
     if (!v || v.length>2000) return 'Responda esta pergunta para continuar (até 2.000 caracteres).';
@@ -60,19 +76,20 @@
     if (v.length<(q.min||2)) return 'Descreva um pouco melhor para continuar.';
     if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g,'')) || (root.QFUI?.validPhone && !root.QFUI.validPhone(v)))) return 'Confira o celular com DDD.';
     if (q.budget && Number.isNaN(budget(v))) return 'Informe um valor válido, como 300 ou 1.500,00, ou “a combinar”.';
+    if (q.key==='data' && ['hoje','urgente'].includes(a.urgencia) && v!==today()) return 'Para este prazo, selecione a data de hoje ou altere o prazo.';
     if (q.key==='data' && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))) return 'Escolha hoje ou uma data futura.';
     if (q.key==='autorizacao' && v==='nao') return 'Sem autorização não podemos publicar nem compartilhar o pedido. Você pode voltar ou encerrar.';
-    if (q.key==='tipo' && v==='garante' && (a.intencao!=='contratar' || budget(a.orcamento)===null || a.materiais==='combinar')) return 'Para o Garante, confirme intenção de contratar, orçamento numérico e quem fornece os materiais. Você pode voltar e ajustar ou escolher Tradicional.';
+    if (q.key==='tipo' && v==='garante' && (a.intencao!=='contratar' || budget(a.orcamento)===null || a.materiais==='combinar')) return 'Para o Garante, confirme intenção de contratar, uma faixa de orçamento definida e quem fornece os materiais. Você pode voltar e ajustar ou escolher Tradicional.';
     if (q.key==='qualificacao' && v!=='sim') return 'Volte e escolha Tradicional para continuar.';
     return '';
   }
   function validAll(a) { for (const q of questions(a)) {const e=validate(q,a[q.key],a);if(e) return e;} return ''; }
   function payload(a,id,categoria) {
     const error=validAll(a); if(error) throw Error(error);
-    return {versao:1,chave:id,categoria,servico:a.servico,detalhes:a.detalhes,escopo:a.escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia,orcamento_centavos:budget(a.orcamento),materiais:a.materiais,data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
+    return {versao:1,chave:id,categoria,servico:a.servico,detalhes:a.detalhes,escopo:a.escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
   }
   function html() {
-    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>Publicação gratuita. Uma pergunta por vez.</p><div data-at-question></div><p class="text--sm text--secondary">Quem Faz Garante oferece exclusividade de contato. Não é garantia de contratação ou execução. Você decide se contrata.</p></section></div>';
+    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>Publicação gratuita em 4 etapas.</p><div data-at-question></div><p class="text--sm text--secondary">Quem Faz Garante oferece exclusividade de contato. Não é garantia de contratação ou execução. Você decide se contrata.</p></section></div>';
   }
   function category(service) {
     const DB=root.DB, found=DB.categories().find(c=>c.id!=='cat_outros' && norm(c.nome)===norm(service));
@@ -94,33 +111,45 @@
     const a={}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) a.servico=cat.nome;
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
-    let step=0,busy=false;
-    const draw=()=>{
-      const list=questions(a),q=list[step];
-      if(!q){review();return;}
-      const value=a[q.key]||'';
-      let field=q.choices ? '<select class="input" id="at-answer" required><option value="">Selecione</option>'+q.choices.map(c=>'<option value="'+esc(c[0])+'"'+(c[0]===value?' selected':'')+'>'+esc(c[1])+'</option>').join('')+'</select>' : q.multiline ? '<textarea class="input" id="at-answer" maxlength="2000" rows="4" required>'+esc(value)+'</textarea>' : '<input class="input" id="at-answer" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'" required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
-      area.innerHTML='<p class="text--sm">Pergunta '+(step+1)+' de '+list.length+'</p><form novalidate><label class="text--strong" for="at-answer">'+esc(q.label)+'</label>'+field+'<p role="alert" data-at-error></p><div class="row"><button type="button" class="btn btn--outline" data-at-back'+(step===0?' disabled':'')+'>Voltar</button><button type="submit" class="btn btn--primary">Continuar</button></div></form>';
-      area.querySelector('form').onsubmit=e=>{e.preventDefault();const v=area.querySelector('#at-answer').value.trim();const err=validate(q,v,a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}a[q.key]=v;step++;draw();};
-      area.querySelector('[data-at-back]').onclick=()=>{step--;draw();};
-      area.querySelector('#at-answer').focus();
+    let step=0,busy=false,currentUser=user;
+    const field=q=>{
+      const value=a[q.key]||'', id='at-'+q.key;
+      const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
+      const input=q.choices ? '<select class="input" id="'+id+'" required><option value="">Selecione</option>'+q.choices.map(c=>'<option value="'+esc(c[0])+'"'+(c[0]===value?' selected':'')+'>'+esc(c[1])+'</option>').join('')+'</select>' : q.multiline ? '<textarea class="input" id="'+id+'" maxlength="2000" rows="2" required>'+esc(value)+'</textarea>' : '<input class="input" id="'+id+'" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'"'+disabled+' required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
+      return '<div class="stack--sm" style="min-width:0"><label class="text--strong" for="'+id+'">'+esc(q.label)+'</label>'+input+'<p class="text--sm" role="alert" data-error="'+q.key+'"></p></div>';
     };
-    const review=()=>{
-      area.innerHTML='<h2 class="h3">Revise antes de publicar</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 16px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl><p>Seus dados pessoais ficam protegidos até o desbloqueio. '+(a.tipo==='garante'?'Um profissional verificado poderá desbloquear este pedido pelo valor de 4 desbloqueios normais.':'Até 4 profissionais poderão desbloquear este pedido.')+'</p><p role="alert" data-at-error></p><div class="row"><button type="button" class="btn btn--outline" data-at-back>Editar respostas</button><button type="button" class="btn btn--primary" data-at-publish>Publicar grátis</button></div>';
-      area.querySelector('[data-at-back]').onclick=()=>{step=0;draw();};
-      area.querySelector('[data-at-publish]').onclick=async()=>{
-        if(busy)return;busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Publicando…';
+    const read=()=>{for(const q of stages(a)[step].questions){const el=area.querySelector('#at-'+q.key);if(el)a[q.key]=el.value.trim();}};
+    const draw=()=>{
+      const stage=stages(a)[step];
+      area.innerHTML='<p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+stage.questions.map(field).join('')+(step===3?'<p>Contato protegido até o desbloqueio. Você decide se contrata.</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+(step===0?' disabled':'')+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3?'data-at-publish':'')+'>'+(step===3?'Publicar grátis':'Continuar')+'</button></div></form>';
+      area.querySelector('form').onsubmit=e=>{
+        e.preventDefault();if(busy)return;area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
+        const list=step===3?questions(a):stages(a)[step].questions;
+        for(const q of list){const error=validate(q,a[q.key],a);if(error){const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
+        if(step<3){step++;draw();}else publish();
+      };
+      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();step--;draw();};
+      for(const key of ['servico','tipo','urgencia']){
+        const input=area.querySelector('#at-'+key);if(input)input.addEventListener('change',()=>{
+          if(busy)return;read();if(key==='servico'){delete a.orcamento;for(const q of questions(a)){const label=area.querySelector('label[for="at-'+q.key+'"]');if(label)label.textContent=q.label;}return;}
+          if(key==='urgencia'&&['hoje','urgente'].includes(a.urgencia))a.data=today();
+          if(key==='tipo'&&a.tipo!=='garante')delete a.qualificacao;
+          draw();area.querySelector('#at-'+key)?.focus();
+        });
+      }
+    };
+    const publish=async()=>{
+        if(busy)return;busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Publicando…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
-          let current=user;
-          if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;}
+          let current=currentUser;
+          if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;currentUser=current;}
           const c=category(a.servico),at=payload(a,id,c.id);
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:a.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           root.navigate('/cliente/pedido/'+req.id,true);
         }catch(e){area.querySelector('[data-at-error]').textContent=e.message||'Não foi possível publicar. Tente novamente; seu pedido não será duplicado.';}
-        finally{busy=false;button.disabled=false;button.textContent='Publicar grátis';}
-      };
+        finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
     };
     draw();
   }
@@ -147,8 +176,8 @@
       const res=await Cloud.client.rpc('qf_atendimento_respostas',{p_id:button.getAttribute('data-at-admin')});
       if(res.error || !res.data)throw Error('Não foi possível consultar o atendimento.');
       const a=res.data;
-      root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc(a[q.key]??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
+      root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc((q.key==='orcamento'&&a.orcamento_faixa?budgetLabel(a.orcamento_faixa,a.servico):a[q.key])??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
     }catch(error){root.PU.toast(error.message,'danger');}finally{button.disabled=false;}
   });
-  return {questions,validate,validAll,budget,payload,html,mount,enrich,install};
+  return {questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install};
 });
