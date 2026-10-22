@@ -11,9 +11,9 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  const a={servico:'Faxina',detalhes:'faxina',escopo:'alguns',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'15000:30000',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
  assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
  assert.match(A.validAll({...a,autorizacao:'nao'}),/Sem autorização/);
- assert.match(A.validAll({...a,orcamento:'avaliacao'}),/Garante/);
- assert.match(A.validAll({...a,intencao:'pesquisando'}),/Garante/);
- assert.match(A.validAll({...a,materiais:'combinar'}),/Garante/);
+ assert.equal(A.validAll({...a,orcamento:'avaliacao',tipo:'tradicional'}),'');assert.ok(!A.stages({...a,orcamento:'avaliacao'} )[3].questions.some(q=>q.key==='tipo'));
+ assert.ok(!A.stages({...a,intencao:'pesquisando'})[3].questions.some(q=>q.key==='tipo'));
+ assert.ok(!A.stages({...a,materiais:'combinar'})[3].questions.some(q=>q.key==='tipo'));
 });
 test('banco: obrigatório, sem autorização e respostas incompletas não criam pedidos nem notificações',async()=>{
  const d=await db();try{
@@ -106,7 +106,7 @@ test('quatro etapas: avaliação sem preço, faixas por profissão e materiais p
  assert.equal(A.validAll({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined}),'');
  assert.equal(A.payload({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
  assert.equal(A.validAll({...a,urgencia:'hoje',data:undefined}),'');
- assert.match(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),/Garante/);
+ assert.equal(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),'');
  assert.match(A.validAll({...a,servico:'Pedreiro',detalhes:'instalacao',orcamento:'15000:30000'}),/opções/);
 });
 
