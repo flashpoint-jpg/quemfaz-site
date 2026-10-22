@@ -20,6 +20,7 @@ const server=http.createServer(async(req,res)=>{
 });
 (async()=>{
  database=await db();
+ await database.exec("update public.qf_profiles set telefone='11988887776',whatsapp='11988887776' where tipo='cliente'");
  await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
  const browser=await chromium.launch({headless:true,...(process.env.QF_CHROMIUM_EXECUTABLE?{executablePath:process.env.QF_CHROMIUM_EXECUTABLE}:{}),args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
@@ -44,7 +45,7 @@ const server=http.createServer(async(req,res)=>{
    window.QFPush={notify:async()=>{}};
    window.navigate=url=>window.__nav.push(url);
   });
-  const values=['Faxina','Limpeza pesada de sala comercial','51 a 100 m²','Santo André','SP','Jardim do Estádio','urgente','300','profissional','2099-10-22','Manhã','Cliente Teste','11988887777','contratar','sim','garante','sim'];
+  const values=['Faxina','Limpeza pesada de sala comercial','51 a 100 m²','Santo André','SP','Jardim do Estádio','urgente','300','profissional','2099-10-22','Manhã','Cliente Teste','11988887776','contratar','sim','garante','sim'];
   for(const value of values){
    assert.equal(await page.locator('#at-answer:visible').count(),1);
    const input=page.locator('#at-answer');if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);
@@ -67,7 +68,7 @@ const server=http.createServer(async(req,res)=>{
   const submissions=await page.evaluate(()=>window.__submissions);assert.equal(submissions.length,1);
   assert.equal(submissions[0].atendimento.tipo,'garante');assert.equal(submissions[0].atendimento.qualificacao,'sim');assert.equal(submissions[0].maxOrcamentos,1);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('qf_atendimento_key')),null);
-  const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.doesNotMatch(stored,/11988887777|Cliente Teste|Limpeza pesada/,'assistant does not persist PII');
+  const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.doesNotMatch(stored,/11988887776|Cliente Teste|Limpeza pesada/,'assistant does not persist PII');
   // Logged-in route also uses the same assistant and cannot render the old form.
   await page.evaluate(()=>{
    document.body.innerHTML='<main id="test-mount"></main>';

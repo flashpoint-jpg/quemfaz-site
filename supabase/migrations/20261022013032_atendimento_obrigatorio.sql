@@ -13,11 +13,15 @@ revoke all on private.qf_atendimentos from public, anon, authenticated;
 create index qf_atendimentos_fingerprint on private.qf_atendimentos(fingerprint, criado_em desc);
 alter table public.qf_chamados add column atendimento_id uuid references private.qf_atendimentos(chave);
 alter table public.qf_chamados add column atendimento_tipo text check(atendimento_tipo in ('tradicional','garante'));
+create index qf_chamados_atendimento_id_idx on public.qf_chamados(atendimento_id) where atendimento_id is not null;
 -- Existing rows remain NULL; status/payment/admin updates continue unchanged.
 create function private.qf_atendimento_guard() returns trigger
 language plpgsql security definer set search_path='' as $$
 begin
   if tg_op='INSERT' then
+    -- Release preparation only: legacy API remains available until the verified frontend is live.
+    -- Missing configuration means mandatory enforcement; normal operation always keeps this true.
+    if new.atendimento_id is null and not coalesce((select (valor->>'ativo')::boolean from public.qf_config where chave='atendimento_obrigatorio'),true) then return new; end if;
     if new.atendimento_id is null or not exists (
       select 1 from private.qf_atendimentos a where a.chave=new.atendimento_id
       and a.chamado_id=new.id and a.cliente_id=new.cliente_id
@@ -98,6 +102,7 @@ begin
   select * into r from private.qf_atendimentos where fingerprint=fp and criado_em>now()-interval '24 hours' order by criado_em desc limit 1;
   if found then
     if r.cliente_id<>u then raise exception 'pedido_duplicado: já existe um pedido equivalente para este contato'; end if;
+    if (r.respostas - 'chave') is distinct from (a - 'chave') then raise exception 'pedido_duplicado_com_outros_dados: já existe pedido equivalente. Revise o pedido existente antes de alterar modalidade ou condições.'; end if;
     select * into result from public.qf_chamados where id=r.chamado_id and cliente_id=u;
     if found then return to_jsonb(result); end if;
     raise exception 'pedido_duplicado_removido';

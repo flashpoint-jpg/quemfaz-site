@@ -1,6 +1,6 @@
 # Atendimento obrigatório — proposta em branch
 
-Esta implementação não foi aplicada ao banco de produção nem integrada à main.
+Esta implementação não foi aplicada ao banco de produção nem integrada à main. A liberação será coordenada após validar banco, frontend e integrações.
 
 ## Comportamento
 
@@ -25,12 +25,12 @@ O painel administrativo mantém seu snapshot e mostra modalidade, escopo e botã
 - `QF_TEST_DATABASE_URL=postgresql://...@127.0.0.1:5432/qf_atendimento_test npm run test:atendimento:postgres`: banco descartável vazio, seis conexões concorrentes; uma publicação, até quatro compras tradicionais e uma compra Garante, com conferência do saldo e livro de débitos. Recusa hosts remotos e outros nomes de banco.
 - `.github/workflows/atendimento-ci.yml`: repete regressão, navegador e concorrência em PostgreSQL 17. Executa também o teste preexistente de pagamentos em banco descartável.
 
-As fixtures preservam as funções financeiras consultadas em produção, mas modelam parte do esquema e elegibilidade. Não equivalem a executar todo o Supabase, webhooks da Efí e entrega real de push. Esses pontos continuam como validação de homologação, sem transações reais. A falha preexistente do teste de labels do admin foi reproduzida na main e a expectativa foi atualizada aos labels atuais, sem modificar os filtros.
+As fixtures preservam as funções financeiras consultadas em produção, mas modelam parte do esquema e elegibilidade. A verificação seguinte reconstruiu, sem dados pessoais, as 67 tabelas, 302 funções, 53 gatilhos, views e permissões do Supabase em uma branch temporária. Nesse ambiente passaram a migração, o cadastro rápido pela Edge Function, Auth/OTP, publicação dos dois modos e painel do cliente pelo navegador. O tradicional manteve quatro desbloqueios; Garante cobrou 4× e recusou um segundo profissional; dados completos ficaram indisponíveis antes do desbloqueio. A função de push respondeu HTTP 200, sem dispositivos reais cadastrados. O ambiente temporário foi removido após a orientação de somente subir o código. Não houve cobrança real, alteração de produção ou teste de entrega em um aparelho físico; webhooks da Efí continuam cobertos pela regressão isolada de pagamentos. A falha preexistente do teste de labels do admin foi reproduzida na main e a expectativa foi atualizada aos labels atuais, sem modificar os filtros.
 
-## Bloqueios para produção
+## Critérios de liberação em produção
 
 1. Exigir CI verde, inclusive concorrência real e pagamentos; não integrar um PR com execução pendente ou erro.
-2. Homologar a migração contra uma cópia completa do esquema atual, inclusive todos os triggers, RLS e RPCs do projeto. Conferir advisors de segurança e performance nessa cópia.
+2. Conferir novamente o esquema no momento de uma futura publicação. A cópia completa foi exercitada em homologação; advisors identificaram o índice da nova FK, que foi acrescentado, e as RPCs SECURITY DEFINER deliberadamente limitadas ao usuário/owner/admin/desbloqueio.
 3. Homologar criação e desbloqueio tradicional/Garante, notificações reais para contas de teste (raio, online e horário), estorno administrativo, painel e webhooks de pagamentos em sandbox.
 4. Preparar atualização obrigatória dos clientes antigos/PWA antes do corte: a API antiga não poderá publicar sem atendimento. Isso é intencional e não pode virar fallback silencioso que contorne consentimento. Uma implantação sem coordenar app e migração interromperia novos envios de versões antigas.
 5. Capturar e comparar as definições de funções/colunas/triggers novamente antes de aplicar; a migração parte do estado consultado nesta revisão. Produção continua sem alterações enquanto não houver evidência desses testes.
@@ -40,3 +40,7 @@ Não é possível afirmar ausência de interrupção em todas as versões instal
 ## Reversão
 
 Antes do corte, salvar as definições atuais de `qf_desbloquear_chamado`, permissões e triggers. Se houver falha, reverter primeiro o cliente para o release anterior e remover a obrigatoriedade do trigger de INSERT em uma janela coordenada; restaurar a função financeira capturada. Não apagar respostas, pedidos, cobranças ou colunas na reversão. A decisão de permitir temporariamente a API antiga deve ser explícita, pois suspende a regra de 100% de atendimento.
+
+A troca futura pode preparar o banco com `qf_config.atendimento_obrigatorio = {"ativo": false}` somente durante a implantação coordenada e ativar `true` após o frontend validado estar disponível. Ausência da chave significa obrigatório. O estado final de operação deve ser `true`; os testes cobrem a passagem de preparação para obrigatoriedade. Nada disso foi ativado em produção.
+
+Teste reproduzível em Supabase descartável: `QF_STAGING_CONFIG=/caminho/config.json QF_STAGING_TIPO=tradicional npm run test:atendimento:supabase`, repetindo com `garante`. A configuração contém somente `url` e chave publicável do projeto de teste; o script recusa o projeto de produção e bloqueia tráfego a outros serviços.

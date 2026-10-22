@@ -46,6 +46,7 @@ test('banco: retry e nova chave equivalente retornam mesmo pedido e disparam um 
  const d=await db();try{
  const a=answers();const first=await pub(d,a);assert.equal((await pub(d,a)).id,first.id);
  assert.equal((await pub(d,answers({chave:uid(201)}))).id,first.id);
+ await assert.rejects(pub(d,answers({chave:uid(202),tipo:'garante',qualificacao:'sim'})),/pedido_duplicado_com_outros_dados/);
  await assert.rejects(pub(d,answers({detalhes:'Outro pedido diferente'})),/chave_reutilizada/);
  await d.exec('reset role');assert.equal(await scalar(d,'select count(*) from private.test_dispatch'),1);
  assert.equal(await scalar(d,'select count(*) from public.qf_chamados'),2); // 1 legacy + 1 new
@@ -69,5 +70,15 @@ test('banco: PII privada antes do desbloqueio, acesso do titular/admin, preserva
  await as(d,11);assert.equal((await unlock(d,uid(100))).ok,true);
  await d.exec('reset role');
  assert.equal(await scalar(d,`select atendimento_id is null from public.qf_chamados where id='${uid(100)}'`),true);
+ }finally{await d.close();}
+});
+
+test('banco: preparação da implantação mantém legado até o corte explícito; depois obriga atendimento',async()=>{
+ const d=await db();try{
+ await d.exec('reset role');await d.exec(`insert into public.qf_config(chave,valor) values('atendimento_obrigatorio','{"ativo":false}')`);
+ await as(d,1);await d.query("insert into public.qf_chamados(cliente_id,categoria,descricao) values($1,'pintor','Legado durante preparação')",[uid(1)]);
+ await d.exec('reset role');await d.exec(`update public.qf_config set valor='{"ativo":true}' where chave='atendimento_obrigatorio'`);
+ await as(d,1);await assert.rejects(d.query("insert into public.qf_chamados(cliente_id,categoria) values($1,'pintor')",[uid(1)]),/atendimento_obrigatorio/);
+ assert.equal((await pub(d)).atendimento_tipo,'tradicional');
  }finally{await d.close();}
 });

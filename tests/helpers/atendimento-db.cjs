@@ -20,7 +20,7 @@ async function db(d=new PGlite()){
  await d.exec(fs.readFileSync('tests/fixtures/atendimento-production-functions.sql','utf8'));
  await d.exec(migration);
  // Existing notification integration is represented by a transactional outbox fixture, not a real push.
- await d.exec(`create function private.test_new_call() returns trigger language plpgsql as $$ begin insert into private.test_dispatch values('new_call',new.id);return new;end $$;
+ await d.exec(`create function private.test_new_call() returns trigger language plpgsql security definer set search_path='' as $$ begin insert into private.test_dispatch values('new_call',new.id);return new;end $$;
  create trigger test_new after insert on public.qf_chamados for each row execute function private.test_new_call();`);
  for(let i=11;i<=16;i++)await d.exec(`insert into public.qf_profiles(id,tipo,nome,foto_url) values('${uid(i)}','profissional','Pro ${i}','selfie');
  insert into public.qf_profissionais(user_id,especialidades,latitude,longitude,verificado,documento) values('${uid(i)}',array['pintor'],-23.66,-46.53,${i!==16},'documento-validado');

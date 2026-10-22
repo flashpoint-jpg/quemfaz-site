@@ -58,7 +58,7 @@
     if (!v || v.length>2000) return 'Responda esta pergunta para continuar (até 2.000 caracteres).';
     if (q.choices && !q.choices.some(c=>c[0]===v)) return 'Escolha uma das opções.';
     if (v.length<(q.min||2)) return 'Descreva um pouco melhor para continuar.';
-    if (q.key==='contato' && !/^[1-9]{2}9?\d{8}$/.test(v.replace(/\D/g,''))) return 'Confira o celular com DDD.';
+    if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g,'')) || (root.QFUI?.validPhone && !root.QFUI.validPhone(v)))) return 'Confira o celular com DDD.';
     if (q.budget && Number.isNaN(budget(v))) return 'Informe um valor válido, como 300 ou 1.500,00, ou “a combinar”.';
     if (q.key==='data' && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))) return 'Escolha hoje ou uma data futura.';
     if (q.key==='autorizacao' && v==='nao') return 'Sem autorização não podemos publicar nem compartilhar o pedido. Você pode voltar ou encerrar.';
@@ -89,8 +89,11 @@
     // PII stays in memory. Persist only the random idempotency key, never answers.
     let id; try{id=root.sessionStorage.getItem('qf_atendimento_key');}catch(_){}
     if(!id) {id=root.crypto.randomUUID();try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
-    const a={}, cat=params.catId && root.DB.categoryById(params.catId);
+    let categoryId=params.catId;
+    if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
+    const a={}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) a.servico=cat.nome;
+    if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=0,busy=false;
     const draw=()=>{
       const list=questions(a),q=list[step];

@@ -5,7 +5,8 @@
     "build": "node scripts/build-client.cjs",
     "test": "npm run build && node --test tests/*.test.cjs",
     "test:atendimento:browser": "npm run build && node tests/atendimento.browser.cjs",
-    "test:atendimento:postgres": "node tests/atendimento.postgres.cjs"
+    "test:atendimento:postgres": "node tests/atendimento.postgres.cjs",
+    "test:atendimento:supabase": "npm run build && node tests/atendimento.supabase.browser.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
