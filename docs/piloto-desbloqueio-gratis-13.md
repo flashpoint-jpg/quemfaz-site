@@ -47,3 +47,34 @@ Adicionar tabelas de acordos, aceite do cliente, eventos financeiros e repasses 
 - Verificado: RLS habilitada nas três tabelas, sem políticas permissivas, e `authenticated` sem SELECT.
 - Nenhum desbloqueio gratuito foi ativado e o fluxo tradicional não foi modificado.
 - Pendente: RPCs seguras, UI, OTP, pagamentos e repasses, notificações e testes ponta a ponta.
+
+## Continuação implementada em 22/10/2026
+
+O piloto permanece **bloqueado para novos desbloqueios gratuitos**. Não houve teste financeiro aprovado nem contratação real pelo piloto.
+
+Implementado:
+- RPC transacional de desbloqueio sem débito, com a mesma linha de bloqueio do tradicional, mesma tabela de participantes e limite compartilhado de até quatro; preserva Garante e utiliza a elegibilidade real da vitrine.
+- Proposta de acordo pelo profissional com valor em centavos, data, telefone obtido exclusivamente do cliente vinculado ao pedido, link aleatório com hash e validade de sete dias.
+- Confirmação de contratação, conclusão ou contestação por OTP: HMAC SHA-256 com segredo do servidor, vínculo ao token/finalidade, cinco minutos, cinco tentativas por código, limites de reenvio e bloqueio por tentativas acumuladas. RPCs de OTP exclusivas de service_role.
+- Endpoint `quemfaz-comissao13`, com adaptador de SMS Twilio. Só registra aceite de envio após resposta real do provedor; nunca declara entrega ao celular. Sessões autenticadas não podem usar o endpoint de confirmação do cliente.
+- Tela do profissional com modalidade/condições e bloqueio explícito enquanto não houver validação; formulário de acordo e compartilhamento manual pelo WhatsApp preparados. Não há envio automático de WhatsApp.
+- Página pública `comissao13.html`, sem cadastro/instalação, com conferência do profissional/pedido/valor e confirmação explícita, OTP e contestação.
+- Painel administrativo e do profissional com estado dos acordos, comissão de 13%, parcela de 87% antes de taxas e indicadores pendentes de pagamento e repasse. Estes indicadores não representam um livro financeiro integrado.
+- Acesso à carteirinha digital no celular; impressão deixou de ser obrigatória na interface.
+
+### Validações realizadas
+- `npm test`: 272 aprovados, 0 falhas, 2 ignorados, em 274 testes.
+- Testes específicos executam PL/pgSQL em PostgreSQL embarcado (PGlite), inclusive reaplicação idempotente, permissões de anon/authenticated, desbloqueios mistos, saldo preservado, adesão, profissão, raio, OTP incorreto/expirado/não enviado/reutilizado, confirmação explícita, contestação e cálculo R$500 => R$65/R$435.
+- Corrigida uma asserção de teste anterior que ainda esperava chamada direta da RPC tradicional antes da introdução da cortesia de reativação. A mesma falha foi reproduzida no commit original `f63f8e4`.
+- Endpoint real respondeu `otp_configurado:false`, `financeiro_servicos_integrado:false`, `ativo:false`; links inexistentes são negados e envio sem configuração retorna HTTP 503.
+- Conferência no Supabase: nenhum desbloqueio/acordo do piloto; anon/authenticated sem acesso às tabelas e sem execução das RPCs de confirmação do servidor.
+
+### Dependências e trabalho ainda necessário para ativar
+1. Configurar e validar um provedor real de OTP. O adaptador atual espera `QF13_TWILIO_ACCOUNT_SID`, `QF13_TWILIO_AUTH_TOKEN`, `QF13_SMS_FROM` e `QF13_OTP_SECRET` (segredo aleatório de ao menos 32 caracteres), cadastrados diretamente nos segredos do Supabase. Nenhum segredo deve ser enviado em conversa ou commit.
+2. Implementar e aprovar cobrança de serviços Pix/cartão, webhook autenticado, registro financeiro, taxas, estornos, chargebacks, identificação dos recebedores e repasse idempotente. A integração Efí existente inspecionada é de recargas/anúncios/prioridade/planos; não foi reaproveitada indevidamente como liquidação de serviços.
+3. Conectar a leitura do QR estático da carteirinha à seleção segura do acordo da modalidade 13%; o QR atual de avaliações foi preservado. O link específico do acordo já tem página com OTP.
+4. Implementar fila e disparos dos novos eventos/push de anúncio com deduplicação e regras de horário. Nenhum push anunciando modalidade ativa foi disparado.
+5. Aprovar testes com sessões PostgreSQL independentes de concorrência e E2E visual em celular/desktop. O PGlite testa as regras transacionais, mas não demonstra concorrência entre sessões. O navegador local não ficou disponível: download do Chromium retornou arquivo inválido. A instalação de PostgreSQL independente também não estava disponível neste ambiente.
+6. Revisar tarifas e termos financeiros efetivos antes de expor escolha ativa. Não alterar a tabela privada de prontidão para habilitar o piloto antes de completar os itens acima.
+
+O fluxo tradicional, créditos, planos, Garante e pedidos existentes não foram substituídos. A modalidade gratuita não está operacional de ponta a ponta.
