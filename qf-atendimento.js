@@ -69,10 +69,6 @@
       options('tipo','Quer conversar com até 4 profissionais ou somente 1?',[['tradicional','Tradicional — até 4 profissionais'],['garante','Quem Faz Garante — 1 profissional']])
     ];
     if (a.tipo === 'garante' && garanteElegivel(a)) list.push(options('qualificacao','Você pode conversar com o profissional e decidir sobre a contratação?',[['sim','Sim, confirmo'],['nao','Não, prefiro o tradicional']]));
-    if (!garanteElegivel(a)) {
-      a.tipo='tradicional';
-      delete a.qualificacao;
-    }
     return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal') && (q.key!=='tipo'||garanteElegivel(a)));
   }
   function budget(v) {
@@ -140,6 +136,7 @@
     };
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.key==='uf'?area.querySelector('#at-'+q.key):(q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key));if(el)a[q.key]=q.key==='uf'?el.value.trim().toUpperCase():el.value.trim();}};
     const draw=()=>{
+      if (!garanteElegivel(a)) {a.tipo='tradicional';delete a.qualificacao;}
       // Preserva o atendimento na memória caso banners ou dados públicos remontem a tela.
       inMemoryDraft={answers:a,step,questionIndex,categoryId};
       const stage=stages(a)[step];
