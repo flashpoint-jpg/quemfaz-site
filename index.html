@@ -4942,7 +4942,7 @@ alt=""></noscript>
   }
 
   function leadFeeForRequest(req) {
-    if (req && Number(req.precoDesbloqueio) > 0) return Number(req.precoDesbloqueio);
+    if (req && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) >= 0) return Number(req.precoDesbloqueio);
     const cat = categoryById(req.categoriaId);
     const tier = (cat && cat.leadTier) || 'padrao';
     const fees = state.settings.leadFees || { padrao: 500, medio: 800, premium: 1300 };
@@ -14874,7 +14874,7 @@ alt=""></noscript>
         const req = DB.requestById(params.id);
         const valorBase = req ? DB.leadFeeForRequest(req) : 0;
         const valor = req && req.atendimentoTipo === 'garante' ? valorBase * 4 : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase);
-        const primeiraGratis = false;
+        const primeiraGratis = !exclusivo && !!req && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
         const usaPlano = !exclusivo && !!(user && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
         const vagasFrase = 'O cliente escolheu receber ' + (vg.limite === 1 ? '1 orçamento' : 'até ' + vg.limite + ' orçamentos') + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' profissional já desbloqueou' : ' profissionais já desbloquearam') : ' e ninguém desbloqueou ainda') + ': você será o ' + (vg.ocupadas + 1) + 'º de ' + vg.limite + '. Sem devolução: se o cliente não te responder ou fechar com outro, o valor não volta. ';
@@ -14883,9 +14883,9 @@ alt=""></noscript>
           message: 'Não há garantia de contratação ou execução. O contato desse cliente fica só para você: o pedido sai da lista dos outros profissionais. Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente é liberado na hora.',
           okLabel: 'Pagar ' + PU.formatCurrency(valor) + ' e pegar'
         } : {
-          title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
+          title: primeiraGratis ? 'Você ganhou um desbloqueio grátis' : 'Desbloquear chamado',
           message: vagasFrase + (primeiraGratis
-            ? 'Nenhum crédito será usado neste primeiro chamado. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
+            ? 'Sua cortesia será usada neste pedido participante, sem descontar saldo ou plano. O WhatsApp do cliente e o chat são liberados na hora. O endereço exato só aparece se o cliente escolher você.'
             : (usaPlano
               ? 'Será usado 1 chamado do seu plano ' + user.plano.nome + ' (você tem ' + user.plano.restantes + '), sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.'
               : 'Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente e o chat são liberados na hora; o endereço exato só aparece se o cliente escolher você.')),
