@@ -46,25 +46,25 @@ const server=http.createServer(async(req,res)=>{
    window.navigate=url=>window.__nav.push(url);
   });
   fs.mkdirSync('/tmp/qf-mockup',{recursive:true});
-  const fill=async(key,value)=>{const input=page.locator('#at-'+key);if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);};
-  await fill('servico','Faxina');await fill('detalhes','Limpeza pesada de sala comercial');await fill('escopo','51 a 100 m²');
-  await page.screenshot({path:'/tmp/qf-mockup/etapa-1.png',fullPage:true});
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  const fill=async(key,value)=>{
+   const radio=page.locator('input[name="at-'+key+'"][value="'+value+'"]');
+   if(await radio.count())await radio.check();
+   else {const input=page.locator('#at-'+key);if(await input.evaluate(el=>el.tagName==='SELECT'))await input.selectOption(value);else await input.fill(value);}
+  };
+  const answer=async(key,value)=>{await fill(key,value);await page.getByRole('button',{name:'Continuar',exact:true}).click();};
+  await answer('servico','Faxina');await answer('detalhes','pesada');await answer('escopo','3a4');
   assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 2 de 4/);
-  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã'}))await fill(k,v);
-  await page.screenshot({path:'/tmp/qf-mockup/etapa-2.png',fullPage:true});
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã'}))await answer(k,v);
   assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 3 de 4/);
-  assert.equal(await page.locator('#at-orcamento option').filter({hasText:'Preciso de uma avaliação'}).count(),1);
-  await fill('materiais','profissional');await fill('orcamento','15000:30000');
-  await page.screenshot({path:'/tmp/qf-mockup/etapa-3.png',fullPage:true});
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
+  await answer('materiais','profissional');
+  assert.equal(await page.getByText('Preciso de uma avaliação',{exact:true}).count(),1);
+  await answer('orcamento','15000:30000');
   assert.match(await page.locator('[data-at-progress]').innerText(),/Etapa 4 de 4/);
-  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar',tipo:'garante',qualificacao:'sim',autorizacao:'sim'}))await fill(k,v);
-  await page.screenshot({path:'/tmp/qf-mockup/etapa-4.png',fullPage:true});
+  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar'}))await answer(k,v);
+  await fill('autorizacao','sim');
   await page.getByRole('heading',{name:'Revise antes de publicar'}).waitFor();
   assert.equal(await page.locator('#at-orcamento').count(),0);
-  assert.match(await page.locator('[data-qf-atendimento]').innerText(),/Não é garantia de contratação/);
+  assert.match(await page.locator('[data-qf-atendimento]').innerText(),/Você decide se contrata/);
   assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)>innerWidth),false,'mobile has no horizontal overflow');
   await page.screenshot({path:'/tmp/qf-atendimento-review.png',fullPage:true});
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
@@ -77,7 +77,7 @@ const server=http.createServer(async(req,res)=>{
   await as(database,11);const unlocked=await unlock(database,id,true);assert.equal(unlocked.ok,true);assert.equal(unlocked.preco_centavos,3160);
   await as(database,12);assert.equal((await unlock(database,id,true)).ok,false);
   const submissions=await page.evaluate(()=>window.__submissions);assert.equal(submissions.length,1);
-  assert.equal(submissions[0].atendimento.tipo,'garante');assert.equal(submissions[0].atendimento.qualificacao,'sim');assert.equal(submissions[0].maxOrcamentos,1);
+  assert.equal(submissions[0].atendimento.tipo,'garante');assert.equal(submissions[0].atendimento.detalhes,'Faxina pesada');assert.equal(submissions[0].maxOrcamentos,1);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('qf_atendimento_key')),null);
   const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.doesNotMatch(stored,/11988887776|Cliente Teste|Limpeza pesada/,'assistant does not persist PII');
   const professionalPreview=await page.evaluate(()=>{
@@ -103,18 +103,15 @@ const server=http.createServer(async(req,res)=>{
   });
   await page.waitForSelector('[data-qf-atendimento] #at-servico');
   assert.equal(await page.locator('#novo-pedido-form').count(),0);
-  assert.equal(await page.locator('#at-servico').inputValue(),'Pintor');
-  assert.match(await page.locator('label[for="at-detalhes"]').innerText(),/superfície/);
+  assert.match(await page.locator('label[for="at-detalhes"]').innerText(),/pintar/);
   // Traditional assessment, denied consent, timeout after commit, and double click retry.
   await page.getByRole('button',{name:'Continuar',exact:true}).click();
   assert.match(await page.locator('[data-error="detalhes"]').innerText(),/Responda/);
-  await fill('detalhes','Pintar sala de reunião interna');await fill('escopo','40 metros quadrados');
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
-  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Tarde'}))await fill(k,v);
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
-  await fill('materiais','combinar');await fill('orcamento','avaliacao');
-  await page.getByRole('button',{name:'Continuar',exact:true}).click();
-  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar',tipo:'tradicional',autorizacao:'nao'}))await fill(k,v);
+  await answer('detalhes','paredes');await answer('escopo','media');
+  for(const [k,v] of Object.entries({cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Tarde'}))await answer(k,v);
+  await answer('materiais','combinar');await answer('orcamento','avaliacao');
+  for(const [k,v] of Object.entries({nome:'Cliente Teste',contato:'11988887776',intencao:'contratar'}))await answer(k,v);
+  await fill('autorizacao','nao');
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
   assert.match(await page.locator('[data-error="autorizacao"]').innerText(),/Sem autorização/);
   assert.equal(await page.evaluate(()=>window.__submissions.length),1);
@@ -132,7 +129,7 @@ const server=http.createServer(async(req,res)=>{
   const traditional=(await database.query("select * from public.qf_chamados where atendimento_tipo='tradicional'")).rows[0];
   assert.equal(traditional.max_orcamentos,4);assert.match(traditional.descricao,/Preciso de uma avaliação/);
   assert.deepEqual(errors,[]);
-  console.log('PASS browser: actual built router, four stages, adapted profession, complete Garante → real createCall → RPC → isolated Postgres → exclusive debit, review, mobile, privacy and both entry points');
+  console.log('PASS browser: actual built router, four stages with individual radio questions, adapted profession, complete Garante → real createCall → RPC → isolated Postgres → exclusive debit, review, mobile, privacy and both entry points');
   await context.close();
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{server.close();if(database)await database.close();});
