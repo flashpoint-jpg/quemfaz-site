@@ -103,8 +103,8 @@ test('quatro etapas: avaliação sem preço, faixas por profissão e materiais p
  for(const servico of ['Faxina','Pedreiro','Eletricista']){
   for(const [orcamento] of A.budgetChoices(servico))assert.equal(A.validAll({...a,servico,detalhes:servico==='Faxina'?'comum':servico==='Pedreiro'?'reparo':'tomada',escopo:servico==='Faxina'?'3a4':servico==='Pedreiro'?'pequena':'um',orcamento}),'');
  }
- assert.equal(A.validAll({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined}),'');
- assert.equal(A.payload({...a,servico:'Professor',detalhes:'instalacao',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
+ assert.equal(A.validAll({...a,servico:'Professor',detalhes:'instalacao',escopo:'um',materiais:undefined}),'');
+ assert.equal(A.payload({...a,servico:'Professor',detalhes:'instalacao',escopo:'um',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
  assert.equal(A.validAll({...a,urgencia:'hoje',data:undefined}),'');
  assert.equal(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),'');
  assert.match(A.validAll({...a,servico:'Pedreiro',detalhes:'instalacao',orcamento:'15000:30000'}),/opções/);
