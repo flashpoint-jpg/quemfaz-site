@@ -1,0 +1,22 @@
+QuemFaz 11.37.0 — Index simples e pedido em 2 etapas
+
+Motivo: de 76 visitantes do Google que viram o formulário, só 6 começaram a preencher.
+
+Index: um campo só ("O que você precisa?") e o botão "Pedir grátis".
+Saíram do index: cidade, bairro e GPS (foram para a etapa 2 do pedido), os três selos,
+o bloco "Como funciona" e o aviso da Play Store. Foto e busca automática não mudaram.
+Tocar numa sugestão já abre o pedido. Texto fora da lista segue como serviço digitado.
+
+Pedir serviço:
+Etapa 1 — título com o serviço ("Precisando de um pedreiro?") e opções de toque.
+  Listas em global.QFPedidoEtapas.opcoes (14 serviços anunciados). Serviço sem lista
+  abre o campo de texto. "Prefiro escrever" e "Outro serviço" também abrem o texto.
+Etapa 2 — cidade ou CEP, bairro, nome e WhatsApp. O estado entra sozinho ao escolher
+  a cidade; o campo UF só aparece quando a cidade é ambígua ou o cliente toca em "trocar".
+Calculadora de preço e "pedir de novo" já chegam com a descrição e abrem na etapa 2.
+
+Regras mantidas: pedido sem cadastro, telefone validado, bairro obrigatório,
+prazo opcional, até 3 orçamentos, medição de captação (mesmos eventos).
+
+Validação: npm test (54 testes). Fluxo conferido no navegador em 390px e 1440px,
+sem publicar pedido real.

@@ -1,0 +1,11 @@
+QuemFaz site 11.46 — "Aberto a todos" sem mensagem contraditória
+
+TELA DO PROFISSIONAL (Início > Abertos a todos)
+- O servidor mantém o pedido "aberto a todos" até as 3 vagas encherem. O cartão dizia
+  "Ninguém desbloqueou ainda" mesmo com vagas ocupadas (ex.: "2 de 3 vagas ocupadas").
+- Agora: "Ninguém desbloqueou ainda" só aparece com 0 vagas ocupadas. Com alguém dentro,
+  a linha some e fica só o contador de vagas. "Sem profissional da categoria na região"
+  continua igual.
+- Texto da seção: "Pedidos que ainda têm vaga. Qualquer profissional pode desbloquear."
+
+NADA MUDOU no banco, nas regras de desbloqueio, nos preços nem no painel admin.

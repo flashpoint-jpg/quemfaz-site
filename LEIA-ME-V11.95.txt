@@ -1,0 +1,8 @@
+QuemFaz V11.95 — painel do administrador organizado (backup antes: branch backup/painel-admin-v11.94)
+
+- Menu da esquerda separado por assunto: Pedidos, Pessoas, Dinheiro e planos, Comunicação e Outros. Nenhum item repetido.
+- Entraram no menu (antes escondidos dentro de outras telas): Cancelamentos, Avisar quem não entrou, Sem notificação.
+- Nomes mais claros: "Painéis" virou "Parados na tela"; "Planos e anúncios" virou "Anúncios (QuemFaz Premium)"; "Por cidade" virou "Profissionais por cidade".
+- Saíram as repetições: bloco "Atalhos" do Início (Aviso geral, Bônus para todos, Cascata, Profissionais, Clientes, Receitas e Recrutamento — todos já têm lugar no menu ou na página de Pedidos), "Baixar tudo" repetido no Início (fica em Todos os pedidos), botões do topo que só levavam para outra página do menu, engrenagem do topo (Configurações está no menu), chip "Cancelamentos" na página de Pedidos, "Sair da conta" repetido em Configurações (fica no botão da conta, no topo).
+- A antiga tela "Mais opções" (cópia do menu) abre o Início.
+- Nada mudou em regras, dados ou ações: só a organização das telas.

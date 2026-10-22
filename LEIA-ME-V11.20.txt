@@ -1,0 +1,9 @@
+QuemFaz V11.20.0 — WhatsApp do cliente no desbloqueio
+
+- Ao desbloquear o chamado, o profissional vê o botão verde "Chamar <cliente> no WhatsApp",
+  com a mensagem pronta. O chat do app continua liberado.
+- O mesmo botão aparece em "Detalhes do serviço" enquanto a negociação está aberta.
+- Cliente é avisado no formulário, ao publicar e na tela do pedido de que o profissional
+  que aceitar vai chamar no WhatsApp. O endereço exato continua protegido até ele escolher.
+- Banco: supabase/2026-10-03-whatsapp-no-desbloqueio.sql.
+- Não muda: devolução de lead e cancelamento em 48h continuam como estavam.

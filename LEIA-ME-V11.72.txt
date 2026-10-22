@@ -1,0 +1,13 @@
+QuemFaz 11.72 — mini carrossel "Anuncie sua marca aqui" na tela inicial
+
+TELA INICIAL
+- Logo abaixo da foto dos profissionais entra uma faixa de publicidade com o logo do QuemFaz,
+  o texto que vai trocando sozinho a cada 3 segundos e o botão "Ver planos".
+- Textos: "Anuncie sua marca aqui", "Sua empresa neste espaço" e "Quer aparecer aqui?".
+- "Ver planos" abre a tela "Anuncie no QuemFaz" (a mesma de "Tenho uma empresa"), sem precisar de login.
+- No computador a ordem é foto, faixa, título e campo, com as bolinhas para trocar na mão.
+- No celular a faixa fica entre a foto e o campo, sem as bolinhas, para o "Pedir grátis" continuar na primeira tela.
+- A faixa tem altura fixa: a tela não pula quando o texto troca. Nenhum rosto da foto é coberto.
+
+AINDA NÃO FAZ
+- A faixa mostra só a chamada do QuemFaz. Logo e texto de empresa que pagar ainda não entram no rodízio.

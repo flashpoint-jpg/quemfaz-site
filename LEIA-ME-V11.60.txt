@@ -1,0 +1,10 @@
+QuemFaz 11.60 — aba "Finalizados" no painel
+
+PAINEL > menu lateral > Finalizados (logo abaixo de Desbloqueios)
+- Uma linha para cada chamado que um profissional informou que fechou: quando finalizou, "Finalizado por"
+  + nome do profissional, o pedido, o cliente (nome e WhatsApp) e a nota que o cliente deu.
+- No topo: finalizados no total, finalizados hoje, quantos profissionais finalizaram e quantos têm nota.
+- Tocar na linha abre o pedido.
+
+SERVIDOR (já publicado)
+- supabase/2026-10-10-snapshot-desfecho-em.sql: o painel recebe a data em que cada profissional finalizou.

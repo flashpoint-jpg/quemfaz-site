@@ -1,0 +1,10 @@
+QuemFaz V11.25.3 — Ajustes na tela inicial do cliente
+
+- Cartão "Receba orçamento grátis": saiu o selo GRÁTIS que cobria o título; ícone alinhado ao título;
+  texto atualizado (o profissional chama no WhatsApp).
+- Etapas do pedido: "Pedido publicado" virou "Publicado" para as 4 etapas ficarem em uma linha.
+- Busca: exemplo curto no campo ("Ex.: pintor, eletricista"), saiu o rótulo repetido "Busca automática"
+  e a dica deixou de ser uma caixa cinza. A busca automática funciona igual.
+
+BANCO
+- Nada a aplicar.

@@ -1,0 +1,14 @@
+V12.0.3 — Confirmação de interesse do cliente + selo "Interesse confirmado pelo cliente"
+
+1) Pedido (última tela, antes do botão de enviar): "Você pretende contratar um profissional?"
+   ( ) Sim, quero receber propostas para contratar.   ( ) Estou apenas pesquisando preços.
+   Obrigatória, nenhuma opção vem marcada. Não cria tela nova. Também vale na tela antiga de pedido.
+2) Profissional: quando o cliente escolhe "Sim", aparece o selo verde "Interesse confirmado pelo cliente"
+   no cartão e no detalhe do pedido, antes do desbloqueio. "Apenas pesquisando": sem selo.
+   O selo não garante contratação e o cliente não fica obrigado a contratar.
+3) Banco (migração 2026-10-19-interesse-do-cliente.sql, já aplicada, só adiciona): colunas interesse_cliente e
+   interesse_confirmado_em em qf_chamados (vazias nos pedidos antigos), data/hora gravada pelo servidor,
+   escolha imutável depois de publicada, leitura segura qf_interesse_info_chamados (só devolve "contratar").
+   Reversão manual: supabase/2026-10-19-interesse-do-cliente-rollback.sql.
+Não altera valores, créditos, pagamentos, desbloqueios nem o limite de 4 profissionais por pedido.
+Se o banco recusar o campo, o pedido é publicado normalmente, sem selo.

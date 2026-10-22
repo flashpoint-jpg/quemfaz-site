@@ -1,0 +1,20 @@
+QuemFaz 11.54 — nenhum plano pago se perde + avisos do admin religados (só servidor, já publicado)
+
+PLANO PAGO ANTES DA CONTA
+- A conferência de minuto em minuto (quemfaz-efi-pix-sync v6) agora também olha o pagamento do
+  cadastro (qf_pre_cadastro_pagamentos). Antes só confirmava com a tela de pagamento aberta:
+  quem pagava com o app fechado ficava "pendente".
+- Pagou e criou a conta com o mesmo e-mail em outro aparelho (ou reinstalou o app): o plano entra
+  sozinho na conta, em até 2 minutos (private.qf_pre_cadastro_resgatar_pendentes, de minuto em minuto).
+- No mesmo aparelho continua como antes: o app retoma o pagamento e cria a conta.
+
+AVISOS NO CELULAR DO ADMIN (função nova quemfaz-admin-aviso)
+- Estavam todos falhando (401): a quemfaz-push não tratava os avisos do admin.
+- Agora chegam: cadastro escolhendo plano (com WhatsApp), plano pago, conta criada com plano,
+  recarga paga, prioridade paga, cadastro novo, pedido desbloqueado, orçamento enviado,
+  mudança de status do pedido e mensagem no suporte.
+- Aviso comum, sem o toque de chamado.
+
+ARQUIVOS
+- supabase/functions/quemfaz-admin-aviso/index.ts
+- supabase/2026-10-10-avisos-admin-e-plano-pago-sem-conta.sql

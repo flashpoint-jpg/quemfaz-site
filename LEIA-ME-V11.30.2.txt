@@ -1,0 +1,11 @@
+QuemFaz V11.30.2 — Textos de "Como funciona" alinhados com as regras atuais
+
+O QUE MUDOU (só texto)
+- "O cliente fica só com você / Ninguém mais pega o mesmo chamado" virou
+  "No máximo 3 profissionais por pedido": até 3 profissionais desbloqueiam o mesmo pedido
+  e as vagas aparecem antes do desbloqueio.
+- Saiu a frase "Se o lead for devolvido, o chamado volta para o plano." (nos planos, em
+  "Como funciona" e na aba Planos): não existe devolução de lead.
+
+O QUE NÃO MUDOU
+- Nenhuma regra, preço, tela ou banco de dados.

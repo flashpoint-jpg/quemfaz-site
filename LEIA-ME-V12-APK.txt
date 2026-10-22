@@ -1,0 +1,29 @@
+QuemFaz APK 12.0.0 (site 11.7.1) — chamado chega com a tela apagada
+
+APP (quemfaz-android)
+- Profissional online = serviço em primeiro plano com a notificação fixa
+  "QuemFaz — Você está online, aguardando chamados" (canal quemfaz_online, sem som).
+  Offline ou sair da conta = o serviço para. Volta sozinho se o sistema matar o app
+  (START_STICKY) e ao reiniciar o celular, se estava online.
+- Na primeira vez que fica online: telas explicativas para notificações, bateria,
+  "chamado como ligação" (tela cheia, Android 14+) e início automático
+  (Xiaomi, Realme/Oppo/OnePlus, Vivo, Huawei/Honor, Tecno/Infinix, Samsung).
+- Chamado novo (strong=1): tela cheia (acende a tela), toque oficial em loop com vibração
+  até o profissional tocar no app/notificação ou por até 60 s. Depois disso o aviso fica, sem som.
+
+SITE (esta versão)
+- Avisa o app quando o profissional fica online/offline ou sai da conta (plugin QFOnline).
+- Perfil do profissional: "Revisar permissões de alerta" (só aparece no APK 12).
+- Token do Firebase vai com platform = "android;v=12".
+
+SERVIDOR (edge function quemfaz-push)
+- Para "android;v=12" manda o push só com dados (sem o bloco notification);
+  assim o app monta o chamado como ligação. Os APKs antigos continuam iguais.
+
+COMO TESTAR
+1. Instale o APK 12 por cima (mesma assinatura, não perde o login).
+2. Abra, fique online e aceite as telas de permissão.
+3. Confira a notificação fixa "Você está online, aguardando chamados".
+4. Apague a tela e espere 2 minutos.
+5. De outro celular, faça um pedido na categoria do profissional.
+6. Esperado: a tela acende, o toque do QuemFaz repete e o celular vibra; tocar abre o chamado.

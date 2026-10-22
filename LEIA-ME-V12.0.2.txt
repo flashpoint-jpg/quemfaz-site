@@ -1,0 +1,10 @@
+V12.0.2 — Devolução por erro na Receita + "Quem recebeu e por quê" no push
+
+1) Receita > "Devolução por erro": procure por código do pedido, nome/WhatsApp do cliente ou profissional,
+   escolha o motivo e confirme. O valor volta para a carteira do profissional, a vaga do pedido é liberada
+   e a devolução sai da Entrada (movimento "estorno" ligado ao pedido). Histórico com total de hoje e geral.
+2) Painéis > pedido > "Ver quem recebeu e por quê": profissionais da profissão, elegíveis, envio aceito,
+   falhas, sem notificação ativada e motivo de quem ficou de fora. Somente leitura; não envia push.
+3) Banco (migração 20261018123000, já aplicada, só adiciona): qf_admin_buscar_desbloqueios,
+   qf_admin_devolver_desbloqueio, qf_admin_devolucoes_lista, qf_admin_push_diagnostico (só administrador).
+Não altera cobrança, desbloqueio, horários, limite de 4 nem o disparo automático do push.

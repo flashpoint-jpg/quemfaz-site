@@ -1,0 +1,28 @@
+QuemFaz site 11.45 — Painel admin com menu lateral (só layout)
+
+PAINEL ADMIN
+- Barra de cima azul-marinho: "QuemFaz | Painel do administrador", sino com o número
+  de pendências (abre "Precisa de você"), engrenagem (Configurações) e a bolinha com a
+  inicial do admin (Sair da conta).
+- Menu lateral fixo: Início, Pedidos, Desbloqueios, Profissionais, Por cidade, Clientes,
+  Receita, Verificações, Comunicados, Bônus, Planos e anúncios, Suporte, Recrutamento
+  e, depois da linha, Configurações. O item aberto fica laranja.
+- Início: cartão com Receita de hoje (mesma regra: soma tudo e zera à meia-noite),
+  Pedidos de hoje, Desbloqueios de hoje e Precisa de você. Depois, "Últimos pedidos"
+  em tabela, com filtros Serviço e Situação e "Baixar tudo" (planilha CSV).
+  O resto do Início continua igual (nota, entrada, como está indo, captação, atalhos).
+- Pedidos: Central de pedidos + chamados parados, sem resposta, cascata e cancelamentos.
+- Desbloqueios: o extrato de desbloqueios ganhou página própria.
+- Por cidade, Verificações, Comunicados, Bônus e Configurações: páginas novas que
+  reúnem o que já existia (antes em "Mais", no Início ou dentro de Profissionais).
+- Receita: a mesma lista, agora em tabela.
+- Celular: o menu abre pelo botão ☰; os 4 números ficam em 2 colunas e as tabelas
+  rolam para o lado dentro do cartão.
+
+NADA MUDOU nas consultas do Supabase, nas regras de negócio nem nas telas de cliente
+e profissional.
+
+COMO TESTAR
+1. Abra o painel admin e clique em cada item do menu.
+2. No Início, troque os filtros de "Últimos pedidos" e toque em "Baixar tudo".
+3. No celular, abra o menu pelo ☰ e escolha uma página.

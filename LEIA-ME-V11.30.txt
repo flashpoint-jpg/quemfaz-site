@@ -1,0 +1,21 @@
+QuemFaz V11.30.0 — Tela inicial do cliente pensada para o pedido
+
+O QUE MUDOU NA TELA INICIAL (cliente que ainda não entrou)
+- Uma mensagem só no topo: "Precisou? Até 3 profissionais chamam você no WhatsApp."
+  No celular a foto virou uma miniatura ao lado do título; no computador ela continua inteira.
+- Campo "Ex.: chuveiro não esquenta" e botão "Pedir grátis" em largura total, um embaixo do outro.
+  A lista de sugestões abre logo abaixo do campo.
+- Atalhos de categoria (Eletricista, Encanador, Pintor, Diarista, Montador de móveis,
+  Marido de aluguel) e "Ver todos": um toque já começa o pedido.
+- Três garantias junto do botão: Grátis, Até 3 profissionais, No WhatsApp.
+- "Como funciona" virou uma faixa de três passos curtos.
+- "Pedir grátis" fica fixo embaixo quando o campo sai da tela (só no celular).
+- "Instalar app" saiu da barra de cima e foi para depois de "Preços, planos e dúvidas".
+
+O QUE NÃO MUDOU
+- A busca automática de categoria, o cadastro, o pedido, o app do profissional, o painel
+  e o banco de dados.
+- Não foram incluídas avaliações de clientes: só entram quando houver dados reais.
+
+TESTE
+- tests/visual-comanda.test.cjs (atualizado: a regra antiga travava a foto e a busca como eram).

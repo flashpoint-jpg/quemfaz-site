@@ -1,0 +1,9 @@
+QuemFaz 11.67 — painel: "Pedidos sem profissional", com "Trocar serviço e reenviar"
+
+PAINEL > menu da esquerda > Pedidos sem profissional (abaixo de Próximos ao pedido)
+- Lista os pedidos abertos que nenhum profissional recebeu (serviço sem ninguém cadastrado, ou ninguém avisado).
+- Em cada pedido: o que o cliente escreveu, o motivo, a lista de serviços (com quantos profissionais cada um tem,
+  já sugerindo o mais provável) e o botão "Trocar serviço e reenviar".
+- Ao reenviar, o pedido passa para o serviço escolhido e o aviso de chamado sai na hora (regra de sempre: toca
+  para quem está online).
+- Quando entra um pedido assim, o administrador recebe um aviso no celular (11.66).

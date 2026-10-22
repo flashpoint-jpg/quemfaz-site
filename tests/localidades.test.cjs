@@ -1,0 +1,6 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),{test}=require('node:test');
+const context={window:{}};vm.createContext(context);vm.runInContext(fs.readFileSync('qf-location-autocomplete.js','utf8'),context);
+const api=context.window.QFLocationAutocomplete,data=JSON.parse(fs.readFileSync('data/localidades.json'));
+test('cidade sem acento encontra município e distingue UF',()=>{const matches=api.cityMatches(data,'santo andre');assert.ok(matches.some(c=>c[1]==='Santo André'&&c[2]==='SP'));assert.equal(api.cityMatches(data,'Santo André / SP')[0][0],'3547809');});
+test('bairro é filtrado por município, sem acento e sem mistura de cidades',()=>{assert.ok(api.neighborhoodMatches(data,'3547809','vila pires').includes('Vila Pires'));const fixture={bairros:{1:['Centro','Jardim São José'],2:['Jardim Paulista']}};assert.deepEqual(Array.from(api.neighborhoodMatches(fixture,'1','jardim sao')),['Jardim São José']);assert.equal(api.neighborhoodMatches(fixture,'1','paulista').length,0);assert.equal(api.neighborhoodMatches(fixture,'3','centro').length,0);});
+test('cada bairro da base está associado a um município conhecido',()=>{const ids=new Set(data.cidades.map(c=>c[0]));for(const id of Object.keys(data.bairros))assert.ok(ids.has(id),id);});

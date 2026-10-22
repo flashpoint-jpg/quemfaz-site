@@ -1,0 +1,20 @@
+QuemFaz site 11.44 — Central de pedidos: quem desbloqueou, hora e extrato
+
+PAINEL ADMIN (Serviços / Central de pedidos)
+- Cada pedido mostra, sem precisar abrir: data e hora do pedido, cliente, bairro/cidade,
+  vagas (0 a 3) e a lista de quem desbloqueou, com nome, hora, data, valor,
+  quanto tempo depois do pedido e o resultado (fechou / não fechou).
+- Cor na lateral: vermelho = ninguém desbloqueou, laranja = desbloqueado,
+  verde = fechado, cinza = cancelado.
+- Extrato de desbloqueios (tipo extrato de banco): uma linha por desbloqueio, com hora,
+  data, profissional, pedido e valor (crédito, plano ou grátis), separado por dia e com
+  o total do dia. No computador fica ao lado dos pedidos; no celular fica em cima,
+  fechado, e abre ao tocar. Tocar numa linha abre o pedido.
+- Horários sempre no horário de Brasília.
+
+NADA MUDOU nas regras, no banco, nas abas, em excluir pedidos nem no detalhe do pedido.
+
+COMO TESTAR
+1. Abra o painel admin > Serviços.
+2. Confira num pedido desbloqueado o nome e a hora de quem desbloqueou.
+3. Abra o "Extrato de desbloqueios" e confira o total de hoje.

@@ -1,0 +1,19 @@
+QuemFaz 11.76 — aba "Painéis" no painel e quilometragem pelo bairro
+
+PAINEL (menu lateral > Painéis)
+- Lista os pedidos que estão parados na tela dos profissionais agora (ainda com vaga livre).
+- Em cada pedido: há quanto tempo está parado, vagas, pra quando, valor do desbloqueio, em quantas telas
+  aparece (e quantos online), profissional mais perto, avisos e reenvios, cliente, quem já desbloqueou
+  (nome, valor, data e hora, distância, situação). Botões: Reenviar aviso, WhatsApp do cliente, Abrir o pedido.
+- "Baixar relatório" gera a planilha com tudo. A tela se atualiza sozinha a cada 20 segundos.
+
+QUILOMETRAGEM
+- Causa: todo pedido era gravado com a coordenada do centro da cidade, então o profissional via a mesma
+  distância em todos os pedidos da mesma cidade.
+- Pedido novo: grava a localização do bairro informado; só usa o centro da cidade se o bairro não for achado.
+- Pedidos que já estão parados: ao abrir a aba Painéis, o painel procura o bairro no mapa e corrige sozinho.
+  Cada pedido mostra de onde veio a localização.
+
+SERVIDOR
+- Migração supabase/2026-10-11-paineis-e-local-do-bairro.sql (já aplicada): coluna geo_precisao,
+  funções qf_admin_paineis e qf_admin_corrigir_local_pedido.

@@ -1,0 +1,30 @@
+QuemFaz site 11.51 — "Simular chamado" (teste do aviso de chamado no celular)
+
+BANCO (já aplicado no Supabase: supabase/2026-10-10-chamados-teste.sql)
+- Tabela chamados_teste (id, profissional_id, enviado_em, chegou_em, confirmado_em, enviado_por,
+  + token do aviso e resultado do envio). RLS: admin cria e lê tudo; profissional lê só o dele e
+  só altera chegou_em/confirmado_em; sem login, nada.
+- qf_teste_chegou(id, token): marca "chegou" (usada pelo celular, mesmo sem sessão).
+- qf_teste_confirmar(id): marca "confirmado" (profissional logado).
+- Testado no banco: um teste completo NÃO muda pedidos, desbloqueios, carteiras,
+  movimentações, recargas nem entregas de push de chamados reais.
+
+SERVIDOR (edge function quemfaz-push v37, já publicada)
+- action "teste_chamado" (só admin): grava o teste e manda o aviso pelo MESMO caminho do
+  chamado real (strong: canal quemfaz_chamados, toque oficial, tela cheia), com tipo = "teste".
+  Vai direto para o profissional: não olha online/offline nem horário.
+
+PAINEL ADMIN (Profissionais)
+- Cartão de resumo: Testes enviados, Confirmados, Chegou e não confirmou, Não chegou no aparelho.
+- Em cada profissional: "Último teste" (etiqueta colorida + data/hora) e o botão "Simular chamado".
+- Atualiza sozinho a cada 5 segundos.
+
+APP DO PROFISSIONAL
+- Aviso de teste: tela cheia "TESTE" com o toque oficial em loop; botão verde
+  "Clique aqui para confirmar o teste"; depois "Teste confirmado" + "Fechar".
+- PWA: o service worker marca "chegou" assim que o aviso chega, mesmo com o app fechado.
+- APK 12 (sem mudar o APK): o aviso já toca como chamado (tela cheia, toque, tela apagada).
+  Com o app fechado, "chegou" só é marcado quando o profissional toca no aviso.
+  Para marcar na hora, o app Android precisa chamar qf_teste_chegou(teste_id, teste_token)
+  ao receber o push com tipo = "teste" (repositório quemfaz-android).
+- O teste não aparece na lista de pedidos.
