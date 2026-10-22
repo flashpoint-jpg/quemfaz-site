@@ -68,7 +68,7 @@ test('index.html: um único fluxo, orçamento sem depender de chave, sem 6% e se
   assert.match(html, /QFValor\.orcamentoHtml\(req\.orcamentoAproxCentavos\)/);
   assert.doesNotMatch(html, /seletorModalidadeHtml|desbloquear-valor|valorPainelPro|valorDefinido|afterValorUnlock|taxa de indicação/);
   // desbloqueio normal e exclusivo continuam na função transacional existente
-  assert.match(html, /client\.rpc\('qf_desbloquear_chamado', exclusivo \? \{ p_chamado_id: chamadoId, p_exclusivo: true \}/);
+  assert.match(html, /client\.rpc\(cortesia \? 'qf_usar_cortesia_reativacao' : 'qf_desbloquear_chamado', exclusivo \? \{ p_chamado_id: chamadoId, p_exclusivo: true \}/);
   assert.match(html, /ativo: true, mult: 4,/);
 });
 

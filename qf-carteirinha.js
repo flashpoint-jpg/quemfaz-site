@@ -19,14 +19,14 @@
      card=document.createElement('section');
      card.className='card qf-carteirinha-home';
      card.setAttribute('data-qf-carteirinha-home','');
-     card.innerHTML='<div class="qf-carteirinha-home__top"><span class="qf-carteirinha-home__icon" aria-hidden="true">▣</span><div><h2>Ganhe pontos com avaliações</h2><p>Imprima sua carteirinha e peça ao cliente para avaliar seu atendimento pelo QR Code.</p></div></div><div data-qf-carteirinha-acoes class="qf-carteirinha-home__acoes">Preparando sua carteirinha...</div>';
+     card.innerHTML='<div class="qf-carteirinha-home__top"><span class="qf-carteirinha-home__icon" aria-hidden="true">▣</span><div><h2>Sua carteirinha digital</h2><p>Abra sua carteirinha digital no celular e mostre o QR Code ao cliente. Não é necessário imprimir.</p></div></div><div data-qf-carteirinha-acoes class="qf-carteirinha-home__acoes">Preparando sua carteirinha...</div>';
      status.insertAdjacentElement('afterend',card);
    }
    if(tokenCache&&tokenCache.id===id){
      var acoes=card.querySelector('[data-qf-carteirinha-acoes]');
      if(acoes&&!acoes.querySelector('a')){
        var link='/carteirinha.html?token='+encodeURIComponent(tokenCache.token);
-       acoes.innerHTML='<a class="btn btn--primary qf-carteirinha-home__btn" href="'+link+'&imprimir=1">Imprimir minha carteirinha</a><a class="qf-carteirinha-home__view" href="'+link+'">Ver carteirinha</a>';
+       acoes.innerHTML='<a class="btn btn--primary qf-carteirinha-home__btn" href="'+link+'">Abrir carteirinha digital</a><a class="qf-carteirinha-home__view" href="'+link+'">Ver carteirinha</a>';
      }
      return;
    }
