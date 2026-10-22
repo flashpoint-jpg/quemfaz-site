@@ -7297,10 +7297,13 @@ alt=""></noscript>
 
   async function unlockCall(chamadoId, profissionalId, exclusivo) {
     // V11.90: exclusivo = só ele recebe o contato do cliente (paga N× o preço, enquanto ninguém desbloqueou).
-    const res = await client.rpc('qf_desbloquear_chamado', exclusivo ? { p_chamado_id: chamadoId, p_exclusivo: true } : { p_chamado_id: chamadoId });
+    const cachedReq = DB.requestById(chamadoId);
+    const cortesia = !exclusivo && cachedReq && cachedReq.precoDesbloqueio != null && Number(cachedReq.precoDesbloqueio) === 0;
+    const res = await client.rpc(cortesia ? 'qf_usar_cortesia_reativacao' : 'qf_desbloquear_chamado', exclusivo ? { p_chamado_id: chamadoId, p_exclusivo: true } : { p_chamado_id: chamadoId });
     if (res.error) return { ok: false, reason: 'erro', error: res.error.message };
     const out = res.data || {};
     if (!out.ok) {
+      if (out.reason === 'cortesia_indisponivel') { await syncProfessionalCalls(profissionalId); throw new Error('Esta cortesia já foi usada ou não está disponível neste pedido. Atualize a lista. Nenhum valor foi cobrado.'); }
       if (out.reason === 'garante_exige_verificacao') throw new Error('Quem Faz Garante exige perfil verificado e documento cadastrado.');
       if (out.reason === 'garante_exige_exclusivo') throw new Error('Este pedido exige desbloqueio exclusivo. Atualize a lista.');
       if (out.reason === 'reservado') {
