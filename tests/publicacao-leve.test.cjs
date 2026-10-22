@@ -20,12 +20,14 @@ assert.ok(sw.includes('./'+cssName),'folha principal disponível no cache offlin
 assert.ok(html.indexOf(cssName)<html.indexOf('id="app-shell"'),'folha principal carregada antes da interface');
 const early=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('QFEarly'))[1];
 const events={},field={value:'Preciso montar guarda-roupa',dispatchEvent(){}},form={tagName:'FORM',matches:()=>true,querySelector:()=>({}),requestSubmit(){this.sent=(this.sent||0)+1;}};
-const document={querySelector:s=>s==='[data-landing-service-search]'?field:form,addEventListener:(key,fn)=>events[key]=fn};
-const window={};vm.runInNewContext(early,{window,document,location:{hash:'#/'},Event:class{}});
+const document={querySelector:s=>s==='[data-landing-service-search]'?field:form,addEventListener:(key,fn)=>events[key]=fn,getElementById:()=>({set outerHTML(value){this.html=value;}})};
+const location={hash:'#/'},window={setTimeout(){}};
+vm.runInNewContext(early,{window,document,location,sessionStorage:{removeItem(){}},Event:class{}});
 let prevented=0;events.submit({target:form,preventDefault(){prevented++;}});
 assert.equal(prevented,1);
 field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(field.value,'Preciso montar guarda-roupa');
-window.QFEarly.finish();assert.equal(form.sent,1);
+assert.equal(location.hash,'#/auth/cliente/cadastro');
+window.QFEarly.finish();assert.equal(form.sent||0,0,'ao tocar cedo abre a rota sem reenviar formulário');
 field.value='Novo serviço';window.QFEarly.capture();field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(field.value,'');
 console.log('publicacao-leve: ordem de scripts, cache offline, conteúdo inicial e preservação de pedido antes do carregamento: ok');
 // A primeira ativação da home mantém os nós já visíveis, sem trocar o candidato LCP.
