@@ -45,7 +45,10 @@
     }catch(e){btn.disabled=false;g.PU.toast('Não foi possível gerar o link. Confira a situação do acordo e tente novamente.','danger');}
    };
   }
-  rpc('qf_comissao13_meu_desbloqueio',{p_chamado_id:params.id}).then(d=>{
+  // Fluxo legado de QR/OTP/split fica desativado no piloto simplificado.
+  // Não apresentar formulários antigos enquanto as novas RPCs não estiverem prontas.
+  const mostrarFluxoLegado=false;
+  if(mostrarFluxoLegado)rpc('qf_comissao13_meu_desbloqueio',{p_chamado_id:params.id}).then(d=>{
    if(!d.ok||!content.isConnected)return;
    // O fluxo antigo de baixa/fechamento não confirma serviços da modalidade 13%.
    content.querySelectorAll('[data-action="fechei-servico"],[data-qf-baixa-btn]').forEach(b=>{b.hidden=true;});
@@ -68,6 +71,11 @@
   }).catch(()=>{});
 
   if(!content.querySelector('[data-action="desbloquear-chamada"]'))return;
+  // Mostrar informação correta, sem oferecer desbloqueio que o backend ainda bloqueia.
+  box.innerHTML='<h2 class="h3">Desbloqueio gratuito · 13% se fechar</h2><p>Nova modalidade em preparação. O cliente paga diretamente ao profissional. A comissão de 13% depende da confirmação da equipe Quem Faz.</p><p>Enquanto isso, o desbloqueio pago continua disponível normalmente.</p>';
+  content.appendChild(box);
+  return;
+
   rpc('qf_comissao13_status').then(s=>{
    if(!s.ok||!content.isConnected)return;
    box.innerHTML=oferta(s);content.appendChild(box);
