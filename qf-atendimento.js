@@ -78,6 +78,7 @@
   function validate(q,v,a) {
     v=String(v || '').trim();
     if (!v || v.length>2000) return 'Responda esta pergunta para continuar (até 2.000 caracteres).';
+    if (q.key==='uf' && !'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').includes(v.toUpperCase())) return 'Informe a sigla do estado, por exemplo SP.';
     if (q.choices && !q.choices.some(c=>c[0]===v)) return 'Escolha uma das opções.';
     if (v.length<(q.min||1)) return 'Descreva um pouco melhor para continuar.';
     if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g,'')) || (root.QFUI?.validPhone && !root.QFUI.validPhone(v)))) return 'Confira o celular com DDD.';
@@ -124,7 +125,7 @@
       const input=q.key==='uf' ? '<input class="input" id="'+id+'" maxlength="2" placeholder="Ex.: SP" value="'+esc(value)+'" required>' : q.choices ? '<div class="stack--sm" role="radiogroup" aria-label="'+esc(q.label)+'">'+q.choices.map(c=>'<label class="card" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;border:1px solid var(--border,#d9e2ef);border-radius:12px"><input type="radio" name="'+id+'" value="'+esc(c[0])+'"'+(c[0]===value?' checked':'')+' required style="width:20px;height:20px;accent-color:#1769d5"><span>'+esc(c[1])+'</span></label>').join('')+'</div>' : q.multiline ? '<textarea class="input" id="'+id+'" maxlength="2000" rows="2" required>'+esc(value)+'</textarea>' : '<input class="input" id="'+id+'" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'"'+disabled+' required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
       return '<div class="stack--sm" style="min-width:0"><label class="text--strong" for="'+id+'">'+esc(q.label)+'</label>'+input+'<p class="text--sm" role="alert" data-error="'+q.key+'"></p></div>';
     };
-    const read=()=>{for(const q of stages(a)[step].questions){const el=q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key);if(el)a[q.key]=el.value.trim();}};
+    const read=()=>{for(const q of stages(a)[step].questions){const el=q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key);if(el)a[q.key]=q.key==='uf'?el.value.trim().toUpperCase():el.value.trim();}};
     const draw=()=>{
       const stage=stages(a)[step];
       questionIndex=Math.min(questionIndex,stage.questions.length-1);
