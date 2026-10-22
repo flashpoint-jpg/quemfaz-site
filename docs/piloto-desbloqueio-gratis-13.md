@@ -78,3 +78,39 @@ Implementado:
 6. Revisar tarifas e termos financeiros efetivos antes de expor escolha ativa. Não alterar a tabela privada de prontidão para habilitar o piloto antes de completar os itens acima.
 
 O fluxo tradicional, créditos, planos, Garante e pedidos existentes não foram substituídos. A modalidade gratuita não está operacional de ponta a ponta.
+
+
+## Continuação após PR #109 — QR, notificações e financeiro
+
+Concluído no código e validado com testes isolados:
+- Carteirinha vinculada a um acordo específico. O servidor confere se o acordo pertence ao profissional da carteirinha; o QR abre a conferência do pedido/valor e continua exigindo OTP. A carteirinha original de avaliações foi preservada.
+- Links adicionais com prazo de um dia, sem invalidar links anteriormente enviados; limite diário de emissão e nenhuma capacidade de concluir pelo profissional.
+- Fila de push persistente e deduplicada por evento e usuário, integrada ao emissor atual. Horários, disponibilidade e preferências continuam valendo. Aceite do provedor é separado de entrega ao celular. Processamento interrompido fica como incerto e não é reenviado automaticamente.
+- Anúncio da modalidade aos elegíveis bloqueado enquanto a prontidão estiver falsa. Eventos de contratação, conclusão, contestação e financeiros geram notificações persistidas; a ativação não ocorreu.
+- Cadastro protegido de conta Efí/payee_code pelo profissional, sem validação automática ou abertura de conta. A validação permanece pendente de evidência real. Recebedor não validado não pode usar o gratuito.
+- Registros financeiros com valor total, comissão, parcela do profissional, tarifa prevista/real, cobrança, estorno e repasse. Reserva única por acordo, eventos idempotentes, repasse bloqueado antes do pagamento ou durante contestação, proteção contra eventos fora de ordem.
+- Adaptador Efí preparado para split Pix e checkout de cartão, confirmação por consulta autenticada ao banco e callback com segredo. QR Pix só é retornado depois da vinculação do split. Autorização de cartão (approved) não é tratada como pagamento liquidado.
+
+**Limite de publicação financeira:** o endpoint `quemfaz-comissao13-financeiro` não foi implantado nem habilitado, porque ainda não há homologação real aprovada. Seus testes usam respostas controladas; não são pagamentos reais. As tabelas e guardas permanecem isoladas e a modalidade gratuita segue bloqueada.
+
+Dependências concretas restantes para ativar:
+1. OTP real: configurar os segredos QF13_TWILIO_ACCOUNT_SID, QF13_TWILIO_AUTH_TOKEN, QF13_SMS_FROM e QF13_OTP_SECRET e aprovar o envio ao telefone de teste autorizado.
+2. Recebedores reais: profissionais do piloto precisam de conta Efí em seu nome, número da conta e payee_code válidos, com documento correspondente. A documentação da Efí restringe split a contas Efí; não havia cadastro destes dados no projeto.
+3. Tarifas contratuais e KYC/escopos: registrar tarifas reais verificadas, habilitar split/Pix/cartão e validar os recebedores com o provedor. O adaptador preparado debita a tarifa do Quem Faz (dentro dos 13%) e impede operação quando a tarifa prevista supera a comissão. Essa política não foi ativada nem aplicada a serviços reais.
+4. Webhook de serviços separado dos pagamentos atuais: QF13_EFI_PIX_KEY e QF13_EFI_WEBHOOK_SECRET, registro do callback e testes de cobrança/estorno/repasse. Não foi substituído o webhook da carteira. QF13_FINANCEIRO_LIBERADO permanece ausente/falso.
+5. Homologação real com Pix e cartão, testes com sessões PostgreSQL independentes e fluxo completo no celular/desktop. A inspeção pública de navegador comprovou rejeição de link sem acordo; não equivale ao teste financeiro ponta a ponta.
+6. Cartão: o pagamento liquidado é reconciliado, mas a comprovação específica de liquidação do split/repasse ainda exige validação com os retornos reais da Efí. Não presumir repasse a partir de autorização ou de pagamento.
+
+Referências oficiais da implementação:
+- https://dev.efipay.com.br/docs/api-pix/split-de-pagamento-pix/
+- https://dev.efipay.com.br/docs/api-cobrancas/split-de-pagamento/
+- https://dev.efipay.com.br/docs/api-cobrancas/link-de-pagamento/
+- https://dev.efipay.com.br/docs/api-cobrancas/notificacoes/
+
+Validação desta continuação: suíte completa e testes específicos executados após as alterações. Os testes de banco são isolados; valores de tarifa e recebedores usados neles são fixtures e não configuram o sistema real. Nenhum pagamento, recebimento ou estorno real foi executado.
+
+### Resultado da tentativa de implantação desta continuação
+- `npm test`: 277 aprovados, 0 falhas, 2 ignorados (279 testes). Inclui validação de pagamento seguido de repasse e proteção contra regressão por webhook repetido, em ambiente isolado.
+- As gravações no Supabase passaram a retornar `Invalid or expired requestState`. A migração foi tentada pela ferramenta de migração e pela conexão SQL; verificações posteriores confirmaram que `private.qf_comissao13_links` e `public.qf_comissao13_financeiro` continuam ausentes.
+- Portanto, estas duas migrações NÃO foram aplicadas, as funções Edge novas/alteradas desta continuação NÃO foram implantadas e as telas dependentes NÃO devem ser integradas/publicadas até a conexão de gravação ser restabelecida.
+- A versão anterior, publicada pelo PR #109, permanece preservada. Nenhum gratuito foi aberto, pagamento gerado ou anúncio da modalidade disparado.

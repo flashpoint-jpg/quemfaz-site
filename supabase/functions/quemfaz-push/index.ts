@@ -597,6 +597,31 @@ Deno.serve(async (req) => {
     // Profissional acaba de entrar no horario: recuperar pedidos ainda abertos.
     // Reaproveita todos os controles de categoria, distancia, vagas, online e
     // deduplicacao do mesmo push usado por chamados novos.
+
+    if (event === "comissao13_queue") {
+      const { data: item, error: reserveError } = await admin.rpc("qf_comissao13_notificacao_reservar", { p_id: callId });
+      if (reserveError) return json({ error: "queue_reservation_failed" }, 500);
+      if (!item?.ok) return json({ ok: true, skipped: item?.reason || "already_processed" });
+      let status = "incerto";
+      try {
+        const result = await sendToUsers([item.user_id], {
+          title: item.titulo, body: item.corpo, url: item.rota,
+          tag: "qf13-" + item.id, strong: false, alerta: item.alerta,
+        }, undefined, async (outcome) => {
+          status = outcome.status === "enviado" ? "aceito_provedor" :
+            (["sem_inscricao", "fora_horario"].includes(outcome.status) ? outcome.status : "incerto");
+          const { error } = await admin.rpc("qf_comissao13_notificacao_resultado", {
+            p_id: item.id, p_status: status, p_erro: outcome.error,
+          });
+          if (error) throw error;
+        });
+        return json({ ok: true, status, entrega_confirmada: false, ...result });
+      } catch (_) {
+        await admin.rpc("qf_comissao13_notificacao_resultado", { p_id: item.id, p_status: "incerto", p_erro: "Falha ou resultado de envio desconhecido; revisão necessária." });
+        return json({ error: "queue_send_uncertain", entrega_confirmada: false }, 502);
+      }
+    }
+
     if (event === "retry_call") {
       try { return json({ ok: true, event, ...(await sendNewCallStage(callId, 200)) }); }
       catch (_) { return json({ error: "retry_call_failed" }, 500); }
