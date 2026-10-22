@@ -15,12 +15,17 @@ Deno.serve(async(req)=>{
   const b=JSON.parse(raw);
   const sid=Deno.env.get('QF13_TWILIO_ACCOUNT_SID')||'', secret=Deno.env.get('QF13_TWILIO_AUTH_TOKEN')||'', from=Deno.env.get('QF13_SMS_FROM')||'', pepper=Deno.env.get('QF13_OTP_SECRET')||'';
   const configurado=/^AC[0-9a-f]{32}$/i.test(sid)&&!!secret&&/^\+[1-9]\d{7,14}$/.test(from)&&pepper.length>=32;
-  if(b.action==='status')return reply({ok:true,otp_configurado:configurado,financeiro_servicos_integrado:false,ativo:false});
+  if(b.action==='status')return reply({ok:true,otp_configurado:configurado,financeiro_servicos_integrado:false,efi_pix_credenciais_presentes:!!(Deno.env.get('EFI_CLIENT_ID')&&Deno.env.get('EFI_CLIENT_SECRET')&&Deno.env.get('EFI_CERT_P12_PROD_BASE64')&&Deno.env.get('EFI_PIX_KEY')),efi_cartao_credenciais_presentes:!!(Deno.env.get('EFI_CLIENT_ID')&&Deno.env.get('EFI_CLIENT_SECRET')),ativo:false});
   // Nunca reutilizar a sessão de profissional para confirmar pelo cliente.
   const bearer=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
   if(bearer){const {data}=await admin.auth.getUser(bearer);if(data.user)return reply({ok:false,reason:'use_acesso_cliente'},403);}
   if(!/^[0-9a-f-]{36}$/i.test(String(b.token||'')))return reply({ok:false,reason:'link_invalido'},400);
-  if(b.action==='info')return reply(await rpc('qf_comissao13_cliente_info',{p_token:b.token}));
+  if(b.carteirinha){
+   if(!/^[0-9a-f-]{36}$/i.test(String(b.carteirinha)))return reply({ok:false,reason:'carteirinha_incompativel'},400);
+   const cart=await rpc('qf_comissao13_carteirinha_info',{p_carteirinha:b.carteirinha,p_token:b.token});
+   if(!cart.ok)return reply(cart,403);
+  }
+  if(b.action==='info')return reply({...await rpc('qf_comissao13_cliente_info',{p_token:b.token}),financeiro_disponivel:Deno.env.get('QF13_FINANCEIRO_LIBERADO')==='true'});
   if(!configurado)return reply({ok:false,reason:'otp_nao_configurado'},503);
   if(!['contratar','concluir','contestar'].includes(b.finalidade))return reply({ok:false,reason:'dados_invalidos'},400);
   if(b.action==='enviar_codigo'){

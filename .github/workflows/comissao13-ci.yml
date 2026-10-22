@@ -1,0 +1,39 @@
+name: Piloto 13% — banco isolado e concorrência
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'qf-comissao13*.js'
+      - 'supabase/**comissao13*'
+      - 'supabase/functions/quemfaz-comissao13*/**'
+      - 'tests/comissao13*'
+      - '.github/workflows/comissao13-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local_only_dummy
+          POSTGRES_DB: qf13_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d qf13_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Dependências e testes sem credenciais de produção
+        run: npm ci --ignore-scripts && npm test
+      - name: Concorrência entre sessões PostgreSQL independentes
+        env:
+          QF13_TEST_DATABASE_URL: postgresql://postgres:local_only_dummy@localhost:5432/qf13_test
+        run: node tests/comissao13.concurrent.cjs

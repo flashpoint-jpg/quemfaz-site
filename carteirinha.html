@@ -82,6 +82,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
   'use strict';
   const params=new URLSearchParams(location.search);
   const token=params.get('token')||'';
+  const servico=new URLSearchParams(location.hash.slice(1)).get('servico')||'';
   const erro=document.getElementById('erro');
   const botao=document.getElementById('imprimir');
   // Sai da carteirinha e volta para o app (funciona no app da Play Store e no navegador).
@@ -153,13 +154,24 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
         img.onload=function(){img.style.display='block';document.getElementById('iniciais').style.display='none';};
         img.src=data.foto;
       }
-      const target=location.origin+'/avaliar.html?token='+encodeURIComponent(token);
+      let target=location.origin+'/avaliar.html?token='+encodeURIComponent(token);
+      if(servico){
+        const acordo=await client.rpc('qf_comissao13_carteirinha_info',{p_carteirinha:token,p_token:servico});
+        if(acordo.error||!acordo.data||!acordo.data.ok)throw new Error('Este acordo não corresponde à carteirinha ou o link expirou. Abra novamente pelo pedido.');
+        target=location.origin+'/comissao13.html#token='+encodeURIComponent(servico)+'&carteirinha='+encodeURIComponent(token);
+        document.querySelector('.question').textContent='Confirme este serviço';
+        document.querySelector('.instructions').textContent='Pedido '+String(acordo.data.pedido).slice(0,8)+' · '+(acordo.data.valor_centavos/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        document.querySelector('.helper').textContent='O cliente escaneia com o próprio celular e recebe um código no telefone do pedido. O QR Code sozinho não confirma a conclusão. Não é necessário imprimir.';
+        document.getElementById('qr').setAttribute('aria-label','QR Code para o cliente conferir o acordo e confirmar com código no telefone');
+        document.querySelector('article.card').setAttribute('aria-label','Carteirinha digital do serviço');
+        botao.hidden=true;
+      }
       if(!window.QRCode)throw new Error('QR Code indisponível. Verifique sua conexão antes de imprimir.');
       new QRCode(document.getElementById('qr'),{text:target,width:236,height:236,colorDark:'#000000',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
       botao.disabled=false;
-      ativarExtras(nome,String(data.numero||''),target).catch(function(){});
+      if(!servico)ativarExtras(nome,String(data.numero||''),target).catch(function(){});
       botao.addEventListener('click',function(){window.print();});
-      if(params.get('imprimir')==='1'){
+      if(!servico&&params.get('imprimir')==='1'){
         if(document.fonts&&document.fonts.ready)await document.fonts.ready;
         setTimeout(function(){window.print();},850);
       }
