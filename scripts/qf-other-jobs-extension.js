@@ -1,7 +1,7 @@
 
 // QF 12.1: vitrine somente-leitura de outras profissoes.
 // Sem push, sem contato do cliente e sem botao de desbloqueio.
-const qfOutrosState = { itens: [], userId: '', loadedAt: 0, pending: null };
+const qfOutrosState = { itens: [], userId: '', categoriasKey: '', loadedAt: 0, pending: null };
 function qfOutrosEsc(value) { return PU.escapeHtml(String(value == null ? '' : value)); }
 function qfOutrosNum(value) { return Math.max(0, Number(value || 0) || 0); }
 function qfOutrosCategoria(id) {
@@ -57,7 +57,14 @@ function qfOutrosStatusBadge(item) {
   const vagas = qfOutrosNum(item.vagas);
   return '<span class="qf-outros-vagas">' + vagas + (vagas === 1 ? ' vaga' : ' vagas') + '</span>';
 }
+function qfOutrosMesmaProfissao(item, user) {
+  if (!user) user = DB.profissionalById((DB.getSession() || {}).userId);
+  return !!(user && DB.qfServicoCompatibilidadeGasista(user, {
+    categoriaId: item.categoria, titulo: item.titulo, descricao: item.descricao
+  }));
+}
 function qfOutrosCard(item) {
+  const mesmaProfissao = qfOutrosMesmaProfissao(item);
   const cat = qfOutrosCategoria(item.categoria);
   const cidade = [item.cidade,item.uf].filter(Boolean).join(' - ');
   const local = [item.bairro,cidade].filter(Boolean).join(' · ');
@@ -80,8 +87,9 @@ function qfOutrosCard(item) {
     '<p><strong>Região:</strong> ' + qfOutrosEsc(local || cidade) + '</p>' +
     '<p><strong>Distância aproximada:</strong> ' + qfOutrosEsc(qfOutrosDistancia(item)) + (item.distancia_km == null ? '' : ' (em linha reta)') + '</p>' +
     '<p><strong>Vagas disponíveis:</strong> ' + qfOutrosNum(item.vagas) + ' de ' + qfOutrosNum(item.limite) + '</p>' +
-    '<p>Este serviço pertence a outra profissão. Para receber chamadas desta categoria, cadastre-a somente se você realmente a realiza. A região de atendimento também deve ser compatível.</p>' +
-    '<button type="button" class="btn btn--outline btn--sm" data-nav="/profissional/home">Voltar ao início e ajustar profissões</button>' +
+    (mesmaProfissao
+      ? '<p>Esta profissão já está cadastrada no seu perfil. Consulte os pedidos disponíveis para verificar vagas e região de atendimento.</p><button type="button" class="btn btn--outline btn--sm" data-nav="/profissional/servicos/disponiveis">Ver pedidos para você</button>'
+      : '<p>Este serviço pertence a outra profissão. Para receber chamadas desta categoria, cadastre-a somente se você realmente a realiza. A região de atendimento também deve ser compatível.</p><button type="button" class="btn btn--outline btn--sm" data-nav="/profissional/home">Voltar ao início e ajustar profissões</button>') +
     '</div></article>';
 }
 function qfOutrosListHtml(itens) {
@@ -208,8 +216,10 @@ Screens.profServicosDisponiveisRender = function(params,user) {
 };
 async function qfOutrosLoad(user,force) {
   if (!user || !user.id) return [];
-  if (qfOutrosState.userId !== user.id) {
+  const categoriasKey=JSON.stringify((user.categorias || []).slice().sort());
+  if (qfOutrosState.userId !== user.id || qfOutrosState.categoriasKey !== categoriasKey) {
     qfOutrosState.userId=user.id;
+    qfOutrosState.categoriasKey=categoriasKey;
     qfOutrosState.itens=[];
     qfOutrosState.loadedAt=0;
     qfOutrosState.pending=null;
@@ -219,17 +229,18 @@ async function qfOutrosLoad(user,force) {
   const cloud = global.QFCloud;
   if (!cloud || !cloud.client) throw new Error('Conecte-se para consultar os pedidos.');
   const expectedUser=user.id;
+  const expectedCategorias=categoriasKey;
   qfOutrosState.pending=cloud.client.rpc('qf_outros_pedidos_vitrine_v2').then(function(res) {
     if (res.error) throw res.error;
     const rows=(Array.isArray(res.data)?res.data:[]).filter(function(r) {
-      return r && r.id && qfOutrosNum(r.vagas)>0;
+      return r && r.id && qfOutrosNum(r.vagas)>0 && !qfOutrosMesmaProfissao(r,user);
     });
-    if (qfOutrosState.userId===expectedUser) {
+    if (qfOutrosState.userId===expectedUser && qfOutrosState.categoriasKey===expectedCategorias) {
       qfOutrosState.itens=rows;
       qfOutrosState.loadedAt=Date.now();
     }
     return rows;
-  }).finally(function(){ if (qfOutrosState.userId===expectedUser) qfOutrosState.pending=null; });
+  }).finally(function(){ if (qfOutrosState.userId===expectedUser && qfOutrosState.categoriasKey===expectedCategorias) qfOutrosState.pending=null; });
   return qfOutrosState.pending;
 }
 function qfOutrosFiltrar(content) {
