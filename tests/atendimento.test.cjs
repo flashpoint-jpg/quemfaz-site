@@ -15,6 +15,17 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.ok(!A.stages({...a,intencao:'pesquisando'})[3].questions.some(q=>q.key==='tipo'));
  assert.ok(!A.stages({...a,materiais:'combinar'})[3].questions.some(q=>q.key==='tipo'));
 });
+test('diarista: serviço escolhido na home não repete e respostas são aceitas pelo banco',()=>{
+ const a={servico:'diarista',__servicePrefilled:true,detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',orcamento:'avaliacao',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+ assert.equal(A.stages(a)[0].questions[0].key,'detalhes');
+ assert.equal(A.validAll(a),'');
+ const p=A.payload(a,uid(250),'diarista');
+ assert.equal(p.detalhes,'Faxina comum');
+ assert.equal(p.escopo,'3 a 4 cômodos');
+ assert.equal(p.autorizacao,'sim');
+ assert.equal(p.tipo,'tradicional');
+ assert.ok(p.detalhes.length>=8);
+});
 test('banco: obrigatório, sem autorização e respostas incompletas não criam pedidos nem notificações',async()=>{
  const d=await db();try{
  for(const a of [answers({autorizacao:'nao'}),answers({escopo:''}),answers({orcamento_centavos:-1}),answers({data:'2000-01-01'}),answers({tipo:'garante',qualificacao:'nao'}),answers({contato:'11900001111'}),answers({detalhes:'Ligar para 11977776666'}),answers({detalhes:'Pintura na Rua teste 20'})])await assert.rejects(pub(d,a));
