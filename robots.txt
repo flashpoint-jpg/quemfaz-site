@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin.html
-Disallow: /profissional.html
-
-Sitemap: https://quemfazservico.com.br/sitemap.xml

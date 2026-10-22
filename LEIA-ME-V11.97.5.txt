@@ -1,9 +1,0 @@
-QuemFaz V11.97.5 — pedidos sem prazo para o profissional (antes do desbloqueio)
-
-- Removido da tela do profissional (cards, detalhe bloqueado, tela cheia de novo chamado, aviso interno e push): "Sem pressa", "Com pressa", "Agendado", "Marcado para determinada data" e a data/horário pretendidos pelo cliente. Também saiu o filtro por data da lista.
-- Pedido comum: "Cliente aguardando propostas. Desbloqueie o contato para conversar, apresentar seu orçamento e combinar a melhor data para o serviço."
-- Pedido com urgência paga: selo URGENTE e "PEDIDO URGENTE — Cliente solicitou atendimento prioritário. Desbloqueie para entrar em contato."
-- A ordem da lista deixou de usar o prazo: urgência paga, distância, mais novos.
-- Nada muda no banco: prazo, prazo_dia, periodo e data_preferida continuam gravados e aparecem para o profissional depois do desbloqueio (chat/pedido).
-- Não mudou: preços, créditos, Pix/cartão, reembolso, limite de vagas, distribuição por profissão e raio, regras de urgência paga, status, expiração.
-- Função do Supabase quemfaz-push: o corpo do aviso não traz mais "Execução dd/mm hh:mm"; título de pedido pago: "PEDIDO URGENTE: ...".

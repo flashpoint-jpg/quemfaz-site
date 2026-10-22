@@ -1,5 +1,0 @@
-QuemFaz V11.84.3
-
-- Barra de cima (Android no navegador): o botão laranja "Google Play" foi trocado pelo selo oficial do Google Play. Ao tocar, abre o QuemFaz na Play Store.
-- Se a imagem do selo não carregar, aparece um botão preto "Google Play" no lugar.
-- Nada mais foi alterado.

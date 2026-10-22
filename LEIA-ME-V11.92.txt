@@ -1,8 +1,0 @@
-QuemFaz V11.92 — notificação sem duplicar e sem "possível spam"
-
-- O mesmo aviso chegava repetido no celular (um por endereço: quemfazservico.com.br, quemfaz-site.vercel.app e o endereço de preview da Vercel) e o Chrome marcou o endereço de preview como "possível spam".
-- Agora cada inscrição de notificação web guarda de qual endereço veio (coluna origem).
-- Endereço de preview da Vercel não ativa notificação (o app e o painel desfazem a inscrição e pedem para abrir em quemfazservico.com.br); o envio ignora esses endereços.
-- Inscrever pelo domínio oficial desativa as inscrições antigas do mesmo aparelho em outros endereços.
-- Painel admin refaz a inscrição em silêncio ao abrir, para limpar as duplicadas.
-- APK (Play Store) não muda.
