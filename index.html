@@ -13335,7 +13335,7 @@ alt=""></noscript>
     const cidade = DB.cityById(req.cidadeId);
     const garante = req.atendimentoTipo === 'garante';
     const valor = DB.leadFeeForRequest(req) * (garante ? 4 : 1);
-    const primeiraGratis = false;
+    const primeiraGratis = req.atendimentoTipo !== 'garante' && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     // Antes do desbloqueio o profissional não vê prazo, "sem pressa", agendamento nem data pretendida.
@@ -13363,7 +13363,7 @@ alt=""></noscript>
               (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
             '</div>' +
             '<div class="qf-unlock-price' + (!garante && CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
-              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (!garante && CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
+              icon('unlock') + '<span>' + (primeiraGratis ? '1 desbloqueio GRÁTIS' : (!garante && CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
             (garante ? '<div class="qf-excl-hint">Quem Faz Garante · exclusivo · sem garantia de contratação</div>' : '') +
             (!garante && global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
@@ -13430,7 +13430,7 @@ alt=""></noscript>
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
     const valor = DB.leadFeeForRequest(req);
-    const primeiraGratis = false;
+    const primeiraGratis = req.atendimentoTipo !== 'garante' && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
     return (
       '<div class="view">' +
         (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
@@ -13475,8 +13475,8 @@ alt=""></noscript>
         (global.QFValor && global.QFValor.seloInteresseHtml ? global.QFValor.seloInteresseHtml(req) : '') +
         (global.QFValor ? global.QFValor.orcamentoHtml(req.orcamentoAproxCentavos) : '') + ((
         '<div class="section card qf-unlock-simple" style="background:var(--navy-900);border:none;">' +
-          '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Benefício de boas-vindas' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(req.atendimentoTipo === 'garante' ? valor * 4 : valor)) + '</div>' +
-          '<p class="text--sm qf-taxa-aviso" style="color:#fff;margin:8px 0 0;">' + (primeiraGratis ? icon('shieldCheck') + ' Primeiro desbloqueio grátis.' : icon('info') + ' <strong>Sem devolução:</strong> chame o cliente no WhatsApp assim que desbloquear.') + '</p></div>' +
+          '<div class="qf-unlock-simple__main"><div class="text--sm" style="color:var(--text-on-navy-muted);">' + (primeiraGratis ? 'Cortesia para pedidos participantes' : 'Taxa para desbloquear') + '</div><div class="h1" style="color:#fff;">' + (primeiraGratis ? 'GRÁTIS' : PU.formatCurrency(req.atendimentoTipo === 'garante' ? valor * 4 : valor)) + '</div>' +
+          '<p class="text--sm qf-taxa-aviso" style="color:#fff;margin:8px 0 0;">' + (primeiraGratis ? icon('shieldCheck') + ' Você ganhou este desbloqueio grátis.' : icon('info') + ' <strong>Sem devolução:</strong> chame o cliente no WhatsApp assim que desbloquear.') + '</p></div>' +
           '<div class="qf-unlock-simple__credits"><div class="icon-tile" style="background:#fff;color:var(--navy-700);">' + icon('wallet') + '</div><div><span class="text--sm" style="color:var(--text-on-navy-muted);">Seus créditos</span><div class="h2" style="color:#fff;">' + PU.formatCurrency(user.creditos || 0) + '</div></div></div>' +
         '</div>' +
 
