@@ -32,3 +32,12 @@ Adicionar tabelas de acordos, aceite do cliente, eventos financeiros e repasses 
 - Não usar a simples leitura do QR Code como prova automática de execução: exigir confirmação explícita do cliente e validação no servidor.
 - O desbloqueio tradicional continua disponível mesmo para profissionais que ainda não tenham aderido à modalidade gratuita.
 - Registrar aviso e aceite no backend; push é complemento, não substitui registro persistido no painel.
+
+## Confirmação segura pelo telefone do cliente
+- O QR Code da carteirinha digital apenas abre a página do pedido; nunca confirma automaticamente a conclusão.
+- Antes de aceitar a conclusão, exigir código OTP de uso único enviado ao telefone do cliente verificado e associado ao pedido (SMS ou WhatsApp por provedor confiável).
+- Validar OTP exclusivamente no servidor, com validade curta, limite de tentativas, rate limiting, hash do código, vínculo ao chamado e invalidação após uso; nunca revelar OTP ao profissional.
+- Acesso autenticado do profissional, QR Code ou simples posse do link não podem aprovar conclusão ou pagamento.
+- Confirmar explicitamente serviço, valor e profissional na tela do cliente; permitir 'Não concluído / Contestar'.
+- Registrar evento auditável, evitar dupla confirmação e bloquear cobrança/repasse durante contestação.
+- Não alegar que OTP prova identidade física ou posse exclusiva do aparelho: confirma controle do canal cadastrado. Em suspeita de fraude, exigir revisão administrativa.
