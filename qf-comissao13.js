@@ -1,96 +1,42 @@
-/* Piloto isolado: a disponibilidade vem exclusivamente do servidor. */
+/* Piloto simplificado: pagamento direto; comissão confirmada pela administração. */
 (function(g){
  'use strict';
- function esc(x){return String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
- function brl(n){return (Number(n||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
- function oferta(s){return '<h2 class="h3">Desbloqueio gratuito · comissão de 13%</h2><p>Sem pagamento antecipado para liberar o contato. Se fechar o serviço, o cliente paga diretamente a você. A comissão de 13% só será devida após a equipe Quem Faz verificar a contratação e o valor. Informe o andamento em até 48 horas.</p><p>Carteirinha digital ativa e aceite dos termos obrigatórios. Até 4 profissionais no total, somando as modalidades. Não há garantia de contratação.</p>'+(!s.desbloqueio_gratuito_ativo?'<p role="status"><strong>Em preparação.</strong> Esta modalidade ainda não está disponível para desbloqueio.</p>':'<label><input type="checkbox" data-qf13-termos> Aceito prestar contas e pagar 13% do valor contratado somente após confirmação da equipe Quem Faz.</label><button class="btn btn--primary" data-qf13-desbloquear>Desbloquear sem pagar agora</button>');}
- function painel(rows){return rows.map(a=>'<article class="card"><strong>'+esc(a.profissional||a.profissional_id)+'</strong><p>Pedido '+esc(a.chamado_id)+' · Gratuito com comissão de 13%</p><p>Valor: '+esc(brl(a.valor_centavos))+' · Situação: '+esc(a.status)+'</p><p>Agendamento: '+esc(a.agendado_em?new Date(a.agendado_em).toLocaleString('pt-BR'):'—')+'</p><p>Cliente: '+(a.contratado_em?'contratação confirmada':'aguardando confirmação')+' · Conclusão: '+(a.concluido_em?'confirmada':'pendente')+'</p><p>Pagamento: '+esc(a.pagamento)+' · Repasse: '+esc(a.repasse)+'</p><p>Quem Faz (13%): '+esc(brl(a.comissao_centavos))+' · Profissional (87%): '+esc(brl(a.profissional_centavos))+' antes das taxas</p><p>Taxas: '+esc(a.taxas_centavos!=null?brl(a.taxas_centavos):a.taxas)+'</p>'+(a.contestacao?'<p>Contestação: '+esc(a.contestacao)+'</p>':'')+'</article>').join('')||'<p>Nenhuma operação nesta modalidade.</p>';}
- g.QFComissao13={oferta,painel,esc};
- if(typeof module!=='undefined')module.exports=g.QFComissao13;
+ const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const brl=n=>(Number(n||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+ const motivo=r=>({prestacao_contas_vencida:'Você tem prestação de contas vencida. Regularize na carteira.',comissao_vencida:'Há comissão confirmada e vencida. Consulte a carteira.',codigo_invalido:'Código do cliente incorreto.',limite_codigo:'Limite de tentativas. Aguarde uma hora.',codigo_nao_emitido_contate_suporte:'Este pedido não tem código emitido. Procure a equipe Quem Faz para verificação manual.',nao_elegivel:'Pedido fora das suas regras de profissão, raio ou disponibilidade.',reservado:'O pedido já atingiu o limite de participantes.',modalidade_desativada:'Modalidade temporariamente indisponível.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',valor_e_evidencia_obrigatorios:'Informe o valor confirmado e a evidência do contato com o cliente.',observacao_obrigatoria:'Descreva a verificação realizada.',comprovante_obrigatorio:'Informe o comprovante do pagamento da comissão.'}[r]||'Não foi possível autorizar a ação. Atualize a página e confira a situação.');
+ function oferta(s){return '<h2 class="h3">Desbloqueio grátis — 13% se fechar</h2><p>O cliente paga diretamente a você. Preste contas em até 48 horas. A comissão de 13% só será devida após confirmação da equipe Quem Faz, com prazo de 48 horas após essa confirmação. Declaração ainda não confirmada não é dívida.</p><p>Até quatro profissionais por pedido, somando os desbloqueios gratuitos e pagos. Não há garantia de contratação.</p>'+(!s.desbloqueio_gratuito_ativo?'<p role="status"><strong>Em preparação.</strong></p>':s.bloqueio?'<p role="alert">'+esc(motivo(s.bloqueio))+'</p><a class="btn btn--outline" href="#/profissional/carteira">Regularizar na carteira</a>':'<label><input type="checkbox" data-qf13-termos> Aceito prestar contas e pagar 13% somente após confirmação da equipe Quem Faz.</label><button type="button" class="btn btn--primary" data-qf13-desbloquear>Desbloquear grátis — 13% se fechar</button>');}
+ function painel(rows,admin){return rows.map(a=>'<article class="card stack--sm" data-qf13-row="'+esc(a.id)+'"><strong>'+esc(admin?a.profissional:a.titulo||'Pedido '+a.chamado_id)+'</strong><p>Pedido '+esc(a.chamado_id)+' · Cliente: '+esc(a.cliente)+'</p><p>Valor informado: '+(a.valor_informado_centavos==null?'não informado':esc(brl(a.valor_informado_centavos)))+' · Situação: '+esc(a.status)+'</p><p>Prestação de contas: '+esc(new Date(a.prazo_contas).toLocaleString('pt-BR'))+'</p><p>Comissão: '+(a.status==='confirmado'?esc(brl(a.comissao_centavos))+' · '+esc(a.cobranca_status)+(a.comissao_vence_em?' · Vencimento: '+esc(new Date(a.comissao_vence_em).toLocaleString('pt-BR')):''):'não devida; depende de confirmação administrativa')+'</p>'+(!admin&&['pendente','negociando'].includes(a.status)?'<form data-qf13-contas><label>Situação<select class="input" name="situacao"><option value="informado">Fechei o serviço</option><option value="negociando">Em negociação</option><option value="recusado">Não fechei</option></select></label><div data-qf13-valor><label>Valor combinado (R$)<input class="input" name="valor" inputmode="decimal" placeholder="500,00" required></label><label>Código de seis dígitos do cliente<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label></div><button class="btn btn--primary">Registrar prestação de contas</button></form>':'')+(admin?'<form data-qf13-admin><label>Valor confirmado com o cliente (R$)<input class="input" name="valor" inputmode="decimal" value="'+esc(a.valor_confirmado_centavos!=null?(a.valor_confirmado_centavos/100).toFixed(2).replace('.',','):a.valor_informado_centavos!=null?(a.valor_informado_centavos/100).toFixed(2).replace('.',','):'')+'"></label><label>Registro do contato, contestação ou comprovante<textarea class="input" name="nota" maxlength="2000"></textarea></label><button type="button" class="btn btn--primary" data-qf13-admin-acao="confirmar">Confirmar contratação e valor</button><button type="button" class="btn btn--outline" data-qf13-admin-acao="nao_contratado">Marcar não contratado</button><button type="button" class="btn btn--outline" data-qf13-admin-acao="contestar">Registrar contestação</button><button type="button" class="btn btn--outline" data-qf13-admin-acao="pago">Confirmar pagamento da comissão</button></form>':'')+'<p role="status" data-qf13-msg></p></article>').join('')||'<p>Nenhum desbloqueio gratuito registrado.</p>';}
+ g.QFComissao13={oferta,painel,esc};if(typeof module!=='undefined')module.exports=g.QFComissao13;
  if(!g.document||!g.Screens)return;
  const anterior=g.Screens.afterRender;
  g.Screens.afterRender=function(pattern,content,params,user){
-  if(anterior)anterior(pattern,content,params,user);
-  const admin=pattern==='/admin/dashboard';
-  if(!admin&&pattern!=='/profissional/pedido/:id'&&pattern!=='/profissional/perfil')return;
-  const c=admin?g.QFAdminCloud&&g.QFAdminCloud.client:g.QFCloud&&g.QFCloud.client;
-  if(!c)return;
-  const rpc=async(n,a)=>{const r=await c.rpc(n,a||{});if(r.error)throw r.error;return r.data;};
+  if(anterior)anterior.apply(this,arguments);
+  const admin=pattern==='/admin/dashboard',carteira=pattern==='/profissional/carteira';
+  const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
+  if(!admin&&!carteira&&!pedido)return;
+  const c=admin?g.QFAdminCloud&&g.QFAdminCloud.client:g.QFCloud&&g.QFCloud.client;if(!c)return;
+  const rpc=async(n,a={})=>{const r=await c.rpc(n,a);if(r.error)throw Error(r.error.message);return r.data;};
   const box=document.createElement('section');box.className='section card stack--sm';box.dataset.qf13='';
-  if(admin){
-   content.appendChild(box);box.innerHTML='<h2 class="h3">Desbloqueio gratuito · comissão de 13%</h2><p>Carregando operações…</p>';
-   Promise.all([rpc('qf_comissao13_painel'),rpc('qf_comissao13_notificacoes_status')]).then(([rows,notificacoes])=>{if(box.isConnected)box.innerHTML='<h2 class="h3">Desbloqueio gratuito · comissão de 13%</h2><p>O piloto simplificado depende da integração da prestação de contas e da confirmação manual pelo WhatsApp. Sem ativação automática.</p>'+painel(rows)+'<h3 class="h3">Notificações do piloto</h3><p>'+esc(Object.entries(notificacoes.resumo||{}).map(([k,v])=>k+': '+v).join(' · ')||'Nenhum envio nesta modalidade.')+'</p><p>Aceito pelo provedor não significa entrega confirmada no celular.</p>'+(notificacoes.ativo?'<button class="btn btn--outline" data-qf13-anunciar>Anunciar a modalidade aos elegíveis</button>':'<p>Anúncio bloqueado enquanto o piloto não estiver validado.</p>');const anunciar=box.querySelector('[data-qf13-anunciar]');if(anunciar)anunciar.onclick=async()=>{anunciar.disabled=true;try{const r=await rpc('qf_comissao13_anunciar');g.PU.toast(r.ok?String(r.enfileirados)+' avisos enfileirados, sem duplicar.':'Anúncio bloqueado.','info');}catch(e){g.PU.toast('Não foi possível enfileirar os avisos.','danger');}finally{anunciar.disabled=false;}};}).catch(()=>{box.textContent='Não foi possível carregar as operações da modalidade gratuita.';});return;
-  }
-  if(pattern==='/profissional/perfil'){
+  const cents=v=>{const s=String(v).trim();return /^\d+(?:\.\d{3})*(?:,\d{1,2})?$/.test(s)?Math.round(Number(s.replace(/\./g,'').replace(',','.'))*100):null;};
+  if(admin||carteira){
    content.appendChild(box);
-   rpc('qf_comissao13_recebedor_status').then(r=>{
-    if(!box.isConnected)return;
-    box.innerHTML='<h2 class="h3">Recebimento da modalidade gratuita</h2><p>Modalidade gratuita com comissão de 13% em preparação. O cliente paga o serviço diretamente a você. O desbloqueio tradicional continua disponível.</p><p>Situação do recebimento: '+esc(r.status)+'</p><form data-qf13-recebedor><label>Código de recebedor Efí (payee_code)<input name="payee" required maxlength="100" autocomplete="off"></label><label>Número da conta Efí<input name="conta" required inputmode="numeric" maxlength="20" autocomplete="off"></label><button class="btn btn--outline" type="submit">Enviar para validação</button><p role="status" data-qf13-status></p></form>';
-    const form=box.querySelector('form');form.onsubmit=async e=>{e.preventDefault();const b=form.querySelector('button'),msg=form.querySelector('[data-qf13-status]');b.disabled=true;try{const out=await rpc('qf_comissao13_recebedor_informar',{p_payee_code:form.elements.payee.value.trim(),p_conta_efi:form.elements.conta.value.trim()});msg.textContent=out.ok?'Dados enviados. O recebimento permanece pendente de validação.':(out.reason==='acordo_em_andamento'?'Existe um acordo em andamento. Os dados de recebimento não podem ser alterados agora.':'Confira os dados da conta e seu documento cadastrado.');}catch{msg.textContent='Não foi possível enviar. Tente novamente mais tarde.';}finally{b.disabled=false;}};
-   }).catch(()=>{box.textContent='Não foi possível consultar o cadastro de recebimento.';});return;
+   const render=async()=>{const rows=await rpc('qf_comissao13_fechamentos_painel');if(!box.isConnected)return;box.innerHTML='<h2 class="h3">Desbloqueios gratuitos — 13%</h2><p>Cliente paga diretamente ao profissional. Comissão ainda não confirmada não é dívida.</p>'+painel(rows,admin);
+    box.querySelectorAll('[data-qf13-row]').forEach(row=>{
+     const id=row.dataset.qf13Row,a=rows.find(x=>x.id===id),msg=row.querySelector('[data-qf13-msg]');
+     if(admin){let tel=String(a.whatsapp||a.telefone||'').replace(/\D/g,'');if(tel.length===10||tel.length===11)tel='55'+tel;
+      if(/^55\d{10,11}$/.test(tel)){const link=document.createElement('a');link.className='btn btn--outline';link.target='_blank';link.rel='noopener noreferrer';link.textContent='Perguntar ao cliente pelo WhatsApp';link.href='https://wa.me/'+tel+'?text='+encodeURIComponent('Olá! Somos da equipe Quem Faz. Sobre seu pedido '+String(a.chamado_id).slice(0,8)+': você contratou '+a.profissional+'? Qual foi o valor combinado?');row.appendChild(link);}
+      row.querySelectorAll('[data-qf13-admin-acao]').forEach(btn=>{btn.onclick=async()=>{btn.disabled=true;try{const form=row.querySelector('form'),r=await rpc('qf_comissao13_admin',{p_id:id,p_acao:btn.dataset.qf13AdminAcao,p_valor_centavos:cents(form.elements.valor.value),p_observacao:form.elements.nota.value.trim()});if(!r.ok)throw Error(motivo(r.reason));await render();}catch(e){msg.textContent=e.message;}finally{btn.disabled=false;}};});
+     }else{const form=row.querySelector('form');if(!form)return;form.elements.situacao.onchange=()=>{const fechado=form.elements.situacao.value==='informado';form.querySelector('[data-qf13-valor]').hidden=!fechado;form.elements.valor.required=fechado;form.elements.codigo.required=fechado;};form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector('button');btn.disabled=true;try{const r=await rpc('qf_comissao13_prestar_contas',{p_id:id,p_situacao:form.elements.situacao.value,p_valor_centavos:cents(form.elements.valor.value),p_codigo:form.elements.codigo.value.trim()});if(!r.ok)throw Error(motivo(r.reason));await render();}catch(err){msg.textContent=err.message;}finally{btn.disabled=false;}};}
+    });
+   };render().catch(()=>box.textContent='Não foi possível carregar a prestação de contas. Atualize a página.');return;
   }
-  const pedido=g.DB&&g.DB.requestById(params.id);
-  if(!pedido||pedido.atendimentoTipo==='garante')return;
-  function acoesAcordo(alvo,acordoId){
-   const btn=document.createElement('button');btn.type='button';btn.className='btn btn--primary';btn.textContent='Abrir carteirinha deste serviço / enviar link';alvo.appendChild(btn);
-   btn.onclick=async()=>{
-    btn.disabled=true;
-    try{
-     const r=await rpc('qf_comissao13_gerar_link',{p_acordo_id:acordoId});if(!r.ok)throw Error(r.reason);
-     const link=g.location.origin+'/comissao13.html#token='+encodeURIComponent(r.token)+'&carteirinha='+encodeURIComponent(r.carteirinha_token);
-     const cart='/carteirinha.html?token='+encodeURIComponent(r.carteirinha_token)+'#servico='+encodeURIComponent(r.token);
-     const a=document.createElement('a');a.className='btn btn--primary';a.href=cart;a.textContent='Mostrar carteirinha com QR deste serviço';
-     const w=document.createElement('a');w.className='btn btn--outline';w.href='https://wa.me/?text='+encodeURIComponent('Confira nosso acordo no Quem Faz e confirme pelo seu telefone: '+link);w.target='_blank';w.rel='noopener noreferrer';w.textContent='Enviar link pelo WhatsApp';
-     const bloco=document.createElement('div');bloco.className='stack--sm';bloco.append(a,w);btn.replaceWith(bloco);
-    }catch(e){btn.disabled=false;g.PU.toast('Não foi possível gerar o link. Confira a situação do acordo e tente novamente.','danger');}
-   };
-  }
-  // Fluxo legado de QR/OTP/split fica desativado no piloto simplificado.
-  // Não apresentar formulários antigos enquanto as novas RPCs não estiverem prontas.
-  const mostrarFluxoLegado=false;
-  if(mostrarFluxoLegado)rpc('qf_comissao13_meu_desbloqueio',{p_chamado_id:params.id}).then(d=>{
-   if(!d.ok||!content.isConnected)return;
-   // O fluxo antigo de baixa/fechamento não confirma serviços da modalidade 13%.
-   content.querySelectorAll('[data-action="fechei-servico"],[data-qf-baixa-btn]').forEach(b=>{b.hidden=true;});
-   const agreement=document.createElement('section');agreement.className='section card stack--sm';
-   if(d.acordo){agreement.innerHTML='<h2 class="h3">Acordo com pagamento pelo Quem Faz</h2><p>Valor: '+esc(brl(d.acordo.valor_centavos))+' · Situação: '+esc(d.acordo.status)+'</p><p>A contratação e a conclusão dependem da confirmação do cliente com código recebido no telefone dele.</p>';content.appendChild(agreement);acoesAcordo(agreement,d.acordo.id);return;}
-   agreement.innerHTML='<h2 class="h3">Fechei o serviço</h2><p>Informe o combinado. O cliente precisa confirmar pelo próprio telefone.</p><form data-qf13-acordo><label>Valor combinado (R$)<input name="valor" type="text" inputmode="decimal" required placeholder="500,00"></label><label>Data e horário<input name="data" type="datetime-local" required></label><button class="btn btn--primary" type="submit">Gerar link para o cliente</button><p role="status" data-qf13-erro></p></form>';
-   content.appendChild(agreement);
-   agreement.querySelector('form').onsubmit=async e=>{
-    e.preventDefault();const f=e.currentTarget,b=f.querySelector('button'),erro=f.querySelector('[data-qf13-erro]');b.disabled=true;
-    const reais=Number(f.elements.valor.value.replace(/\./g,'').replace(',','.')),dia=new Date(f.elements.data.value);
-    if(!Number.isFinite(reais)||reais<=0||!Number.isFinite(dia.getTime())){erro.textContent='Informe valor e data válidos.';b.disabled=false;return;}
-    try{
-     const r=await rpc('qf_comissao13_propor',{p_desbloqueio_id:d.id,p_valor_centavos:Math.round(reais*100),p_agendado_em:dia.toISOString()});
-     if(!r.ok)throw Error(r.reason);
-     const link=g.location.origin+'/comissao13.html#token='+encodeURIComponent(r.token);
-     agreement.innerHTML='<h2 class="h3">Aguardando o cliente confirmar</h2><p>Envie este link ao cliente. O link sozinho não confirma o serviço.</p><a class="btn btn--primary" target="_blank" rel="noopener noreferrer" href="https://wa.me/?text='+encodeURIComponent('Confirme nosso acordo no Quem Faz: '+link)+'">Enviar link pelo WhatsApp</a><p>Na conclusão, mostre sua carteirinha digital. Não é necessário imprimir.</p>';
-     acoesAcordo(agreement,r.acordo_id);
-    }catch(e){erro.textContent='Não foi possível criar o acordo. Atualize a página para conferir a situação antes de tentar novamente.';b.disabled=false;}
-   };
-  }).catch(()=>{});
-
-  if(!content.querySelector('[data-action="desbloquear-chamada"]'))return;
-  // Mostrar informação correta, sem oferecer desbloqueio que o backend ainda bloqueia.
-  box.innerHTML='<h2 class="h3">Desbloqueio gratuito · 13% se fechar</h2><p>Nova modalidade em preparação. O cliente paga diretamente ao profissional. A comissão de 13% depende da confirmação da equipe Quem Faz.</p><p>Enquanto isso, o desbloqueio pago continua disponível normalmente.</p>';
-  content.appendChild(box);
-  return;
-
-  rpc('qf_comissao13_status').then(s=>{
-   if(!s.ok||!content.isConnected)return;
-   box.innerHTML=oferta(s);content.appendChild(box);
-   const button=box.querySelector('[data-qf13-desbloquear]');if(!button)return;
-   button.onclick=async()=>{
-    if(!box.querySelector('[data-qf13-termos]').checked){g.PU.toast('É necessário aceitar os termos.','danger');return;}
-    if(!s.recebedor_validado){g.PU.toast('Cadastre e valide sua conta de recebimento Efí no perfil antes de usar esta modalidade.','danger');return;}
-    if(!s.carteirinha_ativa){g.PU.toast('Abra seu perfil e ative a carteirinha digital. Não é necessário imprimir.','danger');return;}
-    button.disabled=true;
-    try{
-     let r=await rpc('qf_comissao13_aderir',{p_aceitar:true});if(!r.ok)throw Error(r.reason);
-     r=await rpc('qf_comissao13_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok)throw Error(r.reason);
-     g.location.reload();
-    }catch(e){g.PU.toast('Desbloqueio não autorizado. Atualize a lista. Nenhum saldo foi descontado.','danger');button.disabled=false;}
-   };
+  const req=g.DB&&g.DB.requestById(params.id);if(!req||req.atendimentoTipo==='garante'||req.modalidade==='valor_definido')return;
+  // O botão pago conserva seu evento e a cobrança existente.
+  const pago=content.querySelector('[data-action="desbloquear-chamada"]');
+  if(!pago){rpc('qf_comissao13_meu_desbloqueio',{p_chamado_id:params.id}).then(d=>{if(!d.ok||!content.isConnected)return;content.querySelectorAll('[data-action="fechei-servico"],[data-qf-baixa-btn]').forEach(b=>b.hidden=true);box.innerHTML='<h2 class="h3">Desbloqueio gratuito — 13%</h2><p>Registre o andamento em até 48 horas na carteira.</p><a class="btn btn--primary" href="#/profissional/carteira">Prestar contas</a>';content.appendChild(box);}).catch(()=>{});return;}
+  rpc('qf_comissao13_status').then(s=>{if(!s.ok||!content.isConnected)return;box.innerHTML=oferta(s);content.appendChild(box);
+   const preco=req.precoDesbloqueio!=null?req.precoDesbloqueio:g.DB.leadFeeForRequest(req);pago.textContent='Desbloquear pagando '+brl(preco);
+   const btn=box.querySelector('[data-qf13-desbloquear]');if(!btn)return;btn.onclick=async()=>{if(!box.querySelector('[data-qf13-termos]').checked){g.PU.toast('Aceite as condições da modalidade.','danger');return;}btn.disabled=true;try{const r=await rpc('qf_comissao13_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok)throw Error(motivo(r.reason));if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession();g.PU.toast('Contato liberado. Prestação de contas registrada na carteira.','success');g.navigate('/profissional/chat/'+params.id,true);}catch(e){g.PU.toast(e.message||'Não foi possível autorizar o desbloqueio.','danger');btn.disabled=false;}};
   }).catch(()=>{});
  };
 })(typeof window!=='undefined'?window:globalThis);

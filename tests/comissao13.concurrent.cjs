@@ -15,8 +15,9 @@ async function race(pro,mode,call){
 (async()=>{await db.connect();try{
  await db.query(fs.readFileSync('tests/fixtures/valor-definido-schema.sql','utf8'));
  await db.query("alter table qf_chamados add column atendimento_tipo text default 'tradicional';alter table qf_profissionais add column horario_inicio time;alter table qf_profissionais add column horario_fim time;alter table qf_profissionais add column alerta_modo text;alter table qf_profissionais add column documento text default '12345678909';create table qf_admins(user_id uuid primary key)");
- for(const f of ['20261022183000_comissao13_piloto.sql','20261022184500_comissao13_adesao_carteirinha.sql','20261022184616_comissao13_fluxo_validado.sql','20261022185059_comissao13_validacao_acordo.sql','20261022185945_comissao13_qr_notificacoes.sql','20261022190530_comissao13_financeiro_seguro.sql'])await db.query(fs.readFileSync('supabase/migrations/'+f,'utf8'));
- await db.query('update private.qf_comissao13_prontidao set otp_validado=true,financeiro_validado=true,testes_aprovados=true');
+ await db.query("create schema if not exists extensions;create extension if not exists pgcrypto with schema extensions;alter table qf_chamados add column modalidade text default 'padrao'");
+ for(const f of ['20261022183000_comissao13_piloto.sql','20261022184500_comissao13_adesao_carteirinha.sql','20261022184616_comissao13_fluxo_validado.sql','20261022185059_comissao13_validacao_acordo.sql','20261022185945_comissao13_qr_notificacoes.sql','20261022190530_comissao13_financeiro_seguro.sql','20261022235500_comissao13_simplificada_conclusao.sql','20261022235600_comissao13_desbloqueio_simplificado.sql','20261022235700_comissao13_push_simplificado.sql'])await db.query(fs.readFileSync('supabase/migrations/'+f,'utf8'));
+ await db.query('update private.qf_comissao13_config set ativo=true');
  for(let n=1;n<=9;n++){
   await db.query("insert into qf_profiles(id,tipo,nome,ativo,foto_url,telefone) values($1,$2,$3,true,'selfie-test','11999990000')",[id(n),n===9?'cliente':'profissional','Fixture '+n]);
   if(n===9)continue;
