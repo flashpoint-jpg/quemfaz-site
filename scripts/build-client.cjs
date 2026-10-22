@@ -17,6 +17,10 @@ for (const name of fs.readdirSync(root)) {
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 html=html.replace('qf-atendimento.js?v=2','qf-atendimento.js?v=20261022-garante-intencao');
+// Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=simplificado20261023').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=simplificado20261023');
+const adminPath=path.join(out,'admin.html');
+fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=simplificado20261023'));
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
 // Declara apenas ICO e PNG derivados da mesma arte oficial, evitando ícones conflitantes.
@@ -133,6 +137,7 @@ html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></scr
 fs.writeFileSync(path.join(out,'index.html'),html);
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
 sw=sw.replace('./qf-atendimento.js?v=2','./qf-atendimento.js?v=20261022-garante-intencao');
+sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-simplificado13-v1';");
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');

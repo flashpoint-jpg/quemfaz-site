@@ -42,7 +42,7 @@ const server=http.createServer(async(req,res)=>{
    window.QFCloud.signUp=async()=>({ok:true,user:{id:'00000000-0000-4000-8000-000000000001'}});
    const original=window.QFCloud.createCall;
    window.QFCloud.createCall=async args=>{window.__submissions.push(args);return original(args);};
-   window.QFCloud.client.rpc=async(name,args)=>{if(name!=='qf_publicar_atendimento')throw Error('Unexpected fixture RPC: '+name);return fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)}).then(r=>r.json());};
+   window.QFCloud.client.rpc=async(name,args)=>{if(name==='qf13_codigo_cliente')return {data:{ok:true,codigo:'123456'},error:null};if(name!=='qf_publicar_atendimento')throw Error('Unexpected fixture RPC: '+name);return fetch('/__rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)}).then(r=>r.json());};
    window.QFCloud.client.from=table=>{if(table==='qf_chamados')throw Error('Direct insert bypass');return {insert:()=>Promise.resolve({}),update:()=>({eq:()=>Promise.resolve({})})};};
    window.QFGeo.geocodeCity=async()=>({latitude:-23.66,longitude:-46.53});
    window.QFGeo.geocodeBairro=async()=>({latitude:-23.66,longitude:-46.53});
@@ -72,8 +72,8 @@ const server=http.createServer(async(req,res)=>{
   assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)>innerWidth),false,'mobile has no horizontal overflow');
   await page.screenshot({path:'/tmp/qf-atendimento-review.png',fullPage:true});
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
-  await page.waitForFunction(()=>window.__nav.length===1 || document.querySelector('[data-at-error]')?.textContent);
-  assert.equal(await page.locator('[data-at-error]').textContent(),'');
+  await page.getByRole('heading',{name:'Pedido publicado com sucesso!',exact:true}).waitFor();
+  assert.match(await page.locator('[data-at-question]').innerText(),/123456/);
   const id=(await scalar(database,"select id from public.qf_chamados where atendimento_tipo='garante'"));
   assert.ok(id,'real frontend RPC created the database row');
   await database.exec('reset role');
@@ -124,7 +124,7 @@ const server=http.createServer(async(req,res)=>{
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-at-error]')?.textContent==='Timeout simulado após gravar');
   await page.evaluate(()=>{const b=document.querySelector('[data-at-publish]');b.click();b.click();});
-  await page.waitForFunction(()=>window.__nav.length===2);
+  await page.getByRole('heading',{name:'Pedido publicado com sucesso!',exact:true}).waitFor();
   const retry=await page.evaluate(()=>window.__submissions.slice(1));assert.equal(retry.length,2);
   assert.equal(retry[0].atendimento.chave,retry[1].atendimento.chave);
   assert.equal(retry[1].atendimento.orcamento_centavos,null);assert.equal(retry[1].atendimento.orcamento_faixa,'avaliacao');
