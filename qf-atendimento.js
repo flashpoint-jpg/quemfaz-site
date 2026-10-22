@@ -25,7 +25,7 @@
   }
   function stages(a) {
     const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data','disponibilidade']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','tipo','qualificacao','autorizacao']]];
-    return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key))}));
+    return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled)))}));
   }
   function questions(a) {
     const service = norm(a.servico);
@@ -98,7 +98,12 @@
   function validAll(a) { for (const q of questions(a)) {const e=validate(q,a[q.key],a);if(e) return e;} return ''; }
   function payload(a,id,categoria) {
     const error=validAll(a); if(error) throw Error(error);
-    return {versao:1,chave:id,categoria,servico:a.servico,detalhes:a.detalhes,escopo:a.escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
+    const labels=questions(a);
+    const answerLabel=key=>{const q=labels.find(x=>x.key===key);return String((q?.choices||[]).find(c=>c[0]===a[key])?.[1]||a[key]||'').trim();};
+    const detalhes=answerLabel('detalhes');
+    const escopo=answerLabel('escopo');
+    if(detalhes.length<8||escopo.length<3)throw Error('Escolha o tipo e o tamanho do serviço antes de publicar.');
+    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
   }
   function html() {
     return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2"><span style="color:#1769d5">Quem </span><span style="color:#f47b20">Faz</span> Serviços</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Seus dados ficam protegidos. Você decide se contrata.</p></section></div>';
@@ -124,8 +129,8 @@
     const homeService=root.QFHomeDraft&&root.QFHomeDraft.service;
     const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService)));
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
-    if(cat) a.servico=cat.nome;
-    else if(root.QFHomeDraft && root.QFHomeDraft.service) a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);
+    if(cat) {a.servico=cat.nome;a.__servicePrefilled=true;}
+    else if(root.QFHomeDraft && root.QFHomeDraft.service) {a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);a.__servicePrefilled=true;}
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,currentUser=user;
     const field=q=>{
@@ -166,11 +171,11 @@
           let current=currentUser;
           if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;currentUser=current;}
           const c=category(a.servico),at=payload(a,id,c.id);
-          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:a.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
+          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:a.tipo==='garante'?1:4});
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
           root.navigate('/cliente/pedido/'+req.id,true);
-        }catch(e){area.querySelector('[data-at-error]').textContent=e.message||'Não foi possível publicar. Tente novamente; seu pedido não será duplicado.';}
+        }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
         finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
     };
     draw();
