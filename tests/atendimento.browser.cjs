@@ -69,6 +69,13 @@ const server=http.createServer(async(req,res)=>{
   assert.equal(submissions[0].atendimento.tipo,'garante');assert.equal(submissions[0].atendimento.qualificacao,'sim');assert.equal(submissions[0].maxOrcamentos,1);
   assert.equal(await page.evaluate(()=>sessionStorage.getItem('qf_atendimento_key')),null);
   const stored=await page.evaluate(()=>JSON.stringify({...localStorage,...sessionStorage}));assert.doesNotMatch(stored,/11988887776|Cliente Teste|Limpeza pesada/,'assistant does not persist PII');
+  const professionalPreview=await page.evaluate(()=>{
+   const req=DB.state.requests.find(r=>r.atendimentoTipo==='garante');
+   const prof={id:'fixture-pro',nome:'Profissional Teste',categorias:[req.categoriaId],online:true,statusAprovacao:'aprovado',bloqueado:false,creditos:100000};
+   const doc=document.createElement('div');doc.innerHTML=Screens.profChamadaRender({id:req.id},prof);
+   return {fee:doc.querySelector('.qf-unlock-simple .h1')?.textContent,expected:PU.formatCurrency(DB.leadFeeForRequest(req)*4),normalButton:!!doc.querySelector('[data-action="desbloquear-chamada"]'),exclusiveButton:!!doc.querySelector('[data-action="desbloquear-exclusivo"]'),planUpsell:!!doc.querySelector('.qf-plan-save')};
+  });
+  assert.equal(professionalPreview.fee,professionalPreview.expected);assert.equal(professionalPreview.normalButton,false);assert.equal(professionalPreview.exclusiveButton,true);assert.equal(professionalPreview.planUpsell,false);
   // Logged-in route also uses the same assistant and cannot render the old form.
   await page.evaluate(()=>{
    document.body.innerHTML='<main id="test-mount"></main>';
