@@ -41,3 +41,9 @@ Adicionar tabelas de acordos, aceite do cliente, eventos financeiros e repasses 
 - Confirmar explicitamente serviço, valor e profissional na tela do cliente; permitir 'Não concluído / Contestar'.
 - Registrar evento auditável, evitar dupla confirmação e bloquear cobrança/repasse durante contestação.
 - Não alegar que OTP prova identidade física ou posse exclusiva do aparelho: confirma controle do canal cadastrado. Em suspeita de fraude, exigir revisão administrativa.
+
+## Estado da implementação (2026-10-22)
+- Migração isolada aplicada no Supabase: tabelas `qf_comissao13_adesoes`, `qf_comissao13_acordos`, `qf_comissao13_eventos`.
+- Verificado: RLS habilitada nas três tabelas, sem políticas permissivas, e `authenticated` sem SELECT.
+- Nenhum desbloqueio gratuito foi ativado e o fluxo tradicional não foi modificado.
+- Pendente: RPCs seguras, UI, OTP, pagamentos e repasses, notificações e testes ponta a ponta.
