@@ -5,6 +5,8 @@ const vm = require('node:vm');
 const {createHash}=require('node:crypto');
 const esbuild = require('esbuild');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
+// Impede publicar um atendimento cujo arquivo JavaScript tenha erro de sintaxe.
+new vm.Script(fs.readFileSync(path.join(root, 'qf-atendimento.js'), 'utf8'), {filename:'qf-atendimento.js'});
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out);
 const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','docs','.gitignore','package.json','package-lock.json','vercel.json']);
