@@ -117,6 +117,7 @@
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
     const a={}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) a.servico=cat.nome;
+    else if(root.QFHomeDraft && root.QFHomeDraft.service) a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=0,questionIndex=0,busy=false,currentUser=user;
     const field=q=>{
