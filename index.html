@@ -2464,6 +2464,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
 <script src="qf-client-acquisition.js?v=11.96"></script>
+<script src="qf-atendimento.js?v=1"></script>
 
 <!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
      Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
@@ -5950,6 +5951,7 @@ alt=""></noscript>
     const cidadeId = cityIdFromCloud(row.cidade, row.uf);
     return {
       id: row.id,
+      atendimentoTipo: row.atendimento_tipo || null,
       clienteId: row.cliente_id || null,
       categoriaId: row.categoria,
       descricao: row.descricao || '',
@@ -6323,6 +6325,7 @@ alt=""></noscript>
     await attachEvaluations(reqs);
     if (global.QFValor) { try { await global.QFValor.enriquecerOrcamento(reqs); } catch (_) {} }
     if (global.QFValor && global.QFValor.enriquecerInteresse) { try { await global.QFValor.enriquecerInteresse(reqs); } catch (_) {} }
+    if (global.QFAtendimento) await global.QFAtendimento.enrich(reqs);
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
 
@@ -7162,6 +7165,7 @@ alt=""></noscript>
   }
 
   async function createCall(data) {
+    if (!data.atendimento || !global.QFAtendimento) throw new Error('Conclua o atendimento automático antes de publicar.');
     const city = cityFromId(data.endereco.cidadeId);
     const cat = DB.categoryById(data.categoriaId);
     const enderecoCompleto = [data.endereco.rua, data.endereco.complemento].filter(Boolean).join(' · ');
@@ -7232,32 +7236,10 @@ alt=""></noscript>
     // Interesse do cliente ('contratar' ou 'pesquisando'). A data e hora são gravadas pelo banco; nunca marcamos por conta própria.
     const comInteresse = data.interesseCliente === 'contratar' || data.interesseCliente === 'pesquisando';
     if (comInteresse) row.interesse_cliente = data.interesseCliente;
-    let res = await client.from('qf_chamados').insert(row).select('*').single();
-    if (res.error && row.geo_precisao && /geo_precisao/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz origem da localização não gravada', res.error);
-      delete row.geo_precisao;
-      res = await client.from('qf_chamados').insert(row).select('*').single();
-    }
-    if (res.error && comMax && /max_orcamentos/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz quantidade de orçamentos não gravada', res.error);
-      delete row.max_orcamentos;
-      res = await client.from('qf_chamados').insert(row).select('*').single();
-    }
-    if (res.error && comOrc && /orcamento_aproximado/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz orçamento aproximado não gravado', res.error);
-      delete row.orcamento_aproximado_centavos;
-      res = await client.from('qf_chamados').insert(row).select('*').single();
-    }
-    if (res.error && comInteresse && /interesse_/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz interesse do cliente não gravado', res.error);
-      delete row.interesse_cliente;
-      res = await client.from('qf_chamados').insert(row).select('*').single();
-    }
-    if (res.error && comUrgencia && /urgencia/i.test(String(res.error.message || '') + ' ' + String(res.error.details || ''))) {
-      console.warn('QuemFaz urgência não gravada', res.error);
-      delete row.urgencia;
-      res = await client.from('qf_chamados').insert(row).select('*').single();
-    }
+    const res = await client.rpc('qf_publicar_atendimento', {
+      p_respostas: data.atendimento,
+      p_geo: { latitude: row.latitude, longitude: row.longitude, geo_precisao: geoPrecisao, marketing_origem: row.marketing_origem }
+    });
     if (res.error) throw res.error;
     if (global.QFClientAcquisition) global.QFClientAcquisition.published({ id: res.data.id, aguardandoPagamento: (res.data.status || row.status) === 'aguardando_pagamento' }, data.categoriaId);
     // O pedido já foi salvo. Tarefas auxiliares não podem transformar sucesso em erro nem atrasar sua confirmação.
@@ -7316,6 +7298,8 @@ alt=""></noscript>
     if (res.error) return { ok: false, reason: 'erro', error: res.error.message };
     const out = res.data || {};
     if (!out.ok) {
+      if (out.reason === 'garante_exige_verificacao') throw new Error('Quem Faz Garante exige perfil verificado e documento cadastrado.');
+      if (out.reason === 'garante_exige_exclusivo') throw new Error('Este pedido exige desbloqueio exclusivo. Atualize a lista.');
       if (out.reason === 'reservado') {
         try { await syncProfessionalCalls(profissionalId); } catch (_) {}
         return { ok:false, reason:'reservado' };
@@ -13346,7 +13330,8 @@ alt=""></noscript>
   function chamadaCard(req, user) {
     const cat = DB.categoryById(req.categoriaId);
     const cidade = DB.cityById(req.cidadeId);
-    const valor = DB.leadFeeForRequest(req);
+    const garante = req.atendimentoTipo === 'garante';
+    const valor = DB.leadFeeForRequest(req) * (garante ? 4 : 1);
     const primeiraGratis = false;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
     const novoChamado = !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
@@ -13373,11 +13358,12 @@ alt=""></noscript>
               (CallInfo.tempoTxt(req) ? '<span>' + icon('clock') + CallInfo.tempoTxt(req) + '</span>' : '') +
               (CallInfo.midiasTxt(req) ? '<span>' + icon('camera') + CallInfo.midiasTxt(req) + '</span>' : '') +
             '</div>' +
-            '<div class="qf-unlock-price' + (CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
-              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
+            '<div class="qf-unlock-price' + (!garante && CallInfo.usaPlano(user) ? ' is-plan' : '') + '">' +
+              icon('unlock') + '<span>' + (primeiraGratis ? '1º desbloqueio GRÁTIS' : (!garante && CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
-            (global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
-            (function () { if (primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
+            (garante ? '<div class="qf-excl-hint">Quem Faz Garante · exclusivo · sem garantia de contratação</div>' : '') +
+            (!garante && global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
+            (function () { if (garante || primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
@@ -13491,6 +13477,7 @@ alt=""></noscript>
 
         (function () {
           // V11.90: exclusivo (só ele recebe o contato) ou dividido (até 4). O exclusivo some quando alguém desbloqueia.
+          if (req.atendimentoTipo === 'garante') return '<div class="section card stack"><h2 class="h3">Quem Faz Garante</h2><p>Contato exclusivo para 1 profissional verificado. Cliente informou escopo, orçamento e disponibilidade. Não é garantia de contratação.</p><strong>' + PU.formatCurrency(valor * 4) + ' (4× o desbloqueio normal)</strong><p>Pagamento com saldo, sem usar chamado do plano. O contato fica disponível após o desbloqueio.</p><button class="btn btn--primary" type="button" data-action="desbloquear-exclusivo">Desbloquear exclusivo · ' + PU.formatCurrency(valor * 4) + '</button></div>';
           const EX = global.QFExclusivo;
           const temExcl = !!(EX && global.QFCloud && global.QFCloud.enabled && EX.disponivel(req));
           const lim = CallInfo.vagas(req).limite;
@@ -14876,17 +14863,17 @@ alt=""></noscript>
       if (!action) return;
       const act = action.getAttribute('data-action');
       if (act === 'desbloquear-chamada' || act === 'desbloquear-exclusivo') {
-        const exclusivo = act === 'desbloquear-exclusivo';
+        const exclusivo = act === 'desbloquear-exclusivo' || (DB.requestById(params.id) || {}).atendimentoTipo === 'garante';
         const req = DB.requestById(params.id);
         const valorBase = req ? DB.leadFeeForRequest(req) : 0;
-        const valor = exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase;
+        const valor = req && req.atendimentoTipo === 'garante' ? valorBase * 4 : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase);
         const primeiraGratis = false;
         const usaPlano = !exclusivo && !!(user && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
         const vagasFrase = 'O cliente escolheu receber ' + (vg.limite === 1 ? '1 orçamento' : 'até ' + vg.limite + ' orçamentos') + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' profissional já desbloqueou' : ' profissionais já desbloquearam') : ' e ninguém desbloqueou ainda') + ': você será o ' + (vg.ocupadas + 1) + 'º de ' + vg.limite + '. Sem devolução: se o cliente não te responder ou fechar com outro, o valor não volta. ';
         PU.confirmDialog(exclusivo ? {
-          title: 'Pegar exclusivo',
-          message: 'O contato desse cliente fica só para você: o pedido sai da lista dos outros profissionais. Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente é liberado na hora.',
+          title: req && req.atendimentoTipo === 'garante' ? 'Quem Faz Garante — exclusivo' : 'Pegar exclusivo',
+          message: 'Não há garantia de contratação ou execução. O contato desse cliente fica só para você: o pedido sai da lista dos outros profissionais. Serão usados ' + PU.formatCurrency(valor) + ' dos seus créditos, sem devolução. O WhatsApp do cliente é liberado na hora.',
           okLabel: 'Pagar ' + PU.formatCurrency(valor) + ' e pegar'
         } : {
           title: primeiraGratis ? 'Seu primeiro desbloqueio é grátis' : 'Desbloquear chamado',
@@ -15560,7 +15547,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.0.4';
+  const APP_VERSION = '12.1.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -18263,6 +18250,8 @@ alt=""></noscript>
   global.navigate = navigate;
 
   // ---------------- Rotas ----------------
+
+  global.QFAtendimento.install(Screens);
 
   const routes = [
     { pattern: '/profissional/recrutamento', role: 'profissional', title: 'Recrutamento', back: '/profissional/home', render: Screens.recrutamentoRender },

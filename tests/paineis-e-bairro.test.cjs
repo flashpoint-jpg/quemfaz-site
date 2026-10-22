@@ -27,8 +27,8 @@ test('o pedido novo guarda a localização do bairro, e cai no centro da cidade 
   assert.match(index, /geocodeBairro: geocodeBairro/);
   assert.match(index, /geoPrecisao = 'bairro'[\s\S]{0,260}geoPrecisao = 'cidade'/);
   assert.match(index, /if \(geoPrecisao\) row\.geo_precisao = geoPrecisao;/);
-  // se o banco recusar o campo novo, o pedido é publicado sem ele: o pedido nunca se perde
-  assert.match(index, /\/geo_precisao\/i\.test[\s\S]{0,260}delete row\.geo_precisao;/);
+  // Location is passed to the single transactional publication endpoint.
+  assert.match(index, /p_geo: \{ latitude: row\.latitude, longitude: row\.longitude, geo_precisao: geoPrecisao/);
 });
 
 test('a correção do local pelo painel só troca coordenada aproximada e não aceita ponto longe da cidade', () => {

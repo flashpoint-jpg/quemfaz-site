@@ -47,11 +47,11 @@ async function run() {
   const callSource=html.slice(html.indexOf('  async function createCall('),html.indexOf('  async function unlockCall('));
   let published=0,fail=false,inserted;
   const DB={state:{requests:[]},categoryById:()=>({nome:'Pintor'}),clienteById:()=>null,persist(){}};
-  const scope={DB,cityFromId:()=>null,global:{QFClientAcquisition:{attribution:()=>({source:'google'}),published:()=>published++},QFPush:{notify:()=>new Promise(()=>{})}},
-    client:{from:table=>table==='qf_chamados'?{insert:row=>{inserted=row;return {select:()=>({single:async()=>fail?{error:Error('recusado')}:{data:{id:'saved'},error:null}})};}}:{update:()=>({eq:()=>new Promise(()=>{})})}},
+  const scope={DB,cityFromId:()=>null,global:{QFAtendimento:{},QFClientAcquisition:{attribution:()=>({source:'google'}),published:()=>published++},QFPush:{notify:()=>new Promise(()=>{})}},
+    client:{rpc:async(name,args)=>{assert.equal(name,'qf_publicar_atendimento');inserted=args.p_geo;return fail?{error:Error('recusado')}:{data:{id:'saved'},error:null}},from:()=>({update:()=>({eq:()=>new Promise(()=>{})})})},
     requestFromCloud:r=>({id:r.id}),saveClientAddress:()=>new Promise(()=>{}),Date,Number,String,Array,Object,Promise,console};
   vm.createContext(scope);vm.runInContext(callSource,scope);
-  const data={clienteId:'client',categoriaId:'cat_pintor',descricao:'Pintar parede',endereco:{cidade:'São Paulo',uf:'SP'}};
+  const data={atendimento:{versao:1},clienteId:'client',categoriaId:'cat_pintor',descricao:'Pintar parede',endereco:{cidade:'São Paulo',uf:'SP'}};
   const saved=await Promise.race([scope.createCall(data),new Promise((_,r)=>setTimeout(()=>r(Error('Tarefas auxiliares bloquearam a confirmação')),100))]);
   assert.equal(saved.id,'saved');assert.equal(published,1);assert.equal(inserted.marketing_origem.source,'google');
   fail=true;await assert.rejects(scope.createCall(data),/recusado/);assert.equal(published,1,'Insert recusado não converte');

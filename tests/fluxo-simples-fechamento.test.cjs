@@ -31,7 +31,7 @@ assert.ok(html.includes("client.rpc('qf_profissional_fechar_chamado', { p_chamad
 assert.ok(html.includes('const order = [STATUS.BUSCANDO, STATUS.AGUARDANDO_ORCAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.FINALIZADO];'));
 
 // Painel: abas novas, quadro de fechamento e desfecho vindo do banco.
-assert.ok(admin.includes("label: 'Abertos'") && admin.includes("label: 'Desbloqueados'"));
+assert.ok(admin.includes("label: 'Pedido novo'") && admin.includes("label: 'Desbloqueado'"));
 assert.ok(admin.includes('id="admin-fechamento"') && admin.includes('Está dando certo?'));
 assert.ok(admin.includes('desfecho: c.desfecho || null'));
 
