@@ -39,10 +39,16 @@
       detail = 'Quais móveis precisam de montagem ou reparo? Não informe dados pessoais.';
       scope = 'Quantos móveis são? Já estão desmontados?';
     }
+    let detailChoices=[['instalacao','Instalar'],['conserto','Consertar'],['manutencao','Fazer manutenção'],['outro','Outro serviço']];
+    let scopeChoices=[['um','Um item ou local'],['alguns','Alguns itens ou locais'],['varios','Vários itens ou locais'],['avaliar','Preciso de avaliação']];
+    if (/pint/.test(service)) { detailChoices=[['paredes','Pintar paredes'],['casa','Pintar casa ou apartamento'],['portao','Pintar portão ou grades'],['retoque','Fazer retoques'],['outro','Outro serviço']]; scopeChoices=[['pequena','Área pequena'],['media','Área média'],['grande','Área grande'],['avaliar','Preciso de avaliação']]; }
+    else if (/faxin|limpeza|higien|sofa|estof|colch|tapet|carpet/.test(service)) { detailChoices=[['sofa','Limpar sofá'],['colchao','Limpar colchão'],['tapete','Limpar tapete ou carpete'],['faxina','Fazer faxina'],['outro','Outro serviço']]; }
+    else if (/eletric|encan|chaveir|ar.cond|tecnic/.test(service)) { detailChoices=[['conserto','Consertar'],['instalacao','Instalar'],['manutencao','Fazer manutenção'],['outro','Outro serviço']]; }
+    else if (/mont|movel|moveis/.test(service)) { detailChoices=[['montagem','Montar móveis'],['desmontagem','Desmontar móveis'],['reparo','Consertar móveis'],['outro','Outro serviço']]; }
     const list = [
       {key:'servico',label:'Qual serviço você precisa?',catalog:true},
-      {key:'detalhes',label:detail,multiline:true,min:8},
-      {key:'escopo',label:scope,multiline:true,min:3},
+      options('detalhes','O que você precisa fazer?',detailChoices),
+      options('escopo','Qual o tamanho do serviço?',scopeChoices),
       {key:'cidade',label:'Em qual cidade será o serviço?'},
       options('uf','Qual é o estado (UF)?','AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>[x,x])),
       {key:'bairro',label:'Em qual bairro? O endereço exato será combinado após o desbloqueio.'},
@@ -73,7 +79,7 @@
     v=String(v || '').trim();
     if (!v || v.length>2000) return 'Responda esta pergunta para continuar (até 2.000 caracteres).';
     if (q.choices && !q.choices.some(c=>c[0]===v)) return 'Escolha uma das opções.';
-    if (v.length<(q.min||2)) return 'Descreva um pouco melhor para continuar.';
+    if (v.length<(q.min||1)) return 'Descreva um pouco melhor para continuar.';
     if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g,'')) || (root.QFUI?.validPhone && !root.QFUI.validPhone(v)))) return 'Confira o celular com DDD.';
     if (q.budget && Number.isNaN(budget(v))) return 'Informe um valor válido, como 300 ou 1.500,00, ou “a combinar”.';
     if (q.key==='data' && ['hoje','urgente'].includes(a.urgencia) && v!==today()) return 'Para este prazo, selecione a data de hoje ou altere o prazo.';
@@ -89,7 +95,7 @@
     return {versao:1,chave:id,categoria,servico:a.servico,detalhes:a.detalhes,escopo:a.escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:a.disponibilidade,nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:a.tipo,qualificacao:a.tipo==='garante'?a.qualificacao:null};
   }
   function html() {
-    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>Publicação gratuita em 4 etapas.</p><div data-at-question></div><p class="text--sm text--secondary">Quem Faz Garante oferece exclusividade de contato. Não é garantia de contratação ou execução. Você decide se contrata.</p></section></div>';
+    return '<div class="view"><section class="card stack" style="max-width:620px;margin:0 auto" data-qf-atendimento><h1 class="h2">Vamos entender seu pedido</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Quem Faz Garante oferece exclusividade de contato. Não é garantia de contratação ou execução. Você decide se contrata.</p></section></div>';
   }
   function category(service) {
     const DB=root.DB, found=DB.categories().find(c=>c.id!=='cat_outros' && norm(c.nome)===norm(service));
