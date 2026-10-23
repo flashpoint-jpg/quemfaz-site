@@ -4,7 +4,7 @@
  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'';
  function oferta(s={}){
-  return '<span class="badge">QUEM FAZ LIVRE</span><h2 class="h3">'+(s.ativo?'Plano ativo — desbloqueios ilimitados':'Mais oportunidades. Sem pagar por cada contato.')+'</h2><p><strong>R$ 39,90 por 30 dias — só R$ 1,33 por dia!</strong></p><p>Desbloqueie quantos pedidos disponíveis e compatíveis quiser, sem gastar créditos por contato.</p><p><strong>13% de comissão só se fechar o serviço.</strong> Sem renovação automática.</p><details><summary>Ver condições do plano</summary><p>Até quatro profissionais por pedido. Pedidos exclusivos não participam. Comissão somente sobre serviços fechados, confirmados e aprovados pela administração. Preste contas em até 48 horas; enquanto negocia, você pode prorrogar uma única vez por mais 48 horas. Pendências vencidas bloqueiam novos desbloqueios em todas as modalidades. Não há garantia de contratação. Ativação após confirmação do Pix.</p></details>'+(s.valido_ate?'<p><strong>'+(s.ativo?'Válido até ':'Plano vencido em ')+esc(date(s.valido_ate))+'</strong></p>':'<p>Ativação após confirmação do Pix pelo servidor.</p>')+(s.ativo?'<a class="btn btn--primary" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':'<button type="button" class="btn btn--primary btn--block" data-qf-livre-pagar>Assinar por R$ 39,90</button>')+'<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
+  return '<span class="badge">QUEM FAZ LIVRE</span><h2 class="h3">'+(s.ativo?'Desbloqueios ilimitados':'R$ 39,90 por 30 dias · R$ 1,33/dia')+'</h2><p>Pedidos compatíveis ilimitados. <strong>13% só ao fechar.</strong></p><details><summary>Saiba mais sobre o plano</summary><p>Sem pagar por contato. Sem renovação automática.</p><p>Até quatro profissionais por pedido. Pedidos exclusivos não participam. Comissão somente sobre serviços fechados, confirmados e aprovados pela administração. Preste contas em até 48 horas; enquanto negocia, você pode prorrogar uma única vez por mais 48 horas. Pendências vencidas bloqueiam novos desbloqueios em todas as modalidades. Não há garantia de contratação. Ativação após confirmação do Pix.</p></details>'+(s.valido_ate?'<p><strong>'+(s.ativo?'Válido até ':'Plano vencido em ')+esc(date(s.valido_ate))+'</strong></p>':'<p>Ativação após confirmação do Pix pelo servidor.</p>')+(s.ativo?'<a class="btn btn--primary" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':'<button type="button" class="btn btn--primary btn--block" data-qf-livre-pagar>Assinar por R$ 39,90</button>')+'<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
  }
  g.QFLivre={oferta};if(typeof module!=='undefined')module.exports=g.QFLivre;
  if(!g.document)return;
@@ -13,7 +13,7 @@
   // O catálogo antigo continua disponível para registros e assinaturas já contratadas.
   if(Array.isArray(g.QFCadPlanos))g.QFCadPlanos.splice(1);
   if(g.QFPlanoIncentivo)g.QFPlanoIncentivo.porChamado=()=>null;
-  const css=document.createElement('style');css.textContent='.qf-livre{border:2px solid #1769d5!important;background:linear-gradient(120deg,#eef6ff,#fff8ed);border-radius:18px;padding:20px!important;margin:0 0 18px!important;min-width:0}.qf-livre h2{margin:8px 0;font-size:1.35rem}.qf-livre p{overflow-wrap:anywhere}.qf-livre textarea{width:100%;box-sizing:border-box;min-height:90px;overflow-wrap:anywhere}.qf-livre img{display:block;width:200px;max-width:100%;height:auto;margin:12px auto}.qf-livre label{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.qf-livre input[type=checkbox]{width:20px;height:20px;flex:0 0 20px}.qf-livre .btn{white-space:normal}@media(max-width:639px){.qf-livre{padding:16px!important}.qf-livre .btn{width:100%}}';document.head.appendChild(css);
+  const css=document.createElement('style');css.textContent='.qf-livre{border:2px solid #1769d5!important;background:linear-gradient(120deg,#eef6ff,#fff8ed);border-radius:18px;padding:20px!important;margin:0 0 18px!important;min-width:0}.qf-livre h2{margin:8px 0;font-size:1.35rem}.qf-livre p{overflow-wrap:anywhere}.qf-livre textarea{width:100%;box-sizing:border-box;min-height:90px;overflow-wrap:anywhere}.qf-livre img{display:block;width:200px;max-width:100%;height:auto;margin:12px auto}.qf-livre label{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.qf-livre input[type=checkbox]{width:20px;height:20px;flex:0 0 20px}.qf-livre .btn{white-space:normal}@media(max-width:639px){.qf-livre{padding:16px!important}.qf-livre .btn{width:100%}}';css.textContent += "\n/* Ajustes 23/10 — pedidos em evidência e estado do plano compacto */\n.qf-livre.qf-livre--compact{padding:12px 14px!important;margin:0 0 8px!important;display:flex;align-items:center;min-height:64px;gap:12px;border:1px solid #a7cdf6!important;background:#eef6ff!important;box-shadow:none!important;height:auto!important}\n.qf-livre--compact .qf-livre__icon{display:grid;place-items:center;flex:none;width:37px;height:37px;border:1px solid #b2d6fa;border-radius:10px;color:#075bbb;font-size:22px;font-weight:800}\n.qf-livre--compact .qf-livre__copy{min-width:0;flex:1}\n.qf-livre--compact .qf-livre__copy strong{display:block;color:#075bbb;font-size:14px;line-height:1.3}\n.qf-livre--compact .qf-livre__copy small{display:block;font-size:12.5px;line-height:1.35;color:#42526c;margin-top:3px}\n.qf-livre--compact .qf-livre__link{flex:none;white-space:nowrap;font-weight:750;font-size:13px;color:#075bbb;text-decoration:none}\n.qf-livre--compact .qf-livre__link:focus-visible{outline:2px solid #075bbb;outline-offset:3px}\n#app-shell[data-route=\"profissional-home\"] .view>.qf-livre--compact,\n#app-shell[data-route=\"profissional-carteira\"] .view>.qf-livre--compact{grid-column:1/-1;grid-row:auto;break-inside:avoid}\n#app-shell[data-route=\"profissional-home\"] .view>#chamados-disponiveis{grid-column:1/-1;order:0}\n#app-shell[data-route=\"profissional-home\"] .qf-prof-order-heading h2{font-size:clamp(19px,4.8vw,25px);font-weight:850}\n#app-shell[data-route=\"profissional-home\"] .qf-prof-order-tabs{gap:8px;border:0;margin:10px 0 14px;overflow-x:auto}\n#app-shell[data-route=\"profissional-home\"] .qf-prof-order-tabs>*{flex:0 0 auto;min-height:42px;border:1px solid #c8d3e1;border-radius:999px;padding:9px 13px;background:#fff;font-size:13px;white-space:nowrap}\n#app-shell[data-route=\"profissional-home\"] .qf-prof-order-tabs [aria-current]{border:1px solid #075bbb;background:#075bbb;color:#fff}\n#app-shell[data-route=\"profissional-home\"] .qf-prof-status{height:auto!important}\n#app-shell[data-route=\"profissional-carteira\"] .view>.qf-livre{column-span:all}\n#app-shell[data-route=\"profissional-carteira\"] .view>.qf-livre+ .card{column-span:all}\n#cadastro-prof-form .qf-step__nav{position:sticky;bottom:env(safe-area-inset-bottom,0px);z-index:12;display:flex;gap:10px;background:rgba(255,255,255,.97);padding:12px;border:1px solid #e0e9f4;border-radius:16px;box-shadow:0 4px 22px rgba(17,43,76,.10);margin-top:12px}\n#cadastro-prof-form .qf-step__nav .btn{min-height:48px}\n#cadastro-prof-form .qf-step .field input,#cadastro-prof-form .qf-step .field select,#cadastro-prof-form .qf-step .field textarea{scroll-margin-bottom:95px}\n#cadastro-prof-form .qf-step__head .text--sm{max-width:43ch}\n#cadastro-prof-form .qf-cad-planos__nota{line-height:1.4}\n@media(min-width:768px){#cadastro-prof-form .qf-step__nav{position:static;box-shadow:none} }\n@media(max-width:380px){.qf-livre--compact .qf-livre__icon{display:none}.qf-livre--compact .qf-livre__link{font-size:12px} }\n";document.head.appendChild(css);
   const prior=g.Screens.afterRender,priorAnon=g.Screens.afterRenderAnon;
   function enhance(pattern,content,params={}){
    const cadastro=pattern==='/auth/:role/cadastro'&&params.role==='profissional';
@@ -24,7 +24,27 @@
    const client=g.QFCloud&&g.QFCloud.client;if(!client)return;
    const rpc=async(n,a={})=>{const r=await client.rpc(n,a);if(r.error)throw Error('Não foi possível consultar o plano. Tente novamente.');return r.data;};
    const box=document.createElement('section');box.className='section card stack--sm qf-livre';box.dataset.qfLivre='';
-   const view=content.querySelector('.view')||content;if(!cadastro)view.prepend(box);
+   const view=content.querySelector('.view')||content;
+   if(!cadastro){
+    view.prepend(box);
+    if(pattern==='/profissional/home'){
+     // O estado online continua visível, mas os pedidos ficam logo abaixo do plano.
+     const online=view.querySelector('.qf-prof-status');
+     if(online)online.after(box);
+     const calls=view.querySelector('#chamados-disponiveis');
+     if(calls)box.after(calls);
+     const ready=view.querySelector('[data-ativacao="pronto"]');
+     if(ready)setTimeout(()=>{if(ready.isConnected)ready.remove();},4500);
+     const other=view.querySelector('#pedidos-abertos-a-todos');
+     const tabs=view.querySelector('.qf-prof-order-tabs');
+     if(other&&tabs&&!tabs.querySelector('[data-qf-ir-outros]')){
+      const b=document.createElement('button');
+      b.type='button';b.dataset.qfIrOutros='';b.textContent='Outros pedidos';
+      b.addEventListener('click',()=>other.scrollIntoView({behavior:'smooth',block:'start'}));
+      tabs.appendChild(b);
+     }
+    }
+   }
    if(cadastro){
     content.querySelectorAll('[name=planoEscolhido]').forEach(r=>{if(r.value!=='avulso')r.closest('label')?.remove();else r.checked=true;});
     content.querySelector('.qf-cad-planos__ex')?.remove();
@@ -44,7 +64,7 @@
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
       const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=livre?'Criar conta e pagar por Pix':'Criar conta grátis';
       const nota=form.querySelector('[data-plano-nota]');
-      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Sua conta é grátis. Na próxima tela, pague R$ 39,90 por Pix para ativar o Livre. Sem pagamento, desbloqueie somente com saldo no Avulso.':'Adicione créditos na Carteira quando quiser desbloquear um pedido.';}
+      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Ativação após confirmar o Pix. Sem pagamento, só o Avulso com saldo.':'No Avulso, você coloca créditos na Carteira quando precisar.';}
       conditions.hidden=!livre;
      }
      form.addEventListener('change',e=>{if(e.target?.name==='planoEscolhido')updateChoice();});
@@ -56,11 +76,13 @@
    function render(s){
     last=s||{};
     if(last.ativo&&!pedido){
-     box.innerHTML='<strong>Quem Faz Livre ativo</strong><p>Desbloqueios ilimitados até '+esc(date(last.valido_ate))+'.</p><a href="#/profissional/servicos/disponiveis" class="btn btn--outline">Ver pedidos</a>';
+     box.classList.add('qf-livre--compact');
+     box.innerHTML='<span class="qf-livre__icon" aria-hidden="true">✓</span><span class="qf-livre__copy"><strong>Quem Faz Livre ativo</strong><small>Desbloqueios ilimitados · válido até '+esc(date(last.valido_ate))+'</small></span><a href="#/profissional/planos" class="qf-livre__link">Ver plano ›</a>';
     }else{
      box.innerHTML=oferta(last);
      if(pattern==='/profissional/home'){
-      box.innerHTML='<strong>Quem Faz Livre</strong><p>R$ 1,33 por dia · R$ 39,90 por 30 dias</p><a class="btn btn--outline" href="#/profissional/planos">Ver plano e assinar</a><p class="text--sm">No Avulso, adicione saldo na Carteira para desbloquear pedidos.</p>';
+      box.classList.add('qf-livre--compact');
+      box.innerHTML='<span class="qf-livre__icon" aria-hidden="true">i</span><span class="qf-livre__copy"><strong>Quem Faz Livre · R$ 1,33/dia</strong><small>R$ 39,90 por 30 dias · ativação pelo Pix</small></span><a class="qf-livre__link" href="#/profissional/carteira">Ver plano ›</a>';
      }
     }
     bind();
