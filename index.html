@@ -13961,7 +13961,7 @@ alt=""></noscript>
           cfPlano('Quem Faz Livre', true, 'R$ 1,33', 'por dia', 'R$ 39,90 por 30 dias · Desbloqueios ilimitados de pedidos compatíveis', ['Na sua profissão e dentro do seu raio', '13% somente sobre serviços fechados, confirmados e aprovados pela administração', 'Ativação após pagamento · Sem renovação automática'], assinar('Quem Faz Livre')) +
           cfPlano('Avulso', false, 'R$ 5', 'a R$ 13', 'por chamado desbloqueado',
             ['Sem mensalidade e sem comissão', 'Use seu saldo para desbloquear pedidos', 'Recarga por Pix, cartão ou boleto'],
-            role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Escolher Avulso</button>') +
+            role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro" data-qf-escolha-plano="avulso">Escolher Avulso</button>') +
         '</div>' +
         '<p class="text--sm text--secondary" style="margin-top:10px;">Quem Faz Livre: ativação após confirmação do Pix. No Avulso, o saldo continua separado do plano.</p>' +
       '</section>' +
@@ -13970,7 +13970,7 @@ alt=""></noscript>
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 4), e você vê quantas vagas ainda tem antes de desbloquear.') +
-          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. No Livre e gratuito, 13% apenas por serviço fechado, confirmado e aprovado pela administração.') +
+          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. No Quem Faz Livre, 13% apenas por serviço fechado, confirmado e aprovado pela administração.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
