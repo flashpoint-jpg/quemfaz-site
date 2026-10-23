@@ -174,34 +174,33 @@ const server=http.createServer(async(req,res)=>{
    assert.ok(actions.every(a=>a.carteirinha==='00000000-0000-4000-8000-000000000124'));
    await clientContext.close();
   }
-  // Abas administrativas e espelho usam o HTML e o renderizador públicos reais.
+  // O profissional vê a novidade no início, nos cartões e junto da opção paga.
   for(const width of [390,1440]){
-   const ctx=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block'});
-   await ctx.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
-   const adm=await ctx.newPage();await adm.goto(origin+'/admin.html');
-   await adm.evaluate(()=>{
-    const pedido={id:'00000000-0000-4000-8000-000000000990',cliente_id:'cliente-fixture',categoria:'cat_eletricista',titulo:'Tomada sem energia',descricao:'Descrição original do cliente',cidade:'Santo André',uf:'SP',bairro:'Centro',endereco_completo:'Rua de teste, 10',status:'aberto',criado_em:new Date().toISOString(),max_orcamentos:4,cliente:{nome:'Cliente espelho'},fotos:[]};
-    window.__espelhoFixture={pedido,conversas:[{profissional_id:'prof-fixture',profissional_nome:'Profissional no espelho',profissional_cidade:'Santo André',selecionado:false}],desbloqueios:[],orcamentos:[],avaliacoes:[],respostas:{servico:'Eletricista',detalhes:'Tomada',escopo:'pequeno',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',nome:'Cliente espelho',contato:'11999990000',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'}};
-    DB.getSession=()=>({role:'admin',userId:'admin-fixture'});DB.adminById=()=>({id:'admin-fixture',nome:'Administrador'});
-    QFAdminCloud.enabled=false;QFAdminCloud.client={rpc:async(n,a)=>({error:null,data:n==='qf_admin_espelho_clientes'?(a.p_id?window.__espelhoFixture:{total:1,itens:[pedido],gerado_em:new Date().toISOString()}):n==='qf_comissao13_fechamentos_painel'?[]:{ok:true}})};
-    navigate('/admin/espelho-clientes');
+   const ctx=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'});await ctx.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
+   const proPage=await ctx.newPage();proPage.on('pageerror',e=>console.error('Profissional UI:',e.message));await proPage.goto(origin);
+   await proPage.evaluate(()=>{
+    const prof={id:'prof-ui',nome:'Profissional Teste',online:true,statusAprovacao:'aprovado',bloqueado:false,categorias:['cat_eletricista'],creditos:10000,raioKm:20,fotoUrl:'/assets/qf-logo-20261013.webp',areasAtendimento:[]};
+    window.__profPayload={id:'00000000-0000-4000-8000-000000000990',cliente_id:'cliente-fixture',categoria:'cat_eletricista',titulo:'Tomada sem energia',descricao:'Descrição original que chega aos profissionais',cidade:'Santo André',uf:'SP',bairro:'Centro',endereco_completo:'Rua privada, 10',status:'aberto',criado_em:new Date().toISOString(),max_orcamentos:4,limite:4,participantes:0,preco_centavos:790,fotos:[]};
+    DB.state.users.profissionais=[prof];DB.getSession=()=>({role:'profissional',userId:prof.id});DB.state.requests=[QFRequestFromCloud(window.__profPayload,null)];QFPush={supported:()=>true,isActive:()=>true,permission:()=>"granted",refreshStatus:async()=>{},restore:async()=>{},notify:async()=>{}};QFCloud.enabled=false;QFCloud.client={rpc:async(n,a)=>{window.__profRpc=(window.__profRpc||[]).concat(n);return {error:null,data:n==='qf_comissao13_status'?{ok:true,desbloqueio_gratuito_ativo:true}:n==='qf_comissao13_fechamentos_painel'?[{id:'conta-ui',chamado_id:window.__profPayload.id,titulo:'Tomada sem energia',cliente:'Cliente',status:'pendente',prazo_contas:new Date(Date.now()+86400000).toISOString()}]:{ok:true}};}};QFCloud.syncForCurrentSession=async()=>{};window.__profNavigate=navigate;navigate('/profissional/home');
    });
-   await adm.getByRole('button',{name:'Ver como o cliente vê',exact:true}).waitFor();
-   assert.equal(await adm.locator('[data-nav="/admin/comissao13"]').count(),1,'aba 13% permanente');
-   await adm.getByRole('button',{name:'Ver como o cliente vê',exact:true}).click();
-   const frame=adm.frameLocator('iframe[title="Espelho da tela do cliente"]');
-   await frame.locator('[data-request-id]').waitFor();
-   assert.match(await frame.locator('[data-espelho-leitura]').innerText(),/Descrição original do cliente/);
-   assert.match(await frame.locator('[data-qf-client-conversations]').innerText(),/Profissional no espelho/);
-   assert.equal(await frame.locator('[data-qf-choose-prof]').isEnabled(),false);
-   assert.equal(await frame.locator('[data-action="cancelar-pedido"]').isEnabled(),false,'espelho não cancela pedido do cliente');
-   assert.match(await adm.locator('[data-espelho-respostas]').innerText(),/Santo André/);
-   await adm.screenshot({path:'/tmp/qf-espelho-'+width+'.png',fullPage:true});
-   await adm.evaluate(()=>navigate('/admin/comissao13'));
-   await adm.getByText('Nenhum desbloqueio gratuito registrado.',{exact:true}).waitFor();
-   await ctx.close();
+   await proPage.getByRole('heading',{name:'Desbloqueie pedidos grátis',exact:true}).waitFor();
+   await proPage.locator('[data-qf13-card]').waitFor();
+   assert.ok(await proPage.locator('[data-qf13]').evaluate(el=>el===el.parentElement.firstElementChild),'novidade no topo do início');
+   await proPage.locator('[data-qf-home-job] [data-nav]').click();await proPage.locator('[data-qf13-desbloquear]').waitFor();
+   const paid=proPage.locator('[data-action="desbloquear-chamada"]'),free=proPage.locator('[data-qf13-desbloquear]');assert.equal(await paid.isVisible(),true);assert.equal(await free.isVisible(),true);
+   assert.ok(await free.evaluate(el=>el.closest('.qf-opts')!==null),'opções no mesmo grupo');if(width===1440){const a=await free.evaluate(el=>el.closest('.qf-opt').getBoundingClientRect().top),b=await paid.evaluate(el=>el.closest('.qf-opt').getBoundingClientRect().top);assert.ok(Math.abs(a-b)<2,'grátis e pago lado a lado no computador');}
+   await proPage.screenshot({path:'/tmp/qf-prof13-opcoes-'+width+'.png',fullPage:true});
+   await proPage.evaluate(()=>{window.__profNavigated=[];window.navigate=url=>window.__profNavigated.push(url);});await proPage.locator('[data-qf13-termos]').check();await free.click();await proPage.waitForFunction(()=>window.__profNavigated.length>0);assert.match((await proPage.evaluate(()=>window.__profNavigated))[0],/profissional\/chat/);
+   await proPage.evaluate(()=>window.__profNavigate('/profissional/carteira'));await proPage.locator('[data-qf13-row]').waitFor();assert.ok(await proPage.locator('[data-qf13]').evaluate(el=>el===el.parentElement.firstElementChild),'prestação de contas no topo da carteira');
+   await proPage.screenshot({path:'/tmp/qf-prof13-carteira-'+width+'.png',fullPage:true});await ctx.close();
+   const ac=await browser.newContext({viewport:{width,height:1000},serviceWorkers:'block'});await ac.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());const adm=await ac.newPage();await adm.goto(origin+'/admin.html');
+   await adm.evaluate(()=>{
+    const pedido={id:'00000000-0000-4000-8000-000000000990',cliente_id:'cliente-fixture',categoria:'cat_eletricista',titulo:'Tomada sem energia',descricao:'Descrição original que chega aos profissionais',cidade:'Santo André',uf:'SP',bairro:'Centro',endereco_completo:'Rua privada, 10',status:'aberto',criado_em:new Date().toISOString(),max_orcamentos:4,limite:4,participantes:0,preco_centavos:790,fotos:[]};
+    DB.getSession=()=>({role:'admin',userId:'admin-fixture'});DB.adminById=()=>({id:'admin-fixture',nome:'Administrador'});QFAdminCloud.enabled=false;QFAdminCloud.client={rpc:async(n,a)=>({error:null,data:n==='qf_admin_espelho_profissionais'?{total:1,itens:[pedido],profissionais:[],profissional:null,estado:{ok:true,desbloqueio_gratuito_ativo:true},gerado_em:new Date().toISOString()}:n==='qf_comissao13_fechamentos_painel'?[]:{ok:true}})};navigate('/admin/espelho-profissionais');
+   });
+   const frame=adm.frameLocator('iframe[title="Espelho da tela do profissional"]');await frame.locator('[data-qf-home-job] [data-nav]').waitFor();assert.match(await frame.locator('[data-espelho-prof-leitura]').innerText(),/Descrição original que chega aos profissionais/);await frame.locator('[data-qf13-card]').waitFor();await frame.locator('[data-qf-home-job] [data-nav]').click();await frame.locator('[data-qf13-desbloquear]').waitFor();assert.equal(await frame.locator('[data-qf13-desbloquear]').isEnabled(),false,'espelho não desbloqueia pelo profissional');assert.equal(await frame.locator('[data-action="desbloquear-chamada"]').isEnabled(),false);await adm.screenshot({path:'/tmp/qf-espelho-prof-'+width+'.png',fullPage:true});await adm.evaluate(()=>navigate('/admin/comissao13'));await adm.getByText('Nenhum desbloqueio gratuito registrado.',{exact:true}).waitFor();await ac.close();
   }
-  console.log('PASS admin espelho e aba 13% em 390px/1440px; renderizador público, formulário original, ações do cliente bloqueadas');
+  console.log('PASS profissional e espelho 390px/1440px: destaque no início, selo nos cartões, opções juntas, desbloqueio grátis e contas no topo; espelho bloqueia ações');
   console.log('PASS client UI at 390px and 1440px: QR read only, agreement and amount, explicit OTP consent, dispute and financial gate (isolated fixtures)');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(async()=>{server.close();if(database)await database.close();});

@@ -177,7 +177,7 @@ test('HMAC vincula código ao link e à finalidade, sem expor o código',async()
 });
 test('frontend: mostra bloqueio real e não expõe ação de desbloqueio antes da validação',()=>{
  const ui=require('../qf-comissao13.js');
- const off=ui.oferta({desbloqueio_gratuito_ativo:false});assert.match(off,/Em preparação/);assert.ok(!off.includes('data-qf13-desbloquear'));
+ const off=ui.oferta({desbloqueio_gratuito_ativo:false});assert.match(off,/Modalidade indisponível/);assert.ok(!off.includes('data-qf13-desbloquear'));
  const on=ui.oferta({desbloqueio_gratuito_ativo:true});assert.match(on,/data-qf13-termos/);assert.match(on,/data-qf13-desbloquear/);
  assert.ok(!ui.painel([{profissional:'<img src=x>',valor_centavos:50000}]).includes('<img'));
 });
