@@ -178,6 +178,7 @@
             emissao=resultado.data;
           }catch(error){emissao={ok:false,reason:'indisponivel'};}
           const codigo=emissao&&emissao.ok&&/^[0-9]{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
+          if(codigo){try{root.sessionStorage.setItem('qf_cliente_codigo_pedido',JSON.stringify({pedidoId:req.id,codigo,clienteId:current.id}));}catch(_){} codigoFixo(current); }
           area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
             (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
             '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p><button type="button" class="btn btn--outline" data-at-cancelar>Cancelar pedido</button><p role="status" data-at-cancelar-status></p></section>';
@@ -191,6 +192,8 @@
               const resposta=await Cloud.client.rpc('qf_cancelar_pedido_cliente_teste',{p_chamado_id:req.id});
               if(resposta.error)throw resposta.error;
               if(!resposta.data?.ok)throw Error(resposta.data?.reason==='ja_desbloqueado'?'Um profissional já desbloqueou este pedido. Solicite cancelamento à equipe Quem Faz.':'Não foi possível cancelar. Tente novamente.');
+              try{root.sessionStorage.removeItem('qf_cliente_codigo_pedido');}catch(_){}
+              root.document.querySelector('[data-qf-codigo-fixo]')?.remove();
               area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido cancelado</h1><p>Seu pedido foi cancelado e não está mais disponível para novos desbloqueios.</p></section>';
             }catch(error){aviso.textContent=error.message||'Não foi possível cancelar.';cancelar.disabled=false;}
           };
@@ -210,12 +213,27 @@
     for(const row of res.data||[]){const r=reqs.find(x=>x.id===row.chamado_id);if(r){r.atendimentoTipo=row.tipo;r.maxOrcamentos=row.tipo==='garante'?1:4;r.limiteParticipantes=r.maxOrcamentos;}}
     return reqs;
   }
+  // O código permanece disponível ao cliente durante toda a sessão, inclusive após navegar ou atualizar.
+  function codigoFixo(user){
+    const old=root.document.querySelector('[data-qf-codigo-fixo]');
+    if(!user||user.role!=='cliente'){old?.remove();return;}
+    let registro;try{registro=JSON.parse(root.sessionStorage.getItem('qf_cliente_codigo_pedido')||'null');}catch(_){}
+    if(!registro||registro.clienteId!==user.id||!/^[0-9]{6}$/.test(registro.codigo)){old?.remove();return;}
+    if(old)return;
+    const el=root.document.createElement('aside');
+    el.dataset.qfCodigoFixo='';
+    el.setAttribute('aria-label','Código do pedido publicado');
+    el.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9998;max-width:460px;margin:auto;background:#fff;border:2px solid #1769d5;border-radius:16px;box-shadow:0 5px 24px #0b285333;padding:12px 16px;color:#132d53;text-align:center';
+    el.innerHTML='<div style="font-weight:700">Guarde o código do seu pedido</div><div style="font-size:32px;letter-spacing:.14em;font-weight:800;color:#1769d5">'+registro.codigo+'</div><small>Informe somente ao profissional contratado, não para receber orçamento.</small><div><button type="button" class="btn btn--primary" data-qf-codigo-copiar>Copiar código</button></div>';
+    el.querySelector('[data-qf-codigo-copiar]').onclick=async()=>{try{await root.navigator.clipboard.writeText(registro.codigo);el.querySelector('[data-qf-codigo-copiar]').textContent='Código copiado';}catch(_){el.querySelector('[data-qf-codigo-copiar]').textContent='Anote o código acima';}};
+    root.document.body.appendChild(el);
+  }
   function install(Screens) {
     const oldCadastro=Screens.authCadastro,oldAnon=Screens.afterRenderAnon,oldAfter=Screens.afterRender;
     Screens.authCadastro=p=>p.role==='cliente'?html():oldCadastro(p);
     Screens.clienteNovoPedidoRender=()=>html();
     Screens.afterRenderAnon=function(p,c,params){if(p==='/auth/:role/cadastro'&&params.role==='cliente'){mount(c,params,null);return;}return oldAnon?.apply(this,arguments);};
-    Screens.afterRender=function(p,c,params,user){if(p==='/cliente/novo-pedido/:catId'){mount(c,params,user);return;}return oldAfter?.apply(this,arguments);};
+    Screens.afterRender=function(p,c,params,user){const result=p==='/cliente/novo-pedido/:catId'?mount(c,params,user):oldAfter?.apply(this,arguments);if(p.startsWith('/cliente/'))codigoFixo(user);else root.document.querySelector('[data-qf-codigo-fixo]')?.remove();return result;};
   }
   if (root.document) root.document.addEventListener('click',async function(e){
     const button=e.target.closest('[data-at-admin]');if(!button)return;
