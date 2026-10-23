@@ -16,9 +16,15 @@ insert into public.qf_chamados(id,cliente_id,categoria,titulo,descricao,cidade,u
 insert into public.qf_recargas(profissional_id,valor_centavos,metodo,status,plano,provedor,provedor_id) select id,3990,'pix','aprovado','livre','efi','fixture-confirmed-'||id from qf13_fixture_ids where n=3;
 set local session_replication_role=origin;
 do $$
-declare p uuid;c uuid;c2 uuid;cl uuid;adm uuid;f uuid;f2 uuid;r jsonb;t text;k uuid;v_code text;rec uuid;i integer;v_rejected boolean;
+declare p uuid;c uuid;c2 uuid;cl uuid;adm uuid;f uuid;f2 uuid;r jsonb;t text;k uuid;v_code text;rec uuid;i integer;v_rejected boolean;v_answers jsonb;
 begin
  select id into c from qf13_fixture_ids where n=8;select id into c2 from qf13_fixture_ids where n=9;select id into cl from qf13_fixture_ids where n=6;select id into adm from qf13_fixture_ids where n=7;
+ perform set_config('request.jwt.claim.sub',cl::text,true);
+ v_answers:=jsonb_build_object('versao',1,'chave',gen_random_uuid(),'categoria','cat_eletricista','servico','Eletricista','detalhes','Trocar uma tomada elétrica','escopo','Um item','cidade','Santo André','uf','SP','bairro','Centro','urgencia','normal','prazo','normal','orcamento_centavos',null,'orcamento_faixa','a combinar','materiais','profissional','data',null,'disponibilidade','A combinar diretamente','nome','Cliente Fixture','contato','11987654321','intencao','contratar','autorizacao','sim','tipo','tradicional','segredo_acompanhamento',repeat('a',64));
+ r:=public.qf_publicar_atendimento(v_answers,jsonb_build_object('latitude',-23.65,'longitude',-46.53));c:=(r->>'id')::uuid;
+ if r::text like '%'||repeat('a',64)||'%' then raise exception 'owner secret exposed';end if;
+ perform set_config('request.jwt.claim.sub','',true);r:=public.qf13_acompanhar(c,repeat('a',64));v_code:=r->>'codigo';if not coalesce((r->>'ok')::boolean,false) or v_code!~'^[0-9]{6}$' then raise exception 'owner screen code: %',r;end if;
+ r:=public.qf13_acompanhar(c,repeat('b',64));if (r->>'ok')::boolean then raise exception 'wrong browser access';end if;
  for i in 1..4 loop
   select id into p from qf13_fixture_ids where n=i;perform set_config('request.jwt.claim.sub',p::text,true);
   if i=3 then
@@ -31,13 +37,6 @@ begin
  select id into p from qf13_fixture_ids where n=5;perform set_config('request.jwt.claim.sub',p::text,true);r:=public.qf_comissao13_desbloquear(c,true);
  if coalesce((r->>'ok')::boolean,false) then raise exception 'limit 4 failed';end if;
  select f0.id into f from public.qf_comissao13_fechamentos f0 join qf13_fixture_ids x on x.id=f0.profissional_id where x.n=1 and f0.chamado_id=c;
- perform set_config('request.jwt.claim.sub',cl::text,true);r:=public.qf13_cliente_abrir(f);t:=split_part(r->>'url','token=',2);
- perform set_config('request.jwt.claim.sub','',true);
- r:=public.qf13_cliente_guest(t,'criar','contratou',repeat('a',64));if not coalesce((r->>'ok')::boolean,false) then raise exception 'OTP create: %',r;end if;k:=(r->>'codigo_id')::uuid;
- perform public.qf_comissao13_codigo_enviado(k,'SM'||repeat('a',32));
- r:=public.qf13_cliente_guest(t,'confirmar','contratou',repeat('b',64));if (r->>'ok')::boolean then raise exception 'invalid OTP accepted';end if;
- r:=public.qf13_cliente_guest(t,'confirmar','contratou',repeat('a',64));v_code:=r->>'codigo_servico';if not coalesce((r->>'ok')::boolean,false) or v_code!~'^[0-9]{6}$' then raise exception 'guest confirmation: %',r;end if;
- r:=public.qf13_cliente_guest(t,'confirmar','contratou',repeat('a',64));if (r->>'ok')::boolean then raise exception 'token replay';end if;
  select id into p from qf13_fixture_ids where n=1;perform set_config('request.jwt.claim.sub',p::text,true);
  r:=public.qf_comissao13_prestar_contas(f,'informado',50000,v_code);if not (r->>'ok')::boolean then raise exception 'service code: %',r;end if;
  if exists(select 1 from public.qf_comissao13_fechamentos where id=f and comissao_centavos is not null) then raise exception 'commission before admin';end if;
@@ -54,11 +53,10 @@ begin
  r:=public.qf_comissao13_prestar_contas(f2,'negociando');if not (r->>'ok')::boolean then raise exception 'extension: %',r;end if;
  r:=public.qf_comissao13_prestar_contas(f2,'negociando');if r->>'reason'<>'limite_prorrogacao' then raise exception 'double extension';end if;
  r:=public.qf_comissao13_prestar_contas(f2,'recusado');if not (r->>'ok')::boolean or private.qf13_bloqueio(p) is not null then raise exception 'regularization';end if;
- perform set_config('request.jwt.claim.sub',cl::text,true);r:=public.qf13_cliente_abrir(f2);t:=split_part(r->>'url','token=',2);perform set_config('request.jwt.claim.sub','',true);
- r:=public.qf13_cliente_guest(t,'criar','contratou',repeat('a',64));k:=(r->>'codigo_id')::uuid;perform public.qf_comissao13_codigo_enviado(k,'SM'||repeat('b',32));r:=public.qf13_cliente_guest(t,'confirmar','contratou',repeat('a',64));
+ perform set_config('request.jwt.claim.sub','',true);r:=public.qf13_acompanhar(c,repeat('a',64),'responder',f2,true);
  if r->>'resposta'<>'divergencia' then raise exception 'divergence: %',r;end if;
  if private.qf13_bloqueio(p) is not null then raise exception 'automatic suspension from divergence';end if;
  perform set_config('request.jwt.claim.sub',adm::text,true);r:=public.qf13_admin_historico(f2);if jsonb_array_length(r->'eventos')<2 or jsonb_array_length(r->'notificacoes')<2 then raise exception 'audit missing';end if;
 end $$;
 rollback;
-select 'PASS: real Supabase functions, synthetic fixtures rolled back, no charges or delivered notifications' as resultado;
+select 'PASS: real publication, private owner receipt, six-digit code, three modalities, commission approval and divergence; all synthetic fixtures rolled back' as resultado;

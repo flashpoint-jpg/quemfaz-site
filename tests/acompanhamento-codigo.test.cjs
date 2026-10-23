@@ -1,0 +1,46 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
+const {fixture,rpc,answers}=require('./helpers/comissao13-owner.cjs');const {uid,as}=require('./helpers/atendimento-db.cjs');
+test('Pedido real: segredo na publicação, código exclusivo no acompanhamento, sem cadastro/SMS e sem acesso de profissional',async()=>{
+ const d=await fixture();try{await as(d,1);const a=answers(),call=await rpc(d,'qf_publicar_atendimento',[a,{latitude:-23.66,longitude:-46.53}]);assert.ok(call.id);assert.ok(!JSON.stringify(call).includes(a.segredo_acompanhamento));assert.equal((await rpc(d,'qf_publicar_atendimento',[a,{latitude:-23.66,longitude:-46.53}])).id,call.id);
+ await d.exec('reset role');assert.equal((await d.query('select respostas ? $1 as leaked from private.qf_atendimentos where chamado_id=$2',['segredo_acompanhamento',call.id])).rows[0].leaked,false);
+ await as(d,0);let view=await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento]);assert.match(view.codigo,/^\d{6}$/);const code=view.codigo;
+ assert.equal((await rpc(d,'qf13_acompanhar',[call.id,'b'.repeat(64)])).ok,false);
+ await as(d,11);assert.equal((await rpc(d,'qf13_codigo_cliente',[call.id])).ok,false);assert.equal((await rpc(d,'qf_comissao13_desbloquear',[call.id,true])).ok,true);let f=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];assert.ok(!JSON.stringify(f).includes(code));
+ assert.equal((await rpc(d,'qf_comissao13_prestar_contas',[f.id,'informado',50000,code==='000000'?'111111':'000000'])).ok,false);
+ assert.equal((await rpc(d,'qf_comissao13_prestar_contas',[f.id,'informado',50000,code])).ok,true);assert.equal((await rpc(d,'qf_comissao13_fechamentos_painel'))[0].comissao_centavos,null);
+ await as(d,0);assert.equal((await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento])).codigo,code,'código recuperável sem sessão');
+ await as(d,12);await rpc(d,'qf_comissao13_desbloquear',[call.id,true]);f=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];await rpc(d,'qf_comissao13_prestar_contas',[f.id,'recusado']);await as(d,0);
+ assert.equal((await rpc(d,'qf13_acompanhar',[call.id,'b'.repeat(64),'responder',f.id,true])).ok,false);assert.equal((await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento,'responder',f.id,true])).resposta,'divergencia');assert.equal((await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento,'responder',f.id,false])).ok,false,'resposta não sobrescrita');
+ await as(d,12);assert.equal((await rpc(d,'qf_comissao13_status')).bloqueio,null);await d.exec('reset role');await d.exec("select set_config('test.admin','true',false)");await as(d,1);const h=await rpc(d,'qf13_admin_historico',[f.id]);assert.ok(h.eventos.some(x=>x.depois.cliente_resposta==='divergencia'));
+ console.log('PASS código: publicação real, segredo não exposto, acompanhamento anônimo protegido, código certo/errado, prestação na API real, divergência sem cobrança e auditoria.');
+ }finally{await d.close();}
+});
+
+
+test('Telas reais cliente → profissional → admin usam o mesmo código e banco, sem SMS ou link externo',async()=>{
+ const {JSDOM}=require('jsdom');const d=await fixture();let clientDom,proDom,adminDom;
+ const wait=async fn=>{for(let i=0;i<150;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('A tela não alcançou o estado esperado');};
+ try{
+  clientDom=new JSDOM('<main id="app-content"></main>',{url:'https://quemfazservico.com.br/',runScripts:'outside-only'});const w=clientDom.window;
+  w.QFCloud={enabled:true,signUp:async()=>({ok:true,user:{id:uid(1),role:'cliente',nome:'Cliente Teste',telefone:'11988887777'}}),createCall:async data=>{await as(d,1);return rpc(d,'qf_publicar_atendimento',[data.atendimento,{latitude:-23.66,longitude:-46.53}]);},client:{rpc:async()=>({data:{ok:true}})}};
+  w.DB={state:{categories:[{id:'pintor',nome:'Pintor'}]},categoryById:()=>({id:'pintor',nome:'Pintor'}),categories:()=>[{id:'pintor',nome:'Pintor'}],persist(){}};
+  let callId;w.fetch=async(url,o)=>{assert.ok(url.endsWith('/qf13_acompanhar'));const b=JSON.parse(o.body);callId=b.p_chamado_id;await as(d,0);return {ok:true,json:()=>rpc(d,'qf13_acompanhar',[b.p_chamado_id,b.p_segredo,b.p_acao||'ver',b.p_fechamento||null,b.p_contratou??null])};};
+  w.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));w.eval(fs.readFileSync('qf-atendimento.js','utf8'));const content=w.document.getElementById('app-content');content.innerHTML=w.QFAtendimento.html();w.QFAtendimento.mount(content,{catId:'pintor'},null);
+  const values={cidade:'Santo André',bairro:'Centro',nome:'Cliente Teste',contato:'11988887777'};
+  for(let i=0;i<25&&!content.querySelector('[data-at-acompanhar]');i++){
+   const form=content.querySelector('form');if(!form)break;const radio=form.querySelector('input[type=radio]');if(radio){const chosen=form.querySelector('[value=contratar],[value=sim]')||radio;chosen.checked=true;}const select=form.querySelector('select');if(select)select.value='SP';for(const el of form.querySelectorAll('input:not([type=radio]),textarea')){const field=el.id.replace('at-','');el.value=values[field]||el.value||'Pintar uma parede';}
+   form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));if(form.querySelector('[data-at-publish]'))break;
+  }
+  await wait(()=>content.querySelector('[data-at-acompanhar]'));const codeText=content.textContent;assert.match(codeText,/Pedido publicado com sucesso/);const secret=w.localStorage.getItem('qf_pedido_owner_'+callId);assert.match(secret,/^[a-f0-9]{64}$/);
+  const ownerBox=w.document.createElement('section');content.replaceChildren(ownerBox);await w.QFAcompanhamento.mount(ownerBox,callId);const code=ownerBox.querySelector('[data-qf-owner-code]').textContent;assert.match(code,/^\d{6}$/);
+  await as(d,11);assert.equal((await rpc(d,'qf_comissao13_desbloquear',[callId,true])).ok,true);
+  proDom=new JSDOM('<main id="app-content"><div class="view"><section data-qf-fechamento>Controle anterior</section></div></main>',{url:'https://quemfazservico.com.br/#/profissional/pedido/'+callId,runScripts:'outside-only'});const p=proDom.window;Object.defineProperty(p.document,'readyState',{value:'complete'});p.Screens={};p.DB={requestById:()=>({atendimentoTipo:'tradicional',modalidade:'contatos'})};p.QFCloud={client:{rpc:async(n,args={})=>{await as(d,11);try{return {data:await rpc(d,n,Object.values(args))};}catch(e){return {error:{message:e.message}};}}}};
+  p.eval(fs.readFileSync('qf-comissao13.js','utf8'));await wait(()=>p.document.querySelector('[data-qf13-abrir]'));assert.ok(!p.document.body.textContent.includes(code),'código não aparece antecipadamente ao profissional');
+  p.document.querySelector('[data-qf13-abrir]').click();const f=p.document.querySelector('[data-qf13-inline-form]');f.elements.valor.value='500,00';f.elements.codigo.value=code;f.dispatchEvent(new p.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>p.document.body.textContent.includes('Código validado'));
+  await d.exec('reset role');await d.exec("select set_config('test.admin','true',false)");
+  adminDom=new JSDOM('<main id="app-content"><div class="view"></div></main>',{url:'https://quemfazservico.com.br/admin.html#/admin/comissao13',runScripts:'outside-only'});const adm=adminDom.window;Object.defineProperty(adm.document,'readyState',{value:'complete'});adm.Screens={};adm.QFAdminCloud={client:{rpc:async(n,args={})=>{await as(d,1);try{return {data:await rpc(d,n,Object.values(args))};}catch(e){return {error:{message:e.message}};}}}};
+  adm.eval(fs.readFileSync('qf-comissao13.js','utf8'));await wait(()=>adm.document.querySelector('[data-qf13-admin-acao=confirmar]'));const af=adm.document.querySelector('[data-qf13-admin]');af.elements.valor.value='500,00';af.elements.nota.value='Cliente confirmou contratação e valor na conferência administrativa';adm.document.querySelector('[data-qf13-admin-acao=confirmar]').click();await wait(()=>adm.document.body.textContent.includes('65,00'));assert.match(adm.document.body.textContent,/pendente/);
+  const alien=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br/',runScripts:'outside-only'});alien.window.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));await alien.window.QFAcompanhamento.mount(alien.window.document.querySelector('main'),callId);assert.match(alien.window.document.body.textContent,/navegador ou aparelho/);assert.ok(!alien.window.document.body.textContent.includes(code));alien.window.close();
+  console.log('PASS telas: publicação sem cadastro manual, código no acompanhamento real, proteção em outro navegador, entrada de valor/código no pedido profissional e R$65 só após aprovação no admin.');
+ }finally{clientDom?.window.close();proDom?.window.close();adminDom?.window.close();await d.close();}
+});

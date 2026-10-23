@@ -162,22 +162,21 @@
           let current=currentUser;
           if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;currentUser=current;}
           const c=category(a.servico),at=payload(a,id,c.id);
+          if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
+          const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:at.tipo==='garante'?1:4});
+          root.QFAcompanhamento.remember(req.id,segredo);
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
-          // O código aparece na própria confirmação, sem exigir acompanhamento ou app.
-          // Somente o cliente autenticado que publicou pode emiti-lo; nunca gerar código falso.
+          // A prova de propriedade foi vinculada atomicamente no servidor ao publicar.
           let emissao;
-          try {
-            const resultado=await Cloud.client.rpc('qf13_codigo_cliente',{p_chamado_id:req.id});
-            if(resultado.error)throw resultado.error;
-            emissao=resultado.data;
-          }catch(error){emissao={ok:false,reason:'indisponivel'};}
+          try{emissao=await root.QFAcompanhamento.api(req.id);}catch(_){emissao={ok:false};}
           const codigo=emissao&&emissao.ok&&/^[0-9]{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
           if(codigo){try{root.sessionStorage.setItem('qf_cliente_codigo_pedido',JSON.stringify({pedidoId:req.id,codigo,clienteId:current.id}));}catch(_){} codigoFixo(current); }
           area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
             (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
-            '<p>A equipe Quem Faz poderá entrar em contato pelo WhatsApp para confirmar a contratação e o valor combinado.</p><button type="button" class="btn btn--outline" data-at-cancelar>Cancelar pedido</button><p role="status" data-at-cancelar-status></p></section>';
+            '<p>A comissão depende da conferência e aprovação manual da administração.</p><button type="button" class="btn btn--primary" data-at-acompanhar>Acompanhar meu pedido</button><button type="button" class="btn btn--outline" data-at-cancelar>Cancelar pedido</button><p role="status" data-at-cancelar-status></p></section>';
+          area.querySelector('[data-at-acompanhar]').onclick=()=>root.location.assign('/acompanhar-pedido.html#pedido='+req.id);
           const cancelar=area.querySelector('[data-at-cancelar]');
           if(cancelar)cancelar.onclick=async()=>{
             if(!root.confirm('Cancelar este pedido? Ele deixará de aparecer para novos profissionais.'))return;
@@ -210,20 +209,7 @@
     return reqs;
   }
   // O código permanece disponível ao cliente durante toda a sessão, inclusive após navegar ou atualizar.
-  function codigoFixo(user){
-    const old=root.document.querySelector('[data-qf-codigo-fixo]');
-    if(!user||user.role!=='cliente'){old?.remove();return;}
-    let registro;try{registro=JSON.parse(root.sessionStorage.getItem('qf_cliente_codigo_pedido')||'null');}catch(_){}
-    if(!registro||registro.clienteId!==user.id||!/^[0-9]{6}$/.test(registro.codigo)){old?.remove();return;}
-    if(old)return;
-    const el=root.document.createElement('aside');
-    el.dataset.qfCodigoFixo='';
-    el.setAttribute('aria-label','Código do pedido publicado');
-    el.style.cssText='position:fixed;bottom:12px;left:12px;right:12px;z-index:9998;max-width:460px;margin:auto;background:#fff;border:2px solid #1769d5;border-radius:16px;box-shadow:0 5px 24px #0b285333;padding:12px 16px;color:#132d53;text-align:center';
-    el.innerHTML='<div style="font-weight:700">Guarde o código do seu pedido</div><div style="font-size:32px;letter-spacing:.14em;font-weight:800;color:#1769d5">'+registro.codigo+'</div><small>Informe somente ao profissional contratado, não para receber orçamento.</small><div><button type="button" class="btn btn--primary" data-qf-codigo-copiar>Copiar código</button></div>';
-    el.querySelector('[data-qf-codigo-copiar]').onclick=async()=>{try{await root.navigator.clipboard.writeText(registro.codigo);el.querySelector('[data-qf-codigo-copiar]').textContent='Código copiado';}catch(_){el.querySelector('[data-qf-codigo-copiar]').textContent='Anote o código acima';}};
-    root.document.body.appendChild(el);
-  }
+  function codigoFixo(user){root.document.querySelector('[data-qf-codigo-fixo]')?.remove();}
   function install(Screens) {
     const oldCadastro=Screens.authCadastro,oldAnon=Screens.afterRenderAnon,oldAfter=Screens.afterRender;
     Screens.authCadastro=p=>p.role==='cliente'?html():oldCadastro(p);

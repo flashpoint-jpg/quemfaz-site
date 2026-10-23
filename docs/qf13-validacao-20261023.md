@@ -1,27 +1,28 @@
-# Validação Quem Faz Livre e comissão 13% — 23/10/2026
+# Quem Faz Livre e comissão 13% — 23/10/2026
 
-## Implementado
+## Fluxo final aprovado
 
-- Extensão dos fechamentos, links, códigos e fila de notificações existentes; nenhum segundo lançamento financeiro.
-- Confirmação sem cadastro com token aleatório de 256 bits, validade de sete dias e uso único, mais OTP de cinco minutos para o telefone vinculado. O profissional nunca recebe esse link pelas APIs de cliente.
-- Código de contratação associado ao fechamento/profissional; o OTP de identidade não deve ser compartilhado.
-- Resposta do cliente, divergência e data no painel, com histórico administrativo e estado da notificação.
-- Prestação de contas no pedido/chat; estado e comissão consultáveis na mesma tela.
-- Carteira com extrato recolhido; novas ofertas restritas a Avulso, Livre R$39,90/30 dias e gratuito com 13%. Assinaturas antigas preservadas.
-- Bloqueio de 48h entre modalidades e prorrogação única preservados e testados.
+- Cada pedido novo recebe um código de contratação aleatório de seis dígitos.
+- Na publicação, uma chave privada de 256 bits do navegador é vinculada atomicamente ao pedido. Somente seu hash fica no banco; ela é removida das respostas e nunca é retornada nas APIs de profissionais ou administradores.
+- O acompanhamento mostra novamente o código ao navegador que publicou, inclusive sem sessão de conta. O cliente não precisa criar uma conta, receber SMS nem abrir link de WhatsApp.
+- O código de contratação é diferente da chave privada de acompanhamento. Conhecer o código não permite acessar o acompanhamento ou responder pelo cliente.
+- O cliente fornece os seis dígitos ao profissional somente ao contratar. O profissional informa código e valor na própria tela do pedido.
+- A comissão de 13% só é gerada pela aprovação manual do administrador, com evidência registrada.
+- Se o profissional disser que não fechou, o acompanhamento oferece confirmação ou contestação. Divergência não cobra nem suspende automaticamente; permanece para decisão administrativa.
+- Gratuito, Livre e Avulso respeitam bloqueio por prestação vencida. Uma única prorrogação adicional de 48 horas é permitida.
+- Carteira compacta, histórico recolhido e três ofertas comerciais atuais. Assinaturas antigas e registros financeiros preservados.
 
 ## Evidências
 
-- Testes isolados de banco: Avulso, Livre, gratuito, limite misto de quatro, vigência de 30 dias, idempotência, saldo preservado, RLS e cobrança só após administração.
-- Integração Efí simulada: valor, txid, titular, forma Pix e ativação somente depois da confirmação. Nenhuma cobrança real emitida.
-- Novos testes guest: token, uso único, código incorreto, destino do SMS exclusivamente do banco, consentimento, indisponibilidade do provedor, prorrogação, liberação e divergência sem cobrança/suspensão.
-- `tests/comissao13-live-rollback.sql`: executado com sucesso contra funções reais do projeto dczlyrgnzlxmzghzaooz. Sementes sintéticas, sem contato com clientes. ROLLBACK obrigatório, sem COMMIT; a fila pg_net não despacha solicitações não confirmadas.
-- Bateria geral: 290 testes, 285 aprovados, 2 ignorados e 3 falhas anteriores à mudança. As mesmas três falhas foram reproduzidas no commit original ac11c92 em um checkout separado: atendimento.test.cjs, garante-novos-intencao.test.cjs e garante-por-orcamento.test.cjs. Não foram alterados o fluxo de publicação nem as regras de Garante nesta entrega.
+- `tests/acompanhamento-codigo.test.cjs`: publicação pelo SQL real da aplicação, idempotência, ausência da chave privada nos dados expostos, acesso anônimo protegido, código correto/incorreto, divergência e auditoria.
+- O mesmo teste executa os componentes reais de publicação, acompanhamento, profissional e administrador com DOM e banco descartável integrados: código exibido ao cliente, oculto ao profissional antes de fornecido, envio de valor e código, comissão R$65 sobre R$500 somente após clique de aprovação administrativa.
+- `tests/comissao13-live-rollback.sql`: executado no Supabase de produção com identidades sintéticas e transação revertida; inclui publicação real, três modalidades, limite de quatro, propriedade do pedido, código, bloqueio Livre/Avulso, prorrogação única, regularização, divergência e auditoria. Sem COMMIT, sem cobrança e sem envio pela fila pg_net.
+- Testes de Pix Efí usam respostas simuladas para conferir titular, valor, txid, rejeições e ativação por confirmação do servidor, sem emitir cobrança real.
 
-## Impedimento externo confirmado
+- `tests/acompanhamento-codigo.browser.cjs`: Chromium em 390 × 844 px, usando os arquivos do build e banco descartável. Publicação pelo formulário real, código no acompanhamento, inserção na tela do profissional, aprovação de R$65 sobre R$500 no painel e bloqueio em outro navegador. Nenhuma chamada externa permitida.
 
-A Edge Function de produção informa `otp_configurado: false`. A confirmação por telefone permanece protegida: não se substitui por uma sessão de cadastro rápido nem se registra sucesso de SMS que não foi enviado.
+## Limites de acesso
 
-A configuração esperada pelo serviço é `QF13_TWILIO_ACCOUNT_SID`, `QF13_TWILIO_AUTH_TOKEN`, `QF13_SMS_FROM` e `QF13_OTP_SECRET` (ao menos 32 caracteres), com remetente habilitado para os destinatários. Não inserir segredos no GitHub ou em mensagens. É necessário configurar um serviço de SMS válido no Supabase e validar entrega em número de teste autorizado para concluir a etapa externa.
+A chave permanece no armazenamento do navegador original. Outro aparelho ou navegador, ou a limpeza dos dados do site, não concede acesso ao pedido pelo simples conhecimento do telefone ou do código compartilhado. A equipe deve conferir a propriedade antes de qualquer recuperação manual. Pedidos anteriores que não receberam essa chave preservam seus dados e códigos existentes; não são atribuídos automaticamente a outro navegador.
 
-A ausência do SMS não impede a revisão manual pelo administrador com evidência registrada. Não é prova de funcionamento completo da confirmação automática sem conta. Pagamento real de Pix, SMS real e dispositivo físico não foram exercitados.
+A bateria anterior à correção já apresentava três falhas de especificação em atendimento/Garante no commit ac11c92, reproduzidas em checkout separado. Não foi feita uma reconstrução desse fluxo; foi corrigida a compatibilidade da publicação com o formulário atual (data opcional e orçamento a combinar), necessária para publicar e mostrar o código.
