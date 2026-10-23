@@ -6210,7 +6210,7 @@ Screens.adminDashboardRender = function () {
 
   function profBadges(p) {
     const plano = adminPlanoDoProf(p.id);
-    return (plano && plano.vigente && plano.p.plano === 'livre' ? '<span class="badge badge--navy">Quem Faz Livre</span>' : '') + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
+    return (plano && plano.vigente && plano.p.plano === 'livre' ? '<span class="badge badge--navy">Quem Faz Livre · Ativo</span>' : '<span class="badge badge--muted">Sem Livre ativo</span>') + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
       (p.verificado ? '<span class="badge badge--success">Verificado</span>' : '') +
       (p.indicadoPor ? '<span class="badge badge--orange">Indicado</span>' : '') +
       (p.temFoto === false ? '<span class="badge badge--warning">Sem selfie</span>' : '') +
@@ -6219,6 +6219,14 @@ Screens.adminDashboardRender = function () {
   }
   // V12.2: profissionais separados por cidade (para saber onde abrir campanha de cliente).
   let profCidadeFiltro = 'todas';
+  let profPlanoFiltro = 'todos';
+  function profTemLivreAtivo(p) {
+    const plano = adminPlanoDoProf(p.id);
+    return !!(plano && plano.vigente && plano.p.plano === 'livre');
+  }
+  function profPassaPlano(p) {
+    return profPlanoFiltro === 'todos' || (profPlanoFiltro === 'livre' ? profTemLivreAtivo(p) : !profTemLivreAtivo(p));
+  }
   let profBusca = '';
   function profCidadeInfo(p) {
     const c = DB.cityById(p.cidadeId);
@@ -6469,7 +6477,7 @@ Screens.adminDashboardRender = function () {
     if (testeTodosRodando) return;
     const todos = DB.state.users.profissionais || [];
     const daCidade = profCidadeFiltro === 'todas' ? todos : todos.filter(function (p) { return profCidadeInfo(p).key === profCidadeFiltro; });
-    const alvo = daCidade.length ? daCidade : todos;
+    const alvo = daCidade.filter(profPassaPlano);
     const ids = alvo.map(function (p) { return String(p.id); }).filter(Boolean);
     if (!ids.length) { PU.toast('Nenhum profissional na lista.', 'danger'); return; }
     const ok = await PU.confirmDialog({ title: 'Simular chamado para ' + ids.length + ' profissiona' + (ids.length === 1 ? 'l' : 'is'),
@@ -6532,24 +6540,31 @@ Screens.adminDashboardRender = function () {
     const ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.itens.length - a.itens.length || a.label.localeCompare(b.label); });
     if (profCidadeFiltro !== 'todas' && !groups[profCidadeFiltro]) profCidadeFiltro = 'todas';
     const visiveis = ordered.filter(function (g) { return profCidadeFiltro === 'todas' || g.key === profCidadeFiltro; }).map(function (g) {
-      const itens = g.itens.slice().sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || tsCadastro(b) - tsCadastro(a); });
-      return { key: g.key, label: g.label, itens: itens, todos: g.itens };
+      const itens = g.itens.filter(profPassaPlano).sort(function (a, b) { return (b.online ? 1 : 0) - (a.online ? 1 : 0) || tsCadastro(b) - tsCadastro(a); });
+      return { key: g.key, label: g.label, itens: itens, todos: itens };
     }).filter(function (g) { return g.itens.length; });
+    const daCidade = profCidadeFiltro === 'todas' ? list : groups[profCidadeFiltro].itens;
+    const livres = daCidade.filter(profTemLivreAtivo).length;
+    const filtrosPlano = '<section class="card card--tight" aria-label="Filtrar profissionais por plano" style="margin-bottom:12px;">' +
+      '<div class="h3" style="margin-bottom:10px;">Plano dos profissionais</div><div style="display:flex;flex-wrap:wrap;gap:8px;">' +
+      [{ id: 'todos', nome: 'Todos', total: daCidade.length }, { id: 'livre', nome: 'Quem Faz Livre ativo', total: livres }, { id: 'sem-livre', nome: 'Sem Livre ativo', total: daCidade.length - livres }].map(function (f) {
+        return '<button type="button" class="chip' + (profPlanoFiltro === f.id ? ' is-selected' : '') + '" data-prof-plano="' + f.id + '" aria-pressed="' + (profPlanoFiltro === f.id) + '">' + f.nome + ' (' + f.total + ')</button>';
+      }).join('') + '</div><p class="text--sm text--secondary" style="margin-top:10px;">Livre ativo: pagamento confirmado e assinatura dentro da validade.</p></section>';
     const chips = '<div class="qf-prof-cities" role="tablist">' +
       '<button type="button" class="chip' + (profCidadeFiltro === 'todas' ? ' is-selected' : '') + '" data-prof-city="todas">Todas (' + list.length + ')</button>' +
       ordered.map(function (g) { return '<button type="button" class="chip' + (profCidadeFiltro === g.key ? ' is-selected' : '') + '" data-prof-city="' + PU.escapeHtml(g.key) + '">' + PU.escapeHtml(g.label) + ' (' + g.itens.length + ')</button>'; }).join('') +
     '</div>';
     return (
-      '<div class="view">' + migrationBanner() +
+      '<div class="view">' + migrationBanner() + filtrosPlano +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
         '<section class="qf-adm-numeros qf-adm-numeros--6 qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
         // V11.56: o mesmo "Simular chamado", para todos de uma vez (ou só a cidade escolhida nos filtros).
         (function () {
-          const alvo = profCidadeFiltro === 'todas' ? list : (groups[profCidadeFiltro] ? groups[profCidadeFiltro].itens : list);
+          const alvo = daCidade.filter(profPassaPlano);
           const onde = profCidadeFiltro === 'todas' || !groups[profCidadeFiltro] ? 'todos' : groups[profCidadeFiltro].label;
           return '<div class="qf-teste-todos"><div><strong>Testar ' + (onde === 'todos' ? 'todos de uma vez' : 'todos de ' + PU.escapeHtml(onde)) + '</strong>' +
             '<span>Manda o chamado de teste para ' + alvo.length + ' profissiona' + (alvo.length === 1 ? 'l' : 'is') + '. Não cria pedido nem mexe em carteira.</span></div>' +
-            '<button type="button" class="btn btn--primary btn--sm qf-teste-btn" data-simular-todos' + (testeTodosRodando ? ' disabled' : '') + '>' + icon('bell') + '<span data-simular-todos-txt>' + (testeTodosRodando ? 'Enviando…' : 'Simular chamado para todos') + '</span></button></div>';
+            '<button type="button" class="btn btn--primary btn--sm qf-teste-btn" data-simular-todos' + (testeTodosRodando || !alvo.length ? ' disabled' : '') + '>' + icon('bell') + '<span data-simular-todos-txt>' + (testeTodosRodando ? 'Enviando…' : 'Simular chamado para todos') + '</span></button></div>';
         })() +
         '<input class="input" type="search" id="qf-prof-busca" placeholder="Buscar por nome, telefone ou e-mail" value="' + PU.escapeHtml(profBusca) + '" style="margin-bottom:10px;">' +
         chips +
@@ -6561,12 +6576,19 @@ Screens.adminDashboardRender = function () {
             '<div class="qf-prof-city__cats">' + PU.escapeHtml(topCats(g.todos) || 'Sem profissões marcadas') + '</div>' +
             '<div class="stack--sm">' + g.itens.map(profCard).join('') + '</div>' +
           '</section>';
-        }).join('') : '<div class="empty-state"><p class="text text--secondary">Nenhum profissional encontrado.</p></div>') +
+        }).join('') : '<div class="empty-state"><p class="text text--secondary">Nenhum profissional neste filtro.</p></div>') +
       '</div>'
     );
   };
   function bindProfissionaisLista(content) {
     content.addEventListener('click', function (e) {
+      const plano = e.target.closest('[data-prof-plano]');
+      if (plano) {
+        profPlanoFiltro = plano.getAttribute('data-prof-plano');
+        global.navigate('/admin/profissionais', true);
+        window.scrollTo(0, 0);
+        return;
+      }
       const chip = e.target.closest('[data-prof-city]');
       if (!chip) return;
       profCidadeFiltro = chip.getAttribute('data-prof-city');
