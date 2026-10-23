@@ -6305,13 +6305,8 @@ alt=""></noscript>
   // para que nenhum deles dispare o alerta de chamado). Junto vêm os números da faixa de movimento.
   // Se a consulta falhar, a tela aparece como antes (só os pedidos da categoria do profissional).
   async function fetchAbertos() {
-    if (!client) return [];
-    try {
-      const res = await Promise.all([client.rpc('qf_portfolio_abertos_todos'), client.rpc('qf_movimento_pedidos')]);
-      if (!res[1].error && res[1].data && res[1].data.ok) global.QFMovimento = res[1].data;
-      if (res[0].error) throw res[0].error;
-      return (res[0].data || []).filter(function (r) { return r && r.id && r.aberto_todos; });
-    } catch (err) { console.warn('QuemFaz pedidos abertos a todos', err); return []; }
+    // A vitrine geral foi retirada: só qf_portfolio_servicos define novos pedidos.
+    return [];
   }
 
   async function syncProfessionalCalls(userId) {
@@ -15462,7 +15457,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.13';
+  const APP_VERSION = '12.1.14';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

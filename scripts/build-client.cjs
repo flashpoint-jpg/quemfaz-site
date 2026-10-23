@@ -61,7 +61,7 @@ for (const [kind,script] of [['main',main],['shell',shell]]) {
     const existingRoute="    { pattern: '/profissional/servicos/disponiveis', role: 'profissional', tab: 'servicos', title: 'Serviços disponíveis', render: Screens.profServicosDisponiveisRender },";
     if (!source.includes(routeAnchor) || !source.includes(existingRoute)) throw Error('Rota de servicos do profissional nao encontrada');
     source=source.replace(routeAnchor,ext+'\n'+routeAnchor);
-    source=source.replace(existingRoute,existingRoute+"\n    { pattern: '/profissional/outros-pedidos', role: 'profissional', tab: 'servicos', title: 'Outros pedidos', render: Screens.profOutrosPedidosRender },");
+    source=source.replace(existingRoute,existingRoute+"\n    { pattern: '/profissional/outros-pedidos', role: 'profissional', tab: 'servicos', title: 'Pedidos para você', render: Screens.profOutrosPedidosRender },");
   }
   const code=esbuild.transformSync(source,{loader:'js',minify:true,keepNames:true,charset:'utf8',target:'es2020',legalComments:'inline'}).code;
   const hash=createHash('sha256').update(code).digest('hex').slice(0,12);
