@@ -53,6 +53,7 @@ const assets=[];
 for (const [kind,script] of [['main',main],['shell',shell]]) {
   let source=script[1];
   if(kind==='main')source=source.replace('function requestFromCloud(row, professionalId) {','global.QFRequestFromCloud=requestFromCloud; global.QFQuoteFromCloud=quoteFromCloud; function requestFromCloud(row, professionalId) {');
+  if(kind==='main')source=source.replace('function renderConversationCards(rows, req) {','global.QFConversationCards=renderConversationCards; function renderConversationCards(rows, req) {');
   if (kind==='shell') {
     const ext=fs.readFileSync(path.join(__dirname,'qf-other-jobs-extension.js'),'utf8');
     const routeAnchor='  const routes = [';

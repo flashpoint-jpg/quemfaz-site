@@ -181,7 +181,7 @@ const server=http.createServer(async(req,res)=>{
    const adm=await ctx.newPage();await adm.goto(origin+'/admin.html');
    await adm.evaluate(()=>{
     const pedido={id:'00000000-0000-4000-8000-000000000990',cliente_id:'cliente-fixture',categoria:'cat_eletricista',titulo:'Tomada sem energia',descricao:'Descrição original do cliente',cidade:'Santo André',uf:'SP',bairro:'Centro',endereco_completo:'Rua de teste, 10',status:'aberto',criado_em:new Date().toISOString(),max_orcamentos:4,cliente:{nome:'Cliente espelho'},fotos:[]};
-    window.__espelhoFixture={pedido,desbloqueios:[],orcamentos:[],avaliacoes:[],respostas:{servico:'Eletricista',detalhes:'Tomada',escopo:'pequeno',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',nome:'Cliente espelho',contato:'11999990000',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'}};
+    window.__espelhoFixture={pedido,conversas:[{profissional_id:'prof-fixture',profissional_nome:'Profissional no espelho',profissional_cidade:'Santo André',selecionado:false}],desbloqueios:[],orcamentos:[],avaliacoes:[],respostas:{servico:'Eletricista',detalhes:'Tomada',escopo:'pequeno',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',nome:'Cliente espelho',contato:'11999990000',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'}};
     DB.getSession=()=>({role:'admin',userId:'admin-fixture'});DB.adminById=()=>({id:'admin-fixture',nome:'Administrador'});
     QFAdminCloud.enabled=false;QFAdminCloud.client={rpc:async(n,a)=>({error:null,data:n==='qf_admin_espelho_clientes'?(a.p_id?window.__espelhoFixture:{total:1,itens:[pedido],gerado_em:new Date().toISOString()}):n==='qf_comissao13_fechamentos_painel'?[]:{ok:true}})};
     navigate('/admin/espelho-clientes');
@@ -192,6 +192,8 @@ const server=http.createServer(async(req,res)=>{
    const frame=adm.frameLocator('iframe[title="Espelho da tela do cliente"]');
    await frame.locator('[data-request-id]').waitFor();
    assert.match(await frame.locator('[data-espelho-leitura]').innerText(),/Descrição original do cliente/);
+   assert.match(await frame.locator('[data-qf-client-conversations]').innerText(),/Profissional no espelho/);
+   assert.equal(await frame.locator('[data-qf-choose-prof]').isEnabled(),false);
    assert.equal(await frame.locator('[data-action="cancelar-pedido"]').isEnabled(),false,'espelho não cancela pedido do cliente');
    assert.match(await adm.locator('[data-espelho-respostas]').innerText(),/Santo André/);
    await adm.screenshot({path:'/tmp/qf-espelho-'+width+'.png',fullPage:true});
