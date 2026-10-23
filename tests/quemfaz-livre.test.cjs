@@ -68,6 +68,23 @@ test('Livre: pagamento, ativação, RLS, vigência, limite, comissão e carteira
  await q("update qf_recargas set status='aprovado',provedor='efi',provedor_id='fixtureSix' where id=$1",[p6.recarga_id]);
  assert.equal((await rpc('qf_comissao13_desbloquear',[id(106),true])).ok,true,'assinatura paga libera mesmo com saldo zero');
  await user(3);assert.ok((await rpc('qf_comissao13_fechamentos_painel')).length,'fechamentos antigos preservados');
+ // Regra de 23/10/2026: o gratuito exige crédito na carteira (ou plano Livre ativo) e nunca debita saldo.
+ await db.exec(fs.readFileSync('supabase/migrations/20261023230000_gratuito_exige_credito_na_carteira.sql','utf8'));
+ const novoPedido=async n=>q("insert into qf_chamados(id,cliente_id,categoria,max_orcamentos,latitude,longitude) values($1,$2,'cat_eletricista',4,0.09,0)",[id(n),id(9)]);
+ await q("insert into qf_carteiras(profissional_id,saldo_centavos) values($1,10000) on conflict(profissional_id) do update set saldo_centavos=10000",[id(7)]);
+ await q("insert into qf_carteiras(profissional_id,saldo_centavos) values($1,0) on conflict(profissional_id) do update set saldo_centavos=0",[id(8)]);
+ await novoPedido(107);await novoPedido(108);
+ await user(7);const st7=await rpc('qf_livre_status');assert.equal(st7.tem_credito,true);assert.equal(st7.ativo,false);
+ const cred=await rpc('qf_comissao13_desbloquear',[id(107),true]);assert.equal(cred.ok,true);assert.equal(cred.plano,'credito');assert.equal(cred.preco_centavos,0);
+ assert.equal((await q('select origem from qf_desbloqueios where chamado_id=$1 and profissional_id=$2',[id(107),id(7)]))[0].origem,'comissao13');
+ assert.equal((await q('select saldo_centavos from qf_carteiras where profissional_id=$1',[id(7)]))[0].saldo_centavos,10000,'gratuito não debita a carteira');
+ await user(8);assert.equal((await rpc('qf_livre_status')).tem_credito,false);
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),true])).reason,'credito_necessario');
+ assert.equal((await q('select count(*) n from qf_desbloqueios where chamado_id=$1',[id(108)]))[0].n,0,'sem crédito não cria desbloqueio');
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),false])).reason,'aceite_obrigatorio');
+ await q('update qf_carteiras set saldo_centavos=500 where profissional_id=$1',[id(8)]);
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),true])).ok,true,'carregar crédito libera o gratuito');
+ await q("select set_config('request.jwt.claim.sub','',false)");assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),true])).reason,'nao_autenticado');
  console.log('PASS Livre: Pix idempotente, ativação servidor, RLS, 30 dias, sem saldo, desbloqueio e contas, quatro vagas mistas, compatibilidade, vencimento e recarga tradicional.');
  }finally{await db.close();}
 });

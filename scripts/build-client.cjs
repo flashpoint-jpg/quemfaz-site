@@ -15,7 +15,7 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=admin-claro-20261023-v1');
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=credito-20261023-v1');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 html=html.replace('qf-atendimento.js?v=2','qf-atendimento.js?v=20261022-garante-intencao');
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
