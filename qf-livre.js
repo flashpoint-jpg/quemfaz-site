@@ -17,6 +17,7 @@
   const prior=g.Screens.afterRender,priorAnon=g.Screens.afterRenderAnon;
   function enhance(pattern,content,params={}){
    const cadastro=pattern==='/auth/:role/cadastro'&&params.role==='profissional';
+   if(pattern==='/profissional/home'){try{if(sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'){g.navigate('/profissional/carteira',true);return;}}catch(_){}}
    const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
    if(!cadastro&&!pedido&&!['/profissional/home','/profissional/planos','/profissional/carteira','/profissional/servicos','/profissional/servicos/disponiveis'].includes(pattern))return;
    if(content.querySelector('[data-qf-livre],[data-qf-livre-cadastro]'))return;
@@ -41,23 +42,30 @@
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
-      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent='Criar conta grátis';
+      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=livre?'Criar conta e pagar por Pix':'Criar conta grátis';
       const nota=form.querySelector('[data-plano-nota]');
-      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Crie sua conta grátis. Depois, assine por Pix na aba Planos. Ativação após confirmação do pagamento.':'Adicione créditos na Carteira quando quiser desbloquear um pedido.';}
+      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Sua conta é grátis. Na próxima tela, pague R$ 39,90 por Pix para ativar o Livre. Sem pagamento, desbloqueie somente com saldo no Avulso.':'Adicione créditos na Carteira quando quiser desbloquear um pedido.';}
       conditions.hidden=!livre;
      }
      form.addEventListener('change',e=>{if(e.target?.name==='planoEscolhido')updateChoice();});
      updateChoice();
     }
    }
-   if(['/profissional/home','/profissional/carteira','/profissional/planos'].includes(pattern)){
-    const modes=document.createElement('section');modes.className='card stack--sm';modes.dataset.qfModalidades='';
-    modes.innerHTML='<h2 class="h3">Escolha como desbloquear</h2><p><strong>Avulso:</strong> use saldo por contato. Sem comissão.</p><p><strong>Quem Faz Livre:</strong> R$ 39,90 por 30 dias, contatos elegíveis ilimitados e 13% por contratação confirmada. Sem renovação automática.</p><p><strong>Gratuito com comissão:</strong> sem pagamento antecipado, 13% somente se fechar e a administração aprovar.</p><a class="btn btn--outline" href="#/profissional/servicos/disponiveis">Ver pedidos</a>';
-    box.after(modes);
-   }
    let pending=false,busy=false,last={};
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
-   function render(s){last=s||{};box.innerHTML=oferta(last);if(pattern==='/profissional/carteira'||pattern==='/profissional/home'){const d=document.createElement('details');d.innerHTML='<summary>Condições do Quem Faz Livre</summary>';box.querySelectorAll('p:not([role=status]),details').forEach(el=>d.appendChild(el));box.querySelector('h2').after(d);}bind();if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}}
+   function render(s){
+    last=s||{};
+    if(last.ativo&&!pedido){
+     box.innerHTML='<strong>Quem Faz Livre ativo</strong><p>Desbloqueios ilimitados até '+esc(date(last.valido_ate))+'.</p><a href="#/profissional/servicos/disponiveis" class="btn btn--outline">Ver pedidos</a>';
+    }else{
+     box.innerHTML=oferta(last);
+     if(pattern==='/profissional/home'){
+      box.innerHTML='<strong>Quem Faz Livre</strong><p>R$ 1,33 por dia · R$ 39,90 por 30 dias</p><a class="btn btn--outline" href="#/profissional/planos">Ver plano e assinar</a><p class="text--sm">No Avulso, adicione saldo na Carteira para desbloquear pedidos.</p>';
+     }
+    }
+    bind();
+    if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}
+   }
    function unlock(s){
     if(!pedido||!s.ativo||box.querySelector('[data-qf-livre-desbloquear]'))return;
     const req=g.DB&&g.DB.requestById(params.id),pago=content.querySelector('[data-action="desbloquear-chamada"]');
@@ -71,8 +79,10 @@
    }
    async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(s.ativo){pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
    async function pay(){
-    if(busy)return;busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
+    if(busy)return;
+    busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
     try{
+     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');if(current.ativo){pending=false;render(current);unlock(current);return;}
      const r=await rpc('qf_livre_solicitar_pix');if(!r||!r.ok)throw Error('Conclua seu cadastro de profissional antes de assinar.');
      const fn=await client.functions.invoke('quemfaz-efi-checkout',{body:{tipo:'recarga',pagamento_id:r.recarga_id}});
      if(fn.error||!fn.data?.ok)throw Error('Não foi possível gerar o Pix. Tente novamente em instantes.');
@@ -82,11 +92,20 @@
      pix.innerHTML='<h3>Pague R$ 39,90 por Pix</h3>'+(typeof x.qr_image==='string'&&/^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(x.qr_image)?'<img src="'+esc(x.qr_image)+'" alt="QR Code Pix do plano Quem Faz Livre">':'')+'<p>Pix válido por 24 horas. O plano será ativado automaticamente após a confirmação do pagamento.</p><textarea readonly aria-label="Pix copia e cola">'+esc(x.pix_copy_paste)+'</textarea><button type="button" class="btn btn--outline" data-qf-livre-copiar>Copiar Pix</button><button type="button" class="btn btn--outline" data-qf-livre-verificar>Verificar ativação</button>';
      pix.querySelector('[data-qf-livre-copiar]').onclick=async()=>{try{await navigator.clipboard.writeText(x.pix_copy_paste);msg.textContent='Pix copiado.';}catch(_){const t=pix.querySelector('textarea');t.focus();t.select();msg.textContent='Selecione e copie o código Pix.';}};
      pix.querySelector('[data-qf-livre-verificar]').onclick=()=>refresh().then(active=>{if(!active&&box.isConnected)msg.textContent='Aguardando confirmação do pagamento pelo servidor. Isso pode levar alguns instantes.';}).catch(()=>msg.textContent='Não foi possível consultar agora. Tente novamente.');
-     msg.textContent='Aguardando pagamento. Você pode continuar usando créditos ou a modalidade gratuita.';
+     msg.textContent='Aguardando confirmação do Pix. O Livre ainda não está ativo. Sem saldo no Avulso, os desbloqueios ficam bloqueados.';
      let tries=0;const poll=async()=>{if(!box.isConnected||!pending||++tries>180)return;try{if(await refresh())return;}catch(_){}if(box.isConnected&&pending)setTimeout(poll,5000);};setTimeout(poll,5000);
     }catch(e){pending=false;msg.textContent=e.message;}finally{busy=false;if(button&&button.isConnected)button.disabled=false;}
    }
-   render({});if(!cadastro)refresh().catch(()=>{box.querySelector('[data-qf-livre-msg]').textContent='Não foi possível consultar a situação do plano. Atualize a tela.';});
+   if(cadastro){render({});return;}
+   box.innerHTML='<p role="status">Consultando seu plano…</p>';
+   async function load(){
+    const s=await rpc('qf_livre_status');if(!box.isConnected)return;
+    if(!s?.ok)throw Error('Entre novamente para consultar seu plano.');
+    render(s);unlock(s);
+    let auto=false;try{auto=sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'&&['/profissional/carteira','/profissional/planos'].includes(pattern);}catch(_){}
+    if(auto){try{sessionStorage.removeItem('qf_plano_pos_cadastro');sessionStorage.removeItem('qf_plano_pos_cadastro_metodo');}catch(_){}if(!s.ativo)await pay();}
+   }
+   load().catch(()=>{if(box.isConnected)box.innerHTML='<p role="status">Não foi possível consultar seu plano.</p><button class="btn btn--outline" data-qf-livre-retry>Tentar novamente</button>';const retry=box.querySelector('[data-qf-livre-retry]');if(retry)retry.onclick=load;});
   }
   g.QFLivre.enhance=enhance;
   g.Screens.afterRender=function(){if(prior)prior.apply(this,arguments);enhance.apply(this,arguments);};

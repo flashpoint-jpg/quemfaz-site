@@ -10754,6 +10754,7 @@ alt=""></noscript>
           selfieData: selfieData
         };
         const btn = form.querySelector('button[type="submit"]');
+        const livreEscolhido = String(fd.get('planoEscolhido') || 'avulso') === 'livre';
         const planoPago = QF_CAD_PLANOS.find(function (x) { return x.id === String(fd.get('planoEscolhido') || 'avulso') && x.valor; });
         if (btn) btn.disabled = true;
         if (global.QFIndicacao) global.QFIndicacao.beforeSignup(fd.get('indicacao'));
@@ -10761,7 +10762,7 @@ alt=""></noscript>
           if (global.QFCloud && global.QFCloud.enabled) {
             // V11.62: a conta nasce na hora em qualquer plano. Plano pago: a Carteira abre o pagamento dele;
             // enquanto não pagar, o profissional usa o app como Avulso (nenhum cadastro se perde).
-            await criarContaAgora(dados, planoPago ? planoPago.id : null, 'pix');
+            await criarContaAgora(dados, livreEscolhido ? 'livre' : planoPago ? planoPago.id : null, 'pix');
             return;
           }
           const foundCity = DB.cities().find(function (c) { return String(c.nome).toLowerCase() === String(dados.cidade).toLowerCase() && c.uf === dados.uf; });
@@ -15461,7 +15462,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.10';
+  const APP_VERSION = '12.1.11';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

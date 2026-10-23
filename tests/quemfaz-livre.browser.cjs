@@ -1,23 +1,25 @@
+// Pagamento e assinatura: testes móveis isolados, sem chamadas a serviços reais.
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),http=require('node:http'),path=require('node:path');
 (async()=>{
- const server=http.createServer((req,res)=>{const f=path.join(process.cwd(),'dist',decodeURIComponent(req.url.split('?')[0]==='/'?'/index.html':req.url.split('?')[0]));if(!f.startsWith(path.join(process.cwd(),'dist'))){res.writeHead(403).end();return;}try{res.setHeader('Content-Type',f.endsWith('.js')?'application/javascript':f.endsWith('.css')?'text/css':f.endsWith('.html')?'text/html':'application/octet-stream');res.end(fs.readFileSync(f));}catch(_){res.writeHead(404).end();}});await new Promise(r=>server.listen(0,'127.0.0.1',r));
- const browser=await chromium.launch({headless:true});
- try{
-  const p=await browser.newPage({viewport:{width:390,height:844}});
-  await p.goto('http://127.0.0.1:'+server.address().port+'/#/auth/profissional/cadastro');
-  await p.getByRole('button',{name:'Assinar por R$ 39,90',exact:true}).waitFor();
-  assert.equal(await p.locator('[data-qf-livre]').count(),1);assert.ok(await p.locator('[data-qf-livre]').evaluate(el=>el.getBoundingClientRect().width<=390));
-  await p.getByRole('button',{name:'Assinar por R$ 39,90',exact:true}).click();await p.getByText('Conclua seu cadastro para contratar o plano com segurança.').waitFor();
-  await p.screenshot({path:'/tmp/qf-livre-cadastro-mobile.png',fullPage:false});
-  for(const route of ['/profissional/home','/profissional/carteira','/profissional/pedido/:id']){
-   await p.goto('about:blank');await p.setContent('<div id="app-content"><div class="view"><button data-action="desbloquear-chamada">Desbloquear por créditos</button></div></div>');
-   await p.evaluate(()=>{window.Screens={};window.fixtureActive=false;window.fixtureCalls=[];window.fixtureNav='';window.QFCloud={client:{rpc:async(n,a)=>{fixtureCalls.push({n,a});if(n==='qf_livre_status')return {data:{ok:true,ativo:fixtureActive,valido_ate:fixtureActive?'2026-12-01':null}};if(n==='qf_livre_solicitar_pix')return {data:{ok:true,recarga_id:'fixture'}};return {data:{ok:true}};},functions:{invoke:async()=>({data:{ok:true,pix_copy_paste:'fixture-copy-pix',qr_image:'data:image/png;base64,AAAA'}})}},syncForCurrentSession:async()=>{}};window.DB={requestById:()=>({atendimentoTipo:'tradicional',modalidade:'padrao'})};window.navigate=r=>fixtureNav=r;});
-   await p.addScriptTag({path:'dist/qf-livre.js'});await p.evaluate(route=>QFLivre.enhance(route,document.getElementById('app-content'),{id:'call-fixture'}),route);
-   await p.getByRole('button',{name:'Assinar por R$ 39,90',exact:true}).click();await p.locator('textarea').waitFor();assert.equal(await p.locator('textarea').inputValue(),'fixture-copy-pix');
-   await p.evaluate(()=>fixtureActive=true);await p.getByRole('button',{name:'Verificar ativação'}).click();await p.getByRole('heading',{name:'Plano ativo — desbloqueios ilimitados'}).waitFor();
-   if(route.includes('pedido')){await p.locator('[data-qf-livre-termos]').check();await p.locator('[data-qf-livre-desbloquear]').click();assert.equal(await p.evaluate(()=>fixtureNav),'/profissional/chat/call-fixture');assert.equal(await p.locator('[data-action="desbloquear-chamada"]').count(),1);}
-   assert.ok(await p.locator('[data-qf-livre]').evaluate(el=>el.getBoundingClientRect().right<=390));
-  }
-  console.log('PASS mobile 390px: cadastro real, home/carteira/pedido, Pix, confirmação pelo status, plano ativo, desbloqueio, créditos preservados.');
- }finally{await browser.close();await new Promise(r=>server.close(r));}
-})().catch(e=>{console.error(e);process.exitCode=1;});
+ const dist=path.resolve('dist');
+ const server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http://local').pathname;res.setHeader('Content-Type',pathname.endsWith('.js')?'application/javascript':'text/html');
+ if(pathname==='/fixture'){res.end('<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><main id="app-content"><div class="view"><button data-action="desbloquear-chamada">Desbloquear por créditos</button></div></main><script>window.Screens={};window.fixtureActive=false;window.fixtureCalls=[];window.fixtureNav="";window.QFCloud={client:{rpc:async(n,a)=>{fixtureCalls.push(n);if(n==="qf_livre_status")return {data:{ok:true,ativo:fixtureActive,valido_ate:fixtureActive?"2026-12-01":null}};if(n==="qf_livre_solicitar_pix")return {data:{ok:true,recarga_id:"fixture"}};return {data:{ok:true}};},functions:{invoke:async()=>({data:{ok:true,pix_copy_paste:"fixture-copy-pix"}})}},syncForCurrentSession:async()=>{}};window.DB={requestById:()=>({atendimentoTipo:"tradicional",modalidade:"padrao"})};window.navigate=r=>fixtureNav=r;</script>');return;}
+ const f=path.resolve(dist,'.'+pathname);if(!f.startsWith(dist+path.sep)){res.writeHead(403).end();return;}try{res.end(fs.readFileSync(f));}catch(_){res.writeHead(404).end();}});
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));let browser;
+ try{browser=await chromium.launch({executablePath:process.env.QF_CHROMIUM_EXECUTABLE,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--no-zygote','--single-process']});const p=await browser.newPage({viewport:{width:390,height:844},serviceWorkers:'block'});const errors=[];p.on('pageerror',e=>errors.push(e.message));const base='http://127.0.0.1:'+server.address().port;
+ await p.route('**/*',r=>r.request().url().startsWith(base)?r.continue():r.abort());
+ const open=async(route,{active=false,intent=false}={})=>{await p.goto(base+'/fixture');await p.evaluate(({active,intent})=>{fixtureActive=active;sessionStorage.clear();if(intent)sessionStorage.setItem('qf_plano_pos_cadastro','livre');},{active,intent});await p.addScriptTag({path:'dist/qf-livre.js'});await p.evaluate(route=>QFLivre.enhance(route,document.getElementById('app-content'),{id:'call-fixture'}),route);};
+ // Escolha no cadastro: próxima tela gera Pix automaticamente, antes de liberar o plano.
+ await open('/profissional/carteira',{intent:true});await p.locator('textarea').waitFor();assert.equal(await p.locator('textarea').inputValue(),'fixture-copy-pix');assert.equal(await p.locator('[data-qf-livre-desbloquear]').count(),0);assert.equal(await p.evaluate(()=>fixtureCalls.filter(x=>x==='qf_livre_solicitar_pix').length),1);
+ await p.locator('[data-qf-livre-verificar]').click();assert.match(await p.locator('[data-qf-livre-msg]').innerText(),/Aguardando confirmação/);
+ await p.evaluate(()=>fixtureActive=true);await p.locator('[data-qf-livre-verificar]').click();await p.getByText('Quem Faz Livre ativo',{exact:true}).waitFor();assert.equal(await p.locator('[data-qf-livre-pagar]').count(),0);assert.equal(await p.locator('textarea').count(),0);
+ // Voltar com plano pago: nenhuma nova cobrança nem oferta duplicada, inclusive com intenção antiga.
+ for(const route of ['/profissional/home','/profissional/carteira','/profissional/planos']){await open(route,{active:true,intent:route!=='/profissional/home'});await p.getByText('Quem Faz Livre ativo',{exact:true}).waitFor();assert.equal(await p.evaluate(()=>fixtureCalls.includes('qf_livre_solicitar_pix')),false);assert.equal(await p.locator('[data-qf-modalidades]').count(),0);assert.equal(await p.locator('[data-qf-livre-pagar]').count(),0);}
+ // Proteção contra assinatura já ativada em outra aba antes do clique.
+ await open('/profissional/planos');await p.locator('[data-qf-livre-pagar]').waitFor();await p.evaluate(()=>fixtureActive=true);await p.locator('[data-qf-livre-pagar]').click();await p.getByText('Quem Faz Livre ativo',{exact:true}).waitFor();assert.equal(await p.evaluate(()=>fixtureCalls.includes('qf_livre_solicitar_pix')),false);
+ // Pedido pendente não oferece Livre para desbloquear; ativo oferece e mantém créditos.
+ await open('/profissional/pedido/:id');await p.locator('[data-qf-livre-pagar]').waitFor();assert.equal(await p.locator('[data-qf-livre-desbloquear]').count(),0);
+ await open('/profissional/pedido/:id',{active:true});await p.locator('[data-qf-livre-termos]').check();await p.locator('[data-qf-livre-desbloquear]').click();assert.equal(await p.evaluate(()=>fixtureNav),'/profissional/chat/call-fixture');assert.equal(await p.locator('[data-action="desbloquear-chamada"]').count(),1);assert.deepEqual(errors,[]);
+ console.log('PASS mobile: cadastro encaminha ao Pix; pendente não libera; confirmado ativa; assinante não recebe oferta nem cobrança duplicada; Livre ativo desbloqueia e preserva Avulso.');
+ }finally{await browser?.close();await new Promise(r=>server.close(r));}
+})().catch(e=>{console.error(e);process.exitCode=1});

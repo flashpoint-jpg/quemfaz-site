@@ -56,6 +56,18 @@ test('Livre: pagamento, ativação, RLS, vigência, limite, comissão e carteira
  assert.equal((await q('select count(*) n from qf_desbloqueios where profissional_id=$1',[id(1)]))[0].n,1,'contato anterior preservado');
  // Recarga comum ainda credita carteira exatamente uma vez.
  await q("insert into qf_recargas(id,profissional_id,valor_centavos,metodo) values($1,$2,5000,'pix')",[id(501),id(1)]);await q("update qf_recargas set status='aprovado' where id=$1",[id(501)]);assert.equal((await q('select saldo_centavos from qf_carteiras where profissional_id=$1',[id(1)]))[0].saldo_centavos,15000);
+ // Nova regra: o endpoint antigo não libera mais contatos sem assinatura paga.
+ await db.exec(fs.readFileSync('supabase/migrations/20261023104017_livre_pix_creditos_obrigatorios.sql','utf8'));
+ await user(6);await q('update qf_carteiras set saldo_centavos=0 where profissional_id=$1',[id(6)]);
+ await q("insert into qf_chamados(id,cliente_id,categoria,max_orcamentos,latitude,longitude) values($1,$2,'cat_eletricista',4,0.09,0)",[id(106),id(9)]);
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(106),true])).reason,'plano_inativo');
+ assert.equal((await rpc('qf_desbloquear_chamado',[id(106)])).reason,'saldo_insuficiente');
+ assert.equal((await rpc('qf_comissao13_status')).desbloqueio_gratuito_ativo,false);
+ const p6=await rpc('qf_livre_solicitar_pix');
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(106),true])).reason,'plano_inativo','Pix pendente não libera');
+ await q("update qf_recargas set status='aprovado',provedor='efi',provedor_id='fixtureSix' where id=$1",[p6.recarga_id]);
+ assert.equal((await rpc('qf_comissao13_desbloquear',[id(106),true])).ok,true,'assinatura paga libera mesmo com saldo zero');
+ await user(3);assert.ok((await rpc('qf_comissao13_fechamentos_painel')).length,'fechamentos antigos preservados');
  console.log('PASS Livre: Pix idempotente, ativação servidor, RLS, 30 dias, sem saldo, desbloqueio e contas, quatro vagas mistas, compatibilidade, vencimento e recarga tradicional.');
  }finally{await db.close();}
 });

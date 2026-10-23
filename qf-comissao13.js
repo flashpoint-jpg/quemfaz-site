@@ -68,10 +68,8 @@
   // O botão pago conserva seu evento e a cobrança existente.
   const pago=content.querySelector('[data-action="desbloquear-chamada"]');
   if(!pago){rpc('qf_comissao13_meu_desbloqueio',{p_chamado_id:params.id}).then(d=>{if(!d.ok||!content.isConnected||content.querySelector('[data-qf13-fechar-inline]'))return;content.querySelectorAll('[data-action="fechei-servico"],[data-qf-baixa-btn]').forEach(b=>b.hidden=true);box.innerHTML='<h2 class="h3">Desbloqueio gratuito — 13%</h2><p>Registre o andamento em até 48 horas na carteira.</p><a class="btn btn--primary" href="#/profissional/carteira">Prestar contas</a>';view.prepend(box);}).catch(()=>{});return;}
-  rpc('qf_comissao13_status').then(s=>{if(!s.ok||!content.isConnected)return;box.innerHTML=oferta(s);box.classList.add('qf13-option','qf-opt');const paidOption=pago.closest('.qf-opt');if(paidOption){paidOption.parentElement.prepend(box);box.after(paidOption);}else view.prepend(box);
-   const preco=req.precoDesbloqueio!=null?req.precoDesbloqueio:g.DB.leadFeeForRequest(req);if(!user?.plano?.restantes&&Number(preco)>0)pago.textContent='Desbloquear pagando '+brl(preco);const paidTitle=paidOption&&paidOption.querySelector('.qf-opt__top strong');if(paidTitle)paidTitle.textContent='Opção tradicional';if(paidOption&&!paidOption.querySelector('[data-qf13-tradicional]'))pago.insertAdjacentHTML('beforebegin','<p data-qf13-tradicional>Use saldo ou plano e negocie diretamente com o cliente, sem comissão sobre o serviço.</p>');const feeTitle=content.querySelector('.qf-unlock-simple__main > .text--sm');if(feeTitle)feeTitle.textContent='Valor da opção tradicional';
-   const btn=box.querySelector('[data-qf13-desbloquear]');if(!btn)return;btn.onclick=async()=>{if(!box.querySelector('[data-qf13-termos]').checked){g.PU.toast('Aceite as condições da modalidade.','danger');return;}btn.disabled=true;try{const r=await rpc('qf_comissao13_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok)throw Error(motivo(r.reason));if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession();g.PU.toast('Contato liberado. Prestação de contas registrada na carteira.','success');g.navigate('/profissional/chat/'+params.id,true);}catch(e){g.PU.toast(e.message||'Não foi possível autorizar o desbloqueio.','danger');btn.disabled=false;}};
-  }).catch(()=>{});
+  // Novos contatos: plano pago ou créditos. Prestação de contas anterior permanece acima.
+  return;
  }
  g.QFComissao13.enhance=enhance;
  g.Screens.afterRender=function(){if(anterior)anterior.apply(this,arguments);enhance.apply(this,arguments);};
