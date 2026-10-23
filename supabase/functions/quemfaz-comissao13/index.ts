@@ -19,6 +19,29 @@ Deno.serve(async(req)=>{
   // Nunca reutilizar a sessão de profissional para confirmar pelo cliente.
   const bearer=(req.headers.get('authorization')||'').replace(/^Bearer\s+/i,'');
   if(bearer){const {data}=await admin.auth.getUser(bearer);if(data.user)return reply({ok:false,reason:'use_acesso_cliente'},403);}
+  if(b.fluxo==='prestacao'){
+   if(!/^[a-f0-9]{64}$/.test(String(b.token||'')))return reply({ok:false,reason:'link_invalido'},400);
+   const args={p_token:b.token,p_acao:'info'};
+   if(b.action==='info')return reply({...await rpc('qf13_cliente_guest',args),otp_configurado:configurado});
+   if(!configurado)return reply({ok:false,reason:'otp_nao_configurado'},503);
+   if(!['contratou','nao_contratou'].includes(b.finalidade))return reply({ok:false,reason:'dados_invalidos'},400);
+   if(b.action==='enviar_codigo'){
+    const code=gerarCodigo(),hash=await hashCodigo(b.token,b.finalidade,code,pepper);
+    const r=await rpc('qf13_cliente_guest',{...args,p_acao:'criar',p_finalidade:b.finalidade,p_hash:hash});
+    if(!r.ok)return reply(r);
+    const payload=new URLSearchParams({To:telefoneBR(r.telefone),From:from,Body:`Quem Faz: código ${code} para confirmar sua resposta sobre a contratação. Válido por 5 minutos. Não compartilhe este código.`});
+    const response=await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`,{method:'POST',headers:{Authorization:'Basic '+btoa(sid+':'+secret),'Content-Type':'application/x-www-form-urlencoded'},body:payload,signal:AbortSignal.timeout(15000)});
+    const sent=await response.json();
+    if(!response.ok||!/^SM[0-9a-f]{32}$/i.test(sent.sid||'')||['failed','undelivered','canceled'].includes(sent.status))return reply({ok:false,reason:'falha_envio'},502);
+    await rpc('qf_comissao13_codigo_enviado',{p_id:r.codigo_id,p_provedor_id:sent.sid});
+    return reply({ok:true,status:'aceito_pelo_provedor',entrega_confirmada:false});
+   }
+   if(b.action==='confirmar'){
+    if(b.confirmar!==true||!/^\d{6}$/.test(String(b.codigo||'')))return reply({ok:false,reason:'codigo_invalido'},400);
+    return reply(await rpc('qf13_cliente_guest',{...args,p_acao:'confirmar',p_finalidade:b.finalidade,p_hash:await hashCodigo(b.token,b.finalidade,b.codigo,pepper)}));
+   }
+   return reply({ok:false,reason:'acao_invalida'},400);
+  }
   if(!/^[0-9a-f-]{36}$/i.test(String(b.token||'')))return reply({ok:false,reason:'link_invalido'},400);
   if(b.carteirinha){
    if(!/^[0-9a-f-]{36}$/i.test(String(b.carteirinha)))return reply({ok:false,reason:'carteirinha_incompativel'},400);

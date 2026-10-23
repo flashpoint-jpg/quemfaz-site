@@ -10,6 +10,9 @@
  if(!g.document)return;
  function install(){
   if(!g.Screens||g.QFLivre.installed)return;g.QFLivre.installed=true;
+  // O catálogo antigo continua disponível para registros e assinaturas já contratadas.
+  if(Array.isArray(g.QFCadPlanos))g.QFCadPlanos.splice(1);
+  if(g.QFPlanoIncentivo)g.QFPlanoIncentivo.porChamado=()=>null;
   const css=document.createElement('style');css.textContent='.qf-livre{border:2px solid #1769d5!important;background:linear-gradient(120deg,#eef6ff,#fff8ed);border-radius:18px;padding:20px!important;margin:0 0 18px!important;min-width:0}.qf-livre h2{margin:8px 0;font-size:1.35rem}.qf-livre p{overflow-wrap:anywhere}.qf-livre textarea{width:100%;box-sizing:border-box;min-height:90px;overflow-wrap:anywhere}.qf-livre img{display:block;width:200px;max-width:100%;height:auto;margin:12px auto}.qf-livre label{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.qf-livre input[type=checkbox]{width:20px;height:20px;flex:0 0 20px}.qf-livre .btn{white-space:normal}@media(max-width:639px){.qf-livre{padding:16px!important}.qf-livre .btn{width:100%}}';document.head.appendChild(css);
   const prior=g.Screens.afterRender,priorAnon=g.Screens.afterRenderAnon;
   function enhance(pattern,content,params={}){
@@ -21,9 +24,19 @@
    const rpc=async(n,a={})=>{const r=await client.rpc(n,a);if(r.error)throw Error('Não foi possível consultar o plano. Tente novamente.');return r.data;};
    const box=document.createElement('section');box.className='section card stack--sm qf-livre';box.dataset.qfLivre='';
    const view=content.querySelector('.view')||content;view.prepend(box);
+   if(cadastro){
+    content.querySelectorAll('[name=planoEscolhido]').forEach(r=>{if(r.value!=='avulso')r.closest('label')?.remove();else r.checked=true;});
+    content.querySelector('.qf-cad-planos__ex')?.remove();
+    const submit=content.querySelector('[data-cad-criar]');if(submit)submit.textContent='Criar conta grátis';
+   }
+   if(['/profissional/home','/profissional/carteira','/profissional/planos'].includes(pattern)){
+    const modes=document.createElement('section');modes.className='card stack--sm';modes.dataset.qfModalidades='';
+    modes.innerHTML='<h2 class="h3">Escolha como desbloquear</h2><p><strong>Avulso:</strong> use saldo por contato. Sem comissão.</p><p><strong>Quem Faz Livre:</strong> R$ 39,90 por 30 dias, contatos elegíveis ilimitados e 13% por contratação confirmada. Sem renovação automática.</p><p><strong>Gratuito com comissão:</strong> sem pagamento antecipado, 13% somente se fechar e a administração aprovar.</p><a class="btn btn--outline" href="#/profissional/servicos/disponiveis">Ver pedidos</a>';
+    box.after(modes);
+   }
    let pending=false,busy=false,last={};
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
-   function render(s){last=s||{};box.innerHTML=oferta(last);bind();if(cadastro){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=()=>{const form=content.querySelector('form');if(form){form.scrollIntoView({behavior:'smooth',block:'start'});form.querySelector('input')?.focus();}box.querySelector('[data-qf-livre-msg]').textContent='Conclua seu cadastro para contratar o plano com segurança.';};}}
+   function render(s){last=s||{};box.innerHTML=oferta(last);if(pattern==='/profissional/carteira'||pattern==='/profissional/home'){const d=document.createElement('details');d.innerHTML='<summary>Condições do Quem Faz Livre</summary>';box.querySelectorAll('p:not([role=status]),details').forEach(el=>d.appendChild(el));box.querySelector('h2').after(d);}bind();if(cadastro){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=()=>{const form=content.querySelector('form');if(form){form.scrollIntoView({behavior:'smooth',block:'start'});form.querySelector('input')?.focus();}box.querySelector('[data-qf-livre-msg]').textContent='Conclua seu cadastro para contratar o plano com segurança.';};}}
    function unlock(s){
     if(!pedido||!s.ativo||box.querySelector('[data-qf-livre-desbloquear]'))return;
     const req=g.DB&&g.DB.requestById(params.id),pago=content.querySelector('[data-action="desbloquear-chamada"]');

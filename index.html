@@ -13751,20 +13751,17 @@ alt=""></noscript>
           '</div>' +
         '</div>' +
 
-        '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Histórico de créditos e débitos</h2></div>' +
-          walletMovimentacoesHtml(txs) +
-        '</div>' +
+        '<details class="section"><summary class="text--strong">Histórico de créditos e débitos</summary>' + walletMovimentacoesHtml(txs) + '</details>' +
 
         walletPlanosSection(user) +
 
         '<div class="section">' +
-          '<div class="section-head"><h2 class="h3">Como funciona</h2></div>' +
+          '<div class="section-head"><h2 class="h3">Como funciona o Avulso</h2></div>' +
           '<div class="card" style="padding:4px 16px;">' +
             ((global.QFBonusCadastro || {}).texto ? walletInfoRow('money', global.QFBonusCadastro.texto + ' de bônus de cadastro', 'Todo novo profissional começa com ' + global.QFBonusCadastro.texto + ' em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') : '') +
             walletInfoRow('phoneCall', 'Contato liberado', 'Depois do desbloqueio, você recebe o WhatsApp do cliente e combina o serviço direto com ele.') +
-            walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. O QuemFaz já recebeu pelo lead.') +
-            '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Planos Mensal e Pro</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
+            walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. No Avulso, não há comissão sobre o serviço.') +
+            '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Modalidades atuais</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda. Por isso, chame o cliente no WhatsApp assim que desbloquear.') +
           '</div>' +
         '</div>' +
@@ -13862,25 +13859,7 @@ alt=""></noscript>
   function walletPlanosSection(user) {
     const guardado = DB.state && DB.state.carteiraPlanos;
     const dados = guardado && guardado.userId === (user && user.id) ? guardado : { planos: [], compras: [] };
-    function buy(plano, nome, preco, valor, detalhe, destaque) {
-      return '<div class="card row-between" style="gap:12px;' + (destaque ? 'border:2px solid var(--orange-500);' : '') + '">' +
-        '<div><div class="text--strong">' + nome + ' · ' + preco + '<span class="text--sm text--secondary" style="font-weight:600;"> por ' + global.QFPlanos.dias(plano) + ' dias</span></div><div class="text--sm text--secondary">' + detalhe + '</div></div>' +
-        '<button class="btn btn--primary btn--sm" type="button" data-action="assinar-plano" data-plano="' + plano + '" data-valor="' + valor + '" style="flex:none;width:auto;">Assinar</button>' +
-      '</div>';
-    }
-    return '<div class="section" id="carteira-planos">' +
-      '<div class="section-head"><div><h2 class="h3">Meus planos</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade. Plano não é saldo em reais.</div></div></div>' +
-      walletPlanosAtualHtml(user, dados) +
-      walletPlanosHistoricoHtml(dados) +
-      '<div class="section-head" style="margin-top:14px;"><h3 class="h3">Contratar ou renovar</h3></div>' +
-      '<div class="stack stack--sm">' +
-        global.QFPlanos.ids.map(function (id) {
-          const P = global.QFPlanos;
-          return buy(id, P.nome(id), P.preco(id), P.valor(id), P.chamados(id) + ' chamados · sai a ' + P.cada(id) + ' cada' + (id === 'premium' ? ' · anúncio no carrossel por 30 dias incluído · selo Premium' : ''), id === 'premium');
-        }).join('') +
-      '</div>' +
-      '<p class="text--sm text--secondary" style="margin-top:8px;">Paga com a forma escolhida acima (Pix, cartão ou boleto). O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
-    '</div>';
+    return '<details class="section" id="carteira-planos"><summary class="text--strong">Assinaturas anteriores e comprovantes</summary>' + walletPlanosAtualHtml(user, dados) + walletPlanosHistoricoHtml(dados) + '</details>';
   }
 
   function walletInfoRow(iconName, title, subtitle) {
@@ -13931,7 +13910,7 @@ alt=""></noscript>
           cfStep(3, 'Fique online', 'Toque no botão para ficar online (verde). Assim você recebe os pedidos dentro do seu horário de atendimento.') +
           cfStep(4, 'O pedido chega no seu celular', 'Antes de decidir você vê o serviço, a distância até o cliente, para quando ele precisa e o valor para desbloquear.') +
           cfStep(5, 'Desbloqueie e chame no WhatsApp', 'Gostou do pedido? Desbloqueie e chame o cliente direto no WhatsApp para passar o orçamento.') +
-          cfStep(6, 'Feche o serviço', 'O valor do serviço é todo seu. O QuemFaz não cobra comissão.') +
+          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Livre ou gratuito, a comissão é de 13% após contratação confirmada e aprovação administrativa.') +
         '</div>' +
       '</section>' +
 
@@ -13951,24 +13930,17 @@ alt=""></noscript>
           cfPlano('Avulso', false, 'R$ 5', 'a R$ 13', 'por chamado desbloqueado',
             ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
             role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
-          cfPlano('Mensal', false, global.QFPlanos.preco('mensal'), 'por ' + global.QFPlanos.dias('mensal') + ' dias', global.QFPlanos.chamados('mensal') + ' chamados',
-            ['Sai a ' + global.QFPlanos.cada('mensal') + ' por chamado, em qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 13', 'Sem renovação automática e sem fidelidade'],
-            assinar('Mensal')) +
-          cfPlano('Pro', false, global.QFPlanos.preco('pro'), 'por ' + global.QFPlanos.dias('pro') + ' dias', global.QFPlanos.chamados('pro') + ' chamados',
-            ['Sai a ' + global.QFPlanos.cada('pro') + ' por chamado, em qualquer serviço', 'Sem renovação automática e sem fidelidade'],
-            assinar('Pro')) +
-          cfPlano('Premium', true, global.QFPlanos.preco('premium'), 'por ' + global.QFPlanos.dias('premium') + ' dias', global.QFPlanos.chamados('premium') + ' chamados',
-            ['Sai a ' + global.QFPlanos.cada('premium') + ' por chamado', 'Seu anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil, que o cliente vê', 'Sem renovação automática e sem fidelidade'],
-            assinar('Premium')) +
+          cfPlano('Quem Faz Livre', true, 'R$ 39,90', 'por 30 dias', 'Desbloqueios elegíveis ilimitados', ['13% somente sobre serviços fechados e confirmados pela administração', 'Sem renovação automática'], assinar('Quem Faz Livre')) +
+          cfPlano('Gratuito com comissão', false, 'R$ 0', 'antecipado', 'Desbloqueie sem usar saldo', ['13% somente se fechar e a administração aprovar', 'Prestação de contas em 48 horas; uma prorrogação de 48 horas'], assinar('Gratuito')) +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">Assine direto no app, na aba Planos, por Pix, cartão ou boleto. O plano é ativado sozinho assim que o pagamento é confirmado. Os chamados do plano valem por 30 dias e são usados antes do seu saldo.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Quem Faz Livre: ativação após confirmação do Pix pelo servidor. No Avulso, o saldo continua separado do plano.</p>' +
       '</section>' +
 
       '<section class="section">' +
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 4), e você vê quantas vagas ainda tem antes de desbloquear.') +
-          walletInfoRow('percent', 'Sem comissão', 'Você paga só o desbloqueio. O valor do serviço é 100% seu.') +
+          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. No Livre e gratuito, 13% apenas por serviço fechado, confirmado e aprovado pela administração.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
@@ -13985,7 +13957,7 @@ alt=""></noscript>
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
           cfFaq('Os créditos de bônus vencem?', 'Não. Bônus que você recebeu fica na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
-          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'Não. O QuemFaz não cobra comissão. Você combina o preço direto com o cliente e recebe tudo.') +
+          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'No Avulso, não. No Livre ou gratuito, 13% somente se fechar e após confirmação administrativa.') +
           cfFaq('Como assino um plano?', 'Na aba Planos (barra de baixo), toque em Assinar e pague por Pix, cartão ou boleto. O plano é ativado sozinho quando o pagamento é confirmado, sem precisar falar com ninguém.') +
           cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm renovação automática nem fidelidade: é só não comprar de novo no mês seguinte.') +
           cfFaq('E se eu comprar outro plano antes de acabar?', 'Os chamados que sobraram passam para o plano novo, e a validade conta de novo a partir da compra.') +
@@ -14099,99 +14071,7 @@ alt=""></noscript>
 
   // V11.13: aba Planos — planos de chamados (Mensal/Pro) e divulgação, tudo num lugar só.
   Screens.profPlanosRender = function (params, user) {
-    const ativo = user && user.plano && user.plano.restantes > 0 ? user.plano : null;
-    const validade = ativo && ativo.validoAte ? new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '';
-    const adPlans = ((DB.state.settings || {}).adPlans) || {};
-    const meusAnuncios = (DB.state.ads || []).filter(function (a) { return a.anuncianteId === user.id; }).sort(function (a, b) { return new Date(b.criadoEm || 0) - new Date(a.criadoEm || 0); });
-    const ultimoAd = meusAnuncios[0] || null;
-    function assinar(plano, valor, nome) {
-      return '<button class="btn btn--primary" type="button" data-action="assinar-plano" data-plano="' + plano + '" data-valor="' + valor + '">' + icon('crown') + ' Assinar o plano ' + nome + '</button>';
-    }
-    function adRow(key, desc) {
-      const p = adPlans[key];
-      if (!p) return '';
-      return '<div class="qf-ad-plan-row"><div class="spacer"><div class="text--strong">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + desc + ' · ' + (p.dias || 30) + ' dias</div></div><div class="qf-ad-plan-row__price">' + PU.formatCurrency(p.valor) + '</div></div>';
-    }
-    function adStatus(a) {
-      if (!a) return '';
-      const map = { ativo: ['badge--success', 'No ar'], reprovado: ['badge--danger', 'Reprovado'], pausado: ['badge--warning', 'Pausado'] };
-      const b = map[a.status] || ['badge--warning', 'Aguardando aprovação'];
-      return '<div class="card card--tight row-between" style="margin-top:10px;"><div><div class="text--strong">Seu último anúncio</div><div class="text--sm text--secondary">' + PU.escapeHtml(a.empresa || 'Anúncio') + '</div></div><span class="badge ' + b[0] + '"><span class="badge__dot"></span>' + b[1] + '</span></div>';
-    }
-    return '<div class="view stack">' +
-      '<div class="card" style="background:var(--navy-900);border:none;color:#fff;">' +
-        '<div class="eyebrow" style="color:var(--orange-400);">Planos e divulgação</div>' +
-        '<div class="h2" style="color:#fff;margin-top:4px;">Pegue mais clientes pagando menos</div>' +
-        '<p class="text--sm" style="color:#c7d1e3;margin:6px 0 0;">Escolha um plano de chamados ou divulgue seu serviço para os clientes da sua região.</p>' +
-      '</div>' +
-
-      '<div class="section">' +
-        (ativo
-          ? '<div class="card qf-plan-status" style="background:var(--success-100);border:none;"><div class="icon-tile" style="background:var(--success-600);">' + icon('checkCircle') + '</div><div><div class="text--strong">Plano ' + PU.escapeHtml(ativo.nome) + ' ativo</div><div class="text--sm">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') + (validade ? ' · vale até ' + validade : '') + '. Os chamados do plano são usados antes do saldo.</div></div></div>'
-          : '<div class="card qf-plan-status"><div class="icon-tile icon-tile--orange">' + icon('wallet') + '</div><div class="spacer"><div class="text--strong">Hoje você está no Avulso</div><div class="text--sm text--secondary">Paga de R$ 5 a R$ 13 por chamado desbloqueado, com o saldo da carteira. Saldo: <strong>' + PU.formatCurrency(user.creditos || 0) + '</strong></div><button class="btn btn--outline btn--sm btn--block-auto" type="button" data-nav="/profissional/carteira" style="margin-top:10px;">' + icon('plus') + ' Colocar saldo</button></div></div>') +
-      '</div>' +
-
-      (function () {
-        if (ativo || !global.QFPlanoIncentivo) return '';
-        const PI = global.QFPlanoIncentivo;
-        const h = PI.historico(user);
-        let titulo, texto, avulso, plano, nomePlano, economia;
-        const sim = h.n > 0 ? PI.simular(h.n, h.total) : null;
-        if (sim && sim.economia > 0) {
-          titulo = 'Com plano você teria economizado ' + PU.formatCurrency(sim.economia);
-          texto = 'Nos últimos 30 dias você desbloqueou ' + h.n + ' chamado' + (h.n === 1 ? '' : 's') + ' no avulso. No plano ' + sim.plano.nome + ' teria pago bem menos.';
-          avulso = h.total; plano = sim.custo; nomePlano = sim.plano.nome; economia = sim.economia;
-        } else {
-          // Exemplo com o valor mais comum de desbloqueio (R$ 8): os chamados do plano Mensal no avulso x Mensal.
-          const m = PI.planos[0], ex = 800 * m.chamados;
-          titulo = 'Pegue ' + m.chamados + ' chamados e economize ' + PU.formatCurrency(ex - m.preco);
-          texto = m.chamados + ' chamados de R$ 8 no avulso custam ' + PU.formatCurrency(ex) + '. No plano Mensal saem por ' + PU.formatCurrency(m.preco) + '. Em pedreiro, frete e mecânico (R$ 13) a economia é maior.';
-          avulso = ex; plano = m.preco; nomePlano = m.nome; economia = ex - m.preco;
-        }
-        return '<div class="section"><div class="qf-plan-save">' +
-          '<div class="qf-plan-save__top"><div class="icon-tile qf-plan-save__icon">' + icon('crown') + '</div><div class="spacer">' +
-            '<div class="qf-plan-save__big">' + titulo + '</div>' +
-            '<div class="text--sm text--secondary" style="margin-top:4px;">' + texto + '</div>' +
-          '</div></div>' +
-          '<div class="qf-plan-save__cmp"><div><small>Avulso</small><strong>' + PU.formatCurrency(avulso) + '</strong></div><div class="is-plan"><small>Plano ' + nomePlano + '</small><strong>' + PU.formatCurrency(plano) + '</strong></div></div>' +
-          '<button class="btn btn--primary btn--sm" type="button" data-scroll-planos>' + icon('crown') + ' Quero economizar</button>' +
-        '</div></div>';
-      })() +
-      '<section class="section" id="planos-chamados">' +
-        '<div class="section-head"><div><h2 class="h3">Planos de chamados</h2><div class="text--sm text--secondary">Pague menos por chamado, em qualquer serviço. Sem fidelidade.</div></div></div>' +
-        '<div class="stack">' +
-          (function () {
-            const P = global.QFPlanos;
-            function linha(id) { return [P.preco(id), 'por ' + P.dias(id) + ' dias', P.chamados(id) + ' chamados · sai a ' + P.cada(id) + ' cada']; }
-            const m = linha('mensal'), pr = linha('pro'), pm = linha('premium');
-            return cfPlano('Mensal', false, m[0], m[1], m[2],
-              ['Vale para qualquer serviço', 'Ótimo para pedreiro, frete e mecânico, que no avulso custam R$ 13', 'Sem renovação automática'], assinar('mensal', P.valor('mensal'), 'Mensal')) +
-            cfPlano('Pro', false, pr[0], pr[1], pr[2],
-              ['Vale para qualquer serviço', 'Sem renovação automática'], assinar('pro', P.valor('pro'), 'Pro')) +
-            cfPlano('Premium', true, pm[0], pm[1], pm[2],
-              ['Anúncio no carrossel do app por 30 dias incluído', 'Selo Premium no seu perfil', 'Vale para qualquer serviço', 'Sem renovação automática'], assinar('premium', P.valor('premium'), 'Premium'));
-          })() +
-        '</div>' +
-        '<div style="margin-top:14px;"><div class="field__label" style="margin-bottom:8px;">Como quer pagar o plano?</div>' +
-          '<div class="qf-pay-methods" id="planos-metodos">' +
-            '<button type="button" class="qf-pay-method is-selected" data-plano-metodo="pix">' + icon('bolt') + ' Pix</button>' +
-            '<button type="button" class="qf-pay-method" data-plano-metodo="cartao">' + icon('creditCard') + ' Cartão</button>' +
-            '<button type="button" class="qf-pay-method" data-plano-metodo="boleto">' + icon('document') + ' Boleto</button>' +
-          '</div></div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">O plano é ativado sozinho quando o pagamento é confirmado. Comprou de novo antes de acabar? Os chamados que sobraram passam para o plano novo.</p>' +
-      '</section>' +
-
-      '<section class="section" id="planos-divulgacao">' +
-        '<div class="section-head"><div><h2 class="h3">Divulgação</h2><div class="text--sm text--secondary">Sua marca na primeira tela do QuemFaz, logo abaixo da foto.</div></div></div>' +
-        '<div class="card" style="padding:4px 16px;">' +
-          adRow('premium', 'Sua marca na primeira tela do QuemFaz') +
-        '</div>' +
-        '<button class="btn btn--primary" type="button" data-nav="/profissional/anuncie" style="margin-top:12px;">' + icon('megaphone') + ' Divulgar meu serviço</button>' +
-        adStatus(ultimoAd) +
-      '</section>' +
-
-      '<div class="section"><button class="btn btn--outline" type="button" data-nav="/profissional/como-funciona">' + icon('info') + ' Dúvidas sobre planos e preços</button></div>' +
-    '</div>';
+    return '<div class="view stack"><h1 class="h2">Modalidades de desbloqueio</h1>' + walletPlanosSection(user) + '</div>';
   };
 
   document.addEventListener('click', async function (e) {
