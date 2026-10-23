@@ -27,7 +27,7 @@ test('admin: lista mostra valor, taxa, profissional, pagamento, baixa, cancelame
     cancelamento: { motivo: 'financeiro', detalhe: null, houve_desbloqueio: true, criado_em: '2026-10-18T13:00:00Z' },
     contestacoes: [{ id: 'k1', status: 'pendente', motivo: 'contato_falso', descricao: 'número não existe', valor_estornado_centavos: null }]
   });
-  for (const t of ['Valor definido', 'R$ 1.500,00', 'R$ 90,00', 'João', 'pagamento confirmado', 'Aguardando o cliente', 'Problema financeiro', 'contato_falso', 'data-qf-encerrar="c1"', 'data-qf-resolver="k1"', 'Histórico completo']) {
+  for (const t of ['Valor definido', 'R$ 1.500,00', 'R$ 90,00', 'João', 'débito confirmado', 'Aguardando o cliente', 'Problema financeiro', 'contato_falso', 'data-qf-encerrar="c1"', 'data-qf-resolver="k1"', 'Histórico completo']) {
     assert.ok(h.includes(t), 'faltou: ' + t);
   }
 });
@@ -39,7 +39,7 @@ test('admin: escapa HTML vindo do banco', () => {
 
 test('admin: pedido tradicional não mostra valor; suspeitos só listam (sem ação de bloqueio)', () => {
   const h = A.pedidoHtml({ id: 'a', categoria: 'cat_x', status: 'aberto', modalidade: 'contatos' });
-  assert.ok(h.includes('Tradicional') && !h.includes('Valor do cliente'));
+  assert.ok(h.includes('Pedido de orçamento') && !h.includes('Valor do cliente'));
   const s = A.suspeitosHtml([{ cliente: 'Maria', total: 4, com_desbloqueio: 3, ultimo: '2026-10-01T00:00:00Z' }]);
   assert.ok(s.includes('revisão humana') && s.includes('Nada é bloqueado automaticamente') && !/data-qf-bloquear/.test(s));
 });

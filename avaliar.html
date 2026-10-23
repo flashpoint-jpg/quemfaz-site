@@ -42,7 +42,7 @@ button:disabled{opacity:.65;cursor:wait}
   <div id="form-wrap">
    <div class="avatar"><span id="iniciais">QF</span><img id="foto" alt="Foto do profissional"></div>
    <h1 id="titulo">Como foi seu atendimento?</h1>
-   <p class="name" id="nome">Carregando profissional...</p>
+   <p class="name" id="nome">Carregando profissional...</p><p id="plano-livre" hidden style="color:#1458cc;font-weight:800">Quem Faz Livre</p>
    <form id="form">
     <div class="stars" role="group" aria-label="Nota do atendimento de 1 a 5 estrelas">
      <button type="button" data-nota="1" aria-label="1 estrela" aria-pressed="false">☆</button>
@@ -126,6 +126,7 @@ button:disabled{opacity:.65;cursor:wait}
      if(r.error||!r.data||!r.data.ok)throw new Error('Profissional não disponível para avaliação.');
      const nome=String(r.data.nome||'Profissional Quem Faz').trim();
      document.getElementById('nome').textContent=nome;
+     document.getElementById('plano-livre').hidden=r.data.plano_livre_ativo!==true;
      document.getElementById('iniciais').textContent=nome.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
      if(r.data.foto&&/^https:\/\//i.test(r.data.foto)){
        const img=document.getElementById('foto');

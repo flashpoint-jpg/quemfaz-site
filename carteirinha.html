@@ -63,7 +63,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
  <article class="card" aria-label="Carteirinha Quem Faz Serviços para impressão">
   <header class="header"><img class="qf-approved-logo" src="/assets/qf-logo-20261013.webp" alt="Quem Faz Serviços"></header>
   <div class="avatar"><img id="foto" alt="Foto do profissional"><span class="fallback" id="iniciais">QF</span></div>
-  <h1 id="nome">Carregando...</h1>
+  <h1 id="nome">Carregando...</h1><div id="plano-livre" hidden style="margin:10px auto;padding:6px 12px;border-radius:999px;background:#e8f1ff;color:#1458cc;font-weight:800;width:fit-content">Quem Faz Livre</div>
   <p id="profissao" class="profissao" hidden></p>
   <p id="numero"></p>
   <div id="qr" role="img" aria-label="QR Code para o cliente avaliar o atendimento"></div>
@@ -147,6 +147,7 @@ main{display:flex;align-items:center;flex-direction:column;gap:16px}
       const data=r.data;
       const nome=String(data.nome||'Profissional Quem Faz').trim();
       document.getElementById('nome').textContent=nome;
+      document.getElementById('plano-livre').hidden=data.plano_livre_ativo!==true;
       document.getElementById('numero').textContent=String(data.numero||'');
       document.getElementById('iniciais').textContent=nome.split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase();
       if(data.foto && /^https:\/\//i.test(data.foto)){
