@@ -18,7 +18,13 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      - name: Navegador para testes
+        run: |
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "QF_CHROMIUM_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            npx playwright install --with-deps chromium
+          fi
       - run: npm run test:atendimento:browser
   concorrencia-postgres:
     runs-on: ubuntu-latest
