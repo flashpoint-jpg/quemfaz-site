@@ -22,7 +22,7 @@
   function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
   function tipoPorOrcamento(a) { return 'tradicional'; }
   function stages(a) {
-    const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia','data']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
+    const groups=[['Serviço',['servico','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia']],['Condições',['materiais','orcamento']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
     return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled)))}));
   }
   function questions(a) {
@@ -59,7 +59,6 @@
       options('urgencia','Quando precisa?',[['normal','Quero agendar'],['hoje','Ainda hoje'],['urgente','Preciso com urgência']]),
       {...options('orcamento','Você sabe quanto pretende gastar? Pode pedir uma avaliação.',budgetChoices(a.servico)),budget:true},
       options('materiais','Quem fornece os materiais ou ferramentas?',[['profissional','O profissional leva tudo'],['cliente','Eu forneço'],['combinar','Vamos combinar'],['nao_aplica','Não se aplica']]),
-      {key:'data',label:'Em qual data você pretende realizar o serviço?',type:'date'},
       {key:'nome',label:'Seu nome',autocomplete:'name'},
       {key:'contato',label:'Celular com DDD',type:'tel',autocomplete:'tel'},
       options('intencao','Pretende contratar?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
@@ -97,7 +96,7 @@
     const detalhes=answerLabel('detalhes');
     const escopo=answerLabel('escopo');
     if(detalhes.length<8||escopo.length<3)throw Error('Escolha o tipo e o tamanho do serviço antes de publicar.');
-    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:a.data,disponibilidade:'A combinar diretamente entre cliente e profissional',nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:tipoPorOrcamento(a)};
+    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:a.orcamento,orcamento_centavos:/^\d+:\d+$/.test(a.orcamento)?null:budget(a.orcamento),materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:null,disponibilidade:'A combinar diretamente entre cliente e profissional',nome:a.nome,contato:a.contato.replace(/\D/g,''),intencao:a.intencao,autorizacao:a.autorizacao,tipo:tipoPorOrcamento(a)};
   }
   function html() {
     return '<div class="view" data-qf-atendimento-layout><section class="card stack" style="max-width:620px;margin:0 auto;width:100%" data-qf-atendimento><h1 class="h2"><span style="color:#1769d5">Quem </span><span style="color:#f47b20">Faz</span> Serviços</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Seus dados ficam protegidos. Você decide se contrata.</p></section></div>';
@@ -152,7 +151,6 @@
       for(const key of ['servico','tipo','urgencia']){
         const inputs=area.querySelectorAll('#at-'+key+', input[name="at-'+key+'"]');inputs.forEach(input=>input.addEventListener('change',()=>{
           if(busy)return;read();if(key==='servico'){delete a.orcamento;for(const q of questions(a)){const label=area.querySelector('label[for="at-'+q.key+'"]');if(label)label.textContent=q.label;}return;}
-          if(key==='urgencia'&&['hoje','urgente'].includes(a.urgencia))a.data=today();
           if(key==='tipo'&&a.tipo!=='garante')delete a.qualificacao;
           draw();
         }));
