@@ -20,7 +20,7 @@
   const admin=['/admin/dashboard','/admin/comissao13'].includes(pattern),carteira=pattern==='/profissional/carteira';
   const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
   const lista=['/profissional/home','/profissional/servicos/disponiveis','/profissional/servicos'].includes(pattern);
-  if(!admin&&!carteira&&!pedido&&!lista)return;
+  if(!admin&&!carteira&&!pedido&&!lista&&pattern!=='/profissional/chat/:id')return;
   const c=admin?g.QFAdminCloud&&g.QFAdminCloud.client:g.QFCloud&&g.QFCloud.client;if(!c)return;
   const rpc=async(n,a={})=>{const r=await c.rpc(n,a);if(r.error)throw Error(r.error.message);return r.data;};
   const box=document.createElement('section');box.className='section card stack--sm';box.dataset.qf13='';
@@ -39,6 +39,25 @@
     });
    };render().catch(()=>box.textContent='Não foi possível carregar a prestação de contas. Atualize a página.');return;
   }
+  // Prestação de contas diretamente no pedido ou na conversa, sem abrir a carteira.
+  if(pattern==='/profissional/chat/:id'||pattern==='/profissional/pedido/:id'||pattern==='/profissional/chamada/:id'){
+   const pedidoId=params.id;if(!pedidoId)return;
+   rpc('qf_comissao13_fechamentos_painel').then(rows=>{
+    if(!content.isConnected||!Array.isArray(rows))return;
+    const a=rows.find(x=>String(x.chamado_id)===String(pedidoId)&&['pendente','negociando'].includes(x.status));if(!a)return;
+    if(content.querySelector('[data-qf13-fechar-inline]'))return;
+    const panel=document.createElement('section');panel.className='section card stack--sm qf13-inline';panel.dataset.qf13FecharInline='';
+    panel.innerHTML='<h2 class="h3">Fechou o serviço?</h2><p>Se fechou, solicite ao cliente o código de 6 dígitos. O código pertence ao cliente e não aparece para o profissional.</p><div class="btn-row"><button type="button" class="btn btn--primary" data-qf13-abrir>Fechei o serviço</button><button type="button" class="btn btn--outline" data-qf13-negociando>Em negociação</button><button type="button" class="btn btn--outline" data-qf13-recusado>Não fechei</button></div><form data-qf13-inline-form hidden class="stack--sm"><label>Valor combinado (R$)<input class="input" name="valor" inputmode="decimal" placeholder="500,00" required></label><label>Código do cliente (6 dígitos)<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" placeholder="Peça o código ao cliente" required></label><p class="text--sm">Peça ao cliente o código somente depois de fechar o serviço. A comissão de 13% depende da confirmação da equipe Quem Faz.</p><button class="btn btn--primary" type="submit">Confirmar serviço fechado</button></form><p role="status" data-qf13-inline-msg></p>';
+    (content.querySelector('.view')||content).prepend(panel);
+    const msg=panel.querySelector('[data-qf13-inline-msg]'),form=panel.querySelector('form');
+    panel.querySelector('[data-qf13-abrir]').onclick=()=>{form.hidden=false;panel.querySelector('[name=valor]').focus();};
+    const submit=async(situacao,valor=null,codigo=null,btn=null)=>{if(btn)btn.disabled=true;try{const r=await rpc('qf_comissao13_prestar_contas',{p_id:a.id,p_situacao:situacao,p_valor_centavos:valor,p_codigo:codigo});if(!r.ok)throw Error(motivo(r.reason));panel.innerHTML='<h2 class="h3">Resultado registrado</h2><p>Informação enviada ao Quem Faz. Obrigado por prestar contas.</p>';}catch(e){msg.textContent=e.message||'Não foi possível registrar. Tente novamente.';if(btn)btn.disabled=false;}};
+    panel.querySelector('[data-qf13-negociando]').onclick=e=>submit('negociando',null,null,e.currentTarget);
+    panel.querySelector('[data-qf13-recusado]').onclick=e=>submit('recusado',null,null,e.currentTarget);
+    form.onsubmit=e=>{e.preventDefault();const valor=cents(form.elements.valor.value),codigo=form.elements.codigo.value.trim();if(valor==null||!(/^[0-9]{6}$/).test(codigo)){msg.textContent='Informe o valor e os seis dígitos fornecidos pelo cliente.';return;}submit('informado',valor,codigo,form.querySelector('button'));};
+   }).catch(()=>{});
+   if(pattern==='/profissional/chat/:id')return;
+  }
   const req=g.DB&&g.DB.requestById(params.id);if(!req||req.atendimentoTipo==='garante'||req.modalidade==='valor_definido')return;
   // O botão pago conserva seu evento e a cobrança existente.
   const pago=content.querySelector('[data-action="desbloquear-chamada"]');
@@ -50,7 +69,7 @@
  }
  g.QFComissao13.enhance=enhance;
  g.Screens.afterRender=function(){if(anterior)anterior.apply(this,arguments);enhance.apply(this,arguments);};
- const path=(g.location.hash||'').replace(/^#/,'');let pattern=path,params={};const match=path.match(/^\/profissional\/(pedido|chamada)\/([^/]+)$/);if(match){pattern='/profissional/'+match[1]+'/:id';params.id=match[2];}
+ const path=(g.location.hash||'').replace(/^#/,'');let pattern=path,params={};const match=path.match(/^\/profissional\/(pedido|chamada|chat)\/([^/]+)$/);if(match){pattern='/profissional/'+match[1]+'/:id';params.id=match[2];}
  const content=document.getElementById('app-content'),sess=g.DB&&g.DB.getSession&&g.DB.getSession(),user=sess&&g.DB.profissionalById&&g.DB.profissionalById(sess.userId);if(content)enhance(pattern,content,params,user);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
