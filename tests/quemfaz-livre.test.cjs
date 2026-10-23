@@ -85,6 +85,16 @@ test('Livre: pagamento, ativação, RLS, vigência, limite, comissão e carteira
  await q('update qf_carteiras set saldo_centavos=500 where profissional_id=$1',[id(8)]);
  assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),true])).ok,true,'carregar crédito libera o gratuito');
  await q("select set_config('request.jwt.claim.sub','',false)");assert.equal((await rpc('qf_comissao13_desbloquear',[id(108),true])).reason,'nao_autenticado');
+ // Regra final: saldo não substitui uma assinatura paga, inclusive na API antiga.
+ await db.exec(fs.readFileSync('supabase/migrations/20261023232309_somente_livre_e_avulso.sql','utf8'));
+ await novoPedido(109);await novoPedido(110);
+ await user(7);
+ for(const api of ['qf_livre_desbloquear','qf_comissao13_desbloquear'])assert.equal((await rpc(api,[id(109),true])).reason,'plano_inativo','Avulso com saldo não recebe desbloqueio por comissão');
+ assert.equal((await q('select count(*) n from qf_desbloqueios where chamado_id=$1',[id(109)]))[0].n,0);
+ assert.equal((await q('select saldo_centavos from qf_carteiras where profissional_id=$1',[id(7)]))[0].saldo_centavos,10000);
+ await user(6);const ativo=await rpc('qf_livre_desbloquear',[id(110),true]);assert.equal(ativo.ok,true);assert.equal(ativo.plano,'livre');
+ await q("update qf_livre_assinaturas set inicio_em=now()-interval '30 days 1 second',fim_em=now()-interval '1 second' where profissional_id=$1",[id(6)]);
+ assert.equal((await rpc('qf_livre_desbloquear',[id(109),true])).reason,'plano_inativo','assinatura vencida não libera');
  console.log('PASS Livre: Pix idempotente, ativação servidor, RLS, 30 dias, sem saldo, desbloqueio e contas, quatro vagas mistas, compatibilidade, vencimento e recarga tradicional.');
  }finally{await db.close();}
 });

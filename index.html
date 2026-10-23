@@ -37,6 +37,8 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 #cadastro-prof-form .qf-cad-planos__nota{font-size:13px;padding:10px 12px;background:var(--navy-100);color:var(--text-primary);border:0}
 #cadastro-prof-form .qf-cad-planos{margin-top:12px}
 
+
+
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
@@ -3828,6 +3830,16 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
   #app-shell .qf-landing-topbar .qf-home-prof-btn .qf-prof-short{display:inline;min-width:0;white-space:nowrap}
   #app-shell .qf-landing-topbar .btn.qf-landing-login{overflow:hidden;white-space:nowrap;font-size:clamp(11px,3.2vw,13px);padding-inline:6px}
 }
+
+</style>
+<style>
+/* Faixa do Quem Faz Livre: visível também antes do carregamento do aplicativo. */
+.qf-home-livre{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto;align-items:center;gap:16px 24px;padding:24px;background:linear-gradient(110deg,#064cae,#0870db);color:#fff;margin:0 0 18px;min-width:0}
+.qf-home-livre__tag{display:inline-block;padding:6px 10px;border-radius:8px;background:#ff8b24;color:#17233c;font-size:11px;font-weight:850;line-height:1.3}
+.qf-home-livre h2{color:#fff;font-size:clamp(22px,2.7vw,32px);line-height:1.2;margin:10px 0 0}.qf-home-livre__offer strong{font-size:16px;line-height:1.4;display:block}.qf-home-livre__offer p{color:#fff;margin:4px 0;font-size:18px;font-weight:750}.qf-home-livre__offer b{font-size:clamp(30px,3.2vw,42px);color:#ffad57;line-height:1.15}.qf-home-livre__offer>span{font-size:14px;color:#fff}
+.qf-home-livre__cta{display:flex;align-items:center;justify-content:center;min-height:48px;padding:10px 22px;box-sizing:border-box;border-radius:12px;background:#ff8b24;color:#17233c;text-decoration:none;font-size:15px;font-weight:850;text-align:center}.qf-home-livre__cta:focus-visible{outline:3px solid #fff;outline-offset:4px}.qf-home-livre .qf-home-livre__terms{grid-column:1/-1;font-size:12px;line-height:1.5;margin:0;color:#fff}
+@media(min-width:900px){#app-shell[data-route="inicio"] .qf-home-livre{grid-column:1/-1;grid-row:1;border-radius:0 0 18px 18px;margin-bottom:24px}#app-shell[data-route="inicio"] .qf-landing-hero{grid-row:2}#app-shell[data-route="inicio"] .qf-landing-body{grid-row:2}}
+@media(max-width:899px){.qf-home-livre{grid-template-columns:minmax(0,1fr);gap:14px;padding:20px;margin:0}.qf-home-livre h2{font-size:25px}.qf-home-livre__offer strong{font-size:16px}.qf-home-livre__cta{justify-self:stretch}.qf-home-livre .qf-home-livre__terms{font-size:11px}}
 
 </style>
 </head>
@@ -8489,6 +8501,7 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '</div>' + deskMenu() + '<div class="qf-home-prof"><button type="button" class="qf-home-prof-btn" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span class="qf-prof-full">Área de profissionais</span><span class="qf-prof-short">Profissionais</span></button></div><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
+      '<section class="qf-home-livre" aria-labelledby="qf-home-livre-title" data-qf-home-livre><div class="qf-home-livre__brand"><span class="qf-home-livre__tag">NOVO · PARA PROFISSIONAIS</span><h2 id="qf-home-livre-title">Quem Faz Livre</h2></div><div class="qf-home-livre__offer"><strong>Desbloqueie quantos pedidos quiser</strong><p><b>R$ 1,33</b> por dia</p><span>R$ 39,90 por 30 dias</span></div><a class="qf-home-livre__cta" href="#/como-funciona" data-nav="/como-funciona">Conhecer o plano</a><p class="qf-home-livre__terms">Pedidos da sua profissão e dentro do seu raio. Comissão de 13% sobre serviços fechados, após confirmação e aprovação administrativa.</p></section>' +
       '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div>' +
       // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
       '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '</span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
@@ -13900,7 +13913,7 @@ alt=""></noscript>
   }
   function cfPlano(nome, destaque, preco, unidade, detalhe, itens, botao) {
     return '<div class="card stack stack--sm" style="' + (destaque ? 'border:2px solid var(--orange-500, #f06a1d);' : '') + 'position:relative;">' +
-      (destaque ? '<span class="badge" style="position:absolute;top:-11px;right:14px;background:var(--orange-500, #f06a1d);color:#fff;">Mais vantagem</span>' : '') +
+      (destaque ? '<span class="badge" style="position:absolute;top:-11px;right:14px;background:var(--orange-500, #f06a1d);color:#fff;">RECOMENDADO</span>' : '') +
       '<div class="eyebrow">' + nome + '</div>' +
       '<div class="h2" style="margin:0;">' + preco + ' <span class="text--sm text--secondary" style="font-weight:600;">' + unidade + '</span></div>' +
       '<div class="text--sm text--strong">' + detalhe + '</div>' +
@@ -13928,12 +13941,12 @@ alt=""></noscript>
           cfStep(3, 'Fique online', 'Toque no botão para ficar online (verde). Assim você recebe os pedidos dentro do seu horário de atendimento.') +
           cfStep(4, 'O pedido chega no seu celular', 'Antes de decidir você vê o serviço, a distância até o cliente, para quando ele precisa e o valor para desbloquear.') +
           cfStep(5, 'Desbloqueie e chame no WhatsApp', 'Gostou do pedido? Desbloqueie e chame o cliente direto no WhatsApp para passar o orçamento.') +
-          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Livre ou gratuito, a comissão é de 13% após contratação confirmada e aprovação administrativa.') +
+          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Quem Faz Livre, a comissão é de 13% após contratação confirmada e aprovação administrativa.') +
         '</div>' +
       '</section>' +
 
       '<section class="section">' +
-        '<div class="section-head"><div><h2 class="h3">Quanto custa desbloquear um chamado</h2><div class="text--sm text--secondary">O valor depende do tipo de serviço.</div></div></div>' +
+        '<div class="section-head"><div><h2 class="h3">Quanto custa no Avulso</h2><div class="text--sm text--secondary">O valor depende do tipo de serviço.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
           QF_PRECOS_FAIXAS.map(function (f) {
             return '<div class="list-item"><div class="text--strong" style="min-width:84px;color:var(--orange-600, #c2410c);">' + f.valor + '</div><div class="list-item__body"><div class="list-item__sub">' + f.cats + '</div></div></div>';
@@ -13945,13 +13958,12 @@ alt=""></noscript>
       '<section class="section" id="cf-planos">' +
         '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Escolha o jeito que fica melhor para você.</div></div></div>' +
         '<div class="stack">' +
+          cfPlano('Quem Faz Livre', true, 'R$ 1,33', 'por dia', 'R$ 39,90 por 30 dias · Desbloqueios ilimitados de pedidos compatíveis', ['Na sua profissão e dentro do seu raio', '13% somente sobre serviços fechados, confirmados e aprovados pela administração', 'Ativação após pagamento · Sem renovação automática'], assinar('Quem Faz Livre')) +
           cfPlano('Avulso', false, 'R$ 5', 'a R$ 13', 'por chamado desbloqueado',
-            ['Sem mensalidade', 'Paga só quando quiser um cliente', 'Recarga por Pix, cartão ou boleto'],
-            role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '') +
-          cfPlano('Quem Faz Livre', true, 'R$ 39,90', 'por 30 dias', 'Desbloqueios elegíveis ilimitados', ['13% somente sobre serviços fechados e confirmados pela administração', 'Sem renovação automática'], assinar('Quem Faz Livre')) +
-          cfPlano('Gratuito com comissão', false, 'R$ 0', 'antecipado', 'Desbloqueie sem usar saldo', ['13% somente se fechar e a administração aprovar', 'Prestação de contas em 48 horas; uma prorrogação de 48 horas'], assinar('Gratuito')) +
+            ['Sem mensalidade e sem comissão', 'Use seu saldo para desbloquear pedidos', 'Recarga por Pix, cartão ou boleto'],
+            role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Escolher Avulso</button>') +
         '</div>' +
-        '<p class="text--sm text--secondary" style="margin-top:10px;">Quem Faz Livre: ativação após confirmação do Pix pelo servidor. No Avulso, o saldo continua separado do plano.</p>' +
+        '<p class="text--sm text--secondary" style="margin-top:10px;">Quem Faz Livre: ativação após confirmação do Pix. No Avulso, o saldo continua separado do plano.</p>' +
       '</section>' +
 
       '<section class="section">' +
@@ -13975,7 +13987,7 @@ alt=""></noscript>
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
           cfFaq('Os créditos de bônus vencem?', 'Não. Bônus que você recebeu fica na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
-          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'No Avulso, não. No Livre ou gratuito, 13% somente se fechar e após confirmação administrativa.') +
+          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'No Avulso, não. No Quem Faz Livre, 13% somente se fechar e após confirmação administrativa.') +
           cfFaq('Como assino um plano?', 'Na aba Planos, escolha Quem Faz Livre e pague por Pix. A ativação acontece após confirmação do pagamento pelo servidor.') +
           cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm renovação automática nem fidelidade: é só não comprar de novo no mês seguinte.') +
           cfFaq('E se eu comprar outro plano antes de acabar?', 'No Quem Faz Livre, a nova compra acrescenta 30 dias após o período já contratado. Assinaturas antigas mantêm suas regras originais.') +
@@ -15457,7 +15469,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.14';
+  const APP_VERSION = '12.1.15';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
