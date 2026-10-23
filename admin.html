@@ -6209,7 +6209,8 @@ Screens.adminDashboardRender = function () {
   })();
 
   function profBadges(p) {
-    return (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
+    const plano = adminPlanoDoProf(p.id);
+    return (plano && plano.vigente && plano.p.plano === 'livre' ? '<span class="badge badge--navy">Quem Faz Livre</span>' : '') + (p.online ? '<span class="badge badge--success"><span class="badge__dot"></span>Online</span>' : '<span class="badge badge--muted">Offline</span>') +
       (p.verificado ? '<span class="badge badge--success">Verificado</span>' : '') +
       (p.indicadoPor ? '<span class="badge badge--orange">Indicado</span>' : '') +
       (p.temFoto === false ? '<span class="badge badge--warning">Sem selfie</span>' : '') +
@@ -6256,15 +6257,16 @@ Screens.adminDashboardRender = function () {
     const agora = Date.now();
     const lista = (DB.state.planosProf || []).filter(function (x) { return String(x.profissional_id) === String(id); });
     if (!lista.length) return null;
-    const vigente = lista.find(function (x) { return Date.parse(x.valido_ate) > agora && Number(x.chamados_restantes) > 0; });
+    const vigente = lista.find(function (x) { return x.plano === 'livre' && Date.parse(x.inicio_em) <= agora && Date.parse(x.valido_ate) > agora; }) || lista.find(function (x) { return Date.parse(x.valido_ate) > agora && (x.plano === 'livre' ? Date.parse(x.inicio_em) <= agora : Number(x.chamados_restantes) > 0); });
     return { p: vigente || lista[0], vigente: !!vigente };
   }
   function adminPlanoHtml(id) {
     const r = adminPlanoDoProf(id);
     if (!r) return '';
-    const x = r.p, nome = { mensal: 'Mensal', pro: 'Pro', premium: 'Premium' }[x.plano] || x.plano;
+    const x = r.p, nome = { livre: 'Quem Faz Livre', mensal: 'Mensal', pro: 'Pro', premium: 'Premium' }[x.plano] || x.plano;
     const ate = new Date(x.valido_ate).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     const rest = Number(x.chamados_restantes), tot = Number(x.chamados_total);
+    if (x.plano === 'livre') return '<div class="qf-prof-ativ" style="white-space:normal"><span class="badge badge--navy">Quem Faz Livre' + (r.vigente ? ' · Ativo' : Date.parse(x.inicio_em) > Date.now() ? ' · Agendado' : ' · Expirado') + '</span><div class="text--sm text--secondary" style="margin-top:5px">' + (r.vigente ? 'Desbloqueios ilimitados · Válido até ' : 'Validade: ') + PU.escapeHtml(ate) + '</div></div>';
     const txt = r.vigente ? 'Plano ' + nome + ' · ' + rest + ' de ' + tot + ' chamados · até ' + ate
       : 'Plano ' + nome + (Date.parse(x.valido_ate) <= Date.now() ? ' expirado em ' + ate : ' · chamados esgotados');
     return '<div class="qf-prof-ativ"><span class="badge ' + (r.vigente ? 'badge--success' : '') + '">' + PU.escapeHtml(txt) + '</span></div>';
@@ -6670,6 +6672,7 @@ Screens.adminDashboardRender = function () {
         rowInfoLong('Áreas de atendimento', (p.areas && p.areas.length ? p.areas.join(' · ') : '—')) +
         rowInfo('Selfie', p.temFoto ? 'Cadastrada' : 'Não cadastrada') +
         rowInfo('Notificações com app fechado', p.pushAtivo ? 'Ativadas' : 'Não ativadas') +
+        rowInfoHtml('Plano', adminPlanoHtml(p.id) || 'Sem plano ativo') +
         rowInfo('Saldo em carteira', PU.formatCurrency(p.saldo || 0)) +
         rowInfo('Cadastro', PU.formatDateTime(p.criadoEm)) +
       '</div>' +
