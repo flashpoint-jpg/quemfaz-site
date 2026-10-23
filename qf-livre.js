@@ -23,11 +23,24 @@
    const client=g.QFCloud&&g.QFCloud.client;if(!client)return;
    const rpc=async(n,a={})=>{const r=await client.rpc(n,a);if(r.error)throw Error('Não foi possível consultar o plano. Tente novamente.');return r.data;};
    const box=document.createElement('section');box.className='section card stack--sm qf-livre';box.dataset.qfLivre='';
-   const view=content.querySelector('.view')||content;view.prepend(box);
+   const view=content.querySelector('.view')||content;if(!cadastro)view.prepend(box);
    if(cadastro){
     content.querySelectorAll('[name=planoEscolhido]').forEach(r=>{if(r.value!=='avulso')r.closest('label')?.remove();else r.checked=true;});
     content.querySelector('.qf-cad-planos__ex')?.remove();
     const submit=content.querySelector('[data-cad-criar]');if(submit)submit.textContent='Criar conta grátis';
+    // O aviso do Quem Faz Livre aparece no fim do cadastro (etapa 5), só quando o profissional escolhe esse plano.
+    const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
+    if(group&&form){
+     group.insertAdjacentHTML('beforeend','<label class="qf-cad-plano qf-cad-plano--top"><span class="qf-cad-plano__selo">MAIS OPORTUNIDADES</span><input type="radio" name="planoEscolhido" value="livre"><span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">Quem Faz Livre</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span><span class="qf-cad-plano__preco"><b>R$ 39,90</b><span>por 30 dias</span></span><span class="qf-cad-plano__unit">Sem pagar por contato</span></label>');
+     group.after(box);box.style.display='none';
+     form.addEventListener('change',e=>{
+      if(!e.target||e.target.name!=='planoEscolhido')return;
+      const livre=e.target.value==='livre';box.style.display=livre?'':'none';
+      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent='Criar conta grátis';
+      const nota=form.querySelector('[data-plano-nota]');
+      if(nota&&livre){nota.classList.add('qf-cad-planos__nota--aviso');nota.innerHTML='<strong>Sua conta é criada agora.</strong> Depois, na aba Planos, você assina o Quem Faz Livre por Pix. Até o pagamento ser confirmado, você usa o Avulso.';}
+     });
+    }
    }
    if(['/profissional/home','/profissional/carteira','/profissional/planos'].includes(pattern)){
     const modes=document.createElement('section');modes.className='card stack--sm';modes.dataset.qfModalidades='';
@@ -36,7 +49,7 @@
    }
    let pending=false,busy=false,last={};
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
-   function render(s){last=s||{};box.innerHTML=oferta(last);if(pattern==='/profissional/carteira'||pattern==='/profissional/home'){const d=document.createElement('details');d.innerHTML='<summary>Condições do Quem Faz Livre</summary>';box.querySelectorAll('p:not([role=status]),details').forEach(el=>d.appendChild(el));box.querySelector('h2').after(d);}bind();if(cadastro){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=()=>{const form=content.querySelector('form');if(form){form.scrollIntoView({behavior:'smooth',block:'start'});form.querySelector('input')?.focus();}box.querySelector('[data-qf-livre-msg]').textContent='Conclua seu cadastro para contratar o plano com segurança.';};}}
+   function render(s){last=s||{};box.innerHTML=oferta(last);if(pattern==='/profissional/carteira'||pattern==='/profissional/home'){const d=document.createElement('details');d.innerHTML='<summary>Condições do Quem Faz Livre</summary>';box.querySelectorAll('p:not([role=status]),details').forEach(el=>d.appendChild(el));box.querySelector('h2').after(d);}bind();if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}}
    function unlock(s){
     if(!pedido||!s.ativo||box.querySelector('[data-qf-livre-desbloquear]'))return;
     const req=g.DB&&g.DB.requestById(params.id),pago=content.querySelector('[data-action="desbloquear-chamada"]');
