@@ -19,7 +19,7 @@ html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pedido-codigo-2026102
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 html=html.replace('qf-atendimento.js?v=2','qf-atendimento.js?v=20261022-garante-intencao');
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pedido-codigo-20261023-v3').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=pedido-codigo-20261023-v3');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pedido-codigo-20261023-v3').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=pedido-codigo-20261023-v4');
 const adminPath=path.join(out,'admin.html');
 fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pedido-codigo-20261023-v3'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.

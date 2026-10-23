@@ -124,7 +124,7 @@
     if(cat) {a.servico=cat.nome;a.__servicePrefilled=true;}
     else if(root.QFHomeDraft && root.QFHomeDraft.service) {a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);a.__servicePrefilled=true;}
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
-    let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,currentUser=user;
+    let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     const field=q=>{
       const value=a[q.key]||'', id='at-'+q.key;
       const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
@@ -168,35 +168,14 @@
           root.QFAcompanhamento.remember(req.id,segredo);
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
-          // A prova de propriedade foi vinculada atomicamente no servidor ao publicar.
-          let emissao;
-          try{emissao=await root.QFAcompanhamento.api(req.id);}catch(_){emissao={ok:false};}
-          const codigo=emissao&&emissao.ok&&/^[0-9]{6}$/.test(String(emissao.codigo||''))?String(emissao.codigo):null;
-          if(codigo){try{root.sessionStorage.setItem('qf_cliente_codigo_pedido',JSON.stringify({pedidoId:req.id,codigo,clienteId:current.id}));}catch(_){} codigoFixo(current); }
-          area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado com sucesso!</h1><p>Aguarde o contato dos profissionais da sua região. Eles poderão apresentar orçamentos por telefone ou WhatsApp.</p>'+
-            (codigo?'<div style="background:#eef5ff;border-radius:16px;padding:20px"><p><strong>Seu código de confirmação</strong></p><p style="font-size:clamp(32px,9vw,48px);font-weight:800;letter-spacing:.13em;color:#1769d5">'+codigo+'</p><button type="button" class="btn btn--primary" data-at-copiar>Copiar código</button></div><p><strong>Anote ou salve esse código agora.</strong> Informe somente ao profissional que decidir contratar, nunca apenas para receber orçamento.</p>':'<p role="alert">Seu pedido foi publicado, mas não foi possível emitir o código. Não publique novamente. Entre em contato com a equipe Quem Faz para recuperar a confirmação.</p>')+
-            '<p>A comissão depende da conferência e aprovação manual da administração.</p><button type="button" class="btn btn--primary" data-at-acompanhar>Acompanhar meu pedido</button><button type="button" class="btn btn--outline" data-at-cancelar>Cancelar pedido</button><p role="status" data-at-cancelar-status></p></section>';
-          area.querySelector('[data-at-acompanhar]').onclick=()=>root.location.assign('/acompanhar-pedido.html#pedido='+req.id);
-          const cancelar=area.querySelector('[data-at-cancelar]');
-          if(cancelar)cancelar.onclick=async()=>{
-            if(!root.confirm('Cancelar este pedido? Ele deixará de aparecer para novos profissionais.'))return;
-            cancelar.disabled=true;
-            const aviso=area.querySelector('[data-at-cancelar-status]');
-            aviso.textContent='Cancelando pedido…';
-            try{
-              const resposta=await Cloud.client.rpc('qf_cancelar_pedido_cliente_teste',{p_chamado_id:req.id});
-              if(resposta.error)throw resposta.error;
-              if(!resposta.data?.ok)throw Error(resposta.data?.reason==='ja_desbloqueado'?'Um profissional já desbloqueou este pedido. Solicite cancelamento à equipe Quem Faz.':'Não foi possível cancelar. Tente novamente.');
-              try{root.sessionStorage.removeItem('qf_cliente_codigo_pedido');}catch(_){}
-              root.document.querySelector('[data-qf-codigo-fixo]')?.remove();
-              area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido cancelado</h1><p>Seu pedido foi cancelado e não está mais disponível para novos desbloqueios.</p></section>';
-            }catch(error){aviso.textContent=error.message||'Não foi possível cancelar.';cancelar.disabled=false;}
-          };
-          const copiar=area.querySelector('[data-at-copiar]');
-          if(copiar)copiar.onclick=async()=>{try{await root.navigator.clipboard.writeText(codigo);copiar.textContent='Código copiado!';}catch(_){copiar.textContent='Anote o código acima';}};
-
+          // Publicação confirmada pelo servidor: vai direto para a página própria de acompanhamento,
+          // fora do roteador do app (que re-renderiza a tela quando a sessão rápida é criada). Sem temporizador.
+          redirecting=true;
+          area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado!</h1><p role="status">Abrindo o acompanhamento do seu pedido…</p></section>';
+          (root.__qfNavigate||(u=>root.location.replace(u)))('/acompanhar-pedido.html#pedido='+req.id);
+          return;
         }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
-        finally{busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}
+        finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}
     };
     draw();
   }

@@ -72,8 +72,7 @@ const server=http.createServer(async(req,res)=>{
   assert.equal(await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth)>innerWidth),false,'mobile has no horizontal overflow');
   await page.screenshot({path:'/tmp/qf-atendimento-review.png',fullPage:true});
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
-  await page.getByRole('heading',{name:'Pedido publicado com sucesso!',exact:true}).waitFor();
-  assert.match(await page.locator('[data-at-question]').innerText(),/123456/);
+  await page.waitForURL(/acompanhar-pedido\.html#pedido=[a-f0-9-]{36}/);
   const id=(await scalar(database,"select id from public.qf_chamados where atendimento_tipo='garante'"));
   assert.ok(id,'real frontend RPC created the database row');
   await database.exec('reset role');
@@ -124,7 +123,7 @@ const server=http.createServer(async(req,res)=>{
   await page.getByRole('button',{name:'Publicar grátis',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-at-error]')?.textContent==='Timeout simulado após gravar');
   await page.evaluate(()=>{const b=document.querySelector('[data-at-publish]');b.click();b.click();});
-  await page.getByRole('heading',{name:'Pedido publicado com sucesso!',exact:true}).waitFor();
+  await page.waitForURL(/acompanhar-pedido\.html#pedido=[a-f0-9-]{36}/);
   const retry=await page.evaluate(()=>window.__submissions.slice(1));assert.equal(retry.length,2);
   assert.equal(retry[0].atendimento.chave,retry[1].atendimento.chave);
   assert.equal(retry[1].atendimento.orcamento_centavos,null);assert.equal(retry[1].atendimento.orcamento_faixa,'avaliacao');
