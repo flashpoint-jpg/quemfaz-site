@@ -130,6 +130,7 @@ function qfOutrosHorario(user) {
     ? 'Você está recebendo pedidos da sua profissão e região.'
     : 'Você está online. Notificações de novos pedidos pausadas até ' + start + '. Você pode consultar os pedidos no app.';
 }
+window.QFHomeProCard=qfOutrosProCard;
 function qfOutrosProCard(req) {
   const c=DB.categoryById(req.categoriaId);
   const city=DB.cityById(req.cidadeId);
