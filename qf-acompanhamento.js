@@ -17,7 +17,15 @@
    container.querySelector('[data-qf-owner-refresh]').onclick=()=>render().catch(e=>container.querySelector('[data-qf-owner-status]').textContent=e.message);
    container.querySelectorAll('[data-qf-owner-answer]').forEach(b=>b.onclick=async()=>{const row=b.closest('[data-qf-owner-fechamento]');row.querySelectorAll('button').forEach(x=>x.disabled=true);try{await api(id,{p_acao:'responder',p_fechamento:row.dataset.qfOwnerFechamento,p_contratou:b.dataset.qfOwnerAnswer==='sim'});await render();}catch(e){row.querySelector('[role=status]').textContent=e.message;row.querySelectorAll('button').forEach(x=>x.disabled=false);}});
   };
-  try{await render();}catch(e){container.innerHTML='<h1 class="h2">Acompanhamento protegido</h1><p role="alert">'+esc(e.message)+'</p>';}
+  try{await render();}catch(e){
+   // Preserva o código já emitido nas versões anteriores, sem atribuir propriedade a quem souber os seis dígitos.
+   let anterior,chaveSalva;try{chaveSalva=g.localStorage.getItem(prefix+id);anterior=JSON.parse(g.sessionStorage.getItem('qf_cliente_codigo_pedido')||'null');}catch(_){}
+   if(!chaveSalva&&anterior?.pedidoId===id&&/^[0-9]{6}$/.test(anterior.codigo||'')){
+    container.innerHTML='<h1 class="h2">Código já salvo neste aparelho</h1><section class="card stack--sm">'+codeHtml(anterior.codigo)+'</section><p>Este código foi emitido antes da atualização. Seus registros continuam preservados. A conferência de contratação permanece com a administração.</p>';
+    container.querySelector('[data-qf-owner-copy]').onclick=()=>g.navigator.clipboard?.writeText(anterior.codigo).catch(()=>{});return;
+   }
+   container.innerHTML='<h1 class="h2">Acompanhamento protegido</h1><p role="alert">'+esc(e.message)+'</p>';
+  }
  }
  g.QFAcompanhamento={draft,remember,api,mount,codeHtml};
  if(typeof module!=='undefined')module.exports=g.QFAcompanhamento;

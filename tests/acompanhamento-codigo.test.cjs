@@ -44,3 +44,7 @@ test('Telas reais cliente → profissional → admin usam o mesmo código e banc
   console.log('PASS telas: publicação sem cadastro manual, código no acompanhamento real, proteção em outro navegador, entrada de valor/código no pedido profissional e R$65 só após aprovação no admin.');
  }finally{clientDom?.window.close();proDom?.window.close();adminDom?.window.close();await d.close();}
 });
+
+test('Códigos anteriores salvos no aparelho continuam visíveis sem conceder poder de confirmação a outro navegador',async()=>{
+ const {JSDOM}=require('jsdom');const dom=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br',runScripts:'outside-only'});const w=dom.window;w.sessionStorage.setItem('qf_cliente_codigo_pedido',JSON.stringify({pedidoId:uid(900),codigo:'123456',clienteId:uid(1)}));w.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));await w.QFAcompanhamento.mount(w.document.querySelector('main'),uid(900));assert.equal(w.document.querySelector('[data-qf-owner-code]').textContent,'123456');assert.equal(w.document.querySelectorAll('[data-qf-owner-answer]').length,0);dom.window.close();
+});
