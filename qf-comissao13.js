@@ -11,7 +11,7 @@
  const anterior=g.Screens.afterRender;
  g.Screens.afterRender=function(pattern,content,params,user){
   if(anterior)anterior.apply(this,arguments);
-  const admin=pattern==='/admin/dashboard',carteira=pattern==='/profissional/carteira';
+  const admin=['/admin/dashboard','/admin/comissao13'].includes(pattern),carteira=pattern==='/profissional/carteira';
   const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
   if(!admin&&!carteira&&!pedido)return;
   const c=admin?g.QFAdminCloud&&g.QFAdminCloud.client:g.QFCloud&&g.QFCloud.client;if(!c)return;
