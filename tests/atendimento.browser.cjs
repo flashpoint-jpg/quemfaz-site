@@ -188,7 +188,7 @@ const server=http.createServer(async(req,res)=>{
    assert.ok(await proPage.locator('[data-qf13]').evaluate(el=>el===el.parentElement.firstElementChild),'novidade no topo do início');
    await proPage.locator('[data-qf-home-job] [data-nav]').click();await proPage.locator('[data-qf13-desbloquear]').waitFor();
    const paid=proPage.locator('[data-action="desbloquear-chamada"]'),free=proPage.locator('[data-qf13-desbloquear]');assert.equal(await paid.isVisible(),true);assert.equal(await free.isVisible(),true);
-   assert.ok(await free.evaluate(el=>el.closest('.qf-opts')!==null),'opções lado a lado no mesmo grupo');
+   assert.ok(await free.evaluate(el=>el.closest('.qf-opts')!==null),'opções no mesmo grupo');if(width===1440){const a=await free.evaluate(el=>el.closest('.qf-opt').getBoundingClientRect().top),b=await paid.evaluate(el=>el.closest('.qf-opt').getBoundingClientRect().top);assert.ok(Math.abs(a-b)<2,'grátis e pago lado a lado no computador');}
    await proPage.screenshot({path:'/tmp/qf-prof13-opcoes-'+width+'.png',fullPage:true});
    await proPage.evaluate(()=>{window.__profNavigated=[];window.navigate=url=>window.__profNavigated.push(url);});await proPage.locator('[data-qf13-termos]').check();await free.click();await proPage.waitForFunction(()=>window.__profRpc.includes('qf_comissao13_desbloquear'));assert.match((await proPage.evaluate(()=>window.__profNavigated))[0],/profissional\/chat/);
    await proPage.evaluate(()=>window.__profNavigate('/profissional/carteira'));await proPage.locator('[data-qf13-row]').waitFor();assert.ok(await proPage.locator('[data-qf13]').evaluate(el=>el===el.parentElement.firstElementChild),'prestação de contas no topo da carteira');
