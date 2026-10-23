@@ -13,6 +13,30 @@
 html.qf-inapp{--safe-bottom:0px}
 @media (max-width:899px){html.qf-inapp .qf-home-nav,html.qf-inapp .tabbar{bottom:7px!important}html.qf-inapp body .qf-update-banner.qf-update-float{bottom:102px!important}}
 .qf-garante-badge{display:inline-flex;align-items:center;width:fit-content;max-width:100%;box-sizing:border-box;padding:6px 10px;margin:6px 0;border-radius:8px;background:#fff3e8;color:#174878;border:1px solid #ed9a4d;font-size:12px;font-weight:800;line-height:1.4;letter-spacing:.03em;white-space:normal;}
+
+/* Cadastro profissional: leitura curta e espaço seguro no topo. */
+#app-shell:has(#cadastro-prof-form) #app-content{padding-top:max(24px,env(safe-area-inset-top,0px))!important}
+#app-shell:has(#cadastro-prof-form) .view{padding-top:16px!important}
+#app-shell:has(#cadastro-prof-form) .view>.row:first-child{align-items:center;margin-bottom:8px;padding-right:0}
+#app-shell:has(#cadastro-prof-form) .view>.row:first-child h1{font-size:clamp(18px,5vw,24px);line-height:1.25}
+body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
+#cadastro-prof-form .qf-step__head .h2{font-size:24px;line-height:1.2;margin:4px 0}
+#cadastro-prof-form .qf-step__head .text--sm{font-size:14px;line-height:1.4}
+#cadastro-prof-cats .qf-catpick__search{order:-3}
+#cadastro-prof-cats .qf-catpick__summary{order:-2;padding:8px 10px}
+#cadastro-prof-cats .qf-catpick__create{order:1;padding:0;border:0;background:transparent}
+#cadastro-prof-cats .qf-catpick__create-title{display:none}
+#cadastro-prof-cats .qf-catpick__create>[data-catpick-open]{background:transparent;color:var(--navy-700);border:1px solid var(--border-subtle);box-shadow:none;font-size:14px}
+#cadastro-prof-cats .qf-catpick__empty{order:0}
+#cadastro-prof-form .qf-cad-plano__lista{display:flex!important}
+#cadastro-prof-form .qf-cad-plano--top{border:2px solid var(--orange-500);padding-top:24px}
+#cadastro-prof-form .qf-cad-plano__dia{font-size:30px;font-weight:800;color:var(--navy-700);line-height:1.15}
+#cadastro-prof-form .qf-cad-plano__dia small{font-size:16px;font-weight:600}
+#cadastro-prof-form .qf-cad-plano__preco b{font-size:22px}
+#cadastro-prof-form .qf-cad-plano__lista span{font-size:14px}
+#cadastro-prof-form .qf-cad-planos__nota{font-size:13px;padding:10px 12px;background:var(--navy-100);color:var(--text-primary);border:0}
+#cadastro-prof-form .qf-cad-planos{margin-top:12px}
+
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
@@ -8964,7 +8988,7 @@ alt=""></noscript>
         (selected.length ? '<span class="qf-catpick__sumlist">' + selected.map(function (c) { return PU.escapeHtml(c.textContent); }).join(' · ') + '</span>'
           : (search && search.value.trim()
             ? '<span class="qf-catpick__sumlist" style="color:var(--warning-600);font-weight:800;">Agora toque na sua profissão na lista abaixo para marcar.</span>'
-            : '<span class="qf-catpick__sumlist">Toque num grupo e escolha suas profissões.</span>'));
+            : ''));
     }
     // V12.0.1: quem digita a profissão na busca e não toca no botão ficava sem profissão marcada.
     // Se só uma profissão bate com o que foi digitado, marca ela automaticamente.
@@ -9076,13 +9100,13 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="2" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 5</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Você pode adicionar quantos serviços precisar. Se não encontrar um, crie sua própria categoria.</div><div class="qf-step__bar"><span style="width:40%"></span></div></div>' +
-          '<div class="field"><span class="field__label">Toque no grupo, depois toque na sua profissão para marcar</span>' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 5</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Busque e selecione as profissões que você atende.</div><div class="qf-step__bar"><span style="width:40%"></span></div></div>' +
+          '<div class="field">' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="3" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 5</div><div class="h2">Seu endereço e onde você atende</div><div class="text--sm text--secondary">Informe seu endereço obrigatório. O CEP ou GPS pode preencher os campos automaticamente.</div><div class="qf-step__bar"><span style="width:60%"></span></div></div>' +
-          '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Localização em todo o Brasil</div><div class="text--sm text--secondary">Digite o CEP ou use o GPS para preencher cidade e estado automaticamente.</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 3 de 5</div><div class="h2">Onde você atende?</div><div class="text--sm text--secondary">Use o CEP ou sua localização para preencher o endereço.</div><div class="qf-step__bar"><span style="width:60%"></span></div></div>' +
+          '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="row-between"><div><div class="text--strong">Preencher com sua localização</div></div><button class="btn btn--outline" type="button" data-use-location>' + icon('location') + ' Usar GPS</button></div></div>' +
           field('CEP da sua base', '<div class="row" style="gap:8px;"><input class="input" name="cep" inputmode="numeric" maxlength="9" required placeholder="00000-000"><button class="btn btn--outline" type="button" data-lookup-cep>Buscar</button></div>') +
           field('Rua / Avenida', '<input class="input" name="rua" required maxlength="160" autocomplete="address-line1" placeholder="Nome da rua ou avenida">') +
           field('Número', '<input class="input" name="numero" required maxlength="20" autocomplete="address-line2" placeholder="Ex.: 120">') +
@@ -9093,30 +9117,28 @@ alt=""></noscript>
           '<div class="qf-cidade-cep" data-cidade-cep hidden>' + icon('checkCircle') + '<span class="qf-cidade-cep__txt">Cidade e estado localizados pelo CEP.</span><button class="btn btn--outline" type="button" data-cidade-alterar>Alterar</button></div>' +
           '<input type="hidden" name="latitude"><input type="hidden" name="longitude">' +
           field('Raio de atendimento: <span id="raio-valor">10</span> km', '<input class="input" type="range" name="raioKm" min="1" max="200" step="1" value="10" id="raio-range">') +
-          '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">Depois do cadastro você pode adicionar várias cidades e definir um raio diferente para cada uma no Perfil.</div></div>' +
+          '<div class="card card--tight" style="background:var(--bg-sunken);border:none;"><div class="text--sm text--secondary">Você pode ajustar cidades e raio depois, no Perfil.</div></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="4" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 5</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:80%"></span></div></div>' +
           '<div class="card stack qf-cad-foto" style="background:var(--warning-100);border:2px solid #efc46e;">' +
-            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Escolha uma opção: tire uma selfie sua ou, se você representa uma empresa, envie o logotipo ou a marca oficial da empresa pela galeria.</div></div></div>' +
+            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Envie sua selfie ou o logotipo oficial da sua empresa.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie do profissional<input type="file" id="cadastro-prof-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="cadastro-prof-logo" accept="image/*" style="display:none;"></label>' +
-            '<div class="text--sm text--secondary"><strong>Pessoa física:</strong> use sua selfie atual, de frente e com boa iluminação. <strong>Empresa:</strong> use somente a marca ou logotipo oficial da empresa que você representa. Uma dessas imagens é obrigatória para criar a conta, ficar online e desbloquear chamados.</div>' +
+            '<div class="text--sm text--secondary">Na selfie, mostre o rosto de frente e com boa iluminação.</div>' +
           '</div>' +
           '<details class="qf-step__opt"><summary>Opcional: código de indicação e taxa de visita</summary><div class="stack" style="margin-top:12px;">' +
           field('Código de indicação (opcional)', '<input class="input" name="indicacao" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Se um colega indicou você" value="' + PU.escapeHtml(global.QFIndicacao ? global.QFIndicacao.stored() : '') + '">') +
           field('Taxa de visita padrão (opcional)', '<input class="input" name="taxaVisita" inputmode="decimal" placeholder="R$ 0,00">') +
           '</div></details>' +
-          '<div class="card card--tight" style="background:var(--navy-100);border:none;">' +
-            '<p class="text text--sm" style="color:var(--navy-800);">Sua foto aparece para o cliente quando você assumir um chamado. Seu CPF nunca é mostrado ao cliente.</p><div class="row" style="margin-top:10px;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--navy-900);">Chamados são desbloqueados com créditos</div><div class="text--sm text--secondary">' + ((global.QFBonusCadastro || {}).texto ? 'Você começa com ' + global.QFBonusCadastro.texto + ' em créditos de bônus. Use esse saldo para desbloquear oportunidades e depois recarregue quando precisar.' : 'Você coloca créditos na carteira (Pix, cartão ou boleto) e usa para desbloquear os pedidos que quiser.') + '</div></div></div>' +
-          '</div>' +
+          '<p class="text--sm text--secondary">Seu CPF não aparece para os clientes.</p>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           // V11.49: etapa 5 — escolha do plano. V11.62: a conta é criada na hora em qualquer plano; cada plano mostra o seu aviso.
           '<div class="qf-step stack" data-step="5" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Sua conta é criada na hora em qualquer plano. Toque em um plano para ver como ele funciona.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Compare as opções e crie sua conta grátis.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'premium' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
               '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'premium' ? ' checked' : '') + '>' +
@@ -15439,7 +15461,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.9';
+  const APP_VERSION = '12.1.10';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

@@ -19,7 +19,7 @@
    const cadastro=pattern==='/auth/:role/cadastro'&&params.role==='profissional';
    const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
    if(!cadastro&&!pedido&&!['/profissional/home','/profissional/planos','/profissional/carteira','/profissional/servicos','/profissional/servicos/disponiveis'].includes(pattern))return;
-   if(content.querySelector('[data-qf-livre]'))return;
+   if(content.querySelector('[data-qf-livre],[data-qf-livre-cadastro]'))return;
    const client=g.QFCloud&&g.QFCloud.client;if(!client)return;
    const rpc=async(n,a={})=>{const r=await client.rpc(n,a);if(r.error)throw Error('Não foi possível consultar o plano. Tente novamente.');return r.data;};
    const box=document.createElement('section');box.className='section card stack--sm qf-livre';box.dataset.qfLivre='';
@@ -31,15 +31,23 @@
     // O aviso do Quem Faz Livre aparece no fim do cadastro (etapa 5), só quando o profissional escolhe esse plano.
     const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
     if(group&&form){
-     group.insertAdjacentHTML('beforeend','<label class="qf-cad-plano qf-cad-plano--top"><span class="qf-cad-plano__selo">MAIS OPORTUNIDADES</span><input type="radio" name="planoEscolhido" value="livre"><span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">Quem Faz Livre</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span><span class="qf-cad-plano__preco"><b>R$ 39,90</b><span>por 30 dias</span></span><span class="qf-cad-plano__unit">Sem pagar por contato</span></label>');
-     group.after(box);box.style.display='none';
-     form.addEventListener('change',e=>{
-      if(!e.target||e.target.name!=='planoEscolhido')return;
-      const livre=e.target.value==='livre';box.style.display=livre?'':'none';
+     group.dataset.qfLivreCadastro='';
+     group.insertAdjacentHTML('afterbegin','<label class="qf-cad-plano qf-cad-plano--top"><span class="qf-cad-plano__selo">RECOMENDADO</span><input type="radio" name="planoEscolhido" value="livre" checked><span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">Quem Faz Livre</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span><span class="qf-cad-plano__dia">R$ 1,33 <small>por dia</small></span><span class="qf-cad-plano__preco"><b>R$ 39,90</b><span>por 30 dias</span></span><span class="qf-cad-plano__lista"><span>Desbloqueios ilimitados de pedidos compatíveis</span><span>Sem pagar por contato</span><span>13% de comissão somente se fechar o serviço</span><span>Sem renovação automática</span></span></label>');
+     const avulso=group.querySelector('input[value="avulso"]');
+     if(avulso){avulso.checked=false;avulso.closest('label').querySelector('.qf-cad-plano__lista').innerHTML='<span>Pague só pelos pedidos que desbloquear</span><span>Sem mensalidade e sem comissão</span>';}
+     // Detalhes acessíveis sem repetir toda a oferta abaixo dos cartões.
+     const conditions=document.createElement('details');conditions.className='qf-step__opt';
+     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. Comissão de 13% somente em serviços fechados, confirmados e aprovados pela administração. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. Pendências vencidas bloqueiam novos desbloqueios. Não há garantia de contratação.</p>';
+     group.after(conditions);
+     function updateChoice(){
+      const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
       const b=form.querySelector('[data-cad-criar]');if(b)b.textContent='Criar conta grátis';
       const nota=form.querySelector('[data-plano-nota]');
-      if(nota&&livre){nota.classList.add('qf-cad-planos__nota--aviso');nota.innerHTML='<strong>Sua conta é criada agora.</strong> Depois, na aba Planos, você assina o Quem Faz Livre por Pix. Até o pagamento ser confirmado, você usa o Avulso.';}
-     });
+      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Crie sua conta grátis. Depois, assine por Pix na aba Planos. Ativação após confirmação do pagamento.':'Adicione créditos na Carteira quando quiser desbloquear um pedido.';}
+      conditions.hidden=!livre;
+     }
+     form.addEventListener('change',e=>{if(e.target?.name==='planoEscolhido')updateChoice();});
+     updateChoice();
     }
    }
    if(['/profissional/home','/profissional/carteira','/profissional/planos'].includes(pattern)){

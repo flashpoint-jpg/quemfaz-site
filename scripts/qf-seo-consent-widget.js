@@ -15,8 +15,8 @@
  }
  function signup(form){
    if(form.querySelector('[data-qf-seo-signup]'))return;
-   const section=document.createElement('section');section.dataset.qfSeoSignup='true';
-   const title=document.createElement('h3');title.textContent='Divulgação pública (opcional)';
+   const section=document.createElement('details');section.className='qf-step__opt';section.dataset.qfSeoSignup='true';
+   const title=document.createElement('summary');title.textContent='Divulgação pública (opcional)';
    const fields=consentFields();
    const note=document.createElement('p');note.textContent='Sua escolha não interfere no cadastro nem no recebimento de chamados. Se marcar, confirme novamente em Meu perfil após entrar. Nada será publicado automaticamente.';
    section.append(title,fields.label,fields.details,fields.link,note);
