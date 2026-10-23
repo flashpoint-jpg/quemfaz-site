@@ -54,7 +54,7 @@
     const submit=async(situacao,valor=null,codigo=null,btn=null)=>{if(btn)btn.disabled=true;try{const r=await rpc('qf_comissao13_prestar_contas',{p_id:a.id,p_situacao:situacao,p_valor_centavos:valor,p_codigo:codigo});if(!r.ok)throw Error(motivo(r.reason));panel.innerHTML='<h2 class="h3">Resultado registrado</h2><p>Informação enviada ao Quem Faz. Obrigado por prestar contas.</p>';}catch(e){msg.textContent=e.message||'Não foi possível registrar. Tente novamente.';if(btn)btn.disabled=false;}};
     panel.querySelector('[data-qf13-negociando]').onclick=e=>submit('negociando',null,null,e.currentTarget);
     panel.querySelector('[data-qf13-recusado]').onclick=e=>submit('recusado',null,null,e.currentTarget);
-    form.onsubmit=e=>{e.preventDefault();const valor=cents(form.elements.valor.value),codigo=form.elements.codigo.value.trim();if(valor==null||!/^\\d{6}$/.test(codigo)){msg.textContent='Informe o valor e os seis dígitos fornecidos pelo cliente.';return;}submit('informado',valor,codigo,form.querySelector('button'));};
+    form.onsubmit=e=>{e.preventDefault();const valor=cents(form.elements.valor.value),codigo=form.elements.codigo.value.trim();if(valor==null||!(/^[0-9]{6}$/).test(codigo)){msg.textContent='Informe o valor e os seis dígitos fornecidos pelo cliente.';return;}submit('informado',valor,codigo,form.querySelector('button'));};
    }).catch(()=>{});
    if(pattern==='/profissional/chat/:id')return;
   }
@@ -69,7 +69,7 @@
  }
  g.QFComissao13.enhance=enhance;
  g.Screens.afterRender=function(){if(anterior)anterior.apply(this,arguments);enhance.apply(this,arguments);};
- const path=(g.location.hash||'').replace(/^#/,'');let pattern=path,params={};const match=path.match(/^\/profissional\/(pedido|chamada)\/([^/]+)$/);if(match){pattern='/profissional/'+match[1]+'/:id';params.id=match[2];}
+ const path=(g.location.hash||'').replace(/^#/,'');let pattern=path,params={};const match=path.match(/^\/profissional\/(pedido|chamada|chat)\/([^/]+)$/);if(match){pattern='/profissional/'+match[1]+'/:id';params.id=match[2];}
  const content=document.getElementById('app-content'),sess=g.DB&&g.DB.getSession&&g.DB.getSession(),user=sess&&g.DB.profissionalById&&g.DB.profissionalById(sess.userId);if(content)enhance(pattern,content,params,user);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
