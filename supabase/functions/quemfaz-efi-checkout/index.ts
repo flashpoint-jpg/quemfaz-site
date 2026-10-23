@@ -95,7 +95,7 @@ async function makePix(pay:any,tipo:string,pagamentoId:string){
       calendario:{expiracao:86400},
       valor:{original:value},
       chave:EFI_PIX_KEY,
-      solicitacaoPagador:tipo === "prioridade" ? "Prioridade de chamado no QuemFaz" : (tipo === "anuncio" ? "Anúncio no QuemFaz" : "Recarga de carteira no QuemFaz"),
+      solicitacaoPagador:tipo === "prioridade" ? "Prioridade de chamado no QuemFaz" : (tipo === "anuncio" ? "Anúncio no QuemFaz" : (pay.plano === "livre" ? "Plano Quem Faz Livre - 30 dias" : "Recarga de carteira no QuemFaz")),
       infoAdicionais:[{nome:"QuemFaz",valor:"qf:" + tipo + ":" + pagamentoId}]
     };
 
@@ -117,6 +117,9 @@ async function makePix(pay:any,tipo:string,pagamentoId:string){
     }
 
     if(String(cob?.status || "").toUpperCase()==="CONCLUIDA"){
+      const original = Math.round(Number(cob?.valor?.original || 0)*100);
+      const paid = Array.isArray(cob?.pix) ? Math.round(cob.pix.reduce((sum:number,p:any)=>sum+Number(p?.valor||0),0)*100) : 0;
+      if(cob?.txid !== txid || original !== Number(pay.valor_centavos) || paid < Number(pay.valor_centavos)) throw new Error("efi_pix_confirmation_mismatch");
       return {txid,status:"aprovado",checkoutUrl:null,pixCopyPaste:cob?.pixCopiaECola || null,qrImage:null};
     }
 
@@ -170,7 +173,7 @@ Deno.serve(async (req)=>{
     table = tipo==="prioridade" ? "qf_prioridade_pagamentos" : "qf_recargas";
     const ownerField = tipo==="prioridade" ? "cliente_id" : "profissional_id";
     const q = await admin.from(table)
-      .select("id,valor_centavos,metodo,status,provedor,provedor_id,checkout_url,"+ownerField)
+      .select("id,valor_centavos,metodo,status,provedor,provedor_id,checkout_url,"+(tipo==="recarga"?"plano,":"")+ownerField)
       .eq("id",pagamentoId).maybeSingle();
     if(q.error || !q.data) return json({ok:false,error:"payment_not_found"},404);
     pay = q.data;
@@ -179,6 +182,8 @@ Deno.serve(async (req)=>{
 
   if(pay.status==="aprovado") return json({ok:true,status:"aprovado",checkout_url:pay.checkout_url,charge_id:pay.provedor_id});
 
+  if(pay.status!=="pendente") return json({ok:false,error:"payment_closed"},409);
+  if(pay.plano==="livre" && (Number(pay.valor_centavos)!==3990 || pay.metodo!=="pix")) return json({ok:false,error:"invalid_subscription_payment"},400);
   const method = String(pay.metodo || "pix").toLowerCase();
 
   if(method==="pix"){

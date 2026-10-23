@@ -6382,12 +6382,14 @@ alt=""></noscript>
           .eq('profissional_id', userId).order('criado_em', { ascending: false }).limit(20),
         client.from('qf_recargas')
           .select('id,plano,valor_centavos,metodo,status,criado_em,aprovado_em')
-          .eq('profissional_id', userId).not('plano', 'is', null).order('criado_em', { ascending: false }).limit(30)
+          .eq('profissional_id', userId).not('plano', 'is', null).order('criado_em', { ascending: false }).limit(30),
+        client.from('qf_livre_assinaturas').select('recarga_id,inicio_em,fim_em').eq('profissional_id', userId).order('fim_em', { ascending: false }).limit(30)
       ]);
       DB.state.carteiraPlanos = {
         userId: userId,
         planos: results[0].error ? [] : (results[0].data || []),
-        compras: results[1].error ? [] : (results[1].data || [])
+        compras: results[1].error ? [] : (results[1].data || []),
+        livres: results[2].error ? [] : (results[2].data || [])
       };
     } catch (_) { DB.state.carteiraPlanos = { userId: userId, planos: [], compras: [] }; }
     DB.persist();
@@ -13801,7 +13803,7 @@ alt=""></noscript>
 
   // "Meus planos": plano contratado, situação, chamados contratados/restantes, validade e histórico de compras.
   // Plano é produto separado do saldo da carteira: nunca soma em reais.
-  function planoNomeCurto(id) { return id === 'premium' ? 'Premium' : (id === 'pro' ? 'Pro' : 'Mensal'); }
+  function planoNomeCurto(id) { if (id === 'livre') return 'Quem Faz Livre'; return id === 'premium' ? 'Premium' : (id === 'pro' ? 'Pro' : 'Mensal'); }
   function planoSituacao(row, agora) {
     if (new Date(row.valido_ate).getTime() <= agora) return { texto: 'Expirado', classe: 'badge--muted' };
     if (Number(row.chamados_restantes || 0) <= 0) return { texto: 'Chamados esgotados', classe: 'badge--muted' };
@@ -13825,7 +13827,7 @@ alt=""></noscript>
           '<div class="text--sm" style="margin-top:6px;">' + ativo.restantes + ' chamado' + (ativo.restantes === 1 ? '' : 's') + ' restante' + (ativo.restantes === 1 ? '' : 's') +
           (ativo.validoAte ? ' · vale até ' + new Date(ativo.validoAte).toLocaleDateString('pt-BR') : '') + '</div></div>';
       }
-      return '<div class="card card--tight"><div class="text--sm text--secondary">Você ainda não tem plano. Os chamados são descontados do saldo da carteira.</div></div>';
+      return '<div class="card card--tight"><div class="text--sm text--secondary">Seus pacotes de chamados aparecem aqui. Consulte também a situação do Quem Faz Livre no destaque acima.</div></div>';
     }
     const sit = planoSituacao(atual, agora);
     const total = Number(atual.chamados_total || 0), resta = Number(atual.chamados_restantes || 0);
@@ -13844,7 +13846,7 @@ alt=""></noscript>
     const compras = dados.compras || [];
     if (!compras.length) return '';
     const ativados = {};
-    (dados.planos || []).forEach(function (x) { if (x.recarga_id) ativados[x.recarga_id] = true; });
+    (dados.planos || []).concat(dados.livres || []).forEach(function (x) { if (x.recarga_id) ativados[x.recarga_id] = true; });
     return '<div class="section-head" style="margin-top:14px;"><h3 class="h3">Histórico de compras de plano</h3></div>' +
       '<div class="card" style="padding:4px 16px;">' + compras.slice(0, 8).map(function (c) {
         const sit = compraPlanoSituacao(c.status, !!ativados[c.id]);
@@ -15557,7 +15559,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.5';
+  const APP_VERSION = '12.1.6';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -19120,6 +19122,7 @@ alt=""></noscript>
 <script src="qf-carteirinha.js?v=11.85"></script>
 <script src="qf-valor-definido.js?v=5"></script>
 <script src="qf-comissao13.js?v=2"></script>
+<script src="qf-livre.js?v=livre-20261023"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>
 
