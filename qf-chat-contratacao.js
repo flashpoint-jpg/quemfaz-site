@@ -44,6 +44,11 @@
    row.push('<strong>Quem Faz Livre · 13%</strong><p style="margin:0">'+escapeHTML(headline)+'</p>');
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
+   if(who==='profissional'){
+    const suporteMensagem='Olá, suporte Quem Faz! Sou profissional do plano Quem Faz Livre. Desbloqueei o pedido #'+callId+' e o cliente não respondeu. Poderiam verificar o contato?';
+    const suporteUrl='https://wa.me/5535998845703?text='+encodeURIComponent(suporteMensagem);
+    row.push('<div class="qfc-support" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px;border:1px solid #cad9ec;border-radius:12px;background:#fff"><span class="text--sm" style="font-weight:650">Cliente não respondeu?</span><a class="btn btn--outline btn--sm" style="width:auto;min-height:40px" href="'+escapeHTML(suporteUrl)+'" target="_blank" rel="noopener noreferrer">Falar com suporte no WhatsApp</a></div>');
+   }
    if(valor)row.push('<p style="margin:0">Valor informado: <strong>'+price(valor)+'</strong> · comissão estimada: <strong>'+price(Math.round(valor*0.13))+'</strong></p>');
    if(resposta==='confirmado')row.push('<p class="text--sm" style="margin:0">O cliente confirmou. A comissão ainda depende de aprovação manual do administrador.</p>');
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
