@@ -14,7 +14,7 @@
     '</div>' +
     '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p>A comissão de 13% vale somente quando o serviço é fechado, confirmado e aprovado pela administração. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Pendências vencidas impedem novos desbloqueios. O plano não garante contratação.</p>' +
+      '<p>A comissão de 13% é gerada automaticamente quando o profissional informa o fechamento e valor, o código do cliente é validado e o cliente confirma. Se houver divergência, a cobrança fica para análise. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Pendências vencidas impedem novos desbloqueios. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
       '<button type="button" class="btn btn--primary btn--block qf-livre__cta" data-qf-livre-pagar>Assinar por R$ 39,90</button>') +
