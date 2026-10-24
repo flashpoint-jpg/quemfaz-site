@@ -13442,7 +13442,7 @@ alt=""></noscript>
               icon('unlock') + '<span>' + (primeiraGratis ? '1 desbloqueio GRÁTIS' : (!garante && CallInfo.usaPlano(user) ? 'Desbloqueio pelo seu plano' : 'Desbloquear por <strong>' + PU.formatCurrency(valor) + '</strong>')) + '</span>' +
             '</div>' +
             (garante ? '<div class="qf-excl-hint">Quem Faz Garante · contato único · sem garantia de contratação</div>' : '') +
-            (!garante && global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo disponível: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ', só você recebe o contato</div>' : '') +
+            (!garante && global.QFExclusivo && global.QFCloud && global.QFCloud.enabled && global.QFExclusivo.disponivel(req) ? '<div class="qf-excl-hint">' + icon('crown') + 'Exclusivo das 4 vagas: ' + PU.formatCurrency(global.QFExclusivo.preco(valor)) + ' (4× a taxa de 1 vaga)</div>' : '') +
             (function () { if (garante || primeiraGratis || CallInfo.usaPlano(user)) return ''; const b = PlanoIncentivo.porChamado(valor); return b ? '<div class="qf-plan-hint">' + icon('crown') + 'No plano ' + b.plano.nome + ': ' + PU.formatCurrency(b.unit) + '</div>' : ''; })() +
             (novoChamado ? '<div class="qf-new-call-badge">Novo chamado</div>' : '') +
           '</div>' +
@@ -13565,8 +13565,8 @@ alt=""></noscript>
           const lim = CallInfo.vagas(req).limite;
           const btnDiv = primeiraGratis ? 'Desbloquear grátis' : (user.plano && user.plano.restantes > 0 ? 'Desbloquear com o plano (' + user.plano.restantes + ' restantes)' : 'Desbloquear · ' + PU.formatCurrency(valor));
           const excl = temExcl ? '<div class="qf-opt qf-opt--excl"><span class="qf-opt__badge">EXCLUSIVO</span>' +
-              '<div class="qf-opt__top"><strong>Só você</strong><span class="qf-opt__preco">' + PU.formatCurrency(EX.preco(valor)) + '</span></div>' +
-              '<p><b>Tenha o contato do cliente exclusivamente para você.</b> Nenhum outro profissional recebe esse pedido.</p>' +
+              '<div class="qf-opt__top"><strong>Comprar as 4 vagas</strong><span class="qf-opt__preco">' + PU.formatCurrency(EX.preco(valor)) + '</span></div>' +
+              '<p><b>Exclusivo:</b> compre as 4 vagas disponíveis (' + PU.formatCurrency(valor) + ' por vaga). Nenhum outro profissional recebe esse pedido.</p>' +
               '<button class="btn btn--primary btn--block qf-opt__btn" type="button" data-action="desbloquear-exclusivo">' + icon('crown') + ' Pegar exclusivo · ' + PU.formatCurrency(EX.preco(valor)) + '</button></div>' : '';
           const motivo = (!temExcl && EX && EX.ativo && Number(req.participantes) > 0) ? 'O exclusivo não está mais disponível porque outro profissional já pegou. ' : '';
           const div = '<div class="qf-opt qf-opt--div">' +
