@@ -42,6 +42,8 @@
    else if(prop&&estado==='negociando')headline='Proposta aguardando resposta do cliente';
    else if(estado==='informado')headline='Profissional informou contratação — confirme o resultado';
    row.push('<strong>Quem Faz Livre · 13%</strong><p style="margin:0">'+escapeHTML(headline)+'</p>');
+   if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
+   row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
    if(valor)row.push('<p style="margin:0">Valor informado: <strong>'+price(valor)+'</strong> · comissão estimada: <strong>'+price(Math.round(valor*0.13))+'</strong></p>');
    if(resposta==='confirmado')row.push('<p class="text--sm" style="margin:0">O cliente confirmou. A comissão ainda depende de aprovação manual do administrador.</p>');
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
@@ -63,6 +65,16 @@
    }
    row.push('<p class="text--sm" data-qfc-status role="status" style="margin:0">A confirmação é registrada no pedido. Não é necessário WhatsApp.</p>');
    pane.innerHTML=row.join('');
+   pane.querySelector('[data-qfc-sound]')?.addEventListener('click',()=>{
+     try{g.PU?.playNotificationSound(false);g.navigator?.vibrate?.(100);setStatus('Teste de som solicitado. Confira volume e permissões do aparelho.');}
+     catch(_){setStatus('Verifique se o volume de notificações do celular está ativado.');}
+   });
+   pane.querySelector('[data-qfc-notify]')?.addEventListener('click',async(e)=>{
+     const btn=e.currentTarget;btn.disabled=true;setStatus('Ativando notificações deste aparelho…');
+     try{await g.QFPush.activate();setStatus('Notificações ativadas. Abra o chat para receber os avisos.');}
+     catch(err){setStatus('Não foi possível ativar: '+String(err.message||'verifique as configurações do celular'));}
+     finally{btn.disabled=false;}
+   });
    pane.querySelector('[data-qfc-form]')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const raw=pane.querySelector('[data-qfc-valor]').value.trim();
