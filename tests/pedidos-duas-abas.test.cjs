@@ -22,14 +22,14 @@ test('duas abas: profissões múltiplas, sem duplicados, cheios ou desbloqueados
 test('troca de abas preserva dados, mostra região/km/contatos e atualiza contagens',()=>{
  const {ctx,user,dom,setRows,row}=setup(),main=dom.window.document.querySelector('main');
  main.innerHTML=ctx.Screens.profHomeRender({},user);ctx.Screens.afterRender('/profissional/home',main,{},user);
- assert.match(main.textContent,/Perto de mim \(1\)/);assert.match(main.textContent,/Mais oportunidades \(2\)/);
+ assert.match(main.textContent,/Perto de mim\s*1\s*pedido/);assert.match(main.textContent,/Mais oportunidades\s*2\s*pedido/);
  assert.deepEqual([...main.querySelectorAll('[data-request-id]')].map(e=>e.dataset.requestId),['near']);
  main.querySelector('[data-qf-pedidos-tab="mais"]').click();
  assert.deepEqual([...main.querySelectorAll('[data-request-id]')].map(e=>e.dataset.requestId),['new','old']);
  assert.match(main.textContent,/Centro/);assert.match(main.textContent,/Santo André - SP/);assert.match(main.textContent,/50 km/);assert.match(main.textContent,/3 contatos disponíveis/);
  assert.match(main.textContent,/Sem toque ou push/);assert.equal(main.querySelector('[role="tab"][aria-selected="true"]').dataset.qfPedidosTab,'mais');
  setRows([row('fresh','eletricista',true)]);main.innerHTML=ctx.Screens.profHomeRender({},user);
- assert.match(main.textContent,/Perto de mim \(0\)/);assert.match(main.textContent,/Mais oportunidades \(1\)/);assert.ok(main.querySelector('[data-request-id="fresh"]'));
+ assert.match(main.textContent,/Perto de mim\s*0\s*pedido/);assert.match(main.textContent,/Mais oportunidades\s*1\s*pedido/);assert.ok(main.querySelector('[data-request-id="fresh"]'));
 });
 test('alertas: fora do raio nunca toca; dentro do raio respeita horário e virada da meia-noite',()=>{
  const {ctx,user,row}=setup(),allows=ctx.window.QFPedidosPodeAvisar;

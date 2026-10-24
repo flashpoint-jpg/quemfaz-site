@@ -13124,7 +13124,7 @@ alt=""></noscript>
         u.horarioInicio=a; u.horarioFim=b; DB.persist();
         PU.closeSheet();
         PU.toast(a===b?'Salvo! Você atende o dia todo.':'Salvo! Você atende das '+a+' às '+b+'.','success');
-        if(/\/profissional\/home/.test(location.hash)) global.navigate('/profissional/home',true);
+        if(/^#\/profissional\/(home|servicos\/disponiveis|outros-pedidos)$/.test(location.hash)) global.navigate(location.hash.slice(1),true);
       }catch(err){
         console.warn('QuemFaz horário',err);
         PU.toast('Não foi possível salvar agora. Tente de novo.','danger');
@@ -13188,13 +13188,32 @@ alt=""></noscript>
         }
         PU.closeSheet();
         PU.toast(ehArea?'Salvo! Você atende até '+areas[0].raioKm+' km.':'Profissões salvas!','success');
-        if(/\/profissional\/home/.test(location.hash)) global.navigate('/profissional/home',true);
+        if(/^#\/profissional\/(home|servicos\/disponiveis|outros-pedidos)$/.test(location.hash)) global.navigate(location.hash.slice(1),true);
       }catch(err){
         PU.toast(err&&err.message?err.message:'Não foi possível salvar agora. Tente de novo.','danger');
         btn.disabled=false;
       }
     };
   }
+
+  // Reaproveita os formulários reais do Perfil em um painel na página atual.
+  global.QFProfAtendimento = {
+    pendencias: function(user) { return Number(cadastroPendente(user)) + Number(!user.fotoUrl); },
+    abrirCadastro: function() {
+      const session=DB.getSession(), user=session&&DB.profissionalById(session.userId);
+      if(!user)return;
+      const holder=document.createElement('div');holder.innerHTML=Screens.profPerfilRender({},user);
+      const cadastro=holder.querySelector('#atualizacao-cadastral');
+      const photo=holder.querySelector('#perfil-selfie');
+      const identification=photo&&photo.closest('.section');
+      PU.openSheet('<div id="qf-cadastro-rapido" class="stack">'+(cadastro?cadastro.outerHTML:'')+(identification?identification.outerHTML:'')+'</div>');
+      const box=document.getElementById('qf-cadastro-rapido');
+      if(box)bindPerfil(box,user,location.hash.replace(/^#/,'')||'/profissional/home');
+    }
+  };
+  document.addEventListener('click',function(event){
+    if(event.target.closest('[data-qf-cadastro-rapido]')){event.preventDefault();global.QFProfAtendimento.abrirCadastro();}
+  });
 
   Screens.profHomeRender = function (params, user) {
     const ativ = ativacaoCard(user);
@@ -15273,7 +15292,7 @@ alt=""></noscript>
     };
   }
 
-  function bindPerfil(content, user) {
+  function bindPerfil(content, user, returnRoute) {
     const cadastroForm = content.querySelector('#prof-cadastro-update-form');
     const cadastroToggle = content.querySelector('#prof-cadastro-toggle');
     if (cadastroForm && cadastroToggle) {
@@ -15347,7 +15366,8 @@ alt=""></noscript>
           });
           await global.QFCloud.syncForCurrentSession(true);
           PU.toast('Dados cadastrais atualizados com sucesso!', 'success');
-          global.navigate('/profissional/perfil', true);
+          if(returnRoute)PU.closeSheet();
+          global.navigate(returnRoute||'/profissional/perfil', true);
         } catch (err) {
           PU.toast((err && err.message) || 'Não foi possível atualizar seus dados.', 'danger');
         } finally { if (btn) btn.disabled = false; }
@@ -15364,13 +15384,17 @@ alt=""></noscript>
         const photo = await PU.fileToCompressedDataUrl(file, 480);
         if (global.QFCloud && global.QFCloud.enabled) await global.QFCloud.saveProfessionalSelfie(photo); else DB.atualizarPerfilProfissional(user.id, { fotoUrl: photo });
         PU.toast(tipo === 'empresa' ? 'Marca da empresa atualizada. Ela poderá ser mostrada aos clientes.' : 'Selfie atualizada. Ela poderá ser mostrada aos clientes.', 'success');
-        global.navigate('/profissional/perfil', true);
+        if(returnRoute)PU.closeSheet();
+        global.navigate(returnRoute||'/profissional/perfil', true);
       } catch (err) {
         PU.toast((err && err.message) || 'Não foi possível salvar a imagem.', 'danger');
       } finally { input.disabled = false; }
     }
     if (selfieInput) selfieInput.addEventListener('change', function () { salvarImagemPerfil(selfieInput, 'selfie'); });
     if (companyLogoInput) companyLogoInput.addEventListener('change', function () { salvarImagemPerfil(companyLogoInput, 'empresa'); });
+
+    // O painel rápido só contém cadastro e identificação; não reintroduz os uploads simulados.
+    if(returnRoute)return;
 
     const chips = content.querySelector('#perfil-cats');
     chips.addEventListener('click', function (e) {
@@ -15476,7 +15500,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.17';
+  const APP_VERSION = '12.1.18';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

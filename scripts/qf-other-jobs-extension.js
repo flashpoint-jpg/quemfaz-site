@@ -77,15 +77,32 @@ function qfOutrosProCard(req) {
 function qfOutrosHomePedidos(user) {
   if(qfPedidosTabUser!==user.id){qfPedidosTabUser=user.id;qfPedidosTab='perto';}
   const groups=qfPedidosGrupos(user),selected=qfPedidosTab,rows=groups[selected];
-  return '<div class="section qf-home-jobs" id="chamados-disponiveis">'+
+  return '<div class="section qf-home-jobs" id="chamados-disponiveis">'+qfAtendimentoCompacto(user)+
+    '<h2 class="qf-pedidos-heading">Pedidos para você</h2>'+
     '<div class="qf-pedidos-tabs" role="tablist" aria-label="Pedidos disponíveis">'+
-    ['perto','mais'].map(function(key){return '<button type="button" role="tab" id="qf-pedidos-'+key+'" aria-controls="qf-pedidos-panel" aria-selected="'+(selected===key)+'" tabindex="'+(selected===key?'0':'-1')+'" data-qf-pedidos-tab="'+key+'">'+(key==='perto'?'Perto de mim':'Mais oportunidades')+' <span>('+groups[key].length+')</span></button>';}).join('')+'</div>'+
+    ['perto','mais'].map(function(key){const count=groups[key].length,title=key==='perto'?'Perto de mim':'Mais oportunidades';return '<button type="button" role="tab" id="qf-pedidos-'+key+'" aria-label="'+title+' ('+count+')" aria-controls="qf-pedidos-panel" aria-selected="'+(selected===key)+'" tabindex="'+(selected===key?'0':'-1')+'" data-qf-pedidos-tab="'+key+'"><span class="qf-pedidos-tab-title"><span class="qf-pedidos-dot'+(count?' is-lit':'')+'" aria-hidden="true"></span>'+title+'</span><span class="qf-pedidos-total">'+count+' <small>'+(count===1?'pedido':'pedidos')+'</small></span><span class="qf-pedidos-sub">'+(key==='perto'?'Dentro do seu raio':'Fora do seu raio')+'</span></button>';}).join('')+'</div>'+
     '<div id="qf-pedidos-panel" role="tabpanel" aria-labelledby="qf-pedidos-'+selected+'">'+
     '<p class="qf-pedidos-hint text--sm text--secondary">'+(selected==='perto'?'Suas profissões, dentro do seu raio. Avisos conforme seu horário.':'Suas profissões, fora do seu raio. Sem toque ou push. Confira a distância antes de desbloquear.')+'</p>'+
     (rows.length?'<div class="stack--sm" data-qf-home-list>'+rows.map(qfOutrosProCard).join('')+'</div>':
       '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div>'+
       '<p class="text text--secondary">'+(selected==='perto'?'Nenhum pedido da sua profissão dentro do seu raio agora.':'Nenhuma oportunidade das suas profissões fora do raio agora.')+'</p></div>')+
     '</div></div>';
+}
+function qfAtendimentoCompacto(user) {
+  const areas=user.areasAtendimento||[],area=areas[0]||{},radius=Number(area.raioKm||user.raioKm||10);
+  const start=String(user.horarioInicio||'06:00').slice(0,5),end=String(user.horarioFim||'22:00').slice(0,5);
+  const format=t=>t.replace(':00','h').replace(':','h');
+  const hours=start===end?'Dia todo':format(start)+' às '+format(end);
+  const cats=(user.categorias||[]).map(id=>DB.categoryById(id)).filter(Boolean);
+  const category=cats.length?cats[0].nome+(cats.length>1?' + '+(cats.length-1):''):'Selecione sua profissão';
+  const pending=window.QFProfAtendimento?window.QFProfAtendimento.pendencias(user):0;
+  const row=(label,value,action,title)=>'<div class="qf-atd-row"><div><span>'+label+'</span><strong>'+qfOutrosEsc(value)+'</strong></div><button type="button" '+action+'>'+title+'</button></div>';
+  return '<details class="qf-atd-compact"><summary><span class="qf-atd-summary-top"><strong>Seu atendimento</strong><span class="qf-atd-adjust">Ajustar '+icon('chevronDown')+'</span></span><span class="qf-atd-values"><span>'+qfOutrosEsc(radius)+' km'+(areas.length>1?' + '+(areas.length-1)+' '+(areas.length===2?'cidade':'cidades'):'')+'</span><span>'+qfOutrosEsc(hours)+'</span>'+(pending?'<span class="qf-atd-pending">'+pending+' '+(pending===1?'pendência':'pendências')+'</span>':'')+'</span></summary><div class="qf-atd-expanded">'+
+    row('Raio de atendimento','Até '+radius+' km'+(area.cidade?' · '+area.cidade:''),'data-prof-settings="area"','Ajustar')+
+    row('Horário de atendimento',hours,'data-qf-horario-rapido="1"','Ajustar')+
+    row('Suas profissões',category,'data-prof-settings="profissao"','Revisar')+
+    row('Cadastro e identificação',pending?'Confira os dados pendentes':'Cadastro completo','data-qf-cadastro-rapido',pending?'Regularizar':'Revisar')+
+    '</div></details>';
 }
 const qfOutrosHomeRender = Screens.profHomeRender;
 Screens.profHomeRender = function(params,user) {
@@ -102,9 +119,23 @@ Screens.profHomeRender = function(params,user) {
   if(oldShortcut)oldShortcut.remove();
   const oldJobs=holder.querySelector('#chamados-disponiveis');
   if(oldJobs)oldJobs.outerHTML=qfOutrosHomePedidos(user);
+  // O resumo já informa a pendência cadastral; não repetir o aviso grande no topo.
+  const cadastroNotice=holder.querySelector('[data-cadastro-update]');
+  if(cadastroNotice)cadastroNotice.closest('.card').remove();
+  const activation=holder.querySelector('[data-ativacao="pendente"]');
+  if(activation){
+    const fold=document.createElement('details');fold.className='qf-atd-compact qf-atd-activation';
+    const missing=activation.querySelectorAll('[data-ativ-feito="0"]').length;
+    fold.innerHTML='<summary><span class="qf-atd-summary-top"><strong>App e notificações</strong><span class="qf-atd-adjust">Revisar '+icon('chevronDown')+'</span></span><span class="qf-atd-values">'+missing+' '+(missing===1?'ajuste pendente':'ajustes pendentes')+'</span></summary>';
+    fold.appendChild(activation);
+    holder.querySelector('#chamados-disponiveis').after(fold);
+  }
   const status=holder.querySelector('.qf-prof-estado__msg');
   const update=qfOutrosHorario(user);
   if(status&&update)status.textContent=update;
+  // Estado online continua funcional em uma linha; preferências passam para o resumo recolhido.
+  const statusCard=holder.querySelector('.qf-prof-status');
+  if(statusCard){statusCard.classList.add('qf-prof-status--compact');statusCard.querySelectorAll('.qf-prof-welcome,.qf-radar-meta,#qf-horario-lembrete').forEach(el=>el.remove());}
   return holder.innerHTML;
 };
 const qfOutrosDisponiveisRender = Screens.profServicosDisponiveisRender;
@@ -160,10 +191,36 @@ Screens.afterRender = function(pattern,content,params,user){
   const tag=document.createElement('style');
   tag.id='qf-outros-style';
   tag.textContent=[
-   '.qf-pedidos-tabs{display:flex;gap:6px;padding:5px;background:#edf3fc;border-radius:14px;margin-bottom:12px}',
-   '.qf-pedidos-tabs button{flex:1;min-width:0;min-height:48px;border:0;border-radius:10px;background:transparent;color:#475a73;font:inherit;font-size:14px;font-weight:700;padding:10px 7px;cursor:pointer;touch-action:manipulation}',
-   '.qf-pedidos-tabs button[aria-selected="true"]{background:#fff;color:#1763cf;box-shadow:0 2px 6px rgba(13,50,105,.08)}',
-   '.qf-pedidos-tabs button span{white-space:nowrap;font-size:12px}',
+   '.qf-pedidos-heading{font-size:19px;font-weight:800;color:#14243b;margin:0 0 12px}',
+   '.qf-pedidos-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px}',
+   '.qf-pedidos-tabs button{min-width:0;border:2px solid #e2e8f0;border-radius:16px;background:#fff;color:#14243b;font:inherit;text-align:left;padding:13px 11px;cursor:pointer;touch-action:manipulation}',
+   '.qf-pedidos-tabs button[aria-selected="true"]{border-color:#1763cf;box-shadow:0 3px 10px #1763cf15}',
+   '.qf-pedidos-tab-title{display:flex;align-items:center;gap:8px;min-height:36px;font-size:13px;font-weight:750;line-height:1.3}',
+   '.qf-pedidos-dot{width:10px;height:10px;border-radius:50%;background:#bdc6d2;flex:none;position:relative}',
+   '[data-qf-pedidos-tab="perto"] .qf-pedidos-dot.is-lit{background:#159b53;color:#159b53}',
+   '[data-qf-pedidos-tab="mais"] .qf-pedidos-dot.is-lit{background:#dc3545;color:#dc3545}',
+   '.qf-pedidos-dot.is-lit:after{content:"";position:absolute;inset:-4px;border:2px solid currentColor;border-radius:50%;animation:qf-pedidos-pulse 1.8s ease-out infinite}',
+   '@keyframes qf-pedidos-pulse{0%{transform:scale(.65);opacity:.65}85%,100%{transform:scale(1.55);opacity:0}}',
+   '@media(prefers-reduced-motion:reduce){.qf-pedidos-dot.is-lit:after{animation:none;opacity:.25}}',
+   '.qf-pedidos-total{display:flex;gap:5px;align-items:baseline;font-size:29px;font-weight:800;line-height:1.1;margin:10px 0 7px;color:#108043}',
+   '[data-qf-pedidos-tab="mais"] .qf-pedidos-total{color:#c6283a}',
+   '.qf-pedidos-total small{font-size:12px;font-weight:600}.qf-pedidos-sub{font-size:11px;color:#64748b}',
+   '.qf-atd-compact{background:#fff;border:1px solid #e1e7ef;border-radius:14px;padding:0 13px;margin:0 0 17px}',
+   '.qf-atd-compact>summary{list-style:none;cursor:pointer;padding:12px 0;min-height:70px}.qf-atd-compact>summary::-webkit-details-marker{display:none}',
+   '.qf-atd-summary-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:#52637b}.qf-atd-summary-top strong{font-weight:650}',
+   '.qf-atd-adjust{display:flex;align-items:center;gap:4px;font-size:12px;color:#2362b5}.qf-atd-adjust svg{width:14px;height:14px}.qf-atd-compact[open] .qf-atd-adjust svg{transform:rotate(180deg)}',
+   '.qf-atd-values{display:flex;align-items:center;flex-wrap:wrap;gap:5px 10px;margin-top:7px;font-size:12px;color:#69788c}.qf-atd-values>span+span{border-left:1px solid #dce3ed;padding-left:10px}.qf-atd-pending{color:#9c5a1c}',
+   '.qf-atd-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:65px;border-top:1px solid #edf1f6}.qf-atd-row>div{min-width:0}.qf-atd-row span{display:block;font-size:11px;color:#778398}.qf-atd-row strong{display:block;font-size:12px;color:#42546c;overflow-wrap:anywhere;margin-top:4px}.qf-atd-row button{border:0;background:transparent;color:#2362b5;font:inherit;font-size:12px;font-weight:650;min-height:44px;padding:10px 0 10px 8px;cursor:pointer;flex:none}',
+   '#app-shell[data-route="profissional-home"] .qf-prof-status--compact{padding:0!important;border:0;box-shadow:none;background:transparent;margin-bottom:10px!important}',
+   '#app-shell[data-route="profissional-home"] .qf-prof-status--compact .qf-prof-estado{padding:6px 12px;border:1px solid #cde8d8;border-radius:12px;gap:8px}',
+   '#app-shell[data-route="profissional-home"] .qf-prof-status--compact .qf-prof-status__title{font-size:13px}',
+   '#app-shell[data-route="profissional-home"] .qf-prof-status--compact .qf-prof-estado__msg{display:none}',
+   '#app-shell[data-route="profissional-home"] .qf-prof-status--compact .qf-prof-estado__btn{font-size:12px;min-height:36px;padding:7px 10px}',
+   '#app-shell[data-route="profissional-home"] .qf-livre.qf-livre--compact{min-height:56px!important;padding:9px 12px!important;margin-bottom:12px!important}',
+   '#app-shell[data-route="profissional-home"] .qf-livre--compact .qf-livre__icon{display:none}',
+   '#app-shell[data-route="profissional-home"] .qf-livre--compact .qf-livre__copy strong{font-size:13px}',
+   '#app-shell[data-route="profissional-home"] .qf-livre--compact .qf-livre__copy small{display:none}',
+   '@media(max-width:360px){.qf-pedidos-tabs button{padding:11px 9px}.qf-pedidos-tab-title{font-size:12px}.qf-atd-values{font-size:11px;gap:5px 8px}.qf-atd-values>span+span{padding-left:8px}}',
    '.qf-pedidos-hint{margin:0 0 14px;line-height:1.5}',
    '.qf-home-job--fora{border-left:3px solid #edb275}',
    '.qf-pedidos-warning{background:#fff3e7;color:#81450d;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:16px}',
