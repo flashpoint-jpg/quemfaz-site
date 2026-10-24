@@ -10,7 +10,7 @@
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(root.navigator?.userAgent||'');
-  const inApp=()=>!!(root.matchMedia?.('(display-mode: standalone)').matches||root.navigator?.standalone||/^android-app:\/\/br\.app\.quemfaz/.test(root.document?.referrer||''));
+  const inApp=()=>!!((typeof root.QFApp?.isNativeApp==='function'&&root.QFApp.isNativeApp())||(typeof root.Capacitor?.isNativePlatform==='function'&&root.Capacitor.isNativePlatform())||root.matchMedia?.('(display-mode: standalone)').matches||root.navigator?.standalone||/^android-app:\/\/br\.app\.quemfaz/.test(root.document?.referrer||''));
   const installText=()=>/Android/i.test(root.navigator?.userAgent||'')?'<a href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener" style="color:#1458cc;font-weight:700">Instalar Quem Faz pela Play Store</a>':'No iPhone, abra o menu Compartilhar do Safari e toque em Adicionar à Tela de Início.';
   const STORE_URL='https://play.google.com/store/apps/details?id=br.app.quemfaz';
   const options = (key, label, choices) => ({key, label, choices});
