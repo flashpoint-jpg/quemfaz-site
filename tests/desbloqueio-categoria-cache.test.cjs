@@ -6,7 +6,7 @@ const source=fs.readFileSync('scripts/qf-other-jobs-extension.js','utf8');
 function setup(){
  const dom=new JSDOM('<html><head></head><body></body></html>');
  const eligible={id:'perto',categoriaId:'cat_eletricista',cidadeId:'abc',distanciaKm:10,descricao:'Instalação elétrica',limiteParticipantes:4,participantes:0};
- const user={id:'prof',online:false};
+ const user={id:'prof',online:false,categorias:['cat_eletricista']};
  const ctx={document:dom.window.document,window:{},PU:{escapeHtml:String},icon:()=>'',DB:{categoryById:()=>({nome:'Eletricista'}),cityById:()=>({nome:'Santo André',uf:'SP'}),chamadasPendentes:()=>[eligible]},Screens:{profHomeRender:()=>'<div class="view"><div class="qf-abertos">Vitrine geral</div><div class="qf-movimento">Movimento geral</div><div id="chamados-disponiveis"></div></div>',profServicosDisponiveisRender:()=>'<div class="view">Lista elegível<div class="qf-abertos">Vitrine geral</div></div>',afterRender:()=>{}}};
  vm.createContext(ctx);vm.runInContext(source,ctx);return {ctx,user};
 }

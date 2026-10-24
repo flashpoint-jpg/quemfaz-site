@@ -6028,6 +6028,7 @@ alt=""></noscript>
       // V11.32: pedido aberto a todos (motivo) e distância aproximada quando o profissional não tem localização salva.
       abertoTodos: row.aberto_todos || null,
       distanciaAprox: !!row.distancia_aprox,
+      foraRaio: row.fora_raio === true,
       mesmaCidade: !!row.mesma_cidade,
       status: localStatus(row.status),
       aguardandoPagamento: row.status === 'aguardando_pagamento',
@@ -6327,9 +6328,12 @@ alt=""></noscript>
     }
     const available = await client.rpc('qf_portfolio_servicos');
     if (available.error) throw available.error;
+    const opportunities = await client.rpc('qf_mais_oportunidades');
+    if (opportunities.error) throw opportunities.error;
     const unlocked = await client.from('qf_chamados_desbloqueados').select('*').order('criado_em', { ascending: false });
     if (unlocked.error) throw unlocked.error;
-    const abertosRows = await fetchAbertos();
+    // Consulta voluntária; nunca entra na lista usada pelo envio de push.
+    const abertosRows = (opportunities.data || []).map(function(r) { return Object.assign({},r,{fora_raio:true}); });
     await attachPrazos((available.data || []).concat(abertosRows).concat(unlocked.data || []));
 
     const reqs = [];
@@ -6711,14 +6715,18 @@ alt=""></noscript>
   async function professionalQuickSignature() {
     if (!client) return null;
     const res = await Promise.all([
-      client.rpc('qf_listar_chamados_disponiveis'),
-      client.from('qf_chamados_desbloqueados').select('id,status,atualizado_em')
+      client.rpc('qf_portfolio_servicos'),
+      client.from('qf_chamados_desbloqueados').select('id,status,atualizado_em'),
+      client.rpc('qf_mais_oportunidades')
     ]);
     if (res[0].error) throw res[0].error;
     if (res[1].error) throw res[1].error;
-    const a = (res[0].data || []).map(function (r) { return r.id + ':' + r.status; }).sort();
+    if (res[2].error) throw res[2].error;
+    const availableKey = function(r) { return [r.id,r.status,r.participantes,r.limite,r.distancia_km,r.raio_atual_km].join(':'); };
+    const a = (res[0].data || []).map(availableKey).sort();
+    const o = (res[2].data || []).map(availableKey).sort();
     const u = (res[1].data || []).map(function (r) { return r.id + ':' + r.status + ':' + (r.atualizado_em || ''); }).sort();
-    return a.join(',') + '|' + u.join(',');
+    return a.join(',') + '|' + u.join(',') + '|' + o.join(',');
   }
 
   let publicAdsSync = null;
@@ -13372,7 +13380,7 @@ alt=""></noscript>
     const valor = DB.leadFeeForRequest(req) * (garante ? 4 : 1);
     const primeiraGratis = req.atendimentoTipo !== 'garante' && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
     const criadoMs = typeof req.criadoEm === 'number' ? req.criadoEm : Date.parse(req.criadoEm || '');
-    const novoChamado = !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
+    const novoChamado = !req.foraRaio && !req.abertoTodos && Number.isFinite(criadoMs) && (Date.now() - criadoMs) >= 0 && (Date.now() - criadoMs) <= 180000;
     // Antes do desbloqueio o profissional não vê prazo, "sem pressa", agendamento nem data pretendida.
     // URGENTE (vermelho) aparece quando o cliente escolheu Urgente; Normal aparece discreto. Prioridade paga tem selo próprio.
     const urgente = global.QFUrgencia.ehUrgente(req);
@@ -15468,7 +15476,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.16';
+  const APP_VERSION = '12.1.17';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16758,7 +16766,7 @@ alt=""></noscript>
   }
   function render(){
     if(editing())return false;
-    const reqs=queue.map(requestById).filter(function(r){return r&&!r.profissionalId&&(r.status===DB.STATUS.BUSCANDO||r.status===DB.STATUS.AGUARDANDO_ACEITE);}).sort(sortReqs);
+    const reqs=queue.map(requestById).filter(function(r){return r&&!r.profissionalId&&(r.status===DB.STATUS.BUSCANDO||r.status===DB.STATUS.AGUARDANDO_ACEITE)&&(!global.QFPedidosPodeAvisar||global.QFPedidosPodeAvisar(r,DB.profissionalById((DB.getSession()||{}).userId)));}).sort(sortReqs);
     if(!reqs.length){
       if(queue.length&&retryCount<4){retryCount++;setTimeout(render,850);return false;}
       queue=[];retryCount=0;return false;
@@ -18098,7 +18106,8 @@ alt=""></noscript>
       if (session.role === 'profissional') {
         // V11.32.1: pedido aberto a todos entra só na lista, sem aviso, sem toque e sem a tela cheia de chamado.
         const abertoTodos = !!(a.abertoTodos || ((DB.requestById(id) || {}).abertoTodos));
-        if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO && !abertoTodos) {
+        if (!b && !a.profissionalId && a.status === DB.STATUS.BUSCANDO && !abertoTodos &&
+            global.QFPedidosPodeAvisar && global.QFPedidosPodeAvisar(DB.requestById(id), currentUser())) {
           // V11.13: aviso já com distância, tempo e valor do desbloqueio.
           let detalheNovo = detail;
           try {
@@ -18786,7 +18795,8 @@ alt=""></noscript>
         r.status,
         r.profissionalId || null,
         r.orcamento && r.orcamento.id,
-        r.orcamento && r.orcamento.status
+        r.orcamento && r.orcamento.status,
+        r.participantes, r.limiteParticipantes, !!r.foraRaio, r.distanciaKm
       ];
     }));
   }

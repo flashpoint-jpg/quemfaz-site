@@ -28,7 +28,7 @@ assert.ok(html.includes('(DB.qfServicoCompatibilidadeGasista(user, req) || !!req
 // Seção própria nas duas telas, com o aviso do crédito e sem o destaque de "Novo chamado".
 assert.equal(html.split('global.QFAbertos.secaoHtml(abertos,user)').length - 1, 2);
 assert.ok(html.includes('Só pegue se você faz esse serviço. O crédito não volta.'));
-assert.ok(html.includes('const novoChamado = !req.abertoTodos && '));
+assert.ok(html.includes('const novoChamado = !req.foraRaio && !req.abertoTodos && '));
 assert.ok(html.includes('CallInfo.vagasHtml(req) +'));
 
 // Módulo QFAbertos, rodado isolado.
@@ -66,7 +66,8 @@ console.log('abertos-a-todos: ok');
 // V11.32.1 — pedido aberto a todos nunca dispara aviso, toque nem a tela cheia de chamado.
 assert.ok(sql.includes('where private.qf_pro_recebe_chamado(auth.uid(), d.id)'));           // lista normal sem os abertos
 assert.ok(!html.includes("client.rpc('qf_portfolio_abertos_todos')"));                        // vitrine geral retirada
-assert.ok(html.includes('a.status === DB.STATUS.BUSCANDO && !abertoTodos) {'));               // sem alerta no app
+assert.ok(html.includes('a.status === DB.STATUS.BUSCANDO && !abertoTodos &&'));               // sem alerta na vitrine
+assert.ok(html.includes('global.QFPedidosPodeAvisar(DB.requestById(id), currentUser())'));
 assert.ok(!html.includes('attachAbertos'));
 console.log('abertos-a-todos 11.32.1: ok');
 
