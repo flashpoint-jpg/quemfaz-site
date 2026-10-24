@@ -101,10 +101,10 @@
   }
 
   // Selo verde e discreto, visível antes do desbloqueio. Sem confirmação registrada (data/hora), nada aparece.
-  function seloInteresseHtml(req) {
+  function seloInteresseHtml(req, compacto) {
     if (!req || req.interesseCliente !== INTERESSE_CONTRATAR || !req.interesseConfirmadoEm) return '';
-    return '<div class="qf-interesse-selo" data-qf-interesse-selo title="O cliente disse que pretende contratar. Não é garantia de contratação.">' +
-      '<span aria-hidden="true">&#10003;</span> Interesse confirmado pelo cliente</div>';
+    return '<span class="qf-interesse-selo' + (compacto === true ? ' qf-interesse-selo--compact' : '') + '" data-qf-interesse-selo title="O cliente disse que pretende contratar. Não é garantia de contratação.">' +
+      '<span aria-hidden="true">&#10003;</span> ' + (compacto === true ? 'Interesse confirmado' : 'Interesse confirmado pelo cliente') + '</span>';
   }
 
   var MOTIVOS_CANCELAMENTO = [
