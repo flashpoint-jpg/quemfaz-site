@@ -14828,7 +14828,7 @@ alt=""></noscript>
         const exclusivo = act === 'desbloquear-exclusivo' || (DB.requestById(params.id) || {}).atendimentoTipo === 'garante';
         const req = DB.requestById(params.id);
         const valorBase = req ? DB.leadFeeForRequest(req) : 0;
-        const valor = req && req.atendimentoTipo === 'garante' ? valorBase * 4 : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase);
+        const valor = req && req.atendimentoTipo === 'garante' ? valorBase * (CallInfo.vagas(req).limite === 4 ? 4 : 1) : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase);
         const primeiraGratis = !exclusivo && !!req && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
         const usaPlano = !exclusivo && !!(user && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
