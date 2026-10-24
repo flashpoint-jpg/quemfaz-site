@@ -8201,7 +8201,7 @@ alt=""></noscript>
       return '<div class="card notify-ok"><div class="row"><div class="icon-tile">' + global.icon('bell') + '</div><div><div class="text--strong">Notificações ativadas</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Você pode receber novos chamados mesmo com o app fechado.' : 'Você será avisado quando um profissional aceitar ou enviar orçamento.') + '</div></div></div></div>';
     }
     const denied = permission() === 'denied';
-    return '<div class="card notify-required"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Ative as notificações</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Obrigatório para ficar online e não perder chamados.' : 'Ative para perceber imediatamente quando houver atualização do seu pedido.') + '</div></div></div>' +
+    return '<div class="card notify-required"><div class="row" style="align-items:flex-start;"><div class="icon-tile icon-tile--orange">' + global.icon('bell') + '</div><div class="spacer"><div class="text--strong">Ative as notificações</div><div class="text--sm text--secondary">' + (role === 'profissional' ? 'Ative para receber novos pedidos no seu horário de atendimento.' : 'Ative para perceber imediatamente quando houver atualização do seu pedido.') + '</div></div></div>' +
       (denied ? '<div class="text--sm" style="color:var(--danger-600);margin-top:10px;">A permissão foi bloqueada. Libere Notificações nas configurações do navegador/app.</div>' : '<button class="btn btn--primary" type="button" data-action="ativar-notificacoes" style="margin-top:12px;">' + global.icon('bell') + ' Ativar notificações</button>') + '</div>';
   }
   function batteryReady(){if(!nativePush())return true;try{return localStorage.getItem('qf_battery_asked')==='1';}catch(_){return false;}}
@@ -12924,7 +12924,7 @@ alt=""></noscript>
     // srv.apk: o app Android já registrou as notificações desta conta (em qualquer aparelho).
     const app = ativAppAberto() || !!srv.apk;
     const push = pushJaAtivo() || !!srv.apk;
-    const online = !!user.online;
+    const online = !!(user.horarioInicio&&user.horarioFim);
     return { app: app, push: push, online: online, feitas: (app ? 1 : 0) + (push ? 1 : 0) + (online ? 1 : 0) };
   }
   // '' = sem cartão · 'pendente' = Complete sua ativação · 'pronto' = Tudo pronto!
@@ -12949,7 +12949,7 @@ alt=""></noscript>
     if (!st.push && ativPushPossivelAqui()) return 'push';
     if (!st.app) return 'app';
     if (!st.push) return 'push';
-    return 'online';
+    return 'horario';
   }
   function ativacaoMensagem(st) {
     const P = global.QFPush;
@@ -12960,7 +12960,7 @@ alt=""></noscript>
       if (P && P.permission && P.permission() === 'denied') return 'As notificações estão bloqueadas neste aparelho. Libere para ' + motivo;
       return 'Falta ativar as notificações para você ' + motivo;
     }
-    return 'Você está offline. Fique online para receber oportunidades.';
+    return 'Configure seu horário de atendimento para receber avisos automaticamente.';
   }
   function ativacaoPasso(n, id, feito, titulo, texto, botao) {
     return '<li class="qf-ativ-step' + (feito ? ' is-done' : '') + '" data-ativ-step="' + id + '" data-ativ-feito="' + (feito ? '1' : '0') + '">' +
@@ -12982,7 +12982,7 @@ alt=""></noscript>
         '<div class="qf-ativacao__headtxt"><h2 class="qf-ativacao__title" id="qf-ativ-titulo">Tudo pronto!</h2>' +
         '<p class="qf-ativacao__msg">Agora você está preparado para receber chamados do Quem Faz.</p></div>' +
         '<button class="qf-ativacao__x" type="button" data-ativacao-fechar aria-label="Fechar aviso">' + icon('x') + '</button></div>' +
-        '<div class="qf-ativacao__chips">' + chip('App instalado') + chip('Notificações ativas') + chip('Online') + '</div></section>' };
+        '<div class="qf-ativacao__chips">' + chip('App instalado') + chip('Notificações ativas') + chip('Horário definido') + '</div></section>' };
     }
     const primeiro = ativacaoPrimeiro(st);
     const boasVindas = ativLer('sessionStorage', ATIV_BOAS_VINDAS) === String(user.id);
@@ -12990,7 +12990,7 @@ alt=""></noscript>
     const pct = Math.round(st.feitas / 3 * 100);
     const btnApp = '<button class="btn btn--primary" type="button" ' + (ativAndroid() ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + ' ' + (ativIos() ? 'Criar atalho no iPhone' : 'Instalar app') + '</button>';
     const btnPush = '<button class="btn btn--primary" type="button" data-ativacao-notificacoes>' + icon('bell') + ' Ativar notificações</button>';
-    const btnOnline = '<button class="btn ' + (primeiro === 'online' ? 'btn--primary' : 'btn--outline') + '" type="button" data-action="ficar-online-agora">' + icon('power') + ' Ficar online</button>';
+    const btnOnline = '<button class="btn ' + (primeiro === 'horario' ? 'btn--primary' : 'btn--outline') + '" type="button" data-qf-horario-rapido="1">' + icon('clock') + ' Definir horário</button>';
     return { pendente: true, estado: st, html: '<section class="card qf-ativacao" data-ativacao="pendente" aria-labelledby="qf-ativ-titulo">' +
       (boasVindas ? '<div class="qf-ativacao__eyebrow">Conta criada' + (nome ? ', ' + PU.escapeHtml(nome) : '') + '! Faltam poucos passos.</div>' : '') +
       '<div class="qf-ativacao__head"><span class="qf-ativacao__icon" aria-hidden="true">' + icon('shieldCheck') + '</span>' +
@@ -13001,7 +13001,7 @@ alt=""></noscript>
       '<ol class="qf-ativacao__steps">' +
         ativacaoPasso(1, 'app', st.app, 'Instale o Quem Faz', 'Instale o app para receber chamados mesmo quando não estiver com o site aberto.', btnApp) +
         ativacaoPasso(2, 'notificacoes', st.push, 'Ative as notificações', 'Permita as notificações para ser avisado imediatamente quando surgir um chamado.', btnPush) +
-        ativacaoPasso(3, 'online', st.online, 'Fique online', 'Você precisa estar online para receber novas oportunidades de serviço.', btnOnline) +
+        ativacaoPasso(3, 'horario', st.online, 'Defina seu horário', 'Os avisos de novos pedidos chegam automaticamente no horário configurado.', btnOnline) +
       '</ol></section>' };
   }
   // Consulta leve (no máximo a cada 2 min): o app Android desta conta já registrou notificação?
@@ -13090,11 +13090,21 @@ alt=""></noscript>
 
   // V11.41: o chamado só chega para quem está online e dentro do horário de atendimento.
   // O lembrete fica na tela inicial e o ajuste abre ali mesmo, sem trocar de tela.
+  function qfDentroDoHorarioProf(user) {
+    const ini=String((user&&user.horarioInicio)||'').slice(0,5);
+    const fim=String((user&&user.horarioFim)||'').slice(0,5);
+    if(!/^\d{2}:\d{2}$/.test(ini)||!/^\d{2}:\d{2}$/.test(fim))return false;
+    if(ini===fim)return true;
+    const mm=v=>Number(v.slice(0,2))*60+Number(v.slice(3,5));
+    const agora=new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date());
+    const a=mm(agora),i=mm(ini),j=mm(fim);
+    return i<j?a>=i&&a<j:a>=i||a<j;
+  }
   function horarioAtendimentoLembrete(user) {
     // V11.85: uma linha só, dentro do cartão de status. "Ajustar" abre na mesma tela (data-qf-horario-rapido).
     const ini=String((user&&user.horarioInicio)||'06:00').slice(0,5), fim=String((user&&user.horarioFim)||'22:00').slice(0,5);
     const faixa=ini===fim?'o dia todo':'das '+ini.replace(':00','h')+' às '+fim.replace(':00','h');
-    return '<div id="qf-horario-lembrete" class="qf-horario-linha" title="Você só recebe chamado online e dentro desse horário.">'+icon('clock')+
+    return '<div id="qf-horario-lembrete" class="qf-horario-linha" title="Novos pedidos notificam automaticamente dentro desse horário. O chat continua avisando fora dele.">'+icon('clock')+
       '<span class="spacer">Atende <strong>'+PU.escapeHtml(faixa)+'</strong></span>'+
       '<button class="qf-horario-linha__btn" type="button" data-qf-horario-rapido="1" aria-label="Ajustar horário de atendimento">Ajustar</button>'+
     '</div>';
@@ -13109,7 +13119,7 @@ alt=""></noscript>
         '<label class="field" style="flex:1;"><span class="field__label">Das</span><input class="input" type="time" id="qf-hr-ini" value="'+PU.escapeHtml(ini)+'" required></label>'+
         '<label class="field" style="flex:1;"><span class="field__label">Até</span><input class="input" type="time" id="qf-hr-fim" value="'+PU.escapeHtml(fim)+'" required></label>'+
       '</div>'+
-      '<p class="text--sm text--secondary" style="margin:0;">Você recebe chamado online e dentro desse horário. Para atender o dia todo, coloque o mesmo horário nos dois campos.</p>'+
+      '<p class="text--sm text--secondary" style="margin:0;">Você recebe avisos de novos pedidos apenas dentro desse horário. Conversas em andamento continuam com notificações. Para atender o dia todo, coloque o mesmo horário nos dois campos.</p>'+
       '<button class="btn btn--primary" type="button" id="qf-hr-salvar">Salvar horário</button></div>');
     const btn=document.getElementById('qf-hr-salvar');
     if(!btn) return;
@@ -13241,8 +13251,11 @@ alt=""></noscript>
       pendingGate(user)+
       avisoAtualizacaoCadastral(user)+
       ativ.html+
-      '<div class="card qf-prof-status'+(user.online?' is-online':' is-offline')+'"><div class="qf-prof-welcome"><div class="avatar avatar--lg qf-avatar qf-prof-welcome__avatar">'+(user.fotoUrl?'<img src="'+PU.escapeHtml(user.fotoUrl)+'" alt="">':PU.escapeHtml(String(user.nome||'QF').trim().slice(0,2).toUpperCase()))+'</div><div class="qf-prof-welcome__copy"><div class="qf-prof-welcome__title">Bem-vindo, '+PU.escapeHtml((user.tipoPessoa==='cnpj'&&String(user.nomeFantasia||'').trim())?String(user.nomeFantasia).trim():String(user.nome||'').trim().split(/\\s+/)[0])+'!</div></div></div><div class="qf-prof-estado '+(user.online?'is-online':'is-offline')+'"><div class="qf-prof-estado__copy"><div class="qf-prof-status__title"><span class="'+(user.online?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+(user.online?'Você está online':'Você está offline')+'</div><div class="qf-prof-estado__msg">'+(user.online?'Você está recebendo pedidos.':'Você não pode receber pedidos. Toque em “Ficar online” para receber.')+'</div></div><button class="btn qf-prof-estado__btn" type="button" data-action="'+(user.online?'ficar-offline-agora':'ficar-online-agora')+'">'+(user.online?'Ficar offline':'Ficar online')+'</button></div><input type="checkbox" id="toggle-online" aria-label="Ficar online" style="display:none;" '+(user.online?'checked':'')+(podeFicarOnline||user.online?'':' data-blocked="1"')+'><div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div>'+horarioAtendimentoLembrete(user)+'</div>'+
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+(user.online?'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.':'Fique online para receber chamados perto de você.')+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
+      '<div class="card qf-prof-status"><div class="qf-prof-welcome"><div class="avatar avatar--lg qf-avatar qf-prof-welcome__avatar">'+(user.fotoUrl?'<img src="'+PU.escapeHtml(user.fotoUrl)+'" alt="">':PU.escapeHtml(String(user.nome||'QF').trim().slice(0,2).toUpperCase()))+'</div><div class="qf-prof-welcome__copy"><div class="qf-prof-welcome__title">Bem-vindo, '+PU.escapeHtml(String(user.nome||'').trim().split(/\s+/)[0])+'!</div></div></div>'+
+      '<div class="qf-prof-estado" style="background:#eef5ff;border-color:#c8dcf5"><div class="qf-prof-estado__copy"><div class="qf-prof-status__title" style="color:#1458cc"><span class="'+(qfDentroDoHorarioProf(user)?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+(qfDentroDoHorarioProf(user)?'Atendimento automático ativo':'Fora do horário de novos pedidos')+'</div><div class="qf-prof-estado__msg" style="color:#204b82">'+(qfDentroDoHorarioProf(user)?'Avisos de novos pedidos no seu horário, conforme profissão e raio.':'Você pode visualizar os pedidos; os alertas de novos pedidos voltam no seu horário.')+' Mensagens do chat continuam chegando.</div></div></div>'+
+      '<input type="checkbox" id="toggle-online" style="display:none" disabled>'+
+      '<div class="qf-radar-meta">'+PU.escapeHtml(firstCat?firstCat.nome:'Selecione sua profissão')+extraCats+' · Até '+raio+' km'+(area&&area.cidade?' · '+PU.escapeHtml(area.cidade):'')+'</div>'+horarioAtendimentoLembrete(user)+'</div>'+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.'+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
       global.QFAbertos.secaoHtml(abertos,user)+
       global.QFAbertos.movimentoHtml()+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.85: só aparece se faltar algo, e só com o que falta, depois dos pedidos
@@ -14747,7 +14760,6 @@ alt=""></noscript>
       radarMsg.classList.remove('is-fading');
     }
     bindNotificationActivation(content);
-    exigirNotificacaoSeOnline(user);
     bindAtivacao(content, user);
     const toggle = content.querySelector('#toggle-online');
     if (toggle) {
