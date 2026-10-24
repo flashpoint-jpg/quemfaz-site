@@ -88,6 +88,37 @@
     }
    }
    let pending=false,busy=false,last={};
+   // V12.1.17: compra do Quem Faz Livre só é medida após assinatura realmente aprovada.
+   // O recarga_id vira eventID/transaction_id e impede duplicação no mesmo aparelho.
+   function trackLivrePurchase(s){
+    try{
+     if(!s||!s.ativo||Number(s.valor_centavos)!==3990||!s.recarga_id||typeof g.fbq!=='function')return false;
+     const paidAt=Date.parse(s.pago_em||'');
+     const age=Date.now()-paidAt;
+     // Não reconta a base antiga ao publicar o recurso; captura pagamentos recentes e os próximos em tempo real.
+     if(!Number.isFinite(paidAt)||age<0||age>48*60*60*1000)return false;
+     if(g.QFConversao&&typeof g.QFConversao.consentimento==='function'&&g.QFConversao.consentimento()!=='granted')return false;
+     const recarga=String(s.recarga_id);
+     const flag='qf_purchase_sent:'+recarga;
+     if(localStorage.getItem(flag))return false;
+     const eventID='qf-livre-'+recarga;
+     g.fbq('track','Purchase',{
+      value:39.90,
+      currency:'BRL',
+      content_name:'Quem Faz Livre - 30 dias',
+      content_ids:['quem_faz_livre_30d'],
+      content_type:'product',
+      num_items:1
+     },{eventID:eventID});
+     localStorage.setItem(flag,'1');
+     try{
+      g.dataLayer=g.dataLayer||[];
+      g.dataLayer.push({event:'qf_livre_purchase',transaction_id:recarga,value:39.90,currency:'BRL'});
+     }catch(_){}
+     return true;
+    }catch(_){return false;}
+   }
+   g.QFTrackLivrePurchase=trackLivrePurchase;
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
    function render(s){
     last=s||{};
@@ -118,7 +149,7 @@
      b.disabled=true;try{const r=await rpc('qf_livre_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok)throw Error(({credito_necessario:'Assine o Quem Faz Livre ou utilize o Avulso com saldo na carteira.',plano_inativo:'Plano vencido ou inativo. Renove ou utilize créditos.',reservado:'O pedido já atingiu o limite de participantes.',nao_elegivel:'Pedido incompatível com sua profissão, região ou raio.',indisponivel:'Pedido indisponível para este plano.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',perfil_inativo:'Fique online e confira seu perfil.',prestacao_contas_vencida:'Regularize sua prestação de contas na carteira.',comissao_vencida:'Regularize a comissão confirmada na carteira.'})[r.reason]||'Não foi possível autorizar o desbloqueio. Atualize o pedido.');if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession();g.navigate('/profissional/chat/'+params.id,true);}catch(e){msg.textContent=e.message;b.disabled=false;}
     };
    }
-   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(s.ativo){pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
+   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(s.ativo){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
    async function pay(){
     if(busy)return;
     busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
@@ -154,6 +185,7 @@
    async function load(){
     const s=await rpc('qf_livre_status');if(!box.isConnected)return;
     if(!s?.ok)throw Error('Entre novamente para consultar seu plano.');
+    if(s.ativo)trackLivrePurchase(s);
     render(s);unlock(s);
     let auto=false;try{auto=sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'&&['/profissional/carteira','/profissional/planos'].includes(pattern);}catch(_){}
     if(auto){try{sessionStorage.removeItem('qf_plano_pos_cadastro');sessionStorage.removeItem('qf_plano_pos_cadastro_metodo');}catch(_){}if(!s.ativo)await pay();}
