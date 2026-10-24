@@ -2491,7 +2491,7 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
 <script src="qf-client-acquisition.js?v=11.96"></script>
-<script src="qf-atendimento.js?v=app-nativo-20261024"></script>
+<script src="qf-atendimento.js?v=codigo-visivel-20261024"></script>
 
 <!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
      Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
@@ -10857,7 +10857,7 @@ alt=""></noscript>
     const cat = DB.categoryById(req.categoriaId);
     const prof = req.profissionalId ? DB.profissionalById(req.profissionalId) : null;
     return (
-      '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/cliente/pedido/' + req.id + '">' +
+      '<article class="card stack--sm" data-qf-pedido-card="' + PU.escapeHtml(req.id) + '">' +
         '<div class="row-between">' +
           '<div class="row">' +
             '<div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div>' +
@@ -10868,12 +10868,12 @@ alt=""></noscript>
           '</div>' +
           icon('chevronRight', 'list-item__chevron') +
         '</div>' +
-        '<div class="qf-perf" aria-hidden="true"></div>' +
+        '<p class="text--sm text--secondary">' + PU.escapeHtml([req.endereco?.bairro, req.endereco?.cidade].filter(Boolean).join(' · ')) + '</p>' +
         '<div class="row-between">' +
           statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
         '</div>' +
-      '</button>'
+      '<div data-qf-list-code-slot></div><button class="btn btn--primary" data-nav="/cliente/pedido/' + PU.escapeHtml(req.id) + '">Acompanhar pedido</button></article>'
     );
   }
 
@@ -11722,7 +11722,7 @@ alt=""></noscript>
 
     if (pattern === '/cliente/home') bindCategoryBrowser(content);
     if (pattern === '/cliente/novo-pedido/:catId') bindNovoPedido(content, params, user);
-    if (pattern === '/cliente/pedidos') bindClientePedidos(content, user);
+    if (pattern === '/cliente/pedidos') { bindClientePedidos(content, user); global.QFAcompanhamento?.mountList(content); }
     if (pattern === '/cliente/pedido/:id') bindPedidoDetalhe(content, params, user);
     if (pattern === '/cliente/endereco') bindEndereco(content, user);
   };
@@ -15531,7 +15531,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.18';
+  const APP_VERSION = '12.1.27';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -19095,8 +19095,8 @@ alt=""></noscript>
 </script>
 <script src="qf-carteirinha.js?v=11.85"></script>
 <script src="qf-valor-definido.js?v=6"></script>
-<script src="qf-acompanhamento.js?v=um-toque-20261024"></script>
-<script src="qf-comissao13.js?v=2"></script>
+<script src="qf-acompanhamento.js?v=codigo-visivel-20261024"></script>
+<script src="qf-comissao13.js?v=codigo-visivel-20261024"></script>
 <script src="qf-livre.js?v=purchase-20261024"></script>
 <script src="qf-card-inline.js?v=1"></script>
 <script src="qf-recharge-return.js?v=1"></script>

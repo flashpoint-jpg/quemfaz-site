@@ -195,7 +195,7 @@
           // fora do roteador do app (que re-renderiza a tela quando a sessão rápida é criada). Sem temporizador.
           redirecting=true;
           area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado!</h1><p role="status">Abrindo o acompanhamento do seu pedido…</p></section>';
-          (root.__qfNavigate||(u=>root.location.replace(u)))('/acompanhar-pedido.html#pedido='+req.id);
+          (root.__qfNavigate||(u=>root.location.replace(u)))('/acompanhar-pedido.html?publicado=1#pedido='+req.id);
           return;
         }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
         finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}
