@@ -3842,6 +3842,23 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 @media(min-width:900px){#app-shell[data-route="inicio"] .qf-home-livre{grid-column:1/-1;grid-row:1;border-radius:0 0 12px 12px;margin-bottom:16px}#app-shell[data-route="inicio"] .qf-landing-hero{grid-row:2}#app-shell[data-route="inicio"] .qf-landing-body{grid-row:2}}
 @media(max-width:899px){.qf-home-livre{grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;padding:10px 14px;margin:0}.qf-home-livre__brand,.qf-home-livre__offer{grid-column:1}.qf-home-livre h2{font-size:18px}.qf-home-livre__offer strong{font-size:11px}.qf-home-livre__offer b{font-size:21px}.qf-home-livre__offer>span{display:block;font-size:10px}.qf-home-livre__cta{grid-column:2;grid-row:1/span 2;max-width:112px;min-height:40px;padding:8px 10px;font-size:11px}.qf-home-livre .qf-home-livre__terms{font-size:9px;line-height:1.35}}
 </style>
+
+<style id="qf-perfil-visual-aprovado">
+/* Perfil profissional - ajustes mobile para evitar quebra e botão sem formato */
+#app-shell .qf-perfil-identificacao {display:grid;gap:12px}
+#app-shell .qf-perfil-identificacao__cabecalho {display:flex;gap:12px;align-items:center;margin-bottom:4px;min-width:0}
+#app-shell .qf-perfil-identificacao__cabecalho .spacer {min-width:0}
+#app-shell .qf-perfil-upload {width:100%;min-width:0;min-height:52px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:1.5px solid #1769d5!important;border-radius:14px;background:#fff!important;color:#1769d5!important;font:inherit;font-size:14px;font-weight:750;line-height:1.25;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(23,105,213,.06);white-space:normal;overflow-wrap:anywhere;box-sizing:border-box}
+#app-shell .qf-perfil-upload svg {width:20px;height:20px;min-width:20px;flex:none;stroke:currentColor}
+#app-shell .qf-perfil-upload span {min-width:0}
+#app-shell .qf-perfil-upload:focus-within {outline:3px solid #b8d4fb;outline-offset:2px}
+#app-shell .qf-perfil-upload:active {background:#edf5ff!important}
+#app-shell #prof-cadastro-update-form .qf-perfil-salvar {display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;padding:12px 16px;text-align:center;line-height:1.3;white-space:normal;border-radius:14px;box-sizing:border-box}
+#app-shell #prof-cadastro-update-form .qf-perfil-salvar svg {flex:none;width:19px;height:19px}
+#app-shell .qf-perfil-visibilidade-resumida .btn {display:flex;align-items:center;justify-content:center;width:100%;min-height:50px;border-radius:14px;line-height:1.25}
+#app-shell .qf-perfil-visibilidade-resumida .qf-perfil-privacy-notice {font-size:12px;color:#667085;margin:6px 0 0}
+@media (max-width:390px) {#app-shell .qf-perfil-upload{font-size:13px;padding:11px 10px;gap:8px}}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -14230,16 +14247,16 @@ alt=""></noscript>
             '<label class="field"><span class="field__label">Complemento (opcional)</span><input class="input" name="complemento" maxlength="120" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.complemento) || '') + '" placeholder="Apto, bloco, referência..."></label>' +
             '<input type="hidden" name="latitude" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.latitude) == null ? '' : user.enderecoCadastro.latitude) + '"><input type="hidden" name="longitude" value="' + PU.escapeHtml((user.enderecoCadastro && user.enderecoCadastro.longitude) == null ? '' : user.enderecoCadastro.longitude) + '">' +
             '<div class="card card--tight" style="background:var(--navy-100);border:none;"><div class="text--sm">Por segurança, o CPF/CNPJ atual não é exibido. Digite novamente o documento para confirmar a atualização.</div></div>' +
-            '<button class="btn btn--primary" type="submit">' + icon('check') + ' Salvar atualização cadastral</button>' +
+            '<button class="btn btn--primary qf-perfil-salvar" type="submit">' + icon('check') + '<span>Salvar atualização cadastral</span></button>' +
           '</form>' +
         '</div>' +
 
         '<div class="section">' +
           '<div class="section-head"><div><h2 class="h3">Identificação</h2><div class="text--sm text--secondary">A imagem aparece para o cliente quando você assumir um chamado.</div></div></div>' +
-          '<div class="card stack--sm">' +
-            '<div class="row">' + personAvatar(user, 'avatar--lg') + '<div class="spacer"><div class="text--strong">' + (user.fotoUrl ? 'Imagem atual' : 'Adicione sua identificação') + '</div><div class="text--sm text--secondary">' + (user.tipoPessoa === 'cnpj' ? 'Empresa: use sua logo ou marca oficial.' : 'Profissional: use uma foto sua.') + '</div></div></div>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Sou profissional — usar minha foto<input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa — usar minha logo<input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
+          '<div class="card stack--sm qf-perfil-identificacao">' +
+            '<div class="row qf-perfil-identificacao__cabecalho">' + personAvatar(user, 'avatar--lg') + '<div class="spacer"><div class="text--strong">' + (user.fotoUrl ? 'Imagem atual' : 'Adicione sua identificação') + '</div><div class="text--sm text--secondary">' + (user.tipoPessoa === 'cnpj' ? 'Empresa: use sua logo ou marca oficial.' : 'Profissional: use uma foto sua.') + '</div></div></div>' +
+            '<label class="btn btn--outline qf-perfil-upload" tabindex="0">' + icon('camera') + '<span>Sou profissional — usar minha foto</span><input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
+            '<label class="btn btn--outline qf-perfil-upload" tabindex="0">' + icon('image') + '<span>Sou empresa — usar minha logo</span><input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
           '</div>' +
         '</div>' +
 
@@ -19099,6 +19116,7 @@ alt=""></noscript>
 })();
 </script>
 <script src="/qf-chat-contratacao.js?v=chat-aceite-20261024" defer></script>
+<script src="/qf-perfil-visual.js?v=20261024" defer></script>
 </body>
 </html>
 
