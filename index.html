@@ -410,6 +410,17 @@ input, select, textarea { font-size: 16px; }
   border:1px solid #fecaca; background:#fff; color:#b91c1c;
   font-size:12px; font-weight:800; cursor:pointer;
 }
+.qf-service-heading { margin-bottom:12px; gap:8px; }
+.qf-service-heading > .h3 { flex:0 0 auto; white-space:nowrap; }
+.qf-service-heading > .btn { flex:0 0 auto; width:auto; }
+.qf-service-history-tabs { display:flex; gap:4px; padding:4px; border-radius:14px; background:var(--navy-50,#edf3fa); margin-bottom:16px; }
+.qf-service-history-tabs [role="tab"] { flex:1; display:flex; justify-content:center; align-items:center; gap:7px; min-height:44px; padding:8px 10px; border:0; border-radius:11px; background:transparent; color:var(--navy-800,#153e69); font:inherit; font-size:14px; font-weight:700; cursor:pointer; }
+.qf-service-history-tabs [aria-selected="true"] { background:var(--navy-800,#153e69); color:#fff; }
+.qf-service-history-tabs span { min-width:21px; padding:2px 5px; border-radius:8px; font-size:12px; background:var(--orange-100,#ffedd5); color:var(--orange-800,#9a3412); }
+.qf-service-history-tabs button:focus-visible { outline:3px solid var(--orange-500,#f97316); outline-offset:2px; }
+.qf-service-history-entry { border:1px solid var(--navy-100,#dbe5ef); border-radius:20px; overflow:hidden; background:#fff; }
+.qf-service-history-entry > .card { border:0; box-shadow:none; border-radius:0; }
+.qf-service-history-entry .qf-service-history-remove { display:block; width:auto; margin:0 12px 10px auto; color:var(--orange-700,#b4410a); min-height:44px; }
 .history-entry { position:relative; }
 .history-entry > .card { padding-right:58px; }
 .history-delete {
@@ -13613,14 +13624,25 @@ alt=""></noscript>
 
   // ---------------- Meus serviços ----------------
 
-  const ATIVOS_PROF = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.PAGO];
+  // A conclusão do serviço independe da avaliação e da situação financeira.
+  const ATIVOS_PROF = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO];
+  const CONCLUIDOS_PROF = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO];
+  const profServiceTabs = Object.create(null);
   function profHiddenHistory(userId) {
-    try { return JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]') || []; } catch (_) { return []; }
+    try {
+      const ids = JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]');
+      return Array.isArray(ids) ? ids.filter(function (id) { return typeof id === 'string'; }) : [];
+    } catch (_) { return []; }
   }
   function hideProfHistory(userId, requestId) {
+    const req = DB.requestById(requestId);
+    if (!req || req.profissionalId !== userId || CONCLUIDOS_PROF.indexOf(req.status) === -1) return false;
     const ids = profHiddenHistory(userId);
     if (ids.indexOf(requestId) === -1) ids.push(requestId);
-    try { localStorage.setItem('quemfaz_hidden_history_v1_profissional_' + userId, JSON.stringify(ids.slice(-250))); } catch (_) {}
+    try {
+      localStorage.setItem('quemfaz_hidden_history_v1_profissional_' + userId, JSON.stringify(ids));
+      return true;
+    } catch (_) { return false; }
   }
 
   Screens.profServicosRender = function (params, user) {
@@ -13628,18 +13650,24 @@ alt=""></noscript>
     const all = DB.requestsByProfissional(user.id);
     const ativos = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) !== -1; });
     const historico = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) === -1 && hidden.indexOf(r.id) === -1; });
-    if (!ativos.length && !historico.length) {
-      return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div><h2 class="h3">Nenhum serviço ainda</h2><p class="text text--secondary">Fique online para começar a receber chamados de clientes.</p></div></div>';
-    }
-    return (
-      '<div class="view">' +
-        (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(servicoCard).join('') + '</div></div>' : '') +
-        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(function (r) {
-          return '<div class="history-entry">' + servicoCard(r) +
-            '<button class="history-delete" type="button" data-hide-servico="' + PU.escapeHtml(r.id) + '" aria-label="Excluir serviço do histórico" title="Excluir do histórico">' + icon('xCircle') + '</button></div>';
-        }).join('') + '</div></div>' : '') +
-      '</div>'
-    );
+    const tab = profServiceTabs[user.id] === 'historico' ? 'historico' : 'andamento';
+    const rows = tab === 'historico' ? historico : ativos;
+    const tabs = [['andamento', 'Em andamento', ativos.length], ['historico', 'Histórico', historico.length]];
+    return '<div class="view">' +
+      '<div class="row-between qf-service-heading"><h2 class="h3">Meus pedidos</h2><button type="button" class="btn btn--ghost btn--sm" data-nav="/profissional/servicos/disponiveis">Ver disponíveis</button></div>' +
+      '<div class="qf-service-history-tabs" role="tablist" aria-label="Meus pedidos">' + tabs.map(function (t) {
+        const selected = t[0] === tab;
+        return '<button type="button" role="tab" id="qf-service-tab-' + t[0] + '" aria-controls="qf-service-panel" aria-selected="' + selected + '" tabindex="' + (selected ? '0' : '-1') + '" data-prof-service-tab="' + t[0] + '">' + t[1] + '<span>' + t[2] + '</span></button>';
+      }).join('') + '</div>' +
+      '<div id="qf-service-panel" role="tabpanel" aria-labelledby="qf-service-tab-' + tab + '" tabindex="0" class="stack--sm">' +
+      (rows.length ? rows.map(function (r) {
+        if (tab !== 'historico' || CONCLUIDOS_PROF.indexOf(r.status) === -1) return servicoCard(r);
+        return '<div class="qf-service-history-entry">' + servicoCard(r) +
+          '<button class="btn btn--ghost btn--sm qf-service-history-remove" type="button" data-hide-servico="' + PU.escapeHtml(r.id) + '">Remover da lista</button></div>';
+      }).join('') : '<div class="empty-state"><div class="icon-tile icon-tile--ghost">' + icon('clipboard') + '</div><h3 class="h3">' +
+        (tab === 'historico' ? 'Nenhum pedido no histórico' : 'Nenhum pedido em andamento') + '</h3><p class="text text--secondary">' +
+        (tab === 'historico' ? 'Os serviços concluídos aparecem aqui.' : 'Seus serviços ativos e em negociação aparecem aqui.') + '</p></div>') +
+      '</div></div>';
   };
 
   function servicoCard(req) {
@@ -14752,21 +14780,43 @@ alt=""></noscript>
   }
 
   function bindProfServicos(content, user) {
+    function selectTab(tab, focus) {
+      if (tab !== 'andamento' && tab !== 'historico') return;
+      profServiceTabs[user.id] = tab;
+      global.navigate('/profissional/servicos', true);
+      if (focus) {
+        const selected = document.querySelector('[data-prof-service-tab="' + tab + '"]');
+        if (selected) selected.focus();
+      }
+    }
+    content.addEventListener('keydown', function (e) {
+      const tab = e.target.closest('[data-prof-service-tab]');
+      if (!tab || ['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(e.key) === -1) return;
+      e.preventDefault();
+      selectTab(e.key === 'Home' ? 'andamento' : e.key === 'End' ? 'historico' : tab.getAttribute('data-prof-service-tab') === 'andamento' ? 'historico' : 'andamento', true);
+    });
     content.addEventListener('click', function (e) {
+      const tab = e.target.closest('[data-prof-service-tab]');
+      if (tab) { e.preventDefault(); selectTab(tab.getAttribute('data-prof-service-tab'), true); return; }
       const btn = e.target.closest('[data-hide-servico]');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
       const id = btn.getAttribute('data-hide-servico');
+      const req = DB.requestById(id);
+      if (!req || req.profissionalId !== user.id || CONCLUIDOS_PROF.indexOf(req.status) === -1) return;
       PU.confirmDialog({
-        title: 'Excluir do histórico',
-        message: 'Este serviço será removido da sua lista. O registro continua preservado no sistema.',
-        okLabel: 'Excluir',
+        title: 'Remover da lista?',
+        message: 'O serviço será ocultado apenas da sua lista neste navegador. Avaliações, pagamentos e comissões continuam preservados.',
+        okLabel: 'Remover da lista',
         danger: true
       }).then(function (ok) {
         if (!ok) return;
-        hideProfHistory(user.id, id);
-        PU.toast('Serviço removido do histórico.', 'success');
+        if (!hideProfHistory(user.id, id)) {
+          PU.toast('Não foi possível salvar a remoção. Tente novamente.', 'danger');
+          return;
+        }
+        PU.toast('Serviço removido da sua lista.', 'success');
         global.navigate('/profissional/servicos', true);
       });
     });
@@ -15531,7 +15581,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.27';
+  const APP_VERSION = '12.1.31';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -16465,11 +16515,6 @@ alt=""></noscript>
     '</div>';
   }
 
-  const oldProfServicos116 = Screens.profServicosRender;
-  if(oldProfServicos116) Screens.profServicosRender=function(params,user){
-    const html=oldProfServicos116(params,user);
-    return html.replace('<div class="view">','<div class="view">'+qfServiceTabs('meus'));
-  };
   Screens.profServicosDisponiveisRender=function(params,user){
     const todas=qfSortPortfolio(DB.chamadasPendentes(user.id));
     const calls=todas.filter(function(r){return !r.abertoTodos;});
