@@ -71,8 +71,14 @@
       const pendencias=rows.filter(a=>a.status==='confirmado'&&a.cobranca_status==='pendente');
       if(pendencias.length){
         const area=document.createElement('section');area.className='card stack--sm';area.style.cssText='border:2px solid #edaa50;background:#fff9f0;padding:16px;border-radius:16px;margin-bottom:12px;';
-        area.innerHTML='<h2 class="h3" style="margin:0">Comissão pendente — pagamento Pix</h2><p>Para desbloquear novos pedidos, pague os 13% do serviço confirmado. O sistema libera automaticamente após o banco confirmar.</p>'+
-          pendencias.map(a=>'<div class="stack--sm" data-qf13-pix="'+esc(a.id)+'"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+' · '+brl(a.comissao_centavos)+'</strong><button class="btn btn--primary" type="button" data-qf13-gerar-pix>Mostrar Pix para pagar</button><div data-qf13-pix-info role="status"></div></div>').join('');
+        area.innerHTML='<h2 class="h3" style="margin:0">Comissão pendente — pagamento Pix</h2><p>A comissão vence em 48 horas após a confirmação. Enquanto houver dívida pendente, novos desbloqueios ficam suspensos. O banco confirma o Pix e a liberação é automática.</p>'+
+          pendencias.map(a=>{
+            const deadline=a.comissao_vence_em?new Date(a.comissao_vence_em):null;
+            const valid=deadline&&!Number.isNaN(deadline.getTime());
+            const overdue=valid&&Date.now()>deadline.getTime();
+            const label=valid?(overdue?'Pagamento vencido desde ':'Pague até ')+deadline.toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}):'Prazo de pagamento: 48 horas após confirmar o serviço';
+            return '<div class="stack--sm" data-qf13-pix="'+esc(a.id)+'"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+' · '+brl(a.comissao_centavos)+'</strong><p role="status" style="margin:2px 0;font-weight:700;color:'+(overdue?'#ad321d':'#7a4500')+'">'+esc(label)+'</p><button class="btn btn--primary" type="button" data-qf13-gerar-pix>Mostrar Pix para pagar</button><div data-qf13-pix-info role="status"></div></div>';
+          }).join('');
         box.prepend(area);
         for(const item of area.querySelectorAll('[data-qf13-pix]')){
           const b=item.querySelector('[data-qf13-gerar-pix]'),target=item.querySelector('[data-qf13-pix-info]');
