@@ -416,6 +416,15 @@ input, select, textarea { font-size: 16px; }
   position:absolute; right:12px; top:50%; transform:translateY(-50%); z-index:2;
 }
 .history-delete:active { transform:translateY(-50%) scale(.96); }
+/* Tela Pedidos do profissional: abas compactas Em andamento / Histórico (azul, branco e laranja). */
+.qf-ped-tabs { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin:0 0 14px; background:#EAF1FD; border-radius:16px; }
+.qf-ped-tab { display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 10px; border:0; border-radius:12px; background:transparent; color:#1764D8; font:inherit; font-weight:800; font-size:15px; cursor:pointer; }
+.qf-ped-tab.is-active { background:#1764D8; color:#fff; box-shadow:0 2px 6px rgba(23,100,216,.28); }
+.qf-ped-tab__n { min-width:22px; height:22px; padding:0 6px; border-radius:11px; display:inline-flex; align-items:center; justify-content:center; background:#fff; color:#1764D8; font-size:12px; font-weight:800; }
+.qf-ped-tab.is-active .qf-ped-tab__n { background:#FF7900; color:#fff; }
+.qf-hist-item { display:grid; gap:8px; }
+.qf-hist-remove { justify-self:end; display:inline-flex; align-items:center; gap:6px; min-height:40px; border-radius:12px; border-color:#fecaca; color:#b91c1c; background:#fff; }
+.qf-hist-remove svg { width:16px; height:16px; }
 
 .tabbar__item.is-active::before {
   content: "";
@@ -5705,6 +5714,7 @@ alt=""></noscript>
       confirmado: S.APROVADO,
       em_andamento: S.EM_ANDAMENTO,
       concluido: S.SERVICO_CONCLUIDO,
+      finalizado: S.FINALIZADO,
       cancelado: S.CANCELADO,
       expirado: S.CANCELADO
     })[status] || S.BUSCANDO;
@@ -6383,6 +6393,11 @@ alt=""></noscript>
     if (global.QFAtendimento) await global.QFAtendimento.enrich(reqs);
     DB.state.requests = reqs;
     rebuildCloudReviews(reqs, userId);
+    // Serviços que o profissional removeu da PRÓPRIA lista (só visualização). Se a consulta falhar, a lista segue igual.
+    try {
+      const ocultos = await client.from('qf_profissional_servicos_ocultos').select('chamado_id').eq('profissional_id', userId);
+      DB.state.servicosOcultos = { userId: userId, ids: ocultos.error ? [] : (ocultos.data || []).map(function (o) { return o.chamado_id; }) };
+    } catch (_) { DB.state.servicosOcultos = { userId: userId, ids: [] }; }
 
     const txRes = await client.from('qf_movimentacoes_carteira').select('*').eq('profissional_id', userId).order('criado_em', { ascending: false }).limit(100);
     const recRes = await client.from('qf_recargas')
@@ -13613,31 +13628,68 @@ alt=""></noscript>
 
   // ---------------- Meus serviços ----------------
 
-  const ATIVOS_PROF = [STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO, STATUS.SERVICO_CONCLUIDO, STATUS.PAGO];
+  // Tela Pedidos do profissional: duas abas compactas.
+  // Em andamento = só serviço ativo ou em negociação. Histórico = concluído, cancelado ou encerrado.
+  const ATIVOS_PROF = [STATUS.BUSCANDO, STATUS.AGUARDANDO_ACEITE, STATUS.AGUARDANDO_ORCAMENTO, STATUS.ORCAMENTO_ENVIADO, STATUS.ORCAMENTO_RECUSADO, STATUS.APROVADO, STATUS.EM_ANDAMENTO];
+  const CONCLUIDOS_PROF = [STATUS.SERVICO_CONCLUIDO, STATUS.PAGO, STATUS.FINALIZADO];
+  const ABA_SERVICOS_KEY = 'qf_prof_servicos_aba';
+  function profServicosAba() {
+    try { return sessionStorage.getItem(ABA_SERVICOS_KEY) === 'historico' ? 'historico' : 'andamento'; } catch (_) { return 'andamento'; }
+  }
+  function setProfServicosAba(aba) {
+    try { sessionStorage.setItem(ABA_SERVICOS_KEY, aba === 'historico' ? 'historico' : 'andamento'); } catch (_) {}
+  }
   function profHiddenHistory(userId) {
-    try { return JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]') || []; } catch (_) { return []; }
+    let local = [];
+    try { local = JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]') || []; } catch (_) {}
+    const srv = DB.state && DB.state.servicosOcultos;
+    return srv && srv.userId === userId && Array.isArray(srv.ids) ? local.concat(srv.ids) : local;
   }
   function hideProfHistory(userId, requestId) {
-    const ids = profHiddenHistory(userId);
+    let ids = [];
+    try { ids = JSON.parse(localStorage.getItem('quemfaz_hidden_history_v1_profissional_' + userId) || '[]') || []; } catch (_) {}
     if (ids.indexOf(requestId) === -1) ids.push(requestId);
     try { localStorage.setItem('quemfaz_hidden_history_v1_profissional_' + userId, JSON.stringify(ids.slice(-250))); } catch (_) {}
+    const srv = DB.state && DB.state.servicosOcultos;
+    if (srv && srv.userId === userId && srv.ids.indexOf(requestId) === -1) srv.ids.push(requestId);
+  }
+  // Separa os serviços do profissional nas duas listas. Remover da lista nunca apaga dado: só esconde o cartão.
+  function profServicosGrupos(userId) {
+    const hidden = profHiddenHistory(userId);
+    const all = DB.requestsByProfissional(userId);
+    return {
+      ativos: all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) !== -1; }),
+      historico: all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) === -1 && hidden.indexOf(r.id) === -1; })
+    };
   }
 
   Screens.profServicosRender = function (params, user) {
-    const hidden = profHiddenHistory(user.id);
-    const all = DB.requestsByProfissional(user.id);
-    const ativos = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) !== -1; });
-    const historico = all.filter(function (r) { return ATIVOS_PROF.indexOf(r.status) === -1 && hidden.indexOf(r.id) === -1; });
-    if (!ativos.length && !historico.length) {
-      return '<div class="view"><div class="empty-state"><div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div><h2 class="h3">Nenhum serviço ainda</h2><p class="text text--secondary">Fique online para começar a receber chamados de clientes.</p></div></div>';
+    const g = profServicosGrupos(user.id);
+    const aba = profServicosAba();
+    const aqui = aba === 'historico' ? g.historico : g.ativos;
+    const tab = function (id, rotulo, n) {
+      const on = aba === id;
+      return '<button class="qf-ped-tab' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + (on ? 'true' : 'false') + '" data-prof-aba="' + id + '">' + rotulo + '<span class="qf-ped-tab__n">' + n + '</span></button>';
+    };
+    let corpo;
+    if (!aqui.length) {
+      corpo = aba === 'historico'
+        ? '<div class="empty-state"><div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div><h2 class="h3">Nenhum serviço no histórico</h2><p class="text text--secondary">Os serviços concluídos aparecem aqui automaticamente.</p></div>'
+        : '<div class="empty-state"><div class="icon-tile icon-tile--lg icon-tile--ghost">' + icon('clipboard') + '</div><h2 class="h3">Nenhum serviço em andamento</h2><p class="text text--secondary">Quando você desbloquear um pedido, ele aparece aqui até ser concluído.</p></div>';
+    } else if (aba === 'historico') {
+      corpo = '<div class="stack--sm">' + aqui.map(function (r) {
+        return '<div class="qf-hist-item">' + servicoCard(r) +
+          '<button class="btn btn--outline btn--sm qf-hist-remove" type="button" data-hide-servico="' + PU.escapeHtml(r.id) + '" aria-label="Remover da lista">' + icon('xCircle') + ' Remover da lista</button></div>';
+      }).join('') + '</div>';
+    } else {
+      corpo = '<div class="stack--sm">' + aqui.map(servicoCard).join('') + '</div>';
     }
     return (
       '<div class="view">' +
-        (ativos.length ? '<div class="section"><div class="section-head"><h2 class="h3">Em andamento</h2></div><div class="stack--sm">' + ativos.map(servicoCard).join('') + '</div></div>' : '') +
-        (historico.length ? '<div class="section"><div class="section-head"><h2 class="h3">Histórico</h2></div><div class="stack--sm">' + historico.map(function (r) {
-          return '<div class="history-entry">' + servicoCard(r) +
-            '<button class="history-delete" type="button" data-hide-servico="' + PU.escapeHtml(r.id) + '" aria-label="Excluir serviço do histórico" title="Excluir do histórico">' + icon('xCircle') + '</button></div>';
-        }).join('') + '</div></div>' : '') +
+        '<div class="qf-ped-tabs" role="tablist" aria-label="Meus serviços">' +
+          tab('andamento', 'Em andamento', g.ativos.length) + tab('historico', 'Histórico', g.historico.length) +
+        '</div>' +
+        '<div class="section" data-prof-servicos-lista="' + aba + '">' + corpo + '</div>' +
       '</div>'
     );
   };
@@ -14752,21 +14804,42 @@ alt=""></noscript>
   }
 
   function bindProfServicos(content, user) {
+    // Um único ouvinte por tela: a cada renderização só atualizamos qual profissional está logado.
+    content.__qfProfServicosUser = user;
+    if (content.__qfProfServicosBound) return;
+    content.__qfProfServicosBound = true;
     content.addEventListener('click', function (e) {
+      const u = content.__qfProfServicosUser;
+      if (!u) return;
+      const aba = e.target.closest('[data-prof-aba]');
+      if (aba) {
+        e.preventDefault();
+        setProfServicosAba(aba.getAttribute('data-prof-aba'));
+        global.navigate('/profissional/servicos', true);
+        return;
+      }
       const btn = e.target.closest('[data-hide-servico]');
       if (!btn) return;
       e.preventDefault();
       e.stopPropagation();
       const id = btn.getAttribute('data-hide-servico');
       PU.confirmDialog({
-        title: 'Excluir do histórico',
-        message: 'Este serviço será removido da sua lista. O registro continua preservado no sistema.',
-        okLabel: 'Excluir',
+        title: 'Remover da lista?',
+        message: 'Este serviço sai apenas da sua lista. Avaliações, pagamentos e comissões continuam registrados no sistema.',
+        okLabel: 'Remover da lista',
         danger: true
-      }).then(function (ok) {
+      }).then(async function (ok) {
         if (!ok) return;
-        hideProfHistory(user.id, id);
-        PU.toast('Serviço removido do histórico.', 'success');
+        // Grava no servidor (vale em todos os aparelhos). Sem a função no servidor, a remoção vale neste aparelho.
+        try {
+          const c = global.QFCloud && global.QFCloud.client;
+          if (c) {
+            const r = await c.rpc('qf_profissional_ocultar_servico', { p_chamado_id: id });
+            if (!r.error && r.data && r.data.ok === false) { PU.toast(r.data.reason || 'Não foi possível remover este serviço.', 'danger'); return; }
+          }
+        } catch (_) {}
+        hideProfHistory(u.id, id);
+        PU.toast('Serviço removido da lista.', 'success');
         global.navigate('/profissional/servicos', true);
       });
     });
