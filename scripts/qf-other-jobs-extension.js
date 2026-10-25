@@ -93,11 +93,11 @@ function qfOutrosProCard(req) {
   const occupied=Math.max(0,Number(req.participantes||0)||0);
   const free=Math.max(0,limit-occupied);
   const criadoMs=qfPedidoCriadoMs(req),expiraMs=qfPedidoExpiraMs(req);
-  const restante=expiraMs==null?'Consulte o prazo no pedido':'Termina em '+qfPedidoRestanteTexto(expiraMs-Date.now());
+  const restante=expiraMs==null?'Consulte o prazo no pedido':qfPedidoRestanteTexto(expiraMs-Date.now());
   const relogio='<div class="qf-home-job__clock" aria-label="Data de publicação e validade do pedido">'+
     '<span class="qf-home-job__published">Publicado: '+qfOutrosEsc(qfPedidoPublicadoTexto(criadoMs))+'</span>'+
     '<span class="qf-home-job__countdown'+(expiraMs!==null&&expiraMs-Date.now()<=6*3600000?' is-soon':'')+'"'+
-    (expiraMs==null?'':' data-qf-expires-at="'+expiraMs+'"')+'>'+qfOutrosEsc(restante)+'</span></div>';
+    (expiraMs==null?'':' data-qf-expires-at="'+expiraMs+'"')+'>'+(expiraMs==null?qfOutrosEsc(restante):'Termina em <strong class="qf-home-job__countdown-value" data-qf-clock-value>'+qfOutrosEsc(restante)+'</strong>')+'</span></div>';
   return '<article class="qf-home-job'+(req.foraRaio?' qf-home-job--fora':'')+'" data-qf-home-job data-request-id="'+qfOutrosEsc(req.id)+'" data-created="'+qfOutrosEsc(req.criadoEm||'')+
     '" data-distance="'+(req.distanciaKm==null?'999999':Number(req.distanciaKm))+'">'+
     '<div class="qf-home-job__symbol">'+icon(c&&c.icon||'briefcase')+'</div>'+
@@ -196,7 +196,8 @@ function qfPedidosAtualizarRelogios(content,user){
   content.querySelectorAll('[data-qf-expires-at]').forEach(function(el){
     const falta=Number(el.getAttribute('data-qf-expires-at'))-Date.now();
     if(falta<=0){expirou=true;return;}
-    el.textContent='Termina em '+qfPedidoRestanteTexto(falta);
+    const value=el.querySelector('[data-qf-clock-value]');
+    if(value)value.textContent=qfPedidoRestanteTexto(falta);
     el.classList.toggle('is-soon',falta<=6*60*60*1000);
   });
   if(expirou){
@@ -291,8 +292,9 @@ Screens.afterRender = function(pattern,content,params,user){
    '.qf-home-jobs__header select{flex:none;width:auto;max-width:146px;padding:8px 12px;font-size:12px;border-radius:12px}',
    '.qf-home-job{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:#fff;border:1px solid #e7edf4;border-radius:16px;padding:13px 12px;box-shadow:0 2px 8px rgba(5,36,84,.035)}',
    '.qf-home-job__clock{flex:0 0 100%;border-top:1px solid #e9eef5;padding-top:8px;margin-top:2px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px 10px;font-size:11px;line-height:1.4}',
-   '.qf-home-job__published{color:#63748b}.qf-home-job__countdown{color:#1763cf;font-weight:800;font-variant-numeric:tabular-nums}',
-   '.qf-home-job__countdown.is-soon{color:#c34226}',
+   '.qf-home-job__published{color:#63748b}.qf-home-job__countdown{color:#586780;font-weight:600;font-variant-numeric:tabular-nums}',
+   '.qf-home-job__countdown-value{color:#bd4b00;font-weight:900;font-size:12px}',
+   '.qf-home-job__countdown.is-soon .qf-home-job__countdown-value{color:#a83e00}',
    '.qf-home-job__symbol{display:grid;place-items:center;background:#ecf4ff;color:#125bb3;border-radius:13px;min-width:54px;height:60px}',
    '.qf-home-job__symbol svg{width:25px;height:25px}',
    '.qf-home-job__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}',
