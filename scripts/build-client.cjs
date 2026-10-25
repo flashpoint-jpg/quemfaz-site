@@ -15,17 +15,17 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.29'");
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=comissao-pix-auto-20261024-v2');
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.30'");
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=comissao-pix-auto-48h');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=comissao-pix-auto-20261024-v2').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=codigo-visivel-20261024');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=comissao-pix-auto-48h').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=codigo-visivel-20261024');
 const adminPath=path.join(out,'admin.html');
-fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=comissao-pix-auto-20261024-v2'));
+fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=comissao-pix-auto-48h'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
 adminHtml=adminHtml.replace(/<script src="qf-comissao13\.js[^"']*"><\/script>/g,'');
-adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=comissao-pix-auto-20261024-v2"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
+adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=comissao-pix-auto-48h"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
 const routeMarker="    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard'";
 if(!adminHtml.includes(routeMarker))throw Error('Rota administrativa ausente');
 adminHtml=adminHtml.replace(routeMarker,"    { pattern: '/admin/espelho-profissionais', role: 'admin', title: 'Espelho dos profissionais', render: Screens.adminEspelhoRender },\n    { pattern: '/admin/espelho-profissionais/:id', role: 'admin', title: 'Tela do profissional', back: '/admin/espelho-profissionais', render: Screens.adminEspelhoDetalheRender },\n    { pattern: '/admin/comissao13', role: 'admin', title: 'Comissões de 13%', render: Screens.adminComissao13Render },\n"+routeMarker);
