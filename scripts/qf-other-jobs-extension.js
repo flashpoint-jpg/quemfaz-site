@@ -33,7 +33,7 @@ Screens.profOutrosPedidosRender = function(params,user) {
 };
 let qfPedidosTab='perto',qfPedidosTabUser='';
 function qfPedidosNoHorario(user,now) {
-  if(!user||!user.online)return false;
+  if(!user||user.bloqueado)return false;
   const parse=v=>{const m=/^(\d{2}):(\d{2})$/.exec(String(v).slice(0,5));return m?Number(m[1])*60+Number(m[2]):null;};
   const a=parse(user.horarioInicio||'06:00'),b=parse(user.horarioFim||'22:00');
   if(a===null||b===null)return false;
@@ -62,7 +62,7 @@ function qfPedidosGrupos(user) {
 window.QFPedidosGrupos=qfPedidosGrupos;
 // Home simplificada: somente pedidos elegiveis, sem vitrine antiga ou contagem de atividade geral.
 function qfOutrosHorario(user) {
-  if (!user || !user.online) return null;
+  if (!user || user.bloqueado) return null;
   const start=String(user.horarioInicio || '06:00').slice(0,5);
   const end=String(user.horarioFim || '22:00').slice(0,5);
   const parse=function(v){const m=/^(\d{2}):(\d{2})$/.exec(v);return m?Number(m[1])*60+Number(m[2]):null;};
@@ -74,7 +74,7 @@ function qfOutrosHorario(user) {
   const inside=a<b?(n>=a&&n<b):(n>=a||n<b);
   return inside
     ? 'Você está recebendo pedidos da sua profissão e região.'
-    : 'Você está online. Notificações de novos pedidos pausadas até ' + start + '. Você pode consultar os pedidos no app.';
+    : 'Notificações de novos pedidos pausadas até ' + start + '. Você pode consultar os pedidos no app.';
 }
 window.QFHomeProCard=qfOutrosProCard;
 function qfOutrosProCard(req) {
@@ -118,7 +118,7 @@ function qfOutrosHomePedidos(user) {
     ['perto','mais'].map(function(key){const count=groups[key].length,title=key==='perto'?'Perto de mim':'Mais oportunidades';return '<button type="button" role="tab" id="qf-pedidos-'+key+'" aria-label="'+title+' ('+count+')" aria-controls="qf-pedidos-panel" aria-selected="'+(selected===key)+'" tabindex="'+(selected===key?'0':'-1')+'" data-qf-pedidos-tab="'+key+'"><span class="qf-pedidos-tab-title"><span class="qf-pedidos-dot'+(count?' is-lit':'')+'" aria-hidden="true"></span>'+title+'</span><span class="qf-pedidos-total">'+count+' <small>'+(count===1?'pedido':'pedidos')+'</small></span><span class="qf-pedidos-sub">'+(key==='perto'?'Dentro do seu raio':'Fora do seu raio')+'</span></button>';}).join('')+'</div>'+
     '<div id="qf-pedidos-panel" role="tabpanel" aria-labelledby="qf-pedidos-'+selected+'">'+
     '<p class="qf-pedidos-hint text--sm text--secondary">'+(selected==='perto'?'Suas profissões, dentro do seu raio. Avisos conforme seu horário.':'Suas profissões, fora do seu raio. Sem toque ou push. Confira a distância antes de desbloquear.')+'</p>'+
-    (rows.length?'<div class="stack--sm" data-qf-home-list>'+rows.map(qfOutrosProCard).join('')+'</div>':
+    (selected==='mais'&&window.QFOpportunitiesError?'<p role="status">Não foi possível atualizar as oportunidades. Tente atualizar a lista.</p>':rows.length?'<div class="stack--sm" data-qf-home-list>'+rows.map(qfOutrosProCard).join('')+'</div>':
       '<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div>'+
       '<p class="text text--secondary">'+(selected==='perto'?'Nenhum pedido da sua profissão dentro do seu raio agora.':'Nenhuma oportunidade das suas profissões fora do raio agora.')+'</p></div>')+
     '</div></div>';

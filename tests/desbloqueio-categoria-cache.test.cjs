@@ -23,6 +23,6 @@ test('link antigo de Outros pedidos abre lista elegível sem a vitrine',()=>{
 });
 test('aviso mantém pedidos visíveis fora do horário sem prometer notificações',()=>{
  const {ctx}=setup();
- assert.equal(ctx.qfOutrosHorario({online:false}),null);
+ assert.match(ctx.qfOutrosHorario({online:false,horarioInicio:'00:00',horarioFim:'00:00'}),/profissão e região/);
  assert.match(ctx.qfOutrosHorario({online:true,horarioInicio:'00:00',horarioFim:'00:00'}),/profissão e região/);
 });

@@ -7,7 +7,7 @@ function setup(){
  const dom=new JSDOM('<html><head></head><body><main></main></body></html>');
  const user={id:'prof',online:true,categorias:['eletricista','montador'],horarioInicio:'08:00',horarioFim:'18:00'};
  let rows=[];
- const ctx={document:dom.window.document,window:{},PU:{escapeHtml:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')},icon:()=>'',DB:{categoryById:id=>({nome:id}),cityById:()=>null,chamadasPendentes:()=>rows,requestById:id=>rows.find(r=>r.id===id)},Screens:{profHomeRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',profChamadaRender:()=>'<div class="view">Desbloquear</div>',profServicosDisponiveisRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',afterRender:()=>{}}};
+ const ctx={setInterval:()=>1,clearInterval:()=>{},document:dom.window.document,window:{},PU:{escapeHtml:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')},icon:()=>'',DB:{categoryById:id=>({nome:id}),cityById:()=>null,chamadasPendentes:()=>rows,requestById:id=>rows.find(r=>r.id===id)},Screens:{profHomeRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',profChamadaRender:()=>'<div class="view">Desbloquear</div>',profServicosDisponiveisRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',afterRender:()=>{}}};
  vm.createContext(ctx);vm.runInContext(source,ctx);
  const row=(id,cat,far=false,more={})=>({id,categoriaId:cat,foraRaio:far,distanciaKm:far?50:5,endereco:{cidade:'Santo André',uf:'SP',bairro:'Centro'},descricao:'Pedido real retornado pelo servidor',limiteParticipantes:4,participantes:1,criadoEm:'2026-10-24T10:00:00Z',...more});
  rows=[row('near','eletricista'),row('old','montador',true),row('new','eletricista',true,{criadoEm:'2026-10-24T12:00:00Z'}),row('wrong','pintor',true),row('full','montador',true,{participantes:4}),row('unlocked','eletricista',true,{profissionalId:'prof'}),row('near','eletricista')];
@@ -38,7 +38,8 @@ test('alertas: fora do raio nunca toca; dentro do raio respeita horário e virad
  assert.equal(allows(row('a','eletricista',true),user,inside),false);
  assert.equal(allows(row('a','pintor'),user,inside),false);
  assert.equal(allows(row('a','eletricista'),user,outside),false);
- user.online=false;assert.equal(allows(row('a','eletricista'),user,inside),false);user.online=true;
+ user.online=false;assert.equal(allows(row('a','eletricista'),user,inside),true,'botão Online antigo não controla avisos');user.online=true;
+ user.bloqueado=true;assert.equal(allows(row('a','eletricista'),user,inside),false);user.bloqueado=false;
  user.horarioInicio='22:00';user.horarioFim='06:00';assert.equal(allows(row('a','eletricista'),user,new Date('2026-10-25T04:00:00Z')),true);
  user.horarioInicio=user.horarioFim='00:00';assert.equal(allows(row('a','eletricista'),user,outside),true);
 });
