@@ -40,6 +40,22 @@
    const onState=()=>paint();g.addEventListener('qf-push-state',onState);
    const cleanupPush=setInterval(()=>{if(!content.isConnected){clearInterval(cleanupPush);g.removeEventListener('qf-push-state',onState);}},3000);
   }
+  // Recuperação manual segura quando a atualização automática não refletir um pedido.
+  if(['/profissional/home','/profissional/servicos/disponiveis'].includes(pattern) && g.QFCloud?.enabled){
+   const host=content.querySelector('.view')||content;
+   const bar=document.createElement('div');
+   bar.setAttribute('data-qf-refresh-pedidos','');
+   bar.style.cssText='display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0;';
+   bar.innerHTML='<button type="button" class="btn btn--outline" data-qf-reload-pedidos>Atualizar pedidos</button><span class="text--sm text--secondary" data-qf-reload-msg>Pedidos consultados automaticamente.</span>';
+   host.prepend(bar);
+   const btn=bar.querySelector('[data-qf-reload-pedidos]');
+   btn.addEventListener('click',function(){
+    btn.disabled=true;btn.textContent='Atualizando…';
+    bar.querySelector('[data-qf-reload-msg]').textContent='Consultando pedidos novamente…';
+    // Recarrega a sessão atual para refazer o RPC e reconstruir os cartões, inclusive após falha temporária.
+    g.location.reload();
+   });
+  }
   if(!['/profissional/home','/profissional/servicos/disponiveis','/profissional/outros-pedidos'].includes(pattern)||!g.QFCloud?.enabled||!g.IntersectionObserver)return;
   const seen=new Set();let pending=new Set(),timer;
   const flush=()=>{const ids=[...pending];pending.clear();if(!ids.length||!content.isConnected)return;g.QFCloud.client.rpc('qf_registrar_pedidos_exibidos',{p_ids:ids}).then(r=>{if(r.error)ids.forEach(id=>seen.delete(id));}).catch(()=>ids.forEach(id=>seen.delete(id)));};
