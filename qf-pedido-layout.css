@@ -1,0 +1,42 @@
+/* Acompanhamento: estilos locais, compartilhados pelo app e pelo link do pedido. */
+.qf-owner-tracking { min-width: 0; color: #173b66; font-family: Inter, system-ui, sans-serif; line-height: 1.5; }
+.qf-owner-tracking *, .qf-owner-tracking *::before, .qf-owner-tracking *::after { box-sizing: border-box; }
+.qf-owner-content, .qf-owner-professionals, .qf-owner-tracking .stack--sm, .qf-owner-form { display: grid; gap: 16px; min-width: 0; }
+.qf-owner-tracking h1, .qf-owner-tracking h2, .qf-owner-tracking p { margin: 0; overflow-wrap: anywhere; }
+.qf-owner-tracking h1 { font-size: 24px; line-height: 1.25; }
+.qf-owner-tracking h2 { font-size: 18px; line-height: 1.35; }
+.qf-owner-tracking .card { margin: 0; padding: 20px; border: 1px solid #dce4ed; border-radius: 16px; background: #fff; box-shadow: none; }
+.qf-owner-tracking .badge { justify-self: start; width: fit-content; max-width: 100%; padding: 6px 10px; border-radius: 8px; background: #edf4ff; color: #1457a8; font-size: 13px; font-weight: 700; white-space: normal; }
+.qf-owner-tracking .text--sm { font-size: 14px; }
+.qf-owner-tracking .btn-row, .qf-owner-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 12px; min-width: 0; }
+.qf-owner-tracking .btn-row > form { flex: 0 0 100%; }
+.qf-owner-tracking .qf-owner-form > label:not(.qf-owner-check) { display: grid; gap: 8px; font-size: 14px; font-weight: 650; }
+.qf-owner-tracking .input { display: block; width: 100%; max-width: 320px; min-width: 0; min-height: 48px; padding: 12px; border: 1px solid #aebed1; border-radius: 10px; background: #fff; color: #173b66; font: inherit; }
+.qf-owner-tracking .qf-owner-check { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 400; cursor: pointer; }
+.qf-owner-tracking .qf-owner-check input { flex: 0 0 20px; width: 20px; height: 20px; margin: 1px 0 0; accent-color: #1769d5; }
+.qf-owner-tracking .btn, #app-shell .qf-owner-tracking .btn { display: inline-flex; align-items: center; justify-content: center; justify-self: start; flex: 0 1 auto; width: auto; max-width: 100%; min-height: 48px; height: auto; padding: 12px 18px; gap: 8px; border: 1px solid #1769d5; border-radius: 12px; background: #fff; color: #1457a8; box-shadow: none; font: 700 14px/1.4 Inter, system-ui, sans-serif; text-align: center; text-decoration: none; white-space: normal; overflow-wrap: anywhere; cursor: pointer; }
+.qf-owner-tracking .btn--primary, #app-shell .qf-owner-tracking .btn--primary { background: #f47b20; border-color: #f47b20; color: #172941; }
+.qf-owner-tracking .btn:disabled { opacity: .55; cursor: wait; }
+.qf-owner-tracking :is(button, input, a):focus-visible { outline: 3px solid #1769d5; outline-offset: 3px; }
+.qf-owner-tracking [role="status"]:empty { display: none; }
+.qf-owner-tracking [role="status"]:not(:empty) { font-size: 14px; }
+.qf-owner-tracking > [role="alert"] { margin-top: 12px; }
+
+/* Preserva as ações existentes, com largura legível no computador. */
+#app-shell[data-route="cliente-pedido"] .view { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; max-width: 860px; margin-inline: auto; min-width: 0; }
+#app-shell[data-route="cliente-pedido"] .view > .row-between { flex-wrap: wrap; gap: 12px; }
+#app-shell[data-route="cliente-pedido"] .view > .row-between > .row { flex-wrap: wrap; }
+#app-shell[data-route="cliente-pedido"] .view .card { border-radius: 16px; }
+#app-shell[data-route="cliente-pedido"] .view .btn-row { flex-wrap: wrap; gap: 12px; }
+#app-shell[data-route="cliente-pedido"] .view .btn { min-height: 48px; height: auto; line-height: 1.4; white-space: normal; }
+#app-shell[data-route="cliente-pedido"] .view > .qf-owner-panel { grid-column: 1 / -1; position: static; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+@media (min-width: 768px) {
+  #app-shell[data-route="cliente-pedido"] .view .btn { width: auto; max-width: 360px; flex: 0 1 auto; align-self: start; }
+  #app-shell[data-route="cliente-pedido"] .view > .section:has(.status-track) { position: static; grid-column: 1 / -1; grid-row: auto; }
+}
+@media (max-width: 767px) {
+  .qf-owner-tracking .card { padding: 16px; }
+  .qf-owner-tracking .btn, #app-shell .qf-owner-tracking .btn { width: 100%; flex-basis: 100%; }
+  .qf-owner-tracking .input { max-width: none; }
+  #app-shell[data-route="cliente-pedido"] .view .btn-row > .btn { flex-basis: 100%; }
+}
