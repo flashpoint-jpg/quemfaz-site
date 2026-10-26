@@ -35,13 +35,13 @@
    const who=s.papel,estado=s.estado,resposta=s.cliente_resposta,valor=s.valor_centavos||0,prop=!!s.proposta_em;
    const row=[];
    let headline='Negociação dentro do aplicativo';
-   if(resposta==='divergencia')headline='Divergência: administração precisa analisar';
+   if(resposta==='divergencia')headline=['informado','negociando'].includes(estado)?'Cliente solicitou correção do valor':'Divergência em análise';
    else if(resposta==='nao_contratou')headline='Cliente informou que não contratou';
    else if(resposta==='confirmado')headline='Contratação confirmada pelo cliente';
    else if(estado==='recusado')headline='Profissional declarou que não fechou';
    else if(prop&&estado==='negociando')headline='Proposta aguardando resposta do cliente';
    else if(estado==='informado')headline='Profissional informou contratação — confirme o resultado';
-   row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(headline)+'</p>');
+   row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(who==='cliente'&&['informado','negociando'].includes(estado)&&valor&&!resposta?(s.profissional_nome||'O profissional')+' informou que vocês fecharam por '+price(valor)+'. Confira e confirme.':headline)+'</p>');
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
    if(who==='profissional'){
@@ -81,6 +81,7 @@
      catch(err){setStatus('Não foi possível ativar: '+String(err.message||'verifique as configurações do celular'));}
      finally{btn.disabled=false;}
    });
+   g.QFComissao13?.bindResumo(pane.querySelector('[data-qfc-form]'));
    pane.querySelector('[data-qfc-form]')?.addEventListener('submit',async e=>{
     e.preventDefault();
     const raw=pane.querySelector('[data-qfc-valor]').value.trim();
@@ -132,6 +133,16 @@
   },10000);
   update();
  }
+ async function avisosCliente(content,user){
+  if(!content||!user?.id||!g.QFCloud?.client)return;
+  try{
+   const {data,error}=await g.QFCloud.client.rpc('qf13_minhas_confirmacoes');if(error||!content.isConnected||!Array.isArray(data)||!data.length)return;
+   if(content.querySelector('[data-qf13-client-notices]'))return;
+   const box=g.document.createElement('section');box.dataset.qf13ClientNotices='';box.className='card stack--sm';box.style.cssText='border:1px solid #efaa57;background:#fff8ef;padding:14px;border-radius:14px;margin:12px 0';
+   box.innerHTML='<strong>Confirme sua contratação</strong>'+data.map(x=>'<div style="display:grid;gap:8px;margin-top:8px"><p style="margin:0">'+escapeHTML(x.profissional)+' informou que vocês fecharam por <strong>'+price(x.valor_centavos)+'</strong>. Confira e confirme.</p><a class="btn btn--primary" href="'+escapeHTML(x.rota)+'">Conferir contratação</a></div>').join('');
+   (content.querySelector('.view')||content).prepend(box);
+  }catch(_){}
+ }
  function install(){
   const Screens=g.Screens;
   if(!Screens||Screens._qfChatContratoInstalled)return;
@@ -139,12 +150,15 @@
   const prev=Screens.afterRender;
   Screens.afterRender=function(pattern,content,params,user){
     if(prev)prev.apply(this,arguments);
+    if(['/cliente/home','/cliente/pedidos','/cliente/pedido/:id'].includes(pattern))avisosCliente(content,user);
     if(pattern==='/profissional/chat/:id'||pattern==='/cliente/chat/:id/:profId'){
       mount(content.querySelector('[data-qf-chat-root]'),params,user,pattern.startsWith('/profissional/')?'profissional':'cliente');
     }
   };
+  const path=g.location?.hash||'',session=g.DB?.getSession?.();
+  if(/^#\/cliente\/(home|pedidos|pedido\/)/.test(path)&&session?.userId)avisosCliente(g.document.getElementById('app-content'),{id:session.userId});
  }
- g.QFChatContratacao={mount,install};
+ g.QFChatContratacao={mount,install,avisosCliente};
  install();
  if(g.document?.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
 })(window);

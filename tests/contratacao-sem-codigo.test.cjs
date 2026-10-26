@@ -1,21 +1,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {fixture,rpc,answers}=require('./helpers/comissao13-owner.cjs');
 const {as,uid}=require('./helpers/atendimento-db.cjs');
-const migration=fs.readdirSync('supabase/migrations').find(n=>n.endsWith('_confirmacao_contratacao_sem_codigo.sql'));
-async function setup(){
- const d=await fixture();await d.exec('reset role');
- await d.exec(`alter table qf_comissao13_fechamentos add column proposta_chat_em timestamptz;
- alter table qf_chat_mensagens add column mensagem text;
- create function private.qf_livre_identificacao(uuid) returns boolean language sql as $$select true$$;
- create table qf_comissao13_pix(id uuid default gen_random_uuid(),fechamento_id uuid unique,profissional_id uuid,valor_centavos bigint);
- create function private.qf_comissao13_automatico() returns trigger language plpgsql as $$begin return null;end$$;
- create trigger qf_comissao13_auto_pix after insert or update of status,cliente_resposta,codigo_validado_em,cobranca_status on qf_comissao13_fechamentos for each row execute function private.qf_comissao13_automatico();`);
- await d.exec(fs.readFileSync('supabase/migrations/'+migration,'utf8'));
- await as(d,1);const a=answers(),call=await rpc(d,'qf_publicar_atendimento',[a,{latitude:-23.66,longitude:-46.53}]);
- await as(d,11);assert.equal((await rpc(d,'qf_comissao13_desbloquear',[call.id,true])).ok,true);
- const f=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];
- return {d,a,call,f};
-}
+const {setup}=require('./helpers/contratacao-sem-codigo.cjs');
 async function row(d,f){await d.exec('reset role');return (await d.query('select * from qf_comissao13_fechamentos where id=$1',[f.id])).rows[0];}
 test('Sem código: valor confirmado gera 13%, Pix único e prazo de 48h; sem resposta não cobra',async()=>{
  const {d,a,call,f}=await setup();try{
