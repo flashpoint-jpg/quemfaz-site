@@ -172,4 +172,5 @@ require('./repair-seo-leads.cjs');
 require('./seo-hub-icons.cjs');
 // V11.96: guias do ABC, consolidação de páginas finas e passagem de UTM/gclid/msclkid.
 require('./seo-abc.cjs');
+require('./seo-index-links.cjs');
 require('./check-sitemap.cjs');
