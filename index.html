@@ -6753,14 +6753,14 @@ alt=""></noscript>
     const res = await Promise.all([
       client.rpc('qf_portfolio_servicos'),
       client.from('qf_chamados_desbloqueados').select('id,status,atualizado_em'),
-      client.rpc('qf_mais_oportunidades')
+      Promise.resolve(client.rpc('qf_mais_oportunidades')).catch(function(error){return {error:error};})
     ]);
     if (res[0].error) throw res[0].error;
     if (res[1].error) throw res[1].error;
-    if (res[2].error) throw res[2].error;
+    // Falha na aba voluntária não interrompe a atualização dos pedidos próximos.
     const availableKey = function(r) { return [r.id,r.status,r.participantes,r.limite,r.distancia_km,r.raio_atual_km].join(':'); };
     const a = (res[0].data || []).map(availableKey).sort();
-    const o = (res[2].data || []).map(availableKey).sort();
+    const o = res[2].error ? ['consulta_indisponivel'] : (res[2].data || []).map(availableKey).sort();
     const u = (res[1].data || []).map(function (r) { return r.id + ':' + r.status + ':' + (r.atualizado_em || ''); }).sort();
     return a.join(',') + '|' + u.join(',') + '|' + o.join(',');
   }
@@ -7932,11 +7932,21 @@ alt=""></noscript>
     };
   })();
   try { QFPrecos.aplicar(JSON.parse(localStorage.getItem(PRECOS_KEY) || 'null')); } catch (_) {}
-  if (client) client.from('qf_precos_desbloqueio').select('categoria,preco_centavos').then(function (r) {
-    if (r.error || !Array.isArray(r.data) || !r.data.length) return;
-    QFPrecos.aplicar(r.data);
-    try { localStorage.setItem(PRECOS_KEY, JSON.stringify(r.data)); } catch (_) {}
-  }, function () {});
+  function carregarPrecosAutenticado(session) {
+    // O catálogo é restrito a usuários autenticados; a página pública não o consulta.
+    if (!client || !session || !session.access_token) return;
+    client.from('qf_precos_desbloqueio').select('categoria,preco_centavos').then(function (r) {
+      if (r.error || !Array.isArray(r.data) || !r.data.length) return;
+      QFPrecos.aplicar(r.data);
+      try { localStorage.setItem(PRECOS_KEY, JSON.stringify(r.data)); } catch (_) {}
+    }, function () {});
+  }
+  if (client && client.auth) {
+    client.auth.getSession().then(function(r){carregarPrecosAutenticado(r.data && r.data.session);},function(){});
+    client.auth.onAuthStateChange(function(event,session){
+      if (session) setTimeout(function(){carregarPrecosAutenticado(session);},0);
+    });
+  }
 })(window);
 
 /* QuemFaz — Web Push real para PWA instalada (HTTPS). */
@@ -15588,7 +15598,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.35';
+  const APP_VERSION = '12.1.36';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
