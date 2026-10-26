@@ -73,6 +73,12 @@ Deno.serve(async (req) => {
   // Mesma resposta para número sem conta e para código errado: não revela quem é cliente.
   if (entrar && !userId) return reply({ ok: false, error: ERRO_ENTRAR }, 401);
 
+  // SECURITY: unauthenticated registration must never mint a session for an existing account.
+  // Existing clients must prove possession of their legacy access code in entrar mode.
+  if (!entrar && userId) {
+    return reply({ ok: false, error: "Este telefone já possui cadastro. Entre com seu código de acesso." }, 409);
+  }
+
   if (entrar) {
     const conf = await admin.rpc("qf_conferir_codigo_acesso", { p_cliente: userId, p_codigo: codigo });
     if (conf.error) {
