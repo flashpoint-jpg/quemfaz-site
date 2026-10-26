@@ -38,3 +38,15 @@ test('Cliente vê selo Livre somente nos profissionais com assinatura ativa',()=
  assert.match(active,/Quem Faz Livre/);assert.match(active,/Patrick &lt;script>/);assert.doesNotMatch(active,/Patrick <script>/);
  assert.doesNotMatch(ctx.renderConversationCards([{...row,plano_livre_ativo:false}],{id:'pedido'}),/Quem Faz Livre/);
 });
+test('Lista administrativa filtra Livre e Sem Livre, combina cidade e mantém contagens',()=>{
+ const html=fs.readFileSync('admin.html','utf8');
+ const rows=[{id:'ativo',nome:'Patrick',cidade:'Guarulhos'},{id:'vencido',nome:'Vencido',cidade:'Guarulhos'},{id:'outro',nome:'Outra cidade',cidade:'Santo André'}];
+ const now=Date.now();
+ const ctx={Screens:{},DB:{state:{users:{profissionais:rows},planosProf:[{profissional_id:'ativo',plano:'livre',inicio_em:new Date(now-10000).toISOString(),valido_ate:new Date(now+100000).toISOString()},{profissional_id:'vencido',plano:'livre',inicio_em:new Date(now-10000).toISOString(),valido_ate:new Date(now-1000).toISOString()}]}},PU:{escapeHtml:String},profCidadeInfo:p=>({key:p.cidade,label:p.cidade}),ehCadastroNovo:()=>false,migrationBanner:()=>'',icon:()=>'',testeResumoHtml:()=>'',testeTodosRodando:false,NOVO_HORAS:24,tsCadastro:()=>0,topCats:()=>'',profCard:p=>'<article data-prof-id="'+p.id+'">'+p.nome+'</article>'};
+ vm.createContext(ctx);
+ vm.runInContext(html.slice(html.indexOf('  let profCidadeFiltro'),html.indexOf('  let profBusca'))+'\nlet profBusca="";'+html.slice(html.indexOf('  function adminPlanoDoProf('),html.indexOf('  // Indicação:'))+html.slice(html.indexOf('  Screens.adminProfissionaisRender = function () {'),html.indexOf('  function bindProfissionaisLista(content)')),ctx);
+ let view=ctx.Screens.adminProfissionaisRender();assert.match(view,/Quem Faz Livre ativo \(1\)/);assert.match(view,/Sem Livre ativo \(2\)/);
+ vm.runInContext("profPlanoFiltro='livre'",ctx);view=ctx.Screens.adminProfissionaisRender();assert.match(view,/data-prof-id="ativo"/);assert.doesNotMatch(view,/data-prof-id="vencido"|data-prof-id="outro"/);
+ vm.runInContext("profPlanoFiltro='sem-livre';profCidadeFiltro='Guarulhos'",ctx);view=ctx.Screens.adminProfissionaisRender();assert.match(view,/data-prof-id="vencido"/);assert.doesNotMatch(view,/data-prof-id="ativo"|data-prof-id="outro"/);assert.match(view,/Sem Livre ativo \(1\)/);
+ vm.runInContext("profPlanoFiltro='livre';profCidadeFiltro='Santo André'",ctx);view=ctx.Screens.adminProfissionaisRender();assert.match(view,/Nenhum profissional neste filtro/);assert.match(view,/data-simular-todos disabled/);
+});
