@@ -9,30 +9,30 @@ const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
 new vm.Script(fs.readFileSync(path.join(root, 'qf-atendimento.js'), 'utf8'), {filename:'qf-atendimento.js'});
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out);
-const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','docs','.gitignore','package.json','package-lock.json','vercel.json']);
+const skip = new Set(['.git','node_modules','dist','tests','scripts','supabase','docs','android-notification-fix','.gitignore','package.json','package-lock.json','vercel.json']);
 for (const name of fs.readdirSync(root)) {
   if (skip.has(name) || (name.startsWith('.') && name !== '.well-known')) continue;
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.33'");
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=confirmacao-melhorias-20261026');
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.34'");
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=livre-seguro-20261026');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=confirmacao-melhorias-20261026').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=codigo-visivel-20261024');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=livre-seguro-20261026').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=codigo-visivel-20261024');
 const adminPath=path.join(out,'admin.html');
-fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=confirmacao-melhorias-20261026'));
+fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=livre-seguro-20261026'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
 adminHtml=adminHtml.replace(/<script src="qf-comissao13\.js[^"']*"><\/script>/g,'');
-adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=confirmacao-melhorias-20261026"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
+adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=livre-seguro-20261026"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
 const routeMarker="    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard'";
 if(!adminHtml.includes(routeMarker))throw Error('Rota administrativa ausente');
 adminHtml=adminHtml.replace(routeMarker,"    { pattern: '/admin/espelho-profissionais', role: 'admin', title: 'Espelho dos profissionais', render: Screens.adminEspelhoRender },\n    { pattern: '/admin/espelho-profissionais/:id', role: 'admin', title: 'Tela do profissional', back: '/admin/espelho-profissionais', render: Screens.adminEspelhoDetalheRender },\n    { pattern: '/admin/comissao13', role: 'admin', title: 'Comissões de 13%', render: Screens.adminComissao13Render },\n"+routeMarker);
 const menuMarker="    { section: 'Pedidos' },";
 adminHtml=adminHtml.replace(menuMarker,menuMarker+"\n    { id: 'espelho', label: 'Espelho dos profissionais', icon: 'smartphone', route: '/admin/espelho-profissionais', also: ['/admin/espelho-profissionais/:id'] },\n    { id: 'comissao13', label: 'Comissões de 13%', icon: 'unlock', route: '/admin/comissao13' },");
 adminHtml=adminHtml.replace('2026-10-12-cache-fix','2026-10-23-admin-claro').replace('qf_admin_reload_20261012','qf_admin_reload_20261023_claro');
-adminHtml=adminHtml.replace(/qf-admin-valor\.js\?v=[^"']+/g,'qf-admin-valor.js?v=dois-planos-20261023-v2');
+adminHtml=adminHtml.replace(/qf-admin-valor\.js\?v=[^"']+/g,'qf-admin-valor.js?v=livre-seguro-20261026');
 fs.writeFileSync(adminPath,adminHtml);
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
@@ -155,7 +155,7 @@ fs.writeFileSync(path.join(out,'espelho-cliente.html'),html.replace('</head>','<
 
 fs.writeFileSync(path.join(out,'espelho-profissional.html'),html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>').replace('</body>','<script src="/qf-admin-prof-mirror-frame.js?v=20261023"></script></body>'));
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
-sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-confirmacao-melhorias-20261026';");
+sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-livre-seguro-20261026';");
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');

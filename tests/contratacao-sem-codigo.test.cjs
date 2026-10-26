@@ -41,23 +41,23 @@ test('Chat: autorização, valor desatualizado, correção, um contratado e Pix 
   await d.exec('reset role');assert.equal((await d.query('select count(*)::int n from qf_comissao13_pix')).rows[0].n,1);
  }finally{await d.close();}
 });
-test('Interface real: sem código, confirmação com um clique e valor explícito',async()=>{
- const {JSDOM}=require('jsdom'),{d,a,call,f}=await setup();let dom;
+test('Interface atual: cliente confirma conclusão, valor e código protegido',async()=>{
+ const {JSDOM}=require('jsdom'),{d,a,call,f}=await setup({seguranca:true});let dom;
  try{
   await rpc(d,'qf_comissao13_prestar_contas',[f.id,'informado',35000]);
   dom=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br',runScripts:'outside-only'});const w=dom.window;
-  w.localStorage.setItem('qf_pedido_owner_'+call.id,a.segredo_acompanhamento);let writes=0;
-  w.fetch=async(url,o)=>{const b=JSON.parse(o.body);if(b.p_acao==='responder'){writes++;assert.equal(b.p_valor_centavos,35000);}await as(d,0);return {ok:true,json:()=>rpc(d,'qf13_acompanhar',[b.p_chamado_id,b.p_segredo,b.p_acao||'ver',b.p_fechamento||null,b.p_contratou??null,b.p_valor_centavos??null])};};
+  w.localStorage.setItem('qf_pedido_owner_'+call.id,a.segredo_acompanhamento);let writes=0,ownerCode;
+  w.fetch=async(url,o)=>{const b=JSON.parse(o.body);if(b.p_acao==='responder'){writes++;assert.equal(b.p_valor_centavos,35000);}await as(d,0);return {ok:true,json:async()=>{const data=await rpc(d,'qf13_acompanhar',[b.p_chamado_id,b.p_segredo,b.p_acao||'ver',b.p_fechamento||null,b.p_contratou??null,b.p_valor_centavos??null,b.p_codigo??null,b.p_concluido??false]);if(data.codigo_seguranca)ownerCode=data.codigo_seguranca;return data;}};};
   w.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));await w.QFAcompanhamento.mount(w.document.querySelector('main'),call.id);
   assert.equal(w.document.querySelector('[data-qf-owner-code]'),null);assert.match(w.document.body.textContent,/350,00/);
-  w.document.querySelector('[data-qf-owner-answer=sim]').click();
-  for(let i=0;i<150&&!w.document.body.textContent.includes('Contratação e valor confirmados.');i++)await new Promise(r=>setTimeout(r,10));
-  assert.equal(writes,1);assert.match(w.document.body.textContent,/Contratação e valor confirmados/);
+  const form=w.document.querySelector('[data-qf-owner-concluir]');form.elements.codigo_seguranca.value=ownerCode;form.elements.concluido.checked=true;form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  for(let i=0;i<150&&!w.document.body.textContent.includes('Contratação, valor e conclusão confirmados.');i++)await new Promise(r=>setTimeout(r,10));
+  assert.equal(writes,1);assert.match(w.document.body.textContent,/Contratação, valor e conclusão confirmados/);
   assert.equal(Number((await row(d,f)).comissao_centavos),4550);
  }finally{dom?.window.close();await d.close();}
 });
-test('Tela profissional envia só valor; cliente confirma no chat sem segunda pergunta',async()=>{
- const {JSDOM}=require('jsdom'),{d,call,f}=await setup();let pro,owner;
+test('Tela profissional envia valor; cliente confirma código e conclusão no chat',async()=>{
+ const {JSDOM}=require('jsdom'),{d,call,f}=await setup({seguranca:true});let pro,owner;
  const wait=async fn=>{for(let i=0;i<200;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('Tela não atualizou');};
  try{
   pro=new JSDOM('<main id="app-content"><div class="view"></div></main>',{url:'https://quemfazservico.com.br/#/profissional/pedido/'+call.id,runScripts:'outside-only'});
@@ -70,7 +70,7 @@ test('Tela profissional envia só valor; cliente confirma no chat sem segunda pe
   w.confirm=()=>{throw Error('Não deve pedir segunda confirmação');};w.Screens={};
   w.QFCloud={client:{rpc:async(n,args)=>{await as(d,1);if(args.p_acao==='aceitar'){accepts++;assert.equal(args.p_valor_centavos,35000);}return {data:await rpc(d,n,Object.values(args))};}}};
   w.eval(fs.readFileSync('qf-chat-contratacao.js','utf8'));w.QFChatContratacao.mount(w.document.querySelector('main'),{id:call.id,profId:uid(11)},{id:uid(1)},'cliente');
-  await wait(()=>w.document.querySelector('[data-qfc-action=aceitar]'));w.document.querySelector('[data-qfc-action=aceitar]').click();await wait(()=>w.document.body.textContent.includes('Contratação e valor confirmados.'));
+  await wait(()=>w.document.querySelector('[data-qfc-concluir]'));await as(d,1);const code=(await rpc(d,'qf_chat_contratacao',[call.id,uid(11)])).codigo_seguranca;const finish=w.document.querySelector('[data-qfc-concluir]');finish.elements.codigo_seguranca.value=code;finish.elements.concluido.checked=true;finish.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>w.document.body.textContent.includes('Contratação, valor e conclusão confirmados.'));
   assert.equal(accepts,1);assert.equal(Number((await row(d,f)).comissao_centavos),4550);
  }finally{pro?.window.close();owner?.window.close();await d.close();}
 });

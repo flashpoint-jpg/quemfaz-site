@@ -11,7 +11,7 @@ test('Cliente responde sem prestação do profissional; correção auditada, iso
   assert.equal((await rpc(d,'qf13_acompanhar',[uid(100),a.segredo_acompanhamento,'responder',f.id,true])).ok,false);
   assert.equal((await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento,'responder',f.id,true])).resposta,'confirmado');
   let view=await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento]);assert.equal(view.profissionais[0].status,'pendente');assert.equal(view.profissionais[0].cliente_resposta,'confirmado');
-  assert.equal(ui.etapa({...f,cliente_resposta:'confirmado'}),'aprovar');
+  assert.equal(ui.etapa({...f,cliente_resposta:'confirmado'}),'concluir');
   assert.equal((await rpc(d,'qf13_acompanhar',[call.id,a.segredo_acompanhamento,'responder',f.id,false])).resposta,'nao_contratou');
   await as(d,11);assert.equal((await rpc(d,'qf_comissao13_prestar_contas',[f.id,'informado',50000,null])).ok,true);
   let row=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];assert.equal(row.codigo_validado_em,null);assert.equal(row.comissao_centavos,null);assert.equal(row.cobranca_status,'nao_gerada');assert.equal(ui.etapa(row),'revisar');

@@ -100,6 +100,7 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
       tag,
       strong: strong ? "1" : "0",
       channel,
+      small_icon: "ic_stat_quemfaz",
       // V11.11: preferência do profissional ("toque" = toque + vibração, "vibrar" = só vibração).
       alerta: String(payload.alerta || "toque"),
       grouped: payload.grouped ? "1" : "0",
@@ -117,11 +118,13 @@ async function sendFcm(token: string, payload: any, soDados = false): Promise<"o
     message.notification = { title, body };
     message.android.notification = {
       channel_id: channel,
+      icon: "ic_stat_quemfaz",
       tag,
       notification_priority: strong ? "PRIORITY_MAX" : "PRIORITY_DEFAULT",
       visibility: "PUBLIC",
       default_vibrate_timings: true,
       default_light_settings: true,
+      ...(payload.tipo === "chat" ? { sound: "default" } : {}),
     };
   }
   const resp = await fetch(`https://fcm.googleapis.com/v1/projects/${fcmAccount.project_id}/messages:send`, {
@@ -304,8 +307,9 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
       : nowMinutes >= start || nowMinutes < end;
     if (!inside) outside.add(String(professional.user_id));
   }
-  const ids = uniqueIds.filter((uid) => !outside.has(uid));
-  if (audit) for (const uid of outside) await audit({ user_id: uid, status: "fora_horario", error: null });
+  // Conversas existentes continuam avisando mesmo fora do horario de novos chamados.
+  const ids = payload?.tipo === "chat" ? uniqueIds : uniqueIds.filter((uid) => !outside.has(uid));
+  if (audit && payload?.tipo !== "chat") for (const uid of outside) await audit({ user_id: uid, status: "fora_horario", error: null });
   if (!ids.length) return { sent: 0, total: 0, skipped_outside_hours: outside.size };
 
   const { data: subsRaw, error } = await admin
@@ -340,7 +344,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
         if (!fcmAccount) { reason = "fcm_not_configured"; continue; }
         try {
           const m = /^apk android;v=(\d+)/.exec(String(s.user_agent || ""));
-          const result = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, !!m && Number(m[1]) >= 12);
+          const result = await sendFcm(endpoint.slice(FCM_PREFIX.length), userPayload, !!m && Number(m[1]) >= 12 && userPayload.tipo !== "chat");
           if (result === "ok") { sent++; userSent++; }
           else reason = result === "gone" ? "subscription_expired" : "fcm_send_failed";
           if (result === "gone") await admin.from("qf_push_subscriptions")
@@ -698,6 +702,7 @@ Deno.serve(async (req) => {
             ? "/#/cliente/chat/" + call.id + "/" + msg.profissional_id
             : "/#/profissional/chat/" + call.id,
           tag: "qf-chat-" + call.id + "-" + msg.profissional_id,
+          tipo: "chat",
           strong: false,
         });
         return json({ ok: true, chat: result });
@@ -1106,4 +1111,3 @@ Deno.serve(async (req) => {
   const result = await sendToUsers(recipients, payload);
   return json({ ok: true, recipients: recipients.length, ...result });
 });
-

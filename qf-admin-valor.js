@@ -32,7 +32,7 @@
     if (valor) h += '<div class="text--sm">Valor do cliente: <strong>' + esc(brl(p.valor_oferecido_centavos)) + '</strong> · ' + (p.material_incluso ? 'material incluso' : 'material à parte') + '</div>';
     (p.desbloqueios || []).forEach(function (d) {
       h += '<div class="qf-adm-desbloqueio"><strong>' + esc(d.profissional || d.profissional_id) + '</strong><div class="qf-adm-plan-tag">' + planoHtml(d.profissional_id) + '</div><span class="text--sm">' +
-        (d.origem === 'comissao13' ? 'Desbloqueio sem débito · 13% se contratar, após aprovação do admin' : 'Desbloqueio: ' + esc(brl(d.taxa_centavos)) + (Number(d.taxa_centavos) > 0 ? (d.pagamento_confirmado ? ' · débito confirmado' : ' · débito não confirmado') : ' · sem débito')) +
+        (d.origem === 'comissao13' ? 'Desbloqueio sem débito · 13% após conclusão confirmada pelo cliente · Pix automático' : 'Desbloqueio: ' + esc(brl(d.taxa_centavos)) + (Number(d.taxa_centavos) > 0 ? (d.pagamento_confirmado ? ' · débito confirmado' : ' · débito não confirmado') : ' · sem débito')) +
         (d.ativo ? '' : ' · inativo') + '</span><small class="text--secondary">' + esc(dt(d.criado_em)) + '</small></div>';
 
     });

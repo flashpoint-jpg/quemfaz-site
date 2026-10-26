@@ -3,9 +3,9 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '12.1.33';
+const SW_VERSION = '12.1.34';
 const CACHE = 'quemfaz-' + SW_VERSION;
-const CORE = ['./qf-acompanhamento.js?v=confirmacao-melhorias-20261026', './acompanhar-pedido.html', './qf-livre.js?v=confirmacao-melhorias-20261026','./qf-atendimento.js?v=codigo-visivel-20261024', './qf-chat-contratacao.js?v=confirmacao-melhorias-20261026', './qf-admin-commercial.js?v=1', './qf-admin-monitoramento.js?v=1', './qf-admin-devolucao.js?v=1', './qf-admin-push-diagnostico.js?v=1', './qf-recharge-return.js?v=1', './assets/qf-logo-20261013.webp', './assets/qf-logo-branco-20261014.webp', './icon-192.png?v=20261013', './icon-512.png?v=20261013', './qf-carteirinha.js?v=11.84.2', './carteirinha.html', './avaliar.html', './vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.96', './qf-conversao.js?v=11.96', './qf-admin-acquisition.js?v=11.75.1', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
+const CORE = ['/assets/notifications/quemfaz-badge-96.png?v=1','./qf-acompanhamento.js?v=livre-seguro-20261026', './acompanhar-pedido.html', './qf-livre.js?v=livre-seguro-20261026','./qf-atendimento.js?v=codigo-visivel-20261024', './qf-chat-contratacao.js?v=livre-seguro-20261026', './qf-admin-commercial.js?v=1', './qf-admin-monitoramento.js?v=1', './qf-admin-devolucao.js?v=1', './qf-admin-push-diagnostico.js?v=1', './qf-recharge-return.js?v=1', './assets/qf-logo-20261013.webp', './assets/qf-logo-branco-20261014.webp', './icon-192.png?v=20261013', './icon-512.png?v=20261013', './qf-carteirinha.js?v=11.84.2', './carteirinha.html', './avaliar.html', './vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.96', './qf-conversao.js?v=11.96', './qf-admin-acquisition.js?v=11.75.1', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE.map(u => new Request(u, { cache: 'reload' })))).catch(() => null));
@@ -75,7 +75,7 @@ self.addEventListener('push', event => {
   const options = {
     body: data.body || 'Abra o QuemFaz para ver os detalhes.',
     icon: './icon-192.png?v=20261013',
-    badge: './icon.svg',
+    badge: '/assets/notifications/quemfaz-badge-96.png?v=1',
     tag: data.tag || 'quemfaz-alerta',
     renotify: true,
     requireInteraction: strong,
@@ -135,7 +135,7 @@ function qfResponderFechou(nd, resposta) {
     const ok = out && out.ok;
     return self.registration.showNotification('QuemFaz', {
       body: ok ? (resposta === 'fechei' ? 'Registrado: você fechou o serviço. Obrigado!' : 'Registrado: você não fechou este pedido.') : 'Não deu para registrar agora. Abra o pedido no QuemFaz para responder.',
-      icon: './icon-192.png?v=20261013', badge: './icon.svg', tag: 'qf-fechou-ok', silent: true,
+      icon: './icon-192.png?v=20261013', badge: '/assets/notifications/quemfaz-badge-96.png?v=1', tag: 'qf-fechou-ok', silent: true,
       data: { url: nd.url || './index.html#/' }
     });
   });

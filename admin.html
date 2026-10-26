@@ -9758,7 +9758,7 @@ Screens.adminDashboardRender = function () {
     });
     const livres = (DB.state.planosProf || []).filter(function(x) { return x.plano === 'livre' && Date.parse(x.valido_ate) > Date.now() && (!x.inicio_em || Date.parse(x.inicio_em) <= Date.now()); });
     const livresUnicos = livres.filter(function(x,i) { return livres.findIndex(function(y) { return y.profissional_id === x.profissional_id; }) === i; });
-    const livresHtml = livresUnicos.map(function(x) { const pro = DB.profissionalById(x.profissional_id); return '<div class="card card--tight stack--sm"><strong>' + esc(pro ? pro.nome : 'Profissional') + '</strong>' + adminPlanoHtml(x.profissional_id) + '<p class="text--sm">13% sobre serviços contratados, após aprovação administrativa.</p><a class="btn btn--ghost btn--sm" href="#/admin/profissionais/' + esc(x.profissional_id) + '">Ver profissional</a></div>'; }).join('') || '<p>Nenhuma assinatura Livre ativa.</p>';
+    const livresHtml = livresUnicos.map(function(x) { const pro = DB.profissionalById(x.profissional_id); return '<div class="card card--tight stack--sm"><strong>' + esc(pro ? pro.nome : 'Profissional') + '</strong>' + adminPlanoHtml(x.profissional_id) + '<p class="text--sm">13% após conclusão confirmada pelo cliente. Pix automático com prazo de 48 horas.</p><a class="btn btn--ghost btn--sm" href="#/admin/profissionais/' + esc(x.profissional_id) + '">Ver profissional</a></div>'; }).join('') || '<p>Nenhuma assinatura Livre ativa.</p>';
     return admCard('Quem Faz Livre', livresUnicos.length + ' profissionais com assinatura ativa', '<div class="stack">' + livresHtml + '</div>') + admCard('Preço dos planos', 'vale na hora para novas assinaturas',
         '<div class="qf-adm-planos">' + editar + '</div>' +
         '<p class="qf-adm-mudo" style="margin:12px 0 0;font-size:13px;">O app passa a mostrar o preço novo sozinho. Quem já tinha gerado o Pix com o preço antigo ainda consegue pagar e recebe o plano como estava.</p>') +
@@ -9931,7 +9931,7 @@ Screens.adminDashboardRender = function () {
 <script src="qf-admin-monitoramento.js?v=1"></script>
 <script src="qf-admin-devolucao.js?v=1"></script>
 <script src="qf-admin-push-diagnostico.js?v=1"></script>
-<script src="qf-admin-valor.js?v=4"></script>
+<script src="qf-admin-valor.js?v=livre-seguro-20261026"></script>
 <script>
 /* QuemFaz — casca do app, roteador por hash e navegação. */
 
@@ -10484,7 +10484,7 @@ Screens.adminDashboardRender = function () {
 </script>
 
 <script src="qf-atendimento.js?v=codigo-visivel-20261024"></script>
-<script src="qf-comissao13.js?v=confirmacao-melhorias-20261026"></script>
+<script src="qf-comissao13.js?v=livre-seguro-20261026"></script>
 </body>
 </html>
 

@@ -1,0 +1,9 @@
+// Aplicar em TODO NotificationCompat.Builder / Notification.Builder do app oficial,
+// incluindo FirebaseMessagingService, notificações locais e resumos de grupos:
+builder.setSmallIcon(R.drawable.ic_stat_quemfaz)
+
+// Manter o logo colorido somente como largeIcon, se já usado.
+// Para Capacitor: configurar a opção de apresentação em primeiro plano
+// sem criar uma segunda notificação quando o FCM já a exibiu.
+// FCM data-only (v12+): o próprio serviço nativo deve usar o smallIcon acima;
+// um campo recebido no payload não substitui a configuração do Builder.
