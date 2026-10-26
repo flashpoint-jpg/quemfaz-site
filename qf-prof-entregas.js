@@ -16,6 +16,30 @@
    const box=document.createElement('section');box.className='section card stack--sm';box.textContent='Consultando atendimento e entrega de pedidos…';(content.querySelector('.view')||content).append(box);
    const load=async()=>{try{const r=await g.QFAdminCloud.client.rpc('qf_admin_profissional_entregas',{p_profissional_id:params.id});if(r.error||!r.data?.ok)throw Error();if(box.isConnected)box.innerHTML=adminHtml(r.data);}catch(_){if(box.isConnected)box.innerHTML='<p>Não foi possível consultar os registros.</p><button type="button" class="btn btn--outline" data-entregas-retry>Tentar novamente</button>';const b=box.querySelector('button');if(b)b.onclick=load;}};load();
   }
+  // Aviso visível na entrada: não bloqueia a consulta de pedidos nem altera horário/raio.
+  if(pattern==='/profissional/home' && g.QFPush){
+   const push=g.QFPush;
+   const host=content.querySelector('.view')||content;
+   const notice=document.createElement('section');
+   notice.className='card stack--sm';
+   notice.setAttribute('data-qf-push-check','');
+   notice.style.cssText='border:1px solid #f3a247;background:#fff9f0;color:#27364a;margin:12px 0;padding:14px;border-radius:14px;';
+   const paint=()=>{
+    if(!notice.isConnected)return;
+    const status=push.permission();
+    if(status==='checking'||push.isActive()){notice.hidden=true;return;}
+    notice.hidden=false;
+    const blocked=status==='denied';
+    notice.innerHTML='<strong style="display:block;color:#263b59">Avisos de novos pedidos desativados</strong>'+
+     '<p style="margin:7px 0;font-size:14px">Você pode consultar e desbloquear pedidos normalmente. Ative os avisos para saber quando chegar um novo serviço no seu horário.</p>'+
+     (blocked?'<p style="font-size:13px">Permita notificações nas configurações do aparelho e volte aqui.</p>':'')+
+     '<button type="button" class="btn btn--primary" data-action="ativar-notificacoes">'+(blocked?'Como liberar notificações':'Ativar notificações')+'</button>';
+   };
+   host.prepend(notice);paint();
+   Promise.resolve(push.refreshStatus()).then(paint).catch(paint);
+   const onState=()=>paint();g.addEventListener('qf-push-state',onState);
+   const cleanupPush=setInterval(()=>{if(!content.isConnected){clearInterval(cleanupPush);g.removeEventListener('qf-push-state',onState);}},3000);
+  }
   if(!['/profissional/home','/profissional/servicos/disponiveis','/profissional/outros-pedidos'].includes(pattern)||!g.QFCloud?.enabled||!g.IntersectionObserver)return;
   const seen=new Set();let pending=new Set(),timer;
   const flush=()=>{const ids=[...pending];pending.clear();if(!ids.length||!content.isConnected)return;g.QFCloud.client.rpc('qf_registrar_pedidos_exibidos',{p_ids:ids}).then(r=>{if(r.error)ids.forEach(id=>seen.delete(id));}).catch(()=>ids.forEach(id=>seen.delete(id)));};
