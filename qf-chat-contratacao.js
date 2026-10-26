@@ -7,7 +7,7 @@
   sem_proposta_pendente:'Não há proposta aguardando sua confirmação.',
   proposta_indisponivel:'Esta proposta não pode mais ser enviada.',
   prestacao_indisponivel:'O resultado deste pedido já foi registrado.',
-  outro_profissional_contratado:'Este pedido já foi contratado com outro profissional.',
+  valor_alterado:'O valor mudou. Aguarde a atualização e confira antes de confirmar.',estado_invalido:'Esta proposta não está mais disponível. Atualize o chat.',outro_profissional_contratado:'Este pedido já foi contratado com outro profissional.',
   resposta_indisponivel:'Este resultado precisa ser conferido pela administração.',
   pedido_encerrado:'Este pedido foi encerrado.',
   sem_permissao:'Você não tem acesso à contratação deste pedido.',
@@ -41,7 +41,7 @@
    else if(estado==='recusado')headline='Profissional declarou que não fechou';
    else if(prop&&estado==='negociando')headline='Proposta aguardando resposta do cliente';
    else if(estado==='informado')headline='Profissional informou contratação — confirme o resultado';
-   row.push('<strong>Quem Faz Livre · 13%</strong><p style="margin:0">'+escapeHTML(headline)+'</p>');
+   row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(headline)+'</p>');
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
    if(who==='profissional'){
@@ -49,16 +49,17 @@
     const suporteUrl='https://wa.me/5535998845703?text='+encodeURIComponent(suporteMensagem);
     row.push('<div class="qfc-support" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px;border:1px solid #cad9ec;border-radius:12px;background:#fff"><span class="text--sm" style="font-weight:650">Cliente não respondeu?</span><a class="btn btn--outline btn--sm" style="width:auto;min-height:40px" href="'+escapeHTML(suporteUrl)+'" target="_blank" rel="noopener noreferrer">Falar com suporte no WhatsApp</a></div>');
    }
-   if(valor)row.push('<p style="margin:0">Valor informado: <strong>'+price(valor)+'</strong> · comissão estimada: <strong>'+price(Math.round(valor*0.13))+'</strong></p>');
-   if(resposta==='confirmado')row.push('<p class="text--sm" style="margin:0">O cliente confirmou. A comissão ainda depende de aprovação manual do administrador.</p>');
+   if(valor)row.push('<p style="margin:0">Valor combinado: <strong>'+price(valor)+'</strong>'+(who==='profissional'?' · comissão de 13%: <strong>'+price(Math.round(valor*0.13))+'</strong>':'')+'</p>');
+   if(estado==='confirmado')row.push('<p class="text--sm" style="margin:0">Contratação e valor confirmados.</p>'+(who==='profissional'?'<p>A comissão de 13% foi gerada automaticamente. Pague em até 48 horas pela carteira.</p><a class="btn btn--primary" href="#/profissional/carteira">Ver Pix da comissão</a>':''));
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
-   if(who==='profissional'&&['pendente','negociando'].includes(estado)&&!resposta){
-    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">Enviar proposta para o cliente</button></form>');
+   if(who==='profissional'&&(['pendente','negociando'].includes(estado)||(estado==='informado'&&resposta==='divergencia'))&&(!resposta||resposta==='divergencia')){
+    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">Enviar confirmação ao cliente</button></form>');
     row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_fechou">Não fechei este serviço</button>');
    }
    if(who==='cliente'){
-    if(estado==='negociando'&&prop&&!resposta){
-      row.push('<button type="button" class="btn btn--primary" data-qfc-action="aceitar">Aceitar e contratar por '+price(valor)+'</button>');
+    if(['negociando','informado'].includes(estado)&&valor&&!resposta){
+      row.push('<button type="button" class="btn btn--primary" data-qfc-action="aceitar">Confirmar contratação por '+price(valor)+'</button>');
+      row.push('<button type="button" class="btn btn--outline" data-qfc-action="corrigir_valor">Corrigir valor</button>');
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_contratei">Não contratei</button>');
     }else if(estado==='recusado'&&!resposta){
       row.push('<p class="text--sm" style="margin:0">O profissional disse que não fechou. Você o contratou?</p>');
@@ -68,7 +69,7 @@
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_contratei">Não contratei este profissional</button>');
     }
    }
-   row.push('<p class="text--sm" data-qfc-status role="status" style="margin:0">A confirmação é registrada no pedido. Não é necessário WhatsApp.</p>');
+   row.push('<p class="text--sm" data-qfc-status role="status" style="margin:0">Confira o valor combinado antes de confirmar a contratação.</p>');
    pane.innerHTML=row.join('');
    pane.querySelector('[data-qfc-sound]')?.addEventListener('click',()=>{
      try{g.PU?.playNotificationSound(false);g.navigator?.vibrate?.(100);setStatus('Teste de som solicitado. Confira volume e permissões do aparelho.');}
@@ -90,9 +91,9 @@
    });
    pane.querySelectorAll('[data-qfc-action]').forEach(button=>button.addEventListener('click',async()=>{
     const acao=button.dataset.qfcAction;
-    const ask={aceitar:'Confirmar a contratação pelo valor informado? O administrador ainda analisará a comissão.',nao_fechou:'Informar que não fechou? O cliente poderá confirmar ou contestar.',nao_contratei:'Confirmar que NÃO contratou este profissional?',contestar:'Você realmente contratou este profissional? O administrador analisará a divergência.'};
-    if(!g.confirm(ask[acao]))return;
-    await run(acao);
+    const ask={aceitar:'Confirmar a contratação pelo valor informado?',nao_fechou:'Informar que não fechou? O cliente poderá confirmar ou contestar.',nao_contratei:'Confirmar que NÃO contratou este profissional?',contestar:'Você realmente contratou este profissional? O administrador analisará a divergência.'};
+    if(acao!=='aceitar'&&acao!=='corrigir_valor'&&!g.confirm(ask[acao]))return;
+    await run(acao,acao==='aceitar'?valor:null);
    }));
   }
   function setStatus(value){const node=pane.querySelector('[data-qfc-status]')||pane.querySelector('[role=status]');if(node)node.textContent=value;}
