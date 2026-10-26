@@ -14014,6 +14014,9 @@ alt=""></noscript>
   function cfFaq(q, a) {
     return '<details class="card" style="padding:14px 16px;"><summary class="text--strong" style="cursor:pointer;">' + q + '</summary><p class="text--sm text--secondary" style="margin:10px 0 0;">' + a + '</p></details>';
   }
+  function cfDivisaoLivre() {
+    return '<div class="qf-cf-divisao" style="display:grid;gap:7px;margin:4px 0;min-width:0;"><div role="img" aria-label="Divisão do valor do serviço: 87% para o profissional e 13% para o Quem Faz" style="display:grid;grid-template-columns:87fr 13fr;width:100%;height:30px;border-radius:9px;overflow:hidden;"><span data-qf-cf-profissional style="display:flex;align-items:center;justify-content:center;background:#1769d5;color:#fff;font-size:12px;font-weight:800;min-width:0;">87%</span><span data-qf-cf-plataforma style="display:flex;align-items:center;justify-content:center;background:#f47b20;color:#152b4b;font-size:11px;font-weight:800;min-width:0;">13%</span></div><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:#18385e;"><span>Profissional</span><span>Quem Faz</span></div><p style="margin:0;font-size:13px;line-height:1.45;color:#18385e;">Você fica com 87% do serviço. O Quem Faz recebe 13% somente sobre serviços fechados, confirmados e aprovados.</p></div>';
+  }
   function cfPlano(nome, destaque, preco, unidade, detalhe, itens, botao) {
     return '<div class="card stack stack--sm" style="' + (destaque ? 'border:2px solid var(--orange-500, #f06a1d);' : '') + 'position:relative;">' +
       (destaque ? '<span class="badge" style="position:absolute;top:-11px;right:14px;background:var(--orange-500, #f06a1d);color:#fff;">RECOMENDADO</span>' : '') +
@@ -14021,6 +14024,7 @@ alt=""></noscript>
       '<div class="h2" style="margin:0;">' + preco + ' <span class="text--sm text--secondary" style="font-weight:600;">' + unidade + '</span></div>' +
       '<div class="text--sm text--strong">' + detalhe + '</div>' +
       '<div class="stack stack--sm" style="margin-top:4px;">' + itens.map(function (t) { return '<div class="row text--sm" style="gap:8px;align-items:flex-start;"><span style="color:var(--success-600);flex:none;display:inline-flex;width:18px;height:18px;">' + icon('check').replace('<svg ', '<svg width="18" height="18" ') + '</span><span>' + t + '</span></div>'; }).join('') + '</div>' +
+      (nome === 'Quem Faz Livre' ? cfDivisaoLivre() : '') +
       (botao || '') +
     '</div>';
   }
@@ -14044,7 +14048,7 @@ alt=""></noscript>
           cfStep(3, 'Fique online', 'Toque no botão para ficar online (verde). Assim você recebe os pedidos dentro do seu horário de atendimento.') +
           cfStep(4, 'O pedido chega no seu celular', 'Antes de decidir você vê o serviço, a distância até o cliente, para quando ele precisa e o valor para desbloquear.') +
           cfStep(5, 'Desbloqueie e chame no WhatsApp', 'Gostou do pedido? Desbloqueie e chame o cliente direto no WhatsApp para passar o orçamento.') +
-          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Quem Faz Livre, a comissão é de 13% após contratação confirmada e aprovação administrativa.') +
+          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Quem Faz Livre, confira a divisão do serviço no card do plano abaixo.') +
         '</div>' +
       '</section>' +
 
@@ -14061,7 +14065,7 @@ alt=""></noscript>
       '<section class="section" id="cf-planos">' +
         '<div class="section-head"><div><h2 class="h3">Planos</h2><div class="text--sm text--secondary">Escolha o jeito que fica melhor para você.</div></div></div>' +
         '<div class="stack">' +
-          cfPlano('Quem Faz Livre', true, 'R$ 1,33', 'por dia', 'R$ 39,90 por 30 dias · Desbloqueios ilimitados de pedidos compatíveis', ['Na sua profissão e dentro do seu raio', '13% somente sobre serviços fechados, confirmados e aprovados pela administração', 'Ativação após pagamento · Sem renovação automática'], assinar('Quem Faz Livre')) +
+          cfPlano('Quem Faz Livre', true, 'R$ 1,33', 'por dia', 'R$ 39,90 por 30 dias · Desbloqueios ilimitados de pedidos compatíveis', ['Na sua profissão e dentro do seu raio', 'Ativação após pagamento · Sem renovação automática'], assinar('Quem Faz Livre')) +
           cfPlano('Avulso', false, 'R$ 5', 'a R$ 13', 'por chamado desbloqueado',
             ['Sem mensalidade e sem comissão', 'Use seu saldo para desbloquear pedidos', 'Recarga por Pix, cartão ou boleto'],
             role === 'profissional' ? '<button class="btn btn--outline" type="button" data-nav="/profissional/carteira">' + icon('wallet') + ' Ir para a carteira</button>' : '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro" data-qf-escolha-plano="avulso">Escolher Avulso</button>') +
@@ -14073,7 +14077,7 @@ alt=""></noscript>
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 4), e você vê quantas vagas ainda tem antes de desbloquear.') +
-          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. No Quem Faz Livre, 13% apenas por serviço fechado, confirmado e aprovado pela administração.') +
+          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. Confira a divisão do Quem Faz Livre no card do plano acima.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
@@ -14090,7 +14094,7 @@ alt=""></noscript>
           cfFaq('E se o cliente sumir depois que eu desbloquear?', 'O desbloqueio não tem devolução. Você recebe o WhatsApp do cliente na hora: chame logo, porque quem chama primeiro costuma fechar.') +
           cfFaq('Os créditos de bônus vencem?', 'Não. Bônus que você recebeu fica na sua carteira até você usar.') +
           cfFaq('Como coloco saldo na carteira?', 'Na aba Carteira, escolha o valor e pague por Pix, cartão de crédito ou boleto. O saldo entra depois da confirmação do pagamento.') +
-          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'No Avulso, não. No Quem Faz Livre, 13% somente se fechar e após confirmação administrativa.') +
+          cfFaq('Tenho que pagar alguma porcentagem do serviço?', 'No Avulso, não. No Quem Faz Livre, vale a divisão apresentada no card, após confirmação e validação do fechamento.') +
           cfFaq('Como assino um plano?', 'Na aba Planos, escolha Quem Faz Livre e pague por Pix. A ativação acontece após confirmação do pagamento pelo servidor.') +
           cfFaq('Posso cancelar o plano?', 'Pode. Os planos não têm renovação automática nem fidelidade: é só não comprar de novo no mês seguinte.') +
           cfFaq('E se eu comprar outro plano antes de acabar?', 'No Quem Faz Livre, a nova compra acrescenta 30 dias após o período já contratado. Assinaturas antigas mantêm suas regras originais.') +
