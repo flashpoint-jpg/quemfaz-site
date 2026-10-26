@@ -6657,6 +6657,7 @@ Screens.adminDashboardRender = function () {
       (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#1458cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
       '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
       (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
+      '<form id="qf-admin-add-profession" class="section card stack--sm"><label class="field"><span class="field__label">Adicionar profissão ao profissional</span><input class="input" name="profissao" placeholder="Ex.: Gesseiro" maxlength="90" required></label><button class="btn btn--primary" type="submit">Adicionar profissão</button><div class="text--sm text--secondary">Mantém as profissões já cadastradas.</div></form>' +
       adminIndicacaoHtml(p) +
       adminProfAtivHtml(p) +
       '<div class="section"><div class="section-head"><h2 class="h3">Selfie de segurança</h2></div>' +
@@ -8415,6 +8416,41 @@ Screens.adminDashboardRender = function () {
   };
 
   function bindProfissionalDetalhe(content, params) {
+    const formProfissao = content.querySelector('#qf-admin-add-profession');
+    if (formProfissao && cloudOn()) formProfissao.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const input = formProfissao.querySelector('[name="profissao"]');
+      const nome = String(input.value || '').trim().replace(/\\s+/g, ' ');
+      if (!nome || nome.length > 90) return;
+      const client = global.QFAdminCloud.client;
+      const btn = formProfissao.querySelector('button');
+      btn.disabled = true;
+      try {
+        const { data: existentes, error: erroBusca } = await client.from('qf_categorias_personalizadas').select('id,nome');
+        if (erroBusca) throw erroBusca;
+        let categoria = (existentes || []).find(function (c) { return c.nome.toLocaleLowerCase('pt-BR') === nome.toLocaleLowerCase('pt-BR'); });
+        if (!categoria) {
+          const id = 'cat_custom_' + nome.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 42) + '_' + Math.random().toString(36).slice(2, 8);
+          const result = await client.from('qf_categorias_personalizadas').insert({ id: id, nome: nome, criado_por: params.id }).select('id,nome').single();
+          if (result.error) throw result.error;
+          categoria = result.data;
+        }
+        const atual = await client.from('qf_profissionais').select('especialidades').eq('user_id', params.id).single();
+        if (atual.error) throw atual.error;
+        const lista = Array.isArray(atual.data.especialidades) ? atual.data.especialidades.slice() : [];
+        if (!lista.includes(categoria.id)) {
+          lista.push(categoria.id);
+          const gravar = await client.from('qf_profissionais').update({ especialidades: lista }).eq('user_id', params.id);
+          if (gravar.error) throw gravar.error;
+        }
+        PU.toast('Profissão adicionada com sucesso.', 'success');
+        global.location.reload();
+      } catch (err) {
+        PU.toast('Não foi possível adicionar: ' + (err.message || 'erro de acesso'), 'danger');
+        btn.disabled = false;
+      }
+    });
+
     content.addEventListener('click', function (e) {
       const el = e.target.closest('[data-action]');
       if (!el) return;
