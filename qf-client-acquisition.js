@@ -31,6 +31,8 @@
   var seen = {}, submittedAt = 0;
   var services = {
     pintor: 'cat_pintor', eletricista: 'cat_eletricista', encanador: 'cat_encanador', montador: 'cat_montador', montagem: 'cat_montador',
+    tecnico_refrigeracao: 'cat_geladeira', tecnico_geladeira: 'cat_geladeira', geladeira: 'cat_geladeira',
+    fogao: 'cat_fogao_microondas', microondas: 'cat_fogao_microondas', fogao_microondas: 'cat_fogao_microondas',
     chaveiro: 'cat_chaveiro', antenista: 'cat_antenista', faxina_pos_obra: 'cat_faxina_pos_obra', limpeza_pos_obra: 'cat_faxina_pos_obra',
     pedreiro: 'cat_pedreiro', desentupidor: 'cat_desentupidor', telhadista: 'cat_telhadista',
     limpeza_sofa: 'cat_limpeza_estofados', marido_aluguel: 'cat_marido_aluguel', diarista: 'cat_diarista',

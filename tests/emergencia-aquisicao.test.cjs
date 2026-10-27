@@ -3,7 +3,7 @@ const {JSDOM}=require('jsdom');
 const code=fs.readFileSync('qf-pedido-home.js','utf8');
 function home(search='',hash='#/'){
  const dom=new JSDOM('<div id="app-shell"><form data-landing-service-form><input data-landing-service-search></form><button data-desk-service="Eletricista">Eletricista</button><button data-home-services>Pedir grátis</button></div>',{url:'https://quemfazservico.com.br/'+search+hash,runScripts:'outside-only'}),g=dom.window;
- const categories=[{id:'cat_eletricista',nome:'Eletricista'},{id:'cat_geladeira',nome:'Técnico de geladeira'}];
+ const categories=[{id:'cat_eletricista',nome:'Eletricista'},{id:'cat_geladeira',nome:'Técnico de geladeira'},{id:'cat_fogao_microondas',nome:'Técnico de fogão e micro-ondas'},{id:'cat_maquina_lavar',nome:'Técnico de máquina de lavar'}];
  g.Element.prototype.scrollIntoView=function(){};
  g.DB={categories:()=>categories,categoryById:id=>categories.find(c=>c.id===id)};
  g.PROAKI_APP={};g.QFClienteAcesso={};g.Screens={landing:()=>'',afterRenderAnon(){},afterRender(){}};g.navigate=()=>{};
@@ -22,6 +22,13 @@ test('atalhos usam o formulário atual, preservam profissão e não enviam descr
 });
 test('link SEO abre diretamente a profissão em vez de descartar o parâmetro',()=>{
  const {dom,mounts}=home('?servico=cat_geladeira','#/auth/cliente/cadastro');assert.equal(mounts.at(-1).service,'Técnico de geladeira');dom.window.close();
+});
+test('fogão e micro-ondas não são classificados como geladeira ou lavadora',()=>{
+ const {dom,g}=home();
+ for(const text of ['Meu fogão não acende','Preciso consertar o micro-ondas','Meu forno não esquenta'])assert.equal(g.QFPedidoHome.classify(text)[0]?.category.id,'cat_fogao_microondas');
+ for(const text of ['Geladeira não está gelando','Freezer parou de funcionar'])assert.equal(g.QFPedidoHome.classify(text)[0]?.category.id,'cat_geladeira');
+ assert.equal(g.QFPedidoHome.classify('Minha máquina de lavar parou')[0]?.category.id,'cat_maquina_lavar');
+ dom.window.close();
 });
 test('origem sem evidência de anúncio não é classificada automaticamente como paga',()=>{
  const html=fs.readFileSync('index.html','utf8'),block=html.match(/<script>\s*\/\* QF_MARKETING_ATTRIBUTION_V2[\s\S]*?<\/script>/)[0].replace(/^<script>|<\/script>$/g,'');
