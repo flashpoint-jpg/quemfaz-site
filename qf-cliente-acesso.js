@@ -41,7 +41,17 @@
     (legacy?'<label>Código de acesso antigo<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><p>Se ainda estiver conectado no aparelho anterior, publique por ele. Se perdeu o código e o acesso, fale com o suporte para recuperar sua conta.</p>':'')+
     (register||legacy||forgot?'<label>E-mail'+(forgot?' cadastrado':' para recuperar sua senha')+'<input class="input" name="email" type="email" autocomplete="email" required></label>':'')+
     (!forgot?'<label>'+(register||legacy?'Crie uma senha':'Sua senha')+'<input class="input" name="senha" type="password" autocomplete="'+(register||legacy?'new-password':'current-password')+'" '+(register||legacy?'minlength="6" ':'')+'required></label>'+(register||legacy?'<p>Senha simples com 6 ou mais posições. Pode usar só números ou só letras. Você receberá um e-mail para verificar seu endereço.</p>':''):'')+
-    '<p role="alert">'+esc(message)+'</p><button class="btn btn--primary" type="submit">'+(forgot?'Enviar link de recuperação':register||legacy?'Criar acesso e continuar':'Entrar e publicar pedido')+'</button></form><div class="qf-client-access__links">'+[['entrar','Já tenho senha'],['cadastrar','Criar conta'],['primeiro_acesso','Tenho cadastro antigo'],['esqueci_senha','Esqueci minha senha']].filter(x=>x[0]!==mode).map(x=>'<button type="button" data-access-mode="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><button type="button" class="btn btn--outline qf-client-access__cancel" data-access-cancel>Voltar ao pedido</button>';
+    '<button type="button" class="btn btn--outline" data-google-login style="width:100%;margin:12px 0">Continuar com Google</button><p role="alert">'+esc(message)+'</p><button class="btn btn--primary" type="submit">'+(forgot?'Enviar link de recuperação':register||legacy?'Criar acesso e continuar':'Entrar e publicar pedido')+'</button></form><div class="qf-client-access__links">'+[['entrar','Já tenho senha'],['cadastrar','Criar conta'],['primeiro_acesso','Tenho cadastro antigo'],['esqueci_senha','Esqueci minha senha']].filter(x=>x[0]!==mode).map(x=>'<button type="button" data-access-mode="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><button type="button" class="btn btn--outline qf-client-access__cancel" data-access-cancel>Voltar ao pedido</button>';
+    host.querySelector('[data-google-login]').onclick=async()=>{
+     const client=g.QFCloud?.client;
+     if(!client?.auth?.signInWithOAuth){host.querySelector('[role=alert]').textContent='Login Google indisponível no momento.';return;}
+     try{
+      // OAuth returns to the same page; the request draft remains in sessionStorage.
+      const redirectTo=g.location.origin+g.location.pathname+g.location.search+g.location.hash;
+      const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+      if(result.error)throw result.error;
+     }catch(err){host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
+    };
     host.querySelector('[data-access-cancel]').onclick=()=>end(null,Error('Seu pedido continua preenchido. Entre para concluir a publicação.'));
     host.querySelectorAll('[data-access-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.accessMode;draw();});
     const form=host.querySelector('form');form.onsubmit=async e=>{
