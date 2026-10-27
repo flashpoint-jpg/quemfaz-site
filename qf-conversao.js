@@ -7,6 +7,8 @@
    Respeita a escolha de cookies de medição feita no aviso (Aceitar / Recusar). */
 (function (global) {
   'use strict';
+  // Links de verificação/recuperação contêm tokens privados: não carregar tags de medição.
+  if (/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)) return;
 
   // IDs reais: preencha somente com valores tirados dos painéis. Vazio = plataforma desligada.
   var CONFIG = global.QF_TRACKING_CONFIG = Object.assign({

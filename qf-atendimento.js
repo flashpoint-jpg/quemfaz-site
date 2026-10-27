@@ -185,7 +185,8 @@
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
-          if(!current){const result=await Cloud.signUp('cliente',{nome:a.nome,telefone:a.contato,quickClient:true});if(!result.ok||!result.user||result.needsConfirmation)throw Error(result.error||'Não foi possível iniciar seu acesso.');current=result.user;currentUser=current;}
+          if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
+          current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato});currentUser=current;
           const c=category(a.servico),at=payload(a,id,c.id);
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;

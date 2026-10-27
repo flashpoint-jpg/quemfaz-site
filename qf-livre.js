@@ -17,7 +17,7 @@
     '</div>' +
     divisao() + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p>A comissão de 13% é gerada automaticamente quando o profissional informa o fechamento e valor, o cliente confirma a contratação, a conclusão e o valor com o código de segurança do pedido. Se houver divergência, a cobrança fica para análise. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Pendências vencidas impedem novos desbloqueios. O plano não garante contratação.</p>' +
+      '<p>A comissão de 13% é gerada automaticamente quando o profissional informa o fechamento e valor, o cliente confirma a contratação, a conclusão e o valor com o código de segurança do pedido. Se houver divergência, a cobrança fica para análise. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Aguardar a resposta do cliente não impede novos desbloqueios. Apenas comissão confirmada e vencida sem pagamento bloqueia novos contatos. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
       '<button type="button" class="btn btn--primary btn--block qf-livre__cta" data-qf-livre-pagar>Assinar por R$ 39,90</button>') +
@@ -78,7 +78,7 @@
      try{if(sessionStorage.getItem('qf_cad_escolha_plano')==='avulso'&&avulso){group.querySelector('input[value="livre"]').checked=false;avulso.checked=true;}sessionStorage.removeItem('qf_cad_escolha_plano');}catch(_){}
      // Detalhes acessíveis sem repetir toda a oferta abaixo dos cartões.
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. Pendências vencidas bloqueiam novos desbloqueios. Não há garantia de contratação.</p>';
+     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. A espera pelo cliente não bloqueia novos pedidos. Comissão confirmada e vencida sem pagamento bloqueia novos contatos. Não há garantia de contratação.</p>';
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';

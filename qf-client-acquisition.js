@@ -2,6 +2,8 @@
    11.96: eventos pedido_iniciado / pedido_formulario_avancado / pedido_publicado para as plataformas de anúncio. */
 (function (global) {
   'use strict';
+  // Links de verificação/recuperação contêm tokens privados: não carregar tags de medição.
+  if (/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)) return;
 
   // Meta Pixel: mede PageView e permite que o evento Lead abaixo seja enviado somente após o pedido salvo.
   var QF_META_PIXEL_ID = '1124265238584181';
