@@ -43,9 +43,11 @@
   const target=work();if(!target)return;
   target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Conte o que você precisa</h2><p class="qf-home-problem-sub">Nós procuramos pra você.</p><form class="stack" data-home-problem novalidate><textarea class="input" id="home-problem" aria-labelledby="home-problem-title" rows="3" minlength="8" maxlength="1500" required placeholder="Ex.: minha torneira está vazando, o chuveiro queimou ou preciso limpar o sofá">'+esc(state.problem||'')+'</textarea><div data-home-type-choices></div><p role="alert"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
   const form=target.querySelector('form'),input=form.querySelector('textarea'),choices=form.querySelector('[data-home-type-choices]');
-  input.oninput=()=>{state.problem=input.value;choices.innerHTML='';form.querySelector('[role=alert]').textContent='';};
+  const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
+  input.onfocus=()=>track('home_focus');
+  input.oninput=()=>{track('home_type');state.problem=input.value;choices.innerHTML='';form.querySelector('[role=alert]').textContent='';};
   const choose=category=>showForm(category.nome,input.value.trim());
-  form.onsubmit=e=>{e.preventDefault();const problem=input.value.trim();state.problem=problem;if(problem.length<8){form.querySelector('[role=alert]').textContent='Conte um pouco mais sobre o que precisa resolver.';input.focus();return;}
+  form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;if(problem.length<8){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Conte um pouco mais sobre o que precisa resolver.';input.focus();return;}
    const matches=classify(problem);
    if(matches.length===1||matches[0]?.score>=100||(matches[0]?.score>=10&&matches[0].score-(matches[1]?.score||0)>=3)){choose(matches[0].category);return;}
    const catalog=matches.length?matches.slice(0,6).map(x=>x.category):g.DB.categories().filter(c=>c.id!=='cat_outros');
@@ -134,7 +136,12 @@
   else if((m=path.match(/^\/cliente\/pedido\/([^/]+)$/)))detail(m[1]);
   else if((m=path.match(/^\/auth\/cliente\/(verificar|redefinir)\/([^/]+)$/))){state.mode='token';state.tokenPath=path;reset();const node=work();node.innerHTML='<div data-client-token data-kind="'+esc(m[1])+'" data-token="'+esc(m[2])+'"></div>';g.QFClienteAcesso.tokenPage();}
   else if(path==='/auth/cliente/login')login();
-  else if(path==='/auth/cliente/cadastro'||path.startsWith('/cliente/novo-pedido'))intro(g.QFHomeDraft?.service);
+  else if(path==='/auth/cliente/cadastro'||path.startsWith('/cliente/novo-pedido')){
+   let catId;try{catId=g.sessionStorage.getItem('qf_pending_category');}catch(_){}
+   const linked=g.QFClientAcquisition?.serviceFromLink(g.location.search);
+   const selected=g.DB.categoryById(path.startsWith('/cliente/novo-pedido/')?decodeURIComponent(path.split('/').pop()):catId||linked);
+   if(selected)showForm(selected.nome,'');else intro(g.QFHomeDraft?.service);
+  }
   else orders();
  }
  function inlinePath(path){return /^\/auth\/cliente\/(verificar|redefinir)\//.test(path||'')||path==='/auth/cliente/cadastro'||path==='/auth/cliente/login'||/^\/cliente\/(home|pedidos|pedido\/|chat\/|novo-pedido)/.test(path);}
@@ -167,6 +174,11 @@
   g.Screens.afterRenderAnon=function(pattern){const result=anon?.apply(this,arguments);if(pattern==='/')bindHome();return result;};
   g.document.addEventListener('submit',e=>{if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();e.stopImmediatePropagation();const value=e.target.querySelector('[data-landing-service-search]')?.value.trim();showForm(value);},true);
   g.document.addEventListener('click',e=>{
+   // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
+   const service=e.target.closest('[data-desk-service],[data-landing-cat]');
+   if(service){e.preventDefault();e.stopImmediatePropagation();const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';showForm(cat?.nome||service.dataset.deskService,'');return;}
+   const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
+   if(start){e.preventDefault();e.stopImmediatePropagation();intro();reveal();host()?.querySelector('#home-problem')?.focus();return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}

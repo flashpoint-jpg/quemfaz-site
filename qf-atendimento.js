@@ -136,6 +136,8 @@
     if(params.problem)a.__problem=String(params.problem).trim().slice(0,1500);
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
+    const track=(event,error,once)=>{try{root.QFClientAcquisition?.track(event,{category:category(a.servico)?.id,error_code:error},once);}catch(_){}};
+    track('form_view',null,true);
     const field=q=>{
       const value=a[q.key]||'', id='at-'+q.key;
       const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
@@ -152,12 +154,13 @@
       const stage=stages(a)[step];
       questionIndex=Math.min(questionIndex,stage.questions.length-1);
       const active=stage.questions[questionIndex];
+      if(questionIndex===0)track(['form_view','step_location_view','step_options_view','step_contact_view'][step],null,true);
       area.innerHTML='<style>[data-qf-atendimento-layout]{min-height:100dvh!important;display:flex!important;flex-direction:column;justify-content:center!important;padding:clamp(16px,3vh,36px) 12px!important;box-sizing:border-box;width:100%;margin:0 auto!important}[data-qf-atendimento-layout] [data-qf-atendimento]{width:100%;flex-shrink:0}@media(max-height:650px){[data-qf-atendimento-layout]{min-height:auto;justify-content:flex-start}}[data-qf-atendimento]{border-radius:22px!important;box-shadow:0 10px 32px rgba(22,82,154,.09);border:1px solid #e5ecf6!important}[data-qf-atendimento] h1{color:#1769d5;font-weight:800}[data-qf-atendimento] progress{accent-color:#f47b20;height:8px}[data-qf-atendimento] label.card{background:#fff!important;border:1.5px solid #dce6f3!important;border-radius:14px!important;box-shadow:none!important}[data-qf-atendimento] label.card:has(input:checked){border-color:#f47b20!important;background:#fff6ed!important}[data-qf-atendimento] .btn--primary{background:#f47b20!important;border-color:#f47b20!important;color:#fff!important;border-radius:12px!important;min-height:48px}[data-qf-atendimento] .btn--outline{border-radius:12px!important;min-height:48px}</style><p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+field(active)+(step===3?'<p><strong>'+ ('Pedido tradicional') +'</strong> · '+('Receba contato de até 4 profissionais.')+' Você decide se contrata. Contato protegido até o desbloqueio.</p>':'')+(active.key==='aceite_app'?'<p class="text--sm" style="padding:12px;border-radius:12px;background:#eef4ff;color:#204e89">'+(requiresInstalledApp()?'<strong>Aplicativo obrigatório.</strong> Ao marcar a concordância no Android, você será direcionado à Play Store. Depois, abra o Quem Faz instalado e faça seu pedido. '+(!inApp()?installText():'Você já está utilizando o aplicativo.'):(isIos()?'<strong>Pedido pelo iPhone.</strong> Continue pelo Safari. Depois de publicar, você pode adicionar o Quem Faz à Tela de Início.':'<strong>Pedido pelo computador.</strong> Continue neste navegador. Não é necessário instalar o aplicativo.'))+'</p>':'')+'<p role="alert" data-at-error></p><div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3&&questionIndex===stage.questions.length-1?'data-at-publish':'')+'>'+(step===3&&questionIndex===stage.questions.length-1?'Publicar grátis':'Continuar')+'</button></div></form>';
       area.querySelector('form').onsubmit=e=>{
-        e.preventDefault();if(busy)return;area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
+        e.preventDefault();if(busy)return;track('form_start',null,true);area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
         const list=[active];
-        for(const q of list){const error=validate(q,a[q.key],a);if(error){const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
-        if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
+        for(const q of list){const error=validate(q,a[q.key],a);if(error){track('validation_error',q.key);const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
+        if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){track(['step_service_completed','step_location_completed','step_options_completed'][step],null,true);step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
       };
       area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.start();else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
       if(active.key==='aceite_app'){
@@ -184,11 +187,13 @@
         if(busy)return;
         if(a.aceite_app!=='sim'||(requiresInstalledApp()&&!inApp())){const status=area.querySelector('[data-at-error]');if(status)status.textContent=requiresInstalledApp()?'É necessário abrir o aplicativo Quem Faz instalado para publicar e receber contatos.':'Marque a concordância para publicar o pedido pelo navegador.';return;}
         busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Publicando…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
+        track('submit');let phase='access';
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
           if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
           current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato,container:params.embedded?area:null});currentUser=current;
+          phase='publish';
           const c=category(a.servico),at=payload(a,id,c.id);
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
@@ -201,7 +206,7 @@
           if(root.QFPedidoHome){await root.QFPedidoHome.published(req,current);}
           else area.innerHTML='<section class="card stack"><h2>Pedido publicado!</h2><p>Estamos buscando profissionais para você.</p></section>';
           return;
-        }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
+        }catch(e){track(phase==='access'?'access_error':'publish_error',phase==='access'?'access_failed':'publish_failed');area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
         finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}
     };
     draw();

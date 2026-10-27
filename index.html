@@ -101,7 +101,10 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
     }
     var payload = {
       source: p.get('utm_source') || (click ? click[1] : ''),
-      medium: p.get('utm_medium') || 'paid',
+      // fbclid também existe em publicações orgânicas; UTM de origem sozinho não prova mídia paga.
+      medium: p.get('utm_medium') || (click && /^(gclid|gbraid|wbraid|msclkid|ttclid)$/.test(click[0]) ? 'cpc' : ''),
+      attribution_version: 3,
+      medium_evidence: p.get('utm_medium') ? 'utm' : (click && /^(gclid|gbraid|wbraid|msclkid|ttclid)$/.test(click[0]) ? 'ad_click_id' : 'unknown'),
       campaign: p.get('utm_campaign') || '',
       content: p.get('utm_content') || '',
       term: p.get('utm_term') || '',
@@ -8580,28 +8583,28 @@ alt=""></noscript>
     return '<div class="qf-desk-extra">' +
       '<div class="qf-stats-slot" data-home-stats></div>' +
       '<section class="qf-desk-card" id="qf-sec-como" aria-labelledby="qf-desk-how"><h2 class="qf-desk-h" id="qf-desk-how">Como funciona</h2><ol class="qf-desk-steps">' +
-        '<li><span class="qf-desk-num">1</span><div><strong>Escreva o que você precisa</strong><p>Leva menos de 1 minuto. É grátis e não precisa de cadastro.</p></div></li>' +
-        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Até 4 profissionais recebem o seu pedido.</p></div></li>' +
-        '<li><span class="qf-desk-num qf-desk-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora. Você compara e escolhe com quem fechar.</p></div></li>' +
+        '<li><span class="qf-desk-num">1</span><div><strong>Escreva o que você precisa</strong><p>É grátis. Crie seu acesso com telefone e senha ao publicar.</p></div></li>' +
+        '<li><span class="qf-desk-num">2</span><div><strong>Os profissionais da sua região são avisados</strong><p>Profissionais compatíveis podem ver o pedido; até 4 podem desbloqueá-lo.</p></div></li>' +
+        '<li><span class="qf-desk-num qf-desk-num--zap">' + icon('whatsapp') + '</span><div><strong>Converse com os profissionais</strong><p>Acompanhe em Meus pedidos. Você compara e escolhe com quem fechar.</p></div></li>' +
       '</ol></section>' +
       '<section class="qf-desk-card" id="qf-sec-servicos" aria-labelledby="qf-desk-serv"><h2 class="qf-desk-h" id="qf-desk-serv">Serviços mais pedidos</h2><p class="qf-desk-sub">Clique em um serviço para começar o seu pedido.</p><div class="qf-desk-services">' +
         DESK_SERVICES.map(function (x) { return '<button type="button" data-desk-service="' + (x[2] || x[0]) + '">' + icon(x[1]) + '<span>' + x[0] + '</span></button>'; }).join('') +
       '</div></section>' +
-      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Sem cadastro</span></li><li>' + icon('lock') + '<span>Só até 4 profissionais veem o seu WhatsApp</span></li></ul>' +
+      '<ul class="qf-desk-trust"><li>' + icon('checkCircle') + '<span>Pedir é grátis</span></li><li>' + icon('user') + '<span>Acesso por telefone e senha</span></li><li>' + icon('lock') + '<span>Só até 4 profissionais veem o seu WhatsApp</span></li></ul>' +
     '</div>';
   }
 
   // Prévia do celular: mais conteúdo abaixo do botão, curto, com o resto recolhido em "toque para abrir".
-  const QF_DICAS_SEGURANCA = ['Seu WhatsApp só é liberado para os profissionais que pegarem o pedido, até a quantidade que você escolher (1 a 4)','O selo Verificado pela QuemFaz aparece só em profissionais com documentos conferidos. Nem todos têm: veja o perfil','Peça o orçamento por escrito no WhatsApp e combine o que está incluído antes de começar','Evite pagar o valor total adiantado; o pagamento é combinado direto com o profissional','Depois do serviço, dê sua nota e ajude outros clientes'];
+  const QF_DICAS_SEGURANCA = ['Seu WhatsApp só é liberado para os profissionais que pegarem o pedido, até a quantidade que você escolher (1 a 4)','O selo Verificado pela QuemFaz aparece só em profissionais com documentos conferidos. Nem todos têm: veja o perfil','Peça o orçamento por escrito e combine o que está incluído antes de começar','Evite pagar o valor total adiantado; o pagamento é combinado direto com o profissional','Depois do serviço, dê sua nota e ajude outros clientes'];
   function mobFold(titulo, corpo) { return '<details class="qf-mob-fold"><summary><span>' + titulo + '</span>' + icon('chevronDown') + '</summary><div class="qf-mob-fold__body">' + corpo + '</div></details>'; }
   function mobExtraInner() {
     return '<div class="qf-stats-slot" data-home-stats></div><section class="qf-mob-card"><h2 class="qf-mob-h">Como funciona</h2><ol class="qf-mob-steps">' +
         '<li><span class="qf-mob-num">1</span><div><strong>Escreva o que você precisa</strong><p>Grátis e sem cadastro.</p></div></li>' +
-        '<li><span class="qf-mob-num">2</span><div><strong>Até 4 profissionais são avisados</strong><p>Só eles veem o seu WhatsApp.</p></div></li>' +
-        '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Eles chamam você no WhatsApp</strong><p>Costuma ser em até 1 hora.</p></div></li>' +
+        '<li><span class="qf-mob-num">2</span><div><strong>Profissionais da região são avisados</strong><p>Até 4 podem desbloquear seu pedido.</p></div></li>' +
+        '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Converse com os profissionais</strong><p>Acompanhe as respostas em Meus pedidos.</p></div></li>' +
       '</ol></section>' +
-      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Calculadora para ter ideia do preço antes de pedir'])) +
-      mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
+      mobFold('Benefícios para o cliente', deskList(['Pedir é grátis. Acesso por telefone e senha','Você escreve uma vez e até 4 profissionais chamam você','Acompanhe as respostas e conversas em Meus pedidos','Calculadora para ter ideia do preço antes de pedir'])) +
+      mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Conversa pelo chat no Plano Livre; WhatsApp no avulso','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
       // V11.96: orientações de contratação segura (só o que o sistema realmente faz).
       mobFold('Contratar com segurança', deskList(QF_DICAS_SEGURANCA) + '<p class="text--sm"><a href="./privacidade/">Como cuidamos dos seus dados</a></p>') +
@@ -8651,10 +8654,10 @@ alt=""></noscript>
     const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()" loading="lazy"></a>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
-          deskList(['Pedir é grátis e não precisa de cadastro','Você escreve uma vez e até 4 profissionais chamam você','A resposta costuma chegar em até 1 hora, no seu WhatsApp','Só até 4 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
+          deskList(['Pedir é grátis. Acesso por telefone e senha','Você escreve uma vez e até 4 profissionais chamam você','Acompanhe as respostas e conversas em Meus pedidos','Só até 4 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
           '<button class="btn btn--primary" type="button" data-home-services><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para profissionais</p>' +
-          deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Fala direto com o cliente no WhatsApp','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
+          deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Conversa pelo chat no Plano Livre; WhatsApp no avulso','Escolhe a região onde quer atender','No app, o aviso de pedido novo toca alto mesmo com o celular no bolso'])) +
           '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro"><span>Quero receber pedidos</span>' + icon('arrowRight') + '</button></div>' +
       '</div></section>' +
       '<section class="qf-desk-card qf-desk-recrut" id="qf-sec-recrut" aria-labelledby="qf-desk-rech"><div class="qf-desk-recrut__intro"><p class="qf-desk-kicker">Para empresas</p><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-rech">Recrutamento: precisa contratar funcionário?</h2>' +

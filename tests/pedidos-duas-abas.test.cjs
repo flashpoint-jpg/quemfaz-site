@@ -9,8 +9,8 @@ function setup(){
  let rows=[];
  const ctx={setInterval:()=>1,clearInterval:()=>{},document:dom.window.document,window:{},PU:{escapeHtml:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;')},icon:()=>'',DB:{categoryById:id=>({nome:id}),cityById:()=>null,chamadasPendentes:()=>rows,requestById:id=>rows.find(r=>r.id===id)},Screens:{profHomeRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',profChamadaRender:()=>'<div class="view">Desbloquear</div>',profServicosDisponiveisRender:()=>'<div class="view"><div id="chamados-disponiveis"></div></div>',afterRender:()=>{}}};
  vm.createContext(ctx);vm.runInContext(source,ctx);
- const row=(id,cat,far=false,more={})=>({id,categoriaId:cat,foraRaio:far,distanciaKm:far?50:5,endereco:{cidade:'Santo André',uf:'SP',bairro:'Centro'},descricao:'Pedido real retornado pelo servidor',limiteParticipantes:4,participantes:1,criadoEm:'2026-10-24T10:00:00Z',...more});
- rows=[row('near','eletricista'),row('old','montador',true),row('new','eletricista',true,{criadoEm:'2026-10-24T12:00:00Z'}),row('wrong','pintor',true),row('full','montador',true,{participantes:4}),row('unlocked','eletricista',true,{profissionalId:'prof'}),row('near','eletricista')];
+ const row=(id,cat,far=false,more={})=>({id,categoriaId:cat,foraRaio:far,distanciaKm:far?50:5,endereco:{cidade:'Santo André',uf:'SP',bairro:'Centro'},descricao:'Pedido real retornado pelo servidor',limiteParticipantes:4,participantes:1,criadoEm:new Date(Date.now()-2*3600000).toISOString(),...more});
+ rows=[row('near','eletricista'),row('old','montador',true),row('new','eletricista',true,{criadoEm:new Date(Date.now()-3600000).toISOString()}),row('wrong','pintor',true),row('full','montador',true,{participantes:4}),row('unlocked','eletricista',true,{profissionalId:'prof'}),row('near','eletricista')];
  return {ctx,user,dom,setRows:r=>rows=r,row,getRows:()=>rows};
 }
 test('duas abas: profissões múltiplas, sem duplicados, cheios ou desbloqueados e ordem recente',()=>{

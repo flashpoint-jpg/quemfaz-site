@@ -15,9 +15,9 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.42'");
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.43'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=card-unico-20261027');
-html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=acesso-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=acesso-20261027');
+html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=funil-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=funil-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
 const authTokenCheck = String.raw`/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)`;
 html=html.replace("!function(f,b,e,v,n,t,s){if(f.fbq)return;", "if (!("+authTokenCheck+")) { !function(f,b,e,v,n,t,s){if(f.fbq)return;")
@@ -36,10 +36,10 @@ html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); re
 html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
-html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=card-unico-20261027"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=atalhos-20261027"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=card-unico-20261027').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=card-unico-20261027');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=card-unico-20261027').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=funil-20261027');
 const adminPath=path.join(out,'admin.html');
 fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=card-unico-20261027'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.

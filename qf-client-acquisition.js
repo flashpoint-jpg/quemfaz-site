@@ -39,7 +39,7 @@
   function serviceFromLink(search) {
     var p = new URLSearchParams(search || '');
     var explicit = p.get('servico');
-    if (explicit) return services[explicit] || (Object.values(services).indexOf(explicit) !== -1 ? explicit : null);
+    if (explicit) return services[explicit] || (/^cat_[a-z0-9_]+$/.test(explicit) ? explicit : null);
     if (p.get('utm_source') !== 'google' || !/^quemfaz_clientes_/.test(p.get('utm_campaign') || '')) return null;
     return services[p.get('utm_content')] || null;
   }
