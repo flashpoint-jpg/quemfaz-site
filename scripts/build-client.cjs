@@ -15,8 +15,8 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.38'");
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=divisao87-20261026');
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.39'");
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=cadastro-planos-20261027');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=divisao87-20261026').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=codigo-visivel-20261024');
@@ -155,7 +155,7 @@ fs.writeFileSync(path.join(out,'espelho-cliente.html'),html.replace('</head>','<
 
 fs.writeFileSync(path.join(out,'espelho-profissional.html'),html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>').replace('</body>','<script src="/qf-admin-prof-mirror-frame.js?v=20261023"></script></body>'));
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
-sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-divisao87-20261026';");
+sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-cadastro-planos-20261027';");
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');
