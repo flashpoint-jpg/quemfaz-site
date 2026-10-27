@@ -12,7 +12,8 @@
   const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(root.navigator?.userAgent||'');
   // Safari do iPhone/iPad publica diretamente; instalação obrigatória permanece no Android.
   const isIos=()=>/iPhone|iPad|iPod/i.test(root.navigator?.userAgent||'')||(root.navigator?.platform==='MacIntel'&&root.navigator?.maxTouchPoints>1);
-  const requiresInstalledApp=()=>isMobile()&&!isIos();
+  // Clientes publicam e acompanham na própria index; instalação é opcional.
+  const requiresInstalledApp=()=>false;
   const inApp=()=>!!((typeof root.QFApp?.isNativeApp==='function'&&root.QFApp.isNativeApp())||(typeof root.Capacitor?.isNativePlatform==='function'&&root.Capacitor.isNativePlatform())||root.matchMedia?.('(display-mode: standalone)').matches||root.navigator?.standalone||/^android-app:\/\/br\.app\.quemfaz/.test(root.document?.referrer||''));
   const installText=()=>/Android/i.test(root.navigator?.userAgent||'')?'<a href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener" style="color:#1458cc;font-weight:700">Instalar Quem Faz pela Play Store</a>':'No iPhone, abra o menu Compartilhar do Safari e toque em Adicionar à Tela de Início.';
   const STORE_URL='https://play.google.com/store/apps/details?id=br.app.quemfaz';
@@ -157,7 +158,7 @@
         for(const q of list){const error=validate(q,a[q.key],a);if(error){const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
         if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
       };
-      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
+      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.openPath('/cliente/pedidos');else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
       if(active.key==='aceite_app'){
         const agreement=area.querySelector('#at-aceite_app');
         agreement.addEventListener('change',()=>{
@@ -186,7 +187,7 @@
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
           if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
-          current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato});currentUser=current;
+          current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato,container:params.embedded?area:null});currentUser=current;
           const c=category(a.servico),at=payload(a,id,c.id);
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
@@ -194,11 +195,10 @@
           root.QFAcompanhamento.remember(req.id,segredo);
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
-          // Publicação confirmada pelo servidor: vai direto para a página própria de acompanhamento,
-          // fora do roteador do app (que re-renderiza a tela quando a sessão rápida é criada). Sem temporizador.
+          // Publicação confirmada: mantém formulário, pedidos e conversa na index.
           redirecting=true;
-          area.innerHTML='<section class="card stack" style="max-width:540px;margin:auto;padding:24px;text-align:center"><h1>Pedido publicado!</h1><p role="status">Abrindo o acompanhamento do seu pedido…</p></section>';
-          (root.__qfNavigate||(u=>root.location.replace(u)))('/acompanhar-pedido.html?publicado=1#pedido='+req.id);
+          if(root.QFPedidoHome){await root.QFPedidoHome.published(req,current);}
+          else area.innerHTML='<section class="card stack"><h2>Pedido publicado!</h2><p>Estamos buscando profissionais para você.</p></section>';
           return;
         }catch(e){area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
         finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}

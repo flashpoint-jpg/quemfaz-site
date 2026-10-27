@@ -75,7 +75,7 @@
   const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
   const lista=['/profissional/home','/profissional/servicos/disponiveis','/profissional/servicos'].includes(pattern);
   if(pattern.startsWith('/cliente/')){
-   if(pattern==='/cliente/pedido/:id'&&g.QFAcompanhamento){const panel=document.createElement('section');panel.className='section qf-owner-panel';panel.dataset.qf13='';const view=content.querySelector('.view')||content,heading=view.querySelector(':scope > .row-between');if(heading)heading.after(panel);else view.prepend(panel);g.QFAcompanhamento.mount(panel,params.id,{embedded:true});}return;
+   if(pattern==='/cliente/pedido/:id'&&g.QFAcompanhamento&&!content.closest('#qf-pedido-facil')){const panel=document.createElement('section');panel.className='section qf-owner-panel';panel.dataset.qf13='';const view=content.querySelector('.view')||content,heading=view.querySelector(':scope > .row-between');if(heading)heading.after(panel);else view.prepend(panel);g.QFAcompanhamento.mount(panel,params.id,{embedded:true});}return;
   }
   if(!admin&&!carteira&&!pedido&&!lista&&pattern!=='/profissional/chat/:id')return;
   const c=admin?g.QFAdminCloud&&g.QFAdminCloud.client:g.QFCloud&&g.QFCloud.client;if(!c)return;

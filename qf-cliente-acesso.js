@@ -19,19 +19,19 @@
   if(p.error||p.data?.tipo!=='cliente'||phone(p.data.whatsapp||p.data.telefone)!==phone(telefone))return null;
   return p.data;
  }
- function authenticate({nome,telefone}){
+ function authenticate({nome,telefone,container}){
   if(active)return active;
-  active=open({nome,telefone}).finally(()=>{active=null;});return active;
+  active=open({nome,telefone,container}).finally(()=>{active=null;});return active;
  }
- async function open({nome,telefone}){
+ async function open({nome,telefone,container}){
   const current=await existing(telefone);if(current)return current;
   return new Promise((resolve,reject)=>{
-   const dialog=g.document.createElement('dialog');dialog.className='qf-client-access';
+   const embedded=!!container;const dialog=g.document.createElement(embedded?'section':'dialog');dialog.className='qf-client-access';if(embedded)dialog.style.cssText='margin:16px 0;width:100%;max-height:none';
    dialog.setAttribute('aria-label','Acesso para publicar seu pedido');
    dialog.innerHTML='<style>.qf-client-access{width:min(440px,calc(100% - 24px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #dce6f3;border-radius:20px;padding:20px;color:#173150;background:#fff;box-sizing:border-box}.qf-client-access::backdrop{background:#10233a99}.qf-client-access h2{font-size:22px;margin:0 0 8px}.qf-client-access p{font-size:14px;line-height:1.45}.qf-client-access form,.qf-client-access label{display:flex;flex-direction:column;gap:9px}.qf-client-access form{gap:14px}.qf-client-access .input{width:100%;box-sizing:border-box}.qf-client-access .btn{min-height:46px;white-space:normal}.qf-client-access__links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.qf-client-access__links button{padding:8px;background:#fff;border:1px solid #dce6f3;border-radius:9px;color:#075bbb;font:inherit;font-size:13px;cursor:pointer}.qf-client-access [role=alert]{color:#9b261c;min-height:1em;margin:0}.qf-client-access__cancel{margin-top:12px;width:100%}</style><div data-access-body></div>';
-   g.document.body.appendChild(dialog);
+   (container||g.document.body).appendChild(dialog);
    const host=dialog.querySelector('[data-access-body]');let mode='entrar',busy=false;
-   const end=(value,error)=>{dialog.close();dialog.remove();if(error)reject(error);else resolve(value);};
+   const end=(value,error)=>{if(!embedded)dialog.close();dialog.remove();if(error)reject(error);else resolve(value);};
    dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)end(null,Error('Seu pedido está salvo nesta tela. Entre para concluir a publicação.'));});
    function draw(message=''){
     const register=mode==='cadastrar',legacy=mode==='primeiro_acesso',forgot=mode==='esqueci_senha';
@@ -40,7 +40,7 @@
     (register?'<label>Seu nome<input class="input" name="nome" autocomplete="name" value="'+esc(nome)+'" required></label>':'')+
     (legacy?'<label>Código de acesso antigo<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><p>Se ainda estiver conectado no aparelho anterior, publique por ele. Se perdeu o código e o acesso, fale com o suporte para recuperar sua conta.</p>':'')+
     (register||legacy||forgot?'<label>E-mail'+(forgot?' cadastrado':' para recuperar sua senha')+'<input class="input" name="email" type="email" autocomplete="email" required></label>':'')+
-    (!forgot?'<label>'+(register||legacy?'Crie uma senha':'Sua senha')+'<input class="input" name="senha" type="password" autocomplete="'+(register||legacy?'new-password':'current-password')+'" '+(register||legacy?'minlength="8" ':'')+'required></label>'+(register||legacy?'<p>Use pelo menos 8 caracteres, com letras e números. Você receberá um e-mail para verificar seu endereço.</p>':''):'')+
+    (!forgot?'<label>'+(register||legacy?'Crie uma senha':'Sua senha')+'<input class="input" name="senha" type="password" autocomplete="'+(register||legacy?'new-password':'current-password')+'" '+(register||legacy?'minlength="6" ':'')+'required></label>'+(register||legacy?'<p>Senha simples com 6 ou mais posições. Pode usar só números ou só letras. Você receberá um e-mail para verificar seu endereço.</p>':''):'')+
     '<p role="alert">'+esc(message)+'</p><button class="btn btn--primary" type="submit">'+(forgot?'Enviar link de recuperação':register||legacy?'Criar acesso e continuar':'Entrar e publicar pedido')+'</button></form><div class="qf-client-access__links">'+[['entrar','Já tenho senha'],['cadastrar','Criar conta'],['primeiro_acesso','Tenho cadastro antigo'],['esqueci_senha','Esqueci minha senha']].filter(x=>x[0]!==mode).map(x=>'<button type="button" data-access-mode="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><button type="button" class="btn btn--outline qf-client-access__cancel" data-access-cancel>Voltar ao pedido</button>';
     host.querySelector('[data-access-cancel]').onclick=()=>end(null,Error('Seu pedido continua preenchido. Entre para concluir a publicação.'));
     host.querySelectorAll('[data-access-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.accessMode;draw();});
@@ -48,7 +48,7 @@
      e.preventDefault();if(busy)return;
      if(!form.reportValidity())return;
      const data=Object.fromEntries(new g.FormData(form));
-     if((register||legacy)&&(!/[A-Za-z]/.test(data.senha)||!/\d/.test(data.senha)||data.senha.length<8)){form.querySelector('[role=alert]').textContent='Use pelo menos 8 caracteres, com letras e números.';return;}
+     if((register||legacy)&&(data.senha.length<6||data.senha.length>72)){form.querySelector('[role=alert]').textContent='Senha simples com 6 ou mais posições. Pode usar só números ou só letras.';return;}
      busy=true;host.querySelectorAll('input,button').forEach(b=>b.disabled=true);
      try{
       const out=await call(mode,data);
@@ -66,7 +66,7 @@
      }finally{busy=false;host.querySelectorAll('input,button').forEach(b=>b.disabled=false);}
     };
    }
-   draw();dialog.showModal();
+   draw();if(!embedded)dialog.showModal();else dialog.scrollIntoView({block:"nearest"});
   });
  }
  async function tokenPage(){
@@ -77,7 +77,7 @@
    host.innerHTML='<h1 class="h2">Confirmar e-mail</h1><p>Confirme seu e-mail para recuperar sua senha quando precisar.</p><button type="button" class="btn btn--primary">Confirmar meu e-mail</button><p role="status"></p>';
    host.querySelector('button').onclick=async e=>{e.target.disabled=true;try{await call('verificar_email',{token});host.innerHTML='<h1 class="h2">E-mail confirmado</h1><p>Agora você pode recuperar sua senha por este e-mail.</p><a class="btn btn--primary" href="/?app=1#/auth/cliente/cadastro">Voltar ao Quem Faz</a>';}catch(err){host.querySelector('[role=status]').textContent=err.message;e.target.disabled=false;}};
   }else{
-   host.innerHTML='<h1 class="h2">Criar nova senha</h1><form class="stack"><label>Nova senha<input class="input" name="senha" type="password" autocomplete="new-password" minlength="8" required></label><p>Use pelo menos 8 caracteres, com letras e números.</p><button type="submit" class="btn btn--primary">Salvar nova senha</button><p role="alert"></p></form>';
+   host.innerHTML='<h1 class="h2">Criar nova senha</h1><form class="stack"><label>Nova senha<input class="input" name="senha" type="password" autocomplete="new-password" minlength="6" required></label><p>Senha simples com 6 ou mais posições. Pode usar só números ou só letras.</p><button type="submit" class="btn btn--primary">Salvar nova senha</button><p role="alert"></p></form>';
    host.querySelector('form').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;try{await call('redefinir_senha',{token,senha:e.target.elements.senha.value});host.innerHTML='<h1 class="h2">Senha atualizada</h1><p>Entre com seu telefone e a nova senha ao publicar o pedido.</p><a class="btn btn--primary" href="/?app=1#/auth/cliente/cadastro">Voltar ao Quem Faz</a>';}catch(err){host.querySelector('[role=alert]').textContent=err.message;btn.disabled=false;}};
   }
  }

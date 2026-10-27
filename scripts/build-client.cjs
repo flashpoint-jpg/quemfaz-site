@@ -15,8 +15,8 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.40'");
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=publicacao-senha-20261027');
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.41'");
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pedido-home-20261027');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=acesso-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=acesso-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
 const authTokenCheck = String.raw`/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)`;
@@ -24,22 +24,28 @@ html=html.replace("!function(f,b,e,v,n,t,s){if(f.fbq)return;", "if (!("+authToke
  .replace("fbq('track','PageView');", "fbq('track','PageView'); }");
 const googleTag='<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663"></script>';
 html=html.replace(googleTag,'<script>if (!('+authTokenCheck+')) { var tag=document.createElement("script");tag.async=true;tag.src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663";document.head.appendChild(tag); }</script>');
+html=html.replaceAll('e chamar você no WhatsApp.','e conversar com você aqui.');
+html=html.replaceAll('Sem cadastro obrigatório · Pedido gratuito','Pedido gratuito · Acesso por telefone e senha').replaceAll('Grátis e sem cadastro.','Grátis. Acompanhe tudo aqui mesmo.');
+html=html.replace('    const found = matchRoute(path);',"    if (global.QFPedidoHome?.isInlinePath(path)) { global.QFPedidoHome.openPath(path); return; }\n    const found = matchRoute(path);");
+// Clientes permanecem na home inclusive com sessão ativa; preserva a entrada profissional.
+html=html.replace("if (found && found.route.publicPage) { renderAnon(found); return; }", "if (found && (found.route.publicPage || (path === '/' && currentSession()?.role === 'cliente'))) { renderAnon(found); return; }");
+html=html.replace('function userIsEditing() {','function userIsEditing() { if (global.QFPedidoHome?.isBusy()) return true;');
 // O login por senha substitui o redirecionamento do login antigo para a home.
 html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); return; }",'');
 // Rotas dos links enviados pelo serviço de contas já implantado, abertas também com sessão ativa.
 html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
-html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=20261027"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=20261027"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=publicacao-senha-20261027').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=publicacao-senha-20261027');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pedido-home-20261027').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=pedido-home-20261027');
 const adminPath=path.join(out,'admin.html');
-fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=publicacao-senha-20261027'));
+fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pedido-home-20261027'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
 adminHtml=adminHtml.replace(/<script src="qf-comissao13\.js[^"']*"><\/script>/g,'');
-adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=publicacao-senha-20261027"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
+adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=pedido-home-20261027"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
 const routeMarker="    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard'";
 if(!adminHtml.includes(routeMarker))throw Error('Rota administrativa ausente');
 adminHtml=adminHtml.replace(routeMarker,"    { pattern: '/admin/espelho-profissionais', role: 'admin', title: 'Espelho dos profissionais', render: Screens.adminEspelhoRender },\n    { pattern: '/admin/espelho-profissionais/:id', role: 'admin', title: 'Tela do profissional', back: '/admin/espelho-profissionais', render: Screens.adminEspelhoDetalheRender },\n    { pattern: '/admin/comissao13', role: 'admin', title: 'Comissões de 13%', render: Screens.adminComissao13Render },\n"+routeMarker);
@@ -147,7 +153,7 @@ const early=`(function(w){
   var saved='',fields={},pending=null,loading=${JSON.stringify(placeholder)},ready=false;
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;['data-landing-location','data-landing-neighborhood'].forEach(function(k){var el=document.querySelector('['+k+']');if(el)fields[k]=el.value;});},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search]');Object.keys(fields).forEach(function(k){var el=content.querySelector('['+k+']');if(el)el.value=fields[k];});if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};
   if(location.hash&&location.hash!=='#/')document.getElementById('app-shell').outerHTML=loading;
-  document.addEventListener('submit',function(e){if(ready)return;if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();early.capture();pending=null;w.QFHomeDraft={service:(saved||'').trim()};try{sessionStorage.removeItem('qf_pending_category');}catch(_){}location.hash='#/auth/cliente/cadastro';var shell=document.getElementById('app-shell');if(shell)shell.outerHTML=loading;w.setTimeout(function(){if(ready||location.hash!=='#/auth/cliente/cadastro')return;var content=document.getElementById('app-content');if(content)content.innerHTML='<div class="card stack" style="max-width:560px;margin:32px auto;padding:24px"><h2>Não foi possível abrir o pedido</h2><p>Verifique sua conexão e toque em tentar novamente.</p><button class="btn btn--primary" onclick="location.reload()">Tentar novamente</button></div>';},12000);},true);
+  document.addEventListener('submit',function(e){if(ready)return;if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();early.capture();w.QFHomeDraft={service:(saved||'').trim()};pending='[data-landing-service-form]';},true);
   document.addEventListener('click',function(e){if(ready)return;var b=e.target.closest('[data-nav],[data-action="landing-login"],[data-support-open]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;}else pending=b.hasAttribute('data-support-open')?'[data-support-open]':'[data-action="landing-login"]';},true);
 })(window);`;
 new vm.Script(early);
@@ -169,7 +175,7 @@ fs.writeFileSync(path.join(out,'espelho-cliente.html'),html.replace('</head>','<
 
 fs.writeFileSync(path.join(out,'espelho-profissional.html'),html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>').replace('</body>','<script src="/qf-admin-prof-mirror-frame.js?v=20261023"></script></body>'));
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
-sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-publicacao-senha-20261027';");
+sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-pedido-home-20261027';");
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');
