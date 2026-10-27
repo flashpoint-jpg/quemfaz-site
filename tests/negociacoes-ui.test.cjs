@@ -25,6 +25,11 @@ test('UI administrativa: orçamento real da API, busca, detalhe, leitura sem env
   assert.match(w.document.body.textContent,/45,50/);assert.ok(w.document.body.textContent.includes('Confirmadas a receber'));
   w.document.querySelector('tbody [data-qfn-open]').click();await wait(()=>w.document.querySelector('[data-qfn-reminder] a'));
   assert.ok(w.document.body.textContent.includes('Conversa interna'));assert.ok(w.document.querySelector('[data-qfn-reminder] a').href.startsWith('https://wa.me/5511988887777?text='));assert.ok(w.document.body.textContent.includes('Abrir não comprova envio'));
+  const dialog=w.document.querySelector('dialog');assert.ok(dialog.hasAttribute('open'));
+  assert.ok(dialog.querySelector('.qfn-detail-grid'));assert.ok(dialog.querySelector('.qfn-messages'));
+  assert.ok([...dialog.querySelectorAll('details')].every(x=>!x.open),'históricos recolhidos inicialmente');
+  assert.equal(dialog.querySelectorAll('pre').length,0,'não despeja JSON na tela');
+  dialog.querySelector('[data-qfn-close]').click();assert.equal(w.document.querySelector('dialog'),null);
   assert.equal(writes,0);
   await d.exec('reset role');assert.equal((await d.query('select count(*)::int n from qf_chat_mensagens where lida_em is not null')).rows[0].n,0);
  }finally{w.close();await d.close();}
