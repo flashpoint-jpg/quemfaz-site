@@ -3,17 +3,56 @@
  'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const uuid=v=>/^[a-f0-9-]{36}$/i.test(v||'');
- const state={mode:'orders',user:null,selected:null,prof:null,notice:'',pending:null};
+ const state={mode:'intro',user:null,selected:null,prof:null,notice:'',pending:null};
  let slot=null,loading=null,originalNavigate=null,after=null;
- function toolbar(){return '<div class="qf-home-orders__bar"><h2>Seu pedido, aqui mesmo</h2><div><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--primary" data-home-new>Novo pedido</button></div></div>'+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
+ function toolbar(){return (['orders','detail','chat'].includes(state.mode)?'<div class="qf-home-orders__bar"><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--outline" data-home-new>Novo pedido</button></div>':'')+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
  function host(){
   if(slot?.isConnected)return slot;
-  const content=g.document.getElementById('app-content');const anchor=content?.querySelector('[data-landing-service-form]');if(!anchor)return null;
-  slot=g.document.createElement('section');slot.className='qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Publicar e acompanhar pedidos');
-  (anchor.closest('.qf-landing-hero')||anchor).insertAdjacentElement('afterend',slot);
-  slot.innerHTML=toolbar();
-  slot.addEventListener('click',e=>{if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';showForm();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
+  const anchor=g.document.querySelector('[data-landing-service-form]');if(!anchor)return null;
+  const seed=anchor.querySelector('[data-landing-service-search]')?.value||'';if(!state.problem&&seed)state.problem=seed;
+  slot=g.document.createElement('section');slot.className='qf-landing-service-search qf-hero-search qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Conte o que você precisa');
+  anchor.replaceWith(slot);slot.innerHTML=toolbar();
+  slot.addEventListener('click',e=>{if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
   return slot;
+ }
+ const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ function classify(problem){
+  const text=norm(problem);
+  const rules=[
+   [/eletric|eletricista/,/tomada|disjuntor|curto.circuito|chuveiro|fiacao|energia|eletric/,10],
+   [/encanador|hidraul/,/torneira|vazament|cano|descarga|registro|encan|hidraul|pia entup/,11],
+   [/desentupid/,/desentup|entupid|esgoto/,12],
+   [/pintor|pintura/,/pintar|pintura|tinta|pintor/,12],
+   [/limpeza.*estof|higien.*estof|limpeza.*sofa/,/sofa|estofado|poltrona|colchao|tapete/,12],
+   [/diarista|faxineira|limpeza residencial/,/faxina|diarista|faxineira|limpar.*casa|limpeza.*casa|limpeza.*apartamento/,11],
+   [/montador|montagem.*moveis/,/montar|montagem|desmontar|guarda.roupa|montador/,12],
+   [/chaveiro/,/chave|fechadura|porta trancada/,12],
+   [/ar.condicionado|refrigeracao/,/ar.condicionado|ar nao gela|ar nao esta gelando|climatiz/,12],
+   [/geladeira|eletrodomestico/,/geladeira|freezer|lavadora|maquina de lavar|fogao|micro.ondas/,12],
+   [/pedreiro|alvenaria/,/pedreiro|reformar|reforma|alvenaria|assentar|azulejo/,10],
+   [/telhadista|telhado/,/telhado|goteira|telha quebrada/,12],
+   [/impermeabiliz/,/impermeabilizar|impermeabilizacao|infiltracao/,12],
+   [/jardineiro|jardinagem/,/grama|podar|poda|jardim|jardinagem/,12],
+   [/marido de aluguel/,/marido de aluguel|pequenos reparos/,12],
+   [/frete|carreto/,/frete|carreto|mudanca|transportar.*movel/,11]
+  ];
+  return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+ }
+ function intro(prefill){
+  state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill)state.problem=prefill;reset();
+  const target=work();if(!target)return;
+  target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Conte o que você precisa</h2><p class="qf-home-problem-sub">Nós procuramos pra você.</p><form class="stack" data-home-problem novalidate><textarea class="input" id="home-problem" aria-labelledby="home-problem-title" rows="3" minlength="8" maxlength="1500" required placeholder="Ex.: minha torneira está vazando, o chuveiro queimou ou preciso limpar o sofá">'+esc(state.problem||'')+'</textarea><div data-home-type-choices></div><p role="alert"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
+  const form=target.querySelector('form'),input=form.querySelector('textarea'),choices=form.querySelector('[data-home-type-choices]');
+  input.oninput=()=>{state.problem=input.value;choices.innerHTML='';form.querySelector('[role=alert]').textContent='';};
+  const choose=category=>showForm(category.nome,input.value.trim());
+  form.onsubmit=e=>{e.preventDefault();const problem=input.value.trim();state.problem=problem;if(problem.length<8){form.querySelector('[role=alert]').textContent='Conte um pouco mais sobre o que precisa resolver.';input.focus();return;}
+   const matches=classify(problem);
+   if(matches.length===1||matches[0]?.score>=100||(matches[0]?.score>=10&&matches[0].score-(matches[1]?.score||0)>=3)){choose(matches[0].category);return;}
+   const catalog=matches.length?matches.slice(0,6).map(x=>x.category):g.DB.categories().filter(c=>c.id!=='cat_outros');
+   choices.innerHTML='<p>Para encontrar quem atende, confirme o tipo de ajuda:</p>'+(!matches.length?'<input class="input" data-home-type-filter placeholder="Buscar tipo de serviço" aria-label="Buscar tipo de serviço">':'')+'<div class="qf-home-type-options"></div>';
+   const paint=filter=>{const options=catalog.filter(c=>norm(c.nome).includes(norm(filter))).slice(0,8);choices.querySelector('.qf-home-type-options').innerHTML=options.map(c=>'<button type="button" class="btn btn--outline" data-home-type="'+esc(c.id)+'">'+esc(c.nome)+'</button>').join('');choices.querySelectorAll('[data-home-type]').forEach(b=>b.onclick=()=>choose(catalog.find(c=>c.id===b.dataset.homeType)));};
+   paint('');const filter=choices.querySelector('[data-home-type-filter]');if(filter)filter.oninput=()=>paint(filter.value);
+  };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
  function reveal(){host()?.scrollIntoView({behavior:'auto',block:'start'});}
@@ -37,12 +76,13 @@
   target.innerHTML='<p>Entre para ver seus pedidos sem sair desta página.</p><form class="stack" data-home-login><label>Telefone<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Entrar e ver pedidos</button><p role="alert"></p></form><div data-home-access></div>';
   const form=target.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const b=form.querySelector('button');b.disabled=true;try{await g.QFClienteAcesso.authenticate({nome:'',telefone:form.elements.telefone.value,container:target.querySelector('[data-home-access]')});await orders();}catch(err){if(form.isConnected)form.querySelector('[role=alert]').textContent=err.message;}finally{b.disabled=false;}};
  }
- function showForm(service){
+ function showForm(service,problem){
+  if(!service){intro();return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
-  state.mode='form';state.selected=null;state.prof=null;state.notice='';reset();
-  if(service){g.QFHomeDraft={service};try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}}
+  state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
+  try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
   const target=work();if(!target)return;
-  target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{embedded:true},state.user);reveal();
+  target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{embedded:true,service,problem:problem||state.problem},state.user);reveal();
  }
  async function detail(id,refresh=true){
   if(!uuid(id))return;
@@ -94,7 +134,7 @@
   else if((m=path.match(/^\/cliente\/pedido\/([^/]+)$/)))detail(m[1]);
   else if((m=path.match(/^\/auth\/cliente\/(verificar|redefinir)\/([^/]+)$/))){state.mode='token';state.tokenPath=path;reset();const node=work();node.innerHTML='<div data-client-token data-kind="'+esc(m[1])+'" data-token="'+esc(m[2])+'"></div>';g.QFClienteAcesso.tokenPage();}
   else if(path==='/auth/cliente/login')login();
-  else if(path==='/auth/cliente/cadastro'||path.startsWith('/cliente/novo-pedido'))showForm(g.QFHomeDraft?.service);
+  else if(path==='/auth/cliente/cadastro'||path.startsWith('/cliente/novo-pedido'))intro(g.QFHomeDraft?.service);
   else orders();
  }
  function inlinePath(path){return /^\/auth\/cliente\/(verificar|redefinir)\//.test(path||'')||path==='/auth/cliente/cadastro'||path==='/auth/cliente/login'||/^\/cliente\/(home|pedidos|pedido\/|chat\/|novo-pedido)/.test(path);}
@@ -109,7 +149,8 @@
   if(action)execute(action);
   else if(state.mode==='token')execute(state.tokenPath);
   else if(state.mode==='login')login();
-  else if(state.mode==='form')showForm();
+  else if(state.mode==='form')showForm(state.service,state.problem);
+  else if(state.mode==='intro')intro();
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
   else orders();
@@ -117,7 +158,7 @@
  function install(){
   if(!g.PROAKI_APP||!g.Screens?.landing||!g.QFClienteAcesso||!g.QFAtendimento)return false;
   if(g.QFPedidoHome.installed)return true;g.QFPedidoHome.installed=true;
-  const css=g.document.createElement('style');css.textContent='.qf-hero-search .qf-service-suggestions{position:static;max-height:220px;overflow:auto;margin-top:6px}.qf-home-orders{grid-column:1/-1;width:calc(100% - 24px);max-width:1100px;margin:20px auto;padding:18px;border:1px solid #dce6f3;background:#fff;border-radius:20px;scroll-margin-top:14px;min-width:0;box-sizing:border-box}.qf-home-orders__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.qf-home-orders__bar h2{font-size:21px;color:#1458cc;margin:0}.qf-home-orders__bar>div{display:flex;gap:8px;flex-wrap:wrap}.qf-home-orders .btn{min-height:44px;white-space:normal}.qf-home-orders__notice{padding:12px;border-radius:12px;background:#eef5ff;color:#1458cc;font-weight:700}.qf-home-orders__list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.qf-home-order{display:grid;gap:7px;text-align:left;width:100%;color:#173150;cursor:pointer}.qf-home-order>strong{font-size:18px}.qf-home-orders .view{min-height:0!important;max-width:100%;width:100%;padding:0!important;margin:0!important;box-sizing:border-box}.qf-home-orders [data-qf-atendimento-layout]{min-height:0!important;padding:0!important;justify-content:flex-start!important}.qf-home-orders .qf-chat-view{height:auto!important;min-height:0!important;padding:0!important}.qf-home-orders .qf-chat-list{max-height:50vh;overflow:auto;min-height:140px}.qf-home-orders .qf-chat-composer{position:static!important}.qf-home-orders [data-qf-atendimento]{box-shadow:none!important;border:0!important}.qf-home-orders [data-home-work]{min-width:0}.qf-home-orders .view>.row-between,.qf-home-orders .view>.row-between>.row{flex-wrap:wrap;gap:8px;max-width:100%}.qf-home-orders .qf-conversation-card .btn-row{display:grid!important;grid-template-columns:1fr!important}.qf-home-orders .qf-conversation-card .btn-row .btn{font-size:14px!important;padding:10px!important;word-break:normal!important;overflow-wrap:normal!important}.qf-home-orders .qf-cli-vagas__barras .is-on{background:#1469d2}.qf-home-more{border:1px solid #dce6f3;border-radius:12px;padding:12px;margin-top:12px}.qf-home-more>summary{color:#1458cc;font-weight:700;cursor:pointer}.qf-home-orders__bar .btn{font-size:13px;padding:9px 12px}@media(max-width:600px){.qf-home-orders{margin:14px 12px;padding:14px}.qf-home-orders__bar{gap:10px}.qf-home-orders__bar h2{font-size:19px}}';g.document.head.appendChild(css);
+  const css=g.document.createElement('style');css.textContent='.qf-hero-search .qf-service-suggestions{position:static;max-height:220px;overflow:auto;margin-top:6px}.qf-home-orders{width:100%;max-width:100%;margin:0;padding:18px;border:1px solid #dce6f3;background:#fff;border-radius:20px;scroll-margin-top:14px;min-width:0;box-sizing:border-box}.qf-home-problem-title{font-size:22px;line-height:1.25;color:#1458cc;margin:0 0 6px}.qf-home-problem-sub{font-size:15px;color:#46566b;margin:0 0 14px}.qf-home-orders textarea{min-height:96px!important;height:auto!important;box-sizing:border-box;max-width:100%;width:100%;font-size:16px;resize:vertical}.qf-home-type-options{display:grid;gap:8px;margin-top:8px}.qf-home-orders__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.qf-home-orders__bar h2{font-size:21px;color:#1458cc;margin:0}.qf-home-orders__bar>div{display:flex;gap:8px;flex-wrap:wrap}.qf-home-orders .btn{min-height:44px;white-space:normal}.qf-home-orders__notice{padding:12px;border-radius:12px;background:#eef5ff;color:#1458cc;font-weight:700}.qf-home-orders__list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.qf-home-order{display:grid;gap:7px;text-align:left;width:100%;color:#173150;cursor:pointer}.qf-home-order>strong{font-size:18px}.qf-home-orders .view{min-height:0!important;max-width:100%;width:100%;padding:0!important;margin:0!important;box-sizing:border-box}.qf-home-orders [data-qf-atendimento-layout]{min-height:0!important;padding:0!important;justify-content:flex-start!important}.qf-home-orders .qf-chat-view{height:auto!important;min-height:0!important;padding:0!important}.qf-home-orders .qf-chat-list{max-height:50vh;overflow:auto;min-height:140px}.qf-home-orders .qf-chat-composer{position:static!important}.qf-home-orders [data-qf-atendimento]{box-shadow:none!important;border:0!important}.qf-home-orders [data-home-work]{min-width:0}.qf-home-orders .view>.row-between,.qf-home-orders .view>.row-between>.row{flex-wrap:wrap;gap:8px;max-width:100%}.qf-home-orders .qf-conversation-card .btn-row{display:grid!important;grid-template-columns:1fr!important}.qf-home-orders .qf-conversation-card .btn-row .btn{font-size:14px!important;padding:10px!important;word-break:normal!important;overflow-wrap:normal!important}.qf-home-orders .qf-cli-vagas__barras .is-on{background:#1469d2}.qf-home-more{border:1px solid #dce6f3;border-radius:12px;padding:12px;margin-top:12px}.qf-home-more>summary{color:#1458cc;font-weight:700;cursor:pointer}.qf-home-orders__bar .btn{font-size:13px;padding:9px 12px}@media(max-width:600px){.qf-home-orders{margin:0;padding:14px}.qf-home-orders__bar{gap:10px}.qf-home-orders__bar h2{font-size:19px}}';g.document.head.appendChild(css);
   originalNavigate=g.navigate;
   g.navigate=function(path,replace){if(inlinePath(path)){openPath(path);return;}return originalNavigate.apply(this,arguments);};
   const oldHome=g.Screens.clienteHomeRender;g.Screens.clienteHomeRender=()=>g.Screens.landing();
@@ -130,9 +171,9 @@
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
   },true);
-  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(path==='/')bindHome();
+  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
   return true;
  }
- g.QFPedidoHome={published,openPath,isInlinePath:inlinePath,isBusy:()=>!!slot?.isConnected&&['form','chat','token','login'].includes(state.mode),installed:false};
+ g.QFPedidoHome={published,openPath,start:()=>intro(),classify,isInlinePath:inlinePath,isBusy:()=>!!slot?.isConnected&&['form','chat','token','login'].includes(state.mode),installed:false};
  if(!install()){const timer=g.setInterval(()=>{if(install())g.clearInterval(timer);},40);}
 })(window);

@@ -102,7 +102,7 @@
     const error=validAll(a); if(error) throw Error(error);
     const labels=questions(a);
     const answerLabel=key=>{const q=labels.find(x=>x.key===key);return String((q?.choices||[]).find(c=>c[0]===a[key])?.[1]||a[key]||'').trim();};
-    const detalhes=answerLabel('detalhes');
+    const detalhes=a.__problem?String(a.__problem)+' — '+answerLabel('detalhes'):answerLabel('detalhes');
     const escopo=answerLabel('escopo');
     if(detalhes.length<8||escopo.length<3)throw Error('Escolha o tipo e o tamanho do serviço antes de publicar.');
     return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:'a combinar',orcamento_centavos:null,materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:null,disponibilidade:'A combinar diretamente entre cliente e profissional',nome:a.nome,contato:a.contato.replace(/\D/g,''),canal_contato:'chat',aceite_app:a.aceite_app,intencao:a.intencao,autorizacao:a.autorizacao,tipo:tipoPorOrcamento(a)};
@@ -128,11 +128,12 @@
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
     const oldDraft=inMemoryDraft;
-    const homeService=root.QFHomeDraft&&root.QFHomeDraft.service;
-    const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService)));
+    const homeService=params.service||(root.QFHomeDraft&&root.QFHomeDraft.service);
+    const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService))&&(!params.problem||norm(oldDraft.answers.__problem)===norm(params.problem)));
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat) {a.servico=cat.nome;a.__servicePrefilled=true;}
-    else if(root.QFHomeDraft && root.QFHomeDraft.service) {a.servico=String(root.QFHomeDraft.service).trim().slice(0,120);a.__servicePrefilled=true;}
+    else if(homeService) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
+    if(params.problem)a.__problem=String(params.problem).trim().slice(0,1500);
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     const field=q=>{
@@ -158,7 +159,7 @@
         for(const q of list){const error=validate(q,a[q.key],a);if(error){const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
         if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
       };
-      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.openPath('/cliente/pedidos');else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
+      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.start();else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
       if(active.key==='aceite_app'){
         const agreement=area.querySelector('#at-aceite_app');
         agreement.addEventListener('change',()=>{
