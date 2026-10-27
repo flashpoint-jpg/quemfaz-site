@@ -32,7 +32,7 @@
    return data;
   }
   function render(s){
-   const who=s.papel,estado=s.estado,resposta=s.cliente_resposta,valor=s.valor_centavos||0,prop=!!s.proposta_em;
+   const who=s.papel,estado=s.estado,resposta=s.cliente_resposta,valor=s.valor_centavos||0,prop=!!s.proposta_em,separado=s.etapas_separadas===true;
    const row=[];
    let headline='Negociação dentro do aplicativo';
    if(resposta==='divergencia')headline=['informado','negociando'].includes(estado)?'Cliente solicitou correção do valor':'Divergência em análise';
@@ -41,7 +41,7 @@
    else if(estado==='recusado')headline='Profissional declarou que não fechou';
    else if(prop&&estado==='negociando')headline='Proposta aguardando resposta do cliente';
    else if(estado==='informado')headline='Profissional informou contratação — confirme o resultado';
-   row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(who==='cliente'&&['informado','negociando'].includes(estado)&&valor&&!resposta?(s.profissional_nome||'O profissional')+' informou que vocês fecharam por '+price(valor)+'. Confira e confirme.':headline)+'</p>');
+   row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(who==='cliente'&&['informado','negociando'].includes(estado)&&valor&&!resposta?(s.profissional_nome||'O profissional')+' apresentou um orçamento de '+price(valor)+'. Você contratou esse serviço?':headline)+'</p>');
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
    if(who==='profissional'){
@@ -52,13 +52,16 @@
    if(valor)row.push('<p style="margin:0">Valor combinado: <strong>'+price(valor)+'</strong>'+(who==='profissional'?' · comissão de 13%: <strong>'+price(Math.round(valor*0.13))+'</strong>':'')+'</p>');
    if(estado==='confirmado')row.push('<p class="text--sm" style="margin:0">Contratação, valor e conclusão confirmados.</p>'+(who==='profissional'?'<p>A comissão de 13% foi gerada automaticamente. Pague em até 48 horas pela carteira.</p><a class="btn btn--primary" href="#/profissional/carteira">Ver Pix da comissão</a>':''));
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
-   if(who==='profissional'&&(['pendente','negociando'].includes(estado)||(estado==='informado'&&resposta==='divergencia'))&&(!resposta||resposta==='divergencia')){
-    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">Enviar confirmação ao cliente</button></form>');
+   if(who==='profissional'&&(['pendente','negociando'].includes(estado)||(estado==='informado'&&resposta==='divergencia'))&&(!resposta||resposta==='divergencia'||resposta==='negociando')){
+    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">Apresentar orçamento ao cliente</button></form>');
     row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_fechou">Não fechei este serviço</button>');
    }
    if(who==='cliente'){
-    if(['negociando','informado'].includes(estado)&&valor&&(!resposta||resposta==='confirmado')){
-      row.push('<form data-qfc-concluir style="display:grid;gap:10px"><p style="margin:0">Código de segurança do seu pedido: <strong>'+escapeHTML(s.codigo_seguranca||'Atualize o chat')+'</strong></p><label>Digite o código do pedido<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="concluido" required>Confirmo que contratei este profissional, que o serviço foi concluído e que o valor é '+price(valor)+'.</label><button type="submit" class="btn btn--primary">Confirmar conclusão e valor</button></form>');
+    if(['negociando','informado'].includes(estado)&&valor&&(!resposta||resposta==='confirmado'||resposta==='negociando')){
+      if(separado&&resposta!=='confirmado')row.push('<p>O profissional apresentou um orçamento. Você contratou esse serviço?</p><button type="button" class="btn btn--primary" data-qfc-action="contratar">Aceitei o orçamento</button><button type="button" class="btn btn--outline" data-qfc-action="negociando">Ainda estou negociando</button>');
+      if(!separado||resposta==='confirmado')
+
+      row.push('<form data-qfc-concluir style="display:grid;gap:10px"><p style="margin:0">Código de segurança do seu pedido: <strong>'+escapeHTML(s.codigo_seguranca||'Atualize o chat')+'</strong></p><label>Valor final do serviço (R$)<input class="input" name="valor_final" inputmode="decimal" value="'+(Number(s.valor_aceito_centavos??valor)/100).toFixed(2).replace('.',',')+'" required></label><label>Digite o código do pedido<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="concluido" required>Confirmo que contratei este profissional, que o serviço foi concluído e confirmo o valor final informado acima.</label><button type="submit" class="btn btn--primary">Confirmar conclusão e valor</button></form>');
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="corrigir_valor">Corrigir valor</button>');
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_contratei">Não contratei</button>');
     }else if(estado==='recusado'&&!resposta){
@@ -90,12 +93,12 @@
     if(!Number.isSafeInteger(cents)||cents<100||cents>100000000){setStatus('Informe um valor entre R$ 1 e R$ 1.000.000.');return;}
     await run('propor',cents);
    });
-   pane.querySelector('[data-qfc-concluir]')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const codigo=form.elements.codigo_seguranca.value.trim();if(!/^[0-9]{6}$/.test(codigo)||!form.elements.concluido.checked){setStatus('Confira o código e confirme a conclusão do serviço.');return;}await run('aceitar',valor,codigo,true);});
+   pane.querySelector('[data-qfc-concluir]')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const codigo=form.elements.codigo_seguranca.value.trim();if(!/^[0-9]{6}$/.test(codigo)||!form.elements.concluido.checked){setStatus('Confira o código e confirme a conclusão do serviço.');return;}const finalValue=Math.round(Number(form.elements.valor_final.value.replace(',','.'))*100);if(!Number.isSafeInteger(finalValue)||finalValue<100||finalValue>100000000){setStatus('Confira o valor final.');return;}await run('aceitar',finalValue,codigo,true);});
    pane.querySelectorAll('[data-qfc-action]').forEach(button=>button.addEventListener('click',async()=>{
     const acao=button.dataset.qfcAction;
     const ask={aceitar:'Confirmar a contratação pelo valor informado?',nao_fechou:'Informar que não fechou? O cliente poderá confirmar ou contestar.',nao_contratei:'Confirmar que NÃO contratou este profissional?',contestar:'Você realmente contratou este profissional? O administrador analisará a divergência.'};
-    if(acao!=='aceitar'&&acao!=='corrigir_valor'&&!g.confirm(ask[acao]))return;
-    await run(acao,acao==='aceitar'?valor:null);
+    if(ask[acao]&&acao!=='aceitar'&&acao!=='corrigir_valor'&&!g.confirm(ask[acao]))return;
+    await run(acao,['aceitar','contratar'].includes(acao)?valor:null);
    }));
   }
   function setStatus(value){const node=pane.querySelector('[data-qfc-status]')||pane.querySelector('[role=status]');if(node)node.textContent=value;}

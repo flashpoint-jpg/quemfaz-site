@@ -30,7 +30,7 @@ test('Acompanhamento: estados preservam suas ações e painel integrado não rep
   assert.equal(box.querySelector('[data-qf-owner-cancel]'),null);assert.equal(box.querySelector('h1'),null);assert.equal(box.querySelector('a'),null);
   assert.equal(box.querySelectorAll('article').length,1);
   assert.equal(box.querySelectorAll('[data-qf-owner-concluir]').length,1);
-  assert.equal(box.querySelector('.qf-owner-check span').textContent,'Confirmo a contratação, a conclusão do serviço e o valor informado.');
+  assert.equal(box.querySelector('.qf-owner-check span').textContent,'Confirmo a contratação, a conclusão do serviço e o valor final informado acima.');
   dom.window.close();
 });
 test('Acompanhamento: confirmar conclusão, corrigir, não contratar e cancelar mantêm os mesmos parâmetros',async()=>{
