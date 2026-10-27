@@ -82,4 +82,4 @@ const built = fs.readFileSync(path.join(__dirname, '..', 'dist/admin.html'), 'ut
 for (const route of ['/admin/negociacoes','/admin/comissao13']) {
   assert.equal(built.split("{ pattern: '"+route+"',").length-1,1,'rota única no build: '+route);
 }
-assert.ok(built.includes('qf-admin-negociacoes.js?v=20261027'));
+assert.ok(built.includes('qf-admin-negociacoes.js?v=20261027-layout2'));
