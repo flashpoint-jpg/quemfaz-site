@@ -76,3 +76,10 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
   const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-10-plano-premium.sql'), 'utf8');
   assert.ok(sql.includes("values ('premium', 'Premium', 19990, 60, 30, true)") && sql.includes("'incluido_no_plano', true"));
 }
+
+// O artefato publicado deve conter uma única rota para cada módulo, mesmo após as injeções do build.
+const built = fs.readFileSync(path.join(__dirname, '..', 'dist/admin.html'), 'utf8');
+for (const route of ['/admin/negociacoes','/admin/comissao13']) {
+  assert.equal(built.split("{ pattern: '"+route+"',").length-1,1,'rota única no build: '+route);
+}
+assert.ok(built.includes('qf-admin-negociacoes.js?v=20261027'));
