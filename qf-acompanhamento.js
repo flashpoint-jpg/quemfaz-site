@@ -43,7 +43,57 @@
    (confirmado?'<p data-qf-owner-saved><strong>Contratação confirmada por '+esc(money(f.valor_centavos))+'.</strong></p>':
     pendente?'<p style="padding:12px;background:#fff8ef;border:1px solid #efaa57;border-radius:12px">'+esc(f.profissional)+' apresentou um orçamento de <strong>'+esc(money(f.valor_centavos))+'</strong>. Você contratou esse serviço?</p><div class="btn-row">'+(f.etapas_separadas&&f.cliente_resposta!=='confirmado'?'<button class="btn btn--primary" type="button" data-qf-owner-answer="contratar">Aceitei o orçamento</button><button class="btn btn--outline" type="button" data-qf-owner-answer="negociando">Ainda estou negociando</button>':'<form data-qf-owner-concluir class="qf-owner-form"><p>Código de segurança do pedido: <strong>'+esc(codigo||'Atualize o acompanhamento')+'</strong></p><label>Valor final do serviço (R$)<input class="input" name="valor_final" inputmode="decimal" value="'+(Number(f.valor_aceito_centavos??f.valor_centavos)/100).toFixed(2).replace('.',',')+'" required></label><label>Digite o código<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label class="qf-owner-check"><input type="checkbox" name="concluido" required><span>Confirmo a contratação, a conclusão do serviço e o valor final informado acima.</span></label><button class="btn btn--primary" type="submit">Confirmar conclusão e valor</button></form>')+'<button class="btn btn--outline" type="button" data-qf-owner-answer="corrigir">Corrigir valor</button><button class="btn btn--outline" type="button" data-qf-owner-answer="nao">Não contratei</button></div>':
     semDeclaracao?'<p>Este profissional ainda não informou um fechamento confirmado. Você contratou? Pode registrar a contratação independentemente, sem aguardar o profissional.</p><form data-qf-owner-relato class="stack--sm"><label>Valor combinado (R$)<input class="input" name="valor" inputmode="decimal" placeholder="Ex.: 500,00" required></label><label class="qf-owner-check"><input type="checkbox" name="confirma" required><span>Confirmo que contratei este profissional pelo valor informado. Entendo que a equipe vai conferir o registro.</span></label><button type="submit" class="btn btn--primary">Sim, contratei — comunicar ao Quem Faz</button></form><p class="text--sm">A declaração será analisada. Não cria comissão ou cobrança automaticamente.</p>':
-    '<p>'+esc(f.status==='contestado'&&f.contratado_em?'Você informou que contratou este profissional por '+money(f.valor_aceito_centavos||0)+'. A equipe está conferindo a declaração. Nenhuma cobrança foi gerada.':f.cliente_resposta==='divergencia'?'Correção ou divergência em análise. Aguarde a conferência.':f.cliente_resposta==='nao_contratou'?'Você informou que não contratou este profissional.':f.status==='recusado'?'O profissional informou que não fechou. Fale com o suporte se houver divergência.':'Aguardando o profissional informar o valor combinado.')+'</p>')+'<p role="status"></p></article>';
+    '<p>'+esc(f.status==='contestado'&&f.contratado_em?'Você informou que contratou este profissional por '+money(f.valor_aceito_centavos||0)+'. A equipe está conferindo a declaração. Nenhuma cobrança foi gerada.':f.cliente_resposta==='divergencia'?'Correção ou divergência em análise. Aguarde a conferência.':f.cliente_resposta==='nao_contratou'?'Você informou que não contratou este profissional.':f.status==='recusado'?'O profissional informou que não fechou. Fale com o suporte se houver divergência.':'Aguardando o profissional informar o valor combinado.')+'</p>')+(f.plano_livre_ativo===true&&confirmado&&f.cliente_concluiu_em?'<section class="card stack--sm" data-qf-livre-split aria-label="Pagamento pós-serviço"><p role="status">Consultando pagamento...</p></section>':'')+'<p role="status"></p></article>';
+ }
+ async function montarSplit(area,id,f){
+  if(area.dataset.qfSplitMounted)return;area.dataset.qfSplitMounted='1';
+  const segredo=g.localStorage.getItem(prefix+id);
+  if(!segredo){area.hidden=true;return;}
+  const endpoint='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-livre-split';
+  const call=async action=>{
+   const r=await g.fetch(endpoint,{method:'POST',cache:'no-store',
+    headers:{apikey:key,'Content-Type':'application/json'},
+    body:JSON.stringify({action,chamado_id:id,fechamento_id:f.id,segredo})});
+   const d=await r.json().catch(()=>({}));
+   if(!d.ok)throw Error(({split_em_preparacao:'Pagamento pelo Quem Faz ainda em preparação.',conta_efi_pendente:'O profissional ainda precisa validar a conta Efí.',cobranca_antiga_existente:'Já existe uma cobrança para este serviço.',pagamento_temporariamente_indisponivel:'Não foi possível emitir Pix seguro. Não faça pagamento fora da plataforma.'})[d.reason]||'Pagamento indisponível. Consulte o suporte.');
+   return d;
+  };
+  let busy=false;
+  const fill=d=>{
+   if(!area.isConnected)return;
+   if(!d.disponivel&&d.status==='nao_iniciado'){area.hidden=true;return;}
+   area.hidden=false;
+   const st=d.status||'nao_iniciado';
+   if(st==='repassado'){area.innerHTML='<h3>Pagamento e repasse confirmados</h3><p>O profissional recebeu 87% na conta Efí e o Quem Faz recebeu 13%, conforme confirmação bancária.</p>';return;}
+   if(st==='pago'){area.innerHTML='<h3>Pagamento confirmado</h3><p>O Pix foi confirmado pelo banco. Aguardando confirmação do crédito do repasse ao profissional.</p>';return;}
+   if(st==='pix_pronto'&&d.pix_copia_cola){
+    area.replaceChildren();
+    const head=g.document.createElement('h3');head.textContent='Pague pelo Quem Faz após o serviço';area.append(head);
+    const note=g.document.createElement('p');note.textContent='Pix de pagamento do serviço, com divisão bancária de 87% ao profissional e 13% ao Quem Faz.';area.append(note);
+    const txt=g.document.createElement('textarea');txt.className='input';txt.readOnly=true;txt.value=String(d.pix_copia_cola);txt.style.cssText='min-height:90px;width:100%;box-sizing:border-box';area.append(txt);
+    const copy=g.document.createElement('button');copy.type='button';copy.className='btn btn--primary';copy.textContent='Copiar código Pix';copy.onclick=()=>{if(g.navigator.clipboard?.writeText)g.navigator.clipboard.writeText(txt.value).then(()=>copy.textContent='Pix copiado').catch(()=>{txt.select();});else txt.select();};area.append(copy);
+    const msg=g.document.createElement('p');msg.setAttribute('role','status');msg.textContent='Aguardando confirmação bancária. Não envie comprovante pelo WhatsApp.';area.append(msg);
+    return;
+   }
+   if(st!=='nao_iniciado'){area.innerHTML='<p role="status">Pagamento em processamento. Verifique mais tarde.</p>';return;}
+   if(area.querySelector('[data-qf-livre-gerar]'))return;
+   area.innerHTML='<h3>Pagamento após o serviço</h3><p>O serviço está concluído. Ao pagar o Pix pelo Quem Faz, os valores são separados automaticamente entre o profissional (87%) e o Quem Faz (13%).</p><button type="button" class="btn btn--primary" data-qf-livre-gerar>Gerar Pix do serviço</button><p role="status"></p>';
+   const btn=area.querySelector('[data-qf-livre-gerar]');
+   btn.onclick=async()=>{
+    if(busy)return;busy=true;btn.disabled=true;
+    area.querySelector('[role=status]').textContent='Preparando Pix seguro...';
+    try{const d=await call('checkout');fill({...d,disponivel:true});}
+    catch(err){area.querySelector('[role=status]').textContent=err.message;btn.disabled=false;}
+    finally{busy=false;}
+   };
+  };
+  const check=async()=>fill(await call('status'));
+  try{await check();}catch(_){area.hidden=true;return;}
+  let tries=0;
+  const timer=g.setInterval(()=>{
+   if(!area.isConnected||tries++>120){g.clearInterval(timer);return;}
+   if(!g.document.hidden)check().catch(()=>{});
+  },15000);
  }
  async function mount(container,id,options={}){
   if(!container||container.dataset.qfOwnerMounted)return;container.dataset.qfOwnerMounted='1';container.classList.add('qf-owner-tracking');
@@ -52,6 +102,11 @@
    const publicado=options.publicado===true;
    container.innerHTML='<div class="qf-owner-content">'+(options.embedded?'':(publicado?'<h1 class="h2">Pedido publicado!</h1><p>Estamos buscando profissionais para você.</p>':'<h1 class="h2">Acompanhar meu pedido</h1>'))+(options.embedded?'':'<section class="card stack--sm"><h2 class="h3">'+esc(p.titulo)+'</h2><p>'+esc(p.bairro)+' · '+esc(p.cidade)+'</p><span class="badge">'+esc(({aberto:'Buscando profissionais',em_negociacao:'Em negociação',cancelado:'Cancelado',concluido:'Concluído',finalizado:'Finalizado'})[p.status]||p.status)+'</span></section>')+(options.embedded?'':'<a class="btn btn--primary" href="/?app=1#/cliente/pedidos">Ir para Meus pedidos</a>')+iosInstallHtml(publicado)+(!publicado?'<div class="qf-owner-professionals" data-qf-owner-respostas>'+data.profissionais.map(f=>profissionalHtml(f,data.codigo_seguranca)).join('')+(data.profissionais.length?'':'<p>Aguardando profissionais interessados.</p>')+'</div><div class="qf-owner-actions"><button type="button" class="btn btn--outline" data-qf-owner-refresh>Atualizar acompanhamento</button>'+(p.status==='aberto'&&!options.embedded?'<button type="button" class="btn btn--outline" data-qf-owner-cancel>Cancelar pedido</button>':'')+'</div>':'')+'<p role="status" data-qf-owner-status></p></div>';
    bindIosInstall(container);
+   container.querySelectorAll('[data-qf-owner-fechamento]').forEach(row=>{
+    const dataProf=data.profissionais.find(x=>x.id===row.dataset.qfOwnerFechamento);
+    const panel=row.querySelector('[data-qf-livre-split]');
+    if(panel&&dataProf)montarSplit(panel,id,dataProf).catch(()=>{});
+   });
    const cb=container.querySelector('[data-qf-owner-cancel]');if(cb)cb.onclick=async()=>{if(!g.confirm('Cancelar este pedido? Ele deixará de aparecer para novos profissionais.'))return;cb.disabled=true;try{await cancelar(id);await render();}catch(e){container.querySelector('[data-qf-owner-status]').textContent=e.message;cb.disabled=false;}};
    const refresh=container.querySelector('[data-qf-owner-refresh]');if(refresh)refresh.onclick=()=>render().catch(e=>container.querySelector('[data-qf-owner-status]').textContent=e.message);
    container.querySelectorAll('[data-qf-owner-relato]').forEach(form=>form.onsubmit=async e=>{
