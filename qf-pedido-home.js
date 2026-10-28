@@ -15,7 +15,7 @@
   slot.addEventListener('click',e=>{if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
   return slot;
  }
- const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+ const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
  function classify(problem){
   const text=norm(problem);
   const rules=[
@@ -31,31 +31,32 @@
    [/geladeira/,/geladeira|freezer|refrigerador|frigobar/,12],
    [/fogao|micro.ondas/,/fogao|forno|micro.ondas/,12],
    [/maquina de lavar|lavadora/,/lavadora|maquina de lavar/,12],
-   [/pedreiro|alvenaria/,/pedreiro|reformar|reforma|alvenaria|assentar|azulejo/,10],
+   [/pedreir|alvenaria/,/pedreir|reformar|reforma|alvenaria|assentar|azulejo|reboc|chapisc|emboc|argamassa|contrapiso|concret|levantar muro|construir muro|cimento|trocar piso|colocar piso|colocar revestimento/,13],
    [/telhadista|telhado/,/telhado|goteira|telha quebrada/,12],
    [/impermeabiliz/,/impermeabilizar|impermeabilizacao|infiltracao/,12],
    [/jardineiro|jardinagem/,/grama|podar|poda|jardim|jardinagem/,12],
    [/marido de aluguel/,/marido de aluguel|pequenos reparos/,12],
    [/frete|carreto/,/frete|carreto|mudanca|transportar.*movel/,11]
   ];
-  return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text||name.length>=4&&text.includes(name)?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
  }
  function intro(prefill){
   state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill)state.problem=prefill;reset();
   const target=work();if(!target)return;
-  target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Conte o que você precisa</h2><p class="qf-home-problem-sub">Nós procuramos pra você.</p><form class="stack" data-home-problem novalidate><textarea class="input" id="home-problem" aria-labelledby="home-problem-title" rows="3" minlength="8" maxlength="1500" required placeholder="Ex.: minha torneira está vazando, o chuveiro queimou ou preciso limpar o sofá">'+esc(state.problem||'')+'</textarea><div data-home-type-choices></div><p role="alert"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
+  target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Conte o que você precisa</h2><p class="qf-home-problem-sub">Nós procuramos pra você.</p><p class="text--sm" style="margin:0 0 12px">Já tem conta? <button type="button" class="btn btn--outline" data-home-login-start style="padding:6px 12px;min-height:34px;font-size:13px">Entrar com Google ou telefone</button></p><form class="stack" data-home-problem novalidate><textarea class="input" id="home-problem" aria-labelledby="home-problem-title" rows="3" minlength="8" maxlength="1500" required placeholder="Ex.: minha torneira está vazando, o chuveiro queimou ou preciso limpar o sofá">'+esc(state.problem||'')+'</textarea><div data-home-type-choices></div><p role="alert"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
   const form=target.querySelector('form'),input=form.querySelector('textarea'),choices=form.querySelector('[data-home-type-choices]');
+  target.querySelector('[data-home-login-start]').onclick=()=>login();
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
   input.onfocus=()=>track('home_focus');
   input.oninput=()=>{track('home_type');state.problem=input.value;choices.innerHTML='';form.querySelector('[role=alert]').textContent='';};
   const choose=category=>showForm(category.nome,input.value.trim());
   form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;if(problem.length<8){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Conte um pouco mais sobre o que precisa resolver.';input.focus();return;}
-   const matches=classify(problem);
-   if(matches.length===1||matches[0]?.score>=100||(matches[0]?.score>=10&&matches[0].score-(matches[1]?.score||0)>=3)){choose(matches[0].category);return;}
-   const catalog=matches.length?matches.slice(0,6).map(x=>x.category):g.DB.categories().filter(c=>c.id!=='cat_outros');
-   choices.innerHTML='<p>Para encontrar quem atende, confirme o tipo de ajuda:</p>'+(!matches.length?'<input class="input" data-home-type-filter placeholder="Buscar tipo de serviço" aria-label="Buscar tipo de serviço">':'')+'<div class="qf-home-type-options"></div>';
-   const paint=filter=>{const options=catalog.filter(c=>norm(c.nome).includes(norm(filter))).slice(0,8);choices.querySelector('.qf-home-type-options').innerHTML=options.map(c=>'<button type="button" class="btn btn--outline" data-home-type="'+esc(c.id)+'">'+esc(c.nome)+'</button>').join('');choices.querySelectorAll('[data-home-type]').forEach(b=>b.onclick=()=>choose(catalog.find(c=>c.id===b.dataset.homeType)));};
-   paint('');const filter=choices.querySelector('[data-home-type-filter]');if(filter)filter.oninput=()=>paint(filter.value);
+   const matches=classify(problem),best=matches[0],second=matches[1];
+   // Profissão é decidida automaticamente. Nunca pedir ao cliente que escolha categoria.
+   if(best&&(best.score>=100||(best.score>=10&&(!second||best.score-second.score>=3)))){choose(best.category);return;}
+   form.querySelector('[role=alert]').textContent='Ainda não conseguimos identificar o profissional com segurança. Conte mais detalhes sobre o que precisa ser feito, sem escolher uma profissão.';
+   input.focus();
+
   };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
@@ -77,7 +78,8 @@
  }
  function login(){
   state.mode='login';const target=work();if(!target)return;
-  target.innerHTML='<p>Entre para ver seus pedidos sem sair desta página.</p><form class="stack" data-home-login><label>Telefone<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Entrar e ver pedidos</button><p role="alert"></p></form><div data-home-access></div>';
+  target.innerHTML='<h2 class="h3">Acessar meus pedidos</h2><p>Informe seu telefone para escolher entre <strong>Continuar com Google</strong> ou entrar com sua senha, nesta mesma página.</p><form class="stack" data-home-login><label>Telefone com DDD<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Continuar para Google ou senha</button><p role="alert"></p></form><div data-home-access></div><button type="button" class="btn btn--outline" data-home-back style="margin-top:12px">Voltar ao pedido</button>';
+  target.querySelector('[data-home-back]').onclick=()=>intro();
   const form=target.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const b=form.querySelector('button');b.disabled=true;try{await g.QFClienteAcesso.authenticate({nome:'',telefone:form.elements.telefone.value,container:target.querySelector('[data-home-access]')});await orders();}catch(err){if(form.isConnected)form.querySelector('[role=alert]').textContent=err.message;}finally{b.disabled=false;}};
  }
  function showForm(service,problem){
