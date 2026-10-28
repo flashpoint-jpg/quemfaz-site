@@ -75,7 +75,7 @@ test('Google: rascunho AES-GCM restaurado sem respostas em texto puro',async()=>
  second.document.body.innerHTML=second.QFAtendimento.html();
  await second.QFAtendimento.mount(second.document.body,{embedded:true,service:''},null);
  assert.ok(second.QFAtendimento.hasActiveDraft());
- assert.ok(second.document.querySelector('input[name="at-detalhes"]'));
+ assert.ok(second.document.querySelector('#at-aceite_app')); // próxima pergunta preservada
  assert.equal(second.QFAtendimento.hasGoogleDraft(),false);
  assert.equal(shared.idb.keys.has('oauth'),false);
  first.close();second.close();
