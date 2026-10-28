@@ -30,8 +30,11 @@
    // Telefone já pertence a uma conta: não vincular por suposição.
    // Voltar para o acesso original por senha ou primeiro acesso.
    if(err.codigo==='telefone_cadastrado'||/telefone do pedido não corresponde/i.test(err.message||'')){
+    // Não misturar perfis diferentes apenas por telefone.
     await client.auth.signOut();
-    return null;
+    const mismatch=Error('Este telefone já está vinculado a outra conta. Escolha a mesma conta Google usada anteriormente ou entre com telefone e senha. Seu pedido permanece preenchido.');
+    mismatch.codigo='conta_google_diferente';
+    throw mismatch;
    }
    throw err;
   }
@@ -45,13 +48,19 @@
   active=(async()=>{
    const profile=await existing(telefone);
    if(profile)return profile;
-   const google=await googleCustomer(nome,telefone);
-   if(google)return google;
-   return open({nome,telefone,container});
+   let warning='';
+   try{
+    const google=await googleCustomer(nome,telefone);
+    if(google)return google;
+   }catch(err){
+    if(err.codigo!=='conta_google_diferente')throw err;
+    warning=err.message;
+   }
+   return open({nome,telefone,container,warning});
   })().finally(()=>{active=null;});
   return active;
  }
- async function open({nome,telefone,container}){
+ async function open({nome,telefone,container,warning=''}){
   const current=await existing(telefone);if(current)return current;
   return new Promise((resolve,reject)=>{
    const embedded=!!container;const dialog=g.document.createElement(embedded?'section':'dialog');dialog.className='qf-client-access';if(embedded)dialog.style.cssText='margin:16px 0;width:100%;max-height:none';
@@ -78,7 +87,7 @@
       if(g.QFAtendimento?.hasActiveDraft?.())await g.QFAtendimento.saveDraftForGoogle();
       // O retorno OAuth deve usar URL canônica autorizada no Supabase, nunca hash/localhost/preview.
       const redirectTo='https://quemfazservico.com.br/?app=1';
-      const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
+      const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{prompt:'select_account'}}});
       if(result.error)throw result.error;
      }catch(err){host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
     };
@@ -106,7 +115,7 @@
      }finally{busy=false;host.querySelectorAll('input,button').forEach(b=>b.disabled=false);}
     };
    }
-   draw();if(!embedded)dialog.showModal();else dialog.scrollIntoView({block:"nearest"});
+   draw(warning);if(!embedded)dialog.showModal();else dialog.scrollIntoView({block:"nearest"});
   });
  }
  async function tokenPage(){
