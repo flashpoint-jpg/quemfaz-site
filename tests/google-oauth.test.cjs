@@ -104,15 +104,25 @@ test('Google: conclui perfil existente com JWT antes de publicar, sem vincular t
  assert.equal(synced,1);
  w.close();
 });
-test('Google: impede publicação quando servidor rejeita telefone de outra conta',async()=>{
+test('Google: telefone de outra conta exige acesso original e não vincula automaticamente',async()=>{
  const w=page();
+ let signedOut=0;
+ w.HTMLElement.prototype.scrollIntoView=()=>{};
  w.QFCloud={
   client:{
-   auth:{getUser:async()=>({data:{user:{id:'11111111-1111-4111-8111-111111111111',identities:[{provider:'google'}]}},error:null})},
+   auth:{
+    getUser:async()=>({data:{user:{id:'11111111-1111-4111-8111-111111111111',identities:[{provider:'google'}]}},error:null}),
+    signOut:async()=>{signedOut++;return {error:null};}
+   },
    from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:null,error:null})})})}),
    functions:{invoke:async()=>({data:{ok:false,error:'Este telefone pertence a outro cadastro.',codigo:'telefone_cadastrado'},error:null})}
   }
  };
- await assert.rejects(w.QFClienteAcesso.authenticate({nome:'Teste',telefone:'11987654321'}),/outro cadastro/);
+ const pending=w.QFClienteAcesso.authenticate({nome:'Teste',telefone:'11987654321',container:w.document.body});
+ await new Promise(resolve=>setTimeout(resolve,25));
+ assert.equal(signedOut,1);
+ assert.ok(w.document.querySelector('.qf-client-access [name="senha"]'),'oferece login da conta original');
+ w.document.querySelector('[data-access-cancel]').click();
+ await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
 });
