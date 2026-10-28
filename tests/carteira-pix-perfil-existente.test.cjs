@@ -33,5 +33,5 @@ test('base Pix isolada e sem movimentação de dinheiro',()=>{
 test('nao exigir mais conta Efí na tela de cadastro de Pix',()=>{
  assert.doesNotMatch(js,/name="contaEfi"/);
  assert.doesNotMatch(js,/qf_livre_split_conta_cadastrar/);
- assert.match(js,/chave Pix do banco que já possui/);
+ assert.match(js,/Receba na conta que você já usa/);
 });
