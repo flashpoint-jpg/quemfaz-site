@@ -60,4 +60,7 @@ test('Saldo das carteiras é exclusivo de Movimentações e ausente da ficha de 
  assert.match(front,/Não é o faturamento do Quem Faz/);
  assert.ok(admin.includes("pattern: '/admin/movimentacoes'"));
  assert.ok(admin.includes("label: 'Movimentações'"));
+ const fin=fs.readFileSync('qf-admin-financeiro.js','utf8');
+ assert.ok(fin.includes("'/admin/financeiro','/admin/movimentacoes',"),"Movimentações visível no menu principal");
+ assert.ok(admin.includes("qf-admin-financeiro.js?v=20261028-movimentacoes-visible"),"Cache do menu renovado");
 });
