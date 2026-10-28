@@ -8,6 +8,7 @@ on:
       - 'qf-admin-cadastro-pago.js'
       - 'supabase/2026-10-28-cadastro-pagante-kpis.sql'
       - 'tests/cadastro-admin-kpis.test.cjs'
+      - 'supabase/migrations/20261028191000_admin_pre_cadastros.sql'
       - 'qf-livre.js'
       - 'supabase/2026-10-28-cadastro-pago-obrigatorio.sql'
       - 'tests/cadastro-obrigatorio.test.cjs'
