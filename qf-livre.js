@@ -14,11 +14,11 @@
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">∞</span><strong>Pedidos compatíveis ilimitados</strong></div>' +
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">%</span><strong>Você fica com 87% do valor do serviço</strong></div>' +
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">✓</span><strong>Ativação após a confirmação do Pix da assinatura</strong></div>' +
-      '<div data-qf-livre-repasse-futuro><span aria-hidden="true" class="qf-livre__benefit-icon">↗</span><strong>Em preparação: pagamento após o serviço, com repasse imediato de 87% ao profissional</strong></div>' +
+      '<div data-qf-livre-repasse-futuro><span aria-hidden="true" class="qf-livre__benefit-icon">↗</span><strong>Em preparação: cliente paga após o serviço e você recebe 87% na sua chave Pix</strong></div>' +
     '</div>' +
     divisao() + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p><strong>Nova opção em preparação — repasse na hora:</strong> o cliente pagará somente depois da execução do serviço pelo Pix do Quem Faz. Após a confirmação bancária, o profissional receberá 87% com repasse imediato, e o Quem Faz ficará com 13%, conforme integração e conta recebedora habilitadas. A confirmação do pagamento e a confirmação do repasse serão mostradas separadamente na carteira. Esta opção ainda não está disponível; não há garantia de disponibilidade imediata em qualquer banco ou chave Pix.</p>' +
+      '<p><strong>Nova opção em preparação — repasse na hora:</strong> o cliente pagará somente depois da execução do serviço pelo Pix do Quem Faz. Após a confirmação bancária, o Quem Faz solicitará o repasse dos 87% para a chave Pix do profissional e ficará com 13%. O crédito depende da confirmação bancária. A confirmação do pagamento e a confirmação do repasse serão mostradas separadamente na carteira. Esta opção ainda não está disponível; o envio automático para outros bancos ainda depende de homologação da Efí.</p>' +
       '<p><strong>Regra vigente:</strong> a comissão de 13% é registrada após confirmação da conclusão e do valor do serviço pelo cliente com o código do pedido, ou após análise administrativa de divergência. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Aguardar o cliente não impede novos desbloqueios. Apenas comissão confirmada e vencida sem pagamento bloqueia novos contatos. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
@@ -74,13 +74,13 @@
     const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
     if(group&&form){
      group.dataset.qfLivreCadastro='';
-     group.insertAdjacentHTML('afterbegin','<label class="qf-cad-plano qf-cad-plano--top"><span class="qf-cad-plano__selo">MAIS VANTAJOSO</span><input type="radio" name="planoEscolhido" value="livre" checked><span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">Quem Faz Livre</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span><span class="qf-cad-plano__dia">R$ 1,33 <small>por dia</small></span><span class="qf-cad-plano__preco"><b>R$ 39,90</b><span>por 30 dias</span></span><span class="qf-cad-plano__lista"><span>Desbloqueios ilimitados de pedidos compatíveis</span><span>Sem pagar por contato</span><span>Pedidos na sua profissão e região</span><span>Sem renovação automática</span><span>Em preparação: cliente paga depois do serviço; repasse imediato de 87% após confirmação bancária</span></span><span class="qf-cad-divisao"><span class="qf-cad-divisao__titulo">O valor do serviço fica assim</span><span class="qf-cad-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-cad-divisao__pro">87%</span><span class="qf-cad-divisao__qf">13%</span></span><span class="qf-cad-divisao__legenda"><b>87% — Profissional</b><span>13% — Quem Faz</span></span><span class="qf-cad-divisao__nota">Você fica com 87% do valor do serviço. O Quem Faz recebe 13% somente sobre serviços fechados e confirmados. Repasse imediato após pagamento pelo Quem Faz: funcionalidade em preparação, ainda indisponível.</span></span></label>');
+     group.insertAdjacentHTML('afterbegin','<label class="qf-cad-plano qf-cad-plano--top"><span class="qf-cad-plano__selo">MAIS VANTAJOSO</span><input type="radio" name="planoEscolhido" value="livre" checked><span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">Quem Faz Livre</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span><span class="qf-cad-plano__dia">R$ 1,33 <small>por dia</small></span><span class="qf-cad-plano__preco"><b>R$ 39,90</b><span>por 30 dias</span></span><span class="qf-cad-plano__lista"><span>Desbloqueios ilimitados de pedidos compatíveis</span><span>Sem pagar por contato</span><span>Pedidos na sua profissão e região</span><span>Sem renovação automática</span><span>Em preparação: cliente paga depois do serviço; envio de 87% à sua chave Pix após confirmação bancária</span></span><span class="qf-cad-divisao"><span class="qf-cad-divisao__titulo">O valor do serviço fica assim</span><span class="qf-cad-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-cad-divisao__pro">87%</span><span class="qf-cad-divisao__qf">13%</span></span><span class="qf-cad-divisao__legenda"><b>87% — Profissional</b><span>13% — Quem Faz</span></span><span class="qf-cad-divisao__nota">Você fica com 87% do valor do serviço. O Quem Faz recebe 13% somente sobre serviços fechados e confirmados. Pix de 87% para sua chave: funcionalidade em preparação, ainda indisponível.</span></span></label>');
      const avulso=group.querySelector('input[value="avulso"]');
      if(avulso){avulso.checked=false;avulso.closest('label').querySelector('.qf-cad-plano__lista').innerHTML='<span>Pague só pelos pedidos que desbloquear</span><span>Sem mensalidade e sem comissão</span>';}
      try{if(sessionStorage.getItem('qf_cad_escolha_plano')==='avulso'&&avulso){group.querySelector('input[value="livre"]').checked=false;avulso.checked=true;}sessionStorage.removeItem('qf_cad_escolha_plano');}catch(_){}
      // Detalhes acessíveis sem repetir toda a oferta abaixo dos cartões.
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. A espera pelo cliente não bloqueia novos pedidos. Comissão confirmada e vencida sem pagamento bloqueia novos contatos. Nova modalidade em preparação: cliente paga somente após o serviço, e o repasse dos 87% ao profissional é imediato após confirmação bancária, sujeito à integração e à conta recebedora habilitadas. O novo modelo ainda não está disponível. Não há garantia de contratação.</p>';
+     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. A espera pelo cliente não bloqueia novos pedidos. Comissão confirmada e vencida sem pagamento bloqueia novos contatos. Nova modalidade em preparação: cliente paga somente após o serviço, e o Quem Faz enviará 87% para a própria chave Pix do profissional após confirmação bancária, sujeito à homologação do serviço. O novo modelo ainda não está disponível. Não há garantia de contratação.</p>';
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
@@ -127,37 +127,60 @@
    g.QFTrackLivrePurchase=trackLivrePurchase;
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
    async function mostrarContaPix(s){
-    if(!s?.ativo||!['/profissional/carteira','/profissional/planos'].includes(pattern)||!box.isConnected)return;
-    if(box.querySelector('[data-qf-livre-conta]'))return;
-    const area=document.createElement('section');area.dataset.qfLivreConta='';
-    area.className='card stack--sm';area.style.cssText='background:#f7faff;border:1px solid #bfdbfa;border-radius:14px;padding:14px;margin:14px 0;';
-    area.innerHTML='<h3 class="h3">Recebimento do Quem Faz Livre</h3>'+
-      '<p class="text--sm">Para o novo pagamento pós-serviço, informe sua chave Pix e sua conta digital Efí. O split imediato de 87% exige conta Efí com CPF/CNPJ validado; chave Pix de outro banco sozinha não autoriza o repasse.</p>'+
-      '<form data-qf-livre-conta-form class="stack--sm">'+
-      '<label>Minha chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, e-mail, celular ou chave aleatória"></label>'+
-      '<label>Número da conta Efí<input class="input" name="contaEfi" inputmode="numeric" pattern="[0-9]{1,20}" maxlength="20" autocomplete="off" required placeholder="Número da conta Efí"></label>'+
-      '<button type="submit" class="btn btn--outline">Salvar dados bancários</button></form>'+
-      '<p class="text--sm" role="status" data-qf-livre-conta-status>Consultando verificação...</p>'+
-      '<p class="text--sm">A nova modalidade permanece em preparação. Só será liberada após homologação e validação bancária; os pagamentos atuais do plano não mudam.</p>';
-    box.append(area);
-    const status=area.querySelector('[data-qf-livre-conta-status]'),form=area.querySelector('form');
+    if(pattern!=='/profissional/carteira'||!box.isConnected)return;
+    const parent=box.parentElement;
+    if(!parent||parent.querySelector('[data-qf-livre-pix-cadastro]'))return;
+    const area=document.createElement('section');
+    area.dataset.qfLivrePixCadastro='';
+    area.className='card stack--sm';
+    area.style.cssText='border:1.5px solid #b5d1ef;border-radius:18px;background:#f7faff;padding:18px;margin:12px 0 18px';
+    area.innerHTML='<h3 class="h3" style="color:#1458cc;margin:0 0 8px">Cadastre sua chave Pix</h3>'+
+     '<p class="text--sm"><strong>Receba na conta que você já usa.</strong> Não precisa abrir conta Efí, fazer outro cadastro ou renovar o plano para registrar a chave.</p>'+
+     '<form data-qf-pix-form class="stack--sm">'+
+     '<label>Chave Pix do profissional<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, CNPJ, e-mail, +55 celular ou chave aleatória"></label>'+
+     '<button type="submit" class="btn btn--primary" data-qf-pix-salvar>Salvar minha chave Pix</button></form>'+
+     '<p role="status" aria-live="polite" data-qf-pix-status>Consultando cadastro...</p>'+
+     '<p class="text--sm">Recurso exclusivo para futuros pagamentos de serviços do Quem Faz Livre. A chave será validada antes de qualquer repasse. O envio automático de dinheiro ainda não está liberado.</p>';
+    box.insertAdjacentElement('afterend',area);
+    const status=area.querySelector('[data-qf-pix-status]'),form=area.querySelector('form');
+    let userId=null,oldValue='';
     try{
-     const r=await rpc('qf_livre_split_conta_status');
-     if(!area.isConnected)return;
-     status.textContent=({validado:'Conta validada para receber o split assim que a modalidade for homologada.',pendente:'Dados aguardando conferência da conta e titularidade.',reprovado:'Dados bancários precisam ser corrigidos.',nao_cadastrado:'Cadastre seus dados uma única vez.'})[r?.status]||'Não foi possível consultar a conta.';
-    }catch(_){status.textContent='Não foi possível consultar os dados bancários agora.';}
-    form.onsubmit=async e=>{
-     e.preventDefault();
-     const b=form.querySelector('button');b.disabled=true;status.textContent='Salvando conta para conferência...';
-     try{
-      const conta=String(form.elements.contaEfi.value||'').trim(),chave=String(form.elements.chavePix.value||'').trim();
-      if(!/^[0-9]{1,20}$/.test(conta)||chave.length<5)throw Error('Informe uma conta Efí numérica e uma chave Pix válida.');
-      const result=await rpc('qf_livre_split_conta_cadastrar',{p_chave_pix:chave,p_conta_efi:conta});
-      if(!result?.ok)throw Error('Confira seu cadastro e a situação do seu plano.');
-      status.textContent='Dados registrados. Aguardando validação bancária da conta Efí. Nenhum Pix de serviço está habilitado ainda.';
-      form.reset();
-     }catch(err){status.textContent=err.message||'Não foi possível salvar a conta.';}
-     finally{b.disabled=false;}
+      const auth=await client.auth.getUser();
+      userId=auth?.data?.user?.id;
+      if(!userId)throw Error('Entre na sua conta de profissional para cadastrar a chave.');
+      const {data,error}=await client.from('qf_livre_pix_chaves')
+        .select('chave_pix,status').eq('profissional_id',userId).maybeSingle();
+      if(error)throw Error('Não foi possível consultar sua chave Pix.');
+      if(!area.isConnected)return;
+      if(data){
+        oldValue=data.chave_pix;
+        form.elements.chavePix.value=data.chave_pix;
+        status.textContent='Sua chave está cadastrada e aguardando validação. Você pode alterá-la.';
+      }else{
+        status.textContent='Ainda não cadastrou uma chave Pix. Preencha acima para se preparar.';
+      }
+    }catch(e){if(area.isConnected)status.textContent=e.message||'Cadastro indisponível.';}
+    form.onsubmit=async event=>{
+      event.preventDefault();
+      const button=form.querySelector('[data-qf-pix-salvar]');
+      const chave=String(form.elements.chavePix.value||'').trim();
+      const valid=/^(?:[0-9]{11}|[0-9]{14}|\+55[1-9][0-9]{10,11}|[^\s@]+@[^\s@]+\.[^\s@]+|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i.test(chave);
+      if(!valid){status.textContent='Chave inválida. Informe CPF, CNPJ, e-mail, telefone com +55 ou chave aleatória.';return;}
+      button.disabled=true;status.textContent='Salvando chave Pix...';
+      try{
+        if(!userId){
+          const auth=await client.auth.getUser();
+          userId=auth?.data?.user?.id;
+        }
+        if(!userId)throw Error('Entre novamente na conta de profissional.');
+        const {error}=await client.from('qf_livre_pix_chaves').upsert({
+          profissional_id:userId,chave_pix:chave,status:'pendente',atualizado_em:new Date().toISOString()
+        },{onConflict:'profissional_id'});
+        if(error)throw Error('Não foi possível salvar a chave. Atualize a página e tente novamente.');
+        oldValue=chave;
+        status.textContent='Chave Pix salva! Aguardando validação da titularidade. Seu cadastro original foi preservado.';
+      }catch(e){status.textContent=e.message||'Não foi possível salvar.';}
+      finally{button.disabled=false;}
     };
    }
    function render(s){
