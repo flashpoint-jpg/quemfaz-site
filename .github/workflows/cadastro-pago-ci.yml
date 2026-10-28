@@ -7,6 +7,7 @@ on:
       - 'qf-livre.js'
       - 'supabase/2026-10-28-cadastro-pago-obrigatorio.sql'
       - 'tests/cadastro-obrigatorio.test.cjs'
+      - 'tests/cadastro-obrigatorio.postgres.sql'
       - 'tests/pagamento-antes-da-conta.test.cjs'
       - '.github/workflows/cadastro-pago-ci.yml'
   workflow_dispatch:
@@ -16,6 +17,20 @@ jobs:
   checkout-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: teste_local_somente
+          POSTGRES_DB: cadastro_isolado
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cadastro_isolado"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -26,3 +41,7 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build e testes estruturais do cadastro
         run: npm run build && node --test tests/cadastro-obrigatorio.test.cjs tests/pagamento-antes-da-conta.test.cjs
+      - name: PostgreSQL isolado sem dados bancários reais
+        env:
+          PGPASSWORD: teste_local_somente
+        run: psql -h 127.0.0.1 -U postgres -d cadastro_isolado -v ON_ERROR_STOP=1 -f tests/cadastro-obrigatorio.postgres.sql
