@@ -196,7 +196,7 @@
     if(cat&&!fromGoogle) {a.servico=cat.nome;a.__servicePrefilled=true;}
     else if(homeService&&!fromGoogle) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
     if(params.problem&&!fromGoogle)a.__problem=String(params.problem).trim().slice(0,1500);
-    if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
+    if(user&&!fromGoogle){a.nome=user.nome||'';a.contato=user.telefone||'';} // OAuth: nunca sobrescrever o telefone salvo no pedido.
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     const track=(event,error,once)=>{try{root.QFClientAcquisition?.track(event,{category:category(a.servico)?.id,error_code:error},once);}catch(_){}};
     track('form_view',null,true);
