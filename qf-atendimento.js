@@ -259,14 +259,14 @@
     const publish=async()=>{
         if(busy)return;
         if(a.aceite_app!=='sim'||(requiresInstalledApp()&&!inApp())){const status=area.querySelector('[data-at-error]');if(status)status.textContent=requiresInstalledApp()?'É necessário abrir o aplicativo Quem Faz instalado para publicar e receber contatos.':'Marque a concordância para publicar o pedido pelo navegador.';return;}
-        busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Publicando…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
+        busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Verificando acesso…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
         track('submit');let phase='access';
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
           if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
           current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato,container:params.embedded?area:null});currentUser=current;
-          phase='publish';
+          phase='publish';if(button.isConnected)button.textContent='Publicando…';
           const c=category(a.servico),at=payload(a,id,c.id);
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
@@ -280,8 +280,8 @@
           if(root.QFPedidoHome){await root.QFPedidoHome.published(req,current);}
           else area.innerHTML='<section class="card stack"><h2>Pedido publicado!</h2><p>Estamos buscando profissionais para você.</p></section>';
           return;
-        }catch(e){track(phase==='access'?'access_error':'publish_error',phase==='access'?'access_failed':'publish_failed');area.querySelector('[data-at-error]').textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
-        finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}
+        }catch(e){track(phase==='access'?'access_error':'publish_error',phase==='access'?'access_failed':'publish_failed');const status=area.querySelector('[data-at-error]');if(status)status.textContent=String(e.message||'Não foi possível publicar. Tente novamente.').replace(/respostas_invalidas_ou_sem_autorizacao|resposta_obrigatoria:.*/,'Revise as respostas do serviço e confirme a autorização antes de publicar.').replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');}
+        finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);if(button.isConnected){button.disabled=false;button.textContent='Publicar grátis';}}}
     };
     draw();
     // O cliente já tocou em "Publicar grátis" antes do OAuth; retoma sem pedir tudo de novo.
