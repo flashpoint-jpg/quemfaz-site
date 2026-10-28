@@ -38,15 +38,19 @@ test('Negativa falsa, código alternativo, dados inválidos e prazos continuam p
   await as(d,13);assert.equal((await rpc(d,'qf_comissao13_desbloquear',[call.id,true])).ok,true);row=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];await d.exec('reset role');await d.query("update public.qf_comissao13_fechamentos set prazo_contas=now()-interval '1 hour' where id=$1",[row.id]);await as(d,13);assert.equal((await rpc(d,'qf_comissao13_status')).bloqueio,'prestacao_contas_vencida');
  }finally{await d.close();}
 });
-test('Tela real: um clique salva a resposta antes do profissional; formulário profissional aceita sem código; painel exibe resposta',async()=>{
- const {JSDOM}=require('jsdom'),{d,a,call,f}=await setup();let owner,pro;const wait=async fn=>{for(let i=0;i<150;i++){if(fn())return;await new Promise(r=>setTimeout(r,10));}throw Error('timeout');};
+test('Tela real exige conclusão, valor e código; contratação isolada não aprova comissão',async()=>{
+ const {JSDOM}=require('jsdom'),{d,a,call}=await setup();
+ const dom=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br',runScripts:'outside-only'}),w=dom.window;
  try{
-  owner=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br',runScripts:'outside-only'});const w=owner.window;w.localStorage.setItem('qf_pedido_owner_'+call.id,a.segredo_acompanhamento);let writes=0;
-  w.fetch=async(url,o)=>{const b=JSON.parse(o.body);if(b.p_acao==='responder')writes++;await as(d,0);return {ok:true,json:()=>rpc(d,'qf13_acompanhar',[b.p_chamado_id,b.p_segredo,b.p_acao||'ver',b.p_fechamento||null,b.p_contratou??null])};};
-  w.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));await w.QFAcompanhamento.mount(w.document.querySelector('main'),call.id);assert.ok(w.document.querySelector('[data-qf-owner-code]'));assert.equal(w.document.querySelector('[data-qf-owner-code]').closest('details'),null);
-  w.document.querySelector('[data-qf-owner-answer=sim]').click();await wait(()=>w.document.body.textContent.includes('Resposta salva.'));assert.equal(writes,1);assert.match(w.document.body.textContent,/Sua resposta: contratei/);assert.equal(w.document.querySelector('[data-qf-owner-answer=sim]').getAttribute('aria-pressed'),'true');
-  pro=new JSDOM('<main id="app-content"><div class="view"></div></main>',{url:'https://quemfazservico.com.br/#/profissional/pedido/'+call.id,runScripts:'outside-only'});const p=pro.window;Object.defineProperty(p.document,'readyState',{value:'complete'});p.Screens={};p.DB={requestById:()=>({atendimentoTipo:'tradicional',modalidade:'contatos'})};p.QFCloud={client:{rpc:async(n,args={})=>{await as(d,11);return {data:await rpc(d,n,Object.values(args))};}}};
-  p.eval(fs.readFileSync('qf-comissao13.js','utf8'));await wait(()=>p.document.querySelector('[data-qf13-abrir]'));assert.equal(p.document.querySelector('[data-qf13-cliente-confirmou]').hidden,false);assert.match(p.document.querySelector('[data-qf13-cliente-confirmou]').textContent,/Contratação confirmada pelo cliente/);p.document.querySelector('[data-qf13-abrir]').click();const form=p.document.querySelector('[data-qf13-inline-form]');assert.equal(form.elements.codigo.required,false);form.elements.valor.value='500,00';form.dispatchEvent(new p.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>p.document.body.textContent.includes('Fechamento informado.'));
-  await as(d,11);const row=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];assert.equal(row.codigo_validado_em,null);assert.equal(row.cliente_resposta,'confirmado');assert.match(ui.painel([row],true),/Sim, contratei/);assert.equal(row.comissao_centavos,null);
- }finally{owner?.window.close();pro?.window.close();await d.close();}
+  await as(d,11);const f=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];await rpc(d,'qf_comissao13_prestar_contas',[f.id,'informado',50000,null]);
+  w.localStorage.setItem('qf_pedido_owner_'+call.id,a.segredo_acompanhamento);let writes=0;
+  w.fetch=async(url,o)=>{const b=JSON.parse(o.body);if(b.p_acao&&b.p_acao!=='ver')writes++;await as(d,0);return {ok:true,json:()=>rpc(d,'qf13_acompanhar',[b.p_chamado_id,b.p_segredo,b.p_acao||'ver',b.p_fechamento||null,b.p_contratou??null])};};
+  w.eval(fs.readFileSync('qf-acompanhamento.js','utf8'));await w.QFAcompanhamento.mount(w.document.querySelector('main'),call.id);
+  assert.equal(w.document.querySelector('[data-qf-owner-code]'),null);
+  assert.equal(w.document.querySelector('[data-qf-owner-answer=sim]'),null);
+  const form=w.document.querySelector('[data-qf-owner-concluir]');assert.ok(form);
+  for(const name of ['codigo_seguranca','valor_final','concluido'])assert.equal(form.elements[name].required,true);
+  assert.equal(writes,0);
+  await as(d,11);const row=(await rpc(d,'qf_comissao13_fechamentos_painel'))[0];assert.equal(row.comissao_centavos,null);
+ }finally{w.close();await d.close();}
 });

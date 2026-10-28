@@ -8,7 +8,7 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.ok(A.questions({servico:'Eletricista'})[1].choices.some(c=>c[0]==='tomada'));
  assert.ok(A.questions({servico:'Montador de móveis'})[1].choices.some(c=>c[0]==='montagem'));
  assert.equal(A.budget('1.500,90'),150090);assert.equal(A.budget('a combinar'),null);assert.ok(Number.isNaN(A.budget('abc')));
- const a={servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'15000:30000',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
+ const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'15000:30000',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
  assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
  assert.match(A.validAll({...a,autorizacao:'nao'}),/Sem autorização/);
  assert.equal(A.validAll({...a,orcamento:'avaliacao',tipo:'tradicional'}),'');assert.ok(!A.stages({...a,orcamento:'avaliacao'} )[3].questions.some(q=>q.key==='tipo'));
@@ -16,8 +16,8 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.ok(!A.stages({...a,materiais:'combinar'})[3].questions.some(q=>q.key==='tipo'));
 });
 test('diarista: serviço escolhido na home não repete e respostas são aceitas pelo banco',()=>{
- const a={servico:'diarista',__servicePrefilled:true,detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',orcamento:'avaliacao',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
- assert.equal(A.stages(a)[0].questions[0].key,'detalhes');
+ const a={aceite_app:'sim',servico:'diarista',__servicePrefilled:true,detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',orcamento:'avaliacao',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+ assert.equal(A.stages(a)[0].questions.map(q=>q.key).filter(k=>k!=='aceite_app')[0],'detalhes');
  assert.equal(A.validAll(a),'');
  const p=A.payload(a,uid(250),'diarista');
  assert.equal(p.detalhes,'Faxina comum');
@@ -104,11 +104,11 @@ test('banco: geocodificador indisponível usa referência da cidade; cidade sem 
  }finally{await d.close();}
 });
 
-test('quatro etapas: avaliação sem preço, faixas por profissão e materiais pertinentes',()=>{
- const a={servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'avaliacao',materiais:'combinar',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+test('quatro etapas: pedido sem orçamento ou data obrigatórios e materiais pertinentes',()=>{
+ const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'avaliacao',materiais:'combinar',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
  assert.equal(A.stages(a).length,4);
  assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
- assert.equal(A.payload(a,uid(200),'faxina').orcamento_faixa,'avaliacao');
+ assert.equal(A.payload(a,uid(200),'faxina').orcamento_faixa,'a combinar');
  assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Pedreiro'));
  assert.notDeepEqual(A.budgetChoices('Faxina'),A.budgetChoices('Eletricista'));
  for(const servico of ['Faxina','Pedreiro','Eletricista']){
@@ -118,7 +118,9 @@ test('quatro etapas: avaliação sem preço, faixas por profissão e materiais p
  assert.equal(A.payload({...a,servico:'Professor',detalhes:'instalacao',escopo:'um',materiais:undefined},uid(200),'professor').materiais,'nao_aplica');
  assert.equal(A.validAll({...a,urgencia:'hoje',data:undefined}),'');
  assert.equal(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),'');
- assert.match(A.validAll({...a,servico:'Pedreiro',detalhes:'instalacao',orcamento:'15000:30000'}),/opções/);
+ assert.equal(A.payload({...a,servico:'Pedreiro',detalhes:'reparo',escopo:'pequena',orcamento:'15000:30000'},uid(200),'pedreiro').tipo,'tradicional');
+ assert.ok(!A.questions(a).some(q=>['orcamento','data','disponibilidade'].includes(q.key)));
+ assert.match(A.validAll({...a,aceite_app:'nao'}),/concordância/);
 });
 
 test('banco: faixa não vira preço exato; avaliação publica, preserva privacidade e retry',async()=>{

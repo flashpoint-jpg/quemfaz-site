@@ -17,7 +17,7 @@ test('Cadastro do Livre distingue repasse planejado da modalidade atual',()=>{
   assert.match(src,/envio de 87% à sua chave Pix após confirmação bancária/);
   assert.match(src,/funcionalidade em preparação, ainda indisponível/);
   assert.match(src,/O novo modelo ainda não está disponível/);
-  assert.match(src,/Sem pagar por contato/);
+  assert.match(plan.oferta(),/Sem cobrança por contato/);
 });
 test('Nenhuma chamada de pagamento ou nova autorização bancária é adicionada à oferta',()=>{
   const html=plan.oferta({ativo:true});

@@ -26,8 +26,9 @@ vm.runInNewContext(early,{window,document,location,sessionStorage:{removeItem(){
 let prevented=0;events.submit({target:form,preventDefault(){prevented++;}});
 assert.equal(prevented,1);
 field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(field.value,'Preciso montar guarda-roupa');
-assert.equal(location.hash,'#/auth/cliente/cadastro');
-window.QFEarly.finish();assert.equal(form.sent||0,0,'ao tocar cedo abre a rota sem reenviar formulário');
+assert.equal(location.hash,'#/');assert.equal(window.QFHomeDraft.service,'Preciso montar guarda-roupa');
+window.QFEarly.finish();assert.equal(form.sent||0,1,'ao tocar cedo retoma o pedido na home uma única vez');
+window.QFEarly.finish();assert.equal(form.sent,1);
 field.value='Novo serviço';window.QFEarly.capture();field.value='';window.QFEarly.restore({querySelector:()=>field});assert.equal(field.value,'');
 console.log('publicacao-leve: ordem de scripts, cache offline, conteúdo inicial e preservação de pedido antes do carregamento: ok');
 // A primeira ativação da home mantém os nós já visíveis, sem trocar o candidato LCP.

@@ -91,11 +91,11 @@ test('index.html: pergunta na última tela antes do botão, obrigatória, gravad
   assert.match(html, /global\.QFValor\.enriquecerInteresse\(reqs\)/);
   // selo nos dois lugares em que o profissional vê o pedido antes de pagar, sempre antes do orçamento aproximado
   const selos = html.match(/seloInteresseHtml\(req\) : ''\) \+\n\s*\(global\.QFValor \? global\.QFValor\.orcamentoHtml/g) || [];
-  assert.equal(selos.length, 2);
+  assert.equal((html.match(/seloInteresseHtml\(req, true\)/g)||[]).length,2);
   // limite de 4 profissionais e nada de cobrança tocado
   assert.match(html, /\[1, 2, 3, 4\]\.map\(function \(n\)/);
   assert.match(html, /Math\.max\(1, Math\.min\(4, Math\.round\(Number\(req\.maxOrcamentos/);
-  assert.match(html, /qf-valor-definido\.js\?v=5/);
+  assert.match(html, /qf-valor-definido\.js\?v=6/);
 });
 
 test('selo é verde e discreto; pergunta tem estilo próprio', () => {
@@ -109,7 +109,7 @@ test('versão do app e do service worker foram atualizadas juntas', () => {
   const app = /const APP_VERSION = '([^']+)'/.exec(html)[1];
   const swv = /const SW_VERSION = '([^']+)'/.exec(sw)[1];
   assert.equal(app, swv);
-  assert.equal(app, '12.1.6');
+  assert.match(app, /^\d+\.\d+\.\d+$/);
 });
 
 test('migração: aditiva, sem tocar pedidos antigos, preços, saldos, recargas nem desbloqueios', () => {

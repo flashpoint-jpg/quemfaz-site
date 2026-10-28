@@ -18,7 +18,7 @@ test('novo Garante exige valor e intenção; preço pesquisado e avaliação fic
    {orcamento_centavos:null,orcamento_faixa:'avaliacao',intencao:'contratar',expected:'tradicional',front:'avaliacao'}
   ];
   for(const [i,{expected,front,...changes}] of conditions.entries()){
-   assert.equal(A.tipoPorOrcamento({orcamento:front,intencao:changes.intencao}),expected);
+   assert.equal(A.tipoPorOrcamento({orcamento:front,intencao:changes.intencao}),'tradicional','o formulário atual não promove pedidos a exclusivo; a migração histórica abaixo mantém seu contrato');
    const a=answers({...changes,chave:uid(300+i),detalhes:'Pintar parede número '+i,materiais:'combinar',tipo:expected==='garante'?'tradicional':'garante'});
    const r=await pub(d,a);assert.equal(r.atendimento_tipo,expected);assert.equal(r.max_orcamentos,expected==='garante'?1:4);
    assert.equal((await pub(d,a)).id,r.id);
