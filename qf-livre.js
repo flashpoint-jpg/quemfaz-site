@@ -127,13 +127,13 @@
    g.QFTrackLivrePurchase=trackLivrePurchase;
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
    async function mostrarContaPix(s){
-    if(!s?.ativo||!['/profissional/carteira','/profissional/planos'].includes(pattern)||!box.isConnected)return;
+    if(!['/profissional/carteira','/profissional/planos'].includes(pattern)||!box.isConnected)return;
     if(box.querySelector('[data-qf-livre-conta]'))return;
     const area=document.createElement('section');area.dataset.qfLivreConta='';
     area.className='card stack--sm';
     area.style.cssText='background:#f7faff;border:1px solid #bfdbfa;border-radius:14px;padding:14px;margin:14px 0;';
     area.innerHTML='<h3 class="h3">Receba na sua própria conta Pix</h3>'+
-      '<p class="text--sm">Exclusivo do Quem Faz Livre: cadastre somente a chave Pix do banco que você já utiliza. Não é necessário abrir uma conta Efí.</p>'+
+      '<p class="text--sm">Já tem cadastro no Quem Faz? Basta salvar a chave Pix que você já usa, sem criar outra conta ou refazer seu cadastro. O repasse será exclusivo dos serviços do Plano Livre.</p>'+
       '<form data-qf-livre-conta-form class="stack--sm">'+
       '<label>Minha chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, CNPJ, e-mail, telefone (+55...) ou chave aleatória"></label>'+
       '<button type="submit" class="btn btn--outline">Salvar minha chave Pix</button></form>'+
@@ -145,6 +145,7 @@
      const r=await rpc('qf_livre_pix_conta_status');
      if(!area.isConnected)return;
      status.textContent=({validado:'Chave Pix validada para o futuro repasse.',pendente:'Chave recebida. Aguardando conferência da titularidade.',reprovado:'Confira ou atualize sua chave Pix.',nao_cadastrado:'Cadastre a chave Pix do seu banco.'})[r?.status]||'A configuração de repasse ainda está em preparação.';
+     if(typeof r?.chave_pix==='string')form.elements.chavePix.value=r.chave_pix;
     }catch(_){status.textContent='O cadastro de repasse ainda não foi habilitado.';}
     form.onsubmit=async e=>{
      e.preventDefault();
