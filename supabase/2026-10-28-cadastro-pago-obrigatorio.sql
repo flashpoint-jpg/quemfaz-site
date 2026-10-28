@@ -12,6 +12,13 @@ VALUES ('avulso','Avulso — recarga inicial',1300,1,30,true),
        ('livre','Quem Faz Livre',3990,1,30,true)
 ON CONFLICT (plano) DO UPDATE SET
  nome=EXCLUDED.nome,preco_centavos=EXCLUDED.preco_centavos,ativo=true;
+-- Impede que um preço divergente seja cobrado e nunca possa habilitar a conta.
+ALTER TABLE public.qf_planos_catalogo
+ ADD CONSTRAINT qf_cadastro_preco_valido CHECK (
+   (plano <> 'avulso' OR preco_centavos = 1300)
+   AND (plano <> 'livre' OR preco_centavos = 3990)
+ );
+
 -- OBS: "chamados" e "dias" em Avulso são valores técnicos para o catálogo legado;
 -- o resgate Avulso grava plano=NULL na recarga e credita 1300 centavos, sem pacote/validade.
 
