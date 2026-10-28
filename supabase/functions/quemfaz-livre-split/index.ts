@@ -167,7 +167,13 @@ Deno.serve(async(req:Request)=>{
  let data:any={};try{data=await req.json();}catch{return reply(req,{ok:false,reason:"json_invalido"},400);}
  if(data.action==="checkout")return checkout(req,data);
  if(data.action==="sync"){
-  if(!service||req.headers.get("Authorization")!=="Bearer "+service)return reply(req,{ok:false,reason:"nao_autorizado"},403);
+  const secretHeader=String(req.headers.get("x-qf-internal")||"");
+  let authorized=!!service&&req.headers.get("Authorization")==="Bearer "+service;
+  if(!authorized&&secretHeader.length>=32){
+   const {data:verified,error}=await db.rpc("qf_push_internal_ok",{p_segredo:secretHeader});
+   authorized=!error&&verified===true;
+  }
+  if(!authorized)return reply(req,{ok:false,reason:"nao_autorizado"},403);
   const list=await rpc("qf_livre_split_pendentes",{});
   if(!Array.isArray(list)||!list.length)return reply(req,{ok:true,consultados:0});
   let c:Deno.HttpClient|null=null;
