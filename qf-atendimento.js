@@ -118,7 +118,65 @@
     const cat={id:'cat_custom_'+key.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,38)+'_'+(hash>>>0).toString(36),nome:service,icon:'briefcase',custom:true,leadTier:'padrao'};
     DB.state.categories.push(cat); DB.persist(); return cat;
   }
-  function mount(content,params,user) {
+
+  // O rascunho do redirecionamento Google é cifrado (AES-GCM) e tem validade curta.
+  // A chave não exportável fica no IndexedDB; respostas nunca vão em texto puro ao storage.
+  const OAUTH_DRAFT='qf_google_draft_v1';
+  function hasGoogleDraft(){
+    try{return !!root.sessionStorage.getItem(OAUTH_DRAFT);}catch(_){return false;}
+  }
+  async function googleDraftKey(action,key){
+    if(!root.indexedDB)throw Error('Seu navegador não permite proteger o pedido para entrar pelo Google. Use telefone e senha.');
+    const db=await new Promise((resolve,reject)=>{
+      const req=root.indexedDB.open('qf_google_draft_keys',1);
+      req.onupgradeneeded=()=>req.result.createObjectStore('keys');
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||Error('Armazenamento seguro indisponível.'));
+    });
+    try{return await new Promise((resolve,reject)=>{
+      const tx=db.transaction('keys',action==='read'?'readonly':'readwrite');
+      const store=tx.objectStore('keys');
+      const req=action==='write'?store.put(key,'oauth'):action==='delete'?store.delete('oauth'):store.get('oauth');
+      let value=null;
+      req.onsuccess=()=>{value=req.result;};
+      tx.oncomplete=()=>resolve(value);
+      tx.onerror=()=>reject(tx.error||Error('Não foi possível proteger o rascunho.'));
+      tx.onabort=()=>reject(tx.error||Error('O armazenamento seguro foi interrompido.'));
+    });}finally{db.close();}
+  }
+  async function clearGoogleDraft(){
+    try{root.sessionStorage.removeItem(OAUTH_DRAFT);}catch(_){}
+    try{await googleDraftKey('delete');}catch(_){}
+  }
+  async function saveDraftForGoogle(){
+    const d=inMemoryDraft;
+    if(!d?.answers?.servico||!root.crypto?.subtle||!root.crypto?.getRandomValues)throw Error('Não foi possível preservar seu pedido. Use telefone e senha para continuar.');
+    const key=await root.crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+    const iv=root.crypto.getRandomValues(new Uint8Array(12));
+    const data=new TextEncoder().encode(JSON.stringify({answers:d.answers,step:d.step,questionIndex:d.questionIndex,categoryId:d.categoryId,oauth:true}));
+    const cipher=await root.crypto.subtle.encrypt({name:'AES-GCM',iv},key,data);
+    try{
+      await googleDraftKey('write',key);
+      root.sessionStorage.setItem(OAUTH_DRAFT,JSON.stringify({v:1,expires:Date.now()+30*60*1000,iv:Array.from(iv),data:Array.from(new Uint8Array(cipher))}));
+    }catch(e){await clearGoogleDraft();throw Error('Não foi possível guardar o pedido com segurança. Use telefone e senha.');}
+  }
+  async function restoreGoogleDraft(){
+    let stored;
+    try{stored=root.sessionStorage.getItem(OAUTH_DRAFT);}catch(_){}
+    if(!stored)return null;
+    try{
+      const p=JSON.parse(stored);
+      if(p.v!==1||!Number.isFinite(p.expires)||Date.now()>p.expires||!Array.isArray(p.iv)||p.iv.length!==12||!Array.isArray(p.data)||p.data.length>100000)throw Error('Rascunho inválido ou expirado.');
+      const key=await googleDraftKey('read');
+      if(!key)throw Error('Chave do rascunho indisponível.');
+      const raw=await root.crypto.subtle.decrypt({name:'AES-GCM',iv:new Uint8Array(p.iv)},key,new Uint8Array(p.data));
+      const d=JSON.parse(new TextDecoder().decode(raw));
+      if(!d?.answers||typeof d.answers!=='object'||typeof d.answers.servico!=='string'||!Number.isInteger(d.step)||d.step<0||d.step>3||!Number.isInteger(d.questionIndex)||d.questionIndex<0||d.questionIndex>25)throw Error('Rascunho inválido.');
+      return d;
+    }catch(_){return null;}
+    finally{await clearGoogleDraft();}
+  }
+  async function mount(content,params,user) {
     const box=content.querySelector('[data-qf-atendimento]'); if(!box || box.dataset.mounted) return;
     box.dataset.mounted='1';
     const area=box.querySelector('[data-at-question]');
@@ -127,13 +185,16 @@
     if(!id) {id=root.crypto.randomUUID();try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
-    const oldDraft=inMemoryDraft;
+    const restored=!inMemoryDraft&&hasGoogleDraft()?await restoreGoogleDraft():null;
+    if(!box.isConnected)return;
+    const oldDraft=inMemoryDraft||restored;
+    const fromGoogle=!!restored?.oauth;
     const homeService=params.service||(root.QFHomeDraft&&root.QFHomeDraft.service);
-    const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(!homeService||norm(oldDraft.answers.servico)===norm(homeService))&&(!params.problem||norm(oldDraft.answers.__problem)===norm(params.problem)));
+    const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(fromGoogle||!homeService||norm(oldDraft.answers.servico)===norm(homeService))&&(fromGoogle||!params.problem||norm(oldDraft.answers.__problem)===norm(params.problem)));
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
-    if(cat) {a.servico=cat.nome;a.__servicePrefilled=true;}
-    else if(homeService) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
-    if(params.problem)a.__problem=String(params.problem).trim().slice(0,1500);
+    if(cat&&!fromGoogle) {a.servico=cat.nome;a.__servicePrefilled=true;}
+    else if(homeService&&!fromGoogle) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
+    if(params.problem&&!fromGoogle)a.__problem=String(params.problem).trim().slice(0,1500);
     if(user){a.nome=user.nome||'';a.contato=user.telefone||'';}
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     const track=(event,error,once)=>{try{root.QFClientAcquisition?.track(event,{category:category(a.servico)?.id,error_code:error},once);}catch(_){}};
@@ -201,6 +262,7 @@
           root.QFAcompanhamento.remember(req.id,segredo);
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
+          await clearGoogleDraft();
           // Publicação confirmada: mantém formulário, pedidos e conversa na index.
           redirecting=true;
           if(root.QFPedidoHome){await root.QFPedidoHome.published(req,current);}
@@ -210,6 +272,14 @@
         finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);button.disabled=false;button.textContent='Publicar grátis';}}
     };
     draw();
+    // O cliente já tocou em "Publicar grátis" antes do OAuth; retoma sem pedir tudo de novo.
+    if(fromGoogle&&reuse&&oldDraft.oauth&&step===3&&questionIndex===stages(a)[step].questions.length-1){
+      try{
+        const auth=await root.QFCloud?.client?.auth?.getUser();
+        if(!auth?.error&&auth?.data?.user&&box.isConnected)await publish();
+        else if(box.isConnected)area.querySelector('[data-at-error]').textContent='Entre com Google e toque em Publicar grátis para continuar.';
+      }catch(_){if(box.isConnected)area.querySelector('[data-at-error]').textContent='Seu pedido foi recuperado. Toque em Publicar grátis para continuar.';}
+    }
   }
   async function enrich(reqs) {
     if(!reqs.length || !root.QFCloud?.client)return reqs;
@@ -239,5 +309,5 @@
       root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc((q.key==='orcamento'&&a.orcamento_faixa?budgetLabel(a.orcamento_faixa,a.servico):a[q.key])??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
     }catch(error){root.PU.toast(error.message,'danger');}finally{button.disabled=false;}
   });
-  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install};
+  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install,hasGoogleDraft,saveDraftForGoogle};
 });
