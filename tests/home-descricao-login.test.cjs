@@ -37,12 +37,26 @@ test('rebocar parede identifica pedreiro sem exigir selecionar profissão',()=>{
  assert.equal(p.w.document.querySelector('[data-home-type]'),null);
  p.close();
 });
-test('descrição não identificada solicita detalhes, não mostra catálogo de profissões',()=>{
+test('serviço não identificado avança sem obrigar escolha de profissão',()=>{
  const p=page();p.w.QFPedidoHome.start();
  submit(p.w,'Preciso de ajuda em casa urgente');
- assert.equal(p.getNext(),null);
- assert.match(p.w.document.querySelector('[role=alert]').textContent,/Conte mais detalhes/);
+ assert.equal(p.getNext().service,'Outros serviços');
+ assert.equal(p.getNext().problem,'Preciso de ajuda em casa urgente');
  assert.equal(p.w.document.querySelector('[data-home-type]'),null);
+ p.close();
+});
+test('soldar portão de ferro sugere serralheiro quando profissão está cadastrada',()=>{
+ const p=page();p.w.DB.categories().push({id:'cat_serralheiro',nome:'Serralheiro'});
+ p.w.QFPedidoHome.start();
+ submit(p.w,'conserto de portão soldar ferro');
+ assert.equal(p.getNext().service,'Serralheiro');
+ assert.equal(p.getNext().problem,'conserto de portão soldar ferro');
+ p.close();
+});
+test('soldar portão também avança sem serralheiro cadastrado',()=>{
+ const p=page();p.w.QFPedidoHome.start();
+ submit(p.w,'soldar portão de ferro');
+ assert.equal(p.getNext().service,'Outros serviços');
  p.close();
 });
 test('entrada por Google ou telefone é anunciada na tela inicial',()=>{
