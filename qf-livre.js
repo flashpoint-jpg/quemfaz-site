@@ -126,6 +126,40 @@
    }
    g.QFTrackLivrePurchase=trackLivrePurchase;
    function bind(){const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;}
+   async function mostrarContaPix(s){
+    if(!s?.ativo||!['/profissional/carteira','/profissional/planos'].includes(pattern)||!box.isConnected)return;
+    if(box.querySelector('[data-qf-livre-conta]'))return;
+    const area=document.createElement('section');area.dataset.qfLivreConta='';
+    area.className='card stack--sm';area.style.cssText='background:#f7faff;border:1px solid #bfdbfa;border-radius:14px;padding:14px;margin:14px 0;';
+    area.innerHTML='<h3 class="h3">Recebimento do Quem Faz Livre</h3>'+
+      '<p class="text--sm">Para o novo pagamento pós-serviço, informe sua chave Pix e sua conta digital Efí. O split imediato de 87% exige conta Efí com CPF/CNPJ validado; chave Pix de outro banco sozinha não autoriza o repasse.</p>'+
+      '<form data-qf-livre-conta-form class="stack--sm">'+
+      '<label>Minha chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, e-mail, celular ou chave aleatória"></label>'+
+      '<label>Número da conta Efí<input class="input" name="contaEfi" inputmode="numeric" pattern="[0-9]{1,20}" maxlength="20" autocomplete="off" required placeholder="Número da conta Efí"></label>'+
+      '<button type="submit" class="btn btn--outline">Salvar dados bancários</button></form>'+
+      '<p class="text--sm" role="status" data-qf-livre-conta-status>Consultando verificação...</p>'+
+      '<p class="text--sm">A nova modalidade permanece em preparação. Só será liberada após homologação e validação bancária; os pagamentos atuais do plano não mudam.</p>';
+    box.append(area);
+    const status=area.querySelector('[data-qf-livre-conta-status]'),form=area.querySelector('form');
+    try{
+     const r=await rpc('qf_livre_split_conta_status');
+     if(!area.isConnected)return;
+     status.textContent=({validado:'Conta validada para receber o split assim que a modalidade for homologada.',pendente:'Dados aguardando conferência da conta e titularidade.',reprovado:'Dados bancários precisam ser corrigidos.',nao_cadastrado:'Cadastre seus dados uma única vez.'})[r?.status]||'Não foi possível consultar a conta.';
+    }catch(_){status.textContent='Não foi possível consultar os dados bancários agora.';}
+    form.onsubmit=async e=>{
+     e.preventDefault();
+     const b=form.querySelector('button');b.disabled=true;status.textContent='Salvando conta para conferência...';
+     try{
+      const conta=String(form.elements.contaEfi.value||'').trim(),chave=String(form.elements.chavePix.value||'').trim();
+      if(!/^[0-9]{1,20}$/.test(conta)||chave.length<5)throw Error('Informe uma conta Efí numérica e uma chave Pix válida.');
+      const result=await rpc('qf_livre_split_conta_cadastrar',{p_chave_pix:chave,p_conta_efi:conta});
+      if(!result?.ok)throw Error('Confira seu cadastro e a situação do seu plano.');
+      status.textContent='Dados registrados. Aguardando validação bancária da conta Efí. Nenhum Pix de serviço está habilitado ainda.';
+      form.reset();
+     }catch(err){status.textContent=err.message||'Não foi possível salvar a conta.';}
+     finally{b.disabled=false;}
+    };
+   }
    function render(s){
     last=s||{};
     box.classList.remove('qf-livre--checkout','qf-livre--promo','qf-livre--compact');
@@ -140,6 +174,7 @@
      }
     }
     bind();
+    mostrarContaPix(s).catch(()=>{});
     if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}
    }
    function unlock(s){
