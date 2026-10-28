@@ -13,15 +13,30 @@ function home(search='',hash='#/'){
 }
 test('atalhos usam o formulário atual, preservam profissão e não enviam descrição na medição',()=>{
  const {dom,g,mounts,events}=home();
- g.document.querySelector('[data-desk-service]').click();assert.equal(mounts.at(-1).service,'Eletricista');
+ g.document.querySelector('[data-desk-service]').click();assert.equal(mounts.length,0);assert.equal(g.document.querySelector('#home-service').value,'cat_eletricista');
  g.document.querySelector('[data-home-services]').click();const input=g.document.querySelector('#home-problem');assert.ok(input);
- input.value='Minha tomada está em curto';input.dispatchEvent(new g.Event('input'));
+ g.document.querySelector('#home-service').value='cat_eletricista';input.value='Minha tomada está em curto';input.dispatchEvent(new g.Event('input'));
  g.document.querySelector('[data-home-problem]').dispatchEvent(new g.Event('submit',{cancelable:true}));
- assert.equal(mounts.at(-1).service,'Eletricista');assert.ok(events.some(e=>e[0]==='home_submit'));
+ assert.equal(mounts.length,1);assert.equal(mounts.at(-1).service,'Eletricista');assert.ok(events.some(e=>e[0]==='home_submit'));
  assert.ok(!JSON.stringify(events).includes('Minha tomada'));assert.equal(g.location.hash,'#/');dom.window.close();
 });
 test('link SEO abre diretamente a profissão em vez de descartar o parâmetro',()=>{
- const {dom,mounts}=home('?servico=cat_geladeira','#/auth/cliente/cadastro');assert.equal(mounts.at(-1).service,'Técnico de geladeira');dom.window.close();
+ const {dom,g,mounts}=home('?servico=cat_geladeira','#/auth/cliente/cadastro');
+ assert.equal(mounts.length,0);assert.equal(g.document.querySelector('#home-service').value,'cat_geladeira');
+ const input=g.document.querySelector('#home-problem');input.value='Minha geladeira parou de gelar';
+ input.form.dispatchEvent(new g.Event('submit',{bubbles:true,cancelable:true}));
+ assert.equal(mounts[0].service,'Técnico de geladeira');assert.equal(mounts[0].problem,input.value);dom.window.close();
+});
+test('atalhos genéricos e formulário legado com texto livre voltam à escolha de profissão',()=>{
+ const {dom,g,mounts}=home();
+ try{
+  const button=g.document.createElement('button');button.dataset.deskService='Outros serviços';g.document.body.append(button);button.click();
+  assert.equal(mounts.length,0);assert.ok(g.document.querySelector('#home-service'));
+  const legacy=g.document.createElement('form');legacy.dataset.landingServiceForm='';legacy.innerHTML='<input data-landing-service-search value="Computador não liga">';g.document.body.append(legacy);
+  legacy.dispatchEvent(new g.Event('submit',{bubbles:true,cancelable:true}));
+  assert.equal(mounts.length,0);assert.equal(g.document.querySelector('#home-problem').value,'Computador não liga');
+  assert.ok(g.document.querySelector('#home-service'));
+ }finally{dom.window.close();}
 });
 test('fogão e micro-ondas não são classificados como geladeira ou lavadora',()=>{
  const {dom,g}=home();
@@ -58,14 +73,15 @@ test('formulário atual publica no PostgreSQL local e apresenta o pedido salvo n
   g.QFClienteAcesso={authenticate:async()=>({id:uid(1)})};g.QFAcompanhamento={draft:()=> 'cliente-teste-segredo-local-123456789',remember(){}};
   g.QFCloud={enabled:true,createCall:async args=>{await as(d,1);return(await d.query('select public.qf_publicar_atendimento($1::jsonb,$2::jsonb) r',[JSON.stringify(args.atendimento),JSON.stringify({latitude:-23.66,longitude:-46.53})])).rows[0].r;}};
   g.QFPedidoHome={published:async req=>{published=req;g.document.querySelector('main').textContent='Pedido publicado';}};
-  g.eval(fs.readFileSync('qf-atendimento.js','utf8'));const target=g.document.querySelector('main');target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{service:'Eletricista'},null);
-  for(const [key,value] of [['aceite_app','sim'],['detalhes','tomada'],['escopo','um'],['cep','09020000'],['bairro','Centro'],['urgencia','normal'],['materiais','profissional'],['nome','Cliente Teste'],['contato','11988887777'],['intencao','contratar'],['autorizacao','sim']]){
+  g.eval(fs.readFileSync('qf-atendimento.js','utf8'));const target=g.document.querySelector('main');target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{service:'Eletricista',problem:'A tomada da cozinha solta faíscas quando ligo a geladeira'},null);
+  for(const [key,value] of [['aceite_app','sim'],['cep','09020000'],['bairro','Centro'],['urgencia','normal'],['materiais','profissional'],['nome','Cliente Teste'],['contato','11988887777'],['intencao','contratar'],['autorizacao','sim']]){
    const el=target.querySelector('#at-'+key)||target.querySelector('[name="at-'+key+'"][value="'+value+'"]');assert.ok(el,key);if(el.type==='checkbox'||el.type==='radio')el.checked=true;else el.value=value;target.querySelector('form').dispatchEvent(new g.Event('submit',{cancelable:true}));
    if(key==='cep')await new Promise(r=>setTimeout(r,0));
   }
   for(let i=0;i<100&&!published;i++)await new Promise(r=>setTimeout(r,10));
   assert.ok(published?.id,target.textContent);assert.equal(target.textContent,'Pedido publicado');assert.equal(g.location.href,'https://quemfazservico.com.br/');
-  await d.exec('reset role');const rows=await d.query('select categoria,status,max_orcamentos from qf_chamados where id=$1',[published.id]);assert.equal(rows.rows[0].categoria,'cat_eletricista');assert.equal(rows.rows[0].max_orcamentos,4);
+  await d.exec('reset role');const rows=await d.query('select categoria,status,max_orcamentos,descricao from qf_chamados where id=$1',[published.id]);assert.equal(rows.rows[0].categoria,'cat_eletricista');assert.equal(rows.rows[0].max_orcamentos,4);
+  assert.ok(rows.rows[0].descricao.includes('A tomada da cozinha solta faíscas quando ligo a geladeira'),'descrição fica no pedido consultado pelos profissionais antes do desbloqueio');
   assert.ok(events.some(e=>e[0]==='submit'));assert.ok(!events.some(e=>e[0]==='publish_error'));
  }finally{dom.window.close();await d.close();}
 });

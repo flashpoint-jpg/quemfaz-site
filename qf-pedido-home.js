@@ -10,16 +10,17 @@
   if(slot?.isConnected)return slot;
   const anchor=g.document.querySelector('[data-landing-service-form]');if(!anchor)return null;
   const seed=anchor.querySelector('[data-landing-service-search]')?.value||'';if(!state.problem&&seed)state.problem=seed;
-  slot=g.document.createElement('section');slot.className='qf-landing-service-search qf-hero-search qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Conte o que você precisa');
+  slot=g.document.createElement('section');slot.className='qf-landing-service-search qf-hero-search qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Escolha o serviço que você precisa');
   anchor.replaceWith(slot);slot.innerHTML=toolbar();
   slot.addEventListener('click',e=>{if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
   return slot;
  }
  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+ const serviceCategories=()=>(g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros'&&!/^outros?( servicos?)?$/.test(norm(c.nome))).slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
  function classify(problem){
   const text=norm(problem);
   const rules=[
-   [/eletric|eletricista/,/tomada|disjuntor|curto.circuito|chuveiro|fiacao|energia|eletric/,10],
+   [/\beletric/,/tomada|disjuntor|curto.circuito|chuveiro|fiacao|energia|eletric/,10],
    [/encanador|hidraul/,/torneira|vazament|cano|descarga|registro|encan|hidraul|pia entup/,11],
    [/desentupid/,/desentup|entupid|esgoto/,12],
    [/pintor|pintura/,/pintar|pintura|tinta|pintor/,12],
@@ -32,6 +33,10 @@
    [/geladeira/,/geladeira|freezer|refrigerador|frigobar/,12],
    [/fogao|micro.ondas/,/fogao|forno|micro.ondas/,12],
    [/maquina de lavar|lavadora/,/lavadora|maquina de lavar/,12],
+   [/informatica/,/\b(computador|computadores|notebook|notebooks|laptop|laptops|pc|desktop|impressora|windows|informatica)\b|formatar|formatacao|instalar.*programa|remover.*virus/,16],
+   [/celular/,/\b(celular|smartphone|iphone|android)\b/,16],
+   [/internet.*redes/,/\b(internet|wi[ -]?fi|roteador|modem)\b|rede.*(cai|lenta|conecta)/,16],
+   [/tecnico.*tv.*som/,/\b(tv|televisao|televisor)\b/,16],
    [/pedreir|alvenaria/,/pedreir|reformar|reforma|alvenaria|assentar|azulejo|reboc|chapisc|emboc|argamassa|contrapiso|concret|levantar muro|construir muro|cimento|trocar piso|colocar piso|colocar revestimento/,13],
    [/telhadista|telhado/,/telhado|goteira|telha quebrada/,12],
    [/impermeabiliz/,/impermeabilizar|impermeabilizacao|infiltracao/,12],
@@ -41,23 +46,24 @@
   ];
   return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text||name.length>=4&&text.includes(name)?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
  }
- function intro(prefill){
+ function intro(prefill,service){
   state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill)state.problem=prefill;reset();
   const target=work();if(!target)return;
-  target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Conte o que você precisa</h2><p class="qf-home-problem-sub">Nós procuramos pra você.</p><p class="text--sm" style="margin:0 0 12px">Já tem conta? <button type="button" class="btn btn--outline" data-home-login-start style="padding:6px 12px;min-height:34px;font-size:13px">Entrar com Google ou telefone</button></p><form class="stack" data-home-problem novalidate><textarea class="input" id="home-problem" aria-labelledby="home-problem-title" rows="3" minlength="8" maxlength="1500" required placeholder="Ex.: minha torneira está vazando, o chuveiro queimou ou preciso limpar o sofá">'+esc(state.problem||'')+'</textarea><div data-home-type-choices></div><p role="alert"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
-  const form=target.querySelector('form'),input=form.querySelector('textarea'),choices=form.querySelector('[data-home-type-choices]');
+  const categories=serviceCategories();
+  target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Qual serviço você precisa?</h2><p class="qf-home-problem-sub">Escolha a profissão para encontrarmos quem pode ajudar.</p><p class="text--sm" style="margin:0 0 12px">Já tem conta? <button type="button" class="btn btn--outline" data-home-login-start style="padding:6px 12px;min-height:34px;font-size:13px">Entrar com Google ou telefone</button></p><form class="stack" data-home-problem novalidate><label for="home-service">Serviço<select class="input" id="home-service" required aria-describedby="home-service-error"><option value="">Selecione o serviço</option>'+categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join('')+'</select></label><label for="home-problem">Descreva o que você precisa<textarea class="input" id="home-problem" rows="3" minlength="8" maxlength="1500" required aria-describedby="home-problem-hint home-service-error" placeholder="Ex.: meu computador não liga">'+esc(state.problem||'')+'</textarea></label><p class="text--sm text--secondary" id="home-problem-hint">Explique em uma frase o motivo do chamado. O profissional verá a descrição antes de desbloquear o pedido.</p><p role="alert" id="home-service-error"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
+  const form=target.querySelector('form'),input=form.querySelector('textarea'),select=form.querySelector('select');
   target.querySelector('[data-home-login-start]').onclick=()=>login();
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
+  if(service)select.value=categories.find(c=>norm(c.nome)===norm(service))?.id||'';
   input.onfocus=()=>track('home_focus');
-  input.oninput=()=>{track('home_type');state.problem=input.value;choices.innerHTML='';form.querySelector('[role=alert]').textContent='';};
-  const choose=category=>showForm(category.nome,input.value.trim());
-  form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;if(problem.length<8){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Conte um pouco mais sobre o que precisa resolver.';input.focus();return;}
-   const matches=classify(problem),best=matches[0],second=matches[1];
-   // Profissão é decidida automaticamente. Nunca pedir ao cliente que escolha categoria.
-   if(best&&(best.score>=100||(best.score>=10&&(!second||best.score-second.score>=3)))){choose(best.category);return;}
-   // A falta de categoria não impede o cliente de continuar. A equipe pode classificar depois.
-   showForm('Outros serviços',problem);
-
+  input.oninput=()=>{input.removeAttribute('aria-invalid');track('home_type');state.problem=input.value;form.querySelector('[role=alert]').textContent='';};
+  select.onchange=()=>{select.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';};
+  form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;
+   // A escolha explícita usa o catálogo dos profissionais, inclusive categorias novas.
+   const category=categories.find(c=>c.id===select.value);
+   if(!category){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Selecione o serviço que você precisa.';select.setAttribute('aria-invalid','true');select.focus();return;}
+   if(problem.length<8||problem.length>1500){track('validation_error',{error_code:'description'});form.querySelector('[role=alert]').textContent='Descreva o que precisa ser feito, com 8 a 1.500 caracteres. Ex.: meu computador não liga.';input.setAttribute('aria-invalid','true');input.focus();return;}
+   showForm(category.nome,problem);
   };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
@@ -85,12 +91,13 @@
  }
  function showForm(service,problem){
   if(!service&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()){intro();return;}
+  if(service&&!serviceCategories().some(c=>norm(c.nome)===norm(service))){intro(problem||service);return;}
+  if(service&&String(problem||'').trim().length<8){intro(problem,service);return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
   try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
   const target=work();if(!target)return;
   target.innerHTML=g.QFAtendimento.html();
-  if(service==='Outros serviços')target.querySelector('[data-qf-atendimento]')?.insertAdjacentHTML('afterbegin','<p class="text--sm" role="status" style="color:#1458cc;background:#eef4ff;padding:12px;border-radius:12px">Não identificamos uma profissão exata, mas você pode enviar seu pedido. A categoria poderá ser revisada antes da distribuição, sem garantia de profissional disponível.</p>');
   g.QFAtendimento.mount(target,{embedded:true,service,problem:problem||state.problem},state.user);reveal();
  }
  async function detail(id,refresh=true){

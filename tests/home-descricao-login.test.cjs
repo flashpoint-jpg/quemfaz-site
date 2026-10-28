@@ -23,40 +23,44 @@ function page(){
  vm.runInNewContext(source,{window:w,console},{filename:'qf-pedido-home.js'});
  return {w,getNext:()=>last,close:()=>dom.window.close()};
 }
-function submit(w,description){
+function submit(w,description,category){
+ if(category)w.document.querySelector("#home-service").value=category;
  const textarea=w.document.querySelector('#home-problem');
  textarea.value=description;
  textarea.dispatchEvent(new w.Event('input',{bubbles:true}));
  w.document.querySelector('[data-home-problem]').dispatchEvent(new w.Event('submit',{cancelable:true,bubbles:true}));
 }
-test('rebocar parede identifica pedreiro sem exigir selecionar profissão',()=>{
+test('profissão escolhida preserva a descrição e não pede o serviço novamente',()=>{
  const p=page();p.w.QFPedidoHome.start();
- submit(p.w,'rebocar parede');
+ submit(p.w,'rebocar parede','cat_pedreiro');
  assert.equal(p.getNext().service,'Pedreiro');
  assert.equal(p.getNext().problem,'rebocar parede');
  assert.equal(p.w.document.querySelector('[data-home-type]'),null);
  p.close();
 });
-test('serviço não identificado avança sem obrigar escolha de profissão',()=>{
+test('descrição sem profissão pede escolha explícita sem criar Outros serviços',()=>{
  const p=page();p.w.QFPedidoHome.start();
  submit(p.w,'Preciso de ajuda em casa urgente');
- assert.equal(p.getNext().service,'Outros serviços');
- assert.equal(p.getNext().problem,'Preciso de ajuda em casa urgente');
+ assert.equal(p.getNext(),null);
+ assert.equal(p.w.document.querySelector('#home-problem').value,'Preciso de ajuda em casa urgente');
+ assert.match(p.w.document.querySelector('[role=alert]').textContent,/Selecione o serviço/);
  assert.equal(p.w.document.querySelector('[data-home-type]'),null);
  p.close();
 });
-test('soldar portão de ferro sugere serralheiro quando profissão está cadastrada',()=>{
+test('serralheiro selecionado mantém a descrição sobre soldar portão de ferro',()=>{
  const p=page();p.w.DB.categories().push({id:'cat_serralheiro',nome:'Serralheiro'});
  p.w.QFPedidoHome.start();
- submit(p.w,'conserto de portão soldar ferro');
+ submit(p.w,'conserto de portão soldar ferro','cat_serralheiro');
  assert.equal(p.getNext().service,'Serralheiro');
  assert.equal(p.getNext().problem,'conserto de portão soldar ferro');
  p.close();
 });
-test('soldar portão também avança sem serralheiro cadastrado',()=>{
+test('catálogo sem serralheiro preserva o problema sem inventar serviço genérico',()=>{
  const p=page();p.w.QFPedidoHome.start();
  submit(p.w,'soldar portão de ferro');
- assert.equal(p.getNext().service,'Outros serviços');
+ assert.equal(p.getNext(),null);
+ assert.equal(p.w.document.querySelector('#home-problem').value,'soldar portão de ferro');
+ assert.ok(p.w.document.querySelector('[role=alert]').textContent);
  p.close();
 });
 test('entrada por Google ou telefone é anunciada na tela inicial',()=>{
