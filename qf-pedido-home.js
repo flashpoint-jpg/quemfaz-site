@@ -168,12 +168,13 @@
   else if(state.mode==='intro')intro();
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
-  else orders();
+  else intro(); // Na entrada, nunca mostrar automaticamente os pedidos do cliente.
  }
  function install(){
   if(!g.PROAKI_APP||!g.Screens?.landing||!g.QFClienteAcesso||!g.QFAtendimento)return false;
   if(g.QFPedidoHome.installed)return true;g.QFPedidoHome.installed=true;
   const css=g.document.createElement('style');css.textContent='.qf-hero-search .qf-service-suggestions{position:static;max-height:220px;overflow:auto;margin-top:6px}.qf-home-orders{width:100%;max-width:100%;margin:0;padding:18px;border:1px solid #dce6f3;background:#fff;border-radius:20px;scroll-margin-top:14px;min-width:0;box-sizing:border-box}.qf-home-problem-title{font-size:22px;line-height:1.25;color:#1458cc;margin:0 0 6px}.qf-home-problem-sub{font-size:15px;color:#46566b;margin:0 0 14px}.qf-home-orders textarea{min-height:96px!important;height:auto!important;box-sizing:border-box;max-width:100%;width:100%;font-size:16px;resize:vertical}.qf-home-type-options{display:grid;gap:8px;margin-top:8px}.qf-home-orders__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.qf-home-orders__bar h2{font-size:21px;color:#1458cc;margin:0}.qf-home-orders__bar>div{display:flex;gap:8px;flex-wrap:wrap}.qf-home-orders .btn{min-height:44px;white-space:normal}.qf-home-orders__notice{padding:12px;border-radius:12px;background:#eef5ff;color:#1458cc;font-weight:700}.qf-home-orders__list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.qf-home-order{display:grid;gap:7px;text-align:left;width:100%;color:#173150;cursor:pointer}.qf-home-order>strong{font-size:18px}.qf-home-orders .view{min-height:0!important;max-width:100%;width:100%;padding:0!important;margin:0!important;box-sizing:border-box}.qf-home-orders [data-qf-atendimento-layout]{min-height:0!important;padding:0!important;justify-content:flex-start!important}.qf-home-orders .qf-chat-view{height:auto!important;min-height:0!important;padding:0!important}.qf-home-orders .qf-chat-list{max-height:50vh;overflow:auto;min-height:140px}.qf-home-orders .qf-chat-composer{position:static!important}.qf-home-orders [data-qf-atendimento]{box-shadow:none!important;border:0!important}.qf-home-orders [data-home-work]{min-width:0}.qf-home-orders .view>.row-between,.qf-home-orders .view>.row-between>.row{flex-wrap:wrap;gap:8px;max-width:100%}.qf-home-orders .qf-conversation-card .btn-row{display:grid!important;grid-template-columns:1fr!important}.qf-home-orders .qf-conversation-card .btn-row .btn{font-size:14px!important;padding:10px!important;word-break:normal!important;overflow-wrap:normal!important}.qf-home-orders .qf-cli-vagas__barras .is-on{background:#1469d2}.qf-home-more{border:1px solid #dce6f3;border-radius:12px;padding:12px;margin-top:12px}.qf-home-more>summary{color:#1458cc;font-weight:700;cursor:pointer}.qf-home-orders__bar .btn{font-size:13px;padding:9px 12px}@media(max-width:600px){.qf-home-orders{margin:0;padding:14px}.qf-home-orders__bar{gap:10px}.qf-home-orders__bar h2{font-size:19px}}';g.document.head.appendChild(css);
+  css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   originalNavigate=g.navigate;
   g.navigate=function(path,replace){if(inlinePath(path)){openPath(path);return;}return originalNavigate.apply(this,arguments);};
   const oldHome=g.Screens.clienteHomeRender;g.Screens.clienteHomeRender=()=>g.Screens.landing();
@@ -191,6 +192,39 @@
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
   },true);
+
+  // Atalhos públicos: não reutilizar o estado de pedidos do cliente para entrar como profissional.
+  g.document.addEventListener('click',function(e){
+    const professional=e.target.closest?.('.qf-home-prof-btn[data-nav="/auth/profissional/login"]');
+    if(professional){
+      e.preventDefault();e.stopImmediatePropagation();
+      state.mode='intro';state.pending=null;state.selected=null;
+      if(typeof originalNavigate==='function')originalNavigate.call(g,'/auth/profissional/login');
+      else g.location.hash='#/auth/profissional/login';
+      return;
+    }
+    const pricing=e.target.closest?.('button[data-nav="/como-funciona"]');
+    if(!pricing)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    let info=g.document.getElementById('qf-precos-duvidas');
+    if(!info){
+      info=g.document.createElement('section');
+      info.id='qf-precos-duvidas';info.className='qf-public-faq';
+      info.setAttribute('aria-label','Preços, planos e dúvidas');
+      info.innerHTML='<h3>Preços, planos e dúvidas</h3>'+
+        '<p><strong>Para clientes:</strong> publicar um pedido é grátis. Até quatro profissionais podem desbloquear o contato.</p>'+
+        '<p><strong>Para profissionais:</strong> no avulso, cada contato é pago individualmente, sem comissão por serviço. No Quem Faz Livre são R$ 39,90 por 30 dias, com desbloqueios compatíveis ilimitados; em serviços fechados e confirmados, 87% ficam com o profissional e 13% com o Quem Faz.</p>'+
+        '<p><strong>Pagamento e repasse Pix após o serviço:</strong> a automatização ainda depende de homologação bancária. Não significa recebimento ou repasse confirmado.</p>'+
+        '<p>Você acompanha seu pedido em <strong>Meus pedidos</strong>. Profissionais podem acessar cadastro, plano e carteira pela <strong>Área de profissionais</strong>.</p>';
+      pricing.insertAdjacentElement('afterend',info);
+      pricing.setAttribute('aria-controls','qf-precos-duvidas');
+      pricing.setAttribute('aria-expanded','true');
+    }else{
+      info.hidden=!info.hidden;
+      pricing.setAttribute('aria-expanded',String(!info.hidden));
+    }
+  },true);
+
   const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(g.QFAtendimento?.hasGoogleDraft?.())bindHome();else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
   return true;
  }
