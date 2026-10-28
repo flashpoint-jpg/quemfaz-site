@@ -6,7 +6,7 @@ const listSql=fs.readFileSync('supabase/migrations/20261028191000_admin_pre_cada
 
 test('Painel administrativo carrega com sintaxe válida e conexão realmente existente',()=>{
  new vm.Script(front,{filename:'qf-admin-cadastro-pago.js'});
- assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261028-pre-cadastros/);
+ assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261028-saldo-movimentacoes/);
  assert.match(front,/global\.QFAdminCloud/,'usa cliente real do administrativo');
  assert.doesNotMatch(front,/global\.QFCloud\b/,'não usar o nome errado que escondia cadastros');
  assert.match(admin,/global\.QFAdminCloud\s*=/);
@@ -43,4 +43,24 @@ test('Indicadores de caixa existentes seguem protegidos e não confundem saldo c
  'recebido_avulso_inicial_centavos','recebido_livre_inicial_centavos','saldo_carteiras_total_centavos'])
  assert.ok(migration.includes("'"+k+"'"),k);
  assert.ok(!migration.includes("'receita_efetiva'"));
+});
+
+test('Saldo das carteiras é exclusivo de Movimentações e ausente da ficha de cadastro',()=>{
+ const pre=front.slice(front.indexOf('  function render(panel,s,d){'),front.indexOf('  async function load(panel){'));
+ const route=front.slice(front.indexOf('  function host(){'),front.indexOf('  function insertMenu(){'));
+ assert.ok(pre.length>1000 && route.length>80,'funções principais encontradas');
+ assert.doesNotMatch(pre,/saldo_carteiras_total_centavos|qf-pre-finance|Conciliação e valores|Carteiras \(inclui outros créditos\)/);
+ assert.ok(route.includes(String.raw`if(!/^#\/admin\/planos`),'cadastros somente em Planos');
+ for(const other of ['dashboard','profissionais','financeiro','clientes'])assert.ok(!route.includes(other),'cadastro indevidamente em '+other);
+ assert.match(front,/function movementHost\(\)/);
+ assert.ok(front.includes(String.raw`/^#\/admin\/movimentacoes`),'saldo somente em Movimentações');
+ assert.match(front,/function renderWallet\(panel, data\)/);
+ assert.match(front,/data\.saldo_carteiras_total_centavos/);
+ assert.match(front,/Créditos nas carteiras dos profissionais/);
+ assert.match(front,/Não é o faturamento do Quem Faz/);
+ assert.ok(admin.includes("pattern: '/admin/movimentacoes'"));
+ assert.ok(admin.includes("label: 'Movimentações'"));
+ const fin=fs.readFileSync('qf-admin-financeiro.js','utf8');
+ assert.ok(fin.includes("'/admin/financeiro','/admin/movimentacoes',"),"Movimentações visível no menu principal");
+ assert.ok(admin.includes("qf-admin-financeiro.js?v=20261028-movimentacoes-visible"),"Cache do menu renovado");
 });

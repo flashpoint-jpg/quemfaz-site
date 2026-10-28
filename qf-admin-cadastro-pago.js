@@ -6,6 +6,8 @@
   const PANEL='qf-admin-cadastro-pago';
   const state={busca:'',situacao:'todos',offset:0,limite:30};
   let busy=false, lastAt=0, installed=false;
+  const WALLET_PANEL='qf-admin-saldo-carteiras';
+  let walletBusy=false, walletUpdatedAt=0;
   const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
   const asNum=v=>Math.max(0,Math.floor(Number(v)||0));
   const money=v=>(asNum(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -14,7 +16,7 @@
   const api=()=>global.QFAdminCloud?.enabled?global.QFAdminCloud.client:null;
   const path=()=>String(global.location.hash||'');
   function host(){
-    if(!/^#\/admin\/(?:dashboard|planos|profissionais|financeiro)(?:$|[/?])/.test(path()))return null;
+    if(!/^#\/admin\/planos(?:$|[/?])/.test(path()))return null;
     if(!document.body.classList.contains('qf-adm-body')||!admin())return null;
     return document.getElementById('app-content');
   }
@@ -77,11 +79,7 @@
       +'<div class="qf-pre-list-meta">'+total+' resultado(s) · Mostrando '+entries.length+' a partir de '+(state.offset+1)+'</div>'
       +'<div class="qf-pre-list">'+(entries.length?entries.map(record).join(''):'<p class="qf-pre-empty">Nenhum pré-cadastro encontrado para este filtro.</p>')+'</div>'
       +'<div class="qf-pre-pager">'+(state.offset>0?'<button type="button" class="btn btn--outline" data-qf-pre-previous>Anterior</button>':'')
-      +(state.offset+entries.length<total?'<button type="button" class="btn btn--outline" data-qf-pre-next>Próximos</button>':'')+'</div>'
-      +'<details class="qf-pre-finance"><summary>Conciliação e valores</summary><p>Recebido em crédito pré-pago Avulso: <strong>'+money(s.recebido_avulso_inicial_centavos)+'</strong> · Livre inicial recebido: <strong>'+money(s.recebido_livre_inicial_centavos)+'</strong></p>'
-      +'<p>Carteiras (inclui outros créditos): <strong>'+money(s.saldo_carteiras_total_centavos)+'</strong>. Carteira é saldo do profissional, não faturamento.</p>'
-      +'<p>Assinaturas Livre vigentes: '+asNum(s.livres_vigentes)+' · Vencidas: '+asNum(s.livres_vencidos)+'</p>'
-      +'<p>O status é o último registrado pela plataforma. A recarga só é liberada após conciliação bancária; atualizar a lista não confirma pagamentos na Efí.</p></details>';
+      +(state.offset+entries.length<total?'<button type="button" class="btn btn--outline" data-qf-pre-next>Próximos</button>':'')+'</div>';
     const form=panel.querySelector('[data-qf-pre-form]');
     form.addEventListener('submit',e=>{
       e.preventDefault();state.busca=form.elements.busca.value.trim();state.situacao=form.elements.situacao.value;state.offset=0;load(panel);
@@ -113,8 +111,58 @@
       if(retry)retry.addEventListener('click',()=>load(panel));
     }finally{busy=false;panel.removeAttribute('aria-busy');}
   }
+  // Os créditos de carteiras pertencem somente a Movimentações, não à ficha de
+  // cliente, profissional, nem à relação de pré-cadastros/planos.
+  function movementHost(){
+    if(!/^#\/admin\/movimentacoes(?:$|[/?])/.test(path()))return null;
+    if(!document.body.classList.contains('qf-adm-body')||!admin())return null;
+    return document.getElementById('app-content');
+  }
+  function renderWallet(panel, data){
+    const saldo=money(data.saldo_carteiras_total_centavos);
+    panel.innerHTML='<div class="qf-wallet-top"><div><h2>Créditos nas carteiras dos profissionais</h2>'
+      +'<p>Saldo total ainda disponível para desbloqueios</p></div>'
+      +'<button type="button" class="btn btn--outline" data-qf-wallet-refresh>Atualizar saldo</button></div>'
+      +'<strong class="qf-wallet-amount">'+esc(saldo)+'</strong>'
+      +'<p class="qf-wallet-note">Esse valor pertence às carteiras dos profissionais, incluindo recargas, ajustes e bônus remanescentes. '
+      +'Não é o faturamento do Quem Faz nem dinheiro disponível para saque da plataforma.</p>';
+    const refresh=panel.querySelector('[data-qf-wallet-refresh]');
+    if(refresh)refresh.addEventListener('click',()=>{walletUpdatedAt=0;loadWallet(panel);});
+  }
+  async function loadWallet(panel){
+    const client=api();
+    if(!client||!admin()){
+      panel.innerHTML='<p>Entre como administrador para consultar movimentações.</p>';return;
+    }
+    if(walletBusy)return;
+    walletBusy=true;walletUpdatedAt=Date.now();
+    panel.setAttribute('aria-busy','true');
+    try{
+      const {data,error}=await client.rpc('qf_admin_cadastro_pagamentos');
+      if(error||!data)throw Error('Não foi possível consultar as carteiras.');
+      if(panel.isConnected&&admin())renderWallet(panel,data);
+    }catch(err){
+      if(panel.isConnected)panel.innerHTML='<p class="qf-pre-error">'+esc(err.message||'Erro ao consultar saldos')+'</p>'
+        +'<button type="button" class="btn btn--outline" data-qf-wallet-retry>Tentar novamente</button>';
+      const b=panel.querySelector('[data-qf-wallet-retry]');
+      if(b)b.addEventListener('click',()=>loadWallet(panel));
+    }finally{walletBusy=false;panel.removeAttribute('aria-busy');}
+  }
+  function placeWallet(){
+    const h=movementHost();if(!h)return;
+    let panel=h.querySelector('#'+WALLET_PANEL);
+    if(!panel){
+      panel=document.createElement('section');panel.id=WALLET_PANEL;
+      panel.className='card qf-wallet-panel';
+      panel.setAttribute('aria-label','Saldo das carteiras dos profissionais em movimentações');
+      panel.innerHTML='<p>Carregando saldo das carteiras...</p>';
+      h.prepend(panel);walletUpdatedAt=0;
+    }
+    if(!walletBusy&&(!walletUpdatedAt||Date.now()-walletUpdatedAt>120000))loadWallet(panel);
+  }
   function place(){
     insertMenu();
+    placeWallet();
     const h=host();if(!h)return;
     let panel=h.querySelector('#'+PANEL);
     if(!panel){
@@ -135,7 +183,10 @@
       +'.qf-pre-filters{display:flex;align-items:end;gap:10px;flex-wrap:wrap}.qf-pre-filters label{display:grid;gap:5px;flex:1;min-width:160px;font-size:13px;font-weight:650}.qf-pre-filters input,.qf-pre-filters select{min-height:40px;width:100%;padding:8px;border:1px solid #c8d6e7;border-radius:9px;background:#fff;color:#17324d}'
       +'.qf-pre-list-meta{font-size:12px;color:#5f7182;margin:14px 0 7px}.qf-pre-list{display:grid;gap:8px}.qf-pre-record{border:1px solid #d9e3ed;border-radius:12px;background:#fff}.qf-pre-record summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px;cursor:pointer;flex-wrap:wrap}.qf-pre-record-head{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}.qf-pre-record-head b{color:#18385c;font-size:14px}.qf-pre-record-head small{font-size:12px;color:#68798a}.qf-pre-status{font-size:12px;color:#246347;font-weight:700}.qf-pre-status.is-pending{color:#955207}'
       +'.qf-pre-detail{border-top:1px solid #e6ecf3;padding:12px;display:grid;gap:7px}.qf-pre-detail p{margin:0;font-size:13px;overflow-wrap:anywhere}.qf-pre-detail a{color:#1352a5;text-decoration:underline}.qf-pre-note{color:#86521b}.qf-pre-finance{font-size:13px;margin:12px 0 0}.qf-pre-finance summary{font-weight:700;cursor:pointer}.qf-pre-finance p{margin:6px 0}.qf-pre-pager{display:flex;gap:8px;margin:12px 0}.qf-pre-error{color:#ac2525}.qf-pre-empty{padding:12px;background:#f5f7fa;color:#68798a;border-radius:8px}'
-      +'.qf-pre-nav-mark{font-size:20px;color:#fa8b22}@media(max-width:700px){.qf-pre-panel{padding:12px!important}.qf-pre-stats{grid-template-columns:1fr 1fr}.qf-pre-stat strong{font-size:20px}.qf-pre-record summary{align-items:flex-start}}';
+      +'.qf-wallet-panel{padding:18px!important;margin:0 0 18px!important;border:1px solid #dce5f0!important;border-radius:18px!important;background:#fff!important}'
+      +'.qf-wallet-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.qf-wallet-top h2{margin:0;font-size:17px;color:#133f7d}.qf-wallet-top p{font-size:12px;color:#536477;margin:4px 0}'
+      +'.qf-wallet-amount{display:block;font-size:27px;letter-spacing:-.02em;color:#1458a8;margin:14px 0 8px}.qf-wallet-note{font-size:13px;line-height:1.5;color:#5b6d7e;margin:0}'
+      +'.qf-pre-nav-mark{font-size:20px;color:#fa8b22}@media(max-width:700px){.qf-pre-panel,.qf-wallet-panel{padding:12px!important}.qf-pre-stats{grid-template-columns:1fr 1fr}.qf-pre-stat strong{font-size:20px}.qf-pre-record summary{align-items:flex-start}}';
     document.head.appendChild(css);
     let queued=false;
     new MutationObserver(()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;place();},90);}).observe(document.body,{childList:true,subtree:true});
