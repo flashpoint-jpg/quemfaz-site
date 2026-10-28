@@ -54,11 +54,22 @@ test('Acompanhamento: confirmar conclusão, corrigir, não contratar e cancelar 
     dom.window.close();
   }
 });
-test('Acompanhamento: confirmação exige código e conclusão; demais respostas não exibem formulário',async()=>{
+test('Acompanhamento: conclusão exige código; relato independente não conclui nem cobra',async()=>{
   const {dom,box,calls}=await screen('em_negociacao',[proposal()]);
-  await box.querySelector('form').onsubmit({preventDefault(){}});assert.equal(calls.length,1);
-  assert.match(box.querySelector('article [role=status]').textContent,/Confira o código/);dom.window.close();
-  for(const f of [{...proposal(),status:'confirmado'},{...proposal(),cliente_resposta:'divergencia'},{...proposal(),cliente_resposta:'nao_contratou'},{...proposal(),status:'recusado'},{...proposal(),valor_centavos:null,status:'pendente'}]) {
-    const s=await screen('em_negociacao',[f]);assert.equal(s.box.querySelector('form'),null);s.dom.window.close();
+  await box.querySelector('[data-qf-owner-concluir]').onsubmit({preventDefault(){}});
+  assert.equal(calls.length,1);
+  assert.match(box.querySelector('article [role=status]').textContent,/Confira o código/);
+  dom.window.close();
+  for(const f of [{...proposal(),status:'confirmado'},{...proposal(),cliente_resposta:'divergencia'},{...proposal(),cliente_resposta:'nao_contratou'}]) {
+    const s=await screen('em_negociacao',[f]);
+    assert.equal(s.box.querySelector('[data-qf-owner-concluir]'),null);
+    assert.equal(s.box.querySelector('[data-qf-owner-relato]'),null);
+    s.dom.window.close();
+  }
+  for(const f of [{...proposal(),status:'recusado'},{...proposal(),valor_centavos:null,status:'pendente'}]){
+    const s=await screen('em_negociacao',[f]);
+    assert.ok(s.box.querySelector('[data-qf-owner-relato]'),'cliente pode relatar sem depender da declaração do profissional');
+    assert.equal(s.box.querySelector('[data-qf-owner-concluir]'),null,'relato não é confirmação de conclusão');
+    s.dom.window.close();
   }
 });
