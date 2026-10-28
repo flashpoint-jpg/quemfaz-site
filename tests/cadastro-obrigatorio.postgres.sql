@@ -148,3 +148,26 @@ DO $$ BEGIN
  THEN RAISE EXCEPTION 'Falha: Livre não ativo ou cobrança dupla'; END IF;
 END $$;
 SELECT 'CADEIA DE PAGAMENTO SIMULADA OK' AS fixture_result;
+
+-- 8. Indicadores administrativos somente para admin, sem transformar saldo em receita.
+CREATE FUNCTION private.qf_is_admin() RETURNS boolean LANGUAGE sql AS
+$$ SELECT current_setting('test.admin',true)='true' $$;
+\i supabase/2026-10-28-cadastro-pagante-kpis.sql
+SET test.admin='false';
+DO $$ DECLARE blocked boolean:=false; BEGIN
+ BEGIN PERFORM public.qf_admin_cadastro_pagamentos();
+ EXCEPTION WHEN insufficient_privilege THEN blocked=true; END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Falha: indicadores financeiros expostos sem admin'; END IF;
+END $$;
+SET test.admin='true';
+DO $$ DECLARE j jsonb; BEGIN
+ SELECT public.qf_admin_cadastro_pagamentos() INTO j;
+ IF (j->>'avulsos_iniciais_pagos')::integer<>1 OR
+    (j->>'livres_iniciais_pagos')::integer<>1 OR
+    (j->>'recebido_avulso_inicial_centavos')::integer<>1300 OR
+    (j->>'recebido_livre_inicial_centavos')::integer<>3990 OR
+    (j->>'saldo_carteiras_total_centavos')::integer<>1300 THEN
+    RAISE EXCEPTION 'Falha: admin apresentou dados financeiros divergentes %', j;
+ END IF;
+END $$;
+SELECT 'ADMIN PAGAMENTOS SIMULADOS OK' AS admin_fixture;
