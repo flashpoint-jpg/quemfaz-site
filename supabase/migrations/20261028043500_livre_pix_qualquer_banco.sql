@@ -5,6 +5,9 @@ create table if not exists private.qf_livre_pix_config(
  habilitado boolean not null default false,
  homologado boolean not null default false,
  pix_send_aprovado boolean not null default false,
+ webhook_verificado boolean not null default false,
+ limites_verificados boolean not null default false,
+ tarifas_verificadas boolean not null default false,
  atualizado_em timestamptz not null default now(),
  observacao text not null default 'Aguardando pix.send, limites da Efí, webhook, teste de titularidade e conciliação'
 );
@@ -142,7 +145,7 @@ as $$
 declare f public.qf_comissao13_fechamentos; r private.qf_livre_pix_recebedores;
  b private.qf_livre_pix_pagamentos;
 begin
- if not exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado)
+ if not exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado and webhook_verificado and limites_verificados and tarifas_verificadas)
  then return jsonb_build_object('ok',false,'reason','repasse_em_preparacao');end if;
  if p_segredo is null or p_segredo !~ '^[a-f0-9]{64}$' then return jsonb_build_object('ok',false,'reason','acesso_invalido');end if;
  perform 1 from public.qf_chamados c join private.qf13_codigos_pedido k on k.chamado_id=c.id
@@ -183,7 +186,7 @@ returns jsonb language plpgsql stable security definer set search_path to ''
 as $$
 declare b private.qf_livre_pix_pagamentos;
 begin
- if not exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado)
+ if not exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado and webhook_verificado and limites_verificados and tarifas_verificadas)
  then return jsonb_build_object('ok',false,'reason','desabilitado');end if;
  select * into b from private.qf_livre_pix_pagamentos where id=p_id;
  if not found then return jsonb_build_object('ok',false,'reason','nao_encontrado');end if;
@@ -201,7 +204,7 @@ returns jsonb language sql stable security definer set search_path to ''
 as $$
  select coalesce(jsonb_agg(x),'[]'::jsonb) from
  (select id from private.qf_livre_pix_pagamentos
- where status in('pix_pronto','pago','envio_solicitado') and criado_em>now()-interval '30 days'
+ where status in('pix_pronto','pago','envio_solicitado')
  order by criado_em asc limit 50) x
 $$;
 revoke all on function public.qf_livre_pix_pendentes() from public,anon,authenticated;
@@ -281,7 +284,7 @@ begin
  then return jsonb_build_object('ok',false,'reason','acesso_invalido');end if;
  select * into b from private.qf_livre_pix_pagamentos where chamado_id=p_chamado_id and fechamento_id=p_fechamento_id;
  return jsonb_build_object('ok',true,
- 'disponivel',exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado),
+ 'disponivel',exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado and webhook_verificado and limites_verificados and tarifas_verificadas),
  'status',coalesce(b.status,'nao_iniciado'),'valor_centavos',b.valor_centavos,
  'repasse_centavos',b.repasse_centavos,'comissao_centavos',b.comissao_centavos,
  'pix_copia_cola',case when b.status='pix_pronto' then b.pix_copia_cola else null end,
@@ -324,7 +327,7 @@ returns trigger language plpgsql security definer set search_path to ''
 as $$
 begin
  if new.status='confirmado' and new.cobranca_status='pendente' and new.comissao_centavos>0 then
-  if (exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado)
+  if (exists(select 1 from private.qf_livre_pix_config where id and habilitado and homologado and pix_send_aprovado and webhook_verificado and limites_verificados and tarifas_verificadas)
     and exists(select 1 from private.qf_livre_pix_recebedores
       where profissional_id=new.profissional_id and status='validado' and validado_em is not null)
     and exists(select 1 from public.qf_desbloqueios d

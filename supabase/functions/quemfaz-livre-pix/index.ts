@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import forge from "npm:node-forge@1.3.1";
+import {gotIncoming,sentVerified} from "./provas.mjs";
 
 // Repasses pós-serviço do Quem Faz Livre: NÃO é split Pix entre contas.
 // Paga o QR do Quem Faz e só depois envia 87% à chave do próprio banco do profissional.
@@ -52,25 +53,14 @@ async function rpc(name:string,args:Record<string,unknown>){
  return data;
 }
 const cents=(v:unknown)=>Math.round(Number(v||0)*100);
-function gotIncoming(cob:any,b:any){
- if(cob?.txid!==b.txid||cents(cob?.valor?.original)!==Number(b.valor_centavos)||cob.status!=="CONCLUIDA")return null;
- const pays=Array.isArray(cob.pix)?cob.pix:[];
- if(!pays.length||cents(pays.reduce((n:number,p:any)=>n+Number(p.valor||0),0))!==Number(b.valor_centavos)
- ||pays.some((p:any)=>!p.endToEndId||String(p.endToEndId).length<16))return null;
- return pays.map((p:any)=>String(p.endToEndId)).sort().join(",");
-}
-function sentVerified(sent:any,b:any){
- return sent?.status==="REALIZADO"&&sent.idEnvio===b.id_envio&&
-  cents(sent.valor)===Number(b.repasse_centavos)&&sent.favorecido?.chave===b.chave_pix&&
-  typeof sent.endToEndId==="string"&&sent.endToEndId.length>=16;
-}
 async function notify(b:any,credit:boolean){
  try{await rpc("qf_livre_pix_avisar",{p_id:b.id,p_creditado:credit});}catch(e){console.warn("notificacao_pendente",String((e as Error).message||e));}
 }
 async function syncOne(c:Deno.HttpClient,t:string,pid:string,allowSend:boolean){
  const b=await rpc("qf_livre_pix_instrucao",{p_id:pid});
  if(!b?.ok)return {ok:false,reason:b?.reason||"indisponivel"};
- if(b.status==="repassado")return {ok:true,status:"repassado"};
+ if(b.status==="repassado"){await notify(b,false);await notify(b,true);return {ok:true,status:"repassado"};}
+ if(!["pix_pronto","pago","envio_solicitado"].includes(b.status))return {ok:false,reason:"estado_nao_processavel"};
  // Antes de enviar qualquer Pix, a entrada bancária deve estar efetivamente conciliada.
  if(["pix_pronto","pago","envio_solicitado"].includes(b.status)){
   const incoming=await api(c,t,"GET","/v2/cob/"+encodeURIComponent(b.txid));
@@ -81,10 +71,9 @@ async function syncOne(c:Deno.HttpClient,t:string,pid:string,allowSend:boolean){
    p_id:b.id,p_txid:b.txid,p_e2e:e2e,p_valor:b.valor_centavos
   });
   if(!result?.ok)return {ok:false,reason:"entrada_nao_conciliada"};
-  if(result.novo)await notify(b,false);
+  await notify(b,false);
  }
  // SEJA conservador com a transferência: primeiro consulta idEnvio (idempotência fixa).
- if(!allowSend)return {ok:true,status:"pago"};
  const sent=await api(c,t,"GET","/v2/gn/pix/enviados/id-envio/"+encodeURIComponent(b.id_envio));
  if(sent.ok){
   if(sentVerified(sent.data,b)){
@@ -92,13 +81,16 @@ async function syncOne(c:Deno.HttpClient,t:string,pid:string,allowSend:boolean){
     p_id:b.id,p_id_envio:b.id_envio,p_e2e:sent.data.endToEndId,p_valor:b.repasse_centavos
    });
    if(!done?.ok)return {ok:false,reason:"saida_nao_conciliada"};
-   if(done.novo)await notify(b,true);
+   await notify(b,true);
    return {ok:true,status:"repassado"};
   }
   if(sent.data?.status==="EM_PROCESSAMENTO")return {ok:true,status:"repasse_processando"};
   return {ok:false,reason:"repasse_requer_analise"};
  }
  if(sent.status!==404)return {ok:false,reason:"consulta_envio_indisponivel"};
+ if(!allowSend)return {ok:true,status:"pago"};
+ const claim=await rpc("qf_livre_pix_reservar_envio",{p_id:b.id});
+ if(!claim?.ok)return {ok:false,reason:claim?.reason||"envio_bloqueado"};
  // Só envia com a entrada conciliada; passa CPF/CNPJ do titular para recusar chave de terceiro.
  const fav=String(b.documento).length===14?{chave:b.chave_pix,cnpj:b.documento}:{chave:b.chave_pix,cpf:b.documento};
  const payment=await api(c,t,"PUT","/v3/gn/pix/"+encodeURIComponent(b.id_envio),{
@@ -107,7 +99,7 @@ async function syncOne(c:Deno.HttpClient,t:string,pid:string,allowSend:boolean){
   favorecido:fav
  });
  // Falha 5xx é ambígua: nunca cria outro idEnvio; consulta o MESMO no próximo ciclo.
- if(!payment.ok)return {ok:false,reason:"envio_aguardando_verificacao"};
+ if(!payment.ok)return {ok:false,status:"repasse_processando",reason:"envio_aguardando_verificacao"};
  if(payment.data?.idEnvio!==b.id_envio||cents(payment.data?.valor)!==Number(b.repasse_centavos))
  return {ok:false,reason:"resposta_envio_divergente"};
  return {ok:true,status:"repasse_processando"};

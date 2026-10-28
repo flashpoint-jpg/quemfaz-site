@@ -10,9 +10,9 @@ const pro=read('qf-livre.js');
 const cliente=read('qf-acompanhamento.js');
 
 test('profissional informa APENAS a chave Pix do banco atual',()=>{
- assert.match(pro,/Receba na sua própria conta Pix/);
- assert.match(pro,/Não é necessário abrir uma conta Efí/);
- assert.match(pro,/qf_livre_pix_conta_cadastrar/);
+ assert.match(pro,/Receba na conta que você já usa/);
+ assert.match(pro,/Não precisa abrir conta Efí/);
+ assert.match(pro,/qf_livre_pix_chaves/);
  assert.doesNotMatch(pro,/name="contaEfi"/);
  assert.match(sql,/p_chave_pix text/);
 });
@@ -37,7 +37,7 @@ test('repasses usam apenas saldo de Pix recebido e ID do envio fixo',()=>{
  assert.match(edge,/b.id_envio/);
  assert.match(edge,/idEnvio!==b.id_envio/);
  assert.match(edge,/sentVerified/);
- assert.match(edge,/status==="REALIZADO"/);
+ assert.match(read('supabase/functions/quemfaz-livre-pix/provas.mjs'),/status==='REALIZADO'/);
  assert.match(sql,/saida_e2eid text unique/);
 });
 test('titularidade é verificada pela Efí ao enviar, usando CPF/CNPJ',()=>{
