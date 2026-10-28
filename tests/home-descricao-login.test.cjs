@@ -54,3 +54,14 @@ test('entrada por Google ou telefone é anunciada na tela inicial',()=>{
  assert.ok(p.w.document.querySelector('[data-home-login] input[type="tel"]'));
  p.close();
 });
+
+test('descrição informada evita perguntas repetidas sobre tipo e tamanho',()=>{
+ const atendimento=require('../qf-atendimento.js');
+ const a={servico:'Pedreiro',__servicePrefilled:true,__problem:'rebocar parede',detalhes:'parede',escopo:'avaliar'};
+ const questions=atendimento.stages(a).flatMap(s=>s.questions.map(q=>q.key));
+ assert.equal(questions.includes('servico'),false);
+ assert.equal(questions.includes('detalhes'),false);
+ assert.equal(questions.includes('escopo'),false);
+ assert.equal(questions.includes('cidade'),true);
+ assert.equal(questions.includes('contato'),true);
+});
