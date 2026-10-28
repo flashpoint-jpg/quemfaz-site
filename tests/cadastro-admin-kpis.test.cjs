@@ -10,7 +10,7 @@ test('Card administrativo carrega RPC protegida sem contadores ficticios',()=>{
  assert.match(front,/saldo antecipado do profissional não é receita reconhecida/);
 });
 test('Servidor exige admin e diferencia saldo, pagamentos e assinaturas',()=>{
- assert.match(migration,/not private\.qf_is_admin\(\)/);
+ assert.match(migration,/not private\.qf_is_admin\(\)/i);
  for(const k of ['pre_cadastros_pendentes','pre_cadastros_abandonados','pagos_ainda_nao_resgatados',
  'profissionais_ativos','avulsos_iniciais_pagos','livres_iniciais_pagos','livres_vigentes','livres_vencidos',
  'recebido_avulso_inicial_centavos','recebido_livre_inicial_centavos','saldo_carteiras_total_centavos'])
