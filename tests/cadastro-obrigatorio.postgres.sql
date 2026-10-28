@@ -171,3 +171,30 @@ DO $$ DECLARE j jsonb; BEGIN
  END IF;
 END $$;
 SELECT 'ADMIN PAGAMENTOS SIMULADOS OK' AS admin_fixture;
+
+-- 9. Pré-cadastros visíveis no admin ANTES de pagar e invisíveis a não administradores.
+\i supabase/migrations/20261028191000_admin_pre_cadastros.sql
+SET test.admin='false';
+DO $$ DECLARE bloqueou boolean:=false; BEGIN
+ BEGIN PERFORM public.qf_admin_pre_cadastros();
+ EXCEPTION WHEN insufficient_privilege THEN bloqueou=true; END;
+ IF NOT bloqueou THEN RAISE EXCEPTION 'Pré-cadastros expostos a usuário não administrador'; END IF;
+END $$;
+SET test.admin='true';
+DO $$ DECLARE d jsonb; it jsonb; BEGIN
+ SELECT public.qf_admin_pre_cadastros(50,0,'','todos') INTO d;
+ IF (d->>'total')::integer<>3 THEN RAISE EXCEPTION 'Esperados três pré-cadastros: %',d; END IF;
+ SELECT public.qf_admin_pre_cadastros(50,0,'intruso','pendente') INTO d;
+ IF (d->>'total')::integer<>1 THEN RAISE EXCEPTION 'Não encontrou interessado não pago: %',d; END IF;
+ it:=d->'itens'->0;
+ IF it->>'status'<>'pendente' OR it->>'etapa'<>'aguardando_pagamento'
+    OR it->>'profissional_id' IS NOT NULL
+    OR it ? 'segredo' OR it ? 'checkout_url' THEN
+   RAISE EXCEPTION 'Dados incorretos ou segredos expostos: %',it;
+ END IF;
+ SELECT public.qf_admin_pre_cadastros(50,0,'avulso@exemplo.com','ativado') INTO d;
+ IF (d->>'total')::integer<>1 OR (d->'itens'->0->>'perfil_ativo')::boolean IS NOT TRUE THEN
+    RAISE EXCEPTION 'Ativação paga não apareceu no painel: %',d;
+ END IF;
+END $$;
+SELECT 'PRE-CADASTROS VISIVEIS E PROTEGIDOS OK' AS cadastros_admin;
