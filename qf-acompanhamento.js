@@ -16,17 +16,34 @@
  function lastId(){try{const v=g.localStorage.getItem(prefix+'ultimo');return /^[a-f0-9-]{36}$/i.test(v||'')?v:'';}catch(_){return '';}}
  async function cancelar(id){const secret=g.localStorage.getItem(prefix+id);if(!secret)throw Error('Abra este pedido no navegador ou aparelho em que você o publicou.');const r=await g.fetch(url.replace('qf13_acompanhar','qf13_cancelar_pedido'),{method:'POST',cache:'no-store',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({p_chamado_id:id,p_segredo:secret})});const out=await r.json().catch(()=>null);if(!r.ok||!out?.ok)throw Error(out?.reason==='ja_desbloqueado'?'Um profissional já desbloqueou este pedido. Fale com a equipe Quem Faz para cancelar.':'Não foi possível cancelar. Tente novamente.');return out;}
  async function api(id,args={}){const secret=g.localStorage.getItem(prefix+id);if(!secret)throw Error('Abra este pedido no navegador ou aparelho em que você o publicou.');const r=await g.fetch(url,{method:'POST',cache:'no-store',headers:{apikey:key,'Content-Type':'application/json'},body:JSON.stringify({p_chamado_id:id,p_segredo:secret,...args})});const out=await r.json();if(!r.ok||!out?.ok)throw Error(({codigo_obrigatorio:'Informe os seis dígitos do código do pedido.',codigo_invalido:'Código incorreto. Confira o código deste pedido.',limite_codigo:'Limite de tentativas. Aguarde uma hora.',conclusao_obrigatoria:'Confirme a conclusão do serviço.',valor_alterado:'O valor foi atualizado. Toque em Atualizar acompanhamento e confira antes de confirmar.',estado_invalido:'Essa proposta não está mais disponível. Atualize o acompanhamento.',outro_profissional_contratado:'Você já confirmou outro profissional neste pedido.',resposta_indisponivel:'Contratação já confirmada. Fale com o suporte para revisar.'})[out?.reason]||'Não foi possível validar o acesso a este pedido. Abra no navegador em que fez a publicação.');return out;}
+ async function informarContratacao(id,fechamento,valor){
+  const secret=g.localStorage.getItem(prefix+id);
+  if(!secret)throw Error('Abra este pedido no navegador em que foi publicado.');
+  const response=await g.fetch(url.replace('qf13_acompanhar','qf13_cliente_informar_fechamento'),{
+   method:'POST',cache:'no-store',headers:{apikey:key,'Content-Type':'application/json'},
+   body:JSON.stringify({p_chamado_id:id,p_segredo:secret,p_fechamento:fechamento,p_valor_centavos:valor})
+  });
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||!data?.ok){
+   const reason=data?.reason;
+   const messages={acesso_invalido:'Pedido não reconhecido neste aparelho.',valor_invalido:'Confira o valor informado.',ja_declarado:'Este atendimento já tem uma resposta. Atualize o pedido.',outro_profissional_contratado:'Já existe outro profissional contratado para esse pedido.',fechamento_indisponivel:'Este profissional não está disponível para confirmação.'};
+   throw Error(messages[reason]||'Não conseguimos registrar a declaração. Atualize o pedido e tente novamente.');
+  }
+  return data;
+ }
  async function mountList(container){
   container.querySelectorAll('[data-qf-list-code]').forEach(el=>el.remove());
  }
  const money=v=>(v/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  function profissionalHtml(f,codigo){
   const confirmado=f.status==='confirmado',pendente=['informado','negociando'].includes(f.status)&&f.valor_centavos!=null&&(!f.cliente_resposta||f.cliente_resposta==='confirmado'||f.cliente_resposta==='negociando');
+  const semDeclaracao=['pendente','negociando','recusado'].includes(f.status)&&!f.cliente_resposta&&!pendente;
   return '<article class="card stack--sm" data-qf-owner-fechamento="'+esc(f.id)+'"><h2 class="h3">'+esc(f.profissional)+'</h2>'+
    (f.plano_livre_ativo===true?'<span class="badge badge--navy">Quem Faz Livre</span>':'')+
    (confirmado?'<p data-qf-owner-saved><strong>Contratação confirmada por '+esc(money(f.valor_centavos))+'.</strong></p>':
     pendente?'<p style="padding:12px;background:#fff8ef;border:1px solid #efaa57;border-radius:12px">'+esc(f.profissional)+' apresentou um orçamento de <strong>'+esc(money(f.valor_centavos))+'</strong>. Você contratou esse serviço?</p><div class="btn-row">'+(f.etapas_separadas&&f.cliente_resposta!=='confirmado'?'<button class="btn btn--primary" type="button" data-qf-owner-answer="contratar">Aceitei o orçamento</button><button class="btn btn--outline" type="button" data-qf-owner-answer="negociando">Ainda estou negociando</button>':'<form data-qf-owner-concluir class="qf-owner-form"><p>Código de segurança do pedido: <strong>'+esc(codigo||'Atualize o acompanhamento')+'</strong></p><label>Valor final do serviço (R$)<input class="input" name="valor_final" inputmode="decimal" value="'+(Number(f.valor_aceito_centavos??f.valor_centavos)/100).toFixed(2).replace('.',',')+'" required></label><label>Digite o código<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label class="qf-owner-check"><input type="checkbox" name="concluido" required><span>Confirmo a contratação, a conclusão do serviço e o valor final informado acima.</span></label><button class="btn btn--primary" type="submit">Confirmar conclusão e valor</button></form>')+'<button class="btn btn--outline" type="button" data-qf-owner-answer="corrigir">Corrigir valor</button><button class="btn btn--outline" type="button" data-qf-owner-answer="nao">Não contratei</button></div>':
-    '<p>'+esc(f.cliente_resposta==='divergencia'?'Correção solicitada. Aguarde o profissional conferir o valor.':f.cliente_resposta==='nao_contratou'?'Você informou que não contratou este profissional.':f.status==='recusado'?'O profissional informou que não fechou. Fale com o suporte se houver divergência.':'Aguardando o profissional informar o valor combinado.')+'</p>')+'<p role="status"></p></article>';
+    semDeclaracao?'<p>Este profissional ainda não informou um fechamento confirmado. Você contratou? Pode registrar a contratação independentemente, sem aguardar o profissional.</p><form data-qf-owner-relato class="stack--sm"><label>Valor combinado (R$)<input class="input" name="valor" inputmode="decimal" placeholder="Ex.: 500,00" required></label><label class="qf-owner-check"><input type="checkbox" name="confirma" required><span>Confirmo que contratei este profissional pelo valor informado. Entendo que a equipe vai conferir o registro.</span></label><button type="submit" class="btn btn--primary">Sim, contratei — comunicar ao Quem Faz</button></form><p class="text--sm">A declaração será analisada. Não cria comissão ou cobrança automaticamente.</p>':
+    '<p>'+esc(f.status==='contestado'&&f.contratado_em?'Você informou que contratou este profissional por '+money(f.valor_aceito_centavos||0)+'. A equipe está conferindo a declaração. Nenhuma cobrança foi gerada.':f.cliente_resposta==='divergencia'?'Correção ou divergência em análise. Aguarde a conferência.':f.cliente_resposta==='nao_contratou'?'Você informou que não contratou este profissional.':f.status==='recusado'?'O profissional informou que não fechou. Fale com o suporte se houver divergência.':'Aguardando o profissional informar o valor combinado.')+'</p>')+'<p role="status"></p></article>';
  }
  async function mount(container,id,options={}){
   if(!container||container.dataset.qfOwnerMounted)return;container.dataset.qfOwnerMounted='1';container.classList.add('qf-owner-tracking');
@@ -37,6 +54,24 @@
    bindIosInstall(container);
    const cb=container.querySelector('[data-qf-owner-cancel]');if(cb)cb.onclick=async()=>{if(!g.confirm('Cancelar este pedido? Ele deixará de aparecer para novos profissionais.'))return;cb.disabled=true;try{await cancelar(id);await render();}catch(e){container.querySelector('[data-qf-owner-status]').textContent=e.message;cb.disabled=false;}};
    const refresh=container.querySelector('[data-qf-owner-refresh]');if(refresh)refresh.onclick=()=>render().catch(e=>container.querySelector('[data-qf-owner-status]').textContent=e.message);
+   container.querySelectorAll('[data-qf-owner-relato]').forEach(form=>form.onsubmit=async e=>{
+    e.preventDefault();
+    const row=form.closest('[data-qf-owner-fechamento]'),f=data.profissionais.find(x=>x.id===row.dataset.qfOwnerFechamento);
+    const raw=String(form.elements.valor.value||'').trim();
+    let normalized=raw;
+    if(raw.includes(','))normalized=raw.replace(/\./g,'').replace(',','.');
+    else if(/^\d{1,3}(?:\.\d{3})+$/.test(raw))normalized=raw.replace(/\./g,'');
+    const valor=/^\d+(?:\.\d{1,2})?$/.test(normalized)?Math.round(Number(normalized)*100):null;
+    if(!form.elements.confirma.checked||!Number.isSafeInteger(valor)||valor<100||valor>100000000){
+      row.querySelector('[role=status]').textContent='Confirme a contratação e informe um valor entre R$ 1 e R$ 1.000.000.';return;
+    }
+    form.querySelectorAll('button,input').forEach(el=>el.disabled=true);
+    try{
+      await informarContratacao(id,f.id,valor);
+      await render();
+      container.querySelector('[data-qf-owner-status]').textContent='Sua declaração de contratação foi enviada para conferência. Nenhuma comissão foi cobrada.';
+    }catch(err){row.querySelector('[role=status]').textContent=err.message;form.querySelectorAll('button,input').forEach(el=>el.disabled=false);}
+   });
    container.querySelectorAll('[data-qf-owner-concluir]').forEach(form=>form.onsubmit=async e=>{e.preventDefault();const row=form.closest('[data-qf-owner-fechamento]'),f=data.profissionais.find(x=>x.id===row.dataset.qfOwnerFechamento),codigo=form.elements.codigo_seguranca.value.trim();if(!/^[0-9]{6}$/.test(codigo)||!form.elements.concluido.checked){row.querySelector('[role=status]').textContent='Confira o código e confirme a conclusão do serviço.';return;}form.querySelectorAll('button,input').forEach(x=>x.disabled=true);try{const finalValue=Math.round(Number(form.elements.valor_final.value.replace(',','.'))*100);if(!Number.isSafeInteger(finalValue)||finalValue<100||finalValue>100000000)throw Error('Confira o valor final.');await api(id,{p_acao:'responder',p_fechamento:f.id,p_contratou:true,p_valor_centavos:finalValue,p_codigo:codigo,p_concluido:true});await render();container.querySelector('[data-qf-owner-status]').textContent='Contratação, valor e conclusão confirmados.';}catch(err){row.querySelector('[role=status]').textContent=err.message;form.querySelectorAll('button,input').forEach(x=>x.disabled=false);}});
    container.querySelectorAll('[data-qf-owner-answer]').forEach(b=>b.onclick=async()=>{
     const row=b.closest('[data-qf-owner-fechamento]'),f=data.profissionais.find(x=>x.id===row.dataset.qfOwnerFechamento),acao=b.dataset.qfOwnerAnswer;
@@ -52,7 +87,7 @@
    container.innerHTML='<h1 class="h2">Acompanhamento protegido</h1><p role="alert">'+esc(e.message)+'</p>';
   }
  }
- g.QFAcompanhamento={draft,remember,api,mount,mountList,cancelar,lastId};
+ g.QFAcompanhamento={draft,remember,api,mount,mountList,cancelar,lastId,informarContratacao};
  if(typeof module!=='undefined')module.exports=g.QFAcompanhamento;
  if(g.document){const start=()=>{const el=g.document.querySelector('[data-qf-acompanhamento-page]');if(el){let id=new URLSearchParams(g.location.hash.slice(1)).get('pedido');if(!/^[a-f0-9-]{36}$/i.test(id||''))id=lastId();if(/^[a-f0-9-]{36}$/i.test(id||'')){try{g.history.replaceState(null,'',g.location.search+'#pedido='+id);}catch(_){}mount(el,id,{publicado:new URLSearchParams(g.location.search).get('publicado')==='1'});}else el.textContent='Pedido não identificado. Abra seu pedido pelo Quem Faz.';}};g.document.readyState==='loading'?g.document.addEventListener('DOMContentLoaded',start,{once:true}):start();}
 })(typeof window!=='undefined'?window:globalThis);
