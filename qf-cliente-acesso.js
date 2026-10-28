@@ -25,7 +25,16 @@
   const {data,error}=await client.auth.getUser();
   if(error||!data?.user?.identities?.some(i=>i.provider==='google'))return null;
   // Função existente no servidor: valida JWT, titularidade e duplicidade de telefone.
-  await call('google',{nome,telefone});
+  try{await call('google',{nome,telefone});}
+  catch(err){
+   // Telefone já pertence a uma conta: não vincular por suposição.
+   // Voltar para o acesso original por senha ou primeiro acesso.
+   if(err.codigo==='telefone_cadastrado'||/telefone do pedido não corresponde/i.test(err.message||'')){
+    await client.auth.signOut();
+    return null;
+   }
+   throw err;
+  }
   const profile=await existing(telefone);
   if(!profile)throw Error('Sua conta Google foi validada, mas não conseguimos confirmar o telefone do pedido.');
   await g.QFCloud.syncForCurrentSession(true);
