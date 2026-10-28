@@ -122,6 +122,7 @@ test('Google: telefone de outra conta exige acesso original e não vincula autom
  await new Promise(resolve=>setTimeout(resolve,25));
  assert.equal(signedOut,1);
  assert.ok(w.document.querySelector('.qf-client-access [name="senha"]'),'oferece login da conta original');
+ assert.match(w.document.querySelector('.qf-client-access [role="alert"]').textContent,/Escolha a mesma conta Google/,'explica por que o login não foi aceito');
  w.document.querySelector('[data-access-cancel]').click();
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
@@ -147,6 +148,7 @@ test('Google: retorno OAuth sempre usa site oficial sem hash nem localhost',asyn
  await new Promise(resolve=>setTimeout(resolve,20));
  assert.equal(options.provider,'google');
  assert.equal(options.options.redirectTo,'https://quemfazservico.com.br/?app=1');
+ assert.equal(options.options.queryParams.prompt,'select_account');
  w.document.querySelector('[data-access-cancel]').click();
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
