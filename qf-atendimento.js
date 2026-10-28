@@ -122,6 +122,7 @@
   // O rascunho do redirecionamento Google é cifrado (AES-GCM) e tem validade curta.
   // A chave não exportável fica no IndexedDB; respostas nunca vão em texto puro ao storage.
   const OAUTH_DRAFT='qf_google_draft_v1';
+  function hasActiveDraft(){return !!inMemoryDraft?.answers?.servico;}
   function hasGoogleDraft(){
     try{return !!root.sessionStorage.getItem(OAUTH_DRAFT);}catch(_){return false;}
   }
@@ -309,5 +310,5 @@
       root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc((q.key==='orcamento'&&a.orcamento_faixa?budgetLabel(a.orcamento_faixa,a.servico):a[q.key])??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
     }catch(error){root.PU.toast(error.message,'danger');}finally{button.disabled=false;}
   });
-  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install,hasGoogleDraft,saveDraftForGoogle};
+  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install,hasGoogleDraft,hasActiveDraft,saveDraftForGoogle};
 });
