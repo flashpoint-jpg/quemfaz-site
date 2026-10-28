@@ -30,7 +30,7 @@
   function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
   function tipoPorOrcamento(a) { return 'tradicional'; }
   function stages(a) {
-    const groups=[['Serviço',['servico','aceite_app','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia']],['Condições',['materiais']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
+    const groups=[['Serviço',['servico','aceite_app','detalhes','escopo']],['Local e prazo',a.__cepRequired?['cep','bairro','urgencia']:['cidade','uf','bairro','urgencia']],['Condições',['materiais']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
     return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled) && !(a.__problem&&['detalhes','escopo'].includes(key))))}));
   }
   function questions(a) {
@@ -61,6 +61,7 @@
       {key:'servico',label:'Qual serviço você precisa?',catalog:true},
       options('detalhes',detailLabel,detailChoices),
       options('escopo',scopeLabel,scopeChoices),
+      ...(a.__cepRequired?[{key:'cep',label:'Qual o CEP do local do serviço?',type:'text',autocomplete:'postal-code'}]:[]),
       {key:'cidade',label:'Em qual cidade será o serviço?'},
       options('uf','Qual é o estado (UF)?','AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>[x,x])),
       {key:'bairro',label:'Em qual bairro? O endereço exato será combinado após o desbloqueio.'},
@@ -87,6 +88,12 @@
     v=String(v || '').trim();
     if (q.key==='aceite_app') return v==='sim'?'':(requiresInstalledApp()?'Marque a concordância para instalar e utilizar o aplicativo Quem Faz.':'Marque a concordância para continuar pelo navegador.');
     if (!v || v.length>2000) return 'Responda esta pergunta para continuar (até 2.000 caracteres).';
+    if (q.key==='cep') {
+      const d=v.replace(/\D/g,'');
+      if(!/^\d{8}$/.test(d))return 'Informe um CEP com 8 números.';
+      if(a.__cepValidado!==d||!a.cidade||!a.uf)return 'Confirme seu CEP para validar cidade e estado.';
+    }
+    if (q.key==='bairro'&&a.__bairroCep&&norm(a.__bairroCep)!==norm(v))return 'Este CEP corresponde a '+a.__bairroCep+'. Para outro bairro, informe o CEP correto.';
     if (q.key==='uf' && !'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').includes(v.toUpperCase())) return 'Informe a sigla do estado, por exemplo SP.';
     if (q.choices && !q.choices.some(c=>c[0]===v)) return 'Escolha uma das opções.';
     if (v.length<(q.min||1)) return 'Descreva um pouco melhor para continuar.';
@@ -96,6 +103,20 @@
     if (q.key==='data' && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))) return 'Escolha hoje ou uma data futura.';
     if (q.key==='autorizacao' && v==='nao') return 'Sem autorização não podemos publicar nem compartilhar o pedido. Você pode voltar ou encerrar.';
     return '';
+  }
+  async function consultarCep(value){
+    const cep=String(value||'').replace(/\D/g,'');
+    if(!/^\d{8}$/.test(cep))throw Error('Informe um CEP com 8 números.');
+    if(typeof root.fetch!=='function')throw Error('Não conseguimos consultar o CEP agora. Tente novamente.');
+    let response;
+    try{response=await root.fetch('https://viacep.com.br/ws/'+cep+'/json/');}
+    catch(_){throw Error('Consulta de CEP indisponível. Verifique sua conexão e tente novamente.');}
+    if(!response.ok)throw Error('Não conseguimos consultar o CEP agora. Tente novamente.');
+    let data;try{data=await response.json();}catch(_){throw Error('Resposta inválida da consulta de CEP. Tente novamente.');}
+    if(data.erro===true||data.erro==='true')throw Error('CEP não encontrado. Confira os 8 números.');
+    const cidade=String(data.localidade||'').trim(),uf=String(data.uf||'').trim().toUpperCase(),bairro=String(data.bairro||'').trim();
+    if(!cidade||!/^([A-Z]{2})$/.test(uf))throw Error('Este CEP não retornou cidade e estado. Confira os dados.');
+    return {cep,cidade,uf,bairro};
   }
   function validAll(a) { for (const q of questions(a)) {const e=validate(q,a[q.key],a);if(e) return e;} return ''; }
   function payload(a,id,categoria) {
@@ -193,6 +214,7 @@
     const homeService=params.service||(root.QFHomeDraft&&root.QFHomeDraft.service);
     const reuse=!!(oldDraft&&oldDraft.answers&&(!categoryId||oldDraft.categoryId===categoryId)&&(fromGoogle||!homeService||norm(oldDraft.answers.servico)===norm(homeService))&&(fromGoogle||!params.problem||norm(oldDraft.answers.__problem)===norm(params.problem)));
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
+    a.__cepRequired=true; // CEP consultado para todos os novos pedidos, sem solicitar rua ou número.
     if(cat&&!fromGoogle) {a.servico=cat.nome;a.__servicePrefilled=true;}
     else if(homeService&&!fromGoogle) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
     if(params.problem&&!fromGoogle){
@@ -209,15 +231,16 @@
     }
     if(user&&!fromGoogle){a.nome=user.nome||'';a.contato=user.telefone||'';} // OAuth: nunca sobrescrever o telefone salvo no pedido.
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
+    if(step>1&&!a.__cepValidado){step=1;questionIndex=0;} // Rascunho anterior sem CEP deve validar local antes de publicar.
     const track=(event,error,once)=>{try{root.QFClientAcquisition?.track(event,{category:category(a.servico)?.id,error_code:error},once);}catch(_){}};
     track('form_view',null,true);
     const field=q=>{
       const value=a[q.key]||'', id='at-'+q.key;
-      const disabled=q.key==='contato'&&user?.telefone ? ' readonly' : '';
+      const disabled=(q.key==='contato'&&user?.telefone)||(q.key==='bairro'&&!!a.__bairroCep) ? ' readonly' : '';
       const input=q.consent
         ? '<label class="card" style="display:flex;align-items:flex-start;gap:12px;padding:16px;cursor:pointer;border:1.5px solid #1769d5;border-radius:14px"><input id="'+id+'" type="checkbox" value="sim" '+(value==='sim'?'checked ':'')+'style="width:22px;height:22px;min-width:22px;margin:2px 0 0;accent-color:#1769d5"><span>'+(requiresInstalledApp()?'Li e concordo. Entendo que preciso instalar e abrir o <strong>Quem Faz</strong> para conversar com profissionais e acompanhar meu pedido.':'Li e concordo em receber contatos dos profissionais e acompanhar meu pedido pelo <strong>Quem Faz</strong> neste navegador.')+'</span></label>'
         : q.key==='uf' ? '<select class="input" id="'+id+'" required><option value="">Selecione o estado</option>'+('AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ')).map(uf=>'<option value="'+uf+'"'+(uf===value?' selected':'')+'>'+uf+'</option>').join('')+'</select>' : q.choices ? '<div class="stack--sm" role="radiogroup" aria-label="'+esc(q.label)+'">'+q.choices.map(c=>'<label class="card" style="display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;border:1px solid var(--border,#d9e2ef);border-radius:12px"><input type="radio" name="'+id+'" value="'+esc(c[0])+'"'+(c[0]===value?' checked':'')+' required style="width:20px;height:20px;accent-color:#1769d5"><span>'+esc(c[1])+'</span></label>').join('')+'</div>' : q.multiline ? '<textarea class="input" id="'+id+'" maxlength="2000" rows="2" required>'+esc(value)+'</textarea>' : '<input class="input" id="'+id+'" type="'+(q.type||'text')+'" maxlength="2000" autocomplete="'+(q.autocomplete||'off')+'" '+(q.catalog?'list="at-services"':'')+' value="'+esc(value)+'"'+disabled+' required>'+(q.catalog?'<datalist id="at-services">'+root.DB.categories().filter(c=>c.id!=='cat_outros').map(c=>'<option value="'+esc(c.nome)+'"></option>').join('')+'</datalist>':'');
-      return '<div class="stack--sm" style="min-width:0"><label class="text--strong" for="'+id+'">'+esc(q.label)+'</label>'+input+'<p class="text--sm" role="alert" data-error="'+q.key+'"></p></div>';
+      return '<div class="stack--sm" style="min-width:0"><label class="text--strong" for="'+id+'">'+esc(q.label)+'</label>'+input+(q.key==='cep'?'<p class="text--sm" style="color:#475569;margin:0">Consultamos o CEP para confirmar cidade e estado. O número da residência não é solicitado nem divulgado.</p>':q.key==='bairro'&&a.__cepValidado?'<p class="text--sm" style="color:#475569;margin:0">Local confirmado: '+esc(a.cidade)+' / '+esc(a.uf)+(a.__bairroCep?' · bairro identificado pelo CEP':' · informe seu bairro')+'</p>':'')+'<p class="text--sm" role="alert" data-error="'+q.key+'"></p></div>';
     };
     const read=()=>{for(const q of stages(a)[step].questions){const el=q.key==='uf'?area.querySelector('#at-'+q.key):(q.choices?area.querySelector('input[name="at-'+q.key+'"]:checked'):area.querySelector('#at-'+q.key));if(el)a[q.key]=q.consent?(el.checked?'sim':'nao'):(q.key==='uf'?el.value.trim().toUpperCase():el.value.trim());}};
     const draw=()=>{
@@ -229,8 +252,22 @@
       const active=stage.questions[questionIndex];
       if(questionIndex===0)track(['form_view','step_location_view','step_options_view','step_contact_view'][step],null,true);
       area.innerHTML='<style>[data-qf-atendimento-layout]{min-height:100dvh!important;display:flex!important;flex-direction:column;justify-content:center!important;padding:clamp(16px,3vh,36px) 12px!important;box-sizing:border-box;width:100%;margin:0 auto!important}[data-qf-atendimento-layout] [data-qf-atendimento]{width:100%;flex-shrink:0}@media(max-height:650px){[data-qf-atendimento-layout]{min-height:auto;justify-content:flex-start}}[data-qf-atendimento]{border-radius:22px!important;box-shadow:0 10px 32px rgba(22,82,154,.09);border:1px solid #e5ecf6!important}[data-qf-atendimento] h1{color:#1769d5;font-weight:800}[data-qf-atendimento] progress{accent-color:#f47b20;height:8px}[data-qf-atendimento] label.card{background:#fff!important;border:1.5px solid #dce6f3!important;border-radius:14px!important;box-shadow:none!important}[data-qf-atendimento] label.card:has(input:checked){border-color:#f47b20!important;background:#fff6ed!important}[data-qf-atendimento] .btn--primary{background:#f47b20!important;border-color:#f47b20!important;color:#fff!important;border-radius:12px!important;min-height:48px}[data-qf-atendimento] .btn--outline{border-radius:12px!important;min-height:48px}</style><p class="text--sm" data-at-progress>Etapa '+(step+1)+' de 4 — '+esc(stage.title)+'</p><progress aria-label="Etapa do pedido" max="4" value="'+(step+1)+'" style="width:100%"></progress><form class="stack" novalidate>'+(step===3?'<h2 class="h3">Revise antes de publicar</h2><details><summary>'+esc(a.servico)+' · '+esc(a.bairro)+', '+esc(a.cidade)+' — Ver resumo</summary><dl>'+questions(a).filter(q=>!['nome','contato','intencao','autorizacao','tipo','qualificacao'].includes(q.key)).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd style="margin:4px 0 12px;overflow-wrap:anywhere">'+esc((q.choices||[]).find(c=>c[0]===a[q.key])?.[1]||a[q.key])+'</dd>').join('')+'</dl></details>':'')+field(active)+(step===3?'<p><strong>'+ ('Pedido tradicional') +'</strong> · '+('Receba contato de até 4 profissionais.')+' Você decide se contrata. Contato protegido até o desbloqueio.</p>':'')+(active.key==='aceite_app'?'<p class="text--sm" style="padding:12px;border-radius:12px;background:#eef4ff;color:#204e89">'+(requiresInstalledApp()?'<strong>Aplicativo obrigatório.</strong> Ao marcar a concordância no Android, você será direcionado à Play Store. Depois, abra o Quem Faz instalado e faça seu pedido. '+(!inApp()?installText():'Você já está utilizando o aplicativo.'):(isIos()?'<strong>Pedido pelo iPhone.</strong> Continue pelo Safari. Depois de publicar, você pode adicionar o Quem Faz à Tela de Início.':'<strong>Pedido pelo computador.</strong> Continue neste navegador. Não é necessário instalar o aplicativo.'))+'</p>':'')+'<p role="alert" data-at-error></p>'+(step===3&&questionIndex===stage.questions.length-1?'<p class="text--sm" style="margin:0;color:#46566b">Ao tocar em Publicar grátis, você poderá entrar com Google ou telefone e senha, caso ainda não esteja conectado.</p>':'')+'<div class="row" style="background:var(--surface,#fff);padding:12px 0;gap:8px"><button type="button" class="btn btn--outline" data-at-back'+'>Voltar</button><button type="submit" class="btn btn--primary" '+(step===3&&questionIndex===stage.questions.length-1?'data-at-publish':'')+'>'+(step===3&&questionIndex===stage.questions.length-1?'Publicar grátis':'Continuar')+'</button></div></form>';
-      area.querySelector('form').onsubmit=e=>{
+      area.querySelector('form').onsubmit=async e=>{
         e.preventDefault();if(busy)return;track('form_start',null,true);area.querySelectorAll('[role="alert"]').forEach(el=>el.textContent='');read();
+        if(active.key==='cep'){
+          const digits=String(a.cep||'').replace(/\D/g,'');
+          if(a.__cepValidado!==digits){
+            const error=area.querySelector('[data-error=cep]'),submit=area.querySelector('button[type=submit]');
+            if(!/^\d{8}$/.test(digits)){error.textContent='Informe um CEP com 8 números.';return;}
+            busy=true;submit.disabled=true;submit.textContent='Consultando CEP…';
+            try{
+              const loc=await consultarCep(digits);
+              // Nunca manter cidade/bairro da consulta anterior após mudar o CEP.
+              a.cep=loc.cep;a.__cepValidado=loc.cep;a.cidade=loc.cidade;a.uf=loc.uf;a.bairro=loc.bairro;a.__bairroCep=loc.bairro;
+            }catch(err){error.textContent=err.message;return;}
+            finally{busy=false;if(submit.isConnected){submit.disabled=false;submit.textContent='Continuar';}}
+          }
+        }
         const list=[active];
         for(const q of list){const error=validate(q,a[q.key],a);if(error){track('validation_error',q.key);const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
         if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){track(['step_service_completed','step_location_completed','step_options_completed'][step],null,true);step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
@@ -321,5 +358,5 @@
       root.PU.openSheet('<h2 class="h3">Atendimento automático</h2><dl>'+questions(a).map(q=>'<dt class="text--strong">'+esc(q.label)+'</dt><dd>'+esc((q.key==='orcamento'&&a.orcamento_faixa?budgetLabel(a.orcamento_faixa,a.servico):a[q.key])??(q.key==='orcamento'?(a.orcamento_centavos==null?'A combinar':(a.orcamento_centavos/100).toFixed(2)):''))+'</dd>').join('')+'<dt>Registro no servidor</dt><dd>'+esc(a.registrado_em)+'</dd></dl>');
     }catch(error){root.PU.toast(error.message,'danger');}finally{button.disabled=false;}
   });
-  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,html,mount,enrich,install,hasGoogleDraft,hasActiveDraft,saveDraftForGoogle};
+  return {tipoPorOrcamento,questions,stages,materialsApplicable,budgetChoices,budgetLabel,validate,validAll,budget,payload,consultarCep,html,mount,enrich,install,hasGoogleDraft,hasActiveDraft,saveDraftForGoogle};
 });

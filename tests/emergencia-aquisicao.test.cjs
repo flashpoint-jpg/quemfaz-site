@@ -53,13 +53,15 @@ test('formulário atual publica no PostgreSQL local e apresenta o pedido salvo n
  await d.exec('reset role');await d.exec('create function private.qf13_iniciar_pedido(uuid,text) returns void language sql as $$select null::void$$;');await d.exec(fs.readFileSync('tests/fixtures/publicacao-production-20261027.sql','utf8'));
  const dom=new JSDOM('<main></main>',{url:'https://quemfazservico.com.br/',runScripts:'outside-only'}),g=dom.window,events=[];let published;
  try{
+  g.fetch=async url=>{assert.match(url,/viacep\.com\.br\/ws\/09020000\/json\//);return {ok:true,json:async()=>({cep:'09020-000',localidade:'Santo André',uf:'SP',bairro:'Centro'})};};
   g.DB={categories:()=>[{id:'cat_eletricista',nome:'Eletricista'}],categoryById:()=>null};g.QFClientAcquisition={track:(...e)=>events.push(e)};
   g.QFClienteAcesso={authenticate:async()=>({id:uid(1)})};g.QFAcompanhamento={draft:()=> 'cliente-teste-segredo-local-123456789',remember(){}};
   g.QFCloud={enabled:true,createCall:async args=>{await as(d,1);return(await d.query('select public.qf_publicar_atendimento($1::jsonb,$2::jsonb) r',[JSON.stringify(args.atendimento),JSON.stringify({latitude:-23.66,longitude:-46.53})])).rows[0].r;}};
   g.QFPedidoHome={published:async req=>{published=req;g.document.querySelector('main').textContent='Pedido publicado';}};
   g.eval(fs.readFileSync('qf-atendimento.js','utf8'));const target=g.document.querySelector('main');target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{service:'Eletricista'},null);
-  for(const [key,value] of [['aceite_app','sim'],['detalhes','tomada'],['escopo','um'],['cidade','Santo André'],['uf','SP'],['bairro','Centro'],['urgencia','normal'],['materiais','profissional'],['nome','Cliente Teste'],['contato','11988887777'],['intencao','contratar'],['autorizacao','sim']]){
+  for(const [key,value] of [['aceite_app','sim'],['detalhes','tomada'],['escopo','um'],['cep','09020000'],['bairro','Centro'],['urgencia','normal'],['materiais','profissional'],['nome','Cliente Teste'],['contato','11988887777'],['intencao','contratar'],['autorizacao','sim']]){
    const el=target.querySelector('#at-'+key)||target.querySelector('[name="at-'+key+'"][value="'+value+'"]');assert.ok(el,key);if(el.type==='checkbox'||el.type==='radio')el.checked=true;else el.value=value;target.querySelector('form').dispatchEvent(new g.Event('submit',{cancelable:true}));
+   if(key==='cep')await new Promise(r=>setTimeout(r,0));
   }
   for(let i=0;i<100&&!published;i++)await new Promise(r=>setTimeout(r,10));
   assert.ok(published?.id,target.textContent);assert.equal(target.textContent,'Pedido publicado');assert.equal(g.location.href,'https://quemfazservico.com.br/');

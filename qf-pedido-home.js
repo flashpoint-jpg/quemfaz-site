@@ -23,6 +23,7 @@
    [/encanador|hidraul/,/torneira|vazament|cano|descarga|registro|encan|hidraul|pia entup/,11],
    [/desentupid/,/desentup|entupid|esgoto/,12],
    [/pintor|pintura/,/pintar|pintura|tinta|pintor/,12],
+   [/serralheir|soldador|soldagem|metalurg/,/soldar|solda|soldagem|portao de ferro|portao de metal|grade de ferro|estrutura metalica|serralheria|corrimao|metalico/,16],
    [/limpeza.*estof|higien.*estof|limpeza.*sofa/,/sofa|estofado|poltrona|colchao|tapete/,12],
    [/diarista|faxineira|limpeza residencial/,/faxina|diarista|faxineira|limpar.*casa|limpeza.*casa|limpeza.*apartamento/,11],
    [/montador|montagem.*moveis/,/montar|montagem|desmontar|guarda.roupa|montador/,12],
@@ -54,8 +55,8 @@
    const matches=classify(problem),best=matches[0],second=matches[1];
    // Profissão é decidida automaticamente. Nunca pedir ao cliente que escolha categoria.
    if(best&&(best.score>=100||(best.score>=10&&(!second||best.score-second.score>=3)))){choose(best.category);return;}
-   form.querySelector('[role=alert]').textContent='Ainda não conseguimos identificar o profissional com segurança. Conte mais detalhes sobre o que precisa ser feito, sem escolher uma profissão.';
-   input.focus();
+   // A falta de categoria não impede o cliente de continuar. A equipe pode classificar depois.
+   showForm('Outros serviços',problem);
 
   };
  }
@@ -88,7 +89,9 @@
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
   try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
   const target=work();if(!target)return;
-  target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{embedded:true,service,problem:problem||state.problem},state.user);reveal();
+  target.innerHTML=g.QFAtendimento.html();
+  if(service==='Outros serviços')target.querySelector('[data-qf-atendimento]')?.insertAdjacentHTML('afterbegin','<p class="text--sm" role="status" style="color:#1458cc;background:#eef4ff;padding:12px;border-radius:12px">Não identificamos uma profissão exata, mas você pode enviar seu pedido. A categoria poderá ser revisada antes da distribuição, sem garantia de profissional disponível.</p>');
+  g.QFAtendimento.mount(target,{embedded:true,service,problem:problem||state.problem},state.user);reveal();
  }
  async function detail(id,refresh=true){
   if(!uuid(id))return;
