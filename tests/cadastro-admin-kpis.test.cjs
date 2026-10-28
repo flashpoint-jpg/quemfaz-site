@@ -17,7 +17,7 @@ test('Painel administrativo carrega com sintaxe válida e conexão realmente exi
 test('Administrativo permite localizar nome, contato, plano e estágio de pagamento sem confundir com cadastro ativo',()=>{
  for(const s of ['Pré-cadastros dos profissionais','Aguardando pagamento','Avulso','Quem Faz Livre',
  'data-qf-pre-form','state.busca','state.situacao','data-qf-pre-next','data-qf-pre-refresh',
- 'Sem perfil ativo e sem saldo liberado','QFAdminCloud','data-qf-pre-nav'])
+ 'Sem perfil ativo e sem saldo liberado','QFAdminCloud','qfPreNav'])
  assert.ok(front.includes(s),'falta elemento '+s);
  assert.match(front,/Não confirmado pela Efí/);
  assert.match(front,/r\.perfil_ativo===true/);
