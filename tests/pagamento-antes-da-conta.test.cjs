@@ -15,10 +15,10 @@ assert.equal(/const APP_VERSION = '([^']+)'/.exec(html)[1], /const SW_VERSION = 
 // Foto: os dois botões ficam numa pilha com espaço (antes a classe não aplicava o espaçamento).
 assert.ok(html.includes('class="card stack qf-cad-foto"') && html.includes('.qf-cad-foto{gap:14px}'));
 
-// V11.62: a conta é criada na hora em qualquer plano; o plano pago abre o pagamento na Carteira depois.
-const envio = html.slice(html.indexOf("const planoPago = QF_CAD_PLANOS.find"), html.indexOf("const foundCity = DB.cities()"));
-assert.ok(!envio.includes('abrirPagamento(') && envio.includes("criarContaAgora(dados, planoPago ? planoPago.id : null, 'pix')"));
-assert.ok(html.includes('sua conta também é criada agora.') && html.includes('Enquanto não pagar, você fica no Avulso') && html.includes("'Criar conta e pagar · ' + pl.preco"));
+// Regra 2026-10-28: nenhuma conta profissional ativa sem confirmar um dos pagamentos.
+const envio = html.slice(html.indexOf("const planoEscolhido = String(fd.get('planoEscolhido')"), html.indexOf("} catch (err) {", html.indexOf("const planoEscolhido = String(fd.get('planoEscolhido')")));
+assert.ok(envio.includes('abrirPagamento(dados, planoPago') && !envio.includes("criarContaAgora(dados"));
+assert.ok(html.includes('Seu cadastro profissional só será ativado depois da confirmação bancária.'));
 // A conta só nasce depois do "aprovado"; em seguida o pagamento vira plano e os dados da conta aparecem.
 const conf = html.slice(html.indexOf('async function pagamentoConfirmado()'), html.indexOf('function renderContaCriada(conta)'));
 assert.ok(conf.indexOf("signUp('profissional', dados)") < conf.indexOf('preCadastroResgatar(pre.pag.id, pre.pag.segredo)'));
@@ -27,7 +27,7 @@ assert.ok(html.includes('Dados da sua conta') && html.includes("<span>E-mail</sp
 // A senha nunca vai para o armazenamento permanente do aparelho.
 assert.ok(html.includes('const semSenha = Object.assign({}, dados); delete semSenha.senha;'));
 // Formas de pagamento na tela e rede de segurança para quem pagou e entrou depois.
-for (const m of ['pix', 'cartao', 'boleto']) assert.ok(html.includes("metodoBtn('" + m + "'"));
+for (const m of ['pix', 'cartao']) assert.ok(html.includes("metodoBtn('" + m + "'"));
 assert.ok(html.includes('global.QFPreCadastro.tentar()'));
 
 // Banco: tabela fechada, resgate único e só de pagamento aprovado.
@@ -38,4 +38,4 @@ assert.ok(fn.includes('"email_em_uso"') && fn.indexOf('qf_pre_cadastro_email_liv
 assert.ok(fn.includes('esperado === original && pago >= esperado') && fn.includes('q.data.segredo !== segredo'));
 console.log('pagamento-antes-da-conta ok');
 // Avulso: conta na hora, com o aviso de que desbloquear chamado exige crédito na Carteira.
-assert.ok(html.includes('Para desbloquear um chamado você precisa adicionar crédito na Carteira') && html.includes('data-plano-nota') && html.includes('No Avulso sua conta é criada agora.'));
+assert.ok(html.includes('Os R$ 13 viram saldo integral da carteira') && html.includes('data-plano-nota') && html.includes('pagamento inicial de R$ 13,00'));
