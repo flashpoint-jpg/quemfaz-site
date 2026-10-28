@@ -1,5 +1,7 @@
 -- Teste PostgreSQL ISOLADO: não usa credenciais/dados de produção e não gera cobranças.
 \set ON_ERROR_STOP on
+CREATE ROLE anon NOLOGIN;
+CREATE ROLE authenticated NOLOGIN;
 CREATE SCHEMA auth;
 CREATE SCHEMA private;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
