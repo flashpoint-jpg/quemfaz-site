@@ -49,13 +49,13 @@
   if(area.dataset.qfSplitMounted)return;area.dataset.qfSplitMounted='1';
   const segredo=g.localStorage.getItem(prefix+id);
   if(!segredo){area.hidden=true;return;}
-  const endpoint='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-livre-split';
+  const endpoint='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-livre-pix';
   const call=async action=>{
    const r=await g.fetch(endpoint,{method:'POST',cache:'no-store',
     headers:{apikey:key,'Content-Type':'application/json'},
     body:JSON.stringify({action,chamado_id:id,fechamento_id:f.id,segredo})});
    const d=await r.json().catch(()=>({}));
-   if(!d.ok)throw Error(({split_em_preparacao:'Pagamento pelo Quem Faz ainda em preparação.',conta_efi_pendente:'O profissional ainda precisa validar a conta Efí.',cobranca_antiga_existente:'Já existe uma cobrança para este serviço.',pagamento_temporariamente_indisponivel:'Não foi possível emitir Pix seguro. Não faça pagamento fora da plataforma.'})[d.reason]||'Pagamento indisponível. Consulte o suporte.');
+   if(!d.ok)throw Error(({repasse_em_preparacao:'Pagamento pelo Quem Faz ainda em preparação.',chave_pix_nao_validada:'O profissional ainda precisa validar sua chave Pix.',cobranca_anterior_existente:'Já existe uma cobrança para este serviço.',pix_temporariamente_indisponivel:'Não foi possível emitir Pix seguro. Não faça pagamento fora da plataforma.'})[d.reason]||'Pagamento indisponível. Consulte o suporte.');
    return d;
   };
   let busy=false;
@@ -64,12 +64,12 @@
    if(!d.disponivel&&d.status==='nao_iniciado'){area.hidden=true;return;}
    area.hidden=false;
    const st=d.status||'nao_iniciado';
-   if(st==='repassado'){area.innerHTML='<h3>Pagamento e repasse confirmados</h3><p>O profissional recebeu 87% na conta Efí e o Quem Faz recebeu 13%, conforme confirmação bancária.</p>';return;}
-   if(st==='pago'){area.innerHTML='<h3>Pagamento confirmado</h3><p>O Pix foi confirmado pelo banco. Aguardando confirmação do crédito do repasse ao profissional.</p>';return;}
+   if(st==='repassado'){area.innerHTML='<h3>Pagamento e repasse confirmados</h3><p>O profissional recebeu 87% na chave Pix do banco cadastrado. Os 13% ficaram no Quem Faz. Transferência confirmada pelo banco.</p>';return;}
+   if(st==='pago'){area.innerHTML='<h3>Pagamento confirmado</h3><p>O Quem Faz recebeu seu Pix. O envio dos 87% ao banco do profissional está em andamento.</p>';return;}
    if(st==='pix_pronto'&&d.pix_copia_cola){
     area.replaceChildren();
     const head=g.document.createElement('h3');head.textContent='Pague pelo Quem Faz após o serviço';area.append(head);
-    const note=g.document.createElement('p');note.textContent='Pix de pagamento do serviço, com divisão bancária de 87% ao profissional e 13% ao Quem Faz.';area.append(note);
+    const note=g.document.createElement('p');note.textContent='O Quem Faz recebe o Pix e solicita o envio de 87% à chave Pix do profissional. Os 13% restantes ficam na plataforma.';area.append(note);
     const txt=g.document.createElement('textarea');txt.className='input';txt.readOnly=true;txt.value=String(d.pix_copia_cola);txt.style.cssText='min-height:90px;width:100%;box-sizing:border-box';area.append(txt);
     const copy=g.document.createElement('button');copy.type='button';copy.className='btn btn--primary';copy.textContent='Copiar código Pix';copy.onclick=()=>{if(g.navigator.clipboard?.writeText)g.navigator.clipboard.writeText(txt.value).then(()=>copy.textContent='Pix copiado').catch(()=>{txt.select();});else txt.select();};area.append(copy);
     const msg=g.document.createElement('p');msg.setAttribute('role','status');msg.textContent='Aguardando confirmação bancária. Não envie comprovante pelo WhatsApp.';area.append(msg);
@@ -77,7 +77,7 @@
    }
    if(st!=='nao_iniciado'){area.innerHTML='<p role="status">Pagamento em processamento. Verifique mais tarde.</p>';return;}
    if(area.querySelector('[data-qf-livre-gerar]'))return;
-   area.innerHTML='<h3>Pagamento após o serviço</h3><p>O serviço está concluído. Ao pagar o Pix pelo Quem Faz, os valores são separados automaticamente entre o profissional (87%) e o Quem Faz (13%).</p><button type="button" class="btn btn--primary" data-qf-livre-gerar>Gerar Pix do serviço</button><p role="status"></p>';
+   area.innerHTML='<h3>Pagamento após o serviço</h3><p>O serviço está concluído. Ao pagar o Pix pelo Quem Faz, 13% ficam na plataforma e enviamos os outros 87% por Pix para a conta do profissional.</p><button type="button" class="btn btn--primary" data-qf-livre-gerar>Gerar Pix do serviço</button><p role="status"></p>';
    const btn=area.querySelector('[data-qf-livre-gerar]');
    btn.onclick=async()=>{
     if(busy)return;busy=true;btn.disabled=true;
