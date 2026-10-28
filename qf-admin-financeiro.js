@@ -18,6 +18,33 @@
  function install(){
   if(!g.Screens||g.Screens._qff)return;g.Screens._qff=true;
   const css=g.document.createElement('style');css.textContent='.qff{display:grid;gap:18px;color:#17324d;min-width:0}.qff h2,.qff h3,.qff p{margin:0}.qff-head,.qff-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.qff-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.qff-card{border:1px solid #d5e2f1;background:#fff;border-radius:16px;padding:16px;text-align:left;color:inherit;cursor:pointer}.qff-card strong{display:block;font-size:22px;margin-top:6px;color:#1458cc}.qff-card[aria-pressed=true]{outline:2px solid #1458cc}.qff section,.qff details{border:1px solid #dbe4ee;border-radius:16px;background:#fff;padding:18px;min-width:0}.qff summary{font-weight:750;cursor:pointer}.qff-scroll{overflow-x:auto;margin-top:14px}.qff table{border-collapse:collapse;width:100%;font-size:13px;min-width:660px}.qff th,.qff td{min-width:120px;text-align:left;vertical-align:top;padding:12px 10px;border-bottom:1px solid #e4ebf3;max-width:320px;overflow-wrap:anywhere}.qff small{display:block;color:#5b6e83;margin-top:4px}.qff .qff-alert{background:#fff7e8;border-color:#e8bb72}.qff label{display:grid;gap:5px;flex:1;min-width:160px}.qff .btn{width:auto;min-height:44px}.qff-controls input,.qff-controls select{width:100%}.qff-error{color:#a22825}@media(max-width:500px){.qff section,.qff details{padding:12px}.qff-cards{grid-template-columns:1fr 1fr}.qff-card{padding:12px}.qff-card strong{font-size:18px}}';css.textContent+=".qff-prof-list{display:grid;gap:8px;margin-top:14px}.qff .qff-prof-item{padding:10px 12px;border:1px solid #e1e8f2;border-radius:12px;background:#f8fbff}.qff .qff-prof-item summary{display:grid;gap:3px;cursor:pointer}.qff .qff-prof-item summary strong{font-size:15px;color:#133c76}.qff .qff-prof-item summary span{font-size:13px;color:#465c73}.qff .qff-prof-item summary small{font-size:12px;color:#526c86}.qff-prof-detail{padding:10px 0 2px;display:grid;gap:6px}.qff-prof-detail p{margin:0;font-size:13px;overflow-wrap:anywhere}";g.document.head.append(css);
+
+  // Menu mais curto: nenhuma ferramenta é removida; ferramentas secundárias ficam recolhidas.
+  function simplifyMenu(){
+    const menu=g.document.querySelector('.qf-adm-nav');
+    if(!menu||menu.querySelector('[data-qff-nav-more]'))return;
+    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes']);
+    const more=g.document.createElement('details');
+    more.className='qff-nav-more';more.dataset.qffNavMore='1';
+    const heading=g.document.createElement('summary');heading.textContent='Mais ferramentas';
+    more.append(heading);
+    menu.querySelectorAll('button.qf-adm-nav__item').forEach(button=>{
+      if(!important.has(button.dataset.nav)){
+        if(button.classList.contains('is-active'))more.open=true;
+        more.append(button);
+      }
+    });
+    menu.querySelectorAll('.qf-adm-nav__secao').forEach(heading=>{
+      let cursor=heading.nextElementSibling,found=false;
+      while(cursor&&!cursor.classList.contains('qf-adm-nav__secao')){
+        if(cursor.classList.contains('qf-adm-nav__item'))found=true;
+        cursor=cursor.nextElementSibling;
+      }
+      if(!found)heading.hidden=true;
+    });
+    menu.append(more);
+  }
+  css.textContent += '.qff-nav-more{margin:12px 8px 22px;border:1px solid #526981;border-radius:12px;overflow:hidden}.qff-nav-more>summary{padding:12px 14px;color:#edf3fd;font-size:14px;font-weight:750;cursor:pointer;list-style:none}.qff-nav-more .qf-adm-nav__item{width:100%;font-size:13px}.qf-adm-nav__secao[hidden]{display:none!important}';
   const prev=g.Screens.afterRender;
   async function enhance(pattern,content){
    if(!['/admin/dashboard','/admin/financeiro'].includes(pattern)||content.querySelector('[data-qff]'))return;
@@ -84,7 +111,7 @@
    }catch(e){let status=root.querySelector('[data-qff-status]');if(!status){root.innerHTML='<p role="status" data-qff-status></p><button class="btn btn--outline" data-qff-refresh>Tentar novamente</button>';status=root.querySelector('[data-qff-status]');root.querySelector('[data-qff-refresh]').onclick=load;}status.className='qff-error';status.textContent=e.message;}finally{busy=false;root.removeAttribute('aria-busy');}}
    await load();
   }
-  g.Screens.afterRender=function(){if(prev)prev.apply(this,arguments);enhance.apply(this,arguments);};
+  g.Screens.afterRender=function(){if(prev)prev.apply(this,arguments);simplifyMenu();enhance.apply(this,arguments);};
   const c=g.document.getElementById('app-content');if(c)enhance((g.location.hash||'').replace(/^#/,''),c);
  }
  if(typeof module!=='undefined')module.exports={totals,bankIn,bankOut};
