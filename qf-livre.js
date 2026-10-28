@@ -143,7 +143,7 @@
      '<p class="text--sm">Recurso exclusivo para futuros pagamentos de serviços do Quem Faz Livre. A chave será validada antes de qualquer repasse. O envio automático de dinheiro ainda não está liberado.</p>';
     box.insertAdjacentElement('afterend',area);
     const status=area.querySelector('[data-qf-pix-status]'),form=area.querySelector('form');
-    let userId=null,oldValue='';
+    let userId=null;
     try{
       const auth=await client.auth.getUser();
       userId=auth?.data?.user?.id;
@@ -153,7 +153,6 @@
       if(error)throw Error('Não foi possível consultar sua chave Pix.');
       if(!area.isConnected)return;
       if(data){
-        oldValue=data.chave_pix;
         form.elements.chavePix.value=data.chave_pix;
         status.textContent='Sua chave está cadastrada e aguardando validação. Você pode alterá-la.';
       }else{
@@ -177,7 +176,6 @@
           profissional_id:userId,chave_pix:chave,status:'pendente',atualizado_em:new Date().toISOString()
         },{onConflict:'profissional_id'});
         if(error)throw Error('Não foi possível salvar a chave. Atualize a página e tente novamente.');
-        oldValue=chave;
         status.textContent='Chave Pix salva! Aguardando validação da titularidade. Seu cadastro original foi preservado.';
       }catch(e){status.textContent=e.message||'Não foi possível salvar.';}
       finally{button.disabled=false;}
@@ -254,6 +252,8 @@
     let auto=false;try{auto=sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'&&['/profissional/carteira','/profissional/planos'].includes(pattern);}catch(_){}
     if(auto){try{sessionStorage.removeItem('qf_plano_pos_cadastro');sessionStorage.removeItem('qf_plano_pos_cadastro_metodo');}catch(_){}if(!s.ativo)await pay();}
    }
+   // Cadastro bancário independente do estado e da disponibilidade da assinatura.
+   mostrarContaPix(null).catch(()=>{});
    load().catch(()=>{if(box.isConnected)box.innerHTML='<p role="status">Não foi possível consultar seu plano.</p><button class="btn btn--outline" data-qf-livre-retry>Tentar novamente</button>';const retry=box.querySelector('[data-qf-livre-retry]');if(retry)retry.onclick=load;});
   }
   g.QFLivre.enhance=enhance;

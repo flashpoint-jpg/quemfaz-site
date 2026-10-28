@@ -10064,6 +10064,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/mais', role: 'admin', tab: 'mais', title: 'Início', render: function (p, u) { return Screens.adminDashboardRender(p, u); } }, // V11.95: "Mais opções" repetia o menu da esquerda
     { pattern: '/admin/negociacoes', role: 'admin', title: 'Orçamentos e negociações', render: function () { return '<div class="view"></div>'; } },
     { pattern: '/admin/comissao13', role: 'admin', title: 'Revisão de comissões', render: function () { return '<div class="view"></div>'; } },
+    { pattern: '/admin/financeiro', role: 'admin', title: 'Financeiro e Pix', render: function () { return '<div class="view"></div>'; } },
     { pattern: '/admin/desbloqueios', role: 'admin', title: 'Desbloqueios', render: Screens.adminDesbloqueiosRender },
     { pattern: '/admin/finalizados', role: 'admin', title: 'Chamados finalizados', render: Screens.adminFinalizadosRender },
     { pattern: '/admin/fechou', role: 'admin', title: 'Você fechou? · respostas dos profissionais', render: function () { return Screens.adminFechouRender(); } },
@@ -10275,6 +10276,7 @@ Screens.adminDashboardRender = function () {
     { id: 'semprof', label: 'Sem profissional', icon: 'alertTriangle', route: '/admin/sem-profissional' },
     { id: 'proximos', label: 'Profissionais próximos', icon: 'mapPin', route: '/admin/proximos' },
     { id: 'negociacoes', label: 'Orçamentos e negociações', icon: 'chat', route: '/admin/negociacoes' },
+    { id: 'financeiro', label: 'Financeiro e Pix', icon: 'wallet', route: '/admin/financeiro' },
     { id: 'desbloqueios', label: 'Desbloqueios', icon: 'unlock', route: '/admin/desbloqueios' },
     { id: 'fechou', label: 'Fechou? Sem resposta', icon: 'chat', route: '/admin/fechou' },
     { id: 'finalizados', label: 'Finalizados', icon: 'checkCircle', route: '/admin/finalizados' },
@@ -10525,6 +10527,7 @@ Screens.adminDashboardRender = function () {
 <script src="qf-atendimento.js?v=codigo-visivel-20261024"></script>
 <script src="qf-comissao13.js?v=negociacoes-20261027"></script>
 <script src="qf-admin-negociacoes.js?v=20261027-cards3"></script>
+<script src="qf-admin-financeiro.js?v=20261028-operacao1"></script>
 <script defer src="qf-prof-entregas.js?v=20261026"></script>
 </body>
 </html>
