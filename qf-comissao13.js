@@ -85,6 +85,39 @@
   const view=content.querySelector('.view')||content;
   if(lista){return;}
   if(admin||carteira){
+   if(admin){
+    const a=document.createElement('section');a.className='section card stack--sm';a.style.cssText='padding:14px;margin-bottom:14px';a.dataset.qfSplitAdmin='';
+    view.prepend(a);
+    const load=async()=>{
+     if(!a.isConnected)return;
+     a.innerHTML='<h2 class="h3">Recebedores Efí · Plano Livre</h2><p role="status">Consultando...</p>';
+     try{
+      const rows=await rpc('qf_livre_split_contas_admin');
+      a.innerHTML='<h2 class="h3">Contas Efí para repasse imediato</h2><p>Valide CPF/CNPJ e titularidade no banco antes de aprovar. A função de pagamento continua desabilitada até a homologação.</p>'+
+       (rows||[]).map(x=>'<article class="card stack--sm" data-qf-split-admin-id="'+esc(x.profissional_id)+'"><strong>'+esc(x.profissional)+'</strong><p>Conta Efí: '+esc(x.conta_efi)+' · Chave Pix: '+esc(x.chave_pix)+'</p><p>CPF/CNPJ: '+esc(x.documento)+' · Status: '+esc(x.status)+'</p>'+
+       '<label>Registro da verificação<textarea class="input" maxlength="1000" data-split-evidencia placeholder="Descreva como confirmou a conta e a titularidade"></textarea></label>'+
+       '<label><input type="checkbox" data-split-verificado> Conferi titularidade e conta Efí diretamente no banco</label>'+
+       '<div class="btn-row"><button type="button" class="btn btn--primary" data-split-decisao="true">Aprovar</button><button type="button" class="btn btn--outline" data-split-decisao="false">Reprovar</button></div><p role="status"></p></article>').join('')+
+       (!(rows||[]).length?'<p>Nenhuma conta bancária cadastrada ainda.</p>':'');
+      a.querySelectorAll('[data-qf-split-admin-id]').forEach(item=>{
+       item.querySelectorAll('[data-split-decisao]').forEach(b=>b.onclick=async()=>{
+        const val=item.querySelector('[data-split-evidencia]').value.trim();
+        const approve=b.dataset.splitDecisao==='true';
+        if(val.length<20||approve&&!item.querySelector('[data-split-verificado]').checked){
+         item.querySelector('[role=status]').textContent='Confirme a verificação e escreva pelo menos 20 caracteres de evidência.';return;
+        }
+        b.disabled=true;
+        try{
+         const r=await rpc('qf_livre_split_conta_validar_admin',{p_profissional:item.dataset.qfSplitAdminId,p_aprovar:approve,p_evidencia:val});
+         if(!r?.ok)throw Error(r?.reason||'Falha na validação.');
+         await load();
+        }catch(err){item.querySelector('[role=status]').textContent=err.message;b.disabled=false;}
+       });
+      });
+     }catch(_){a.querySelector('[role=status]').textContent='Não foi possível consultar as contas agora.';}
+    };
+    load().catch(()=>{});
+   }
    box.classList.add('qf13-wallet');view.prepend(box);box.innerHTML=(g.QFLivre?g.QFLivre.divisao():'')+'<h2 class="h3">Prestação de contas e comissões</h2><p>Carregando…</p>';
    let filtro='todos',pagina=0,cache=null;
    if(admin){const clock=g.setInterval(()=>{if(!box.isConnected){g.clearInterval(clock);return;}box.querySelectorAll('[data-qf13-age]').forEach(el=>{const t=tempoDecorrido(el.dataset.qf13Age);if(t)el.textContent=el.dataset.qf13AgeLabel+' há '+t+' · Desde '+dataCurta(el.dataset.qf13Age);});},60000);}
