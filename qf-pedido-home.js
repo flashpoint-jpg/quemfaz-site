@@ -52,16 +52,41 @@
   const categories=serviceCategories();
   target.innerHTML='<h2 class="qf-home-problem-title" id="home-problem-title">Qual serviço você precisa?</h2><p class="qf-home-problem-sub">Escolha a profissão para encontrarmos quem pode ajudar.</p><p class="text--sm" style="margin:0 0 12px">Já tem conta? <button type="button" class="btn btn--outline" data-home-login-start style="padding:6px 12px;min-height:34px;font-size:13px">Entrar com Google ou telefone</button></p><form class="stack" data-home-problem novalidate><label for="home-service">Serviço<select class="input" id="home-service" required aria-describedby="home-service-error"><option value="">Selecione o serviço</option>'+categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join('')+'</select></label><label for="home-problem">Descreva o que você precisa<textarea class="input" id="home-problem" rows="3" minlength="8" maxlength="1500" required aria-describedby="home-problem-hint home-service-error" placeholder="Ex.: meu computador não liga">'+esc(state.problem||'')+'</textarea></label><p class="text--sm text--secondary" id="home-problem-hint">Explique em uma frase o motivo do chamado. O profissional verá a descrição antes de desbloquear o pedido.</p><p role="alert" id="home-service-error"></p><button class="btn btn--primary" type="submit">Continuar</button></form><p class="text--sm text--secondary" style="margin-bottom:0">Pedido grátis. Uma etapa por vez, aqui mesmo.</p>';
   const form=target.querySelector('form'),input=form.querySelector('textarea'),select=form.querySelector('select');
+  // O catálogo completo permanece interno. No celular, só aparecem resultados da busca.
+  select.hidden=true;select.required=false;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
+  select.insertAdjacentHTML('beforebegin','<input class="input" id="home-service-search" type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="home-service-results" aria-describedby="home-service-hint home-service-error" placeholder="Digite o serviço. Ex.: informática, pintor"><div id="home-service-results" role="listbox" aria-label="Serviços encontrados" hidden></div><span class="text--sm text--secondary" id="home-service-hint" role="status">Digite pelo menos 2 letras para buscar.</span>');
+  form.querySelector('label[for="home-service"]').htmlFor='home-service-search';
+  const search=form.querySelector('#home-service-search'),results=form.querySelector('#home-service-results'),hint=form.querySelector('#home-service-hint');
+  select.closest('label').after(results,hint);search.required=true;
+  let active=-1;
+  const closeResults=()=>{results.hidden=true;search.setAttribute('aria-expanded','false');search.removeAttribute('aria-activedescendant');active=-1;};
+  const pick=category=>{select.value=category.id;search.value=category.nome;search.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';closeResults();hint.textContent='Serviço selecionado. Você pode digitar para trocar.';};
+  const suggest=()=>{
+   const query=norm(search.value),tokens=query.split(/[^a-z0-9]+/).filter(Boolean);results.innerHTML='';closeResults();
+   if(query.length<2){hint.textContent='Digite pelo menos 2 letras para buscar.';return;}
+   const inferred=new Map(classify(query).map(x=>[x.category.id,x.score]));
+   const found=categories.map(c=>({category:c,score:norm(c.nome)===query?1000:tokens.length&&tokens.every(t=>norm(c.nome).includes(t))?200:(inferred.get(c.id)||0)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5);
+   if(!found.length){hint.textContent='Nenhum serviço encontrado. Tente outro nome ou descreva o aparelho, como computador.';return;}
+   results.innerHTML=found.map(({category:c},i)=>'<button class="btn btn--outline" style="display:block;width:100%;text-align:left;margin-top:6px;white-space:normal" type="button" role="option" aria-selected="false" id="home-service-option-'+i+'" data-service-id="'+esc(c.id)+'">'+esc(c.nome)+'</button>').join('');
+   results.hidden=false;search.setAttribute('aria-expanded','true');hint.textContent='Toque no serviço correspondente.';
+   results.querySelectorAll('button').forEach(b=>b.onclick=()=>pick(categories.find(c=>c.id===b.dataset.serviceId)));
+  };
+  search.oninput=()=>{select.value='';search.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';suggest();};
+  search.onfocus=()=>{if(!select.value)suggest();};
+  search.onkeydown=e=>{const buttons=[...results.querySelectorAll('button')];if(e.key==='Escape'){closeResults();return;}if(results.hidden||!buttons.length)return;
+   if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();active=(active+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;buttons.forEach((b,i)=>b.setAttribute('aria-selected',String(i===active)));search.setAttribute('aria-activedescendant',buttons[active].id);}
+   else if(e.key==='Enter'){e.preventDefault();buttons[active<0?0:active].click();}
+  };
   target.querySelector('[data-home-login-start]').onclick=()=>login();
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
-  if(service)select.value=categories.find(c=>norm(c.nome)===norm(service))?.id||'';
+  if(service){const category=categories.find(c=>norm(c.nome)===norm(service));if(category)pick(category);}
   input.onfocus=()=>track('home_focus');
   input.oninput=()=>{input.removeAttribute('aria-invalid');track('home_type');state.problem=input.value;form.querySelector('[role=alert]').textContent='';};
   select.onchange=()=>{select.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';};
   form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;
    // A escolha explícita usa o catálogo dos profissionais, inclusive categorias novas.
    const category=categories.find(c=>c.id===select.value);
-   if(!category){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Selecione o serviço que você precisa.';select.setAttribute('aria-invalid','true');select.focus();return;}
+   if(!category){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Digite o serviço e escolha uma das opções encontradas.';search.setAttribute('aria-invalid','true');search.focus();return;}
    if(problem.length<8||problem.length>1500){track('validation_error',{error_code:'description'});form.querySelector('[role=alert]').textContent='Descreva o que precisa ser feito, com 8 a 1.500 caracteres. Ex.: meu computador não liga.';input.setAttribute('aria-invalid','true');input.focus();return;}
    showForm(category.nome,problem);
   };
