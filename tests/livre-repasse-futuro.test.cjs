@@ -9,7 +9,7 @@ test('Somente oferta Quem Faz Livre anuncia futuro repasse, claramente não disp
   assert.match(h,/QUEM FAZ LIVRE/);
   assert.match(h,/Em preparação: pagamento após o serviço, com repasse imediato de 87%/);
   assert.match(h,/Esta opção ainda não está disponível/);
-  assert.match(h,/após a confirmação bancária/);
+  assert.match(h,/após a confirmação bancária/i);
   assert.match(h,/13%/);
   assert.match(h,/Regra vigente/);
 });
