@@ -8,6 +8,7 @@ const root=path.join(__dirname,'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const livre=fs.readFileSync(path.join(root,'qf-livre.js'),'utf8');
 const sql=fs.readFileSync(path.join(root,'supabase/2026-10-28-cadastro-pago-obrigatorio.sql'),'utf8');
+const edge=fs.readFileSync(path.join(root,'supabase/functions/quemfaz-pre-cadastro/index.ts'),'utf8');
 const signup=html.slice(html.indexOf("form.addEventListener('submit', async function (e) {",680000));
 
 test('Scripts inline e modulo Livre com sintaxe valida',()=>{
@@ -63,4 +64,14 @@ test('Profissionais existentes preservados, sem criacao de pagamentos ou repasse
   assert.match(sql,/INSERT INTO private\.qf_profissionais_anteriores_pagamento/);
   assert.doesNotMatch(sql,/INSERT INTO public\.qf_pre_cadastro_pagamentos/);
   assert.doesNotMatch(sql,/qf_livre_split_confirmar_banco/);
+});
+
+test('Efí recusa planos legados, preço divergente e cartão Livre ANTES de cobrar',()=>{
+ const inicio=edge.indexOf('if (acao === "criar")');
+ const gerar=edge.indexOf('const segredo = segredoNovo()',inicio);
+ const trecho=edge.slice(inicio,gerar);
+ assert.match(trecho,/plano !== "avulso" && plano !== "livre"/);
+ assert.match(trecho,/plano === "livre" && metodo !== "pix"/);
+ assert.match(trecho,/valorEsperado = plano === "avulso" \? 1300 : 3990/);
+ assert.match(sql,/ADD CONSTRAINT qf_cadastro_preco_valido/);
 });
