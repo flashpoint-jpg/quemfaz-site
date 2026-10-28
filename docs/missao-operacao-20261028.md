@@ -27,11 +27,11 @@ Valores abaixo são **orçamentos configurados, não gastos realizados**.
 | Google 24318526983 — reparos/limpeza | Ativa | 29,20 |
 | Google 24310102048 — instalação/pintura | Ativa | 30,80 |
 | Google 24346726219 — cadastro de profissionais | Pausada | 1,00, sem entrega |
-| Meta 52598343778388 — clientes, Facebook + Instagram | Ativa; anúncio editado em análise | 30,00 compartilhados |
+| Meta 52598343778388 — clientes, Facebook + Instagram | Ativa; anúncio editado e aprovado | 30,00 compartilhados |
 | Meta 52591042341788 — profissionais | Ativa, objetivo separado | 30,00 |
 
 - Google: nenhum aumento, nenhuma campanha reativada. Preservadas negativas existentes contra vagas, cursos, recrutamento e tutoriais. Grupo adicional de fogão/micro-ondas criado **pausado**, ID 205190718361, anúncio 829756818196, sem iniciar gasto adicional. Sua ativação aguarda validação da meta principal na conta.
-- Meta: texto de clientes atualizado para a mensagem solicitada, preservando a campanha, o criativo e R$ 30/dia compartilhados entre Facebook e Instagram. `write_status=applied`; anúncio entrou em revisão. Campanha de profissionais preservada separadamente.
+- Meta: texto de clientes atualizado para a mensagem solicitada, preservando a campanha, o criativo e R$ 30/dia compartilhados entre Facebook e Instagram. `write_status=applied`; anúncio aprovado na leitura final. Campanha de profissionais preservada separadamente.
 - Cobertura: confrontadas especialidades, coordenadas e raios com profissionais de perfil ativo, foto e saldo positivo ou Livre vigente. Na região circular de 30 km de São Paulo há ao menos um cadastro com cobertura integral para cada profissão dos grupos ativos; há 2 para geladeira e 2 para fogão/micro-ondas. Cadastro/raio não garante comparecimento ou disponibilidade em cada horário.
 - O código de conversão coincide com o snippet de **Pedido publicado**, ação 7662297511: `AW-18273159663/RIX-CKfD1cUcEO-TqYlE`. O teste local prova disparo após persistência; **não confirma se a ação está como principal/biddable nem se a atribuição chegou ao Google**.
 - Gastos, termos de pesquisa e CPA não puderam ser consultados: Supermetrics retornou `TRIAL_EXPIRED`, equipe 1165792, expiração 14/10/2026. Não foram inventados números ou termos de desperdício. Necessário restaurar a conexão paga para concluir auditoria de retorno e meta principal. Nenhuma assinatura foi contratada.
@@ -45,3 +45,7 @@ Valores abaixo são **orçamentos configurados, não gastos realizados**.
 - Pendências técnicas antes de ativar a PR #147: implantar e testar webhook autenticado que reconsulta o banco; reconciliação contínua de estornos posteriores à liquidação; políticas/fluxo administrativo para devolução, falhas permanentes e tarifas; prova de notificações separadas em aparelhos reais; testes bancários controlados. Bloqueios adicionais de webhook/limites/tarifas permanecem falsos por padrão.
 
 Não considerar a missão integralmente concluída: faltam homologação bancária, validação autenticada das jornadas de produção e auditoria completa dos anúncios.
+
+## Publicação comprovada
+
+PR #149 incorporada, commit `d7fedbe9c5bcddc1ac2c1f4327890263513a396c`. Deploy de produção `dpl_5X325nPqaeKuGyBy37oZm8RB3hEw` READY. Domínio oficial e preview devolveram os arquivos de Carteira, painel e Service Worker idênticos ao build testado. Ajuste final de legibilidade das tabelas e busca por nome do profissional validado nesta sequência.
