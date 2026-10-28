@@ -39,7 +39,11 @@ function home(categories=catalog){
  w.eval(fs.readFileSync('qf-pedido-home.js','utf8'));
  const submit=(id,problem='')=>{
   w.QFPedidoHome.start();const input=w.document.querySelector('#home-problem');
-  w.document.querySelector('#home-service').value=id;
+  const category=categories.find(c=>c.id===id);
+  if(category&&id!=='cat_outros'){
+   const search=w.document.querySelector('#home-service-search');search.value=category.nome;search.dispatchEvent(new w.Event('input'));
+   w.document.querySelector('[data-service-id="'+id+'"]')?.click();
+  }
   input.value=problem;input.dispatchEvent(new w.Event('input'));
   input.form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
  };
@@ -72,8 +76,8 @@ test('Descrição nunca troca a profissão escolhida nem avança sem uma escolha
   for(const description of ['Computador não liga','Preciso de ajuda com alguma coisa','Meu computador e meu celular não ligam']){
    submit('',description);assert.equal(mounted.length,0);
    assert.equal(w.document.querySelector('#home-problem').value,description);
-   assert.match(w.document.querySelector('[role=alert]').textContent,/Selecione o serviço/);
-   assert.equal(w.document.activeElement.id,'home-service');
+   assert.match(w.document.querySelector('[role=alert]').textContent,/Digite o serviço/);
+   assert.equal(w.document.activeElement.id,'home-service-search');
   }
   submit('cat_informatica','Computador não liga');
   assert.equal(mounted.at(-1).service,'Técnico em informática');
@@ -100,5 +104,23 @@ test('Profissão adicionada ao catálogo aparece na escolha e mantém seu nome c
   submit(category.id,'Preciso ajustar um acessório');
   assert.equal(mounted[0].service,category.nome);
   w.QFPedidoHome.start();assert.equal(w.document.querySelector('option[value="cat_custom_outros"]'),null);
+ }finally{dom.window.close();}
+});
+
+test('Busca mostra até cinco opções, reconhece apelidos e invalida a seleção ao editar',()=>{
+ const {dom,w,mounted}=home();
+ try{
+  w.QFPedidoHome.start();const search=w.document.querySelector('#home-service-search'),select=w.document.querySelector('#home-service'),results=w.document.querySelector('#home-service-results');
+  assert.equal(select.hidden,true);assert.equal(results.hidden,true);
+  const type=text=>{search.value=text;search.dispatchEvent(new w.Event('input'));};
+  type('computador');assert.ok(results.querySelector('[data-service-id="cat_informatica"]'));
+  results.querySelector('[data-service-id="cat_informatica"]').click();assert.equal(select.value,'cat_informatica');assert.equal(search.value,'Técnico em informática');assert.equal(results.hidden,true);
+  type('pint');assert.equal(select.value,'');assert.ok(results.querySelectorAll('button').length<=5);
+  search.dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));
+  search.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Enter',bubbles:true,cancelable:true}));assert.ok(select.value);
+  type('zzzz sem categoria');assert.equal(select.value,'');assert.equal(results.hidden,true);assert.match(w.document.querySelector('#home-service-hint').textContent,/Nenhum serviço/);
+  w.document.querySelector('#home-problem').value='Meu computador não liga';search.form.dispatchEvent(new w.Event('submit',{cancelable:true}));assert.equal(mounted.length,0);
+  type('tecnico');assert.ok(results.querySelectorAll('button').length<=5);
+  search.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(results.hidden,true);
  }finally{dom.window.close();}
 });

@@ -43,7 +43,7 @@ test('descrição sem profissão pede escolha explícita sem criar Outros servi�
  submit(p.w,'Preciso de ajuda em casa urgente');
  assert.equal(p.getNext(),null);
  assert.equal(p.w.document.querySelector('#home-problem').value,'Preciso de ajuda em casa urgente');
- assert.match(p.w.document.querySelector('[role=alert]').textContent,/Selecione o serviço/);
+ assert.match(p.w.document.querySelector('[role=alert]').textContent,/Digite o serviço/);
  assert.equal(p.w.document.querySelector('[data-home-type]'),null);
  p.close();
 });
