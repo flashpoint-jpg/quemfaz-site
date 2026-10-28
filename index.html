@@ -10813,7 +10813,6 @@ alt=""></noscript>
         const btn = form.querySelector('button[type="submit"]');
         const planoEscolhido = String(fd.get('planoEscolhido') || '');
         const planoPago = QF_CAD_PLANOS.find(function (x) { return x.id === planoEscolhido; });
-        const btn = form.querySelector('button[type="submit"]');
         if (btn) btn.disabled = true;
         try {
           if (!(global.QFCloud && global.QFCloud.enabled)) {
