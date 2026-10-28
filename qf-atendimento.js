@@ -31,7 +31,7 @@
   function tipoPorOrcamento(a) { return 'tradicional'; }
   function stages(a) {
     const groups=[['Serviço',['servico','aceite_app','detalhes','escopo']],['Local e prazo',['cidade','uf','bairro','urgencia']],['Condições',['materiais']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
-    return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled)))}));
+    return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled) && !(a.__problem&&['detalhes','escopo'].includes(key))))}));
   }
   function questions(a) {
     const service = norm(a.servico);
@@ -195,7 +195,18 @@
     const a=reuse?oldDraft.answers:{}, cat=categoryId && root.DB.categoryById(categoryId);
     if(cat&&!fromGoogle) {a.servico=cat.nome;a.__servicePrefilled=true;}
     else if(homeService&&!fromGoogle) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
-    if(params.problem&&!fromGoogle)a.__problem=String(params.problem).trim().slice(0,1500);
+    if(params.problem&&!fromGoogle){
+      a.__problem=String(params.problem).trim().slice(0,1500);
+      // A descrição original é a fonte do pedido; metadados exigidos pelo servidor
+      // são preenchidos sem obrigar o cliente a repetir o tipo ou tamanho.
+      const qs=questions(a),detail=qs.find(q=>q.key==='detalhes'),scope=qs.find(q=>q.key==='escopo');
+      const words=norm(a.__problem).split(/[^a-z0-9]+/).filter(w=>w.length>=4&&!['preciso','servico','fazer','quero','minha','tenho','para','sobre','algum','alguma'].includes(w));
+      if(!a.detalhes&&detail){
+        const matched=detail.choices.find(([,label])=>words.some(w=>norm(label).split(/[^a-z0-9]+/).includes(w)));
+        a.detalhes=matched?.[0]||detail.choices.find(([id])=>id==='outro')?.[0]||detail.choices[0]?.[0];
+      }
+      if(!a.escopo&&scope)a.escopo=scope.choices.find(([id])=>id==='avaliar')?.[0]||scope.choices[0]?.[0];
+    }
     if(user&&!fromGoogle){a.nome=user.nome||'';a.contato=user.telefone||'';} // OAuth: nunca sobrescrever o telefone salvo no pedido.
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     const track=(event,error,once)=>{try{root.QFClientAcquisition?.track(event,{category:category(a.servico)?.id,error_code:error},once);}catch(_){}};
