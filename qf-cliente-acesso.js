@@ -76,7 +76,8 @@
      try{
       // Salva o formulário cifrado antes do redirecionamento; o retorno é tratado na home.
       if(g.QFAtendimento?.hasActiveDraft?.())await g.QFAtendimento.saveDraftForGoogle();
-      const redirectTo=g.location.origin+g.location.pathname+g.location.search+g.location.hash;
+      // O retorno OAuth deve usar URL canônica autorizada no Supabase, nunca hash/localhost/preview.
+      const redirectTo='https://quemfazservico.com.br/?app=1';
       const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
       if(result.error)throw result.error;
      }catch(err){host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
