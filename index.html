@@ -10599,7 +10599,7 @@ alt=""></noscript>
       }
       function renderPedirSenha() {
         pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Crie a senha da sua conta <strong>' + esc(pre.dados.email) + '</strong> para terminar.</div></div>' +
-          '<label class="field"><span class="field__label">Senha</span><input class="input" type="text" data-pag-senha minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>' +
+          '<label class="field"><span class="field__label">Senha</span><input class="input" type="password" data-pag-senha minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>' +
           '<button class="btn btn--primary" type="button" data-pag-criar-conta>Criar minha conta</button>';
       }
       function renderErroConta(msg) {
@@ -10655,11 +10655,11 @@ alt=""></noscript>
           '<div class="h2" style="text-align:center;">' + (conta.ativo ? 'Pagamento confirmado e conta criada!' : 'Conta criada!') + '</div>' +
           '<div class="qf-conta-dados"><div class="qf-conta-dados__tit">Dados da sua conta</div>' +
             '<div class="qf-conta-dados__linha"><span>E-mail</span><strong>' + esc(conta.email) + '</strong></div>' +
-            '<div class="qf-conta-dados__linha"><span>Senha</span><strong>' + esc(conta.senha) + '</strong></div>' +
-            '<div class="qf-conta-dados__nota">Anote ou tire um print: você usa esse e-mail e essa senha para entrar no QuemFaz.</div></div>' +
+            '<div class="qf-conta-dados__linha"><span>Senha</span><strong>Protegida — use a senha que você criou</strong></div>' +
+            '<div class="qf-conta-dados__nota">Guarde sua senha com segurança. Você utiliza seu e-mail e a senha que criou para entrar.</div></div>' +
           '<div class="card card--tight row" style="background:var(--success-100);border:none;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--success-600);">' +
             (conta.ativo ? 'Plano ' + esc(conta.plano.nome) + ' creditado na sua carteira' : 'Pagamento do plano ' + esc(conta.plano.nome) + ' confirmado') + '</div><div class="text--sm">' +
-            (conta.ativo ? esc(conta.plano.unit.split(' · ')[0]) + ' para usar em ' + global.QFPlanos.dias(conta.plano.id) + ' dias.' : 'O plano entra na sua carteira em instantes, assim que você abrir o app.') + '</div></div></div>' +
+            (conta.ativo ? (conta.plano.id === 'avulso' ? 'Os R$ 13 são saldo seu para desbloqueios e não têm prazo de vencimento.' : 'Quem Faz Livre ativo por 30 dias após o pagamento confirmado.') : 'O saldo ou plano será ativado após a conciliação bancária. Confira sua carteira ao entrar.') + '</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
       }
       async function criarContaAgora(dados, planoId, metodo) {
