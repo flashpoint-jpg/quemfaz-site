@@ -23,7 +23,7 @@
   function simplifyMenu(){
     const menu=g.document.querySelector('.qf-adm-nav');
     if(!menu||menu.querySelector('[data-qff-nav-more]'))return;
-    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes']);
+    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/movimentacoes','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes']);
     const more=g.document.createElement('details');
     more.className='qff-nav-more';more.dataset.qffNavMore='1';
     const heading=g.document.createElement('summary');heading.textContent='Mais ferramentas';
