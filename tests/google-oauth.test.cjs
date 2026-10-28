@@ -126,3 +126,28 @@ test('Google: telefone de outra conta exige acesso original e não vincula autom
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
 });
+
+test('Google: retorno OAuth sempre usa site oficial sem hash nem localhost',async()=>{
+ const w=page();
+ w.HTMLElement.prototype.scrollIntoView=()=>{};
+ let options=null;
+ w.QFCloud={
+  client:{
+   auth:{
+    getUser:async()=>({data:{user:null},error:null}),
+    signInWithOAuth:async args=>{options=args;return {error:null};}
+   }
+  }
+ };
+ const pending=w.QFClienteAcesso.authenticate({nome:'Cliente',telefone:'11987654321',container:w.document.body});
+ await new Promise(resolve=>setTimeout(resolve,20));
+ const login=w.document.querySelector('[data-google-login]');
+ assert.ok(login);
+ login.click();
+ await new Promise(resolve=>setTimeout(resolve,20));
+ assert.equal(options.provider,'google');
+ assert.equal(options.options.redirectTo,'https://quemfazservico.com.br/?app=1');
+ w.document.querySelector('[data-access-cancel]').click();
+ await assert.rejects(pending,/pedido continua preenchido/);
+ w.close();
+});
