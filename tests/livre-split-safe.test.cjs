@@ -46,13 +46,14 @@ test('conciliação exige comprovante E2E, valor, split e repasse',()=>{
  assert.match(alert,/primary key\(pagamento_id,tipo\)/);
  assert.match(alert,/qf_push_interno\('chat_message'/);
 });
-test('somente Plano Livre mostra opção de Pix e conta Efí, sem habilitar Avulso',()=>{
+test('Novo cadastro usa chave Pix sem Efí, mantendo fluxo financeiro antigo desativado',()=>{
  assert.match(customer,/data-qf-livre-split/);
  assert.match(customer,/cliente_concluiu_em/);
  assert.match(customer,/!d.disponivel&&d.status==='nao_iniciado'/);
- assert.match(professional,/qf_livre_split_conta_cadastrar/);
- assert.match(professional,/conta digital Efí/);
- assert.match(professional,/novo pagamento pós-serviço/);
+ assert.match(professional,/data-qf-livre-pix-cadastro/);
+ assert.match(professional,/qf_livre_pix_chaves/);
+ assert.match(professional,/Não precisa abrir conta Efí/);
+ assert.doesNotMatch(professional,/name="contaEfi"/);
 });
 test('funções financeiras internas inacessíveis a cliente e profissional',()=>{
  assert.match(base,/revoke all on function public.qf_livre_split_confirmar_banco/);
