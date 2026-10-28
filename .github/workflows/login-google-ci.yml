@@ -1,0 +1,37 @@
+name: Login Google — rascunho e titularidade
+on:
+  pull_request:
+    paths:
+      - 'qf-atendimento.js'
+      - 'qf-cliente-acesso.js'
+      - 'qf-pedido-home.js'
+      - 'tests/google-oauth.test.cjs'
+      - '.github/workflows/login-google-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'qf-atendimento.js'
+      - 'qf-cliente-acesso.js'
+      - 'qf-pedido-home.js'
+      - 'tests/google-oauth.test.cjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  google-login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Verificar sintaxe
+        run: |
+          node --check qf-atendimento.js
+          node --check qf-cliente-acesso.js
+          node --check qf-pedido-home.js
+      - name: Executar testes isolados de login Google
+        run: node --test tests/google-oauth.test.cjs
