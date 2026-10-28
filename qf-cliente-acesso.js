@@ -19,9 +19,28 @@
   if(p.error||p.data?.tipo!=='cliente'||phone(p.data.whatsapp||p.data.telefone)!==phone(telefone))return null;
   return p.data;
  }
+ async function googleCustomer(nome,telefone){
+  const client=g.QFCloud?.client;
+  if(!client?.auth?.getUser)return null;
+  const {data,error}=await client.auth.getUser();
+  if(error||!data?.user?.identities?.some(i=>i.provider==='google'))return null;
+  // Função existente no servidor: valida JWT, titularidade e duplicidade de telefone.
+  await call('google',{nome,telefone});
+  const profile=await existing(telefone);
+  if(!profile)throw Error('Sua conta Google foi validada, mas não conseguimos confirmar o telefone do pedido.');
+  await g.QFCloud.syncForCurrentSession(true);
+  return profile;
+ }
  function authenticate({nome,telefone,container}){
   if(active)return active;
-  active=open({nome,telefone,container}).finally(()=>{active=null;});return active;
+  active=(async()=>{
+   const profile=await existing(telefone);
+   if(profile)return profile;
+   const google=await googleCustomer(nome,telefone);
+   if(google)return google;
+   return open({nome,telefone,container});
+  })().finally(()=>{active=null;});
+  return active;
  }
  async function open({nome,telefone,container}){
   const current=await existing(telefone);if(current)return current;
@@ -46,7 +65,8 @@
      const client=g.QFCloud?.client;
      if(!client?.auth?.signInWithOAuth){host.querySelector('[role=alert]').textContent='Login Google indisponível no momento.';return;}
      try{
-      // OAuth returns to the same page; the request draft remains in sessionStorage.
+      // Salva o formulário cifrado antes do redirecionamento; o retorno é tratado na home.
+      if(g.QFAtendimento?.hasActiveDraft?.())await g.QFAtendimento.saveDraftForGoogle();
       const redirectTo=g.location.origin+g.location.pathname+g.location.search+g.location.hash;
       const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo}});
       if(result.error)throw result.error;
