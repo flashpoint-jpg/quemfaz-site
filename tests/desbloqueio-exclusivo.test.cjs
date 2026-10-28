@@ -15,7 +15,7 @@ assert.ok(sql.includes('if not v_exclusivo then'), 'plano não cobre o exclusivo
 assert.ok(sql.includes('REVOKE ALL ON FUNCTION public.qf_desbloquear_chamado(uuid, boolean) FROM PUBLIC, anon;'), 'sem acesso anônimo');
 
 // App: opção exclusiva com a frase aprovada, e o pedido do cliente de 1 a 4.
-assert.ok(html.includes('Tenha o contato do cliente exclusivamente para você.'), 'frase do exclusivo');
+assert.ok(html.includes('O contato fica reservado a 1 profissional verificado.'), 'frase do exclusivo');
 assert.ok(html.includes('data-action="desbloquear-exclusivo"'), 'botão do exclusivo');
 assert.ok(html.includes("{ p_chamado_id: chamadoId, p_exclusivo: true }"), 'chamada do exclusivo');
 assert.ok(html.includes("client.rpc('qf_exclusivo_info')"), 'preço do exclusivo vem do painel');

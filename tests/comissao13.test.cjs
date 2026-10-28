@@ -175,9 +175,12 @@ test('HMAC vincula código ao link e à finalidade, sem expor o código',async()
  for(let i=0;i<100;i++)assert.match(gerarCodigo(),/^\d{6}$/);
  assert.equal(telefoneBR('11999990000'),'+5511999990000');assert.throws(()=>telefoneBR('123'));
 });
-test('frontend: mostra bloqueio real e não expõe ação de desbloqueio antes da validação',()=>{
+test('frontend: oferta legada encaminha ao Livre sem autorizar desbloqueios',()=>{
  const ui=require('../qf-comissao13.js');
- const off=ui.oferta({desbloqueio_gratuito_ativo:false});assert.match(off,/Modalidade indisponível/);assert.ok(!off.includes('data-qf13-desbloquear'));
- const on=ui.oferta({desbloqueio_gratuito_ativo:true});assert.match(on,/data-qf13-termos/);assert.match(on,/data-qf13-desbloquear/);
+ for(const ativo of [false,true]){
+  const html=ui.oferta({desbloqueio_gratuito_ativo:ativo});
+  assert.match(html,/Quem Faz Livre/);assert.match(html,/39,90/);
+  assert.doesNotMatch(html,/data-qf13-desbloquear|data-qf13-termos/);
+ }
  assert.ok(!ui.painel([{profissional:'<img src=x>',valor_centavos:50000}]).includes('<img'));
 });

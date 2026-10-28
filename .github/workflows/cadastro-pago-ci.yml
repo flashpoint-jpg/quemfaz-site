@@ -11,6 +11,7 @@ on:
       - 'qf-livre.js'
       - 'supabase/2026-10-28-cadastro-pago-obrigatorio.sql'
       - 'tests/cadastro-obrigatorio.test.cjs'
+      - 'tests/cadastro-planos-ui.test.cjs'
       - 'tests/cadastro-efi-conciliacao.test.cjs'
       - 'tests/cadastro-obrigatorio.postgres.sql'
       - 'tests/pagamento-antes-da-conta.test.cjs'
@@ -45,7 +46,7 @@ jobs:
       - name: Instalar ferramentas sem scripts de terceiros
         run: npm ci --ignore-scripts
       - name: Build e testes estruturais do cadastro
-        run: npm run build && node --test tests/cadastro-admin-kpis.test.cjs tests/cadastro-obrigatorio.test.cjs tests/cadastro-efi-conciliacao.test.cjs tests/pagamento-antes-da-conta.test.cjs
+        run: npm run build && node --test tests/cadastro-admin-kpis.test.cjs tests/cadastro-obrigatorio.test.cjs tests/cadastro-planos-ui.test.cjs tests/cadastro-efi-conciliacao.test.cjs tests/pagamento-antes-da-conta.test.cjs
       - name: PostgreSQL isolado sem dados bancários reais
         env:
           PGPASSWORD: teste_local_somente

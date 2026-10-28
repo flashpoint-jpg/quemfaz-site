@@ -10,6 +10,7 @@
   return '<div class="qf-livre__eyebrow">QUEM FAZ LIVRE</div>' +
     '<h2 class="qf-livre__headline">Desbloqueie o quanto quiser <span>por R$ 1,33 ao dia</span></h2>' +
     '<p class="qf-livre__price">R$ 39,90 por 30 dias</p>' +
+    (s.ativo ? '<p role="status">Plano ativo — desbloqueios ilimitados'+(s.valido_ate?' até '+esc(date(s.valido_ate)):'')+'</p>' : s.valido_ate ? '<p role="status">Plano vencido em '+esc(date(s.valido_ate))+'. Renove para continuar com os benefícios.</p>' : '') +
     '<div class="qf-livre__benefits">' +
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">∞</span><strong>Pedidos compatíveis ilimitados</strong></div>' +
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">%</span><strong>Você fica com 87% do valor do serviço</strong></div>' +
@@ -66,16 +67,13 @@
     }
    }
    if(cadastro){
-    content.querySelectorAll('[name=planoEscolhido]').forEach(r=>{if(r.value!=='avulso')r.closest('label')?.remove();else r.checked=true;});
     content.querySelector('.qf-cad-planos__ex')?.remove();
-    const submit=content.querySelector('[data-cad-criar]');if(submit)submit.textContent='Criar conta grátis';
     // O aviso do Quem Faz Livre aparece no fim do cadastro (etapa 5), só quando o profissional escolhe esse plano.
     const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
     if(group&&form){
      group.dataset.qfLivreCadastro='';
      // Os dois cartões já são renderizados no cadastro principal: não duplicar o Livre.
      const avulso=group.querySelector('input[value="avulso"]');
-     if(avulso){avulso.checked=false;avulso.closest('label').querySelector('.qf-cad-plano__lista').innerHTML='<span>Pague só pelos pedidos que desbloquear</span><span>Sem mensalidade e sem comissão</span>';}
      try{if(sessionStorage.getItem('qf_cad_escolha_plano')==='avulso'&&avulso){group.querySelector('input[value="livre"]').checked=false;avulso.checked=true;}sessionStorage.removeItem('qf_cad_escolha_plano');}catch(_){}
      // Detalhes acessíveis sem repetir toda a oferta abaixo dos cartões.
      const conditions=document.createElement('details');conditions.className='qf-step__opt';

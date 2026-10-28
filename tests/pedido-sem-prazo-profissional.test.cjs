@@ -61,11 +61,11 @@ assert.ok(ov.includes('QFPedidoMsg') && ov.includes('URGENTE') && ov.includes('Q
 assert.ok(!html.includes('pz ? pz.texto'));
 assert.ok(!html.includes('data-qf-portfolio-period aria-label'));
 assert.ok(!html.includes('QFPrazo.comparar'));
-assert.ok(html.includes('function qfUrgent(req){\n    return !!(req && req.prioridade);'));
+assert.ok(/function qfUrgent\(req\)\{\s*return !!\(req && req.prioridade\);/.test(html));
 
 // Aba de pedidos da home (cartões reais) e "Outros pedidos".
 assert.ok(!ext.includes('SEM PRESSA') && !ext.includes('PRA HOJE') && !ext.includes('Previsto:') && !ext.includes('Data a combinar') && !ext.includes('qfOutrosPrazo'));
-assert.ok(ext.includes('QFPedidoMsg') && ext.includes('QFUrgencia'));
+assert.ok(ext.includes('QFUrgencia') && ext.includes('U.tagHtml(req)+U.prioridadeHtml(req)'));
 
 // Push: sem data/horário pretendido; urgência paga com título próprio; regras de envio intactas.
 const body = push.slice(push.indexOf('function newCallBody'), push.indexOf('async function newCallPayloads'));

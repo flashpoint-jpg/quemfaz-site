@@ -21,9 +21,9 @@ test('UI administrativa: orçamento real da API, busca, detalhe, leitura sem env
  try{await rpc(d,'qf_chat_contratacao',[call.id,uid(11),'propor',35000]);await d.exec("reset role;select set_config('test.admin','true',false)");await as(d,1);w.Screens={};let writes=0;
   w.QFAdminCloud={client:{rpc:async(n,a)=>{try{if(!['qf_admin_negociacoes','qf_admin_negociacao_detalhe'].includes(n)){writes++;throw Error('Mutação inesperada');}return {data:await rpc(d,n,n==='qf_admin_negociacao_detalhe'?[a.p_desbloqueio]:[])};}catch(error){return {error};}}}};
   w.eval(fs.readFileSync('qf-admin-negociacoes.js','utf8'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
-  await wait(()=>w.document.querySelector('tbody tr'));
-  assert.match(w.document.body.textContent,/45,50/);assert.ok(w.document.body.textContent.includes('Confirmadas a receber'));
-  w.document.querySelector('tbody [data-qfn-open]').click();await wait(()=>w.document.querySelector('[data-qfn-reminder] a'));
+  await wait(()=>w.document.querySelector('[data-qfn-open]' ));
+  assert.match(w.document.body.textContent,/350,00/);assert.match(w.document.body.textContent,/Comissão: Sem cobrança/);assert.doesNotMatch(w.document.body.textContent,/45,50/);
+  w.document.querySelector('[data-qfn-open]').click();await wait(()=>w.document.querySelector('[data-qfn-reminder] a'));
   assert.ok(w.document.body.textContent.includes('Conversa interna'));assert.ok(w.document.querySelector('[data-qfn-reminder] a').href.startsWith('https://wa.me/5511988887777?text='));assert.ok(w.document.body.textContent.includes('Abrir não comprova envio'));
   const dialog=w.document.querySelector('dialog');assert.ok(dialog.hasAttribute('open'));
   assert.ok(dialog.querySelector('.qfn-detail-grid'));assert.ok(dialog.querySelector('.qfn-messages'));

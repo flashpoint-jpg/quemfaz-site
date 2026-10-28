@@ -17,7 +17,9 @@ test('banco: aviso exige online, horário e respeita o raio do profissional', ()
 
 test('profissional: lembrete do horário na tela inicial ajusta ali mesmo', () => {
   const home = index.slice(index.indexOf('Screens.profHomeRender = function'));
-  assert.match(home.slice(0, 6000), /horarioAtendimentoLembrete\(user\)/);
+  const extension=fs.readFileSync(path.join(root,'scripts/qf-other-jobs-extension.js'),'utf8');
+  assert.match(extension,/row\('Horário de atendimento',hours,'data-qf-horario-rapido="1"'/);
+  assert.match(extension,/user.horarioInicio/);assert.match(extension,/user.horarioFim/);
   const helper = index.slice(index.indexOf('function horarioAtendimentoLembrete'), index.indexOf('Screens.profHomeRender = function'));
   assert.match(helper, /data-qf-horario-rapido/);
   assert.ok(!/data-nav/.test(helper));

@@ -8,7 +8,7 @@ const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
 [...admin.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m, i) => new vm.Script(m[1], { filename: 'admin-' + i + '.js' }));
 
 // Menu na ordem combinada; cada rota do menu existe.
-const menu = ['Início', 'Todos os pedidos', 'Parados na tela', 'Sem profissional', 'Profissionais próximos', 'Orçamentos e negociações', 'Desbloqueios', 'Fechou? Sem resposta', 'Finalizados', 'Cancelamentos', 'Profissionais', 'Como acessam (app/PWA/site)', 'Verificações', 'Profissionais por cidade', 'Clientes', 'Movimentações', 'Receita', 'Planos dos profissionais', 'Bônus', 'Anúncios (QuemFaz Premium)', 'Comunicados', 'Avisar quem não entrou', 'Sem notificação', 'Instalação do app', 'Suporte', 'Recrutamento', 'Configurações']; // V11.95: agrupado por assunto, sem repetição
+const menu = ['Início', 'Todos os pedidos', 'Parados na tela', 'Sem profissional', 'Profissionais próximos', 'Orçamentos e negociações', 'Financeiro e Pix', 'Desbloqueios', 'Fechou? Sem resposta', 'Finalizados', 'Cancelamentos', 'Profissionais', 'Como acessam (app/PWA/site)', 'Verificações', 'Profissionais por cidade', 'Clientes', 'Movimentações', 'Receita', 'Planos dos profissionais', 'Bônus', 'Anúncios (QuemFaz Premium)', 'Comunicados', 'Avisar quem não entrou', 'Sem notificação', 'Instalação do app', 'Suporte', 'Recrutamento', 'Configurações']; // V11.95: agrupado por assunto, sem repetição
 const bloco = admin.slice(admin.indexOf('const ADMIN_MENU = ['), admin.indexOf('];', admin.indexOf('const ADMIN_MENU = [')));
 const labels = [...bloco.matchAll(/label: '([^']+)'/g)].map((m) => m[1]);
 assert.deepEqual(labels, menu);
@@ -65,7 +65,7 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
 {
   const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   // V11.55: os números do Premium vêm de QFPlanos (painel); 19990 / 60 é só o ponto de partida.
-  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 35, dias: 30 }") && site.includes("qfCadPlano('premium', 'MAIS COMPLETO'"));
+  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 35, dias: 30 }") && site.includes("id: 'avulso', nome: 'Avulso'") && site.includes("id: 'livre', nome: 'Quem Faz Livre'"));
   assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
   assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
   // V11.50: plano pago vai para o pagamento antes da conta; só o boleto ainda abre na Carteira depois do cadastro.
@@ -82,4 +82,4 @@ const built = fs.readFileSync(path.join(__dirname, '..', 'dist/admin.html'), 'ut
 for (const route of ['/admin/negociacoes','/admin/comissao13']) {
   assert.equal(built.split("{ pattern: '"+route+"',").length-1,1,'rota única no build: '+route);
 }
-assert.ok(built.includes('qf-admin-negociacoes.js?v=20261027-layout2'));
+assert.ok(built.includes('qf-admin-negociacoes.js?v=20261027-cards3'));
