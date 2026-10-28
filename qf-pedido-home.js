@@ -81,7 +81,7 @@
   const form=target.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const b=form.querySelector('button');b.disabled=true;try{await g.QFClienteAcesso.authenticate({nome:'',telefone:form.elements.telefone.value,container:target.querySelector('[data-home-access]')});await orders();}catch(err){if(form.isConnected)form.querySelector('[role=alert]').textContent=err.message;}finally{b.disabled=false;}};
  }
  function showForm(service,problem){
-  if(!service){intro();return;}
+  if(!service&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()){intro();return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
   try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
@@ -153,6 +153,7 @@
  }
  function bindHome(){
   if(!host())return;
+  if(g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
   if(action)execute(action);
@@ -185,7 +186,7 @@
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
   },true);
-  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
+  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(g.QFAtendimento?.hasGoogleDraft?.())bindHome();else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
   return true;
  }
  g.QFPedidoHome={published,openPath,start:()=>intro(),classify,isInlinePath:inlinePath,isBusy:()=>!!slot?.isConnected&&['form','chat','token','login'].includes(state.mode),installed:false};
