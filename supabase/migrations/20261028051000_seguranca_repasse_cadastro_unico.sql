@@ -5,6 +5,10 @@ returns trigger language plpgsql security definer set search_path='' as $$
 declare doc text;
 begin
  if tg_op='UPDATE' and old.chave_pix is not distinct from new.chave_pix then return new;end if;
+ if exists(select 1 from private.qf_livre_pix_pagamentos where profissional_id=new.profissional_id
+  and status in ('preparando','pix_pronto','pago','envio_solicitado','em_analise')) then
+  raise exception 'Chave não pode ser alterada durante pagamento ou repasse pendente' using errcode='23514';
+ end if;
  select regexp_replace(documento,'[^0-9]','','g') into doc from public.qf_profissionais where user_id=new.profissional_id;
  if length(coalesce(doc,'')) not in(11,14) then
   update private.qf_livre_pix_recebedores set status='pendente',validado_em=null,validado_por=null,evidencia=null where profissional_id=new.profissional_id;
@@ -22,6 +26,21 @@ insert into private.qf_livre_pix_recebedores(profissional_id,chave_pix,documento
 select k.profissional_id,k.chave_pix,regexp_replace(p.documento,'[^0-9]','','g'),'pendente'
 from public.qf_livre_pix_chaves k join public.qf_profissionais p on p.user_id=k.profissional_id
 where length(regexp_replace(p.documento,'[^0-9]','','g')) in (11,14) on conflict(profissional_id) do nothing;
+
+-- Compatibilidade com clientes antigos: nenhuma segunda origem gravável de chave.
+create or replace function public.qf_livre_pix_conta_cadastrar(p_chave_pix text)
+returns jsonb language plpgsql security invoker set search_path='' as $$
+begin
+ if auth.uid() is null then return jsonb_build_object('ok',false,'reason','nao_autenticado');end if;
+ if p_chave_pix is null or length(trim(p_chave_pix)) not between 5 and 100 then
+  return jsonb_build_object('ok',false,'reason','chave_pix_invalida');end if;
+ insert into public.qf_livre_pix_chaves(profissional_id,chave_pix,status)
+ values(auth.uid(),trim(p_chave_pix),'pendente') on conflict(profissional_id) do update
+ set chave_pix=excluded.chave_pix,status='pendente',atualizado_em=now();
+ return jsonb_build_object('ok',true,'status','pendente');
+end $$;
+revoke all on function public.qf_livre_pix_conta_cadastrar(text) from public,anon;
+grant execute on function public.qf_livre_pix_conta_cadastrar(text) to authenticated;
 
 -- Reserva global persistente: uma transferência em andamento até resolução bancária.
 create or replace function public.qf_livre_pix_reservar_envio(p_id uuid)
