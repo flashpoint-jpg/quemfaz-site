@@ -95,6 +95,7 @@ DO $$ BEGIN
 END $$;
 
 -- 4. Depois de "aprovação" simulada, titular vincula uma vez. Não houve Efí real.
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
 UPDATE public.qf_pre_cadastro_pagamentos SET status='aprovado'
  WHERE id='10000000-0000-0000-0000-000000000002';
 DO $$ BEGIN
