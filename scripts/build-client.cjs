@@ -15,8 +15,8 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.45'");
-html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=aviso-claro-20261028');
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.46'");
+html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=cadastro-pago-20261028');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
 const authTokenCheck = String.raw`/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)`;
