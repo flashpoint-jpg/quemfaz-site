@@ -17,7 +17,7 @@
     '</div>' +
     '<p class="text--sm text--secondary">Comissão de 13% somente sobre serviços fechados e confirmados. Repasse automático via Pix ainda indisponível.</p>' + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p><strong>Nova opção em preparação — repasse na hora:</strong> o cliente pagará somente depois da execução do serviço pelo Pix do Quem Faz. Após a confirmação bancária, o Quem Faz solicitará o repasse dos 87% para a chave Pix do profissional e ficará com 13%. O crédito depende da confirmação bancária. A confirmação do pagamento e a confirmação do repasse serão mostradas separadamente na carteira. Esta opção ainda não está disponível; o envio automático para outros bancos ainda depende de homologação da Efí.</p>' +
+      '<p><strong>Em preparação: cliente paga após o serviço e você recebe 87% na sua chave Pix</strong>, após a confirmação bancária. Esta opção ainda não está disponível. O Quem Faz recebe 13%, e o app mostrará separadamente a confirmação do pagamento e a do repasse. A liberação depende de homologação bancária.</p>' +
       '<p><strong>Regra vigente:</strong> a comissão de 13% é registrada após confirmação da conclusão e do valor do serviço pelo cliente com o código do pedido, ou após análise administrativa de divergência. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Aguardar o cliente não impede novos desbloqueios. Apenas comissão confirmada e vencida sem pagamento bloqueia novos contatos. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
@@ -79,7 +79,7 @@
      try{if(sessionStorage.getItem('qf_cad_escolha_plano')==='avulso'&&avulso){group.querySelector('input[value="livre"]').checked=false;avulso.checked=true;}sessionStorage.removeItem('qf_cad_escolha_plano');}catch(_){}
      // Detalhes acessíveis sem repetir toda a oferta abaixo dos cartões.
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. A espera pelo cliente não bloqueia novos pedidos. Comissão confirmada e vencida sem pagamento bloqueia novos contatos. Nova modalidade em preparação: cliente paga somente após o serviço, e o Quem Faz enviará 87% para a própria chave Pix do profissional após confirmação bancária, sujeito à homologação do serviço. O novo modelo ainda não está disponível. Não há garantia de contratação.</p>';
+     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>Pedidos disponíveis e compatíveis, com até quatro profissionais por pedido. Pedidos exclusivos não participam. A confirmação do cliente sobre a contratação e o valor aprova automaticamente a comissão de 13%; divergências seguem para análise. Preste contas em até 48 horas, com uma prorrogação de 48 horas durante a negociação. A espera pelo cliente não bloqueia novos pedidos. Comissão confirmada e vencida sem pagamento bloqueia novos contatos. Nova modalidade em preparação: cliente paga somente após o serviço, e o Quem Faz enviará 87% para a própria chave Pix do profissional após confirmação bancária, sujeito à homologação do serviço. O novo modelo ainda não está disponível. Previsão: envio de 87% à sua chave Pix após confirmação bancária; funcionalidade em preparação, ainda indisponível. Não há garantia de contratação.</p>';
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
@@ -133,13 +133,14 @@
     area.dataset.qfLivrePixCadastro='';
     area.className='card stack--sm';
     area.style.cssText='border:1.5px solid #b5d1ef;border-radius:18px;background:#f7faff;padding:18px;margin:12px 0 18px';
-    area.innerHTML='<details data-qf-pix-detalhes><summary style="color:#1458cc;font-weight:800;font-size:17px;cursor:pointer;padding:2px 0 10px">Minha chave Pix · cadastrar ou alterar</summary>'+
+    area.innerHTML='<details data-qf-pix-detalhes><summary style="color:#1458cc;font-weight:800;font-size:17px;cursor:pointer;padding:2px 0 10px" >Cadastre sua chave Pix</summary>'+
      '<p class="text--sm">Informe a chave Pix da conta em que deseja receber.</p>'+
      '<form data-qf-pix-form class="stack--sm">'+
      '<label>Chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória"></label>'+
-     '<button type="submit" class="btn btn--primary" data-qf-pix-salvar>Salvar chave Pix</button></form></details>'+
+     '<button type="submit" class="btn btn--primary" data-qf-pix-salvar>Salvar minha chave Pix</button></form></details>'+
      '<p role="status" aria-live="polite" data-qf-pix-status>Consultando chave Pix...</p>'+
-     '<p class="text--sm text--secondary" style="font-size:12px">Repasse automático do valor do serviço: ainda indisponível.</p>';
+     '<p class="text--sm text--secondary" style="font-size:12px">Repasse automático do serviço: ainda indisponível.</p>'+ 
+     '<details class="text--sm"><summary>Informações sobre recebimento</summary><p>Receba na conta que você já usa. Não precisa abrir conta Efí. O envio automático de dinheiro ainda não está liberado.</p></details>';
     box.insertAdjacentElement('afterend',area);
     const status=area.querySelector('[data-qf-pix-status]'),form=area.querySelector('form');
     let userId=null;
@@ -154,6 +155,7 @@
       if(data){
         form.elements.chavePix.value=data.chave_pix;
         status.textContent='Chave Pix cadastrada · aguardando validação.';
+        area.querySelector('[data-qf-pix-detalhes] summary').textContent='Minha chave Pix · alterar';
         area.querySelector('[data-qf-pix-detalhes]').open=false;
       }else{
         status.textContent='Chave Pix não cadastrada.';
