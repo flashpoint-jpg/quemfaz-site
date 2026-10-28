@@ -4,6 +4,7 @@ const fs=require('node:fs');
 const {JSDOM}=require('jsdom');
 const source=fs.readFileSync(require.resolve('../qf-acompanhamento.js'),'utf8');
 const migration=fs.readFileSync(require.resolve('../supabase/migrations/20261028032700_qf13_cliente_relato_e_conciliacao.sql'),'utf8');
+const reviewFix=fs.readFileSync(require.resolve('../supabase/migrations/20261028033000_qf13_relato_cliente_confirmado_sem_cobranca.sql'),'utf8');
 const uid='00000000-0000-4000-8000-000000000101';
 const fid='00000000-0000-4000-8000-000000000102';
 function setup(){
@@ -45,4 +46,7 @@ test('o servidor não transforma relato em cobrança automática e exige segredo
  assert.match(migration,/pagamento_conciliado/);
  assert.match(migration,/pix\.end_to_end_id is not null/);
  assert.match(migration,/revoke all on function/);
+ assert.match(reviewFix,/cliente_resposta='confirmado'/);
+ assert.match(reviewFix,/status='contestado'/);
+ assert.match(reviewFix,/cobranca_status='nao_gerada'/);
 });
