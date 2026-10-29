@@ -177,7 +177,8 @@
           (banner.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING)) {
         actions.after(banner);
       }
-      if (copy && actions && !copy.querySelector('[data-qf-client-first-tip]')) {
+      if(copy && copy.querySelector('.qf-customer-sub')) copy.querySelector('[data-qf-client-first-tip]')?.remove();
+      if (copy && actions && !copy.querySelector('.qf-customer-sub') && !copy.querySelector('[data-qf-client-first-tip]')) {
         var tip = document.createElement('p');
         tip.setAttribute('data-qf-client-first-tip', '');
         tip.className = 'text text--sm text--secondary';
