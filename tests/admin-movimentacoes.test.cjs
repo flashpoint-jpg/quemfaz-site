@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const admin = fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8');
+const admin = require('../scripts/prepare-admin-organizacao.cjs')(fs.readFileSync(path.join(__dirname, '..', 'admin.html'), 'utf8'));
 const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', '2026-10-18-admin-movimentacoes.sql'), 'utf8');
 
 // Rota, item no menu (em "Dinheiro e planos"), carga ao abrir e atualização sozinha.
@@ -60,3 +60,4 @@ assert.ok(html.includes('Edson &lt;b&gt;L.&lt;/b&gt;'), 'nomes são escapados');
 assert.ok(html.includes('+ R$ 49,90') && !html.includes('+ R$ 50,00'), 'recarga não aparece como entrada');
 assert.ok(html.includes('287 profissionais'));
 console.log('PASS movimentações: rota, menu, tempo real, consulta só de leitura e somas');
+

@@ -29,7 +29,7 @@ begin
 
   with
   desb as (
-    select d.profissional_id,
+    select d.profissional_id,d.chamado_id,
            d.criado_em as em,
            case when d.origem = 'plano' then 0 else coalesce(d.valor_centavos, 0) end as centavos,
            d.origem,
@@ -40,7 +40,7 @@ begin
      where coalesce(d.ativo, true) and d.criado_em >= v_ini
   ),
   mov as (
-    select x.em,
+    select '/admin/servicos/'||x.chamado_id as rota,x.em,
            case when x.exclusivo then 'desbloqueio_exclusivo' else 'desbloqueio' end as tipo,
            coalesce(p.nome, 'Profissional') as quem,
            concat_ws(' · ', nullif(x.titulo, ''), nullif(x.cidade, ''), case when x.origem = 'plano' then 'pelo plano' end) as detalhe,
@@ -49,7 +49,7 @@ begin
       from desb x
       left join public.qf_profiles p on p.id = x.profissional_id
     union all
-    select coalesce(r.aprovado_em, r.atualizado_em, r.criado_em), 'plano',
+    select '/admin/profissionais/'||r.profissional_id,coalesce(r.aprovado_em, r.atualizado_em, r.criado_em), 'plano',
            coalesce(p.nome, 'Profissional'),
            concat_ws(' · ', 'Plano ' || coalesce(cat.nome, r.plano), case when cat.chamados is not null then cat.chamados || ' chamados' end),
            r.valor_centavos,
@@ -60,7 +60,7 @@ begin
      where r.status = 'aprovado' and r.plano is not null
        and coalesce(r.aprovado_em, r.atualizado_em, r.criado_em) >= v_ini
     union all
-    select coalesce(g.aprovado_em, g.criado_em), 'plano',
+    select '/admin/planos',coalesce(g.aprovado_em, g.criado_em), 'plano',
            coalesce(g.nome, 'Novo profissional'),
            concat_ws(' · ', 'Plano ' || coalesce(cat.nome, g.plano), 'pago, conta ainda não criada'),
            g.valor_centavos,
@@ -71,7 +71,7 @@ begin
        and g.email not ilike '%@exemplo.com'
        and coalesce(g.aprovado_em, g.criado_em) >= v_ini
     union all
-    select coalesce(u.aprovado_em, u.atualizado_em, u.criado_em), 'pedido_urgente',
+    select '/admin/servicos/'||u.chamado_id,coalesce(u.aprovado_em, u.atualizado_em, u.criado_em), 'pedido_urgente',
            coalesce(cl.nome, 'Cliente'),
            concat_ws(' · ', nullif(c.titulo, ''), nullif(c.cidade, '')),
            u.valor_centavos,
@@ -82,7 +82,7 @@ begin
      where u.status = 'aprovado'
        and coalesce(u.aprovado_em, u.atualizado_em, u.criado_em) >= v_ini
     union all
-    select coalesce(ap.aprovado_em, ap.criado_em), 'anuncio',
+    select '/admin/anuncios',coalesce(ap.aprovado_em, ap.criado_em), 'anuncio',
            coalesce(a.anunciante_nome, 'Anunciante'),
            'QuemFaz Premium · ' || coalesce(nullif(a.titulo, ''), 'anúncio'),
            ap.valor_centavos,
@@ -92,7 +92,7 @@ begin
      where ap.status = 'aprovado'
        and coalesce(ap.aprovado_em, ap.criado_em) >= v_ini
     union all
-    select coalesce(r.aprovado_em, r.atualizado_em, r.criado_em), 'recarga',
+    select '/admin/profissionais/'||r.profissional_id,coalesce(r.aprovado_em, r.atualizado_em, r.criado_em), 'recarga',
            coalesce(p.nome, 'Profissional'),
            concat_ws(' · ', 'Carteira', r.metodo),
            r.valor_centavos,
@@ -141,7 +141,7 @@ begin
                order by coalesce(sum(x.centavos), 0) desc, count(*) desc, max(x.em) desc
                limit 10) t), '[]'::jsonb),
     'movimentos', coalesce((
-      select jsonb_agg(jsonb_build_object('em', m.em, 'tipo', m.tipo, 'quem', m.quem, 'detalhe', m.detalhe, 'centavos', m.centavos)
+      select jsonb_agg(jsonb_build_object('rota',m.rota,'em', m.em, 'tipo', m.tipo, 'quem', m.quem, 'detalhe', m.detalhe, 'centavos', m.centavos)
                        order by m.em desc)
         from (select * from mov order by em desc limit 40) m), '[]'::jsonb),
     'movimentos_total', (select count(*) from mov)
@@ -153,3 +153,4 @@ $function$;
 
 revoke all on function public.qf_admin_movimentacoes(integer) from public, anon;
 grant execute on function public.qf_admin_movimentacoes(integer) to authenticated;
+

@@ -4,7 +4,7 @@ test('Admin: cortesia com prazo customizado e mensagens prontas só registram ap
 const dom=new JSDOM('<body class="qf-adm-body"><nav class="qf-adm-nav"><button data-nav="/admin/planos"></button></nav><main id="app-content"></main></body>',{url:'https://quemfazservico.com.br/admin.html#/admin/planos',runScripts:'outside-only'});const w=dom.window,calls=[];
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
 const rows=[{nome:'Carlos Silva',email:'carlos@example.com',telefone:'11987654321',situacao:'pendente',criado_em:new Date().toISOString(),historico:[]}];
-w.DB={getSession:()=>({role:'admin'})};w.QFAdminCloud={enabled:true,client:{rpc:async(n,a)=>{calls.push({n,a});return {data:n==='qf_admin_livre_painel'?{itens:rows,total:1,kpis:{},servidor_agora:new Date().toISOString()}:{ok:true},error:null};}}};
+w.DB={getSession:()=>({role:'admin'})};w.QFAdminCloud={enabled:true,client:{rpc:async(n,a)=>{calls.push({n,a});return {data:n==='qf_admin_lista_controle'?[]:n==='qf_admin_livre_painel'?{itens:rows,total:1,kpis:{},servidor_agora:new Date().toISOString()}:{ok:true},error:null};}}};
 try{w.eval(fs.readFileSync('qf-admin-cadastro-pago.js','utf8'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));await sleep();
 let b=w.document.querySelector('[data-contact=whatsapp]');assert.ok(b);b.click();let d=w.document.querySelector('dialog');const url=new URL(d.querySelector('a').href);assert.equal(url.hostname,'wa.me');assert.equal(url.pathname,'/5511987654321');assert.match(url.searchParams.get('text'),/Olá, Carlos!/);assert.match(url.searchParams.get('text'),/GRÁTIS POR 2 DIAS/);assert.equal(calls.filter(x=>x.n==='qf_admin_livre_contato').length,0);
 d.querySelector('[data-sent]').click();await sleep();assert.equal(calls.filter(x=>x.n==='qf_admin_livre_contato').length,1);
@@ -13,3 +13,4 @@ w.document.querySelector('[data-benefit=ativar]').click();d=w.document.querySele
 rows[0].teste_utilizado=true;w.document.querySelector('[data-qf-pre-refresh]').click();await sleep();w.document.querySelector('[data-contact=whatsapp]').click();d=w.document.querySelector('dialog');assert.doesNotMatch(d.querySelector('textarea').value,/GRÁTIS POR 2 DIAS/);assert.match(d.querySelector('textarea').value,/R\$ 39,90/);
 d.querySelector('[data-close]').click();w.DB.profissionalById=()=>({nome:'Carlos Silva',email:'carlos@example.com'});w.location.hash='#/admin/profissionais/00000000-0000-4000-a000-000000000001';w.dispatchEvent(new w.Event('hashchange'));await sleep();assert.ok(w.document.querySelector('[data-profissional-email] [data-benefit=ativar]'),'ficha individual também permite ativação manual');
 }finally{w.close();}});
+

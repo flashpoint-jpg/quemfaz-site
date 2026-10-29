@@ -19,7 +19,7 @@ test('UI do cliente: três escolhas, negociar, contratar sem cobrança, conclus�
 test('UI administrativa: orçamento real da API, busca, detalhe, leitura sem enviar mensagem e sem dados de terceiros',async()=>{
  const {d,call}=await ready(),dom=new JSDOM('<main id="app-content"></main>',{url:'https://quemfazservico.com.br/admin.html#/admin/negociacoes',runScripts:'outside-only'}),w=dom.window;
  try{await rpc(d,'qf_chat_contratacao',[call.id,uid(11),'propor',35000]);await d.exec("reset role;select set_config('test.admin','true',false)");await as(d,1);w.Screens={};let writes=0;
-  w.QFAdminCloud={client:{rpc:async(n,a)=>{try{if(!['qf_admin_negociacoes','qf_admin_negociacao_detalhe'].includes(n)){writes++;throw Error('Mutação inesperada');}return {data:await rpc(d,n,n==='qf_admin_negociacao_detalhe'?[a.p_desbloqueio]:[])};}catch(error){return {error};}}}};
+  w.QFAdminCloud={client:{rpc:async(n,a)=>{try{if(n==='qf_admin_lista_controle'&&!a.p_dados)return {data:[]};if(!['qf_admin_negociacoes','qf_admin_negociacao_detalhe'].includes(n)){writes++;throw Error('Mutação inesperada');}return {data:await rpc(d,n,n==='qf_admin_negociacao_detalhe'?[a.p_desbloqueio]:[])};}catch(error){return {error};}}}};
   w.eval(fs.readFileSync('qf-admin-negociacoes.js','utf8'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
   await wait(()=>w.document.querySelector('[data-qfn-open]' ));
   assert.match(w.document.body.textContent,/350,00/);assert.match(w.document.body.textContent,/Comissão: Sem cobrança/);assert.doesNotMatch(w.document.body.textContent,/45,50/);
@@ -34,3 +34,4 @@ test('UI administrativa: orçamento real da API, busca, detalhe, leitura sem env
   await d.exec('reset role');assert.equal((await d.query('select count(*)::int n from qf_chat_mensagens where lida_em is not null')).rows[0].n,0);
  }finally{w.close();await d.close();}
 });
+

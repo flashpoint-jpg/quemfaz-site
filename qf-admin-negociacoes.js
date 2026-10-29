@@ -155,7 +155,7 @@
    if(!['/admin/dashboard','/admin/negociacoes'].includes(pattern)||content.querySelector('[data-qfn]'))return;
    const client=g.QFAdminCloud?.client;if(!client)return;
    const root=g.document.createElement('section');root.className='section qfn';root.dataset.qfn='';(content.querySelector('.view')||content).prepend(root);
-   let rows=[],page=0,query='',filter='todos',busy=false,detailId=null;
+   let rows=[],controls=[],showDeleted=false,page=0,query='',filter='todos',busy=false,detailId=null;
    async function rpc(name,args={}){const r=await client.rpc(name,args);if(r.error)throw Error(r.error.message);return r.data;}
    const error=e=>{let box=root.querySelector('[data-qfn-status]');if(!box){box=g.document.createElement('p');box.dataset.qfnStatus='';box.setAttribute('role','status');root.prepend(box);}box.textContent='Não foi possível atualizar: '+e.message;};
    async function open(id){
@@ -172,6 +172,8 @@
      panel.querySelector('[data-qfn-close]').onclick=close;
      if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
      panel.querySelector('[data-qfn-close]').focus();
+     const footer=panel.querySelector('.qfn-detail-footer');
+     g.QFAdminOrganizacao?.negotiationActions(footer,r,controls.find(c=>c.chave===id),async()=>{close();await load(true);});
      const target=panel.querySelector('[data-qfn-reminder]');let phone=String(d.telefone_suporte||'').replace(/\D/g,'');if(phone.length===10||phone.length===11)phone='55'+phone;
      if(d.contato_autorizado&&/^55\d{10,11}$/.test(phone)){
       const message='Olá! Aqui é do Quem Faz Serviços. Vimos que um profissional apresentou um orçamento para seu pedido. Você chegou a contratar o serviço ou ainda está avaliando? Acesse seu pedido no Quem Faz para atualizar a negociação. https://quemfazservico.com.br/?app=1';
@@ -184,17 +186,25 @@
 
    function render(){
     const dashboard=pattern==='/admin/dashboard',allFilters=filters.concat(extraFilters),match=allFilters.find(x=>x[0]===filter)?.[2]||(()=>true);
-    const filtered=rows.filter(match).filter(r=>[r.profissional,r.cliente,r.chamado_id,r.titulo,r.categoria,r.cidade,r.bairro,state(r)].join(' ').toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))).sort((a,b)=>activity(b)-activity(a)||String(a.desbloqueio_id).localeCompare(String(b.desbloqueio_id)));
+    const visible=rows.filter(r=>!!controls.find(c=>c.chave===r.desbloqueio_id)?.excluido===showDeleted);
+    const filtered=visible.filter(match).filter(r=>[r.profissional,r.cliente,r.chamado_id,r.titulo,r.categoria,r.cidade,r.bairro,state(r)].join(' ').toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))).sort((a,b)=>activity(b)-activity(a)||String(a.desbloqueio_id).localeCompare(String(b.desbloqueio_id)));
     page=Math.min(page,Math.max(0,Math.ceil(filtered.length/48)-1));
-    root.innerHTML='<h2>Orçamentos e negociações</h2>'+kpis(rows,filter)+'<p class="qfn-note">Cada card acompanha um profissional e cliente no pedido. Desbloqueio não confirma contratação. Comissões recebidas exigem conciliação registrada.</p><div class="qfn-toolbar"><button type="button" class="btn btn--outline" data-qfn-refresh>Atualizar dados</button><p role="status" data-qfn-status>Atualização automática a cada 15 segundos · '+esc(date(Date.now()))+'</p></div><div data-qfn-detail></div>'+(dashboard?'<div class="qfn-cards">'+filtered.slice(0,4).map(row).join('')+'</div><a class="btn btn--primary" href="#/admin/negociacoes">Ver todas as negociações</a>':'<div class="qfn-controls"><label>Buscar nome, serviço ou pedido (opcional)<input type="search" class="input" data-qfn-search value="'+esc(query)+'" placeholder="Todas as negociações aparecem sem buscar"></label><label>Situação<select class="input" data-qfn-situation>'+allFilters.map(([key,label])=>'<option value="'+key+'"'+(filter===key?' selected':'')+'>'+label+'</option>').join('')+'</select></label></div><p class="qfn-note">'+filtered.length+' de '+rows.length+' negociações · mais recentes ou atualizadas primeiro · '+rows.filter(waiting).length+' aguardando resposta</p><div class="qfn-cards">'+filtered.slice(page*48,page*48+48).map(row).join('')+'</div>'+(!filtered.length?'<p role="status" class="qfn-empty">Nenhuma negociação encontrada para este filtro.</p>':'')+'<div class="qfn-pagination"><button type="button" class="btn btn--outline" data-qfn-page="-1" '+(!page?'disabled':'')+'>Anterior</button><span>Página '+(page+1)+' de '+Math.max(1,Math.ceil(filtered.length/48))+'</span><button type="button" class="btn btn--outline" data-qfn-page="1" '+((page+1)*48>=filtered.length?'disabled':'')+'>Próxima</button></div>');
-    root.querySelectorAll('[data-qfn-open]').forEach(b=>b.onclick=()=>open(b.dataset.qfnOpen));
+    root.innerHTML='<h2>Orçamentos e negociações</h2>'+kpis(visible,filter)+'<p class="qfn-note">Cada card acompanha um profissional e cliente no pedido. Desbloqueio não confirma contratação. Comissões recebidas exigem conciliação registrada.</p><div class="qfn-toolbar"><button type="button" class="btn btn--outline" data-qfn-refresh>Atualizar dados</button><p role="status" data-qfn-status>Atualização automática a cada 15 segundos · '+esc(date(Date.now()))+'</p></div><div data-qfn-detail></div>'+(dashboard?'<div class="qfn-cards">'+filtered.slice(0,4).map(row).join('')+'</div><a class="btn btn--primary" href="#/admin/negociacoes">Ver todas as negociações</a>':'<div class="qfn-controls"><label>Buscar nome, serviço ou pedido (opcional)<input type="search" class="input" data-qfn-search value="'+esc(query)+'" placeholder="Todas as negociações aparecem sem buscar"></label><label>Situação<select class="input" data-qfn-situation>'+allFilters.map(([key,label])=>'<option value="'+key+'"'+(filter===key?' selected':'')+'>'+label+'</option>').join('')+'</select></label></div><p class="qfn-note">'+filtered.length+' de '+rows.length+' negociações · mais recentes ou atualizadas primeiro · '+visible.filter(waiting).length+' aguardando resposta</p><div class="qfn-cards">'+filtered.slice(page*48,page*48+48).map(row).join('')+'</div>'+(!filtered.length?'<p role="status" class="qfn-empty">Nenhuma negociação encontrada para este filtro.</p>':'')+'<div class="qfn-pagination"><button type="button" class="btn btn--outline" data-qfn-page="-1" '+(!page?'disabled':'')+'>Anterior</button><span>Página '+(page+1)+' de '+Math.max(1,Math.ceil(filtered.length/48))+'</span><button type="button" class="btn btn--outline" data-qfn-page="1" '+((page+1)*48>=filtered.length?'disabled':'')+'>Próxima</button></div>');
+    root.querySelectorAll('[data-qfn-open]').forEach(b=>{
+     b.onclick=()=>open(b.dataset.qfnOpen);
+     const r=rows.find(r=>r.desbloqueio_id===b.dataset.qfnOpen);
+     const actions=g.document.createElement('div');actions.className='btn-row';b.after(actions);
+     const wrapper=g.document.createElement('article');wrapper.style.cssText='display:grid;gap:8px;min-width:0';b.before(wrapper);wrapper.append(b,actions);
+     g.QFAdminOrganizacao?.negotiationActions(actions,r,controls.find(c=>c.chave===r.desbloqueio_id),()=>load(true));
+    });
+    const toggle=g.document.createElement('button');toggle.type='button';toggle.className='btn btn--outline';toggle.textContent=showDeleted?'Mostrar negociações ativas':'Ver excluídas';toggle.onclick=()=>{showDeleted=!showDeleted;page=0;render();};root.querySelector('.qfn-toolbar').append(toggle);
     root.querySelector('[data-qfn-refresh]').onclick=()=>load(true);
     root.querySelectorAll('[data-qfn-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.qfnFilter;page=0;render();});
     root.querySelectorAll('[data-qfn-page]').forEach(b=>b.onclick=()=>{page+=Number(b.dataset.qfnPage);render();root.querySelector('.qfn-controls')?.scrollIntoView({block:'start'});});
     const select=root.querySelector('[data-qfn-situation]');if(select)select.onchange=()=>{filter=select.value;page=0;render();};
     const search=root.querySelector('[data-qfn-search]');if(search)search.oninput=()=>{query=search.value;page=0;const pos=search.selectionStart;render();const next=root.querySelector('[data-qfn-search]');next.focus();next.setSelectionRange(pos,pos);};
    }
-   async function load(force=false){if(busy||!root.isConnected||(!force&&(detailId||root.querySelector('[data-qfn-search]')===g.document.activeElement)))return;busy=true;try{rows=await rpc('qf_admin_negociacoes');if(!Array.isArray(rows))throw Error('Resposta inválida');if(root.isConnected){detailId=null;render();}}catch(e){error(e);}finally{busy=false;}}
+   async function load(force=false){if(busy||!root.isConnected||(!force&&(detailId||g.document.querySelector('.qfo-dialog[open]')||root.querySelector('[data-qfn-search]')===g.document.activeElement)))return;busy=true;try{const result=await Promise.all([rpc('qf_admin_negociacoes'),rpc('qf_admin_lista_controle',{p_tipo:'negociacao'})]);rows=result[0];controls=result[1];if(!Array.isArray(rows)||!Array.isArray(controls))throw Error('Resposta inválida');if(root.isConnected){detailId=null;render();}}catch(e){error(e);}finally{busy=false;}}
    await load(true);const timer=g.setInterval(()=>{if(!root.isConnected){g.clearInterval(timer);return;}if(!g.document.hidden)load();},15000);
   }
   g.Screens.afterRender=function(){if(prev)prev.apply(this,arguments);enhance.apply(this,arguments);};
@@ -204,3 +214,4 @@
  if(typeof module!=='undefined')module.exports=g.QFAdminNegociacoes;
  if(g.document){if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});else install();}
 })(typeof window!=='undefined'?window:globalThis);
+

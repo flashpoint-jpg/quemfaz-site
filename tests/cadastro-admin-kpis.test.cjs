@@ -1,12 +1,12 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const front=fs.readFileSync('qf-admin-cadastro-pago.js','utf8');
-const admin=fs.readFileSync('admin.html','utf8');
+const admin=require('../scripts/prepare-admin-organizacao.cjs')(fs.readFileSync('admin.html','utf8'));
 const migration=fs.readFileSync('supabase/2026-10-28-cadastro-pagante-kpis.sql','utf8');
 const listSql=fs.readFileSync('supabase/migrations/20261028191000_admin_pre_cadastros.sql','utf8');
 
 test('Painel administrativo carrega com sintaxe válida e conexão realmente existente',()=>{
  new vm.Script(front,{filename:'qf-admin-cadastro-pago.js'});
- assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261028-saldo-movimentacoes/);
+ assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261029-excluir-lista/);
  assert.match(front,/global\.QFAdminCloud/,'usa cliente real do administrativo');
  assert.doesNotMatch(front,/global\.QFCloud\b/,'não usar o nome errado que escondia cadastros');
  assert.match(admin,/global\.QFAdminCloud\s*=/);
@@ -64,3 +64,4 @@ test('Saldo das carteiras é exclusivo de Movimentações e ausente da ficha de 
  assert.ok(fin.includes("'/admin/financeiro','/admin/movimentacoes',"),"Movimentações visível no menu principal");
  assert.ok(admin.includes("qf-admin-financeiro.js?v=pix-manual-20261029"),"Cache do menu renovado");
 });
+
