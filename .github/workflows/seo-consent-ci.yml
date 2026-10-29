@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Instalar dependências dos testes de interface
+        run: npm ci --ignore-scripts
       - name: Consent SQL static regression checks
         run: node --check scripts/qf-seo-consent-widget.js && node --test tests/seo-consent-proposal.test.cjs tests/seo-consent-ui.test.cjs tests/seo-public-api.test.cjs
   consent-isolated-postgres:
@@ -65,3 +67,4 @@ jobs:
         env:
           PGPASSWORD: local_only_dummy
         run: psql -h localhost -U postgres -d seo_consent_test -v ON_ERROR_STOP=1 -f tests/seo-consent-rls.integration.sql
+
