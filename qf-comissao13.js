@@ -49,9 +49,9 @@
   const number=/^55\d{10,11}$/.test(digits)?digits:/^\d{10,11}$/.test(digits)?'55'+digits:'';
   // Abertura oficial: o modelo é definido pelo Quem Faz, nunca por texto digitado pelo profissional.
    // WhatsApp permite edição antes do envio: o aviso vinculante é mostrado no chat do aplicativo.
-   const msg='Olá, '+String(cliente?.nome||'cliente').split(' ')[0]+'! Sou profissional do Quem Faz e recebi seu pedido #'+String(pedidoId)+'.\\n\\n'+
-     'AVISO QUEM FAZ LIVRE: O orçamento, aceite, agendamento, confirmação de conclusão e pagamento devem ser registrados pelo aplicativo Quem Faz. O cliente também confirma se contratou ou não.\\n\\n'+
-     'O Pix do serviço só pode ser o Pix oficial gerado no aplicativo depois da conclusão. Não pague por chaves Pix enviadas por WhatsApp. Omissão, informações falsas ou fraude podem gerar suspensão ou bloqueio após análise e possibilidade de contestação.\\n\\n'+
+   const msg='Olá, '+String(cliente?.nome||'cliente').split(' ')[0]+'! Sou profissional do Quem Faz e recebi seu pedido #'+String(pedidoId)+'.\n\n'+
+     'AVISO QUEM FAZ LIVRE: O orçamento, aceite, agendamento, confirmação de conclusão e pagamento devem ser registrados pelo aplicativo Quem Faz. O cliente também confirma se contratou ou não.\n\n'+
+     'O Pix do serviço só pode ser o Pix oficial gerado no aplicativo depois da conclusão. Não pague por chaves Pix enviadas por WhatsApp. Omissão, informações falsas ou fraude podem gerar suspensão ou bloqueio após análise e possibilidade de contestação.\n\n'+
      'Podemos conversar por aqui, mas o fechamento será formalizado pelo aplicativo.';
   const waUrl=number?'https://wa.me/'+number+'?text='+encodeURIComponent(msg):'';
   const links='<div class="qf13-contact-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">'+
