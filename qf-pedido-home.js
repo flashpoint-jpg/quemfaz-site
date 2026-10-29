@@ -277,7 +277,7 @@
       info.innerHTML='<h3>Preços, planos e dúvidas</h3>'+
         '<p><strong>Para clientes:</strong> publicar um pedido é grátis. Até quatro profissionais podem desbloquear o contato.</p>'+
         '<p><strong>Para profissionais:</strong> no avulso, cada contato é pago individualmente, sem comissão por serviço. No Quem Faz Livre são R$ 39,90 por 30 dias, com desbloqueios compatíveis ilimitados; em serviços fechados e confirmados, 87% ficam com o profissional e 13% com o Quem Faz.</p>'+
-        '<p><strong>Pagamento e repasse Pix após o serviço:</strong> a automatização ainda depende de homologação bancária. Não significa recebimento ou repasse confirmado.</p>'+
+        '<p><strong>Plano Livre:</strong> o cliente paga o valor integral do serviço pelo Pix oficial gerado no acompanhamento. O Quem Faz retém 13% e faz o repasse dos 87% manualmente, após a confirmação bancária. No Avulso, o pagamento direto ao profissional é permitido.</p>'+
         '<p>Você acompanha seu pedido em <strong>Meus pedidos</strong>. Profissionais podem acessar cadastro, plano e carteira pela <strong>Área de profissionais</strong>.</p>';
       pricing.insertAdjacentElement('afterend',info);
       pricing.setAttribute('aria-controls','qf-precos-duvidas');
