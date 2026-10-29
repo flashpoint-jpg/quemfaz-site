@@ -87,6 +87,38 @@
 #app-shell[data-route="inicio"] .qf-landing-topbar.qf-fixed-bar{left:0!important;right:0!important;width:100%!important;max-width:none!important}
 #app-shell[data-route="inicio"] .qf-desk-menu{flex:1!important}
 .qf-home-visual{min-width:0}
+/* Professional account: compact status, wallet first and separated actions. */
+#app-shell[data-route="profissional-carteira"] .view{display:grid!important;column-count:auto!important;grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
+#app-shell[data-route="profissional-carteira"] .view>*{grid-column:1!important;grid-row:auto!important;margin:0!important;min-width:0}
+#app-shell[data-route="profissional-carteira"] [data-qf-wallet-balance]{order:-3;display:block!important}
+#app-shell[data-route="profissional-carteira"] [data-qf-wallet-balance]{padding:18px!important}
+#app-shell[data-route="profissional-carteira"] [data-qf-wallet-balance] .h1{font-size:30px!important}
+#app-shell[data-route="profissional-carteira"] #carteira-recarga summary{font-weight:750;cursor:pointer;color:#1458cc;padding:12px 0}
+#app-shell[data-route="profissional-carteira"] #carteira-recarga details>.card{margin-top:10px}
+#app-shell[data-route="profissional-carteira"] [data-qf-livre]{order:-2}
+#app-shell[data-route="profissional-carteira"] [data-qf-livre-pix-cadastro]{order:2}
+#app-shell[data-route="profissional-carteira"] .qf13-wallet{order:3}
+#app-shell .qf-plan-status{padding:16px!important;min-height:0!important;border:1px solid #bad2ef!important;border-radius:16px!important;background:#f2f7ff!important;box-shadow:none!important}
+#app-shell .qf-plan-status .qf-livre__copy{width:100%}
+#app-shell .qf-plan-status strong{font-size:17px!important;color:#075bbb!important}
+#app-shell .qf-plan-status p{font-size:14px;line-height:1.5;margin:8px 0}
+#app-shell .qf-plan-status .btn{width:auto!important;min-height:44px!important;margin:14px 0 4px!important;padding:10px 16px!important}
+#app-shell [data-qf-livre-pix-cadastro] form{display:grid;gap:16px;margin:14px 0}
+#app-shell [data-qf-livre-pix-cadastro] label{display:grid;gap:8px;line-height:1.5}
+#app-shell [data-qf-livre-pix-cadastro] .btn{width:fit-content!important;max-width:100%;padding:10px 18px!important;min-height:44px!important}
+#app-shell [data-qf-livre-pix-cadastro] p{line-height:1.55;margin:12px 0!important}
+#app-shell[data-route="profissional-home"] .qf-prof-status{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;min-height:0!important;align-self:start}
+#app-shell[data-route="profissional-home"] .qf-prof-status .qf-prof-estado{margin:0!important;padding:10px 14px!important;min-height:0!important}
+#app-shell[data-route="profissional-perfil"] .view{gap:18px!important}
+#app-shell[data-route="profissional-perfil"] [data-action="logout"]{margin:24px 0 12px!important;min-height:46px!important}
+#app-shell[data-route="profissional-perfil"] [data-logout]{margin:24px 0 12px!important;min-height:46px!important}
+#app-shell[data-route="profissional-perfil"] .view>.section:has([data-logout]){grid-column:1/-1!important;margin-top:16px!important;padding-top:8px!important}
+#app-shell[data-route="profissional-perfil"] .view>form{margin-bottom:12px!important}
+#cadastro-prof-form .qf-step__opt ul{font-size:14px;line-height:1.6;padding-left:20px}
+#cadastro-prof-form .qf-step__opt li{margin:10px 0}
+#app-shell[data-route="profissional-perfil"] form .btn[type="submit"]{margin-top:16px!important}
+#cadastro-prof-form .qf-livre-conditions{font-size:14px!important;line-height:1.6!important}
+#cadastro-prof-form .qf-livre-conditions li{margin:10px 0}
 @media(min-width:900px){#app-shell[data-route="inicio"] .qf-home-orders__list{max-height:520px;overflow-y:auto;overscroll-behavior:contain;padding:2px 6px 2px 2px;gap:10px!important}#app-shell[data-route="inicio"] .qf-home-order{padding:12px!important;gap:7px!important}#app-shell[data-route="inicio"] .qf-desk-h--lg{font-size:24px!important}}
 #app-shell[data-route="inicio"] :is(.qf-home-services-desktop,.qf-home-services-mobile) button[aria-pressed="true"]{background:#ff8610!important;border-color:#e87500!important;color:#10233e!important}
 @media(min-width:900px){

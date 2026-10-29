@@ -12,6 +12,15 @@
   return '<div class="qf-trial-progress"><span>'+text+'</span><progress max="2880" value="'+minutes+'" aria-label="Tempo restante do teste grátis" aria-valuetext="'+text+'">'+pct+'%</progress></div>';
  }
  g.QFLivreTrialProgress=trialProgress;
+ function planSummary(s){
+  const trial=s.tipo_acesso==='teste',active=!!s.ativo,end=Date.parse(s.valido_ate),now=Date.parse(s.servidor_agora)||Date.now();
+  const mins=Math.max(0,Math.ceil((end-now)/60000)),days=Math.floor(mins/1440),hours=Math.floor(mins%1440/60);
+  const remaining=Number.isFinite(end)?(days?days+' dia'+(days===1?'':'s')+' e '+hours+'h':Math.floor(mins/60)+'h '+mins%60+'min'):'';
+  const title=trial?(active?'Versão de teste · Quem Faz Livre':s.aguarda_identificacao?'Teste aguardando identificação':'Seu teste grátis terminou'):active?'Meu plano · Quem Faz Livre':'Sem assinatura Livre ativa';
+  const note=s.aguarda_identificacao?'Conclua sua identificação para começar as 48 horas.':active?(remaining?'Faltam '+remaining+'. Termina em '+date(s.valido_ate)+'.':'Validade do plano: '+date(s.valido_ate)+'.'):trial?'Assine para continuar desbloqueando pedidos pelo Livre.':'Nenhum teste ou plano Livre ativo nesta conta. Você pode usar o Avulso com saldo ou assinar o Livre.';
+  const bar=active&&Number.isFinite(end)?'<progress max="'+(trial?2880:43200)+'" value="'+Math.min(trial?2880:43200,mins)+'" aria-label="Tempo restante do '+(trial?'teste':'plano')+'" aria-valuetext="'+esc(remaining)+'"></progress>':'';
+  return '<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+esc(note)+'</p><div class="qf-trial-progress">'+bar+'</div>'+(!active||trial?'<button type="button" class="btn btn--primary" data-qf-livre-pagar>Assine agora · R$ 39,90 / 30 dias</button>':'<a href="#/profissional/planos" class="qf-livre__link">Ver condições do plano</a>')+'<p class="text--sm">'+(trial?'Sem cobrança automática. ':'')+'Desbloqueios de pedidos compatíveis, conforme disponibilidade e vagas.</p></div><div data-qf-livre-pix></div><p role="status" data-qf-livre-msg></p>';
+ }
  function divisao(){
   return '<section class="qf-divisao" aria-label="Divisão do valor do serviço no Quem Faz Livre"><h3>Você faz o serviço e fica com 87% do valor. O Quem Faz recebe 13% pela intermediação.</h3><div class="qf-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-divisao__pro">87%</span><span class="qf-divisao__qf">13%</span></div><div class="qf-divisao__legenda"><span><i class="qf-divisao__verde"></i><b>Profissional · 87%</b><strong>R$ 174</strong></span><span><i class="qf-divisao__laranja"></i><b>Quem Faz · 13%</b><strong>R$ 26</strong></span></div><p>Exemplo: serviço de R$ 200. Você define o preço. Esta é a divisão do valor após a comissão no Quem Faz Livre; seus custos e tributos não estão descontados. Não representa lucro líquido garantido. No Avulso, não há comissão.</p></section>';
  }
@@ -28,7 +37,7 @@
     '<p class="text--sm text--secondary">Comissão de 13% sobre serviços fechados e confirmados. O repasse de valores da mão de obra será feito manualmente pelo Quem Faz, depois de o banco confirmar o Pix do cliente. A cobrança integral do serviço ainda está em validação bancária.</p>' + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
       '<p><strong>Novo modelo de recebimento: cliente paga o serviço por Pix ao Quem Faz e você solicita os 87% na sua chave Pix</strong>, após a confirmação bancária. O repasse não é automático: a equipe transfere pelo banco e registra o comprovante. A cobrança ao cliente pelo valor integral do serviço ainda depende de liberação bancária. Os pagamentos de comissões já existentes ficam separados para não haver cobrança duplicada.</p>' +
-      '<p><strong>Regra vigente:</strong> a comissão de 13% é registrada após confirmação da conclusão e do valor do serviço pelo cliente com o código do pedido, ou após análise administrativa de divergência. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Aguardar o cliente não impede novos desbloqueios. Apenas comissão confirmada e vencida sem pagamento bloqueia novos contatos. O plano não garante contratação.</p>' +
+      '<p><strong>Como funciona hoje:</strong> combine o preço com o cliente pelo chat. Informe o andamento em até 48 horas; se ainda estiver negociando, prorrogue uma vez por mais 48 horas. A comissão de 13% nasce após confirmação da conclusão e do valor pelo cliente, ou análise administrativa. Comissão confirmada e vencida bloqueia novos desbloqueios. Se você declarar recebimento direto do cliente, é preciso quitar a comissão pendente antes de desbloquear outro pedido. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
       '<button type="button" class="btn btn--primary btn--block qf-livre__cta" data-qf-livre-pagar>Assinar por R$ 39,90</button>') +
@@ -47,7 +56,7 @@
   function enhance(pattern,content,params={}){
    if(pattern==='/como-funciona'){if(!content.querySelector('.qf-divisao'))(content.querySelector('.view')||content).insertAdjacentHTML('beforeend',divisao());return;}
    const cadastro=pattern==='/auth/:role/cadastro'&&params.role==='profissional';
-   if(pattern==='/profissional/home'){try{if(sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'){g.navigate('/profissional/carteira',true);return;}}catch(_){}}
+   // A entrada profissional permanece na lista de pedidos, inclusive após o cadastro.
    const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
    if(!cadastro&&!pedido&&!['/profissional/home','/profissional/planos','/profissional/carteira','/profissional/servicos','/profissional/servicos/disponiveis'].includes(pattern))return;
    if(content.querySelector('[data-qf-livre],[data-qf-livre-cadastro]'))return;
@@ -55,8 +64,19 @@
    const rpc=async(n,a={})=>{const r=await client.rpc(n,a);if(r.error)throw Error('Não foi possível consultar o plano. Tente novamente.');return r.data;};
    const box=document.createElement('section');box.className='section card stack--sm qf-livre';box.dataset.qfLivre='';
    const view=content.querySelector('.view')||content;
+   if(pattern==='/profissional/carteira'){
+    const recharge=view.querySelector('#carteira-recarga');
+    if(recharge&&!recharge.querySelector('details')){
+     const details=document.createElement('details'),summary=document.createElement('summary');summary.textContent='Adicionar créditos para o Avulso';
+     details.append(summary);recharge.querySelector('.section-head')?.remove();while(recharge.firstChild)details.append(recharge.firstChild);recharge.append(details);
+     view.querySelector('[data-action="rolar-recarga"]')?.addEventListener('click',()=>{details.open=true;});
+    }
+   }
    if(!cadastro){
-    view.prepend(box);
+    if(pattern==='/profissional/carteira'){
+     const balance=Array.from(view.children).find(el=>/Minha carteira.*saldo disponível/i.test(el.textContent||''));
+     if(balance){balance.dataset.qfWalletBalance='';view.prepend(balance);balance.after(box);}else view.prepend(box);
+    }else view.prepend(box);
     if(pattern==='/profissional/home'){
      // O estado online continua visível, mas os pedidos ficam logo abaixo do plano.
      const online=view.querySelector('.qf-prof-status');
@@ -100,7 +120,7 @@
       trialLabel.classList.add('qf-trial-card');trialLabel.dataset.qfTrialReady='';
      }
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>O Livre oferece desbloqueios ilimitados de pedidos disponíveis e compatíveis, respeitando o limite de profissionais por pedido. O profissional apresenta o orçamento; o cliente aceita a contratação e confirma a conclusão e o valor. A comissão de 13% só é gerada após essa confirmação. Divergências vão à análise. Preste contas em até 48 horas. O novo modelo ainda não está disponível: recebimento do pagamento integral do serviço pela plataforma e envio de 87% à sua chave Pix após confirmação bancária são uma funcionalidade em preparação, ainda indisponível. Até sua liberação bancária, valem as regras atuais de comissão Pix. Sem cobrança automática após o teste.</p>';
+     conditions.innerHTML='<summary>Como funciona o Quem Faz Livre</summary><ul><li>R$ 39,90 por 30 dias. Teste grátis de 48 horas somente quando selecionado e autorizado.</li><li>Desbloqueie pedidos compatíveis com sua profissão e região, enquanto houver vagas. Até 4 profissionais por pedido; não há garantia de contratação.</li><li>Combine o preço com o cliente pelo chat. Se o serviço for fechado e confirmado, a comissão é de 13%.</li><li>Informe o andamento em até 48 horas. Se ainda estiver negociando, pode prorrogar uma vez por mais 48 horas.</li><li>Comissão confirmada e vencida impede novos desbloqueios. Se declarar que recebeu diretamente do cliente, quite a comissão pendente antes de desbloquear outro pedido.</li><li>Não há cobrança automática após o teste. O recebimento integral do serviço pelo Quem Faz e o repasse de 87% ainda não estão disponíveis.</li></ul>';
      group.after(conditions);
      function updateChoice(){
       const test=!!trialInput?.checked;
@@ -165,12 +185,12 @@
     area.className='card stack--sm';
     area.style.cssText='border:1.5px solid #b5d1ef;border-radius:18px;background:#f7faff;padding:18px;margin:12px 0 18px';
     area.innerHTML='<details data-qf-pix-detalhes><summary style="color:#1458cc;font-weight:800;font-size:17px;cursor:pointer;padding:2px 0 10px" >Cadastre sua chave Pix</summary>'+
-     '<p class="text--sm">Informe a chave Pix da conta em que deseja receber.</p>'+
+     '<p class="text--sm">Esta é a conta onde você poderá receber repasses de serviços pagos ao Quem Faz. Salvar a chave não faz cobrança nem transfere dinheiro.</p>'+
      '<form data-qf-pix-form class="stack--sm">'+
      '<label>Chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória"></label>'+
      '<button type="submit" class="btn btn--primary" data-qf-pix-salvar>Salvar minha chave Pix</button></form></details>'+
      '<p role="status" aria-live="polite" data-qf-pix-status>Consultando chave Pix...</p>'+
-     '<p class="text--sm text--secondary" style="font-size:12px">Repasse do serviço: manual pela administração após confirmação do Pix bancário. Cobrança integral do serviço aguardando liberação pela Efí.</p>'+ 
+     '<p class="text--sm text--secondary" style="font-size:13px">O recebimento do valor integral do serviço pelo Quem Faz ainda não está disponível. Quando for liberado, a equipe fará o repasse após confirmar o pagamento e a conclusão. Você não precisa abrir outra conta bancária.</p>'+ 
      '<details class="text--sm"><summary>Informações sobre recebimento</summary><p>Receba na conta que você já usa. Não precisa abrir conta Efí. O repasse será feito manualmente pelo administrador; não existe transferência automática.</p></details>';
     box.insertAdjacentElement('afterend',area);
     const status=area.querySelector('[data-qf-pix-status]'),form=area.querySelector('form');
@@ -236,6 +256,9 @@
      if(last.tipo_acesso==='teste')box.querySelector('.qf-livre__copy').insertAdjacentHTML('beforeend',trialProgress(last));
      if(active&&last.tipo_acesso==='teste'&&Date.parse(last.valido_ate)-Date.parse(last.servidor_agora)<12*3600000)box.insertAdjacentHTML('beforeend','<p>Seu teste termina em breve. Continue com o Plano Livre por R$ 39,90.</p>');
     }
+    if(!cadastro&&!pedido&&pattern!=='/profissional/planos'){
+     box.classList.remove('qf-livre--promo');box.classList.add('qf-livre--compact','qf-plan-status');box.innerHTML=planSummary(last);
+    }
     bind();
     mostrarContaPix(s).catch(()=>{});
     if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}
@@ -253,12 +276,12 @@
      b.disabled=true;try{const r=await rpc('qf_livre_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok&&r.reason==='comissao_pendente'){msg.textContent='Comissão pendente. Abrindo o Pix automático na carteira.';g.navigate('/profissional/carteira',true);return;}if(!r.ok)throw Error(({credito_necessario:'Assine o Quem Faz Livre ou utilize o Avulso com saldo na carteira.',plano_inativo:'Plano vencido ou inativo. Renove ou utilize créditos.',reservado:'O pedido já atingiu o limite de participantes.',nao_elegivel:'Pedido incompatível com sua profissão, região ou raio.',indisponivel:'Pedido indisponível para este plano.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',perfil_inativo:'Confira a situação do seu perfil e do plano.',prestacao_contas_vencida:'Regularize sua prestação de contas na carteira.',comissao_vencida:'Regularize a comissão confirmada na carteira.',comissao_pendente:'A comissão pendente deve ser paga por Pix na carteira antes de outro desbloqueio.'})[r.reason]||'Não foi possível autorizar o desbloqueio. Atualize o pedido.');if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession();g.navigate('/profissional/chat/'+params.id,true);}catch(e){msg.textContent=e.message;b.disabled=false;}
     };
    }
-   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(s.ativo){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
+   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(pending&&s.ativo&&s.tipo_acesso==='teste')return false;if(s.ativo){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
    async function pay(){
     if(busy)return;
     busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
     try{
-     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');if(current.ativo){pending=false;render(current);unlock(current);return;}
+     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');if(current.ativo&&current.tipo_acesso!=='teste'){pending=false;render(current);unlock(current);return;}
      const r=await rpc('qf_livre_solicitar_pix');if(!r||!r.ok)throw Error('Conclua seu cadastro de profissional antes de assinar.');
      const fn=await client.functions.invoke('quemfaz-efi-checkout',{body:{tipo:'recarga',pagamento_id:r.recarga_id}});
      if(fn.error||!fn.data?.ok)throw Error('Não foi possível gerar o Pix. Tente novamente em instantes.');
@@ -292,8 +315,8 @@
     if(!s?.ok)throw Error('Entre novamente para consultar seu plano.');
     if(s.ativo)trackLivrePurchase(s);
     render(s);unlock(s);
-    let auto=false;try{auto=sessionStorage.getItem('qf_plano_pos_cadastro')==='livre'&&['/profissional/carteira','/profissional/planos'].includes(pattern);}catch(_){}
-    if(auto){try{sessionStorage.removeItem('qf_plano_pos_cadastro');sessionStorage.removeItem('qf_plano_pos_cadastro_metodo');}catch(_){}if(!s.ativo)await pay();}
+    // O pagamento só começa quando o profissional escolhe Assinar.
+    try{sessionStorage.removeItem('qf_plano_pos_cadastro');sessionStorage.removeItem('qf_plano_pos_cadastro_metodo');}catch(_){}
    }
    // Cadastro bancário independente do estado e da disponibilidade da assinatura.
    mostrarContaPix(null).catch(()=>{});
@@ -306,3 +329,4 @@
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })(typeof window!=='undefined'?window:globalThis);
+

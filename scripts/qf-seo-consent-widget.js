@@ -58,11 +58,9 @@
  let scheduled=false;
  function scan(){
    scheduled=false;
-   const form=document.getElementById('cadastro-prof-form');if(form)signup(form);
-   if((global.location.hash||'').startsWith('#/profissional/perfil')){
-     const host=document.querySelector('#app-content .view.stack');
-     if(host&&!host.querySelector('[data-qf-seo-profile]'))profile(host);
-   }
+   // Divulgação pública retirada da interface a pedido do administrador.
+   // Não altera autorizações já registradas nem publica informações.
+   document.querySelectorAll('[data-qf-seo-profile],[data-qf-seo-signup]').forEach(el=>el.remove());
  }
  function schedule(){if(scheduled)return;scheduled=true;queueMicrotask(scan);}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{

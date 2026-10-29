@@ -15,6 +15,8 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+html=html.replace("global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);","global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/home',true);");
+html=html.replace("global.navigate(planoId ? '/profissional/carteira' : '/profissional/home', true);","global.navigate('/profissional/home', true);");
 // A cortesia é administrativa; não oferecer controles técnicos no cadastro público.
 html=html.replace(/<label[^>]*><input type="checkbox" name="cortesiaLivre"[^>]*>Recebi uma cortesia da equipe Quem Faz \(será validada pelo servidor\)\.<\/label>/g,'<input type="hidden" name="cortesiaLivre" value="">');
 // Uma sessão de cliente não deve capturar a entrada de profissionais.
