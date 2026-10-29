@@ -85,7 +85,7 @@
       } catch (_) {}
     }
     try { if (!out.content) out.content = sessionStorage.getItem('qf_seo_page') || undefined; } catch (_) {}
-    return out;
+    return Object.assign(out,global.QFMarketingDedicado?.attribution?.()||{});
   }
   // Eventos de conversão para Google Ads / GA4 / Microsoft Ads (ver qf-conversao.js). Sem dados pessoais.
   // Começar pela busca da home também é iniciar o pedido; a etapa 1 concluída garante o "iniciado" antes (ordem do funil).

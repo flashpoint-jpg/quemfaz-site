@@ -59,6 +59,7 @@ html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
 html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=busca-profissao-20261028"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-marketing-dedicado.js"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
@@ -76,6 +77,13 @@ fs.writeFileSync(adminPath,adminSource);
 fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
+// Integra os módulos ao mesmo administrativo, seguindo a montagem já usada pelo projeto.
+const mdFinanceRoute="    { pattern: '/admin/financeiro', role: 'admin', title: 'Financeiro e Pix', render: function () { return '<div class=\"view\"></div>'; } },";
+const mdFinanceMenu="    { id: 'financeiro', label: 'Financeiro e Pix', icon: 'wallet', route: '/admin/financeiro' },";
+if(!adminHtml.includes(mdFinanceRoute)||!adminHtml.includes(mdFinanceMenu))throw Error('Integração do administrativo não encontrada');
+adminHtml=adminHtml.replace(mdFinanceRoute,mdFinanceRoute+"\n    { pattern: '/admin/marketing-dedicado', role: 'admin', title: 'Marketing Dedicado', render: function () { return '<div class=\"view\"></div>'; } },");
+adminHtml=adminHtml.replace(mdFinanceMenu,mdFinanceMenu+"\n    { id: 'marketing-dedicado', label: 'Marketing Dedicado', icon: 'megaphone', route: '/admin/marketing-dedicado' },");
+adminHtml=adminHtml.replace('</body>','<script src="qf-pix-financeiro.js"></script><script src="qf-marketing-dedicado.js"></script></body>');
 adminHtml=adminHtml.replace(/<script src="qf-comissao13\.js[^"']*"><\/script>/g,'');
 adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=direto-saque-20261029"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
 const routeMarker="    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard'";
@@ -238,3 +246,4 @@ require('./seo-hub-icons.cjs');
 require('./seo-abc.cjs');
 require('./seo-index-links.cjs');
 require('./check-sitemap.cjs');
+

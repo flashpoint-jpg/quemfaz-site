@@ -137,6 +137,7 @@
   const errText={admin_obrigatorio:'Acesso exclusivo do administrador. Entre novamente.',
    efi_producao_nao_validada:'A Efí de produção não confirmou as credenciais e o certificado. A cobrança permanece desativada.',
    efi_sandbox_inadequado:'A Efí está configurada em homologação, não em produção.',
+   operacao_em_analise:'Operação em análise: falta confirmação específica da Efí e revisão fiscal/KYC para serviços de terceiros e repasse manual.',
    rpc_indisponivel:'Não foi possível conferir a configuração.'};
   const invoke=async action=>{
    const r=await c.functions.invoke('quemfaz-livre-pix-manual',{body:{action}});
@@ -152,11 +153,14 @@
     '<p class="text--sm">O cliente paga <strong>100% pelo Pix do Quem Faz</strong>. A plataforma fica com 13% e você repassa <strong>manualmente os 87%</strong> depois da confirmação bancária. Sem split automático.</p>'+
     '<p style="font-weight:800;color:'+(on?'#087544':'#ad5600')+'">'+(on?'Recebimento ativo':'Recebimento desativado')+'</p>'+
     (cfg.efi_verificado_em?'<p class="text--sm">Efí validada em '+esc(new Date(cfg.efi_verificado_em).toLocaleString('pt-BR'))+'</p>':'')+
+    (cfg.bloqueio?'<p role="status" style="padding:12px;background:#fff1d6;border-radius:10px"><strong>Operação em análise.</strong> '+esc(cfg.bloqueio)+'</p>':'')+
+    (cfg.efi_ultima_tentativa?'<p class="text--sm">Última conferência: '+esc(new Date(cfg.efi_ultima_tentativa).toLocaleString('pt-BR'))+' · '+esc(cfg.efi_ultimo_resultado)+'</p>':'<p class="text--sm">Autenticação de produção ainda não conferida neste controle.</p>')+
     '<p class="text--sm">Esta configuração não afeta a assinatura de R$ 39,90. Ao pausar, cobranças já emitidas continuam no histórico.</p>'+
     '<div class="btn-row"><button class="btn '+(on?'btn--outline':'btn--primary')+'" style="white-space:normal;min-height:44px" type="button" data-qf-manual-toggle="'+(on?'admin_disable':'admin_enable')+'">'+(on?'Pausar novas cobranças':'Ativar cobrança Pix integral')+'</button>'+
-    '<button class="btn btn--outline" type="button" data-qf-manual-refresh>Atualizar</button></div>'+
+    '<button class="btn btn--outline" type="button" data-qf-manual-validate>Validar conexão Efí sem cobrança</button><button class="btn btn--outline" type="button" data-qf-manual-refresh>Atualizar</button></div>'+
     '<p role="status" data-qf-manual-feedback>'+(note?esc(note):'')+'</p>';
     box.querySelector('[data-qf-manual-refresh]').onclick=()=>render();
+    box.querySelector('[data-qf-manual-validate]').onclick=async e=>{e.currentTarget.disabled=true;const msg=box.querySelector('[data-qf-manual-feedback]');msg.textContent='Validando autenticação bancária. Nenhuma cobrança será criada.';try{await invoke('admin_validate');await render('Autenticação de produção confirmada. Nenhuma cobrança criada.');}catch(ex){await render(ex.message);}};
     box.querySelector('[data-qf-manual-toggle]').onclick=async e=>{
      const btn=e.currentTarget,action=btn.dataset.qfManualToggle,feedback=box.querySelector('[data-qf-manual-feedback]');
      btn.disabled=true;feedback.textContent=action==='admin_enable'?'Autenticando com a Efí de produção antes de ativar...':'Pausando novas cobranças...';
@@ -377,10 +381,20 @@
   // Novos contatos: plano pago ou créditos. Prestação de contas anterior permanece acima.
   return;
  }
+ // O financeiro real monta estes controles antes das tabelas extensas.
+ g.QFComissao13.mountPixAdmin=function(view,c){
+  const existing=view.parentElement?.querySelector('[data-qf-manual-config]');
+  if(existing&&!view.contains(existing))view.prepend(existing);
+  painelPixAtivacao(view,c);if(g.QFPixFinanceiro)g.QFPixFinanceiro.mount(view,c);else painelPixManual(view,c,true);
+  const cfg=view.querySelector('[data-qf-manual-config]');if(cfg)view.prepend(cfg);
+ };
  g.QFComissao13.enhance=enhance;
  g.Screens.afterRender=function(){if(anterior)anterior.apply(this,arguments);enhance.apply(this,arguments);};
  const path=(g.location.hash||'').replace(/^#/,'');let pattern=path,params={};const match=path.match(/^\/profissional\/(pedido|chamada|chat)\/([^/]+)$/);if(match){pattern='/profissional/'+match[1]+'/:id';params.id=match[2];}
- const content=document.getElementById('app-content'),sess=g.DB&&g.DB.getSession&&g.DB.getSession(),user=sess&&g.DB.profissionalById&&g.DB.profissionalById(sess.userId);if(content)enhance(pattern,content,params,user);
+ const content=document.getElementById('app-content'),sess=g.DB&&g.DB.getSession&&g.DB.getSession();
+ // O banco local do painel não contém o cadastro profissional do aplicativo.
+ let user=null;if(!path.startsWith('/admin/')&&sess&&g.DB?.profissionalById){try{user=g.DB.profissionalById(sess.userId);}catch(_){}}
+ if(content)enhance(pattern,content,params,user);
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })(typeof window!=='undefined'?window:globalThis);
