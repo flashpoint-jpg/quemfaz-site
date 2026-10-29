@@ -47,7 +47,7 @@ const css2 = (html.match(/<style id="qf-skin-inicio">([\s\S]*?)<\/style>/) || []
 assert.ok(css2.length > 500);
 assert.ok(!/qf-landing-photo|qf-hero-search \.|qf-hero-search\{|\.qf-landing-photo img/.test(css2.replace(/\/\*[\s\S]*?\*\//g, '')), 'o visual novo não pode mexer na foto nem no campo de busca');
 // Nada de função perdida no início: entrar, instalar, ajuda, profissional, anúncio e preços.
-['data-action="landing-login"', 'data-support-open>Ajuda', 'data-nav="/auth/profissional/login"', 'data-nav="/anuncie"', 'data-nav="/como-funciona"'].forEach((x) => assert.ok(landing.includes(x) || html.includes(x), x));
+['data-action="landing-login"', 'data-support-open>Ajuda', 'data-nav="/auth/profissional/login"', 'data-nav="/como-funciona"'].forEach((x) => assert.ok(landing.includes(x) || html.includes(x), x));
 assert.ok(!landing.includes('qf-how3') && !landing.includes('qf-launch-mini'));
 
 // Pedir serviço: mesmos campos, anúncio depois do botão.

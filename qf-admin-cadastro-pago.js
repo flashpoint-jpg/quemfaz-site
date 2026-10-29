@@ -42,44 +42,57 @@
     return 'Não ativado · '+String(r.status||'desconhecido');
   }
   function waNumber(p){let d=String(p||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d.length>=12&&d.length<=13&&d.startsWith('55')?d:'';}
-  function record(r){
-    const pay=String(r.plano||'')==='livre'?'Quem Faz Livre':'Avulso';
-    const detail=(r.status==='aprovado'&&r.perfil_ativo!==true)
-      ? 'Aprovado pela Efí; conta ainda não aparece como profissional ativo.'
-      : (r.status==='pendente'?'Não confirmado pela Efí. Sem perfil ativo e sem saldo liberado.':'');
-    const tel=waNumber(r.telefone);
-    const contacts='<p><strong>E-mail:</strong> '+esc(r.email||'Não informado')
-      +(r.email? ' <a href="mailto:'+encodeURIComponent(r.email)+'">Enviar e-mail</a>':'')+'</p>'
-      +'<p><strong>Telefone:</strong> '+esc(r.telefone||'Não informado')
-      +(tel?' <a href="https://wa.me/'+tel+'" target="_blank" rel="noopener noreferrer">WhatsApp</a>':'')+'</p>';
-    return '<details class="qf-pre-record"><summary><span class="qf-pre-record-head"><b>'+esc(r.nome||'Profissional sem nome')+'</b><small>'+esc(pay)+' · '+money(r.valor_centavos)+' · '+esc(String(r.metodo||'').toUpperCase())+'</small></span>'
-      +'<span class="qf-pre-status'+(r.status==='pendente'?' is-pending':'')+'">'+esc(situation(r))+'</span></summary>'
-      +'<div class="qf-pre-detail">'+contacts
-      +'<p><strong>Iniciado:</strong> '+esc(date(r.criado_em))+' · <strong>Pago:</strong> '+esc(date(r.aprovado_em))+'</p>'
-      +'<p><strong>Resgate do cadastro:</strong> '+esc(date(r.resgatado_em))+'</p>'
-      +'<p><strong>Referência Efí:</strong> '+esc(r.provedor_id||'Ainda não gerada')+'</p>'
-      +(detail?'<p class="qf-pre-note">'+esc(detail)+'</p>':'')+'</div></details>';
+  let records=[];
+  const names={pendente:'Aguardando pagamento',teste:'Em teste',vencido:'Teste vencido',cortesia:'Cortesia',pago:'Plano pago',convite:'Convite preparado — prazo inicia após identificação'};
+  function record(r,i){
+    const until=r.situacao==='pago'?r.pago_ate:r.fim_em;
+    const days=until?Math.max(0,Math.ceil((Date.parse(until)-Date.parse(r.servidor_agora||new Date().toISOString())))/86400000):0;
+    return '<details class="qf-pre-record"><summary><span class="qf-pre-record-head"><b>'+esc(r.nome||'Profissional')+'</b><small>'+esc(r.email)+'</small></span><span class="qf-pre-status">'+esc(names[r.situacao]||r.situacao)+'</span></summary><div class="qf-pre-detail"><p><strong>Cadastro:</strong> '+(r.profissional_id?'Profissional cadastrado':'Pré-cadastro — identificação pendente')+'</p><p><strong>Plano:</strong> '+esc(names[r.situacao])+' · '+Math.ceil(days)+' dia(s) restante(s)</p><p><strong>Início:</strong> '+date(r.inicio_em)+' · <strong>Vencimento:</strong> '+date(until)+'</p><p><strong>WhatsApp:</strong> '+esc(r.telefone||'Não informado')+' · Último contato: '+date(r.ultimo_whatsapp)+'</p><p><strong>E-mail:</strong> '+esc(r.email)+' · Último contato: '+date(r.ultimo_email)+'</p><div class="qf-pre-actions">'+
+    (r.situacao!=='pago'?'<button class="btn btn--primary" data-benefit="ativar" data-record="'+i+'">ATIVAR PLANO MANUAL</button>':'<span>Assinatura paga preservada</span>')+
+    (r.tipo==='cortesia'&&!r.encerrado_em?'<button class="btn btn--outline" data-benefit="prorrogar" data-record="'+i+'">Prorrogar</button><button class="btn btn--outline" data-benefit="encerrar" data-record="'+i+'">Encerrar cortesia</button>':'')+
+    (!r.contato_recusado?((waNumber(r.telefone)?'<button class="btn btn--outline" data-contact="whatsapp" data-record="'+i+'">WhatsApp</button>':'')+(r.email?'<button class="btn btn--outline" data-contact="email" data-record="'+i+'">Enviar e-mail</button>':'')+'<button class="btn btn--outline" data-contact="recusa" data-record="'+i+'">Não receber convites</button>'):'<strong>Contato recusado — não enviar convites</strong>')+
+    '</div><details><summary>Histórico de ativações e alterações</summary>'+(r.historico?.length?r.historico.map(h=>'<p>'+date(h.criado_em)+' · '+esc(h.acao)+' · '+esc(h.motivo)+' · Responsável: '+esc(h.responsavel_nome||h.responsavel||'Sistema')+'</p>').join(''):'<p>Nenhuma liberação registrada.</p>')+'</details></div></details>';
+  }
+  function modal(title,body){const d=document.createElement('dialog');d.className='qf-benefit-modal';d.innerHTML='<h2>'+esc(title)+'</h2>'+body+'<p role="alert"></p><button type="button" class="btn btn--outline" data-close>Fechar</button>';document.body.append(d);d.querySelector('[data-close]').onclick=()=>{d.close();d.remove();};d.addEventListener('close',()=>d.remove());d.showModal();return d;}
+  function benefit(r,action,panel){
+    const d=modal(action==='encerrar'?'Encerrar cortesia':'Quem Faz Livre — ativação manual','<p><strong>'+esc(r.nome)+'</strong><br>'+esc(r.email)+'</p><p>Situação: '+esc(names[r.situacao])+'</p><p>Início: '+(r.profissional_id?'Após confirmação':'Após conclusão da identificação')+' · Vencimento calculado pelo servidor.</p><form class="stack"><label>Plano<input value="Quem Faz Livre — cortesia administrativa" readonly></label>'+(action!=='encerrar'?'<label>Dias de liberação<div class="qf-benefit-days">'+[1,2,3,4,7,15,30].map(n=>'<button type="button" data-days="'+n+'">'+n+'</button>').join('')+'</div><input name="dias" type="number" min="1" max="365" value="2" required aria-label="Outra quantidade de dias"></label><p data-expiry></p>':'')+'<label>Motivo<textarea name="motivo" minlength="5" maxlength="500" required></textarea></label><button class="btn btn--primary" type="submit">'+(action==='encerrar'?'CONFIRMAR ENCERRAMENTO':'CONFIRMAR ATIVAÇÃO MANUAL')+'</button></form>');
+    const f=d.querySelector('form');const update=()=>{if(f.elements.dias)d.querySelector('[data-expiry]').textContent=r.profissional_id?'Previsão de vencimento: '+date(new Date(Math.max(Date.now(),action==='prorrogar'?Date.parse(r.fim_em)||0:0)+Number(f.elements.dias.value)*86400000).toISOString()):'O prazo começa somente após identificação e ativação válidas.';};
+    d.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{f.elements.dias.value=b.dataset.days;update();});if(f.elements.dias)f.elements.dias.oninput=update;update();
+    f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('[type=submit]');b.disabled=true;try{const out=await api().rpc('qf_admin_livre_beneficio',{p_email:r.email,p_acao:action,p_dias:Number(f.elements.dias?.value||1),p_motivo:f.elements.motivo.value.trim()});if(out.error||!out.data?.ok)throw Error(out.error?.message||'Não foi possível ativar');d.close();d.remove();lastAt=0;await load(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}finally{b.disabled=false;}};
+  }
+  function contactText(r,channel){
+    const first=String(r.nome||'Profissional').trim().split(/\s+/)[0];
+    if(['cortesia','teste'].includes(r.situacao))return {subject:'Seu Quem Faz Livre está ativo',body:'Olá, '+first+'! Seu Quem Faz Livre está liberado '+(r.situacao==='cortesia'?'como cortesia administrativa':'em teste grátis')+' até '+date(r.fim_em)+'. Acesse sua carteira para acompanhar a validade. Comissão de 13% e prestação de contas mantidas. Não haverá cobrança automática.\n\nhttps://quemfazservico.com.br\n\nEquipe Quem Faz'};
+    if(r.teste_utilizado||r.situacao==='pago')return {subject:first+', continue com o Quem Faz Livre',body:'Olá, '+first+'! Tudo bem?\n\nAqui é da equipe Quem Faz.\n\nPara continuar conhecendo as oportunidades da sua região e desbloqueando novos pedidos, ative o Quem Faz Livre por R$ 39,90 por 30 dias — menos de R$ 1,50 por dia.\n\nNão haverá cobrança automática. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nSe precisar, podemos ajudar com seu cadastro.\n\nQuem Faz — Precisou? Encontre quem faz!'};
+    if(channel==='email')return {subject:String(r.nome||first)+', você ganhou 2 dias para conhecer o Quem Faz Livre!',body:'Olá, '+String(r.nome||first)+'!\n\nVocê iniciou seu cadastro no Quem Faz e queremos te ajudar a conhecer nossa plataforma.\n\nAgora é possível experimentar o Quem Faz Livre gratuitamente por 2 dias.\n\nDurante o teste, você poderá conhecer oportunidades profissionais na sua região e utilizar os recursos do plano.\n\nApós o período gratuito, para continuar desbloqueando novas oportunidades, basta contratar o Quem Faz Livre por R$ 39,90 por 30 dias.\n\nNão existe cobrança automática depois do teste. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nEquipe Quem Faz'};
+    return {subject:first+', você ganhou 2 dias para conhecer o Quem Faz Livre!',body:'Olá, '+first+'! Tudo bem?\n\nAqui é da equipe Quem Faz.\n\nPercebemos que você começou seu cadastro para trabalhar pela plataforma, mas ainda não concluiu sua ativação.\n\nQueremos te oferecer uma oportunidade especial:\n\nTESTE O QUEM FAZ LIVRE GRÁTIS POR 2 DIAS!\n\nDurante esse período, você poderá conhecer as oportunidades da sua região e experimentar os recursos do plano.\n\nDepois dos 2 dias, para continuar desbloqueando novas oportunidades, o Quem Faz Livre custa R$ 39,90 por 30 dias — menos de R$ 1,50 por dia.\n\nVocê não precisa pagar para começar o teste e não haverá cobrança automática ao final. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nSe precisar, podemos te ajudar a concluir seu cadastro.\n\nQuem Faz — Precisou? Encontre quem faz!'};
+  }
+  function contact(r,channel,panel){
+    const m=contactText(r,channel);const last=channel==='whatsapp'?r.ultimo_whatsapp:r.ultimo_email;
+    const d=modal(channel==='recusa'?'Registrar recusa de contato':'Mensagem pronta — '+r.nome,channel==='recusa'?'<p>Confirme que este interessado pediu para não receber convites.</p><button type="button" class="btn btn--primary" data-sent>CONFIRMAR RECUSA</button>':'<p>Destinatário: '+esc(channel==='whatsapp'?r.telefone:r.email)+'</p>'+(last?'<p>Último contato: '+date(last)+'. Evite repetir convites.</p>':'')+'<p><strong>'+esc(m.subject)+'</strong></p><textarea readonly rows="12">'+esc(m.body)+'</textarea><a class="btn btn--primary" target="_blank" rel="noopener noreferrer" href="'+(channel==='whatsapp'?'https://wa.me/'+waNumber(r.telefone)+'?text='+encodeURIComponent(m.body):'mailto:'+encodeURIComponent(r.email)+'?subject='+encodeURIComponent(m.subject)+'&body='+encodeURIComponent(m.body))+'">Abrir '+(channel==='whatsapp'?'WhatsApp':'e-mail')+' com mensagem</a><p>Depois de enviar no aplicativo, confirme abaixo. Abrir a conversa não registra envio.</p><button type="button" class="btn btn--outline" data-sent>CONFIRMAR QUE ENVIEI</button>');
+    d.querySelector('[data-sent]').onclick=async()=>{try{const out=await api().rpc('qf_admin_livre_contato',{p_email:r.email,p_canal:channel});if(out.error)throw out.error;d.close();lastAt=0;load(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}};
   }
   function render(panel,s,d){
     if(!panel.isConnected)return;
-    const entries=Array.isArray(d.itens)?d.itens:[];
+    const entries=Array.isArray(d.itens)?d.itens:[];records=entries.map(r=>({...r,servidor_agora:d.servidor_agora}));
     const total=asNum(d.total);
     panel.innerHTML='<div class="qf-pre-top"><div><h2>Pré-cadastros dos profissionais</h2><p>Quem escolheu Avulso ou Livre, mesmo sem pagar</p></div>'
       +'<button type="button" class="btn btn--outline" data-qf-pre-refresh>Atualizar dados</button></div>'
       +'<div class="qf-pre-stats">'
       +stat('Aguardando pagamento',asNum(s.pre_cadastros_pendentes))
       +stat('Pagos, sem ativar',asNum(s.pagos_ainda_nao_resgatados))
-      +stat('Avulso inicial pago',asNum(s.avulsos_iniciais_pagos))
-      +stat('Livre inicial pago',asNum(s.livres_iniciais_pagos))+'</div>'
-      +'<p class="qf-pre-explain">O interessado que não pagou <strong>não está ativo</strong> nem recebeu os R$ 13 na carteira. Pagamento pendente não é receita.</p>'
+      +stat('Testes ativos',asNum(d.kpis?.testes_ativos))+stat('Vencem hoje',asNum(d.kpis?.vencem_hoje))+stat('Testes vencidos',asNum(d.kpis?.testes_vencidos))+stat('Cortesias',asNum(d.kpis?.cortesias))+stat('Planos pagos ativos',asNum(d.kpis?.planos_pagos))+stat('Contrataram após teste',asNum(d.kpis?.convertidos))+stat('Conversão teste → pago',d.kpis?.total_testes?((asNum(d.kpis.convertidos)/d.kpis.total_testes)*100).toFixed(1)+'%':'0%')+'</div>'
+      +'<p class="qf-pre-explain">Cadastro ativo exige pagamento bancário, teste válido ou cortesia autorizada. Testes e cortesias não geram receita nem saldo financeiro.</p>'
       +'<form class="qf-pre-filters" data-qf-pre-form><label>Buscar nome, e-mail ou telefone<input type="search" name="busca" maxlength="120" placeholder="Ex.: Nilson" value="'+esc(state.busca)+'"></label>'
-      +'<label>Situação<select name="situacao">'+[['todos','Todos'],['pendente','Aguardando pagamento'],['aprovado','Pagos sem ativar'],['ativado','Ativados'],['cancelado','Cancelados ou expirados']]
+      +'<label>Situação<select name="situacao">'+[['todos','Todos'],['pendente','Aguardando pagamento'],['teste','Em teste'],['vencido','Teste vencido'],['cortesia','Cortesia'],['pago','Plano pago'],['convite','Convites preparados']]
         .map(v=>'<option value="'+v[0]+'"'+(v[0]===state.situacao?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></label>'
       +'<button type="submit" class="btn btn--primary">Filtrar</button></form>'
       +'<div class="qf-pre-list-meta">'+total+' resultado(s) · Mostrando '+entries.length+' a partir de '+(state.offset+1)+'</div>'
-      +'<div class="qf-pre-list">'+(entries.length?entries.map(record).join(''):'<p class="qf-pre-empty">Nenhum pré-cadastro encontrado para este filtro.</p>')+'</div>'
+      +'<div class="qf-pre-list">'+(entries.length?records.map(record).join(''):'<p class="qf-pre-empty">Nenhum pré-cadastro encontrado para este filtro.</p>')+'</div>'
       +'<div class="qf-pre-pager">'+(state.offset>0?'<button type="button" class="btn btn--outline" data-qf-pre-previous>Anterior</button>':'')
       +(state.offset+entries.length<total?'<button type="button" class="btn btn--outline" data-qf-pre-next>Próximos</button>':'')+'</div>';
+    panel.querySelectorAll('[data-benefit]').forEach(b=>b.onclick=()=>benefit(records[Number(b.dataset.record)],b.dataset.benefit,panel));
+    panel.querySelectorAll('[data-contact]').forEach(b=>b.onclick=()=>contact(records[Number(b.dataset.record)],b.dataset.contact,panel));
     const form=panel.querySelector('[data-qf-pre-form]');
     form.addEventListener('submit',e=>{
       e.preventDefault();state.busca=form.elements.busca.value.trim();state.situacao=form.elements.situacao.value;state.offset=0;load(panel);
@@ -101,7 +114,7 @@
     try{
       const [a,b]=await Promise.all([
         client.rpc('qf_admin_cadastro_pagamentos'),
-        client.rpc('qf_admin_pre_cadastros',{p_limite:state.limite,p_offset:state.offset,p_busca:state.busca,p_situacao:state.situacao})
+        client.rpc('qf_admin_livre_painel',{p_offset:state.offset,p_busca:state.busca,p_situacao:state.situacao})
       ]);
       if(a.error||b.error||!a.data||!b.data)throw Error('Não foi possível ler os cadastros. Confira a sessão administrativa e a atualização do banco.');
       render(panel,a.data,b.data);
@@ -187,6 +200,7 @@
       +'.qf-wallet-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.qf-wallet-top h2{margin:0;font-size:17px;color:#133f7d}.qf-wallet-top p{font-size:12px;color:#536477;margin:4px 0}'
       +'.qf-wallet-amount{display:block;font-size:27px;letter-spacing:-.02em;color:#1458a8;margin:14px 0 8px}.qf-wallet-note{font-size:13px;line-height:1.5;color:#5b6d7e;margin:0}'
       +'.qf-pre-nav-mark{font-size:20px;color:#fa8b22}@media(max-width:700px){.qf-pre-panel,.qf-wallet-panel{padding:12px!important}.qf-pre-stats{grid-template-columns:1fr 1fr}.qf-pre-stat strong{font-size:20px}.qf-pre-record summary{align-items:flex-start}}';
+    css.textContent+='.qf-pre-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.qf-benefit-modal{border:1px solid #c9d7e8;border-radius:20px;padding:22px;width:min(560px,calc(100% - 24px));max-height:90dvh;overflow:auto;background:#fff;color:#183047}.qf-benefit-modal::backdrop{background:#071c38aa}.qf-benefit-modal h2{font-size:21px;color:#134f98}.qf-benefit-modal input,.qf-benefit-modal textarea{width:100%;padding:10px;border:1px solid #cbd6e5;border-radius:9px;box-sizing:border-box}.qf-benefit-modal label{display:grid;gap:8px}.qf-benefit-modal .btn{margin:8px 0;min-height:42px}.qf-benefit-days{display:flex;flex-wrap:wrap;gap:6px}.qf-benefit-days button{padding:8px 12px;border:1px solid #bcd4ef;border-radius:8px;background:#f1f6fd;color:#134f98}.qf-benefit-modal [role=alert]{color:#a12c23}';
     document.head.appendChild(css);
     let queued=false;
     new MutationObserver(()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;place();},90);}).observe(document.body,{childList:true,subtree:true});

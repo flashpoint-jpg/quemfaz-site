@@ -11,15 +11,15 @@ test('Painel administrativo carrega com sintaxe válida e conexão realmente exi
  assert.doesNotMatch(front,/global\.QFCloud\b/,'não usar o nome errado que escondia cadastros');
  assert.match(admin,/global\.QFAdminCloud\s*=/);
  assert.match(front,/\.rpc\('qf_admin_cadastro_pagamentos'\)/);
- assert.match(front,/\.rpc\('qf_admin_pre_cadastros'/);
+ assert.match(front,/\.rpc\('qf_admin_livre_painel'/);
 });
 
 test('Administrativo permite localizar nome, contato, plano e estágio de pagamento sem confundir com cadastro ativo',()=>{
  for(const s of ['Pré-cadastros dos profissionais','Aguardando pagamento','Avulso','Quem Faz Livre',
  'data-qf-pre-form','state.busca','state.situacao','data-qf-pre-next','data-qf-pre-refresh',
- 'Sem perfil ativo e sem saldo liberado','QFAdminCloud','qfPreNav'])
+ 'Teste vencido','QFAdminCloud','qfPreNav'])
  assert.ok(front.includes(s),'falta elemento '+s);
- assert.match(front,/Não confirmado pela Efí/);
+ assert.match(front,/Testes e cortesias não geram receita/);
  assert.match(front,/r\.perfil_ativo===true/);
 });
 

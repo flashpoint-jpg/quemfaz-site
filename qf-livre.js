@@ -2,7 +2,7 @@
 (function(g){
  'use strict';
  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- const date=v=>v?new Date(v).toLocaleDateString('pt-BR'):'';
+ const date=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'';
  function divisao(){
   return '<section class="qf-divisao" aria-label="Divisão do valor do serviço no Quem Faz Livre"><h3>Você faz o serviço e fica com 87% do valor. O Quem Faz recebe 13% pela intermediação.</h3><div class="qf-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-divisao__pro">87%</span><span class="qf-divisao__qf">13%</span></div><div class="qf-divisao__legenda"><span><i class="qf-divisao__verde"></i><b>Profissional · 87%</b><strong>R$ 174</strong></span><span><i class="qf-divisao__laranja"></i><b>Quem Faz · 13%</b><strong>R$ 26</strong></span></div><p>Exemplo: serviço de R$ 200. Você define o preço. Esta é a divisão do valor após a comissão no Quem Faz Livre; seus custos e tributos não estão descontados. Não representa lucro líquido garantido. No Avulso, não há comissão.</p></section>';
  }
@@ -81,7 +81,7 @@
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
-      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=livre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
+      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=form.elements.testeLivre?.checked?'ATIVAR TESTE GRÁTIS — 2 DIAS':livre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
       const nota=form.querySelector('[data-plano-nota]');
       if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Acesso após o Pix confirmado de R$ 39,90, por 30 dias; sem recarga de R$ 13.':'Acesso após o pagamento inicial de R$ 13,00, creditado integralmente na Carteira.';}
       conditions.hidden=!livre;
@@ -195,6 +195,13 @@
       box.innerHTML='<span class="qf-livre__icon" aria-hidden="true">'+(typeof g.icon==='function'?g.icon('crown'):'∞')+'</span><span class="qf-livre__copy"><strong>Desbloqueie o quanto quiser <em>por R$ 1,33/dia</em></strong><small>R$ 39,90 por 30 dias · ativação pelo Pix</small></span><a class="qf-livre__link" href="#/profissional/carteira">Ver plano ›</a>';
      }
     }
+    if(last.tipo_acesso==='teste'||last.tipo_acesso==='cortesia'){
+     const active=last.ativo;
+     const title=last.tipo_acesso==='teste'?(active?'Teste grátis ativo':'Seu teste grátis terminou!'):(active?'Quem Faz Livre — cortesia ativa':'Cortesia encerrada');
+     const note=active?'Termina em '+esc(date(last.valido_ate))+'. Comissão de 13% e prestação de contas mantidas.':last.aguarda_identificacao?'Conclua sua identificação para iniciar a contagem.':'Para continuar desbloqueando novas oportunidades, ative o Quem Faz Livre por R$ 39,90 durante 30 dias. Sem cobrança automática.';
+     box.innerHTML='<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+note+'</p></div>'+(!active&&!last.aguarda_identificacao?'<button type="button" class="btn btn--primary" data-qf-livre-pagar>ATIVAR PLANO — R$ 39,90</button>':'');
+     if(active&&last.tipo_acesso==='teste'&&Date.parse(last.valido_ate)-Date.parse(last.servidor_agora)<12*3600000)box.insertAdjacentHTML('beforeend','<p>Seu teste termina em breve. Continue com o Plano Livre por R$ 39,90.</p>');
+    }
     bind();
     mostrarContaPix(s).catch(()=>{});
     if(cadastro){box.querySelector('[data-qf-livre-pagar]')?.remove();box.querySelector('[data-qf-livre-pix]')?.remove();}
@@ -244,6 +251,7 @@
     }catch(e){pending=false;const visible=box.querySelector('[data-qf-livre-msg]');if(visible)visible.textContent=e.message;}finally{busy=false;if(button&&button.isConnected)button.disabled=false;}
    }
    if(cadastro){render({});return;}
+   const validityTimer=setInterval(()=>{if(!box.isConnected){clearInterval(validityTimer);return;}if(!pending&&!busy)refresh().catch(()=>{});},60000);
    box.innerHTML='<p role="status">Consultando seu plano…</p>';
    async function load(){
     const s=await rpc('qf_livre_status');if(!box.isConnected)return;

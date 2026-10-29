@@ -3874,6 +3874,7 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 @media (max-width:390px) {#app-shell .qf-perfil-upload{font-size:13px;padding:11px 10px;gap:8px}}
 </style>
 <link rel="stylesheet" href="/qf-pedido-layout.css?v=20261026-1">
+<link rel="stylesheet" href="/qf-home-refresh.css">
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -5835,14 +5836,16 @@ alt=""></noscript>
     if (role === 'profissional') {
       let prepay = null;
       try { prepay = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null'); } catch (_) {}
-      if (!prepay || !prepay.pag || !prepay.pag.id || !prepay.pag.segredo) {
-        throw new Error('Escolha o Avulso ou o Livre e confirme o pagamento para ativar o cadastro.');
-      }
-      const vinculo = await client.rpc('qf_vincular_pre_cadastro', {
-        p_id: prepay.pag.id, p_segredo: prepay.pag.segredo
+      let trialDraft = null;
+      try { trialDraft=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null'); } catch(_) {}
+      const benefit=await client.rpc('qf_livre_preparar_acesso',{
+        p_teste:!!(trialDraft && trialDraft.email===String(user.email||'').toLowerCase()),
+        p_documento:trialDraft?.documento||'',p_telefone:trialDraft?.telefone||''
       });
-      if (vinculo.error || !vinculo.data || vinculo.data.ok !== true) {
-        throw new Error('Pagamento não confirmado para este e-mail. Retome o pagamento antes de continuar.');
+      if (!(benefit.data && benefit.data.ok===true)) {
+        if (!prepay?.pag?.id || !prepay?.pag?.segredo) throw new Error(benefit.error?.message || 'Escolha o Avulso ou o Livre, ou ative seu teste gratuito, para concluir o cadastro.');
+        const vinculo=await client.rpc('qf_vincular_pre_cadastro',{p_id:prepay.pag.id,p_segredo:prepay.pag.segredo});
+        if(vinculo.error || !vinculo.data?.ok) throw new Error('Pagamento não confirmado para este e-mail. Retome o pagamento antes de continuar.');
       }
     }
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
@@ -6869,7 +6872,7 @@ alt=""></noscript>
 
     if (!String(data.nome || '').trim()) return { ok: false, error: 'Informe seu nome.' };
     if (role === 'profissional' && !/^data:image\//i.test(String(data.selfieData || ''))) {
-      return { ok: false, error: 'É obrigatório enviar uma selfie do profissional ou a marca oficial da empresa representada.' };
+      return { ok: false, error: 'Escolha uma foto simples do profissional ou a marca da empresa.' };
     }
 
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
@@ -8571,13 +8574,11 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '</div>' + deskMenu() + '<div class="qf-home-prof"><button type="button" class="qf-home-prof-btn" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span class="qf-prof-full">Área de profissionais</span><span class="qf-prof-short">Profissionais</span></button></div><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
-      '<section class="qf-home-livre" aria-labelledby="qf-home-livre-title" data-qf-home-livre><div class="qf-home-livre__intro"><div class="qf-home-livre__top"><div class="qf-home-livre__brand"><h2 id="qf-home-livre-title">Quem Faz Livre</h2><strong>Desbloqueios ilimitados</strong></div><div class="qf-home-livre__offer"><p><b>R$ 1,33</b> /dia</p><span>R$ 39,90 por 30 dias</span></div></div></div><div class="qf-home-livre__split"><div class="qf-home-livre__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-home-livre__pro"></span><span class="qf-home-livre__qf"></span></div><p class="qf-home-livre__legend"><strong>87% para você</strong> · 13% Quem Faz</p></div><a class="qf-home-livre__cta" href="#/como-funciona" data-nav="/como-funciona">Conhecer o plano</a></section>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><p class="qf-customer-sub">Publique seu pedido grátis e encontre profissionais da sua região.</p>' +
       // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
-      '<div class="qf-brandrot" data-brandrot><div class="qf-brandrot__card"><span class="qf-brandrot__logo">' + (global.QF_BRAND_MARK || '') + '</span><div class="qf-brandrot__copy" data-brandrot-copy aria-live="off"><small class="qf-brandrot__tag">PUBLICIDADE</small><strong class="qf-brandrot__title" data-brandrot-title>Anuncie sua marca aqui</strong><span class="qf-brandrot__text" data-brandrot-text>Este espaço pode ser da sua empresa.</span></div><button class="qf-brandrot__cta" type="button" data-nav="/anuncie"><span>Ver planos</span>' + icon('arrowRight') + '</button></div><div class="qf-brandrot__dots"><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 1" aria-current="true"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 2"></button><button class="qf-brandrot__dot" type="button" data-brandrot-dot aria-label="Ver anúncio 3"></button></div></div>' +
       '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Qual serviço você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura, montagem..." autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Sem cadastro obrigatório · Pedido gratuito</p></form></div>' +
-        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()"></a>' +
+        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="/assets/google-play-badge.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()"></a>' +
         '<a class="qf-play-link" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer">' + icon('download') + '<span>Baixar direto da Play Store</span></a>' +
         '</div><div class="qf-tape" aria-hidden="true"></div></section>' +
       '<div class="qf-landing-body">' +
@@ -8617,6 +8618,7 @@ alt=""></noscript>
         '<li><span class="qf-mob-num">2</span><div><strong>Profissionais da região são avisados</strong><p>Até 4 podem desbloquear seu pedido.</p></div></li>' +
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Converse com os profissionais</strong><p>Acompanhe as respostas em Meus pedidos.</p></div></li>' +
       '</ol></section>' +
+      '<section class="qf-mob-card"><h2 class="qf-mob-h">Serviços mais procurados</h2><div class="qf-mobile-services">'+DESK_SERVICES.map(function(x){return '<button type="button" data-desk-service="'+(x[2]||x[0])+'">'+icon(x[1])+'<span>'+x[0]+'</span></button>';}).join('')+'</div></section>'+
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis. Acesso por telefone e senha','Você escreve uma vez e até 4 profissionais chamam você','Acompanhe as respostas e conversas em Meus pedidos','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Conversa pelo chat no Plano Livre; WhatsApp no avulso','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +
@@ -8665,7 +8667,7 @@ alt=""></noscript>
   function deskList(items) { return '<ul class="qf-desk-list">' + items.map(function (t) { return '<li>' + icon('check') + '<span>' + t + '</span></li>'; }).join('') + '</ul>'; }
   function deskWideInner() {
     // Selo oficial do Google Play, com destino direto para o app (cliente e profissional).
-    const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()" loading="lazy"></a>';
+    const play = '<a class="qf-play-badge qf-play-badge--desk" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="Baixar QuemFaz no Google Play"><img src="/assets/google-play-badge.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()" loading="lazy"></a>';
     return '<section id="qf-sec-beneficios" aria-labelledby="qf-desk-ben"><h2 class="qf-desk-h qf-desk-h--lg" id="qf-desk-ben">O que o QuemFaz oferece</h2><div class="qf-desk-two">' +
         '<div class="qf-desk-card"><p class="qf-desk-tag">Para quem precisa de um serviço</p>' +
           deskList(['Pedir é grátis. Acesso por telefone e senha','Você escreve uma vez e até 4 profissionais chamam você','Acompanhe as respostas e conversas em Meus pedidos','Só até 4 profissionais veem o seu WhatsApp','Calculadora para ter ideia do preço antes de pedir']) +
@@ -9203,7 +9205,7 @@ alt=""></noscript>
           '<div class="card stack qf-cad-foto" style="background:var(--warning-100);border:2px solid #efc46e;">' +
             '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Envie sua selfie ou o logotipo oficial da sua empresa.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Tirar selfie do profissional<input type="file" id="cadastro-prof-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
+            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Escolher minha foto do profissional<input type="file" id="cadastro-prof-selfie" accept="image/*"  style="display:none;"></label>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="cadastro-prof-logo" accept="image/*" style="display:none;"></label>' +
             '<div class="text--sm text--secondary">Na selfie, mostre o rosto de frente e com boa iluminação.</div>' +
           '</div>' +
@@ -9228,6 +9230,7 @@ alt=""></noscript>
           }).join('') + '</div>' +
           '<p class="text--sm text--secondary">Avulso: R$ 13 de saldo, não é taxa. Livre: R$ 39,90 por 30 dias; a comissão de 13% só incide sobre serviços fechados e confirmados.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
+          '<label class="qf-trial-choice" style="display:flex;gap:10px;padding:14px;background:#eef5ff;border:1px solid #bcd4f2;border-radius:12px;align-items:flex-start"><input type="checkbox" name="testeLivre" value="sim"><span><strong>Experimente o Quem Faz Livre grátis por 2 dias!</strong><br>Sem pagamento para começar e sem cobrança automática. Após 48 horas: R$ 39,90 por 30 dias. Comissão de 13% e prestação de contas mantidas. Um teste por profissional.</span></label><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="cortesiaLivre" value="sim">Recebi uma cortesia da equipe Quem Faz (será validada pelo servidor).</label>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Pagar R$ 39,90 e ativar cadastro</button></div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
@@ -10441,7 +10444,7 @@ alt=""></noscript>
         }
         if (n === 4 && !selfieData) {
           try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
-          PU.toast('Falta a foto: toque em "Tirar selfie" (ou, se for empresa, escolha o logo).', 'danger');
+          PU.toast('Falta a foto: toque em "Escolher minha foto" (ou, se for empresa, escolha o logo).', 'danger');
           return false;
         }
         if (n === 3) {
@@ -10469,7 +10472,7 @@ alt=""></noscript>
       function botaoPlano() {
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'livre'); }) || QF_CAD_PLANOS[1];
         const b = form.querySelector('[data-cad-criar]');
-        if (b) b.textContent = 'Continuar para pagamento · ' + pl.preco;
+        if (b) b.textContent = form.elements.testeLivre?.checked ? 'ATIVAR TESTE GRÁTIS — 2 DIAS' : 'Continuar para pagamento · ' + pl.preco;
         const nota = form.querySelector('[data-plano-nota]');
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
@@ -10478,7 +10481,7 @@ alt=""></noscript>
             : 'Assinatura de R$ 39,90 por 30 dias. Não exige os R$ 13 do Avulso. Ativação só após Pix confirmado.';
         }
       }
-      form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
+      form.addEventListener('change', function (e) { if (e.target && ['planoEscolhido','testeLivre','cortesiaLivre'].includes(e.target.name)) { if(e.target.checked && ['testeLivre','cortesiaLivre'].includes(e.target.name)){const radio=form.querySelector('[name=planoEscolhido][value=livre]');if(radio)radio.checked=true;} if(e.target.name==='planoEscolhido' && e.target.value==='avulso')form.elements.testeLivre.checked=false;botaoPlano(); } });
       botaoPlano();
       form.addEventListener('click', function (e) {
         if (e.target.closest('[data-step-next]')) avancar();
@@ -10773,7 +10776,7 @@ alt=""></noscript>
         if (!selfieData) {
           goStep(4);
           try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
-          PU.toast('Falta a foto: toque em "Tirar selfie" (ou, se for empresa, escolha o logo).', 'danger');
+          PU.toast('Falta a foto: toque em "Escolher minha foto" (ou, se for empresa, escolha o logo).', 'danger');
           return;
         }
         if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
@@ -10821,7 +10824,16 @@ alt=""></noscript>
           if (!planoPago || !['avulso','livre'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
           }
-          abrirPagamento(dados, planoPago, fd.get('indicacao'));
+          if(fd.get('testeLivre')==='sim'||fd.get('cortesiaLivre')==='sim') {
+            if(fd.get('testeLivre')==='sim')localStorage.setItem('qf_livre_teste_cadastro',JSON.stringify({email:dados.email,documento:dados.cpf||dados.cnpj,telefone:dados.telefone}));else localStorage.removeItem('qf_livre_teste_cadastro');
+            const r=await global.QFCloud.signUp('profissional',dados);
+            if(!r.ok)throw Error(r.error||'Não foi possível iniciar o teste.');
+            PU.toast(r.needsConfirmation?'Confirme seu e-mail e entre para ativar as 48 horas de teste.':'Acesso Quem Faz Livre ativado. Confira a validade na carteira.','success');
+            global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);
+          } else {
+            localStorage.removeItem('qf_livre_teste_cadastro');
+            abrirPagamento(dados, planoPago, fd.get('indicacao'));
+          }
         } catch (err) {
           console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
           PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
@@ -14289,7 +14301,7 @@ alt=""></noscript>
           '<div class="section-head"><div><h2 class="h3">Identificação</h2><div class="text--sm text--secondary">A imagem aparece para o cliente quando você assumir um chamado.</div></div></div>' +
           '<div class="card stack--sm qf-perfil-identificacao">' +
             '<div class="row qf-perfil-identificacao__cabecalho">' + personAvatar(user, 'avatar--lg') + '<div class="spacer"><div class="text--strong">' + (user.fotoUrl ? 'Imagem atual' : 'Adicione sua identificação') + '</div><div class="text--sm text--secondary">' + (user.tipoPessoa === 'cnpj' ? 'Empresa: use sua logo ou marca oficial.' : 'Profissional: use uma foto sua.') + '</div></div></div>' +
-            '<label class="btn btn--outline qf-perfil-upload" tabindex="0">' + icon('camera') + '<span>Sou profissional — usar minha foto</span><input type="file" id="perfil-selfie" accept="image/*" capture="user" style="display:none;"></label>' +
+            '<label class="btn btn--outline qf-perfil-upload" tabindex="0">' + icon('camera') + '<span>Sou profissional — usar minha foto</span><input type="file" id="perfil-selfie" accept="image/*"  style="display:none;"></label>' +
             '<label class="btn btn--outline qf-perfil-upload" tabindex="0">' + icon('image') + '<span>Sou empresa — usar minha logo</span><input type="file" id="perfil-empresa-logo" accept="image/*" style="display:none;"></label>' +
           '</div>' +
         '</div>' +
@@ -15587,7 +15599,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.1.47';
+  const APP_VERSION = '12.2.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
@@ -15996,7 +16008,7 @@ alt=""></noscript>
     if (canOfferInstall()) {
       const play = usePlay();
       // V11.84.3: na barra de cima, o Android mostra o selo oficial do Google Play (no lugar do botão laranja).
-      if (play) return '<button class="qf-top-dl qf-top-play" type="button" data-download-apk aria-label="Baixar QuemFaz no Google Play"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/pt-br_badge_web_generic.png" alt="Disponível no Google Play" width="646" height="250" onerror="this.parentNode.classList.add(\'qf-top-play--txt\');this.remove()"></button>';
+      if (play) return '<button class="qf-top-dl qf-top-play" type="button" data-download-apk aria-label="Baixar QuemFaz no Google Play"><img src="/assets/google-play-badge.png" alt="Disponível no Google Play" width="646" height="250" onerror="this.parentNode.classList.add(\'qf-top-play--txt\');this.remove()"></button>';
       const label = isIosDevice() ? 'Criar atalho' : 'Instalar app';
       return '<button class="qf-top-dl" type="button" ' + (play ? 'data-download-apk' : 'data-install-app') + '>' + icon('download') + '<span>' + label + '</span></button>';
     }
@@ -16122,7 +16134,7 @@ alt=""></noscript>
     document.getElementById('qf-install-ok').onclick = function () { PU.closeSheet(); };
   });
 
-  // V11.5.0: no APK, "Tirar selfie" abre a câmera frontal, "Tirar foto" a traseira e "Galeria"/"escolher logo"
+  // V11.5.0: no APK, "Escolher minha foto" abre a câmera frontal, "Tirar foto" a traseira e "Galeria"/"escolher logo"
   // a galeria, pelo plugin Camera. O arquivo volta para o mesmo <input>, então o resto da tela não muda.
   function cameraPlugin() {
     try { return isNativeApp() && global.Capacitor.Plugins && global.Capacitor.Plugins.Camera ? global.Capacitor.Plugins.Camera : null; } catch (_) { return null; }
