@@ -1,4 +1,4 @@
-/* Piloto simplificado: pagamento direto; comissão confirmada pela administração. */
+/* Plano Livre: Pix integral no Quem Faz com repasse manual; cobrança anterior de comissão preservada para atendimentos legados. */
 (function(g){
  'use strict';
  const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -192,8 +192,8 @@
         section.className='card stack--sm';
         section.style.cssText='border:2px solid #dfb15f;background:#fff8eb;border-radius:16px;padding:16px;margin-bottom:12px';
         section.dataset.qf13Direto='';
-        section.innerHTML='<h2 class="h3">Recebimento direto · Plano Livre</h2>'+
-         '<p>Se o cliente pagou diretamente a você, informe aqui. O Quem Faz cobrará apenas os 13% da comissão por Pix. Até o banco confirmar essa comissão, novos desbloqueios ficarão bloqueados. Se o cliente pagou pelo Pix da plataforma, NÃO confirme recebimento direto.</p>'+
+        section.innerHTML='<h2 class="h3">Recebimento direto antigo · acerto de comissão</h2>'+
+         '<p>Somente para atendimentos antigos pagos diretamente: declare o recebimento para quitar a comissão de 13% por Pix. Até o banco confirmar essa comissão, novos desbloqueios ficarão bloqueados. Se o cliente pagou pelo Pix da plataforma, NÃO confirme recebimento direto.</p>'+
          declarados.map(a=>'<p role="status"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+'</strong>: pagamento direto declarado. Novos pedidos bloqueados até quitar a comissão de '+brl(a.comissao_centavos)+' por Pix na carteira.</p>').join('')+
          diretos.map(a=>'<div class="stack--sm" data-qf13-direto="'+esc(a.id)+'"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+' · comissão '+brl(a.comissao_centavos)+'</strong>'+
           '<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-qf13-direto-aceite> Confirmo que recebi o valor deste serviço diretamente do cliente e tenho uma comissão de 13% a pagar ao Quem Faz.</label>'+
