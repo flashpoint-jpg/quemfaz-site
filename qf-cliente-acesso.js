@@ -85,11 +85,13 @@
      try{
       // Salva o formulário cifrado antes do redirecionamento; o retorno é tratado na home.
       if(g.QFAtendimento?.hasActiveDraft?.())await g.QFAtendimento.saveDraftForGoogle();
+       // Após retorno do Google, abrir a área de pedidos se não há rascunho em andamento.
+       try{g.sessionStorage.setItem('qf_google_login_return','1');}catch(_){}
       // O retorno OAuth deve usar URL canônica autorizada no Supabase, nunca hash/localhost/preview.
       const redirectTo='https://quemfazservico.com.br/?app=1';
       const result=await client.auth.signInWithOAuth({provider:'google',options:{redirectTo,queryParams:{prompt:'select_account'}}});
       if(result.error)throw result.error;
-     }catch(err){host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
+     }catch(err){try{g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
     };
     host.querySelector('[data-access-cancel]').onclick=()=>end(null,Error('Seu pedido continua preenchido. Entre para concluir a publicação.'));
     host.querySelectorAll('[data-access-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.accessMode;draw();});

@@ -153,3 +153,46 @@ test('Google: retorno OAuth sempre usa site oficial sem hash nem localhost',asyn
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
 });
+
+test('Google: conta mostra nome, abre pedidos vinculados e permite sair',async()=>{
+ const script=fs.readFileSync(require.resolve('../qf-pedido-home.js'),'utf8');
+ const dom=new JSDOM('<!doctype html><html><body><div id="app-shell"><div class="qf-landing-copy"><form data-landing-service-form><input data-landing-service-search></form></div></div></body></html>',{url:'https://quemfazservico.com.br/?app=1'});
+ const w=dom.window;w.HTMLElement.prototype.scrollIntoView=()=>{};
+ const userId='11111111-1111-4111-8111-111111111111';
+ const requestId='22222222-2222-4222-8222-222222222222';
+ let connected=true;
+ w.PROAKI_APP={};
+ w.Screens={landing:()=>'',clienteHomeRender:()=>'',afterRender:()=>{},afterRenderAnon:()=>{}};
+ w.QFClienteAcesso={};
+ w.QFAtendimento={hasGoogleDraft:()=>false};
+ w.DB={categories:()=>[{id:'cat_pintor',nome:'Pintor'}],categoryById:()=>null,state:{requests:[{id:requestId,clienteId:userId,titulo:'Pintar sala',status:'aberto',criadoEm:new Date().toISOString()}]}};
+ w.navigate=()=>{};
+ w.QFCloud={
+  syncForCurrentSession:async()=>connected?{role:'cliente',user:{id:userId,nome:'Cliente Teste'}}:null,
+  client:{
+   auth:{
+    getUser:async()=>({data:{user:connected?{id:userId,email:'teste@example.com',app_metadata:{provider:'google'},identities:[{provider:'google'}],user_metadata:{full_name:'Cliente Teste'}}:null},error:null}),
+    onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),
+    signOut:async()=>{connected=false;return {error:null};}
+   },
+   from:table=>table==='qf_profiles'?{
+    select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:userId,tipo:'cliente',nome:'Cliente Teste'},error:null})})})
+   }:{
+    select:()=>({eq:()=>({order:()=>({limit:async()=>({data:[{id:requestId,titulo:'Pintar sala',status:'aberto',cidade:'São Paulo',bairro:'Centro',criado_em:new Date().toISOString()}],error:null})})})})
+   }
+  }
+ };
+ vm.runInNewContext(script,{window:w,console,Date},{filename:'qf-pedido-home.js'});
+ await new Promise(resolve=>setTimeout(resolve,240));
+ const account=w.document.querySelector('.qf-account-strip');
+ assert.ok(account,'mostra barra da conta conectada');
+ assert.match(account.textContent,/Olá, Cliente Teste/);
+ assert.ok(w.document.querySelector('[data-account-signout]'));
+ w.document.querySelector('[data-account-orders]').click();
+ await new Promise(resolve=>setTimeout(resolve,50));
+ assert.match(w.document.querySelector('#qf-pedido-facil').textContent,/Pintar sala/);
+ w.document.querySelector('[data-account-signout]').click();
+ await new Promise(resolve=>setTimeout(resolve,30));
+ assert.equal(w.document.querySelector('.qf-account-strip'),null,'apaga identificação após sair');
+ dom.window.close();
+});

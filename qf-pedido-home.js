@@ -5,16 +5,53 @@
  const uuid=v=>/^[a-f0-9-]{36}$/i.test(v||'');
  function safeAreas(){const native=!!g.Capacitor?.isNativePlatform?.()||/; wv\)|\bwv\b/.test(g.navigator?.userAgent||'');g.document?.documentElement?.classList?.toggle('qf-native-webview',native);}
  safeAreas();
- const state={tab:'home',mode:'intro',user:null,selected:null,prof:null,notice:'',pending:null};
+ const state={tab:'home',mode:'intro',user:null,account:null,selected:null,prof:null,notice:'',pending:null};
+ let authSequence=0,authSubscribed=false;
+ function accountBar(){
+  if(!state.account)return '';
+  const a=state.account,initial=String(a.name||'C').trim().slice(0,1).toUpperCase();
+  return '<section class="qf-account-strip" aria-label="Conta do cliente"><span class="qf-account-initial">'+esc(initial)+'</span><div class="qf-account-person"><small>'+(a.google?'Conectado com Google':'Cliente conectado')+'</small><strong>Olá, '+esc(a.name)+'</strong></div><div class="qf-account-buttons"><button type="button" data-account-orders>Meus pedidos</button><button type="button" data-account-signout>Sair</button></div></section>';
+ }
+ function paintAccount(){const el=slot?.querySelector('[data-home-account]');if(el){el.innerHTML=accountBar();el.hidden=!state.account;}}
+ async function refreshAccount(){
+  const n=++authSequence,c=g.QFCloud?.client;if(!c?.auth?.getUser)return;
+  let r;try{r=await c.auth.getUser();}catch(_){return;}
+  if(n!==authSequence||r.error)return;
+  const a=r.data?.user;
+  if(!a){state.account=null;state.user=null;paintAccount();return;}
+  let p=null;try{const z=await c.from('qf_profiles').select('id,tipo,nome').eq('id',a.id).maybeSingle();if(!z.error)p=z.data;}catch(_){}
+  if(n!==authSequence)return;
+  if(p&&p.tipo!=='cliente'){state.account=null;paintAccount();return;}
+  const google=a.app_metadata?.provider==='google'||(a.identities||[]).some(i=>i.provider==='google');
+  if(!google&&p?.tipo!=='cliente'){state.account=null;paintAccount();return;}
+  const meta=a.user_metadata||{};
+  state.account={id:a.id,google:!!google,profile:p?.tipo==='cliente',name:String(p?.nome||meta.full_name||meta.name||meta.given_name||a.email?.split('@')[0]||'Cliente').trim().slice(0,80)};
+  paintAccount();
+  let returned=false;try{returned=g.sessionStorage?.getItem('qf_google_login_return')==='1';if(returned)g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}
+  if(returned&&state.mode==='intro'&&!g.QFAtendimento?.hasGoogleDraft?.())orders();
+ }
+ function watchAccount(){
+  if(!authSubscribed&&g.QFCloud?.client?.auth?.onAuthStateChange){
+   authSubscribed=true;
+   g.QFCloud.client.auth.onAuthStateChange(event=>{if(['SIGNED_IN','SIGNED_OUT','INITIAL_SESSION','USER_UPDATED','TOKEN_REFRESHED'].includes(event))g.setTimeout(refreshAccount,0);});
+  }
+  g.setTimeout(refreshAccount,100);
+ }
+ async function signOutCustomer(){
+  const c=g.QFCloud?.client,b=slot?.querySelector('[data-account-signout]');if(!c?.auth?.signOut)return;if(b)b.disabled=true;
+  try{const r=await c.auth.signOut();if(r.error)throw r.error;authSequence++;state.account=null;state.user=null;state.notice='Você saiu da conta.';state.mode='intro';intro();paintAccount();selectTab('home');}
+  catch(e){state.notice=e.message||'Não foi possível sair.';reset();}
+  finally{if(b?.isConnected)b.disabled=false;}
+ }
  let slot=null,loading=null,originalNavigate=null,after=null;
- function toolbar(){return (['orders','detail','chat'].includes(state.mode)?'<div class="qf-home-orders__bar"><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--outline" data-home-new>Novo pedido</button></div>':'')+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
+ function toolbar(){return '<div data-home-account>'+accountBar()+'</div>'+(['orders','detail','chat'].includes(state.mode)?'<div class="qf-home-orders__bar"><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--outline" data-home-new>Novo pedido</button></div>':'')+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
  function host(){
   if(slot?.isConnected)return slot;
   const anchor=g.document.querySelector('[data-landing-service-form]');if(!anchor)return null;
   const seed=anchor.querySelector('[data-landing-service-search]')?.value||'';if(!state.problem&&seed)state.problem=seed;
   slot=g.document.createElement('section');slot.className='qf-landing-service-search qf-hero-search qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Escolha o serviço que você precisa');
   anchor.replaceWith(slot);slot.innerHTML=toolbar();
-  slot.addEventListener('click',e=>{if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
+  slot.addEventListener('click',e=>{if(e.target.closest('[data-account-signout]')){e.preventDefault();signOutCustomer();return;}if(e.target.closest('[data-account-orders]')){e.preventDefault();orders();return;}if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
   return slot;
  }
  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -83,7 +120,7 @@
    else if(e.key==='Enter'){e.preventDefault();buttons[active<0?0:active].click();}
   };
   target.querySelector('[data-home-login-start]').onclick=()=>{state.service=select.value;login();};
-  target.querySelector('[data-home-google]').onclick=async()=>{state.problem=input.value;state.service=select.value;try{sessionStorage.setItem('qf_home_oauth_draft',JSON.stringify({problem:input.value,service:select.value}));const r=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){target.querySelector('[role=alert]').textContent=e.message||'Não foi possível entrar com Google.';}};
+  target.querySelector('[data-home-google]').onclick=async()=>{state.problem=input.value;state.service=select.value;try{sessionStorage.setItem('qf_home_oauth_draft',JSON.stringify({problem:input.value,service:select.value}));sessionStorage.setItem('qf_google_login_return','1');const r=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){sessionStorage.removeItem('qf_google_login_return');target.querySelector('[role=alert]').textContent=e.message||'Não foi possível entrar com Google.';}};
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
   if(service||state.service){const category=categories.find(c=>c.id===(service||state.service)||norm(c.nome)===norm(service));if(category)pick(category);}
   input.onfocus=()=>track('home_focus');
@@ -101,8 +138,9 @@
  function reveal(){host()?.scrollIntoView({behavior:'auto',block:'start'});}
  function message(text){const node=work();if(node)node.innerHTML='<p role="status">'+esc(text)+'</p>';}
  async function user(){
-  const session=await g.QFCloud?.syncForCurrentSession(true);
-  state.user=session?.role==='cliente'?(session.user||g.DB.clienteById(session.userId)):null;
+  let session=null;try{session=await g.QFCloud?.syncForCurrentSession(true);}catch(_){}
+  state.user=session?.role==='cliente'?(session.user||g.DB?.clienteById?.(session.userId)):null;
+  if(!state.user&&state.account?.profile){const q=await g.QFCloud.client.from('qf_profiles').select('id,tipo,nome').eq('id',state.account.id).maybeSingle();if(!q.error&&q.data?.tipo==='cliente')state.user=q.data;}
   return state.user;
  }
  function list(){return state.user?(g.DB?.state?.requests||[]).filter(r=>r.clienteId===state.user.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0)):[];}
@@ -111,14 +149,25 @@
   selectTab('orders');
   state.mode='orders';state.selected=null;reset();const target=work();if(!target)return;
   target.innerHTML='<p role="status">Consultando seus pedidos…</p>';
-  try{if(!await user())return login();if(!target.isConnected||state.mode!=='orders')return;
-   const rows=list();target.innerHTML=rows.length?'<p>Escolha um pedido para acompanhar e conversar nesta página.</p><div class="qf-home-orders__list">'+rows.map(r=>'<button type="button" class="card qf-home-order" data-home-order="'+esc(r.id)+'"><strong>'+esc(r.titulo||g.DB.categoryById(r.categoriaId)?.nome||'Pedido de serviço')+'</strong><span>'+esc(r.endereco?.bairro||r.bairro||'')+' · '+esc(r.endereco?.cidade||r.cidadeNome||g.DB.cityById?.(r.cidadeId)?.nome||'')+'</span><span class="badge">'+esc(({aberto:'Buscando profissionais',buscando:'Buscando profissionais',em_negociacao:'Em negociação',cancelado:'Cancelado',concluido:'Concluído',finalizado:'Finalizado'})[r.status]||r.status)+'</span><span>Ver pedido e conversas</span></button>').join('')+'</div>':'<section class="card" data-home-empty-orders style="border:1px solid #b7cff0;background:#f2f7ff;padding:17px;border-radius:16px;display:grid;gap:10px"><strong style="font-size:18px;color:#1458cc">Seu cadastro está pronto. Falta publicar o pedido!</strong><p style="margin:0">Você está cadastrado como cliente, mas ainda não enviou uma solicitação aos profissionais. Conte o que precisa e publique grátis.</p><button type="button" class="btn btn--primary" data-home-new>Publicar meu primeiro pedido</button><p class="text--sm" style="margin:0">Quer receber pedidos e oferecer serviços? Entre na Área do profissional, não no cadastro de cliente.</p><button type="button" class="btn btn--outline qf-home-prof-btn" data-nav="/auth/profissional/login">Sou profissional — ir para cadastro</button></section>';
+  try{
+   if(!await user()){if(state.account?.google){target.innerHTML='<section class="card qf-account-no-orders"><h2>Conta Google conectada</h2><p>Os pedidos desta conta aparecerão aqui depois da primeira publicação.</p><p>Se você publicou usando outra conta com telefone e senha, entre no acesso original. Não é seguro vincular pedidos pelo telefone automaticamente.</p><button class="btn btn--primary" data-home-new>Fazer pedido grátis</button></section>';return;}return login();}
+   if(!target.isConnected||state.mode!=='orders')return;
+   let rows=list();
+   try{const result=await g.QFCloud.client.from('qf_chamados').select('id,titulo,categoria,cidade,bairro,status,criado_em').eq('cliente_id',state.user.id).order('criado_em',{ascending:false}).limit(100);
+    if(!result.error&&Array.isArray(result.data)&&result.data.length){const local=new Map(rows.map(x=>[x.id,x]));rows=result.data.map(x=>local.get(x.id)||{id:x.id,titulo:x.titulo,categoriaId:x.categoria,bairro:x.bairro,cidadeNome:x.cidade,status:x.status,criadoEm:x.criado_em});}
+   }catch(_){}
+   if(!target.isConnected||state.mode!=='orders')return;
+   target.innerHTML=rows.length?'<p>Escolha um pedido para acompanhar e conversar nesta página.</p><div class="qf-home-orders__list">'+rows.map(r=>'<button type="button" class="card qf-home-order" data-home-order="'+esc(r.id)+'"><strong>'+esc(r.titulo||g.DB.categoryById(r.categoriaId)?.nome||'Pedido de serviço')+'</strong><span>'+esc(r.endereco?.bairro||r.bairro||'')+' · '+esc(r.endereco?.cidade||r.cidadeNome||g.DB.cityById?.(r.cidadeId)?.nome||'')+'</span><span class="badge">'+esc(({aberto:'Buscando profissionais',buscando:'Buscando profissionais',em_negociacao:'Em negociação',cancelado:'Cancelado',concluido:'Concluído',finalizado:'Finalizado'})[r.status]||r.status)+'</span><span>Ver pedido e conversas</span></button>').join('')+'</div>':'<section class="card" data-home-empty-orders style="border:1px solid #b7cff0;background:#f2f7ff;padding:17px;border-radius:16px;display:grid;gap:10px"><strong style="font-size:18px;color:#1458cc">Seu cadastro está pronto. Falta publicar o pedido!</strong><p style="margin:0">Você está cadastrado como cliente, mas ainda não enviou uma solicitação aos profissionais. Conte o que precisa e publique grátis.</p><button type="button" class="btn btn--primary" data-home-new>Publicar meu primeiro pedido</button><p class="text--sm" style="margin:0">Quer receber pedidos e oferecer serviços? Entre na Área do profissional, não no cadastro de cliente.</p><button type="button" class="btn btn--outline qf-home-prof-btn" data-nav="/auth/profissional/login">Sou profissional — ir para cadastro</button></section>';
   }catch(err){message('Não foi possível consultar seus pedidos. '+err.message);}
  }
  function login(){
   state.mode='login';const target=work();if(!target)return;
-  target.innerHTML='<h2 class="h3">Já sou cliente</h2><p>Este acesso é para quem precisa contratar um profissional. Entre com telefone e senha para acompanhar seu pedido. Se você quer oferecer serviços, use a Área do profissional.</p><form class="stack" data-home-login><label>Telefone com DDD<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Entrar com telefone</button><p role="alert"></p></form><div data-home-access></div><button type="button" class="btn btn--outline" data-home-back style="margin-top:12px">Voltar ao pedido</button>';
+  target.innerHTML='<h2 class="h3">Já sou cliente</h2><p>Entre com Google ou com telefone e senha para acompanhar seus pedidos.</p><button type="button" class="btn btn--outline" data-home-google-entry>Continuar com Google</button><form class="stack" data-home-login><label>Telefone com DDD<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Entrar com telefone</button><p role="alert"></p></form><div data-home-access></div><button type="button" class="btn btn--outline" data-home-back style="margin-top:12px">Voltar ao pedido</button>';
   target.querySelector('[data-home-back]').onclick=()=>intro();
+  target.querySelector('[data-home-google-entry]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;
+   try{g.sessionStorage.setItem('qf_google_login_return','1');const x=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(x.error)throw x.error;}
+   catch(err){g.sessionStorage.removeItem('qf_google_login_return');message(err.message||'Não foi possível entrar com Google.');b.disabled=false;}
+  };
   const form=target.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const b=form.querySelector('button');b.disabled=true;try{await g.QFClienteAcesso.authenticate({nome:'',telefone:form.elements.telefone.value,container:target.querySelector('[data-home-access]')});await orders();}catch(err){if(form.isConnected)form.querySelector('[role=alert]').textContent=err.message;}finally{b.disabled=false;}};
  }
  function showForm(service,problem){
@@ -235,13 +284,15 @@
   else if(state.mode==='intro')intro();
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
-  else intro(); // Na entrada, nunca mostrar automaticamente os pedidos do cliente.
+  else intro();
+  watchAccount();
  }
  function install(){
   if(!g.PROAKI_APP||!g.Screens?.landing||!g.QFClienteAcesso||!g.QFAtendimento)return false;
   if(g.QFPedidoHome.installed)return true;g.QFPedidoHome.installed=true;
   const css=g.document.createElement('style');css.textContent='.qf-hero-search .qf-service-suggestions{position:static;max-height:220px;overflow:auto;margin-top:6px}.qf-home-orders{width:100%;max-width:100%;margin:0;padding:18px;border:1px solid #dce6f3;background:#fff;border-radius:20px;scroll-margin-top:14px;min-width:0;box-sizing:border-box}.qf-home-problem-title{font-size:22px;line-height:1.25;color:#1458cc;margin:0 0 6px}.qf-home-problem-sub{font-size:15px;color:#46566b;margin:0 0 14px}.qf-home-orders textarea{min-height:96px!important;height:auto!important;box-sizing:border-box;max-width:100%;width:100%;font-size:16px;resize:vertical}.qf-home-type-options{display:grid;gap:8px;margin-top:8px}.qf-home-orders__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.qf-home-orders__bar h2{font-size:21px;color:#1458cc;margin:0}.qf-home-orders__bar>div{display:flex;gap:8px;flex-wrap:wrap}.qf-home-orders .btn{min-height:44px;white-space:normal}.qf-home-orders__notice{padding:12px;border-radius:12px;background:#eef5ff;color:#1458cc;font-weight:700}.qf-home-orders__list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.qf-home-order{display:grid;gap:7px;text-align:left;width:100%;color:#173150;cursor:pointer}.qf-home-order>strong{font-size:18px}.qf-home-orders .view{min-height:0!important;max-width:100%;width:100%;padding:0!important;margin:0!important;box-sizing:border-box}.qf-home-orders [data-qf-atendimento-layout]{min-height:0!important;padding:0!important;justify-content:flex-start!important}.qf-home-orders .qf-chat-view{height:auto!important;min-height:0!important;padding:0!important}.qf-home-orders .qf-chat-list{max-height:50vh;overflow:auto;min-height:140px}.qf-home-orders .qf-chat-composer{position:static!important}.qf-home-orders [data-qf-atendimento]{box-shadow:none!important;border:0!important}.qf-home-orders [data-home-work]{min-width:0}.qf-home-orders .view>.row-between,.qf-home-orders .view>.row-between>.row{flex-wrap:wrap;gap:8px;max-width:100%}.qf-home-orders .qf-conversation-card .btn-row{display:grid!important;grid-template-columns:1fr!important}.qf-home-orders .qf-conversation-card .btn-row .btn{font-size:14px!important;padding:10px!important;word-break:normal!important;overflow-wrap:normal!important}.qf-home-orders .qf-cli-vagas__barras .is-on{background:#1469d2}.qf-home-more{border:1px solid #dce6f3;border-radius:12px;padding:12px;margin-top:12px}.qf-home-more>summary{color:#1458cc;font-weight:700;cursor:pointer}.qf-home-orders__bar .btn{font-size:13px;padding:9px 12px}@media(max-width:600px){.qf-home-orders{margin:0;padding:14px}.qf-home-orders__bar{gap:10px}.qf-home-orders__bar h2{font-size:19px}}';g.document.head.appendChild(css);
-  css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
+  css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
+   css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   originalNavigate=g.navigate;
   g.navigate=function(path,replace){if(inlinePath(path)){openPath(path);return;}return originalNavigate.apply(this,arguments);};
   const oldHome=g.Screens.clienteHomeRender;g.Screens.clienteHomeRender=()=>g.Screens.landing();
