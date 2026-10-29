@@ -43,7 +43,7 @@
     return 'Não ativado · '+String(r.status||'desconhecido');
   }
   function waNumber(p){let d=String(p||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d.length>=12&&d.length<=13&&d.startsWith('55')?d:'';}
-  let records=[];
+  let records=[],listControls=[],showDeleted=false;
   const names={pendente:'Aguardando pagamento',teste:'Em teste',vencido:'Teste vencido',cortesia:'Cortesia',pago:'Plano pago',convite:'Convite preparado — prazo inicia após identificação'};
   function record(r,i){
     const until=r.situacao==='pago'?r.pago_ate:r.fim_em;
@@ -75,7 +75,7 @@
   }
   function render(panel,s,d){
     if(!panel.isConnected)return;
-    const entries=Array.isArray(d.itens)?d.itens:[];records=entries.map(r=>({...r,servidor_agora:d.servidor_agora}));
+    const entries=(Array.isArray(d.itens)?d.itens:[]).filter(r=>!!listControls.find(c=>c.chave===String(r.email||'').trim().toLowerCase())?.excluido===showDeleted);records=entries.map(r=>({...r,servidor_agora:d.servidor_agora}));
     const total=asNum(d.total);
     panel.innerHTML='<div class="qf-pre-top"><div><h2>Pré-cadastros dos profissionais</h2><p>Quem escolheu Avulso ou Livre, mesmo sem pagar</p></div>'
       +'<button type="button" class="btn btn--outline" data-qf-pre-refresh>Atualizar dados</button></div>'
@@ -88,12 +88,14 @@
       +'<label>Situação<select name="situacao">'+[['todos','Todos'],['pendente','Aguardando pagamento'],['teste','Em teste'],['vencido','Teste vencido'],['cortesia','Cortesia'],['pago','Plano pago'],['convite','Convites preparados']]
         .map(v=>'<option value="'+v[0]+'"'+(v[0]===state.situacao?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></label>'
       +'<button type="submit" class="btn btn--primary">Filtrar</button></form>'
-      +'<div class="qf-pre-list-meta">'+total+' resultado(s) · Mostrando '+entries.length+' a partir de '+(state.offset+1)+'</div>'
+      +'<div class="qf-pre-list-meta">'+total+' cadastro(s) no banco · '+entries.length+' '+(showDeleted?'excluído(s)':'visível(is)')+' nesta página · a partir de '+(state.offset+1)+'</div>'
       +'<div class="qf-pre-list">'+(entries.length?records.map(record).join(''):'<p class="qf-pre-empty">Nenhum pré-cadastro encontrado para este filtro.</p>')+'</div>'
       +'<div class="qf-pre-pager">'+(state.offset>0?'<button type="button" class="btn btn--outline" data-qf-pre-previous>Anterior</button>':'')
-      +(state.offset+entries.length<total?'<button type="button" class="btn btn--outline" data-qf-pre-next>Próximos</button>':'')+'</div>';
+      +(state.offset+(d.itens||[]).length<total?'<button type="button" class="btn btn--outline" data-qf-pre-next>Próximos</button>':'')+'</div>';
     panel.querySelectorAll('[data-benefit]').forEach(b=>b.onclick=()=>benefit(records[Number(b.dataset.record)],b.dataset.benefit,panel));
     panel.querySelectorAll('[data-contact]').forEach(b=>b.onclick=()=>contact(records[Number(b.dataset.record)],b.dataset.contact,panel));
+    panel.querySelectorAll('.qf-pre-record').forEach((el,i)=>global.QFAdminOrganizacao?.cadastroActions(el.querySelector('.qf-pre-actions'),records[i],listControls.find(c=>c.chave===String(records[i].email).trim().toLowerCase()),()=>{lastAt=0;return refreshPanel(panel);}));
+    const deleted=document.createElement('button');deleted.type='button';deleted.className='btn btn--outline';deleted.textContent=showDeleted?'Mostrar cadastros ativos':'Ver excluídos';deleted.onclick=()=>{showDeleted=!showDeleted;render(panel,s,d);};panel.querySelector('.qf-pre-top').append(deleted);
     const form=panel.querySelector('[data-qf-pre-form]');
     form.addEventListener('submit',e=>{
       e.preventDefault();state.busca=form.elements.busca.value.trim();state.situacao=form.elements.situacao.value;state.offset=0;load(panel);
@@ -113,11 +115,13 @@
     busy=true;lastAt=Date.now();
     panel.setAttribute('aria-busy','true');
     try{
-      const [a,b]=await Promise.all([
+      const [a,b,c]=await Promise.all([
         client.rpc('qf_admin_cadastro_pagamentos'),
-        client.rpc('qf_admin_livre_painel',{p_offset:state.offset,p_busca:state.busca,p_situacao:state.situacao})
+        client.rpc('qf_admin_livre_painel',{p_offset:state.offset,p_busca:state.busca,p_situacao:state.situacao}),
+        client.rpc('qf_admin_lista_controle',{p_tipo:'cadastro'})
       ]);
-      if(a.error||b.error||!a.data||!b.data)throw Error('Não foi possível ler os cadastros. Confira a sessão administrativa e a atualização do banco.');
+      if(a.error||b.error||c.error||!a.data||!b.data||!Array.isArray(c.data))throw Error('Não foi possível ler os cadastros. Confira a sessão administrativa e a atualização do banco.');
+      listControls=c.data;
       render(panel,a.data,b.data);
     }catch(err){
       if(panel.isConnected)panel.innerHTML='<p class="qf-pre-error">'+esc(err.message||'Falha ao carregar cadastros')+'</p><button type="button" class="btn btn--outline" data-qf-pre-retry>Tentar novamente</button>';
@@ -230,3 +234,4 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install);
   else install();
 })(window);
+
