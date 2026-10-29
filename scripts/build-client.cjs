@@ -18,11 +18,12 @@ let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 html=html.replace("if (existing.data.tipo === 'profissional') {",`if (existing.data.tipo === 'profissional') {
         // O bootstrap de auth já pode ter criado o perfil: preparar o teste antes do retorno.
         let trial=null;try{trial=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null');}catch(_){}
+        if(trial?.email!==String(user.email||'').trim().toLowerCase())trial=null;
         const documentValue=data.cpf||data.cnpj||trial?.documento||localStorage.getItem(pendingCpfKey(user.email))||localStorage.getItem(pendingCnpjKey(user.email));
         if(documentValue){
           const status=await client.rpc('qf_livre_status');
           if(status.error)throw status.error;
-          if(!status.data?.ativo&&!status.data?.teste_utilizado){
+          if(!status.data?.ativo&&!status.data?.teste_utilizado&&!status.data?.assinatura_id){
             const benefit=await client.rpc('qf_livre_preparar_acesso',{p_teste:true,p_documento:documentValue,p_telefone:data.telefone||trial?.telefone||meta.qf_telefone||existing.data.telefone||''});
             if(benefit.error||!benefit.data?.ok)throw new Error(benefit.error?.message||'Não foi possível ativar o teste automático.');
           }
