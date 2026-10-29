@@ -87,6 +87,32 @@
  if(!g.Screens||g.QFComissao13.installed)return;g.QFComissao13.installed=true;
  const style=document.createElement('style');style.textContent='.qf13-feature{border:2px solid #1769d5!important;background:linear-gradient(120deg,#eef6ff,#fff8ed);padding:20px!important;margin:0 0 18px!important;border-radius:18px}.qf13-feature h2{font-size:1.35rem;margin:10px 0 6px}.qf13-card-hint{color:#176035;font-weight:750;background:#eaf8ef;padding:10px 12px;border-radius:10px;margin-top:8px}.qf13-terms{display:flex;gap:10px;align-items:flex-start;font-size:.9rem}.qf13-terms input{width:20px;height:20px;flex:0 0 20px;margin-top:2px}.qf13-option-head{display:grid;gap:8px}.qf13-wallet{scroll-margin-top:85px}.qf13-option{border:2px solid #1769d5!important;background:#eef6ff;margin:0!important;padding:18px!important;min-width:0;display:flex;flex-direction:column;gap:12px}.qf13-option p{margin:0}.qf13-option details p{padding-top:8px}.qf-opts:has(.qf13-option){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}.qf-opts:has(.qf13-option)>.qf-opt--excl,.qf-opts:has(.qf13-option)>.qf-opts__nota,.qf-opts:has(.qf13-option)>.btn{grid-column:1/-1}@media(max-width:639px){.qf-opts:has(.qf13-option){grid-template-columns:1fr}.qf13-feature .btn-row{display:grid}.qf13-feature{padding:16px!important}}';document.head.appendChild(style);
  const adminStyle=document.createElement('style');adminStyle.textContent=`.qf13-wallet,.qf-adm-pedido{min-width:0;line-height:1.5}.qf13-wallet{display:grid;gap:16px}.qf13-admin-row{display:grid;gap:12px;margin:0!important;overflow-wrap:anywhere}.qf13-card-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}.qf13-card-top strong{font-size:17px}.qf13-facts{margin:0;display:grid;gap:10px}.qf13-facts div{display:grid;grid-template-columns:minmax(100px,1fr) minmax(0,1.4fr);gap:12px}.qf13-facts dt{color:#5b6577;font-size:13px}.qf13-facts dd{margin:0;font-size:14px;font-weight:650}.qf13-next{background:#eef4ff;border-radius:10px;padding:12px;font-size:14px;line-height:1.5}.qf13-details{border-top:1px solid #e2e6ee;padding-top:12px}.qf13-details summary{color:#1458cc;font-weight:700;cursor:pointer;padding:8px 0}.qf13-details>div{padding-top:16px}.qf13-details label{display:grid;gap:8px;font-size:14px}.qf13-details .btn{height:auto;min-height:46px;padding:12px;white-space:normal;line-height:1.4}.qf13-counts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.qf13-counts>div{padding:12px;border-radius:12px;background:#eef4ff;font-size:13px}@media(min-width:640px){.qf13-counts[aria-label]{grid-template-columns:repeat(3,minmax(0,1fr))}}.qf13-counts b{display:block;font-size:22px;color:#1458cc}.qf-adm-desbloqueio{margin-top:12px;padding:12px;background:#f4f7fc;border-radius:12px;display:grid;gap:7px}.qf-adm-plan-tag{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.qf-adm-plan-tag .badge,.qf-adm-pedido>.row-between .badge{white-space:normal;line-height:1.35}.qf-adm-pedido>.row-between{align-items:flex-start;flex-wrap:wrap}.qf-adm-pedido [data-qf-historico]{width:auto;padding:0;margin-top:8px}.qf13-filters{display:grid;gap:10px}.qf13-summary-link{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.qf13-admin-alert{background:#fff1dc;border:1px solid #e4bc75;color:#694408;border-radius:12px;padding:12px;font-size:14px;line-height:1.5}.qf13-admin-alert a{color:#1458cc;font-weight:700;text-decoration:underline}.qf13-admin-meta{font-size:13px;color:#5b6577}.qf13-contact{border:1px solid #cfe0f5;background:#f3f8ff;border-radius:12px;padding:12px;display:grid;gap:7px;margin:12px 0}.qf13-contact__row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}.qf13-contact__row span{font-weight:700;color:#0a355b}.qf13-contact__row .btn{width:auto!important;text-decoration:none}.qf13-contact p{margin:0;color:#42536c}`;document.head.appendChild(adminStyle);
+ function painelAgendamentos(view,c){
+  if(view.querySelector('[data-qf-livre-agendamentos]'))return;
+  const card=document.createElement('section');
+  card.className='section card stack--sm';card.dataset.qfLivreAgendamentos='';
+  card.style.cssText='padding:15px;margin-bottom:14px;border:1px solid #b4cff1;border-radius:16px;background:#f4f8ff';
+  card.innerHTML='<h2 class="h3">Serviços agendados · Plano Livre</h2><p role="status">Carregando agendamentos...</p>';
+  view.prepend(card);
+  const refresh=async()=>{
+   const {data,error}=await c.rpc('qf_livre_agendamentos_admin');
+   if(!card.isConnected)return;
+   if(error||!data?.ok){card.querySelector('[role=status]').textContent='Não foi possível carregar os agendamentos. Atualize a página.';return;}
+   const rows=Array.isArray(data.items)?data.items:[];
+   const future=rows.filter(x=>x.data&&new Date(x.data)>new Date()&&!x.concluido).length;
+   const accepted=rows.filter(x=>x.aceito&&!x.concluido).length;
+   card.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><h2 class="h3" style="margin:0">Serviços agendados · Plano Livre</h2><p class="text--sm" style="margin:5px 0">'+future+' futuros · '+accepted+' aceitos e não concluídos · '+rows.length+' registros</p></div><button type="button" class="btn btn--outline" data-qf-agenda-refresh>Atualizar</button></div>'+
+    '<p class="text--sm">Agendar não gera comissão nem Pix. A conclusão e o pagamento só ocorrem depois da confirmação do cliente.</p>'+
+    (!rows.length?'<p>Nenhum agendamento registrado.</p>':rows.map(x=>'<article class="card" style="padding:12px;margin:8px 0;border:1px solid #d7e4f3;border-radius:12px">'+
+     '<strong>'+esc(x.servico||'Serviço')+'</strong> · '+esc(x.cidade||'')+
+     '<p style="margin:4px 0">Profissional: '+esc(x.profissional||'Não informado')+' · Pedido #'+esc(String(x.chamado_id||'').slice(0,8))+'</p>'+
+     '<p style="margin:4px 0">Data: <strong>'+dataCurta(x.data)+'</strong> · Orçamento: '+brl(x.valor_centavos||0)+'</p>'+
+     '<p style="margin:4px 0">'+esc(x.descricao||'Sem descrição')+'</p>'+
+     '<span class="badge">'+(x.concluido?'Concluído':x.aceito?'Aceito · aguardando execução':'Aguardando aceite do cliente')+'</span></article>').join(''));
+   card.querySelector('[data-qf-agenda-refresh]')?.addEventListener('click',refresh);
+  };
+  refresh().catch(()=>{if(card.isConnected)card.querySelector('[role=status]').textContent='Agendamentos indisponíveis.';});
+ }
  function painelPixManual(view,c,admin){
   if(view.querySelector('[data-qf-pix-manual]'))return;
   const box=document.createElement('section');box.className='card stack--sm';box.dataset.qfPixManual='';
@@ -181,6 +207,7 @@
   if(['/admin/dashboard','/admin/financeiro','/admin/comissao13'].includes(pattern)){
    const adm=g.QFAdminCloud?.client||g.QFCloud?.client;
    if(adm)painelPixAtivacao(content.querySelector('.view')||content,adm);
+    if(adm&&pattern!=='/admin/financeiro')painelAgendamentos(content.querySelector('.view')||content,adm);
    if(pattern!=='/admin/comissao13')return;
   }
   if(content.querySelector('[data-qf13]'))return;
