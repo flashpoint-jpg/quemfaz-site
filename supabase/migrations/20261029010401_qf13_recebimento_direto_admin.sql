@@ -23,7 +23,7 @@ BEGIN
  ) OR EXISTS(
   SELECT 1 FROM private.qf_livre_split_pagamentos x
   WHERE x.chamado_id=f.chamado_id AND x.profissional_id=f.profissional_id
-    AND x.status IN ('criando','pendente','incerto','pago','repassado')
+    AND x.status IN ('preparando','pix_pronto','pago','repassado')
  ) THEN RETURN jsonb_build_object('ok',false,'reason','cobranca_plataforma_existe'); END IF;
  UPDATE public.qf_comissao13_fechamentos
  SET recebimento_direto_declarado_em=now(),comissao_vence_em=now(),
