@@ -10,6 +10,8 @@
   valor_alterado:'O valor mudou. Aguarde a atualização e confira antes de confirmar.',estado_invalido:'Esta proposta não está mais disponível. Atualize o chat.',outro_profissional_contratado:'Este pedido já foi contratado com outro profissional.',
   resposta_indisponivel:'Este resultado precisa ser conferido pela administração.',
   pedido_encerrado:'Este pedido foi encerrado.',
+  pagamento_em_preparacao:'O Pix de serviços do Plano Livre ainda não está disponível. A conclusão ficará pendente, sem cobrança por fora. Consulte o suporte.',
+  servico_ainda_agendado:'Este serviço ainda está agendado. Aguarde a data combinada para confirmar a conclusão.',
   sem_permissao:'Você não tem acesso à contratação deste pedido.',
   nao_autenticado:'Abra o Quem Faz com sua sessão ativa para confirmar.'
  };
@@ -36,6 +38,9 @@
   function render(s){
    const who=s.papel,estado=s.estado,resposta=s.cliente_resposta,valor=s.valor_centavos||0,prop=!!s.proposta_em,separado=s.etapas_separadas===true;
    const row=[];
+   const when=s.agendado_em?new Date(s.agendado_em):null;
+   const future=!!(when&&Number.isFinite(when.getTime())&&when.getTime()>Date.now());
+   const whenText=when&&Number.isFinite(when.getTime())?when.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
    row.push('<section data-qfc-terms role="note" style="padding:12px;border:1px solid #edbc80;border-radius:12px;background:#fff7eb;display:grid;gap:6px">'+
      '<strong style="color:#713900">Aviso oficial · Quem Faz Livre (não editável)</strong>'+
      '<p class="text--sm" style="margin:0">O orçamento, o aceite, o agendamento e a confirmação do serviço precisam ser registrados neste aplicativo. Combinações por WhatsApp não substituem o registro no Quem Faz.</p>'+
@@ -52,20 +57,27 @@
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
    if(who==='cliente')row.push('<section data-qfc-pix-rule style="border:1px solid #f3b761;border-radius:12px;padding:11px;background:#fff8ed"><strong>Plano Livre: Pix somente pelo Quem Faz</strong><p class="text--sm" style="margin:4px 0 0">Somente depois de aceitar a proposta e confirmar que o serviço foi realizado, pague o valor integral por Pix gerado no aplicativo. Não use chaves Pix recebidas por WhatsApp. A Efí credita 100% na conta Quem Faz, o sistema contabiliza 13% para a plataforma e 87% para o profissional, com repasse manual após confirmação bancária.</p></section>');
+   if(s.descricao_proposta)row.push('<p style="margin:0"><strong>Descrição da proposta: </strong>'+escapeHTML(s.descricao_proposta)+'</p>');
+   if(whenText)row.push('<section data-qfc-schedule style="padding:12px;border:1px solid #bacfea;border-radius:12px;background:#fff"><strong>Data agendada: '+escapeHTML(whenText)+'</strong><p class="text--sm" style="margin:5px 0 0">'+(s.contratado_em?'Agendamento aceito pelo cliente. ':'Aguardando o aceite no aplicativo. ')+(future?'A conclusão só será permitida depois da data combinada.':'Confira se o serviço foi realizado antes de confirmar.')+'</p></section>');
    if(valor)row.push('<p style="margin:0">Valor proposto: <strong>'+price(valor)+'</strong>'+(who==='profissional'?' · comissão '+(estado==='confirmado'?'confirmada':'prevista')+' (13%): <strong>'+price(Math.round(valor*0.13))+'</strong> · sua parte (87%): <strong>'+price(valor-Math.round(valor*0.13))+'</strong>':'')+'</p>');
    if(who==='profissional' && s.contratado_em && estado!=='confirmado')row.push('<p class="text--sm" style="margin:0">Orçamento aceito pelo cliente. A comissão é apenas prevista, não devida por agendamento nem por prazo vencido. O cliente precisa confirmar a conclusão e o valor final com o código de seis dígitos; só depois poderá pagar pelo aplicativo.</p>');
    if(estado==='confirmado')row.push('<p class="text--sm" style="margin:0">Contratação, valor e conclusão confirmados.</p>'+(who==='profissional'?(s.pagamento_plataforma?'<p>O cliente deverá pagar o valor integral por Pix ao Quem Faz. Após a confirmação do banco, o Quem Faz repassa manualmente seus 87%. Você não paga outra comissão.</p><a class="btn btn--primary" href="#/profissional/carteira">Acompanhar meu repasse</a>':'<p>Comissão antiga de 13% pendente. Pague o Pix pela carteira em até 48 horas.</p><a class="btn btn--primary" href="#/profissional/carteira">Ver Pix da comissão</a>'):'<p>Pagamento do Plano Livre somente pelo Pix oficial do Quem Faz, após conclusão. Nunca pague diretamente ao profissional.</p>'));
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
    if(who==='profissional'&&(['pendente','negociando'].includes(estado)||(estado==='informado'&&resposta==='divergencia'))&&(!resposta||resposta==='divergencia'||resposta==='negociando')){
-    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">'+(prop?'Atualizar orçamento do cliente':'Apresentar orçamento ao cliente')+'</button></form>');
+    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'">'+
+    '<label class="text--sm">Descrição do serviço<textarea class="input" name="descricao" minlength="10" maxlength="600" rows="3" required placeholder="Descreva o serviço proposto">'+escapeHTML(s.descricao_proposta||'')+'</textarea></label>'+
+    '<label class="text--sm">Data e horário (opcional, para agendamento)<input class="input" type="datetime-local" name="data_servico" value="'+(when?new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(when).replace(' ','T'):'')+'"></label>'+
+    '<p class="text--sm">A proposta e o agendamento não geram cobrança nem comprovam a conclusão.</p>'+
+    '<button type="submit" class="btn btn--primary">'+(prop?'Atualizar orçamento do cliente':'Apresentar orçamento ao cliente')+'</button></form>');
     row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_fechou">Não fechei este serviço</button>');
    }
    if(who==='cliente'){
     if(['negociando','informado'].includes(estado)&&valor&&(!resposta||resposta==='confirmado'||resposta==='negociando')){
       if(separado&&resposta!=='confirmado')row.push('<p>O profissional apresentou um orçamento. Você contratou esse serviço?</p><button type="button" class="btn btn--primary" data-qfc-action="contratar">Aceitei o orçamento</button><button type="button" class="btn btn--outline" data-qfc-action="negociando">Ainda estou negociando</button>');
-      if(!separado||resposta==='confirmado')
-
-      row.push('<form data-qfc-concluir style="display:grid;gap:10px"><p style="margin:0">Código de segurança do seu pedido: <strong>'+escapeHTML(s.codigo_seguranca||'Atualize o chat')+'</strong></p><label>Valor final do serviço (R$)<input class="input" name="valor_final" inputmode="decimal" value="'+(Number(s.valor_aceito_centavos??valor)/100).toFixed(2).replace('.',',')+'" required></label><label>Digite o código do pedido<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="concluido" required>Confirmo que contratei este profissional, que o serviço foi concluído e confirmo o valor final informado acima.</label><button type="submit" class="btn btn--primary">Confirmar conclusão e valor</button></form>');
+      if(!separado||resposta==='confirmado'){
+       if(future)row.push('<p role="status" style="padding:12px;background:#fff4df;border-radius:12px">Serviço agendado para '+escapeHTML(whenText)+'. A conclusão ficará disponível após essa data.</p>');
+       else row.push('<form data-qfc-concluir style="display:grid;gap:10px"><p style="margin:0">Código de segurança do seu pedido: <strong>'+escapeHTML(s.codigo_seguranca||'Atualize o chat')+'</strong></p><label>Valor final do serviço (R$)<input class="input" name="valor_final" inputmode="decimal" value="'+(Number(s.valor_aceito_centavos??valor)/100).toFixed(2).replace('.',',')+'" required></label><label>Digite o código do pedido<input class="input" name="codigo_seguranca" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" name="concluido" required>Confirmo que contratei este profissional, que o serviço foi concluído e confirmo o valor final informado acima.</label><button type="submit" class="btn btn--primary">Confirmar conclusão e valor</button></form>');
+       }
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="corrigir_valor">Corrigir valor</button>');
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_contratei">Não contratei</button>');
     }else if(estado==='recusado'&&!resposta){
@@ -100,7 +112,13 @@
     if(!/^\d{1,7}(?:[.,]\d{1,2})?$/.test(raw)){setStatus('Informe um valor em reais, como 350,00.');return;}
     const cents=Math.round(Number(raw.replace(',','.'))*100);
     if(!Number.isSafeInteger(cents)||cents<100||cents>100000000){setStatus('Informe um valor entre R$ 1 e R$ 1.000.000.');return;}
-    await run('propor',cents);
+    const form=pane.querySelector('[data-qfc-form]');
+     const descricao=String(form?.elements.descricao?.value||'').trim();
+     if(descricao.length<10||descricao.length>600){setStatus('Descreva o serviço em pelo menos 10 caracteres.');return;}
+     const rawDate=String(form?.elements.data_servico?.value||'');
+     const schedule=rawDate?new Date(rawDate):null;
+     if(rawDate&&(!schedule||!Number.isFinite(schedule.getTime())||schedule.getTime()<=Date.now())){setStatus('Escolha uma data futura para o agendamento.');return;}
+     await run('propor',cents,null,false,{descricao,agendado_em:schedule?schedule.toISOString():null});
    });
    pane.querySelector('[data-qfc-concluir]')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const codigo=form.elements.codigo_seguranca.value.trim();if(!/^[0-9]{6}$/.test(codigo)||!form.elements.concluido.checked){setStatus('Confira o código e confirme a conclusão do serviço.');return;}const finalValue=Math.round(Number(form.elements.valor_final.value.replace(',','.'))*100);if(!Number.isSafeInteger(finalValue)||finalValue<100||finalValue>100000000){setStatus('Confira o valor final.');return;}await run('aceitar',finalValue,codigo,true);});
    pane.querySelectorAll('[data-qfc-action]').forEach(button=>button.addEventListener('click',async()=>{
@@ -115,6 +133,10 @@
    if(closed||!pane.isConnected||busy)return;
    try{
     const s=await rpc('ver');
+    if(s?.ok){
+      const detail=await client.rpc('qf_livre_agendamento_ver',{p_chamado_id:callId,p_profissional_id:profId});
+      if(!detail.error&&detail.data?.ok){s.agendado_em=detail.data.agendado_em;s.descricao_proposta=detail.data.descricao_proposta;}
+    }
     if(closed)return;
     const key=JSON.stringify(s);
     if(key!==last){last=key;render(s);}
@@ -123,12 +145,15 @@
     setStatus('Não foi possível atualizar: '+String(err.message||'erro de conexão'));
    }
   }
-  async function run(acao,valor,codigo=null,concluido=false){
+  async function run(acao,valor,codigo=null,concluido=false,proposta=null){
     if(busy)return;
     busy=true;pane.querySelectorAll('button,input').forEach(x=>x.disabled=true);
     setStatus('Registrando no Quem Faz…');
     try{
-      await rpc(acao,valor,codigo,concluido);
+      if(acao==='propor'&&proposta){
+       const {data,error}=await client.rpc('qf_livre_proposta_agendada',{p_chamado_id:callId,p_profissional_id:profId,p_valor_centavos:valor,p_agendado_em:proposta.agendado_em,p_descricao:proposta.descricao});
+       if(error||!data?.ok)throw Error(messages[data?.reason]||data?.reason||error?.message||'Falha ao enviar proposta.');
+      }else await rpc(acao,valor,codigo,concluido);
       last='';
       busy=false;
       await update();
