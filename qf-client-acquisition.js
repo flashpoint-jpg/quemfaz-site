@@ -159,7 +159,7 @@
     // continuam disponíveis abaixo, sem alterar cadastro, atendimento ou pagamentos.
     function prioritizeClientHome() {
       var shell = document.getElementById('app-shell');
-      if (!shell || shell.getAttribute('data-route') !== 'inicio') return;
+      if (!shell || typeof shell.getAttribute !== 'function' || shell.getAttribute('data-route') !== 'inicio') return;
       var landing = shell.querySelector('.qf-landing');
       if (!landing) return;
       var hero = landing.querySelector('.qf-landing-hero');
