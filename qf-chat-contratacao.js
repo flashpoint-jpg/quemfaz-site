@@ -10,6 +10,8 @@
   valor_alterado:'O valor mudou. Aguarde a atualização e confira antes de confirmar.',estado_invalido:'Esta proposta não está mais disponível. Atualize o chat.',outro_profissional_contratado:'Este pedido já foi contratado com outro profissional.',
   resposta_indisponivel:'Este resultado precisa ser conferido pela administração.',
   pedido_encerrado:'Este pedido foi encerrado.',
+  pagamento_em_preparacao:'O Pix de serviços do Plano Livre ainda não está disponível. A conclusão ficará pendente, sem cobrança por fora. Consulte o suporte.',
+  servico_ainda_agendado:'Este serviço ainda está agendado. Aguarde a data combinada para confirmar a conclusão.',
   sem_permissao:'Você não tem acesso à contratação deste pedido.',
   nao_autenticado:'Abra o Quem Faz com sua sessão ativa para confirmar.'
  };
