@@ -87,6 +87,13 @@
 #app-shell[data-route="inicio"] .qf-landing-topbar.qf-fixed-bar{left:0!important;right:0!important;width:100%!important;max-width:none!important}
 #app-shell[data-route="inicio"] .qf-desk-menu{flex:1!important}
 .qf-home-visual{min-width:0}
+.qf-plan-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px}
+.qf-plan-chooser{border:1px solid #c9d7e8;border-radius:20px;padding:24px;width:min(520px,calc(100% - 24px));max-height:90dvh;overflow:auto;color:#183047;background:#fff}
+.qf-plan-chooser::backdrop{background:#071c38aa}
+.qf-plan-chooser h2{font-size:23px;margin:0 0 16px}
+.qf-plan-chooser p{font-size:14px;line-height:1.55;margin:12px 0 20px}
+.qf-plan-chooser .btn{min-height:46px;width:100%;margin:8px 0;padding:12px;white-space:normal}
+#prof-cadastro-update-form{scroll-margin-top:100px}
 #cadastro-prof-form .qf-trial-card--automatic{display:block!important;cursor:default}
 .qf-client-guide{padding:18px;margin-top:20px;border:1px solid #d8e3f0;border-radius:16px;background:#fff;color:#183b65}
 .qf-client-guide h2{font-size:19px;margin:0 0 16px;color:#1458cc}

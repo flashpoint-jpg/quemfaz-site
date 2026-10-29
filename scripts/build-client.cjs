@@ -64,6 +64,7 @@ html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
 const adminPath=path.join(out,'admin.html');
 let adminSource=fs.readFileSync(adminPath,'utf8');
+adminSource=adminSource.replace('</body>','<script defer src="/qf-admin-password-reset.js"></script></body>');
 adminSource=adminSource.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/vendor/supabase-2.117.2.js');
 adminSource=adminSource.replace("const DB_KEY = 'quemfaz_db_v2';","const DB_KEY = 'quemfaz_admin_db_v2';").replace("const SESSION_KEY = 'quemfaz_session_v2';","const SESSION_KEY = 'quemfaz_admin_session_v2';");
 adminSource=adminSource.replace('</head>','<link rel="stylesheet" href="/qf-admin-layout.css"></head>');

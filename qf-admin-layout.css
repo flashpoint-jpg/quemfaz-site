@@ -8,3 +8,6 @@
 .qf-adm-body #app-content [role=alert]{margin-block:12px}
 .qf-benefit-modal form{display:grid;gap:16px}
 .qf-benefit-modal .btn{padding:12px 16px;min-height:44px}
+.qf-reset-tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:18px;margin-bottom:18px}
+.qf-reset-tools p{margin:6px 0;font-size:14px}
+.qf-benefit-modal [hidden]{display:none!important}

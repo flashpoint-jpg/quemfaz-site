@@ -8,16 +8,40 @@ create table public.qf_profiles(id uuid primary key,tipo text,nome text,email te
 create table public.qf_profissionais(user_id uuid primary key,documento text);
 create table public.qf_pre_cadastro_pagamentos(id uuid primary key,email text,nome text,telefone text,profissional_id uuid,status text,criado_em timestamptz default now());
 create table public.qf_profissional_avisos(id uuid primary key default gen_random_uuid(),user_id uuid not null,chamado_id uuid not null,tipo text not null,titulo text not null,corpo text not null,rota text);
+create table private.qf_identidades(user_id uuid primary key,cpf_hash text,cnpj_hash text);
+create table public.qf_planos_profissional(id uuid primary key default gen_random_uuid(),profissional_id uuid,plano text,chamados_restantes integer,criado_em timestamptz default now(),valido_ate timestamptz);
 create table public.qf_recargas(id uuid primary key,status text);
 create table public.qf_livre_assinaturas(id uuid primary key,profissional_id uuid,recarga_id uuid,inicio_em timestamptz,fim_em timestamptz);
 create function private.qf_is_admin() returns boolean language sql as $$select auth.uid()='${uid(99)}'::uuid$$;
 create function private.qf_livre_acesso_ok(uuid) returns boolean language sql as $$select exists(select 1 from public.qf_livre_assinaturas a join public.qf_recargas r on r.id=a.recarga_id where a.profissional_id=$1 and a.inicio_em<=now() and a.fim_em>clock_timestamp() and r.status='aprovado')$$;
 create function private.qf_cadastro_profissional_pago(uuid) returns boolean language sql as $$select false$$;
-create function public.qf_livre_status() returns jsonb language sql as $$select jsonb_build_object('ok',auth.uid() is not null,'ativo',exists(select 1 from public.qf_livre_assinaturas a join public.qf_recargas r on r.id=a.recarga_id where a.profissional_id=auth.uid() and a.inicio_em<=now() and a.fim_em>clock_timestamp() and r.status='aprovado'),'valor_centavos',3990,'recarga_id',null)$$;
+create function public.qf_livre_status() returns jsonb language sql as $$select jsonb_build_object('ok',auth.uid() is not null,'ativo',exists(select 1 from public.qf_livre_assinaturas a join public.qf_recargas r on r.id=a.recarga_id where a.profissional_id=auth.uid() and a.inicio_em<=now() and a.fim_em>clock_timestamp() and r.status='aprovado'),'valor_centavos',3990,'recarga_id',null,'assinatura_id',(select id from public.qf_livre_assinaturas where profissional_id=auth.uid() order by fim_em desc limit 1),'valido_ate',(select max(fim_em) from public.qf_livre_assinaturas where profissional_id=auth.uid()))$$;
 grant usage on schema private,auth to authenticated;grant execute on function auth.uid() to authenticated;
-`);await d.exec(migration);await d.exec(fs.readFileSync('supabase/migrations/20261029110000_teste_automatico_cadastro.sql','utf8'));await d.exec(fs.readFileSync('supabase/migrations/20261029110100_aviso_beneficio_sem_pedido.sql','utf8')); await d.exec(fs.readFileSync('supabase/migrations/20261029024128_livre_ficha_profissional.sql','utf8'));for(let n of [1,2,3,4,5,6,99])await d.query('insert into auth.users values($1,$2,now())',[uid(n),`p${n}@example.com`]);return d;}
+`);await d.exec(migration);await d.exec(fs.readFileSync('supabase/migrations/20261029110000_teste_automatico_cadastro.sql','utf8'));await d.exec(fs.readFileSync('supabase/migrations/20261029110100_aviso_beneficio_sem_pedido.sql','utf8')); await d.exec(fs.readFileSync('supabase/migrations/20261029024128_livre_ficha_profissional.sql','utf8'));await d.exec(fs.readFileSync('supabase/migrations/20261029120000_identidade_beneficio_e_modalidade.sql','utf8'));await d.exec(fs.readFileSync('supabase/migrations/20261029120100_status_plano_atual.sql','utf8'));for(let n of [1,2,3,4,5,6,99])await d.query('insert into auth.users values($1,$2,now())',[uid(n),`p${n}@example.com`]);return d;}
 async function as(d,n,admin=false){await d.exec('reset role');await d.query("select set_config('request.jwt.claim.sub',$1,false)",[n?uid(n):'']);await d.exec(admin?'reset role':'set role authenticated');}
 async function rpc(d,name,args=[]){return (await d.query('select public.'+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') r',args)).rows[0].r;}
+
+test('Identidade protegida inicia cortesia; modalidade é própria e vencimento não reinicia benefício',async()=>{
+ const d=await setup();try{
+  await d.query("insert into qf_profiles(id,tipo,email) values($1,'profissional','p1@example.com')",[uid(1)]);
+  await d.query('insert into qf_profissionais(user_id,documento) values($1,null)',[uid(1)]);
+  await d.query("insert into private.qf_identidades values($1,'hash-validado-fixture',null)",[uid(1)]);
+  await as(d,99,true);await rpc(d,'qf_admin_livre_beneficio',['p1@example.com','ativar',2,'Cortesia identificada']);
+  await as(d,1);let status=await rpc(d,'qf_livre_status');assert.equal(status.ativo,true);assert.equal(status.tipo_acesso,'cortesia');assert.equal(status.identificado,true);
+  await rpc(d,'qf_livre_escolher_modalidade',['avulso']);status=await rpc(d,'qf_livre_status');assert.equal(status.preferencia,'avulso');assert.equal(status.ativo,true,'escolha não cancela cortesia');
+  await assert.rejects(()=>rpc(d,'qf_livre_escolher_modalidade',['admin']),/inválida/);
+  await as(d,99,true);await d.query("insert into qf_profiles(id,tipo,email) values($1,'profissional','p2@example.com')",[uid(2)]);await d.query('insert into qf_profissionais(user_id,documento) values($1,null)',[uid(2)]);
+  await as(d,2);await rpc(d,'qf_livre_preparar_acesso',[false,'11144477735','11923456789']);status=await rpc(d,'qf_livre_status');assert.equal(status.aguarda_identificacao,true);
+  await as(d,99,true);await d.query("insert into private.qf_identidades values($1,'hash-validado-fixture-2',null)",[uid(2)]);
+  await as(d,2);status=await rpc(d,'qf_livre_status');assert.equal(status.tipo_acesso,'teste');assert.equal(status.ativo,true);assert.equal(status.duracao_dias,2);assert.equal(status.preferencia,'livre','não herda opção de outra conta');
+  await as(d,99,true);await d.query("update private.qf_livre_beneficios set inicio_em=now()-interval '3 days',fim_em=now()-interval '1 day' where user_id=$1",[uid(2)]);
+  await as(d,2);assert.equal((await rpc(d,'qf_livre_status')).ativo,false);await as(d,2,true);assert.equal((await d.query('select private.qf_livre_acesso_ok(auth.uid()) as permitido')).rows[0].permitido,false);await as(d,2);await assert.rejects(()=>rpc(d,'qf_livre_preparar_acesso',[true,'11144477735','11923456789']),/já utilizado/);
+  await as(d,99,true);await d.query("insert into qf_recargas values($1,'aprovado')",[uid(6)]);await d.query("insert into qf_livre_assinaturas values($1,$1,$1,now()-interval '31 days',now()-interval '1 day')",[uid(6)]);
+  await as(d,6);status=await rpc(d,'qf_livre_status');assert.equal(status.tipo_acesso,'pago');assert.equal(status.ativo,false);assert.ok(status.valido_ate,'preserva vencimento da assinatura paga');
+  await as(d,99,true);await d.query("insert into qf_planos_profissional(profissional_id,plano,chamados_restantes,valido_ate) values($1,'mensal',5,now()+interval '10 days')",[uid(3)]);
+  await as(d,3);status=await rpc(d,'qf_livre_status');assert.equal(status.ativo,false,'pacote antigo não vira assinatura Livre');assert.equal(status.pacotes_ativos[0].plano,'mensal');assert.equal(status.pacotes_ativos[0].restantes,5);
+ }finally{await d.close();}
+});
 test('Teste de 48 horas: identidade única, contagem após identificação, expiração e acesso anterior preservado',async()=>{const d=await setup();try{
  await as(d,1);assert.equal((await rpc(d,'qf_livre_preparar_acesso',[false,'52998224725','11987654321'])).ok,true);
  assert.equal((await rpc(d,'qf_livre_status')).ativo,false,'não inicia sem identificação completa');
@@ -31,7 +55,7 @@ test('Teste de 48 horas: identidade única, contagem após identificação, expi
  await as(d,99,true);assert.equal((await d.query('select count(*) n from qf_profissionais')).rows[0].n,1,'cadastro mantido');assert.equal((await d.query('select count(*) n from qf_recargas')).rows[0].n,0,'nenhuma cobrança fictícia');
 }finally{await d.close();}});
 test('Cortesia 2, 3, 4, 10 dias, prorrogar, encerrar, auditoria, convite e assinatura paga',async()=>{const d=await setup();try{
- await as(d,99,true);for(const [n,days] of [[1,2],[2,3],[3,4],[4,10]]){await d.query('insert into qf_profissionais values($1,$2)',[uid(n),'doc'+n]);await d.query('insert into qf_pre_cadastro_pagamentos(id,email,nome) values($1,$2,$3)',[uid(n),`p${n}@example.com`,'Pro '+n]);const r=await rpc(d,'qf_admin_livre_beneficio',[`p${n}@example.com`,'ativar',days,'Teste da cortesia']);assert.equal(Date.parse(r.beneficio.fim_em)-Date.parse(r.beneficio.inicio_em),days*86400000);}
+ await as(d,99,true);for(const [n,days] of [[1,2],[2,3],[3,4],[4,10]]){await d.query('insert into qf_profiles(id,tipo,email) values($1,$2,(select email from auth.users where id=$1))',[uid(n),'profissional']);await d.query('insert into qf_profissionais values($1,$2)',[uid(n),'doc'+n]);await d.query('insert into qf_pre_cadastro_pagamentos(id,email,nome) values($1,$2,$3)',[uid(n),`p${n}@example.com`,'Pro '+n]);const r=await rpc(d,'qf_admin_livre_beneficio',[`p${n}@example.com`,'ativar',days,'Teste da cortesia']);assert.equal(Date.parse(r.beneficio.fim_em)-Date.parse(r.beneficio.inicio_em),days*86400000);}
  let r=await rpc(d,'qf_admin_livre_beneficio',['p1@example.com','prorrogar',7,'Prorrogação de teste']);assert.equal(Date.parse(r.beneficio.fim_em)-Date.parse(r.beneficio.inicio_em),9*86400000);
  await rpc(d,'qf_admin_livre_beneficio',['p1@example.com','encerrar',1,'Encerramento autorizado']);await as(d,1);assert.equal((await rpc(d,'qf_livre_status')).ativo,false);
  await as(d,99,true);await d.query('insert into qf_pre_cadastro_pagamentos(id,email,nome) values($1,$2,$3)',[uid(5),'p5@example.com','Convite']);r=await rpc(d,'qf_admin_livre_beneficio',['p5@example.com','ativar',4,'Convite para profissional']);assert.equal(r.beneficio.inicio_em,null);
@@ -43,5 +67,9 @@ test('Cortesia 2, 3, 4, 10 dias, prorrogar, encerrar, auditoria, convite e assin
  await as(d,6);assert.equal((await rpc(d,'qf_livre_status')).tipo_acesso,'pago');
  await as(d,99);const panel=await rpc(d,'qf_admin_livre_painel',['','todos',0]);assert.equal(panel.total,5);assert.equal(panel.kpis.planos_pagos,1);assert.equal(panel.kpis.cortesias,4);await as(d,99,true);await d.query('insert into qf_profiles(id,tipo,nome,email,telefone) values($1,$2,$3,$4,$5)',[uid(5),'profissional','Convite','p5@example.com','11999999999']);await as(d,99);const linked=await rpc(d,'qf_admin_livre_painel',['p5@example.com','todos',0]);assert.equal(linked.itens[0].profissional_id,uid(5),'pré-cadastro reconhece perfil sem falso pagamento');assert.ok(panel.itens.some(r=>r.historico.length));
 }finally{await d.close();}});
+
+
+
+
 
 
