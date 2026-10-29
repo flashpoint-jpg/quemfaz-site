@@ -56,3 +56,16 @@
  .qf-mobile-services button{cursor:pointer;transition:background .15s,border-color .15s}
  .qf-mobile-services button:active,.qf-mobile-services button:focus-visible{background:#fff2e3;border-color:#f58217;outline:2px solid #ff9b38;outline-offset:2px}
 }
+
+/* Serviços imediatamente depois do formulário; fotografia alinhada pelo topo. */
+.qf-home-services-mobile{display:none!important}
+#app-shell[data-route="inicio"] .qf-home-services-desktop{margin:16px 0 0!important;background:#fff!important;color:#164d91!important;border-radius:18px!important}
+@media(max-width:899px){
+ #app-shell[data-route="inicio"] .qf-home-services-desktop{display:none!important}
+ #app-shell[data-route="inicio"] .qf-home-services-mobile{display:block!important;margin:16px 0 0!important;padding:18px!important;background:#fff!important;color:#164d91!important;border-radius:18px!important}
+ #app-shell[data-route="inicio"] .qf-home-services-mobile .qf-mob-h{color:#1458cc!important;font-size:22px!important;line-height:1.2!important}
+ #app-shell[data-route="inicio"] .qf-home-services-mobile button{font-size:13px!important}
+ #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head{padding-top:168px!important}
+ #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head .qf-landing-photo{height:280px!important}
+}
+#app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head .qf-landing-photo img{object-position:right top!important}

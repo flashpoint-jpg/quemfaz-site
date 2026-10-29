@@ -5,7 +5,7 @@
  const uuid=v=>/^[a-f0-9-]{36}$/i.test(v||'');
  function safeAreas(){const native=!!g.Capacitor?.isNativePlatform?.()||/; wv\)|\bwv\b/.test(g.navigator?.userAgent||'');g.document?.documentElement?.classList?.toggle('qf-native-webview',native);}
  safeAreas();
- const state={mode:'intro',user:null,selected:null,prof:null,notice:'',pending:null};
+ const state={tab:'home',mode:'intro',user:null,selected:null,prof:null,notice:'',pending:null};
  let slot=null,loading=null,originalNavigate=null,after=null;
  function toolbar(){return (['orders','detail','chat'].includes(state.mode)?'<div class="qf-home-orders__bar"><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--outline" data-home-new>Novo pedido</button></div>':'')+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
  function host(){
@@ -106,6 +106,7 @@
  function list(){return state.user?(g.DB?.state?.requests||[]).filter(r=>r.clienteId===state.user.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0)):[];}
  function reset(){const el=host();if(el)el.innerHTML=toolbar();}
  async function orders(){
+  selectTab('orders');
   state.mode='orders';state.selected=null;reset();const target=work();if(!target)return;
   target.innerHTML='<p role="status">Consultando seus pedidos…</p>';
   try{if(!await user())return login();if(!target.isConnected||state.mode!=='orders')return;
@@ -123,6 +124,7 @@
   if(service&&!serviceCategories().some(c=>norm(c.nome)===norm(service))){intro(problem||service);return;}
   if(service&&String(problem||'').trim().length<8){intro(problem,service);return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
+  selectTab('request');
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
   try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
   const target=work();if(!target)return;
@@ -192,9 +194,24 @@
   state.user=owner;state.notice='Pedido publicado! Estamos buscando profissionais para você.';state.mode='detail';state.selected=req.id;
   try{await detail(req.id,false);reveal();}catch(err){reset();message('Pedido publicado. Toque em Meus pedidos para atualizar o acompanhamento.');}
  }
+ function selectTab(key){
+  state.tab=key;
+  const selectors={home:'[data-nav="/"]',services:'[data-home-services]',request:'[data-action="landing-all-services"]',orders:'[data-action="landing-my-orders"]',help:'[data-support-open]'};
+  const nav=g.document.querySelector('.qf-home-nav');if(!nav)return;
+  nav.querySelectorAll('button').forEach(b=>b.removeAttribute('aria-current'));
+  nav.querySelector(selectors[key]||selectors.home)?.setAttribute('aria-current','page');
+ }
+ function placeServices(){
+  const anchor=host();if(!anchor)return;
+  const mobile=g.document.querySelector('.qf-mobile-services')?.closest('section');
+  const desktop=g.document.querySelector('#qf-sec-servicos');
+  if(mobile){mobile.classList.add('qf-home-services-mobile');anchor.after(mobile);}
+  if(desktop){desktop.classList.add('qf-home-services-desktop');anchor.after(desktop);}
+ }
  function bindHome(){
   safeAreas();
   if(!host())return;
+  placeServices();selectTab(state.tab);
   if(g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
@@ -220,9 +237,11 @@
   g.Screens.afterRenderAnon=function(pattern){const result=anon?.apply(this,arguments);if(pattern==='/')bindHome();return result;};
   g.document.addEventListener('submit',e=>{if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();e.stopImmediatePropagation();const value=e.target.querySelector('[data-landing-service-search]')?.value.trim();showForm(value);},true);
   g.document.addEventListener('click',e=>{
+   const navButton=e.target.closest('.qf-home-nav button');
+   if(navButton){selectTab(navButton.hasAttribute('data-home-services')?'services':navButton.hasAttribute('data-support-open')?'help':navButton.dataset.action==='landing-my-orders'?'orders':navButton.dataset.action==='landing-all-services'?'request':'home');if(navButton.dataset.nav==='/'){e.preventDefault();e.stopImmediatePropagation();state.notice='';intro();reveal();return;}}
    // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
-   if(service){e.preventDefault();e.stopImmediatePropagation();const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';intro('',cat?.nome||service.dataset.deskService);reveal();return;}
+   if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';intro('',cat?.nome||service.dataset.deskService);reveal();return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
    if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}intro();reveal();return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
