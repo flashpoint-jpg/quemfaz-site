@@ -187,7 +187,7 @@ fs.writeFileSync(path.join(out,'espelho-cliente.html'),html.replace('</head>','<
 
 fs.writeFileSync(path.join(out,'espelho-profissional.html'),html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>').replace('</body>','<script src="/qf-admin-prof-mirror-frame.js?v=20261023"></script></body>'));
 let sw=fs.readFileSync(path.join(out,'sw.js'),'utf8');
-sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-card-unico-20261027';");
+sw=sw.replace("const CACHE = 'quemfaz-' + SW_VERSION;","const CACHE = 'quemfaz-' + SW_VERSION + '-mobile-nav-20261029';");
 sw=sw.replace('const CORE = [','const CORE = ['+assets.map(x=>JSON.stringify(x)).join(',')+',');
 fs.writeFileSync(path.join(out,'sw.js'),sw);
 console.log('Publicação '+version+': HTML '+Buffer.byteLength(html)+' bytes; scripts deferidos e home pronta antes do SDK.');
