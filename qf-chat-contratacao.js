@@ -21,9 +21,11 @@
   const pane=g.document.createElement('section');
   pane.className='card qf-chat-contract';
   pane.style.cssText='border:1.5px solid #b5cff5;border-radius:16px;padding:14px;background:#f3f8ff;display:grid;gap:10px;margin:12px 0;color:#173b66';
-  pane.innerHTML='<strong>Contratação no Quem Faz Livre</strong><p class="text--sm" role="status">Consultando seu pedido…</p>';
+  pane.innerHTML='<strong>Orçamento e contratação · Quem Faz Livre</strong><p class="text--sm" role="status">Consultando seu pedido…</p>';
+  // O chat é a ação principal: primeiro mensagens e caixa de digitar, depois orçamento e comissão.
+  const composer=root.querySelector('[data-qf-chat-form]');
   const msgs=root.querySelector('[data-qf-chat-list]');
-  if(msgs)msgs.before(pane);else root.prepend(pane);
+  if(composer)composer.after(pane);else if(msgs)msgs.after(pane);else root.append(pane);
   let closed=false,busy=false,last='',timer=null;
   async function rpc(acao,valor,codigo=null,concluido=false){
    const {data,error}=await client.rpc('qf_chat_contratacao',{p_chamado_id:callId,p_profissional_id:profId,p_acao:acao,p_valor_centavos:valor??null,p_codigo:codigo,p_concluido:concluido});
@@ -44,16 +46,12 @@
    row.push('<strong>Contratação</strong><p style="margin:0">'+escapeHTML(who==='cliente'&&['informado','negociando'].includes(estado)&&valor&&!resposta?(s.profissional_nome||'O profissional')+' apresentou um orçamento de '+price(valor)+'. Você contratou esse serviço?':headline)+'</p>');
    if(g.QFPush&&!g.QFPush.isActive())row.push('<div style="display:grid;gap:6px;padding:10px;border-radius:10px;background:#fff4e9"><strong>Ative os avisos sonoros do chat</strong><p class="text--sm" style="margin:0">Para ouvir mensagens com o app fechado, permita as notificações nas configurações do celular.</p><button class="btn btn--primary" type="button" data-qfc-notify>Ativar notificações</button></div>');
    row.push('<button type="button" class="btn btn--outline" data-qfc-sound style="font-size:.85rem">Testar som de mensagem</button>');
-   if(who==='profissional'){
-    const suporteMensagem='Olá, suporte Quem Faz! Sou profissional do plano Quem Faz Livre. Desbloqueei o pedido #'+callId+' e o cliente não respondeu. Poderiam verificar o contato?';
-    const suporteUrl='https://wa.me/5535998845703?text='+encodeURIComponent(suporteMensagem);
-    row.push('<div class="qfc-support" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px;border:1px solid #cad9ec;border-radius:12px;background:#fff"><span class="text--sm" style="font-weight:650">Cliente não respondeu?</span><a class="btn btn--outline btn--sm" style="width:auto;min-height:40px" href="'+escapeHTML(suporteUrl)+'" target="_blank" rel="noopener noreferrer">Falar com suporte no WhatsApp</a></div>');
-   }
-   if(valor)row.push('<p style="margin:0">Valor combinado: <strong>'+price(valor)+'</strong>'+(who==='profissional'?' · comissão de 13%: <strong>'+price(Math.round(valor*0.13))+'</strong>':'')+'</p>');
+   if(valor)row.push('<p style="margin:0">Valor proposto: <strong>'+price(valor)+'</strong>'+(who==='profissional'?' · comissão '+(estado==='confirmado'?'confirmada':'prevista')+' (13%): <strong>'+price(Math.round(valor*0.13))+'</strong> · sua parte (87%): <strong>'+price(valor-Math.round(valor*0.13))+'</strong>':'')+'</p>');
+   if(who==='profissional' && s.contratado_em && estado!=='confirmado')row.push('<p class="text--sm" style="margin:0">Orçamento aceito pelo cliente. A comissão é somente prevista até ele confirmar a conclusão e o valor final com o código de seis dígitos.</p>');
    if(estado==='confirmado')row.push('<p class="text--sm" style="margin:0">Contratação, valor e conclusão confirmados.</p>'+(who==='profissional'?'<p>A comissão de 13% foi gerada automaticamente. Pague em até 48 horas pela carteira.</p><a class="btn btn--primary" href="#/profissional/carteira">Ver Pix da comissão</a>':''));
    if(resposta==='divergencia')row.push('<p class="text--sm" style="margin:0">As respostas não coincidem. Nenhuma comissão foi aprovada automaticamente.</p>');
    if(who==='profissional'&&(['pendente','negociando'].includes(estado)||(estado==='informado'&&resposta==='divergencia'))&&(!resposta||resposta==='divergencia'||resposta==='negociando')){
-    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">Apresentar orçamento ao cliente</button></form>');
+    row.push('<form data-qfc-form style="display:grid;gap:8px"><label class="text--sm" for="qfc-valor">Valor combinado do serviço (R$)</label><input id="qfc-valor" data-qfc-valor class="input" inputmode="decimal" autocomplete="off" placeholder="Ex.: 350,00" required style="min-height:44px" value="'+(valor?(valor/100).toFixed(2).replace('.',','):'')+'"><button type="submit" class="btn btn--primary">'+(prop?'Atualizar orçamento do cliente':'Apresentar orçamento ao cliente')+'</button></form>');
     row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_fechou">Não fechei este serviço</button>');
    }
    if(who==='cliente'){
@@ -71,6 +69,11 @@
     }else if(estado==='pendente'&&!resposta){
       row.push('<button type="button" class="btn btn--outline" data-qfc-action="nao_contratei">Não contratei este profissional</button>');
     }
+   }
+   if(who==='profissional'){
+    const suporteMensagem='Olá, suporte Quem Faz! Sou profissional do plano Quem Faz Livre. Desbloqueei o pedido #'+callId+' e o cliente não respondeu. Poderiam verificar o contato?';
+    const suporteUrl='https://wa.me/5535998845703?text='+encodeURIComponent(suporteMensagem);
+    row.push('<details class="qfc-support" style="padding:10px;border:1px solid #cad9ec;border-radius:12px;background:#fff"><summary class="text--sm" style="cursor:pointer;font-weight:650">Precisa de ajuda da equipe Quem Faz?</summary><p class="text--sm">O suporte não é o chat com o cliente. Use a conversa acima para negociar.</p><a class="btn btn--outline btn--sm" style="width:auto;min-height:40px" href="'+escapeHTML(suporteUrl)+'" target="_blank" rel="noopener noreferrer">Falar com suporte no WhatsApp</a></details>');
    }
    row.push('<p class="text--sm" data-qfc-status role="status" style="margin:0">Confira o valor combinado antes de confirmar a contratação.</p>');
    pane.innerHTML=row.join('');
