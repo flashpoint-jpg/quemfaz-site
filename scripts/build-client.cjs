@@ -15,6 +15,11 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// A cortesia é administrativa; não oferecer controles técnicos no cadastro público.
+html=html.replace(/<label[^>]*><input type="checkbox" name="cortesiaLivre"[^>]*>Recebi uma cortesia da equipe Quem Faz \(será validada pelo servidor\)\.<\/label>/g,'<input type="hidden" name="cortesiaLivre" value="">');
+// Uma sessão de cliente não deve capturar a entrada de profissionais.
+html=html.replace('if (found && found.route.anon && global.QFCloud && !currentSession()) {',`if (found && /^\\/auth\\/profissional\\/(login|cadastro)$/.test(path) && currentSession()?.role === 'cliente') { renderAnon(found); return; }
+    if (found && found.route.anon && global.QFCloud && !currentSession()) {`);
 html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.0'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');

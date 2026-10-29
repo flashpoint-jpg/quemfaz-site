@@ -3,6 +3,15 @@
  'use strict';
  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'';
+ function trialProgress(s){
+  const end=Date.parse(s.valido_ate),now=Date.parse(s.servidor_agora);
+  if(s.aguarda_identificacao)return '<p>As 48 horas começam após concluir sua identificação.</p>';
+  if(!Number.isFinite(end)||!Number.isFinite(now))return '';
+  const minutes=Math.max(0,Math.min(2880,Math.ceil((end-now)/60000))),pct=Math.round(minutes/2880*100);
+  const text=minutes?Math.floor(minutes/60)+'h '+minutes%60+'min restantes':'Teste encerrado';
+  return '<div class="qf-trial-progress"><span>'+text+'</span><progress max="2880" value="'+minutes+'" aria-label="Tempo restante do teste grátis" aria-valuetext="'+text+'">'+pct+'%</progress></div>';
+ }
+ g.QFLivreTrialProgress=trialProgress;
  function divisao(){
   return '<section class="qf-divisao" aria-label="Divisão do valor do serviço no Quem Faz Livre"><h3>Você faz o serviço e fica com 87% do valor. O Quem Faz recebe 13% pela intermediação.</h3><div class="qf-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-divisao__pro">87%</span><span class="qf-divisao__qf">13%</span></div><div class="qf-divisao__legenda"><span><i class="qf-divisao__verde"></i><b>Profissional · 87%</b><strong>R$ 174</strong></span><span><i class="qf-divisao__laranja"></i><b>Quem Faz · 13%</b><strong>R$ 26</strong></span></div><p>Exemplo: serviço de R$ 200. Você define o preço. Esta é a divisão do valor após a comissão no Quem Faz Livre; seus custos e tributos não estão descontados. Não representa lucro líquido garantido. No Avulso, não há comissão.</p></section>';
  }
@@ -78,7 +87,7 @@
      // O teste e uma alternativa do Livre, sem checkout e sem cobranca antecipada.
      // Cortesia e exclusivamente administrativa: o usuario nao se autoconcede esse beneficio.
      const courtesyInput=form.elements.cortesiaLivre;
-     if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.hidden=true;}
+     if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
      const trialInput=form.elements.testeLivre;
      const trialLabel=trialInput?.closest('label');
      if(trialLabel&&!trialLabel.dataset.qfTrialReady){
@@ -86,7 +95,7 @@
       extra.innerHTML='<span class="qf-trial-eyebrow">EXPERIMENTE GRÁTIS · 48 HORAS</span>'+
         '<strong class="qf-trial-title">Desbloqueios ilimitados por 2 dias</strong>'+
         '<span class="qf-trial-benefits"><span>✓ Pedidos compatíveis ilimitados</span><span>✓ Chat interno com os clientes</span><span>✓ Sem Pix, recarga ou pagamento inicial</span></span>'+
-        '<small>O teste termina após 48 horas de uso. Sem cobrança automática. Para continuar, assine o Livre por R$ 39,90/30 dias. A comissão de 13% só vale para serviço fechado e confirmado. Um teste por profissional.</small>';
+        '<small>O teste termina após 48 horas. Sem cobrança automática. Para continuar, assine o Livre por R$ 39,90/30 dias. A comissão de 13% só vale para serviço fechado e confirmado. Um teste por profissional.</small><span class="qf-trial-progress"><span>2 dias de teste · a contagem começa após a identificação</span><progress max="48" value="48" aria-label="Duração do teste grátis: 48 horas">48 horas</progress></span>';
       trialLabel.replaceChildren(trialInput,extra);
       trialLabel.classList.add('qf-trial-card');trialLabel.dataset.qfTrialReady='';
      }
@@ -224,6 +233,7 @@
      const title=last.tipo_acesso==='teste'?(active?'Teste grátis ativo':'Seu teste grátis terminou!'):(active?'Quem Faz Livre — cortesia ativa':'Cortesia encerrada');
      const note=active?'Termina em '+esc(date(last.valido_ate))+'. Comissão de 13% e prestação de contas mantidas.':last.aguarda_identificacao?'Conclua sua identificação para iniciar a contagem.':'Para continuar desbloqueando novas oportunidades, ative o Quem Faz Livre por R$ 39,90 durante 30 dias. Sem cobrança automática.';
      box.innerHTML='<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+note+'</p></div>'+(!active&&!last.aguarda_identificacao?'<button type="button" class="btn btn--primary" data-qf-livre-pagar>ATIVAR PLANO — R$ 39,90</button>':'');
+     if(last.tipo_acesso==='teste')box.querySelector('.qf-livre__copy').insertAdjacentHTML('beforeend',trialProgress(last));
      if(active&&last.tipo_acesso==='teste'&&Date.parse(last.valido_ate)-Date.parse(last.servidor_agora)<12*3600000)box.insertAdjacentHTML('beforeend','<p>Seu teste termina em breve. Continue com o Plano Livre por R$ 39,90.</p>');
     }
     bind();
