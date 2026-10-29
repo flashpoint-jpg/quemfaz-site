@@ -171,7 +171,7 @@ async function authorizedAdmin(req:Request){
 async function adminConfiguration(req:Request,b:any){
  const adminId=await authorizedAdmin(req);
  if(!adminId)return reply(req,{ok:false,reason:"admin_obrigatorio"},403);
- if(b.action==="admin_enable"){
+ if(b.action==="admin_enable"||b.action==="admin_validate"){
   // Nenhum Pix é criado neste teste; checamos mTLS e credenciais reais da Efí.
   if(sandbox)return reply(req,{ok:false,reason:"efi_sandbox_inadequado"},409);
   let c:Deno.HttpClient|null=null;
@@ -179,10 +179,13 @@ async function adminConfiguration(req:Request,b:any){
    c=client();
    const tokenValue=await token(c);
    if(!tokenValue)throw Error("efi_auth");
+   await rpc("qf_livre_manual_validacao",{p_admin:adminId,p_ok:true,p_ambiente:"production"});
   }catch(e){
-   console.warn("QF_MANUAL_EFI_AUTH_TEST",String((e as Error).message||e));
+   await rpc("qf_livre_manual_validacao",{p_admin:adminId,p_ok:false,p_ambiente:"production"}).catch(()=>{});
+   console.warn("QF_MANUAL_EFI_AUTH_TEST","Autenticacao nao confirmada");
    return reply(req,{ok:false,reason:"efi_producao_nao_validada"},503);
   }finally{c?.close();}
+  if(b.action==="admin_validate")return reply(req,{ok:true,validado:true,ambiente:"production",cobranca_criada:false});
   const d=await rpc("qf_livre_manual_admin_config",{
    p_ativar:true,p_admin:adminId,p_efi_testado:true,p_ambiente:"production"});
   return reply(req,d,d?.ok?200:409);
@@ -209,7 +212,7 @@ Deno.serve(async req=>{
   if(b.action==="checkout")return checkout(req,b);
   if(b.action==="status")return status(req,b);
   if(b.action==="sync_admin")return syncAdmin(req);
-  if(["admin_status","admin_enable","admin_disable"].includes(b.action))return adminConfiguration(req,b);
+  if(["admin_status","admin_enable","admin_disable","admin_validate"].includes(b.action))return adminConfiguration(req,b);
   return reply(req,{ok:false,reason:"acao_invalida"},400);
  }catch(e){
   console.error("QF_LIVRE_MANUAL_UNHANDLED",String((e as Error).message||e));

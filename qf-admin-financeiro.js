@@ -23,7 +23,7 @@
   function simplifyMenu(){
     const menu=g.document.querySelector('.qf-adm-nav');
     if(!menu||menu.querySelector('[data-qff-nav-more]'))return;
-    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/movimentacoes','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes']);
+    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/movimentacoes','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes','/admin/marketing-dedicado']);
     const more=g.document.createElement('details');
     more.className='qff-nav-more';more.dataset.qffNavMore='1';
     const heading=g.document.createElement('summary');heading.textContent='Mais ferramentas';
@@ -69,6 +69,8 @@
      const timer=g.setInterval(()=>{if(!root.isConnected){g.clearInterval(timer);return;}if(g.document.visibilityState!=='hidden')refresh();},30000);
      return;
    }
+   const pixHost=g.document.createElement('section');pixHost.dataset.qffPixHost='';pixHost.className='section qff';
+   root.before(pixHost);g.QFComissao13?.mountPixAdmin?.(pixHost,client);
    let data={},neg=[],repasses=[],filter='todos',query='',keyFilter='todos',busy=false;
    const orderInFilter=o=>filter==='todos'||filter==='andamento'&&!['concluido','cancelado','expirado'].includes(o.status)||filter==='concluidos'&&o.status==='concluido'||filter==='cancelados'&&['cancelado','expirado'].includes(o.status)||['receber','recebida'].includes(filter)&&neg.some(n=>n.chamado_id===o.id&&(filter==='receber'?n.cobranca_status==='pendente':n.cobranca_status==='paga'&&n.pagamento_conciliado));
    function nomeEspecialidade(codigo){
