@@ -1,7 +1,7 @@
 /* Livro de Pix integral: somente liquidações bancárias compõem entradas e obrigações. */
 (function(g){
  'use strict';
- if(g.document){const style=g.document.createElement('style');style.textContent='[data-qf-manual-config] .btn-row,[data-qf-pix-ledger] .btn-row,.qf-md .btn-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}[data-qf-manual-config] .btn,[data-qf-pix-ledger] .btn,.qf-md .btn{height:auto!important;min-height:46px;white-space:normal;line-height:1.4;padding:12px!important;width:100%!important}@media(max-width:600px){[data-qf-manual-config] .btn-row,[data-qf-pix-ledger] .btn-row,.qf-md .btn-row{grid-template-columns:1fr}}';g.document.head.append(style);}
+ if(g.document){const style=g.document.createElement('style');style.textContent='[data-qf-manual-config] .btn-row,[data-qf-pix-ledger] .btn-row,.qf-md .btn-row{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px!important}[data-qf-manual-config] .btn,[data-qf-pix-ledger] .btn,.qf-md .btn{height:auto!important;min-height:46px;white-space:normal;line-height:1.4;padding:12px!important;width:100%!important}@media(max-width:600px){[data-qf-manual-config] .btn-row,[data-qf-pix-ledger] .btn-row,.qf-md .btn-row{grid-template-columns:1fr}}';g.document.head.append(style);}
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const money=v=>(Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
  const date=v=>v?new Date(v).toLocaleString('pt-BR'):'—';
