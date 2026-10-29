@@ -3,16 +3,19 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const src=fs.readFileSync(path.join(__dirname,'../qf-pedido-home.js'),'utf8');
-test('Cliente Google autenticado não vê Meus pedidos duplicado na barra',()=>{
- assert.match(src,/const showActions=inHistory&&\(!state\.account\|\|state\.mode!=='orders'\)/);
- assert.match(src,/!state\.account\?'<button type="button" class="btn btn--outline" data-home-orders>Meus pedidos<\/button>':' '/.source? /const showActions/ : /const showActions/);
+
+test('Cliente autenticado não recebe botão Meus pedidos duplicado na barra do histórico',()=>{
+ assert.ok(src.includes("const showActions=inHistory&&(!state.account||state.mode!=='orders');"));
+ assert.ok(src.includes("(!state.account?'<button type=\"button\" class=\"btn btn--outline\" data-home-orders>Meus pedidos</button>':'')"));
 });
-test('Histórico com pedidos preserva ação Novo pedido e histórico vazio mantém CTA principal',()=>{
- assert.match(src,/state\.account\?'<div class="qf-home-orders__bar"><button class="btn btn--outline" type="button" data-home-new>\+ Novo pedido<\/button><\/div>':' '/.source?/data-home-new>\+ Novo pedido/:/data-home-new>\+ Novo pedido/);
- assert.match(src,/data-home-empty-orders/);
- assert.match(src,/data-home-new>Publicar meu primeiro pedido/);
+
+test('Histórico com pedidos mostra Novo pedido e histórico vazio conserva CTA principal',()=>{
+ assert.ok(src.includes('data-home-new>+ Novo pedido</button>'));
+ assert.ok(src.includes('data-home-empty-orders'));
+ assert.ok(src.includes('data-home-new>Publicar meu primeiro pedido</button>'));
 });
-test('Botão profissional não herda cor branca do cabeçalho',()=>{
- assert.match(src,/class="qf-empty-prof-cta" data-qf-professional-signup/);
+
+test('Botão profissional tem classe própria e contraste adequado',()=>{
+ assert.ok(src.includes('class="qf-empty-prof-cta" data-qf-professional-signup'));
  assert.match(src,/#qf-pedido-facil \[data-home-empty-orders\] \.qf-empty-prof-cta\{[^}]*color:#143f74/);
 });
