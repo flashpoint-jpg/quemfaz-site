@@ -28,11 +28,11 @@ BEGIN
     SELECT 1 FROM public.qf_comissao13_financeiro x
     JOIN public.qf_comissao13_acordos a ON a.id=x.acordo_id
     WHERE a.chamado_id=f.chamado_id AND a.profissional_id=v_uid
-      AND (x.status='pago' OR x.pago_em IS NOT NULL)
+      AND (x.status IN ('criando','pendente','incerto','pago') OR x.pago_em IS NOT NULL)
   ) OR EXISTS (
     SELECT 1 FROM private.qf_livre_split_pagamentos x
     WHERE x.chamado_id=f.chamado_id AND x.profissional_id=v_uid
-      AND (x.status IN ('pago','repassado') OR x.confirmado_em IS NOT NULL)
+      AND (x.status IN ('preparando','pix_pronto','pago','repassado') OR x.confirmado_em IS NOT NULL)
   ) THEN RETURN jsonb_build_object('ok',false,'reason','pagamento_plataforma_ja_confirmado'); END IF;
   UPDATE public.qf_comissao13_fechamentos
     SET recebimento_direto_declarado_em=now(),
