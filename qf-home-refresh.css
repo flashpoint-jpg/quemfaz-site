@@ -157,3 +157,56 @@
 }
 
 
+
+
+/* Home cliente 29/10 — cards inteiros clicáveis e benefícios informativos. */
+#qf-pedido-facil .qf-intent-chooser{display:grid;gap:13px;margin:0 0 22px}
+#qf-pedido-facil .qf-intent-chooser h2{font-size:clamp(20px,2.2vw,24px);line-height:1.25;font-weight:800;color:#102b50;margin:0}
+#qf-pedido-facil .qf-intent-choices{display:grid;grid-template-columns:1fr;gap:12px}
+#qf-pedido-facil .qf-intent-choice{appearance:none;-webkit-appearance:none;display:grid;grid-template-columns:52px minmax(0,1fr) 36px;align-items:center;gap:12px;width:100%;min-height:105px;padding:16px;border:1.5px solid #dce4ed;border-radius:17px;background:#fff;color:#183354;cursor:pointer;text-align:left;font:inherit;white-space:normal;box-sizing:border-box;box-shadow:0 3px 12px #0e27400b;transition:background .15s,border-color .15s,box-shadow .15s,transform .15s}
+#qf-pedido-facil .qf-intent-choice:hover{border-color:#ff8610;box-shadow:0 6px 22px #123d661b;transform:translateY(-1px)}
+#qf-pedido-facil .qf-intent-choice:active{transform:scale(.99)}
+#qf-pedido-facil .qf-intent-choice:focus-visible{outline:3px solid #ff8610;outline-offset:3px}
+#qf-pedido-facil .qf-intent-choice.is-selected{border:2px solid #1769d5;background:#eef6ff;box-shadow:0 6px 18px #1769d519}
+#qf-pedido-facil .qf-intent-choice__icon{width:50px;height:50px;border-radius:15px;display:grid;place-items:center;background:#e2efff;color:#075cd3}
+#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__icon{background:#fff0e1;color:#f47b06}
+#qf-pedido-facil .qf-intent-choice__icon svg{height:26px;width:26px}
+#qf-pedido-facil .qf-intent-choice__body{display:grid;gap:5px;min-width:0}
+#qf-pedido-facil .qf-intent-choice__body strong{color:#102b50;font-size:16px;font-weight:800;line-height:1.3}
+#qf-pedido-facil .qf-intent-choice__body>span:not(.qf-intent-choice__badge){font-size:13px;line-height:1.45;color:#405772}
+#qf-pedido-facil .qf-intent-choice__badge{width:fit-content;max-width:100%;border-radius:99px;background:#cfe7ff;color:#0755b8;padding:5px 10px;font-size:11px;font-weight:800;line-height:1.35}
+#qf-pedido-facil .qf-intent-choice__arrow{display:grid;place-items:center;width:33px;height:33px;border-radius:50%;background:#1467d3;color:#fff;font-size:30px;line-height:1;box-shadow:0 3px 10px #0a4fa52b}
+#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__arrow{background:#ff8610;color:#142b48}
+#qf-pedido-facil [data-home-problem]>button[type=submit]{cursor:pointer;box-shadow:0 5px 15px #ff86102d!important}
+#qf-pedido-facil [data-home-problem]>button[type=submit]:is(:hover,:focus-visible){background:#f97900!important;outline-offset:2px}
+
+/* Os benefícios ocupam o vão inferior da coluna esquerda, sem criar nova rota. */
+#app-shell[data-route="inicio"] .qf-client-benefits{display:grid;gap:14px;margin-top:18px;padding:22px;border:1px solid #dce5ef;border-radius:20px;background:#fff;color:#143052;box-shadow:0 12px 30px #0e274009}
+#app-shell[data-route="inicio"] .qf-client-benefits h2{font-size:clamp(24px,2.5vw,32px);line-height:1.1;letter-spacing:-.025em;color:#092d58;margin:0;font-weight:850}
+#app-shell[data-route="inicio"] .qf-client-benefits h2 em{color:#f7770a;font-style:normal}
+#app-shell[data-route="inicio"] .qf-client-benefits__lead{font-size:14px;line-height:1.5;color:#4d617b;margin:0}
+#app-shell[data-route="inicio"] .qf-client-benefits__list{display:grid;gap:10px}
+#app-shell[data-route="inicio"] .qf-client-benefits__list article{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;padding:14px;background:#f6f9fe;border:1px solid #e4ebf4;border-radius:13px}
+#app-shell[data-route="inicio"] .qf-client-benefits__icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#e0edff;color:#1262c9;font-size:23px;font-weight:800}
+#app-shell[data-route="inicio"] .qf-client-benefits__list strong{display:block;font-size:15px;line-height:1.4;color:#0c315f}
+#app-shell[data-route="inicio"] .qf-client-benefits__list p{margin:5px 0 0;font-size:13px;line-height:1.5;color:#4c6077}
+#app-shell[data-route="inicio"] .qf-client-benefits__footer{margin:0;padding:12px 14px;background:#fff1e5;border:1px solid #ffd5ae;border-radius:12px;color:#173654;font-size:13px;font-weight:700;line-height:1.45}
+#app-shell[data-route="inicio"] .qf-mobile-payment-info{display:none}
+@media(max-width:899px){
+ #qf-pedido-facil .qf-intent-choice{grid-template-columns:42px minmax(0,1fr) 30px;min-height:91px;padding:13px 10px;gap:9px}
+ #qf-pedido-facil .qf-intent-choice__icon{width:40px;height:40px;border-radius:12px}
+ #qf-pedido-facil .qf-intent-choice__icon svg{width:22px;height:22px}
+ #qf-pedido-facil .qf-intent-choice__arrow{width:28px;height:28px;font-size:27px}
+ #qf-pedido-facil .qf-intent-choice__body strong{font-size:15px}
+ #qf-pedido-facil .qf-intent-choice__body>span:not(.qf-intent-choice__badge){font-size:12px}
+ #qf-pedido-facil .qf-intent-choice__badge{font-size:10px}
+ #app-shell[data-route="inicio"] .qf-client-benefits{display:none!important}
+ #app-shell[data-route="inicio"] .qf-mobile-payment-info{display:block;margin:14px 0;padding:14px 16px;border:1px solid #ffd3aa;border-radius:15px;background:#fff8f1;color:#1a3759;font-size:13px;line-height:1.5}
+ #app-shell[data-route="inicio"] .qf-mobile-payment-info strong{font-size:14px;color:#0a3e81}
+ #app-shell[data-route="inicio"] .qf-mobile-payment-info p{margin:6px 0 0}
+}
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] .qf-home-visual{display:block;min-width:0;align-self:start}
+ #app-shell[data-route="inicio"] .qf-landing-copy{align-items:start!important}
+ #app-shell[data-route="inicio"] .qf-landing-actions{min-width:0}
+}
