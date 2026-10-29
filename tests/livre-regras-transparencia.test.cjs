@@ -21,7 +21,7 @@ test('WhatsApp predefinido contém aviso sobre confirmação, Pix e sanções co
 });
 test('Pix de serviços é descrito sem split, com repasse manual e sem afetar o Avulso',()=>{
  assert.match(chat,/A Efí credita 100% na conta Quem Faz/);
- assert.match(qf13,/O repasse de 87% será manual após confirmação bancária/);
+ assert.match(qf13,/repasse manual de 87% depende de pagamento bancário confirmado/);
  assert.match(chat,/if\(String\(err.message\).includes\('nao_plano_livre'\)\)/);
  assert.ok(chat.includes('qf_chat_contratacao'));
 });
