@@ -3,7 +3,8 @@
  'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const uuid=v=>/^[a-f0-9-]{36}$/i.test(v||'');
- if(g.visualViewport){const adjust=()=>g.document.documentElement.classList.toggle('qf-keyboard-open',g.innerHeight-g.visualViewport.height>150);g.visualViewport.addEventListener('resize',adjust);g.visualViewport.addEventListener('scroll',adjust);}
+ function safeAreas(){const native=!!g.Capacitor?.isNativePlatform?.()||/; wv\)|\bwv\b/.test(g.navigator?.userAgent||'');g.document?.documentElement?.classList?.toggle('qf-native-webview',native);}
+ safeAreas();
  const state={mode:'intro',user:null,selected:null,prof:null,notice:'',pending:null};
  let slot=null,loading=null,originalNavigate=null,after=null;
  function toolbar(){return (['orders','detail','chat'].includes(state.mode)?'<div class="qf-home-orders__bar"><button type="button" class="btn btn--outline" data-home-orders>Meus pedidos</button><button type="button" class="btn btn--outline" data-home-new>Novo pedido</button></div>':'')+(state.notice?'<p class="qf-home-orders__notice" role="status">'+esc(state.notice)+'</p>':'')+'<div data-home-work></div>';}
@@ -192,6 +193,7 @@
   try{await detail(req.id,false);reveal();}catch(err){reset();message('Pedido publicado. Toque em Meus pedidos para atualizar o acompanhamento.');}
  }
  function bindHome(){
+  safeAreas();
   if(!host())return;
   if(g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
@@ -220,9 +222,9 @@
   g.document.addEventListener('click',e=>{
    // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
-   if(service){e.preventDefault();e.stopImmediatePropagation();const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';showForm(cat?.nome||service.dataset.deskService,'');return;}
+   if(service){e.preventDefault();e.stopImmediatePropagation();const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';intro('',cat?.nome||service.dataset.deskService);reveal();return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
-   if(start){e.preventDefault();e.stopImmediatePropagation();intro();reveal();host()?.querySelector('#home-problem')?.focus();return;}
+   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}intro();reveal();return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
