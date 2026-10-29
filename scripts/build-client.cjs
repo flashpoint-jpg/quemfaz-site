@@ -37,6 +37,14 @@ html=html.replace(/<label[^>]*><input type="checkbox" name="cortesiaLivre"[^>]*>
 // Uma sessão de cliente não deve capturar a entrada de profissionais.
 html=html.replace('if (found && found.route.anon && global.QFCloud && !currentSession()) {',`if (found && /^\\/auth\\/profissional\\/(login|cadastro)$/.test(path) && currentSession()?.role === 'cliente') { renderAnon(found); return; }
     if (found && found.route.anon && global.QFCloud && !currentSession()) {`);
+// Uma identidade Google não traz qf_role por padrão. Sem fallback, a sincronização
+// recusava o usuário antes de ler qf_profiles, mesmo com perfil de cliente existente.
+const googleRoleBefore="const role = expectedRole || meta.qf_role;";
+if (!html.includes(googleRoleBefore)) throw Error('ensureProfile: regra de papel ausente');
+html=html.replace(googleRoleBefore,`const googleIdentity = user.app_metadata?.provider === 'google' || (Array.isArray(user.identities) && user.identities.some(i => i.provider === 'google'));
+    const role = expectedRole || meta.qf_role || (googleIdentity ? 'cliente' : null);`);
+html=html.replace("nome: data.nome || meta.qf_nome || user.email || 'Usuário',","nome: data.nome || meta.qf_nome || meta.full_name || meta.name || user.email || 'Usuário',");
+
 html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.0'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');

@@ -196,3 +196,48 @@ test('Google: conta mostra nome, abre pedidos vinculados e permite sair',async()
  assert.equal(w.document.querySelector('.qf-account-strip'),null,'apaga identificação após sair');
  dom.window.close();
 });
+
+test('Google: perfil existente sem qf_role não deve impedir sincronização',async()=>{
+ const path=require('node:path');
+ const code=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
+ const build=fs.readFileSync(path.join(__dirname,'../scripts/build-client.cjs'),'utf8');
+ assert.match(build,/googleRoleBefore/);
+ assert.match(build,/googleIdentity/);
+ const a=code.indexOf('async function ensureProfile(');
+ const b=code.indexOf('async function syncLocalUser(',a);
+ assert.ok(a>0&&b>a);
+ const src=code.slice(a,b).replace('const role = expectedRole || meta.qf_role;',
+  "const googleIdentity = user.app_metadata?.provider === 'google' || (Array.isArray(user.identities) && user.identities.some(i => i.provider === 'google')); const role = expectedRole || meta.qf_role || (googleIdentity ? 'cliente' : null);");
+ let called=0;
+ const client={from:table=>{
+  assert.equal(table,'qf_profiles');called++;
+  return {select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'abc',tipo:'cliente',nome:'Cliente Teste'},error:null})})})};
+ }};
+ const context={client,console};
+ vm.runInNewContext(src+'; globalThis.ensureProfileTest=ensureProfile;',context);
+ const user={id:'abc',email:'teste@example.com',user_metadata:{full_name:'Cliente Teste'},app_metadata:{provider:'google'},identities:[{provider:'google'}]};
+ const result=await context.ensureProfileTest(user,null,null);
+ assert.equal(result.tipo,'cliente');assert.equal(called,1);
+});
+test('Google: sessão inicial atrasada ainda mostra nome no topo',async()=>{
+ const dom=new JSDOM('<!doctype html><html><body><div id="app-shell" data-route="inicio"><div id="app-content"><div class="qf-landing-copy"><form data-landing-service-form><input data-landing-service-search></form></div></div></div></body></html>',{url:'https://quemfazservico.com.br/?app=1'});
+ const w=dom.window;w.HTMLElement.prototype.scrollIntoView=()=>{};
+ w.PROAKI_APP={};w.Screens={landing:()=>'',clienteHomeRender:()=>'',afterRender:()=>{},afterRenderAnon:()=>{}};
+ w.QFClienteAcesso={};w.QFAtendimento={hasGoogleDraft:()=>false};
+ w.DB={categories:()=>[{id:'cat_pintor',nome:'Pintor'}],categoryById:()=>null,state:{requests:[]}};
+ w.navigate=()=>{};
+ const source=fs.readFileSync(require.resolve('../qf-pedido-home.js'),'utf8');
+ vm.runInNewContext(source,{window:w,console,Date},{filename:'qf-pedido-home.js'});
+ await new Promise(resolve=>setTimeout(resolve,130));
+ assert.equal(w.document.querySelector('#qf-connected-header'),null);
+ w.QFCloud={client:{
+  auth:{getUser:async()=>({data:{user:{id:'abcd',email:'teste@example.com',user_metadata:{full_name:'Cliente Google'},app_metadata:{provider:'google'},identities:[{provider:'google'}]}},error:null}),onAuthStateChange:()=>({data:{subscription:{}}})},
+  from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'abcd',tipo:'cliente',nome:'teste@example.com'},error:null})})})})
+ }};
+ await new Promise(resolve=>setTimeout(resolve,700));
+ const top=w.document.querySelector('#qf-connected-header');
+ assert.ok(top,'conta aparece mesmo quando QFCloud carregou depois');
+ assert.match(top.textContent,/Olá, Cliente Google/);
+ assert.equal(w.document.querySelector('#qf-pedido-facil .qf-home-auth-wrap')?.hidden,true);
+ w.close();
+});
