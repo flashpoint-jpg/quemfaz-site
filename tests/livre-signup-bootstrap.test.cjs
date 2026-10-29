@@ -38,7 +38,7 @@ test('Cartao destaca beneficio de 2 dias e nao exibe cortesia livremente',()=>{
  assert.match(src,/Desbloqueios ilimitados por 2 dias/);
  assert.match(src,/Sem Pix, recarga ou pagamento inicial/);
  assert.match(src,/courtesyInput.checked=false/);
- assert.match(src,/courtesyRow.hidden=true/);
+ assert.match(src,/courtesyRow.remove/);
  assert.match(src,/Sem cobrança automática/);
  assert.match(src,/qf-trial-card--selected/);
  assert.doesNotThrow(()=>new (require('node:vm').Script)(src));

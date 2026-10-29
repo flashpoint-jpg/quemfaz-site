@@ -87,6 +87,12 @@
 #app-shell[data-route="inicio"] .qf-landing-topbar.qf-fixed-bar{left:0!important;right:0!important;width:100%!important;max-width:none!important}
 #app-shell[data-route="inicio"] .qf-desk-menu{flex:1!important}
 .qf-home-visual{min-width:0}
+#cadastro-prof-form .qf-trial-card--automatic{display:block!important;cursor:default}
+.qf-client-guide{padding:18px;margin-top:20px;border:1px solid #d8e3f0;border-radius:16px;background:#fff;color:#183b65}
+.qf-client-guide h2{font-size:19px;margin:0 0 16px;color:#1458cc}
+.qf-client-guide ol{display:grid;gap:16px;margin:0;padding-left:22px}
+.qf-client-guide p{margin:5px 0 0;font-size:14px;line-height:1.5}
+@media(max-width:899px){.qf-client-guide{display:none}}
 /* Professional account: compact status, wallet first and separated actions. */
 #app-shell[data-route="profissional-carteira"] .view{display:grid!important;column-count:auto!important;grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
 #app-shell[data-route="profissional-carteira"] .view>*{grid-column:1!important;grid-row:auto!important;margin:0!important;min-width:0}

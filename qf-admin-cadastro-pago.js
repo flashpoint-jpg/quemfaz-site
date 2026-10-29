@@ -30,6 +30,7 @@
     b.type='button';b.className='qf-adm-nav__item';b.dataset.nav='/admin/planos';
     b.dataset.qfPreNav='1';
     b.innerHTML='<span aria-hidden="true" class="qf-pre-nav-mark">◉</span><span>Pré-cadastros e pagamentos</span>';
+    b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();global.navigate('/admin/planos',true);setTimeout(()=>document.getElementById(PANEL)?.scrollIntoView({block:'start'}),250);});
     before.before(b);
   }
   function stat(k,v){return '<div class="qf-pre-stat"><strong>'+esc(v)+'</strong><span>'+esc(k)+'</span></div>';}
@@ -219,7 +220,7 @@
       +'.qf-wallet-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}.qf-wallet-top h2{margin:0;font-size:17px;color:#133f7d}.qf-wallet-top p{font-size:12px;color:#536477;margin:4px 0}'
       +'.qf-wallet-amount{display:block;font-size:27px;letter-spacing:-.02em;color:#1458a8;margin:14px 0 8px}.qf-wallet-note{font-size:13px;line-height:1.5;color:#5b6d7e;margin:0}'
       +'.qf-pre-nav-mark{font-size:20px;color:#fa8b22}@media(max-width:700px){.qf-pre-panel,.qf-wallet-panel{padding:12px!important}.qf-pre-stats{grid-template-columns:1fr 1fr}.qf-pre-stat strong{font-size:20px}.qf-pre-record summary{align-items:flex-start}}';
-    css.textContent+='.qf-pre-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.qf-benefit-modal{border:1px solid #c9d7e8;border-radius:20px;padding:22px;width:min(560px,calc(100% - 24px));max-height:90dvh;overflow:auto;background:#fff;color:#183047}.qf-benefit-modal::backdrop{background:#071c38aa}.qf-benefit-modal h2{font-size:21px;color:#134f98}.qf-benefit-modal input,.qf-benefit-modal textarea{width:100%;padding:10px;border:1px solid #cbd6e5;border-radius:9px;box-sizing:border-box}.qf-benefit-modal label{display:grid;gap:8px}.qf-benefit-modal .btn{margin:8px 0;min-height:42px}.qf-benefit-days{display:flex;flex-wrap:wrap;gap:6px}.qf-benefit-days button{padding:8px 12px;border:1px solid #bcd4ef;border-radius:8px;background:#f1f6fd;color:#134f98}.qf-benefit-modal [role=alert]{color:#a12c23}';
+    css.textContent+='.qf-pre-actions{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}.qf-benefit-modal{border:1px solid #c9d7e8;border-radius:20px;padding:22px;width:min(560px,calc(100% - 24px));max-height:90dvh;overflow:auto;background:#fff;color:#183047}.qf-benefit-modal::backdrop{background:#071c38aa}.qf-benefit-modal h2{font-size:21px;color:#134f98}.qf-benefit-modal input,.qf-benefit-modal textarea{width:100%;padding:10px;border:1px solid #cbd6e5;border-radius:9px;box-sizing:border-box}.qf-benefit-modal form{display:grid;gap:16px}.qf-benefit-modal label{display:grid;gap:8px}.qf-benefit-modal .btn{margin:12px 0;min-height:44px;padding:12px 16px}.qf-benefit-days{display:flex;flex-wrap:wrap;gap:8px}.qf-benefit-days button{min-height:40px;padding:8px 12px;border:1px solid #bcd4ef;border-radius:8px;background:#f1f6fd;color:#134f98}.qf-benefit-modal [role=alert]{color:#a12c23;margin:14px 0}';
     document.head.appendChild(css);
     let queued=false;
     new MutationObserver(()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;place();},90);}).observe(document.body,{childList:true,subtree:true});

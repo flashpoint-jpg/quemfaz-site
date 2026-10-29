@@ -208,6 +208,7 @@
    const visual=g.document.createElement('div');visual.className='qf-home-visual';
    copy.prepend(visual);
    copy.querySelectorAll('.qf-hero2-head,.qf-customer-sub,.qf-play-badge--hero').forEach(el=>visual.append(el));
+   visual.insertAdjacentHTML('beforeend','<section class="qf-client-guide" aria-label="Como pedir um serviço"><h2>Seu pedido, passo a passo</h2><ol><li><strong>Conte o que precisa</strong><p>Escolha o serviço e descreva o problema. Publicar é grátis.</p></li><li><strong>Receba contatos da sua região</strong><p>Até 4 profissionais podem participar. Compare as propostas e escolha com quem fechar.</p></li><li><strong>Acompanhe em Meus pedidos</strong><p>Veja as respostas e conversas no mesmo lugar. Combine o preço antes de contratar.</p></li></ol></section>');
   }
   const mobile=g.document.querySelector('.qf-mobile-services')?.closest('section');
   const desktop=g.document.querySelector('#qf-sec-servicos');

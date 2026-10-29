@@ -13,12 +13,13 @@
  }
  g.QFLivreTrialProgress=trialProgress;
  function planSummary(s){
+  const duration=s.tipo_acesso==='cortesia'?Math.max(1,Number(s.duracao_dias)||30)*1440:s.tipo_acesso==='teste'?2880:43200;
   const trial=s.tipo_acesso==='teste',active=!!s.ativo,end=Date.parse(s.valido_ate),now=Date.parse(s.servidor_agora)||Date.now();
   const mins=Math.max(0,Math.ceil((end-now)/60000)),days=Math.floor(mins/1440),hours=Math.floor(mins%1440/60);
   const remaining=Number.isFinite(end)?(days?days+' dia'+(days===1?'':'s')+' e '+hours+'h':Math.floor(mins/60)+'h '+mins%60+'min'):'';
-  const title=trial?(active?'Versão de teste · Quem Faz Livre':s.aguarda_identificacao?'Teste aguardando identificação':'Seu teste grátis terminou'):active?'Meu plano · Quem Faz Livre':'Sem assinatura Livre ativa';
+  const title=trial?(active?'Versão de teste · Quem Faz Livre':s.aguarda_identificacao?'Teste aguardando identificação':'Seu teste grátis terminou'):active?(s.tipo_acesso==='cortesia'?'Cortesia ativa · Quem Faz Livre':'Meu plano · Quem Faz Livre'):'Sem assinatura Livre ativa';
   const note=s.aguarda_identificacao?'Conclua sua identificação para começar as 48 horas.':active?(remaining?'Faltam '+remaining+'. Termina em '+date(s.valido_ate)+'.':'Validade do plano: '+date(s.valido_ate)+'.'):trial?'Assine para continuar desbloqueando pedidos pelo Livre.':'Nenhum teste ou plano Livre ativo nesta conta. Você pode usar o Avulso com saldo ou assinar o Livre.';
-  const bar=active&&Number.isFinite(end)?'<progress max="'+(trial?2880:43200)+'" value="'+Math.min(trial?2880:43200,mins)+'" aria-label="Tempo restante do '+(trial?'teste':'plano')+'" aria-valuetext="'+esc(remaining)+'"></progress>':'';
+  const bar=active&&Number.isFinite(end)?'<progress max="'+duration+'" value="'+Math.min(duration,mins)+'" aria-label="Tempo restante do '+(trial?'teste':'plano')+'" aria-valuetext="'+esc(remaining)+'"></progress>':'';
   return '<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+esc(note)+'</p><div class="qf-trial-progress">'+bar+'</div>'+(!active||trial?'<button type="button" class="btn btn--primary" data-qf-livre-pagar>Assine agora · R$ 39,90 / 30 dias</button>':'<a href="#/profissional/planos" class="qf-livre__link">Ver condições do plano</a>')+'<p class="text--sm">'+(trial?'Sem cobrança automática. ':'')+'Desbloqueios de pedidos compatíveis, conforme disponibilidade e vagas.</p></div><div data-qf-livre-pix></div><p role="status" data-qf-livre-msg></p>';
  }
  function divisao(){
@@ -110,25 +111,29 @@
      if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
      const trialInput=form.elements.testeLivre;
      const trialLabel=trialInput?.closest('label');
+     if(trialInput){trialInput.type='hidden';trialInput.value='sim';trialInput.checked=true;}
+     group.style.setProperty('display','none','important');
+     const step=group.closest('.qf-step');
+     if(step){const heading=step.querySelector('.qf-step__head .h2');if(heading)heading.textContent='Comece com 2 dias grátis';const sub=step.querySelector('.qf-step__head .text--sm');if(sub)sub.textContent='Conclua seu cadastro. O teste começa automaticamente após a identificação, sem aprovação do administrador e sem Pix inicial.';}
      if(trialLabel&&!trialLabel.dataset.qfTrialReady){
       const extra=document.createElement('span');extra.className='qf-trial-copy';
       extra.innerHTML='<span class="qf-trial-eyebrow">EXPERIMENTE GRÁTIS · 48 HORAS</span>'+
         '<strong class="qf-trial-title">Desbloqueios ilimitados por 2 dias</strong>'+
-        '<span class="qf-trial-benefits"><span>✓ Pedidos compatíveis ilimitados</span><span>✓ Chat interno com os clientes</span><span>✓ Sem Pix, recarga ou pagamento inicial</span></span>'+
+        '<span class="qf-trial-benefits"><span>✓ Teste incluído automaticamente no cadastro</span><span>✓ Pedidos compatíveis ilimitados e chat</span><span>✓ Sem Pix, recarga ou pagamento inicial</span></span>'+
         '<small>O teste termina após 48 horas. Sem cobrança automática. Para continuar, assine o Livre por R$ 39,90/30 dias. A comissão de 13% só vale para serviço fechado e confirmado. Um teste por profissional.</small><span class="qf-trial-progress"><span>2 dias de teste · a contagem começa após a identificação</span><progress max="48" value="48" aria-label="Duração do teste grátis: 48 horas">48 horas</progress></span>';
       trialLabel.replaceChildren(trialInput,extra);
-      trialLabel.classList.add('qf-trial-card');trialLabel.dataset.qfTrialReady='';
+      trialLabel.classList.add('qf-trial-card','qf-trial-card--automatic');trialLabel.dataset.qfTrialReady='';
      }
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Como funciona o Quem Faz Livre</summary><ul><li>R$ 39,90 por 30 dias. Teste grátis de 48 horas somente quando selecionado e autorizado.</li><li>Desbloqueie pedidos compatíveis com sua profissão e região, enquanto houver vagas. Até 4 profissionais por pedido; não há garantia de contratação.</li><li>Combine o preço com o cliente pelo chat. Se o serviço for fechado e confirmado, a comissão é de 13%.</li><li>Informe o andamento em até 48 horas. Se ainda estiver negociando, pode prorrogar uma vez por mais 48 horas.</li><li>Comissão confirmada e vencida impede novos desbloqueios. Se declarar que recebeu diretamente do cliente, quite a comissão pendente antes de desbloquear outro pedido.</li><li>Não há cobrança automática após o teste. O recebimento integral do serviço pelo Quem Faz e o repasse de 87% ainda não estão disponíveis.</li></ul>';
+     conditions.innerHTML='<summary>Como funciona o Quem Faz Livre</summary><ul><li>R$ 39,90 por 30 dias. Todo novo cadastro profissional concluído começa com 48 horas de teste grátis.</li><li>Desbloqueie pedidos compatíveis com sua profissão e região, enquanto houver vagas. Até 4 profissionais por pedido; não há garantia de contratação.</li><li>Combine o preço com o cliente pelo chat. Se o serviço for fechado e confirmado, a comissão é de 13%.</li><li>Informe o andamento em até 48 horas. Se ainda estiver negociando, pode prorrogar uma vez por mais 48 horas.</li><li>Comissão confirmada e vencida impede novos desbloqueios. Se declarar que recebeu diretamente do cliente, quite a comissão pendente antes de desbloquear outro pedido.</li><li>Não há cobrança automática após o teste. O recebimento integral do serviço pelo Quem Faz e o repasse de 87% ainda não estão disponíveis.</li></ul>';
      group.after(conditions);
      function updateChoice(){
-      const test=!!trialInput?.checked;
+      const test=true;if(trialInput)trialInput.checked=true;
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
       if(test&&!livre){const opt=group.querySelector('input[value="livre"]');if(opt){opt.checked=true;}}
       const planoLivre=test||form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
       const b=form.querySelector('[data-cad-criar]');
-      if(b)b.textContent=test?'COMEÇAR TESTE GRÁTIS · 2 DIAS':planoLivre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
+      if(b)b.textContent='Concluir cadastro e começar teste grátis';
       const nota=form.querySelector('[data-plano-nota]');
       if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=test?'2 dias com desbloqueios ilimitados e chat. Nenhum Pix para começar. Depois, assinatura opcional de R$ 39,90/30 dias.':planoLivre?'Ativação após confirmação do Pix de R$ 39,90 por 30 dias; sem recarga de R$ 13.':'R$ 13 de recarga inicial, valor creditado integralmente na Carteira.';}
       conditions.hidden=!planoLivre;
@@ -329,4 +334,6 @@
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })(typeof window!=='undefined'?window:globalThis);
+
+
 

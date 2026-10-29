@@ -1,0 +1,10 @@
+.qf-adm-body #app-content form{display:grid;gap:14px}
+.qf-adm-body #app-content form label{display:grid;gap:7px;line-height:1.4}
+.qf-adm-body #app-content :is(.btn-row,.qf-pre-actions){display:flex;flex-wrap:wrap;gap:12px;margin-block:14px}
+.qf-adm-body #app-content .btn{min-height:42px;padding:10px 16px;line-height:1.4;white-space:normal}
+.qf-adm-body #app-content form .btn{margin-top:4px}
+.qf-adm-body #app-content .card{line-height:1.5}
+.qf-adm-body #app-content input,.qf-adm-body #app-content select{min-height:44px}
+.qf-adm-body #app-content [role=alert]{margin-block:12px}
+.qf-benefit-modal form{display:grid;gap:16px}
+.qf-benefit-modal .btn{padding:12px 16px;min-height:44px}

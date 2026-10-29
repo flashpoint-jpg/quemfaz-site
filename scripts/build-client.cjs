@@ -15,6 +15,20 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+html=html.replace("if (existing.data.tipo === 'profissional') {",`if (existing.data.tipo === 'profissional') {
+        // O bootstrap de auth já pode ter criado o perfil: preparar o teste antes do retorno.
+        let trial=null;try{trial=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null');}catch(_){}
+        const documentValue=data.cpf||data.cnpj||trial?.documento||localStorage.getItem(pendingCpfKey(user.email))||localStorage.getItem(pendingCnpjKey(user.email));
+        if(documentValue){
+          const status=await client.rpc('qf_livre_status');
+          if(status.error)throw status.error;
+          if(!status.data?.ativo&&!status.data?.teste_utilizado){
+            const benefit=await client.rpc('qf_livre_preparar_acesso',{p_teste:true,p_documento:documentValue,p_telefone:data.telefone||trial?.telefone||meta.qf_telefone||existing.data.telefone||''});
+            if(benefit.error||!benefit.data?.ok)throw new Error(benefit.error?.message||'Não foi possível ativar o teste automático.');
+          }
+        }`);
+html=html.replace("p_teste:!!(trialDraft && trialDraft.email===String(user.email||'').toLowerCase()),","p_teste:true,");
+html=html.replace("p_documento:trialDraft?.documento||'',p_telefone:trialDraft?.telefone||''","p_documento:trialDraft?.documento||data.cpf||data.cnpj||localStorage.getItem(pendingCpfKey(user.email))||localStorage.getItem(pendingCnpjKey(user.email))||'',p_telefone:trialDraft?.telefone||data.telefone||meta.qf_telefone||''");
 html=html.replace("global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);","global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/home',true);");
 html=html.replace("global.navigate(planoId ? '/profissional/carteira' : '/profissional/home', true);","global.navigate('/profissional/home', true);");
 // A cortesia é administrativa; não oferecer controles técnicos no cadastro público.
@@ -48,6 +62,15 @@ html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
 const adminPath=path.join(out,'admin.html');
+let adminSource=fs.readFileSync(adminPath,'utf8');
+adminSource=adminSource.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/vendor/supabase-2.117.2.js');
+adminSource=adminSource.replace("const DB_KEY = 'quemfaz_db_v2';","const DB_KEY = 'quemfaz_admin_db_v2';").replace("const SESSION_KEY = 'quemfaz_session_v2';","const SESSION_KEY = 'quemfaz_admin_session_v2';");
+adminSource=adminSource.replace('</head>','<link rel="stylesheet" href="/qf-admin-layout.css"></head>');
+adminSource=adminSource.replace('auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },',"auth: { storageKey: 'qf-admin-auth-v1', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },");
+adminSource=adminSource.replace('return !!(res.data && res.data.session);',`if (!(res.data && res.data.session)) return false;
+    const verified=await client.rpc('qf_admin_config_anuncios');
+    return !verified.error;`);
+fs.writeFileSync(adminPath,adminSource);
 fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
