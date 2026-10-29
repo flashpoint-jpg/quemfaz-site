@@ -81,7 +81,7 @@
      group.after(conditions);
      function updateChoice(){
       const livre=form.querySelector('[name=planoEscolhido]:checked')?.value==='livre';
-      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=form.elements.testeLivre?.checked?'ATIVAR TESTE GRÁTIS — 2 DIAS':livre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
+      const b=form.querySelector('[data-cad-criar]');if(b)b.textContent=form.elements.testeLivre?.checked?'ATIVAR TESTE GRÁTIS — 2 DIAS':form.elements.cortesiaLivre?.checked?'ATIVAR CORTESIA AUTORIZADA':livre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
       const nota=form.querySelector('[data-plano-nota]');
       if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=livre?'Acesso após o Pix confirmado de R$ 39,90, por 30 dias; sem recarga de R$ 13.':'Acesso após o pagamento inicial de R$ 13,00, creditado integralmente na Carteira.';}
       conditions.hidden=!livre;

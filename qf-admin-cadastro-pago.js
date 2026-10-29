@@ -58,7 +58,7 @@
     const d=modal(action==='encerrar'?'Encerrar cortesia':'Quem Faz Livre — ativação manual','<p><strong>'+esc(r.nome)+'</strong><br>'+esc(r.email)+'</p><p>Situação: '+esc(names[r.situacao])+'</p><p>Início: '+(r.profissional_id?'Após confirmação':'Após conclusão da identificação')+' · Vencimento calculado pelo servidor.</p><form class="stack"><label>Plano<input value="Quem Faz Livre — cortesia administrativa" readonly></label>'+(action!=='encerrar'?'<label>Dias de liberação<div class="qf-benefit-days">'+[1,2,3,4,7,15,30].map(n=>'<button type="button" data-days="'+n+'">'+n+'</button>').join('')+'</div><input name="dias" type="number" min="1" max="365" value="2" required aria-label="Outra quantidade de dias"></label><p data-expiry></p>':'')+'<label>Motivo<textarea name="motivo" minlength="5" maxlength="500" required></textarea></label><button class="btn btn--primary" type="submit">'+(action==='encerrar'?'CONFIRMAR ENCERRAMENTO':'CONFIRMAR ATIVAÇÃO MANUAL')+'</button></form>');
     const f=d.querySelector('form');const update=()=>{if(f.elements.dias)d.querySelector('[data-expiry]').textContent=r.profissional_id?'Previsão de vencimento: '+date(new Date(Math.max(Date.now(),action==='prorrogar'?Date.parse(r.fim_em)||0:0)+Number(f.elements.dias.value)*86400000).toISOString()):'O prazo começa somente após identificação e ativação válidas.';};
     d.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{f.elements.dias.value=b.dataset.days;update();});if(f.elements.dias)f.elements.dias.oninput=update;update();
-    f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('[type=submit]');b.disabled=true;try{const out=await api().rpc('qf_admin_livre_beneficio',{p_email:r.email,p_acao:action,p_dias:Number(f.elements.dias?.value||1),p_motivo:f.elements.motivo.value.trim()});if(out.error||!out.data?.ok)throw Error(out.error?.message||'Não foi possível ativar');d.close();d.remove();lastAt=0;await load(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}finally{b.disabled=false;}};
+    f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('[type=submit]');b.disabled=true;try{const out=await api().rpc('qf_admin_livre_beneficio',{p_email:r.email,p_acao:action,p_dias:Number(f.elements.dias?.value||1),p_motivo:f.elements.motivo.value.trim()});if(out.error||!out.data?.ok)throw Error(out.error?.message||'Não foi possível ativar');d.close();d.remove();lastAt=0;await refreshPanel(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}finally{b.disabled=false;}};
   }
   function contactText(r,channel){
     const first=String(r.nome||'Profissional').trim().split(/\s+/)[0];
@@ -70,7 +70,7 @@
   function contact(r,channel,panel){
     const m=contactText(r,channel);const last=channel==='whatsapp'?r.ultimo_whatsapp:r.ultimo_email;
     const d=modal(channel==='recusa'?'Registrar recusa de contato':'Mensagem pronta — '+r.nome,channel==='recusa'?'<p>Confirme que este interessado pediu para não receber convites.</p><button type="button" class="btn btn--primary" data-sent>CONFIRMAR RECUSA</button>':'<p>Destinatário: '+esc(channel==='whatsapp'?r.telefone:r.email)+'</p>'+(last?'<p>Último contato: '+date(last)+'. Evite repetir convites.</p>':'')+'<p><strong>'+esc(m.subject)+'</strong></p><textarea readonly rows="12">'+esc(m.body)+'</textarea><a class="btn btn--primary" target="_blank" rel="noopener noreferrer" href="'+(channel==='whatsapp'?'https://wa.me/'+waNumber(r.telefone)+'?text='+encodeURIComponent(m.body):'mailto:'+encodeURIComponent(r.email)+'?subject='+encodeURIComponent(m.subject)+'&body='+encodeURIComponent(m.body))+'">Abrir '+(channel==='whatsapp'?'WhatsApp':'e-mail')+' com mensagem</a><p>Depois de enviar no aplicativo, confirme abaixo. Abrir a conversa não registra envio.</p><button type="button" class="btn btn--outline" data-sent>CONFIRMAR QUE ENVIEI</button>');
-    d.querySelector('[data-sent]').onclick=async()=>{try{const out=await api().rpc('qf_admin_livre_contato',{p_email:r.email,p_canal:channel});if(out.error)throw out.error;d.close();lastAt=0;load(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}};
+    d.querySelector('[data-sent]').onclick=async()=>{try{const out=await api().rpc('qf_admin_livre_contato',{p_email:r.email,p_canal:channel});if(out.error)throw out.error;d.close();lastAt=0;refreshPanel(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}};
   }
   function render(panel,s,d){
     if(!panel.isConnected)return;
@@ -97,7 +97,7 @@
     form.addEventListener('submit',e=>{
       e.preventDefault();state.busca=form.elements.busca.value.trim();state.situacao=form.elements.situacao.value;state.offset=0;load(panel);
     });
-    panel.querySelector('[data-qf-pre-refresh]').addEventListener('click',()=>{lastAt=0;load(panel);});
+    panel.querySelector('[data-qf-pre-refresh]').addEventListener('click',()=>{lastAt=0;refreshPanel(panel);});
     const prev=panel.querySelector('[data-qf-pre-previous]'),next=panel.querySelector('[data-qf-pre-next]');
     if(prev)prev.addEventListener('click',()=>{state.offset=Math.max(0,state.offset-state.limite);load(panel);});
     if(next)next.addEventListener('click',()=>{state.offset+=state.limite;load(panel);});
@@ -173,8 +173,27 @@
     }
     if(!walletBusy&&(!walletUpdatedAt||Date.now()-walletUpdatedAt>120000))loadWallet(panel);
   }
+  function refreshPanel(panel){return panel.dataset.profissionalEmail?loadDetail(panel):load(panel);}
+  async function loadDetail(panel){
+    if(!api()||!admin())return;
+    try{const r=await api().rpc('qf_admin_livre_painel',{p_busca:panel.dataset.profissionalEmail,p_situacao:'todos',p_offset:0});if(r.error)throw r.error;
+      const row=r.data?.itens?.find(x=>String(x.email).toLowerCase()===panel.dataset.profissionalEmail.toLowerCase());if(!row)throw Error('Não foi possível localizar o plano deste cadastro.');
+      row.servidor_agora=r.data.servidor_agora;if(!panel.isConnected)return;
+      panel.innerHTML='<h2>Quem Faz Livre — controle de acesso</h2>'+record(row,0);
+      panel.querySelector('details').open=true;
+      panel.querySelectorAll('[data-benefit]').forEach(b=>b.onclick=()=>benefit(row,b.dataset.benefit,panel));
+      panel.querySelectorAll('[data-contact]').forEach(b=>b.onclick=()=>contact(row,b.dataset.contact,panel));
+    }catch(e){if(panel.isConnected){panel.innerHTML='<p role="alert">'+esc(e.message)+'</p><button class="btn btn--outline" data-detail-retry>Tentar novamente</button>';panel.querySelector('[data-detail-retry]').onclick=()=>loadDetail(panel);}}
+  }
+  function placeDetail(){
+    const m=path().match(/^#\/admin\/profissionais\/([a-f0-9-]{36})(?:$|[/?])/i);if(!m||!admin())return;
+    const h=document.getElementById('app-content');if(!h||h.querySelector('[data-profissional-email]'))return;
+    const p=global.DB?.profissionalById?.(m[1]);if(!p?.email)return;
+    const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';h.prepend(panel);loadDetail(panel);
+  }
   function place(){
     insertMenu();
+    placeDetail();
     placeWallet();
     const h=host();if(!h)return;
     let panel=h.querySelector('#'+PANEL);

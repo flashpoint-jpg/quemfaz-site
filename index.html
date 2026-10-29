@@ -10472,7 +10472,7 @@ alt=""></noscript>
       function botaoPlano() {
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'livre'); }) || QF_CAD_PLANOS[1];
         const b = form.querySelector('[data-cad-criar]');
-        if (b) b.textContent = form.elements.testeLivre?.checked ? 'ATIVAR TESTE GRÁTIS — 2 DIAS' : 'Continuar para pagamento · ' + pl.preco;
+        if (b) b.textContent = form.elements.testeLivre?.checked ? 'ATIVAR TESTE GRÁTIS — 2 DIAS' : form.elements.cortesiaLivre?.checked ? 'ATIVAR CORTESIA AUTORIZADA' : 'Continuar para pagamento · ' + pl.preco;
         const nota = form.querySelector('[data-plano-nota]');
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
@@ -10481,7 +10481,7 @@ alt=""></noscript>
             : 'Assinatura de R$ 39,90 por 30 dias. Não exige os R$ 13 do Avulso. Ativação só após Pix confirmado.';
         }
       }
-      form.addEventListener('change', function (e) { if (e.target && ['planoEscolhido','testeLivre','cortesiaLivre'].includes(e.target.name)) { if(e.target.checked && ['testeLivre','cortesiaLivre'].includes(e.target.name)){const radio=form.querySelector('[name=planoEscolhido][value=livre]');if(radio)radio.checked=true;} if(e.target.name==='planoEscolhido' && e.target.value==='avulso')form.elements.testeLivre.checked=false;botaoPlano(); } });
+      form.addEventListener('change', function (e) { if (e.target && ['planoEscolhido','testeLivre','cortesiaLivre'].includes(e.target.name)) { if(e.target.checked && ['testeLivre','cortesiaLivre'].includes(e.target.name)){form.elements[e.target.name==='testeLivre'?'cortesiaLivre':'testeLivre'].checked=false;const radio=form.querySelector('[name=planoEscolhido][value=livre]');if(radio)radio.checked=true;} if(e.target.name==='planoEscolhido' && e.target.value==='avulso')form.elements.testeLivre.checked=false;botaoPlano(); } });
       botaoPlano();
       form.addEventListener('click', function (e) {
         if (e.target.closest('[data-step-next]')) avancar();
