@@ -127,8 +127,53 @@
    }catch(err){if(box.isConnected)box.innerHTML='<h2 class="h3">Pix dos serviços</h2><p role="status">'+esc(err.message||'Não foi possível carregar')+'</p>';}
   };render();
  }
+ // Controle de ativação do recebimento integral por Pix, exclusivo do administrador.
+ function painelPixAtivacao(view,c){
+  if(view.querySelector('[data-qf-manual-config]'))return;
+  const box=document.createElement('section');box.dataset.qfManualConfig='';box.className='section card stack--sm';
+  box.style.cssText='border:2px solid #1769d5;border-radius:16px;background:#f3f8ff;padding:16px;margin:0 0 18px;max-width:100%;overflow-wrap:anywhere';
+  box.innerHTML='<h2 class="h3">Pix integral dos serviços</h2><p role="status">Consultando configuração...</p>';
+  view.prepend(box);
+  const errText={admin_obrigatorio:'Acesso exclusivo do administrador. Entre novamente.',
+   efi_producao_nao_validada:'A Efí de produção não confirmou as credenciais e o certificado. A cobrança permanece desativada.',
+   efi_sandbox_inadequado:'A Efí está configurada em homologação, não em produção.',
+   rpc_indisponivel:'Não foi possível conferir a configuração.'};
+  const invoke=async action=>{
+   const r=await c.functions.invoke('quemfaz-livre-pix-manual',{body:{action}});
+   if(r.error||!r.data?.ok)throw Error(errText[r.data?.reason]||'Ação não confirmada. A configuração não foi alterada.');
+   return r.data;
+  };
+  async function render(note){
+   if(!box.isConnected)return;
+   try{
+    const cfg=await invoke('admin_status'),on=cfg.habilitado===true;
+    if(!box.isConnected)return;
+    box.innerHTML='<h2 class="h3">Pagamento dos serviços · Quem Faz Livre</h2>'+
+    '<p class="text--sm">O cliente paga <strong>100% pelo Pix do Quem Faz</strong>. A plataforma fica com 13% e você repassa <strong>manualmente os 87%</strong> depois da confirmação bancária. Sem split automático.</p>'+
+    '<p style="font-weight:800;color:'+(on?'#087544':'#ad5600')+'">'+(on?'Recebimento ativo':'Recebimento desativado')+'</p>'+
+    (cfg.efi_verificado_em?'<p class="text--sm">Efí validada em '+esc(new Date(cfg.efi_verificado_em).toLocaleString('pt-BR'))+'</p>':'')+
+    '<p class="text--sm">Esta configuração não afeta a assinatura de R$ 39,90. Ao pausar, cobranças já emitidas continuam no histórico.</p>'+
+    '<div class="btn-row"><button class="btn '+(on?'btn--outline':'btn--primary')+'" style="white-space:normal;min-height:44px" type="button" data-qf-manual-toggle="'+(on?'admin_disable':'admin_enable')+'">'+(on?'Pausar novas cobranças':'Ativar cobrança Pix integral')+'</button>'+
+    '<button class="btn btn--outline" type="button" data-qf-manual-refresh>Atualizar</button></div>'+
+    '<p role="status" data-qf-manual-feedback>'+(note?esc(note):'')+'</p>';
+    box.querySelector('[data-qf-manual-refresh]').onclick=()=>render();
+    box.querySelector('[data-qf-manual-toggle]').onclick=async e=>{
+     const btn=e.currentTarget,action=btn.dataset.qfManualToggle,feedback=box.querySelector('[data-qf-manual-feedback]');
+     btn.disabled=true;feedback.textContent=action==='admin_enable'?'Autenticando com a Efí de produção antes de ativar...':'Pausando novas cobranças...';
+     try{await invoke(action);await render(action==='admin_enable'?'Cobrança Pix integral ativada.':'Novas cobranças pausadas.');}
+     catch(ex){feedback.textContent=ex.message||'Erro ao alterar';btn.disabled=false;}
+    };
+   }catch(ex){box.innerHTML='<h2 class="h3">Pix integral dos serviços</h2><p role="status">'+esc(ex.message||'Não foi possível consultar')+'</p><button class="btn btn--outline" data-qf-retry>Verificar novamente</button>';box.querySelector('[data-qf-retry]').onclick=()=>render();}
+  }
+  render();
+ }
  const anterior=g.Screens.afterRender;
  function enhance(pattern,content,params,user){
+  if(['/admin/dashboard','/admin/financeiro','/admin/comissao13'].includes(pattern)){
+   const adm=g.QFAdminCloud?.client||g.QFCloud?.client;
+   if(adm)painelPixAtivacao(content.querySelector('.view')||content,adm);
+   if(pattern!=='/admin/comissao13')return;
+  }
   if(content.querySelector('[data-qf13]'))return;
   const admin=pattern==='/admin/comissao13',carteira=pattern==='/profissional/carteira';
   const pedido=['/profissional/pedido/:id','/profissional/chamada/:id'].includes(pattern);
@@ -150,7 +195,7 @@
     aviso.className='section card stack--sm';
     aviso.style.cssText='padding:14px;margin-bottom:14px';
     aviso.dataset.qfManualInfo='';
-    aviso.innerHTML='<h2 class="h3">Repasse Pix manual · Plano Livre</h2><p>O profissional informa a chave Pix de sua conta. Após confirmação bancária do pagamento do serviço e solicitação, o administrador transfere pelo banco e registra o comprovante no painel Financeiro. Não há envio automático de dinheiro.</p><p class="text--sm">A cobrança do valor integral do serviço ainda depende de liberação da operação pela Efí. As cobranças de comissão já existentes continuam separadas e não devem ser duplicadas.</p><a class="btn btn--outline" href="#/admin/financeiro">Abrir controle financeiro</a>';
+    aviso.innerHTML='<h2 class="h3">Repasse Pix manual · Plano Livre</h2><p>O profissional informa a chave Pix de sua conta. Após confirmação bancária do pagamento do serviço e solicitação, o administrador transfere pelo banco e registra o comprovante no painel Financeiro. Não há envio automático de dinheiro.</p><p class="text--sm">Ative ou pause novas cobranças usando o controle Pix acima. As comissões antigas continuam separadas para não gerar pagamentos duplicados.</p><a class="btn btn--outline" href="#/admin/financeiro">Abrir controle financeiro</a>';
     view.prepend(aviso);
    }
    painelPixManual(view,c,admin);
