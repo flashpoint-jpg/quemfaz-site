@@ -39,7 +39,7 @@ html=html.replace("const routes = [",`const routes = [
 html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=busca-profissao-20261028"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
-html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=pix-manual-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
+html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
 const adminPath=path.join(out,'admin.html');
 fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=card-unico-20261027'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
