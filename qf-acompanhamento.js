@@ -64,12 +64,12 @@
    if(!d.disponivel&&d.status==='nao_iniciado'){area.hidden=false;area.innerHTML='<h3>Pagamento Pix pelo Quem Faz</h3><p role="status">A emissão segura do Pix deste serviço está em preparação. Não faça transferência direta ao profissional do Plano Livre. Aguarde a liberação neste acompanhamento ou procure o suporte.</p>';return;}
    area.hidden=false;
    const st=d.status||'nao_iniciado';
-   if(st==='repassado'){area.innerHTML='<h3>Pagamento e repasse confirmados</h3><p>O profissional recebeu 87% na conta Efí e o Quem Faz recebeu 13%, conforme confirmação bancária.</p>';return;}
-   if(st==='pago'){area.innerHTML='<h3>Pagamento confirmado</h3><p>O Pix foi confirmado pelo banco. Aguardando confirmação do crédito do repasse ao profissional.</p>';return;}
+   if(st==='repassado'){area.innerHTML='<h3>Pagamento e repasse confirmados</h3><p>O Pix integral foi confirmado pelo banco e o repasse manual de 87% ao profissional foi registrado pela equipe Quem Faz. A comissão retida é de 13%.</p>';return;}
+   if(st==='pago'){area.innerHTML='<h3>Pagamento confirmado</h3><p>O Pix integral foi confirmado pelo banco. O Quem Faz fará o repasse manual de 87% ao profissional e registrará o comprovante.</p>';return;}
    if(st==='pix_pronto'&&d.pix_copia_cola){
     area.replaceChildren();
     const head=g.document.createElement('h3');head.textContent='Pague pelo Quem Faz após o serviço';area.append(head);
-    const note=g.document.createElement('p');note.textContent='Pix de pagamento do serviço, com divisão bancária de 87% ao profissional e 13% ao Quem Faz.';area.append(note);
+    const note=g.document.createElement('p');note.textContent='O cliente paga 100% do serviço ao Quem Faz pelo Pix oficial. A plataforma retém 13% e repassa manualmente os 87% ao profissional após confirmação bancária.';area.append(note);
     const txt=g.document.createElement('textarea');txt.className='input';txt.readOnly=true;txt.value=String(d.pix_copia_cola);txt.style.cssText='min-height:90px;width:100%;box-sizing:border-box';area.append(txt);
     const copy=g.document.createElement('button');copy.type='button';copy.className='btn btn--primary';copy.textContent='Copiar código Pix';copy.onclick=()=>{if(g.navigator.clipboard?.writeText)g.navigator.clipboard.writeText(txt.value).then(()=>copy.textContent='Pix copiado').catch(()=>{txt.select();});else txt.select();};area.append(copy);
     const msg=g.document.createElement('p');msg.setAttribute('role','status');msg.textContent='Aguardando confirmação bancária. Não envie comprovante pelo WhatsApp.';area.append(msg);
@@ -77,7 +77,7 @@
    }
    if(st!=='nao_iniciado'){area.innerHTML='<p role="status">Pagamento em processamento. Verifique mais tarde.</p>';return;}
    if(area.querySelector('[data-qf-livre-gerar]'))return;
-   area.innerHTML='<h3>Pagamento após o serviço</h3><p>O serviço está concluído. Ao pagar o Pix pelo Quem Faz, os valores são separados automaticamente entre o profissional (87%) e o Quem Faz (13%).</p><button type="button" class="btn btn--primary" data-qf-livre-gerar>Gerar Pix do serviço</button><p role="status"></p>';
+   area.innerHTML='<h3>Pagamento após o serviço</h3><p>O serviço está concluído. O cliente paga o valor integral por Pix ao Quem Faz. Após o banco confirmar, a equipe repassa manualmente 87% ao profissional e mantém 13% de comissão.</p><button type="button" class="btn btn--primary" data-qf-livre-gerar>Gerar Pix do serviço</button><p role="status"></p>';
    const btn=area.querySelector('[data-qf-livre-gerar]');
    btn.onclick=async()=>{
     if(busy)return;busy=true;btn.disabled=true;
