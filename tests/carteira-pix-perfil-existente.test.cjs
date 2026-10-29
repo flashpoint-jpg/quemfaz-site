@@ -28,7 +28,7 @@ test('cadastro preserva conta existente e exige login do próprio profissional',
 test('base Pix isolada e sem movimentação de dinheiro',()=>{
  assert.doesNotMatch(sql,/net\.http_post|efi|send\.pix|cron\.schedule|update public\.qf_chamados/i);
  assert.match(sql,/status='pendente'/);
- assert.match(js,/envio automático de dinheiro ainda não está liberado/);
+ assert.match(js,/repasse será feito manualmente pelo administrador/);
 });
 test('nao exigir mais conta Efí na tela de cadastro de Pix',()=>{
  assert.doesNotMatch(js,/name="contaEfi"/);

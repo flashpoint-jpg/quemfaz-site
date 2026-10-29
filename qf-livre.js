@@ -16,9 +16,9 @@
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">%</span><strong>Você fica com 87% do valor do serviço</strong></div>' +
       '<div><span aria-hidden="true" class="qf-livre__benefit-icon">✓</span><strong>Ativação após a confirmação do Pix da assinatura</strong></div>' +
     '</div>' +
-    '<p class="text--sm text--secondary">Comissão de 13% somente sobre serviços fechados e confirmados. Repasse automático via Pix ainda indisponível.</p>' + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
+    '<p class="text--sm text--secondary">Comissão de 13% sobre serviços fechados e confirmados. O repasse de valores da mão de obra será feito manualmente pelo Quem Faz, depois de o banco confirmar o Pix do cliente. A cobrança integral do serviço ainda está em validação bancária.</p>' + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
       '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p><strong>Em preparação: cliente paga após o serviço e você recebe 87% na sua chave Pix</strong>, após a confirmação bancária. Esta opção ainda não está disponível. O Quem Faz recebe 13%, e o app mostrará separadamente a confirmação do pagamento e a do repasse. A liberação depende de homologação bancária.</p>' +
+      '<p><strong>Novo modelo de recebimento: cliente paga o serviço por Pix ao Quem Faz e você solicita os 87% na sua chave Pix</strong>, após a confirmação bancária. O repasse não é automático: a equipe transfere pelo banco e registra o comprovante. A cobrança ao cliente pelo valor integral do serviço ainda depende de liberação bancária. Os pagamentos de comissões já existentes ficam separados para não haver cobrança duplicada.</p>' +
       '<p><strong>Regra vigente:</strong> a comissão de 13% é registrada após confirmação da conclusão e do valor do serviço pelo cliente com o código do pedido, ou após análise administrativa de divergência. É necessário prestar contas em 48 horas; se estiver negociando, é possível prorrogar uma vez por mais 48 horas. Aguardar o cliente não impede novos desbloqueios. Apenas comissão confirmada e vencida sem pagamento bloqueia novos contatos. O plano não garante contratação.</p>' +
     '</details>' +
     (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
@@ -137,8 +137,8 @@
      '<label>Chave Pix<input class="input" name="chavePix" maxlength="100" autocomplete="off" required placeholder="CPF, CNPJ, e-mail, celular ou chave aleatória"></label>'+
      '<button type="submit" class="btn btn--primary" data-qf-pix-salvar>Salvar minha chave Pix</button></form></details>'+
      '<p role="status" aria-live="polite" data-qf-pix-status>Consultando chave Pix...</p>'+
-     '<p class="text--sm text--secondary" style="font-size:12px">Repasse automático do serviço: ainda indisponível.</p>'+ 
-     '<details class="text--sm"><summary>Informações sobre recebimento</summary><p>Receba na conta que você já usa. Não precisa abrir conta Efí. O envio automático de dinheiro ainda não está liberado.</p></details>';
+     '<p class="text--sm text--secondary" style="font-size:12px">Repasse do serviço: manual pela administração após confirmação do Pix bancário. Cobrança integral do serviço aguardando liberação pela Efí.</p>'+ 
+     '<details class="text--sm"><summary>Informações sobre recebimento</summary><p>Receba na conta que você já usa. Não precisa abrir conta Efí. O repasse será feito manualmente pelo administrador; não existe transferência automática.</p></details>';
     box.insertAdjacentElement('afterend',area);
     const status=area.querySelector('[data-qf-pix-status]'),form=area.querySelector('form');
     let userId=null;

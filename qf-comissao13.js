@@ -86,37 +86,13 @@
   if(lista){return;}
   if(admin||carteira){
    if(admin){
-    const a=document.createElement('section');a.className='section card stack--sm';a.style.cssText='padding:14px;margin-bottom:14px';a.dataset.qfSplitAdmin='';
-    view.prepend(a);
-    const load=async()=>{
-     if(!a.isConnected)return;
-     a.innerHTML='<h2 class="h3">Recebedores Efí · Plano Livre</h2><p role="status">Consultando...</p>';
-     try{
-      const rows=await rpc('qf_livre_split_contas_admin');
-      a.innerHTML='<h2 class="h3">Contas Efí para repasse imediato</h2><p>Valide CPF/CNPJ e titularidade no banco antes de aprovar. A função de pagamento continua desabilitada até a homologação.</p>'+
-       (rows||[]).map(x=>'<article class="card stack--sm" data-qf-split-admin-id="'+esc(x.profissional_id)+'"><strong>'+esc(x.profissional)+'</strong><p>Conta Efí: '+esc(x.conta_efi)+' · Chave Pix: '+esc(x.chave_pix)+'</p><p>CPF/CNPJ: '+esc(x.documento)+' · Status: '+esc(x.status)+'</p>'+
-       '<label>Registro da verificação<textarea class="input" maxlength="1000" data-split-evidencia placeholder="Descreva como confirmou a conta e a titularidade"></textarea></label>'+
-       '<label><input type="checkbox" data-split-verificado> Conferi titularidade e conta Efí diretamente no banco</label>'+
-       '<div class="btn-row"><button type="button" class="btn btn--primary" data-split-decisao="true">Aprovar</button><button type="button" class="btn btn--outline" data-split-decisao="false">Reprovar</button></div><p role="status"></p></article>').join('')+
-       (!(rows||[]).length?'<p>Nenhuma conta bancária cadastrada ainda.</p>':'');
-      a.querySelectorAll('[data-qf-split-admin-id]').forEach(item=>{
-       item.querySelectorAll('[data-split-decisao]').forEach(b=>b.onclick=async()=>{
-        const val=item.querySelector('[data-split-evidencia]').value.trim();
-        const approve=b.dataset.splitDecisao==='true';
-        if(val.length<20||approve&&!item.querySelector('[data-split-verificado]').checked){
-         item.querySelector('[role=status]').textContent='Confirme a verificação e escreva pelo menos 20 caracteres de evidência.';return;
-        }
-        b.disabled=true;
-        try{
-         const r=await rpc('qf_livre_split_conta_validar_admin',{p_profissional:item.dataset.qfSplitAdminId,p_aprovar:approve,p_evidencia:val});
-         if(!r?.ok)throw Error(r?.reason||'Falha na validação.');
-         await load();
-        }catch(err){item.querySelector('[role=status]').textContent=err.message;b.disabled=false;}
-       });
-      });
-     }catch(_){a.querySelector('[role=status]').textContent='Não foi possível consultar as contas agora.';}
-    };
-    load().catch(()=>{});
+    // Modelo aprovado: repasse manual, sem necessidade de conta Efí do profissional.
+    const aviso=document.createElement('section');
+    aviso.className='section card stack--sm';
+    aviso.style.cssText='padding:14px;margin-bottom:14px';
+    aviso.dataset.qfManualInfo='';
+    aviso.innerHTML='<h2 class="h3">Repasse Pix manual · Plano Livre</h2><p>O profissional informa a chave Pix de sua conta. Após confirmação bancária do pagamento do serviço e solicitação, o administrador transfere pelo banco e registra o comprovante no painel Financeiro. Não há envio automático de dinheiro.</p><p class="text--sm">A cobrança do valor integral do serviço ainda depende de liberação da operação pela Efí. As cobranças de comissão já existentes continuam separadas e não devem ser duplicadas.</p><a class="btn btn--outline" href="#/admin/financeiro">Abrir controle financeiro</a>';
+    view.prepend(aviso);
    }
    box.classList.add('qf13-wallet');view.prepend(box);box.innerHTML=(g.QFLivre?g.QFLivre.divisao():'')+'<h2 class="h3">Prestação de contas e comissões</h2><p>Carregando…</p>';
    let filtro='todos',pagina=0,cache=null;
@@ -127,6 +103,35 @@
     const filtered=rows.filter(a=>filtro==='todos'||(filtro==='atuais'?etapa(a)!=='historico':etapa(a)===filtro));pagina=Math.min(pagina,Math.max(0,Math.ceil(filtered.length/8)-1));
     box.innerHTML=admin?'<h2 class="h3">Comissões de 13%</h2><p class="text--sm">O cliente paga o serviço ao profissional. Os 13% são cobrados automaticamente após confirmação da conclusão e do valor final pelo cliente com o código do pedido. Divergências exigem análise.</p><details><summary>Como calcular os 13%</summary><p>Exemplo: serviço de R$ 500,00 gera comissão de R$ 65,00. Sem contratação confirmada, não há comissão aprovada. O Plano Livre permite desbloqueios ilimitados durante a validade; a comissão depende do fechamento.</p></details><p class="text--sm text--secondary">'+rows.length+' desbloqueios · '+counts.aguardar+' aguardando resultado · '+counts.validar+' para conferir · '+counts.revisar+' divergências · '+counts.concluir+' aguardando conclusão · '+counts.cobrar+' comissões dentro do prazo</p>'+'<div class="qf13-counts" aria-label="Pendências de contratação">'+[['cliente','Aguardando cliente'],['corrigir','Correção de valor'],['vencida','Comissão vencida']].map(x=>'<button type="button" class="btn btn--outline" data-qf13-quick="'+x[0]+'" style="height:auto;min-height:64px;white-space:normal;display:grid;gap:4px"><strong>'+counts[x[0]]+'</strong>'+x[1]+'</button>').join('')+'</div>'+(counts.validar?'<p class="qf13-admin-alert" role="status"><strong>Atenção: '+counts.validar+' pedido(s) declarados “não fechei” ainda aguardam confirmação do cliente.</strong> Esses desbloqueios continuam no histórico e precisam de conferência antes do encerramento.</p>':'')+'<label class="qf13-filters">Mostrar<select class="input" data-qf13-filtro>'+[['todos','Todos os desbloqueios'],['validar','Não fechou · confirmar cliente'],['atuais','Todas as pendências'],['concluir','Aguardando conclusão do cliente'],['corrigir','Correção de valor'],['vencida','Comissão vencida'],['aguardar','Aguardando respostas'],['cliente','Aguardando cliente'],['revisar','Divergências'],['cobrar','Comissões a receber'],['historico','Histórico encerrado']].map(x=>'<option value="'+x[0]+'"'+(filtro===x[0]?' selected':'')+'>'+x[1]+'</option>').join('')+'</select></label><p class="text--sm text--secondary">'+filtered.length+' de '+rows.length+' desbloqueios · página '+(pagina+1)+'</p><button type="button" class="btn btn--outline btn--sm" data-qf13-refresh style="width:auto">Atualizar informações</button>'+painel(filtered.slice(pagina*8,pagina*8+8),true)+'<div class="btn-row"><button class="btn btn--outline btn--sm" data-qf13-page="-1" '+(!pagina?'disabled':'')+'>Anterior</button><button class="btn btn--outline btn--sm" data-qf13-page="1" '+((pagina+1)*8>=filtered.length?'disabled':'')+'>Próxima</button></div>':(g.QFLivre?g.QFLivre.divisao():'')+'<h2 class="h3">Prestação de contas e comissões</h2><p>Cliente paga diretamente ao profissional. Comissão de 13% é cobrada apenas por serviço fechado e confirmado. O Pix é automático. Enquanto o cliente não responder ou confirmar, você pode continuar desbloqueando outros pedidos.</p>'+(!rows.length?'<p>Você ainda não desbloqueou pedidos nesta modalidade.</p><a class="btn btn--primary" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':painel(atuais,false)+(historico.length?'<details><summary>Histórico de prestações de contas ('+historico.length+')</summary>'+painel(historico,false)+'</details>':''));
 
+    // A carteira apresenta apenas recebimentos bancários conciliados; o botão
+    // solicita baixa MANUAL, jamais executa Pix ou credita saldo no navegador.
+    if(!admin){
+      const manual=document.createElement('section');
+      manual.className='card stack--sm';
+      manual.style.cssText='border:1px solid #bdd1ea;border-radius:16px;padding:16px;margin-bottom:12px;background:#f5f9ff';
+      manual.dataset.qfManualRepasse='';
+      manual.innerHTML='<h2 class="h3">Meus repasses Pix</h2><p role="status">Consultando pagamentos confirmados...</p>';
+      box.prepend(manual);
+      try{
+        const items=await rpc('qf_repasses_manuais_painel');
+        if(manual.isConnected){
+          manual.innerHTML='<h2 class="h3">Meus repasses Pix</h2><p class="text--sm">Quando o pagamento do serviço for confirmado pelo banco e a conclusão estiver validada, você poderá solicitar o repasse de 87% à chave Pix cadastrada. A transferência será feita manualmente pelo Quem Faz.</p>'+
+           (!items?.length?'<p>Você ainda não tem pagamentos de serviços confirmados para solicitar repasse.</p>':
+           items.map(x=>'<article class="card stack--sm" data-qf-manual-id="'+esc(x.financeiro_id)+'"><strong>'+esc(x.pedido||'Serviço')+'</strong><p>Cliente pagou: '+brl(x.valor_bruto_centavos)+' · Comissão Quem Faz: '+brl(x.comissao_centavos)+' · Seu repasse: <strong>'+brl(x.profissional_centavos)+'</strong></p><p>Situação: <strong>'+esc(x.situacao)+'</strong></p>'+
+            (x.can_request?'<button class="btn btn--primary" type="button" data-qf-solicitar-manual>Solicitar pagamento</button>':'')+
+            '<p role="status" data-qf-manual-msg></p></article>').join(''));
+          manual.querySelectorAll('[data-qf-solicitar-manual]').forEach(btn=>btn.onclick=async()=>{
+            const row=btn.closest('[data-qf-manual-id]'),msg=row.querySelector('[data-qf-manual-msg]');btn.disabled=true;
+            try{
+              const r=await rpc('qf_repasses_manuais_solicitar',{p_financeiro_id:row.dataset.qfManualId});
+              if(!r?.ok)throw Error(({chave_pix_ausente:'Cadastre sua chave Pix na carteira.',plano_livre_nao_comprovado:'Não foi possível comprovar o Plano Livre ativo na contratação.',pagamento_nao_liberado:'Pagamento ainda não foi liberado pelo banco.'})[r?.reason]||'Não foi possível solicitar o pagamento.');
+              msg.textContent='Solicitação registrada. O administrador fará a transferência manual.';
+              btn.remove();
+            }catch(e){msg.textContent=e.message;btn.disabled=false;}
+          });
+        }
+      }catch(e){if(manual.isConnected)manual.querySelector('[role=status]').textContent='Controle de repasses indisponível: '+(e.message||'atualize a carteira');}
+    }
     // Pix da comissão pertence ao profissional e é emitido pelo backend Efí.
     // Nenhum valor ou txid é fornecido pelo navegador.
     if(!admin){
