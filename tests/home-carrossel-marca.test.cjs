@@ -3,13 +3,12 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
 const root=path.join(__dirname,'..');
 const src=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const html=fs.readFileSync(path.join(root,'dist/index.html'),'utf8');
-// Já vem pronto no HTML inicial, depois da foto e antes do campo de busca.
-const foto=html.indexOf('class="qf-landing-photo"'),rot=html.indexOf('data-brandrot',foto),form=html.indexOf('data-landing-service-form',rot);
-assert.ok(foto>0&&rot>foto&&form>rot,'ordem: foto, carrossel, campo');
-// Mostra o logo do QuemFaz e leva para a tela de planos de divulgação, que abre sem login.
-const bloco=html.slice(rot,form);
-assert.ok(bloco.includes('qf-brandrot__logo')&&bloco.includes('alt="Quem Faz Serviços"')&&bloco.includes('Anuncie sua marca aqui'));
-assert.ok(/class="qf-brandrot__cta"[^>]*data-nav="\/anuncie"/.test(bloco));
+// A composição inicial não contém publicidade ou planos profissionais.
+const prerender=html.slice(html.indexOf('id="app-shell"'),html.indexOf('<script defer src="app-main-'));
+assert.ok(prerender.includes('data-landing-service-form'));
+assert.ok(!prerender.includes('data-brandrot'));
+assert.ok(!prerender.includes('data-qf-home-livre'));
+assert.ok(prerender.includes('qf-customer-sub'));
 assert.ok(/pattern: '\/anuncie', anon: true/.test(src));
 // Três textos que vão trocando; altura fixa para a tela não pular; respeita "reduzir movimento".
 for(const t of ['Anuncie sua marca aqui','Sua empresa neste espaço','Quer aparecer aqui?'])assert.ok(src.includes("['"+t+"'"),t);

@@ -15,7 +15,7 @@ for (const name of fs.readdirSync(root)) {
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.1.47'");
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.0'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
@@ -169,6 +169,18 @@ html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=202
 fs.copyFileSync(path.join(__dirname,'qf-seo-consent-widget.js'),path.join(out,'qf-seo-consent-widget.js'));
 // Consentimento opcional: telas de cadastro e perfil profissional, sem bloquear fluxos existentes.
 html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></script></body>');
+// Versionar pelos bytes finais impede URLs antigas e valida que o build preservou as fontes.
+function versionLocalAssets(doc){return doc.replace(/(src|href)="([^"?#]+\.(?:js|css))(?:\?[^"#]*)?"/g,(all,attr,url)=>{
+ if(/^(?:https?:)?\/\//.test(url)||/^(?:app-|vendor\/)/.test(url))return all;
+ const file=path.join(out,url.replace(/^\//,''));if(!fs.existsSync(file))return all;
+ const hash=createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0,12);
+ return attr+'="'+url+'?v='+hash+'"';
+});}
+for(const name of ['qf-livre.js','qf-admin-cadastro-pago.js','qf-comissao13.js','qf-pedido-home.js']){
+ if(!fs.readFileSync(path.join(root,name)).equals(fs.readFileSync(path.join(out,name))))throw Error('Build substituiu fonte atual: '+name);
+}
+html=versionLocalAssets(html);
+fs.writeFileSync(adminPath,versionLocalAssets(fs.readFileSync(adminPath,'utf8')));
 fs.writeFileSync(path.join(out,'index.html'),html);
 // Mesmo HTML/CSS e renderizador do site público; a prévia só aceita dados do painel na mesma origem.
 fs.writeFileSync(path.join(out,'espelho-cliente.html'),html.replace('</head>','<meta name="robots" content="noindex,nofollow"></head>').replace('</body>','<script src="/qf-admin-mirror-frame.js?v=20261023"></script></body>'));
