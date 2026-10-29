@@ -68,7 +68,7 @@ test('Tela profissional envia valor; cliente confirma código e conclusão no ch
   form.elements.valor.value='350,00';form.dispatchEvent(new p.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>p.document.body.textContent.includes('Fechamento informado.'));
   owner=new JSDOM('<main data-qf-chat-root></main>',{url:'https://quemfazservico.com.br',runScripts:'outside-only'});const w=owner.window;let accepts=0;
   w.confirm=()=>{throw Error('Não deve pedir segunda confirmação');};w.Screens={};
-  w.QFCloud={client:{rpc:async(n,args)=>{await as(d,1);if(args.p_acao==='aceitar'){accepts++;assert.equal(args.p_valor_centavos,35000);}return {data:await rpc(d,n,Object.values(args))};}}};
+  w.QFCloud={client:{rpc:async(n,args)=>{if(n==='qf_livre_agendamento_ver')return {data:{ok:true,agendado_em:null,descricao_proposta:null}};await as(d,1);if(args.p_acao==='aceitar'){accepts++;assert.equal(args.p_valor_centavos,35000);}return {data:await rpc(d,n,Object.values(args))};}}};
   w.eval(fs.readFileSync('qf-chat-contratacao.js','utf8'));w.QFChatContratacao.mount(w.document.querySelector('main'),{id:call.id,profId:uid(11)},{id:uid(1)},'cliente');
   await wait(()=>w.document.querySelector('[data-qfc-concluir]'));await as(d,1);const code=(await rpc(d,'qf_chat_contratacao',[call.id,uid(11)])).codigo_seguranca;const finish=w.document.querySelector('[data-qfc-concluir]');finish.elements.codigo_seguranca.value=code;finish.elements.concluido.checked=true;finish.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await wait(()=>w.document.body.textContent.includes('Contratação, valor e conclusão confirmados.'));
   assert.equal(accepts,1);assert.equal(Number((await row(d,f)).comissao_centavos),4550);

@@ -8,14 +8,14 @@ test('Oferta do Plano Livre explica repasse manual sem prometer cobrança não h
   const h=plan.oferta({ativo:false});
   assert.match(h,/QUEM FAZ LIVRE/);
   assert.match(h,/Novo modelo de recebimento: cliente paga o serviço por Pix ao Quem Faz/);
-  assert.match(h,/ainda depende de liberação bancária/);
+  assert.match(h,/depende de liberação operacional e validação bancária/);
   assert.match(h,/após a confirmação bancária/i);
   assert.match(h,/13%/);
-  assert.match(h,/Regra vigente/);
+  assert.match(h,/Como funciona hoje:/);
 });
 test('Cadastro do Livre distingue repasse planejado da modalidade atual',()=>{
-  assert.match(src,/envio de 87% à sua chave Pix após confirmação bancária/);
-  assert.match(src,/funcionalidade em preparação, ainda indisponível/);
+  assert.match(src,/repasse de 87% ainda não estão disponíveis/);
+  assert.match(src,/está em preparação, ainda indisponível/);
   assert.match(src,/O novo modelo ainda não está disponível/);
   assert.match(plan.oferta(),/Sem cobrança por contato/);
 });
@@ -23,6 +23,6 @@ test('Nenhuma chamada de pagamento ou nova autorização bancária é adicionada
   const html=plan.oferta({ativo:true});
   assert.doesNotMatch(html,/data-qf-livre-pagar/);
   assert.match(html,/Ver pedidos disponíveis/);
-  assert.match(html,/ainda depende de liberação bancária/);
+  assert.match(html,/depende de liberação operacional e validação bancária/);
   assert.match(html,/R\$ 39,90 por 30 dias/);
 });
