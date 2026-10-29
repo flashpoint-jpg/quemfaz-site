@@ -159,6 +159,43 @@ async function syncAdmin(req:Request){
  }catch(e){return reply(req,{ok:false,reason:"sincronizacao_indisponivel"},503);}
  finally{c?.close();}
 }
+// Ações financeiras reservadas ao administrador autenticado.
+async function authorizedAdmin(req:Request){
+ const bearer=String(req.headers.get("Authorization")||"").replace(/^Bearer\s+/i,"");
+ if(!bearer) return null;
+ const u=await admin.auth.getUser(bearer);
+ if(u.error||!u.data.user) return null;
+ const {data:row,error}=await admin.from("qf_admins").select("user_id").eq("user_id",u.data.user.id).maybeSingle();
+ return error||!row?null:u.data.user.id;
+}
+async function adminConfiguration(req:Request,b:any){
+ const adminId=await authorizedAdmin(req);
+ if(!adminId)return reply(req,{ok:false,reason:"admin_obrigatorio"},403);
+ if(b.action==="admin_enable"){
+  // Nenhum Pix é criado neste teste; checamos mTLS e credenciais reais da Efí.
+  if(sandbox)return reply(req,{ok:false,reason:"efi_sandbox_inadequado"},409);
+  let c:Deno.HttpClient|null=null;
+  try{
+   c=client();
+   const tokenValue=await token(c);
+   if(!tokenValue)throw Error("efi_auth");
+  }catch(e){
+   console.warn("QF_MANUAL_EFI_AUTH_TEST",String((e as Error).message||e));
+   return reply(req,{ok:false,reason:"efi_producao_nao_validada"},503);
+  }finally{c?.close();}
+  const d=await rpc("qf_livre_manual_admin_config",{
+   p_ativar:true,p_admin:adminId,p_efi_testado:true,p_ambiente:"production"});
+  return reply(req,d,d?.ok?200:409);
+ }
+ if(b.action==="admin_disable"){
+  const d=await rpc("qf_livre_manual_admin_config",{
+   p_ativar:false,p_admin:adminId,p_efi_testado:false,p_ambiente:null});
+  return reply(req,d,d?.ok?200:409);
+ }
+ const d=await rpc("qf_livre_manual_admin_config",{
+  p_ativar:null,p_admin:null,p_efi_testado:false,p_ambiente:null});
+ return reply(req,d,d?.ok?200:503);
+}
 Deno.serve(async req=>{
  if(req.method==="OPTIONS")return new Response(null,{status:204,headers:{
   ...Object.fromEntries(reply(req,{}).headers.entries()),"Access-Control-Allow-Methods":"POST,OPTIONS",
@@ -172,6 +209,7 @@ Deno.serve(async req=>{
   if(b.action==="checkout")return checkout(req,b);
   if(b.action==="status")return status(req,b);
   if(b.action==="sync_admin")return syncAdmin(req);
+  if(["admin_status","admin_enable","admin_disable"].includes(b.action))return adminConfiguration(req,b);
   return reply(req,{ok:false,reason:"acao_invalida"},400);
  }catch(e){
   console.error("QF_LIVRE_MANUAL_UNHANDLED",String((e as Error).message||e));
