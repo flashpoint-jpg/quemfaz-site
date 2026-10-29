@@ -132,6 +132,38 @@
         }
       }catch(e){if(manual.isConnected)manual.querySelector('[role=status]').textContent='Controle de repasses indisponível: '+(e.message||'atualize a carteira');}
     }
+
+    // Pagamento direto fora da plataforma exige declaração explícita e bloqueia
+    // novos desbloqueios até o Pix da comissão ser conciliado pelo banco.
+    if(!admin){
+      const diretos=rows.filter(a=>a.status==='confirmado'&&a.cliente_resposta==='confirmado'&&a.cliente_concluiu_em&&a.cobranca_status==='pendente'&&!a.recebimento_direto_declarado_em);
+      const declarados=rows.filter(a=>a.recebimento_direto_declarado_em&&a.cobranca_status==='pendente');
+      if(diretos.length||declarados.length){
+        const section=document.createElement('section');
+        section.className='card stack--sm';
+        section.style.cssText='border:2px solid #dfb15f;background:#fff8eb;border-radius:16px;padding:16px;margin-bottom:12px';
+        section.dataset.qf13Direto='';
+        section.innerHTML='<h2 class="h3">Recebimento direto · Plano Livre</h2>'+
+         '<p>Se o cliente pagou diretamente a você, informe aqui. O Quem Faz cobrará apenas os 13% da comissão por Pix. Até o banco confirmar essa comissão, novos desbloqueios ficarão bloqueados. Se o cliente pagou pelo Pix da plataforma, NÃO confirme recebimento direto.</p>'+
+         declarados.map(a=>'<p role="status"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+'</strong>: pagamento direto declarado. Novos pedidos bloqueados até quitar a comissão de '+brl(a.comissao_centavos)+' por Pix na carteira.</p>').join('')+
+         diretos.map(a=>'<div class="stack--sm" data-qf13-direto="'+esc(a.id)+'"><strong>Pedido '+esc(String(a.chamado_id).slice(0,8))+' · comissão '+brl(a.comissao_centavos)+'</strong>'+
+          '<label style="display:flex;gap:8px;align-items:flex-start"><input type="checkbox" data-qf13-direto-aceite> Confirmo que recebi o valor deste serviço diretamente do cliente e tenho uma comissão de 13% a pagar ao Quem Faz.</label>'+
+          '<button type="button" class="btn btn--outline" data-qf13-direto-confirmar>Registrar recebimento direto</button><p role="status" data-qf13-direto-msg></p></div>').join('');
+        box.prepend(section);
+        section.querySelectorAll('[data-qf13-direto]').forEach(item=>{
+          const button=item.querySelector('[data-qf13-direto-confirmar]'),msg=item.querySelector('[data-qf13-direto-msg]');
+          button.onclick=async()=>{
+            if(!item.querySelector('[data-qf13-direto-aceite]').checked){msg.textContent='Marque a confirmação do recebimento antes de continuar.';return;}
+            button.disabled=true;msg.textContent='Registrando recebimento e obrigação de comissão...';
+            try{
+              const r=await rpc('qf_comissao13_declarar_recebimento_direto',{p_fechamento_id:item.dataset.qf13Direto});
+              if(!r?.ok)throw Error(({pagamento_plataforma_ja_confirmado:'O Pix do serviço já foi confirmado na plataforma. Nenhuma comissão adicional deve ser cobrada.',conclusao_ou_cobranca_nao_confirmada:'A conclusão e a comissão precisam estar confirmadas pelo cliente.'})[r?.reason]||'Recebimento direto não autorizado.');
+              cache=null;await render();
+            }catch(e){msg.textContent=e.message;button.disabled=false;}
+          };
+        });
+      }
+    }
     // Pix da comissão pertence ao profissional e é emitido pelo backend Efí.
     // Nenhum valor ou txid é fornecido pelo navegador.
     if(!admin){
@@ -191,7 +223,7 @@
       row.querySelectorAll('[data-qf13-admin-acao]').forEach(btn=>{btn.onclick=async()=>{btn.disabled=true;try{const form=row.querySelector('form'),r=await rpc('qf_comissao13_admin',{p_id:id,p_acao:btn.dataset.qf13AdminAcao,p_valor_centavos:cents(form.elements.valor.value),p_observacao:form.elements.nota.value.trim()});if(!r.ok)throw Error(motivo(r.reason));cache=null;await render();}catch(e){msg.textContent=e.message;}finally{btn.disabled=false;}};});
      }else{const form=row.querySelector('form');if(!form)return;bindResumo(form);if(a.prorrogacoes_negociacao>=1)form.querySelector('option[value=negociando]').disabled=true;form.elements.situacao.onchange=()=>{const fechado=form.elements.situacao.value==='informado';form.querySelector('[data-qf13-valor]').hidden=!fechado;form.elements.valor.required=fechado;};form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector('button');btn.disabled=true;try{const r=await rpc('qf_comissao13_prestar_contas',{p_id:id,p_situacao:form.elements.situacao.value,p_valor_centavos:cents(form.elements.valor.value),p_codigo:null});if(!r.ok)throw Error(motivo(r.reason));cache=null;await render();}catch(err){msg.textContent=err.message;}finally{btn.disabled=false;}};}
     });
-   };render().catch(()=>box.textContent='Não foi possível carregar a prestação de contas. Atualize a página.');if(admin&&pattern==='/admin/dashboard'){const timer=setInterval(()=>{if(!box.isConnected){clearInterval(timer);return;}if(document.visibilityState==='hidden')return;cache=null;render().catch(()=>{});},60000);}return;
+   };render().catch(()=>box.textContent='Não foi possível carregar a prestação de contas. Atualize a página.');if(!admin&&carteira){const timer=g.setInterval(()=>{if(!box.isConnected){g.clearInterval(timer);return;}if(g.document.hidden||box.querySelector('input:focus,textarea:focus,select:focus'))return;cache=null;render().catch(()=>{});},30000);}if(admin&&pattern==='/admin/dashboard'){const timer=setInterval(()=>{if(!box.isConnected){clearInterval(timer);return;}if(document.visibilityState==='hidden')return;cache=null;render().catch(()=>{});},60000);}return;
   }
   // Prestação de contas diretamente no pedido ou na conversa, sem abrir a carteira.
   if(pattern==='/profissional/chat/:id')return;
