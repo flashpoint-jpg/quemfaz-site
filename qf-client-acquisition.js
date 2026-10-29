@@ -155,7 +155,39 @@
   global.QFClientAcquisition = { services: services, serviceFromLink: serviceFromLink, applyDestination: applyDestination, attribution: attribution, track: track, published: published };
   global.addEventListener('DOMContentLoaded', function () {
     if (!/profissional|recrutamento/.test(location.hash || '') && !/profissionais/i.test(campaign.campaign || '')) track('landing', {}, true);
+    // O visitante que precisa de um serviço vê primeiro o pedido; planos e publicidade
+    // continuam disponíveis abaixo, sem alterar cadastro, atendimento ou pagamentos.
+    function prioritizeClientHome() {
+      var shell = document.getElementById('app-shell');
+      if (!shell || shell.getAttribute('data-route') !== 'inicio') return;
+      var landing = shell.querySelector('.qf-landing');
+      if (!landing) return;
+      var hero = landing.querySelector('.qf-landing-hero');
+      var body = landing.querySelector('.qf-landing-body');
+      var livre = landing.querySelector('[data-qf-home-livre]');
+      if (hero && body && livre && livre.parentElement === landing &&
+          (livre.compareDocumentPosition(body) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+        body.after(livre);
+      }
+      if (!hero) return;
+      var copy = hero.querySelector('.qf-hero2');
+      var actions = copy && copy.querySelector('.qf-landing-actions');
+      var banner = copy && copy.querySelector('[data-brandrot]');
+      if (actions && banner && banner.parentElement === actions.parentElement &&
+          (banner.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING)) {
+        actions.after(banner);
+      }
+      if (copy && actions && !copy.querySelector('[data-qf-client-first-tip]')) {
+        var tip = document.createElement('p');
+        tip.setAttribute('data-qf-client-first-tip', '');
+        tip.className = 'text text--sm text--secondary';
+        tip.style.cssText = 'margin:0 0 10px;padding:0 4px;line-height:1.5';
+        tip.textContent = 'Publique seu pedido grátis. Compare profissionais da região e escolha sem obrigação de contratar.';
+        actions.before(tip);
+      }
+    }
     function bindForms() {
+      prioritizeClientHome();
       // V11.43.3: tela inicial. Mede só se a pessoa tocou no campo, digitou ou tentou enviar; nunca o texto digitado.
       var home = document.querySelector('[data-landing-service-form]');
       if (home && !home.dataset.funnelBound) {
