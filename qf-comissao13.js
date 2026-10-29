@@ -124,7 +124,7 @@
     const rows=await rpc('qf_livre_manual_pix_painel');
     if(!box.isConnected)return;
     if(!Array.isArray(rows))throw Error('Dados indisponíveis');
-    const names={criando:'Preparando cobrança',pix_pronto:'Aguardando Pix do cliente',pago:'Pix confirmado; aguardando repasse manual',repassado:'Repasse concluído',bloqueado:'Pagamento em análise'};
+    const names={criando:'Preparando cobrança',pix_pronto:'Aguardando Pix do cliente',pago:'Pix confirmado; saque disponível após solicitação',repassado:'Repasse concluído',bloqueado:'Pagamento em análise'};
     const total=rows.filter(x=>x.status==='pago').reduce((n,x)=>n+Number(x.profissional_centavos||0),0);
     box.innerHTML='<h2 class="h3">Pix dos serviços · Plano Livre</h2><p>O cliente paga o valor integral à plataforma. O Quem Faz retém 13% e transfere 87% ao profissional manualmente, após confirmação bancária.</p>'+
      (admin?'<p style="font-size:18px;color:#1458cc;font-weight:800">A repassar: '+brl(total)+'</p><button class="btn btn--outline" type="button" data-qf-pix-sync>Conferir pagamentos na Efí</button>':'')+
@@ -133,7 +133,10 @@
       '<strong>'+esc(x.profissional)+' · pedido '+esc(String(x.chamado_id).slice(0,8))+'</strong>'+
       '<p>Valor integral: '+brl(x.valor_centavos)+' · Quem Faz 13%: '+brl(x.comissao_centavos)+' · Profissional 87%: <strong>'+brl(x.profissional_centavos)+'</strong></p>'+
       '<p><strong>'+esc(names[x.status]||x.status)+'</strong></p>'+
-      (admin&&x.status==='pago'?'<p>Chave Pix cadastrada: <strong>'+esc(x.pix_chave||'Ainda não cadastrada')+'</strong></p>'+
+       (!admin&&x.status==='pago'&&!x.saque_solicitado_em?'<button class="btn btn--primary" type="button" data-qf-solicitar-saque>Solicitar saque · '+brl(x.profissional_centavos)+'</button>':'')+
+       (!admin&&x.status==='pago'&&x.saque_solicitado_em?'<p class="text--sm">Saque solicitado. Aguardando repasse manual pelo administrador.</p>':'')+
+       (admin&&x.status==='pago'&&!x.saque_solicitado_em?'<p class="text--sm">Pix confirmado, aguardando solicitação de saque pelo profissional.</p>':'')+
+      (admin&&x.status==='pago'&&x.saque_solicitado_em?'<p>Chave Pix cadastrada: <strong>'+esc(x.pix_chave||'Ainda não cadastrada')+'</strong></p>'+
        '<p class="text--sm">Transfira os 87% pelo banco. Só depois registre a referência e o comprovante.</p>'+
        '<form data-qf-pix-repassar class="stack--sm"><label>Referência da transferência<input class="input" name="referencia" minlength="16" maxlength="150" required></label>'+
        '<label>Comprovante da transferência<input class="input" name="comprovante" minlength="8" maxlength="500" required></label>'+
@@ -146,12 +149,20 @@
       if(r.error||!r.data?.ok)throw Error('Conciliação indisponível');await render();
      }catch(err){b.textContent=err.message||'Não foi possível conferir';b.disabled=false;}
     });
-    box.querySelectorAll('[data-qf-pix-repassar]').forEach(form=>form.onsubmit=async e=>{
+    box.querySelectorAll('[data-qf-solicitar-saque]').forEach(button=>button.addEventListener('click',async e=>{
+      const item=e.currentTarget.closest('[data-qf-pix-item]'),msg=item.querySelector('[data-qf-pix-msg]');
+      button.disabled=true;msg.textContent='Solicitando saque...';
+      try{const d=await rpc('qf_livre_manual_pix_solicitar',{p_id:item.dataset.qfPixItem});
+       if(!d?.ok)throw Error(({chave_pix_ausente:'Cadastre uma chave Pix válida na Carteira.',pagamento_nao_confirmado:'O pagamento ainda não foi confirmado pela Efí.',ja_repassado:'Este serviço já foi repassado.'})[d?.reason]||'Não foi possível solicitar saque.');
+       await render();
+      }catch(err){msg.textContent=err.message||'Falha ao solicitar saque.';button.disabled=false;}
+     }));
+     box.querySelectorAll('[data-qf-pix-repassar]').forEach(form=>form.onsubmit=async e=>{
      e.preventDefault();if(!form.reportValidity())return;const item=form.closest('[data-qf-pix-item]'),msg=item.querySelector('[data-qf-pix-msg]');
      const b=form.querySelector('button');b.disabled=true;msg.textContent='Registrando comprovante...';
      try{const r=await rpc('qf_livre_manual_pix_repassar',{p_id:item.dataset.qfPixItem,
        p_referencia:form.elements.referencia.value,p_comprovante:form.elements.comprovante.value});
-      if(!r?.ok)throw Error(({chave_pix_ausente:'Profissional sem chave Pix; confira a carteira.',pix_nao_conciliado_ou_repassado:'Pix não confirmado ou já repassado.',comprovacao_obrigatoria:'Informe referência e comprovante.'})[r?.reason]||'Repasse não autorizado');
+      if(!r?.ok)throw Error(({chave_pix_ausente:'Profissional sem chave Pix; confira a carteira.',comprovacao_obrigatoria:'Informe referência e comprovante.',pix_nao_conciliado_ou_repassado:'Pix não confirmado ou saque não solicitado.'})[r?.reason]||'Repasse não autorizado');
       await render();
      }catch(err){msg.textContent=err.message||'Falha';b.disabled=false;}
     });
