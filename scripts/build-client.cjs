@@ -41,11 +41,11 @@ html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
 const adminPath=path.join(out,'admin.html');
-fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=card-unico-20261027'));
+fs.writeFileSync(adminPath,fs.readFileSync(adminPath,'utf8').replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029'));
 // Rotas e abas administrativas instaladas antes da inicialização do roteador.
 let adminHtml=fs.readFileSync(adminPath,'utf8');
 adminHtml=adminHtml.replace(/<script src="qf-comissao13\.js[^"']*"><\/script>/g,'');
-adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=card-unico-20261027"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
+adminHtml=adminHtml.replace('<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */','<script src="qf-comissao13.js?v=direto-saque-20261029"></script><script src="qf-admin-espelho.js?v=profissionais20261023"></script>\n<script>\n/* QuemFaz — casca do app, roteador por hash e navegação. */');
 const routeMarker="    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard'";
 if(!adminHtml.includes(routeMarker))throw Error('Rota administrativa ausente');
 adminHtml=adminHtml.replace(routeMarker,"    { pattern: '/admin/espelho-profissionais', role: 'admin', title: 'Espelho dos profissionais', render: Screens.adminEspelhoRender },\n    { pattern: '/admin/espelho-profissionais/:id', role: 'admin', title: 'Tela do profissional', back: '/admin/espelho-profissionais', render: Screens.adminEspelhoDetalheRender },\n"+routeMarker);
