@@ -14,13 +14,13 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  create table public.qf_profissionais(user_id uuid primary key,online boolean,offline_manual boolean,horario_inicio time,horario_fim time,especialidades text[]);
  create table public.qf_chamados(id uuid primary key,categoria text,marketing_origem jsonb,urgencia text,cidade text,uf char(2),latitude numeric,longitude numeric);
  create table public.qf_desbloqueios(chamado_id uuid,profissional_id uuid);
- create function private.qf_pro_recebe_chamado(p_pro uuid,p_chamado_id uuid) returns boolean language sql as $$select exists(select 1 from public.qf_profissionais pr cross join public.qf_chamados c where c.id=p_chamado_id and pr.user_id=p_pro and c.categoria=any(coalesce(pr.especialidades,array[]::text[])))$$;
- create function private.qf_pro_atende_regiao(uuid,text,text,numeric,numeric) returns boolean language sql as $$select true$$;
+ create function private.qf_pro_recebe_chamado(p_pro uuid,p_chamado_id uuid) returns boolean language sql as $$select exists(select 1 from public.qf_profissionais pr cross join public.qf_chamados c where c.id=p_chamado_id and pr.user_id=p_pro and c.categoria=any(coalesce(pr.especialidades,array[]::text[])) and private.qf_pro_atende_regiao(p_pro,c.cidade,c.uf::text,c.latitude,c.longitude))$$;
+ create function private.qf_pro_atende_regiao(uuid,text,text,numeric,numeric) returns boolean language sql as $$select $2='São Paulo'$$;
  create function private.qf_push_interno(text,uuid) returns void language sql as $$select null::void$$;
  create function private.qf_dentro_horario(time,time) returns boolean language sql as $$select true$$;
  create table public.qf_comissao13_fechamentos(id uuid primary key);
  create table public.qf_livre_pix_chaves(profissional_id uuid,chave_pix text);
- create table public.qf_recargas(id uuid primary key,profissional_id uuid,status text,plano text,valor_centavos integer,provedor text);
+ create table public.qf_recargas(id uuid primary key default gen_random_uuid(),profissional_id uuid,status text,plano text,valor_centavos integer,provedor text,metodo text,provedor_id text,aprovado_em timestamptz);
  create table public.qf_livre_assinaturas(id uuid primary key,recarga_id uuid,profissional_id uuid,inicio_em timestamptz,fim_em timestamptz);`);
  const base=fs.readFileSync('supabase/migrations/20261029131500_pix_integral_livre_repasse_manual.sql','utf8');
  await db.exec(base.slice(0,base.indexOf('create or replace function public.qf_livre_manual_pix_preparar')));
@@ -28,6 +28,7 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  await db.exec(fs.readFileSync('supabase/migrations/20261029152704_financeiro_pix_integral_auditavel.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261029153325_financeiro_ledger_wrapper_privado.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261029152827_marketing_dedicado_solicitacoes_e_atribuicao.sql','utf8'));
+ await db.exec(fs.readFileSync(process.env.QF_MD_MIGRATION||'supabase/migrations/20261029162528_marketing_prioridade_paga_gestao_manual.sql','utf8'));
  const admin='00000000-0000-4000-8000-000000000001',pro='00000000-0000-4000-8000-000000000002';
  await db.exec(`insert into public.qf_profiles values('${admin}','Admin',true),('${pro}','Profissional',true);
  insert into public.qf_admins values('${admin}');insert into public.qf_profissionais(user_id,online) values('${pro}',true);
@@ -44,27 +45,83 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  await db.exec(`reset role;select set_config('request.jwt.claim.sub','${admin}',false);select set_config('test.admin','true',false);set role authenticated;`);
  assert.equal(await q('select jsonb_array_length(public.qf_livre_manual_pix_admin_ledger())'),0);
  assert.equal((await q("select public.qf_md_admin($1,'revisar')",[a.id])).ok,true);
- assert.equal((await q("select public.qf_md_admin($1,'ativar')",[a.id])).reason,'integracao_entrega_pendente');
+ assert.equal((await q("select public.qf_md_admin($1,'ativar')",[a.id])).reason,'pagamento_nao_confirmado');
  await db.exec(`reset role;select set_config('request.jwt.claim.role','service_role',false);`);
  assert.equal((await q(`select public.qf_livre_manual_admin_config(true,'${admin}',true,'production')`)).reason,'operacao_em_analise');
  const other='00000000-0000-4000-8000-000000000003';
  await db.exec(`insert into public.qf_profiles values('${other}','Outro profissional',true);insert into public.qf_profissionais(user_id,online,especialidades) values('${other}',true,array['pintor']);
  update public.qf_profissionais set especialidades=array['pintor'] where user_id='${pro}';
- insert into public.qf_recargas values(gen_random_uuid(),'${pro}','aprovado','livre',3990,'efi');
+ insert into public.qf_recargas(id,profissional_id,status,plano,valor_centavos,provedor) values(gen_random_uuid(),'${pro}','aprovado','livre',3990,'efi');
  insert into public.qf_livre_assinaturas select gen_random_uuid(),id,'${pro}',now()-interval '1 day',now()+interval '29 days' from public.qf_recargas;
- update private.qf_md_campanhas set status='ativa',pagamento_status='conciliado',inicio_em=now(),fim_em=now()+interval '30 days' where id='${a.id}';`);
+ update private.qf_md_campanhas set status='aguardando_pagamento' where id='${a.id}';`);
+ const payment=await q('select public.qf_md_pagamento_preparar($1,$2,55000)',[pro,a.id]);
+ assert.equal(payment.ok,true);assert.equal(payment.valor_centavos,55000);
+ assert.equal((await q('select public.qf_md_pagamento_preparar($1,$2,58990)',[pro,a.id])).reason,'valor_mudou');
+ assert.equal((await q('select public.qf_md_pagamento_liquidar($1,$2,$3,55000)',[payment.id,payment.txid,'E12345678901234567890'])).reason,'estado_invalido');
+ assert.equal((await q('select public.qf_md_pagamento_registrar($1,$2,$3)',[payment.id,payment.txid,'0'.repeat(50)])).ok,true);
+ const settle=()=>q('select public.qf_md_pagamento_liquidar($1,$2,$3,55000)',[payment.id,payment.txid,'E12345678901234567890']);
+ assert.equal((await settle()).status,'conciliado');assert.equal((await settle()).duplicado,true);
  const campaign=await q(`select to_jsonb(c) from private.qf_md_campanhas c where id='${a.id}'`);
+ assert.equal(campaign.status,'ativa');
  const order='00000000-0000-4000-8000-000000000010';
- await db.query('insert into public.qf_chamados(id,categoria,marketing_origem,urgencia) values($1,$2,$3,$4)',[order,'pintor',JSON.stringify({md_token:campaign.token}),'normal']);
+ await db.query("insert into public.qf_chamados(id,categoria,marketing_origem,urgencia,cidade) values($1,$2,$3,$4,'São Paulo')",[order,'pintor',JSON.stringify({}),'normal']);
  assert.equal(await q(`select private.qf_md_prioridade_permite('${pro}','${order}')`),true);
  assert.equal(await q(`select private.qf_md_prioridade_permite('${other}','${order}')`),false);
  await assert.rejects(()=>db.exec(`insert into public.qf_desbloqueios values('${order}','${other}')`),/janela_prioritaria_ativa/);
  await db.exec(`insert into public.qf_desbloqueios values('${order}','${pro}')`);
  assert.equal(await q(`select private.qf_md_prioridade_permite('${other}','${order}')`),true);
- await assert.rejects(()=>db.exec(`update public.qf_chamados set marketing_origem='{}' where id='${order}'`),/origem_do_pedido_imutavel/);
+ await assert.rejects(()=>db.exec(`update public.qf_chamados set marketing_origem='{"md_token":"fake"}' where id='${order}'`),/origem_do_pedido_imutavel/);
  // Uma campanha que perde o Livre pago devolve a prioridade ao fluxo normal.
  await db.exec(`update private.qf_md_leads set resposta='aguardando' where chamado_id='${order}';update public.qf_recargas set status='estornado';`);
  assert.equal(await q(`select private.qf_md_prioridade_permite('${other}','${order}')`),true);
- console.log('PASS SQL: isolamento + idempotência + preço Livre/teste + ativação protegida + atribuição por token + janela de prioridade + desbloqueio seguro + origem imutável + perda de elegibilidade');
+
+ // Restaurar a elegibilidade e criar um segundo patrocinador pago: alternância independe de token.
+ await db.exec(`update public.qf_recargas set status='aprovado';select set_config('request.jwt.claim.sub','${other}',false);`);
+ const second=await q('select public.qf_md_solicitar($1,$2,$3,$4,$5)',args);
+ await db.exec(`insert into public.qf_recargas(id,profissional_id,status,plano,valor_centavos,provedor) values(gen_random_uuid(),'${other}','aprovado','livre',3990,'efi');insert into public.qf_livre_assinaturas select gen_random_uuid(),id,'${other}',now()-interval '1 day',now()+interval '29 days' from public.qf_recargas where profissional_id='${other}';select set_config('request.jwt.claim.sub','${admin}',false);`);
+ await q("select public.qf_md_admin($1,'revisar')",[second.id]);
+ const p2=await q('select public.qf_md_pagamento_preparar($1,$2,55000)',[other,second.id]);
+ await q('select public.qf_md_pagamento_registrar($1,$2,$3)',[p2.id,p2.txid,'0'.repeat(50)]);
+ await q('select public.qf_md_pagamento_liquidar($1,$2,$3,55000)',[p2.id,p2.txid,'E22222222222222222222']);
+ const insert=async(id,category='pintor',city='São Paulo',origin={})=>db.query("insert into public.qf_chamados(id,categoria,cidade,marketing_origem,urgencia) values($1,$2,$3,$4,'normal')",[id,category,city,JSON.stringify(origin)]);
+ const o2='00000000-0000-4000-8000-000000000011',o3='00000000-0000-4000-8000-000000000012';
+ await insert(o2,'pintor','São Paulo',{md_token:campaign.token});
+ assert.equal(await q('select profissional_id from private.qf_md_leads where chamado_id=$1',[o2]),other,'token não escolhe patrocinador; recebe quem aguardava há mais tempo');
+ await insert(o3);
+ assert.equal(await q('select profissional_id from private.qf_md_leads where chamado_id=$1',[o3]),pro);
+ await db.exec(`select set_config('request.jwt.claim.sub','${other}',false);`);
+ assert.equal((await q('select public.qf_md_recusar($1)',[o3])).ok,false,'outro profissional não recusa oferta alheia');
+ assert.equal((await q('select public.qf_md_recusar($1)',[o2])).ok,true);
+ assert.equal(await q('select private.qf_md_prioridade_permite($1,$2)',[pro,o2]),true);
+ await db.exec(`update private.qf_md_leads set prioridade_ate=now()-interval '1 second' where chamado_id='${o3}';`);
+ await q('select private.qf_md_tick()');assert.equal(await q('select resposta from private.qf_md_leads where chamado_id=$1',[o3]),'expirado');
+ for(const [id,cat,city] of [['00000000-0000-4000-8000-000000000013','eletricista','São Paulo'],['00000000-0000-4000-8000-000000000014','pintor','Campinas']]){await insert(id,cat,city);assert.equal(await q('select count(*)::int from private.qf_md_leads where chamado_id=$1',[id]),0);}
+ await db.exec(`select set_config('request.jwt.claim.sub','${pro}',false);`);
+ assert.equal((await q('select public.qf_md_pausa($1)',[a.id])).ok,true);assert.equal(await q('select status from private.qf_md_campanhas where id=$1',[a.id]),'pausada');
+ await db.exec(`select set_config('request.jwt.claim.sub','${admin}',false);`);
+ assert.equal((await q("select public.qf_md_admin($1,'retomar')",[a.id])).ok,true);
+ assert.equal((await q("select public.qf_md_admin($1,'retomar')",[a.id])).duplicado,true);
+ await db.exec(`update private.qf_md_campanhas set fim_em=now()-interval '1 second',inicio_em=now()-interval '31 days' where id='${a.id}';`);
+ await q('select private.qf_md_tick()');assert.equal(await q('select status from private.qf_md_campanhas where id=$1',[a.id]),'concluida');
+ console.log('PASS SQL novo: pagamento bancário idempotente ativa prioridade; pedido orgânico, alternância, token não interfere, categoria/região, recusa, expiração, pausa/retomada e fim dos 30 dias.');
+
+ console.log('PASS SQL: isolamento + idempotência + preço Livre/teste + ativação protegida + pedido sem token + janela de prioridade + desbloqueio seguro + origem imutável + perda de elegibilidade');
+
+ const third='00000000-0000-4000-8000-000000000004';
+ await db.exec(`insert into public.qf_profiles values('${third}','Terceiro',true);insert into public.qf_profissionais(user_id,online,especialidades) values('${third}',true,array['pintor']);insert into public.qf_livre_assinaturas values(gen_random_uuid(),null,'${third}',now(),now()+interval '7 days');select set_config('request.jwt.claim.sub','${third}',false);`);
+ assert.equal(await q('select private.qf_md_livre_pago($1)',[third]),false,'teste grátis não equivale a Livre pago');
+ const c3=await q('select public.qf_md_solicitar($1,$2,$3,$4,$5)',args);
+ await db.exec(`select set_config('request.jwt.claim.sub','${admin}',false);`);
+ await q("select public.qf_md_admin($1,'revisar')",[c3.id]);
+ const p3=await q('select public.qf_md_pagamento_preparar($1,$2,58990)',[third,c3.id]);assert.equal(p3.valor_centavos,58990);
+ await q('select public.qf_md_pagamento_registrar($1,$2,$3)',[p3.id,p3.txid,'0'.repeat(50)]);
+ // Simula somente no banco de testes o gatilho de assinatura Livre já existente em produção.
+ await db.exec(`create function private.test_livre() returns trigger language plpgsql as $$begin if new.status='aprovado' and old.status<>'aprovado' then insert into public.qf_livre_assinaturas values(gen_random_uuid(),new.id,new.profissional_id,now(),now()+interval '30 days');end if;return new;end$$;create trigger test_livre after update on public.qf_recargas for each row execute function private.test_livre();`);
+ assert.equal((await q('select public.qf_md_pagamento_liquidar($1,$2,$3,58990)',[p3.id,p3.txid,'E33333333333333333333'])).ok,true);
+ assert.equal(await q('select private.qf_md_livre_pago($1)',[third]),true);
+ assert.equal(await q('select status from private.qf_md_campanhas where id=$1',[c3.id]),'ativa');
+ assert.equal(await q('select count(*)::int from public.qf_recargas where profissional_id=$1',[third]),1);
+ console.log('PASS SQL conjunto: teste grátis excluído, R$589,90 repartido entre Livre e Marketing, assinatura paga e prioridade ativadas uma única vez.');
+
  await db.close();
 })().catch(e=>{console.error(e);process.exitCode=1;});

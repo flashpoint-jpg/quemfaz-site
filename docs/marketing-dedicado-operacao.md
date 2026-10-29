@@ -1,28 +1,35 @@
-# Marketing Dedicado e financeiro — implantação de 29/10/2026
+# Marketing Dedicado — prioridade paga e anúncios manuais
 
-## Corrigido
+Atualizado em 29/10/2026 após confirmação do administrador: os anúncios são criados manualmente na conta do Quem Faz. Não existe requisito de integração Meta nem de link exclusivo para receber prioridade.
 
-O controle de Pix integral ficava abaixo do histórico extenso em `/admin.html#/admin/financeiro`. O carregamento também consultava o banco local de profissionais no administrativo e lançava erro. O financeiro passa a montar o controle e o livro de Pix antes da tabela operacional, com consulta bancária, exportação CSV, evidências de repasse e auditoria privada. Valores sem conciliação e E2E não compõem entradas nem obrigações. Os 87% pendentes são obrigação com o profissional.
+## Operação
 
-O menu principal e a Carteira recebem Marketing Dedicado: oferta opcional, solicitação sem cobrança, revisão, configuração, link opaco, estados e acompanhamento com dados do banco. O link requer consentimento para preservar a origem por sete dias. Pedidos efetivamente publicados geram atribuição única; origem posterior é imutável. A janela de prioridade aplica elegibilidade atual, com guarda no desbloqueio e retorno ao fluxo comum. Nenhuma campanha histórica é convertida ou duplicada.
+1. O profissional solicita uma proposta sem cobrança. O administrador revisa e aprova para pagamento.
+2. Na Carteira / Meus planos, o profissional confirma o valor antes de gerar Pix: R$550 pelo Marketing (R$300 de mídia e R$250 de gestão), ou R$589,90 incluindo Livre pago quando necessário. Teste grátis não equivale a Livre pago.
+3. A consulta à Efí verifica txid, valor integral e identificador bancário E2E. A conciliação é idempotente. O conciliador existente quemfaz-efi-pix-sync inclui o módulo _shared/marketing-sync.ts, a cada minuto, mesmo com o aplicativo fechado. A consulta na tela também confirma o pagamento.
+4. Após conciliação, com Livre pago ativo, começa a prioridade de 30 dias. Os anúncios são administrados manualmente pela equipe. Não há renovação automática nem garantia de pedidos ou faturamento.
+5. Qualquer pedido publicado pode gerar a primeira oferta. Valem os serviços e a região do perfil operacional do profissional, sua disponibilidade, horário e conta ativa. Os campos da proposta orientam a criação dos anúncios; não ampliam o território nem os serviços do perfil.
+6. Entre profissionais com Marketing elegível, recebe a primeira oferta quem está há mais tempo sem uma oferta. A seleção é serializada no banco. Tokens e links antigos não alteram a escolha.
+7. A janela padrão é de 15 minutos, ou 5 para urgentes, configurável no administrativo. Após aceite, recusa, vencimento ou perda de elegibilidade, o pedido segue para os demais pelas regras existentes. O limite de desbloqueios e a proteção dos contatos continuam nos fluxos existentes.
+8. O profissional pode recusar a primeira oferta em Carteira / Meus planos → Pedidos e histórico. Também pode pausar a prioridade. O administrador pode pausar/retomar, sem reiniciar o saldo dos 30 dias. A equipe deve pausar/retomar os anúncios manualmente na Meta.
+9. A perda do Livre pago interrompe a prioridade imediatamente no filtro. A rotina registra a pausa e libera os avisos em até um minuto. Pagamento em análise, estornado ou contestado não habilita prioridade. O pagamento simultâneo do Livre durante um Pix conjunto exige revisão da parcela; não cria outra assinatura automaticamente.
 
-## Limites da liberação
+## Implementação e implantação
 
-**A missão completa não está concluída.** Marketing está liberado para solicitar e revisar propostas. Venda e ativação continuam bloqueadas no servidor. O checkout implementado aceita R$ 550 ou R$ 589,90 somente com o preço confirmado e após liberação operacional; testes usam banco simulado. Não houve cobrança, campanha Meta nem transferência real nesta execução.
+A migração 20261029162528_marketing_prioridade_paga_gestao_manual.sql usa a versão efetivamente retornada pelo Supabase. Não cria pedidos ou profissionais artificiais em produção.
 
-Faltam integração Meta com verificação de entrega e pausa efetiva automática, homologação bancária completa e confirmação específica da Efí/revisão fiscal e KYC para receber serviços de terceiros. Recebimento de assinaturas existentes não comprova essa autorização. O diagnóstico administrativo mostra a configuração real sem revelar credenciais. Nenhum botão pode transformar solicitação em pagamento ou campanha ativa manualmente.
+O código do conciliador Efí preexistente é mantido no ambiente de funções e contém uma configuração interna que não deve ser publicada no repositório. O arquivo supabase/patches/quemfaz-efi-pix-sync-marketing.patch documenta somente as três alterações aplicadas nele. O módulo compartilhado é versionado integralmente, sem credenciais. A função de Marketing preserva autenticação JWT; a autenticação interna do conciliador existente é preservada.
 
-O fluxo real de cobrança, webhook, restituição e repasse, a contratação conjunta no cadastro, retomada OAuth e os 30 dias efetivos de anúncios ainda precisam de validação de ponta a ponta com as integrações autorizadas. O checkout do Marketing não substitui o checkout atual da assinatura. Não habilitar venda antes de concluir essa validação.
+As tabelas de campanhas, pagamentos, leads e auditoria permanecem privadas com RLS e sem acesso direto de clientes. Apenas o servidor concilia pagamentos; o administrativo não consegue marcar um recebimento como pago. A emissão exige consentimento de preço e proposta aprovada. Uma consulta de status não cria cobrança.
 
-## Validação
+## Validação e limites
 
-Base original `8e11af21f10fa88918d16a83115e9811afb536dc`: 434 testes, 417 aprovados, 15 falhas e 2 ignorados no ambiente Windows. A mesma lista de falhas foi reproduzida após a alteração; nove testes novos cobrem os novos fluxos. SQL isolado verifica permissões, idempotência, atribuição e janela de prioridade. A API bancária é simulada nesses testes; isso não equivale a homologação Efí.
+Testes isolados de PostgreSQL verificam permissões, preço, exclusão de teste grátis, compra conjunta, idempotência, ativação, pedido orgânico, alternância, recusa, prazo, compatibilidade, pausa/retomada e término. Testes da interface e do banco simulado cobrem consentimento e valor, falta de autenticação, inexistência de cobrança ao abrir a tela e conciliação em segundo plano. Não houve compra nem pagamento real de Marketing nesta execução; os testes bancários usam respostas simuladas.
 
-Os testes preexistentes falham em arquivos ausentes/expectativas antigas de planos e consentimento, regras de push/origem e fixtures Efí no Windows. Não foram alterados para mascarar falhas.
+A verificação geral apresentou 445 testes: 428 aprovados, 15 falhas preexistentes e 2 ignorados. O teste de conciliação em segundo plano foi acrescentado depois e passou no conjunto focado. As falhas antigas não foram ocultadas nem alteradas.
+
+Pix integral de serviços e repasse manual de 87% são fluxos separados. Sua configuração operacional permanece bloqueada; esta alteração libera somente o Marketing descrito acima.
 
 ## Reversão
 
-Reimplantar a versão Git anterior na Vercel restaura a interface. Preservar os registros financeiros e as tabelas de auditoria. A configuração `private.qf_livre_manual_config.habilitado` permanece falsa. A venda de Marketing é bloqueada por `private.qf_md_config.entrega_validada=false`.
-
-Se for necessário retirar a prioridade, remover a condição `and private.qf_md_prioridade_permite(p_pro,p_chamado_id)` da função `private.qf_pro_recebe_chamado`, desabilitar `qf_aa_md_guardar`/`qf_md_aceite` em `qf_desbloqueios` e `qf_aa_md_atribuir` em `qf_chamados`, e retirar o agendamento `qf-md-prioridade`. Fazer isso mediante migração revisada, preservando origem e auditoria; não apagar tabelas ou transações.
-
+Para suspender novas compras, definir private.qf_md_config.entrega_validada=false e pausar campanhas ativas. Não apagar pagamentos, leads ou auditorias. Restaurar a versão anterior das telas e reverter somente o patch do conciliador retira esta interface e a conciliação do Marketing, preservando a rotina de pagamentos existente. Campanhas pausadas deixam de reservar pedidos; a função central libera os demais profissionais.
