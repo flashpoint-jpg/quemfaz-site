@@ -27,7 +27,7 @@ function setup(route) {
     URLSearchParams, Node: w.Node, MutationObserver: w.MutationObserver,
     console, Date, Promise
   }, { filename: 'qf-client-acquisition.js' });
-  w.document.dispatchEvent(new w.Event('DOMContentLoaded'));
+  w.dispatchEvent(new w.Event('DOMContentLoaded'));
   return dom;
 }
 test('home de cliente coloca pedido antes de anúncios e card profissional', () => {
@@ -46,7 +46,7 @@ test('home de cliente coloca pedido antes de anúncios e card profissional', () 
   assert.match(d.querySelector('[data-qf-client-first-tip]').textContent, /pedido grátis/);
   assert.ok(d.querySelector('[data-landing-service-form]'), 'formulário original permanece');
   assert.equal(plan.querySelector('a').getAttribute('href'), '#/como-funciona');
-  d.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
+  dom.window.dispatchEvent(new dom.window.Event('DOMContentLoaded'));
   assert.equal(d.querySelectorAll('[data-qf-client-first-tip]').length, 1, 'sem duplicar aviso');
   dom.window.close();
 });
