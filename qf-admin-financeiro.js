@@ -67,7 +67,7 @@
    function profissionalCard(k){
     const cats=[...new Set((k.especialidades||[]).map(nomeEspecialidade))].join(', ')||'Não informadas';
     return '<details class="qff-prof-item"><summary><strong>'+esc(k.nome||'Profissional')+'</strong><span>'+esc(k.cidade||'—')+' / '+esc(k.uf||'—')+'</span><small>'+(k.livre_ativo?'Livre ativo':'Livre inativo')+' · '+esc(situacaoPix(k))+'</small></summary>'+
-      '<div class="qff-prof-detail"><p><b>Profissões:</b> '+esc(cats)+'</p><p><b>Raio informado:</b> '+esc(k.raio_km||'—')+' km</p><p><b>Horário:</b> '+esc(k.horario_inicio||'—')+' a '+esc(k.horario_fim||'—')+'</p><p><b>Perfil:</b> '+(k.ativo?'Ativo':'Inativo')+'</p><p><b>Chave Pix:</b> '+esc(k.chave_pix||'Não cadastrada')+'</p><p><b>Validação:</b> '+esc(situacaoPix(k))+'</p></div></details>';
+      '<div class="qff-prof-detail"><p><b>Profissões:</b> '+esc(cats)+'</p><p><b>Raio informado:</b> '+esc(k.raio_km||'—')+' km</p><p><b>Horário:</b> '+esc(k.horario_inicio||'—')+' a '+esc(k.horario_fim||'—')+'</p><p><b>Perfil:</b> '+(k.ativo?'Ativo':'Inativo')+'</p><p><b>Chave Pix:</b> '+esc(k.chave_pix||'Não cadastrada')+'</p><p><b>Validação:</b> '+esc(situacaoPix(k))+'</p>'+(k.chave_pix?'<div data-qff-pix-key="'+esc(k.profissional_id)+'"><label>Como a titularidade da chave foi conferida?<textarea class="input" maxlength="1500" data-qff-pix-evidencia placeholder="Registre como conferiu a titularidade no banco"></textarea></label><div class="btn-row"><button type="button" class="btn btn--primary" data-qff-pix-aprovar="true">Validar chave Pix</button><button type="button" class="btn btn--outline" data-qff-pix-aprovar="false">Rejeitar</button></div><p role="status"></p></div>':'')+'</div></details>';
    }
    function render(){
     const orders=data.pedidos||[],keys=data.chaves||[],payments=data.pagamentos||[],t=totals(data,neg);
@@ -139,6 +139,19 @@
       }catch(e){g.alert('Não foi possível excluir: '+e.message);b.disabled=false;}
     });
     root.querySelectorAll('[data-qff-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.qffFilter;render();});
+
+    root.querySelectorAll('[data-qff-pix-key]').forEach(item=>{
+      item.querySelectorAll('[data-qff-pix-aprovar]').forEach(btn=>btn.onclick=async()=>{
+        const evidence=item.querySelector('[data-qff-pix-evidencia]').value.trim(),msg=item.querySelector('[role=status]');
+        if(evidence.length<20){msg.textContent='Registre pelo menos 20 caracteres com a evidência da conferência no banco.';return;}
+        btn.disabled=true;msg.textContent='Registrando validação...';
+        try{
+          const r=await client.rpc('qf_repasses_validar_chave_admin',{p_profissional_id:item.dataset.qffPixKey,p_aprovar:btn.dataset.qffPixAprovar==='true',p_evidencia:evidence});
+          if(r.error||!r.data?.ok)throw Error(r.error?.message||r.data?.reason||'Falha ao validar a chave.');
+          await load();
+        }catch(e){msg.textContent=e.message;btn.disabled=false;}
+      });
+    });
     root.querySelector('[data-qff-keys]').onchange=e=>{keyFilter=e.target.value;render();};
     root.querySelector('[data-qff-search]').oninput=e=>{query=e.target.value;const pos=e.target.selectionStart;render();const next=root.querySelector('[data-qff-search]');next.focus();next.setSelectionRange(pos,pos);};
    }
