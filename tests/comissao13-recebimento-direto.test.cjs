@@ -25,7 +25,7 @@ test('bloqueio fica no servidor até Pix da comissão liquidar',()=>{
   assert.doesNotMatch(sql,/pix\.send|pix_send|http_post/i);
 });
 test('admin exige evidência e controle financeiro não abre Pix automático',()=>{
-  assert.match(admin,/not private\.qf_is_admin\(\)/);
+  assert.match(admin,/not private\.qf_is_admin\(\)/i);
   assert.match(admin,/length\(trim\(coalesce\(p_evidencia/);
   assert.match(admin,/qf_comissao13_admin_declarar_direto/);
   assert.match(ui,/qf_comissao13_admin_declarar_direto/);
