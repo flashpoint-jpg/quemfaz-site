@@ -50,7 +50,25 @@
    if(!['/admin/dashboard','/admin/financeiro'].includes(pattern)||content.querySelector('[data-qff]'))return;
    const client=g.QFAdminCloud?.client;if(!client)return;
    const root=g.document.createElement('section');root.dataset.qff='';root.className='section qff';(content.querySelector('.view')||content).prepend(root);
-   if(pattern==='/admin/dashboard'){root.innerHTML='<a class="btn btn--outline" href="#/admin/financeiro">Abrir financeiro, chaves Pix e cobertura</a>';return;}
+   if(pattern==='/admin/dashboard'){
+     root.innerHTML='<div role="status" data-qff-alert-manual>Consultando solicitações Pix...</div><a class="btn btn--outline" href="#/admin/financeiro">Abrir financeiro e repasses manuais</a>';
+     const alert=root.querySelector('[data-qff-alert-manual]');
+     const refresh=async()=>{
+       try{
+         const r=await client.rpc('qf_repasses_manuais_painel');
+         if(!root.isConnected)return;
+         if(r.error||!Array.isArray(r.data))throw Error('Consulta de repasses não disponível');
+         const pendentes=r.data.filter(x=>['solicitado','em_analise'].includes(x.situacao));
+         const confirmados=r.data.filter(x=>x.situacao==='disponivel');
+         const total=pendentes.reduce((v,x)=>v+Number(x.profissional_centavos||0),0);
+         alert.textContent=pendentes.length+' solicitação(ões) de repasse Pix aguardando ação · '+money(total)+' · '+confirmados.length+' pagamento(s) bancário(s) sem solicitação.';
+         alert.style.cssText='background:#fff4e4;border:1px solid #e2ad57;border-radius:12px;padding:12px;font-weight:700;color:#6c430e';
+       }catch(e){alert.textContent=e.message||'Não foi possível consultar repasses';}
+     };
+     await refresh();
+     const timer=g.setInterval(()=>{if(!root.isConnected){g.clearInterval(timer);return;}if(g.document.visibilityState!=='hidden')refresh();},30000);
+     return;
+   }
    let data={},neg=[],repasses=[],filter='todos',query='',keyFilter='todos',busy=false;
    const orderInFilter=o=>filter==='todos'||filter==='andamento'&&!['concluido','cancelado','expirado'].includes(o.status)||filter==='concluidos'&&o.status==='concluido'||filter==='cancelados'&&['cancelado','expirado'].includes(o.status)||['receber','recebida'].includes(filter)&&neg.some(n=>n.chamado_id===o.id&&(filter==='receber'?n.cobranca_status==='pendente':n.cobranca_status==='paga'&&n.pagamento_conciliado));
    function nomeEspecialidade(codigo){
