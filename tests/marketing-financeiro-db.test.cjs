@@ -12,7 +12,7 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  create table auth.users(id uuid primary key);create table public.qf_admins(user_id uuid);
  create table public.qf_profiles(id uuid primary key,nome text,ativo boolean default true);
  create table public.qf_profissionais(user_id uuid primary key,online boolean,offline_manual boolean,horario_inicio time,horario_fim time,especialidades text[]);
- create table public.qf_chamados(id uuid primary key,categoria text,marketing_origem jsonb,urgencia text,cidade text,uf char(2),latitude numeric,longitude numeric);
+ create table public.qf_chamados(id uuid primary key,cliente_id uuid,status text default 'aberto',categoria text,marketing_origem jsonb,urgencia text,cidade text,uf char(2),latitude numeric,longitude numeric);
  create table public.qf_desbloqueios(chamado_id uuid,profissional_id uuid);
  create function private.qf_pro_recebe_chamado(p_pro uuid,p_chamado_id uuid) returns boolean language sql as $$select exists(select 1 from public.qf_profissionais pr cross join public.qf_chamados c where c.id=p_chamado_id and pr.user_id=p_pro and c.categoria=any(coalesce(pr.especialidades,array[]::text[])) and private.qf_pro_atende_regiao(p_pro,c.cidade,c.uf::text,c.latitude,c.longitude))$$;
  create function private.qf_pro_atende_regiao(uuid,text,text,numeric,numeric) returns boolean language sql as $$select $2='São Paulo'$$;
@@ -29,6 +29,7 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  await db.exec(fs.readFileSync('supabase/migrations/20261029153325_financeiro_ledger_wrapper_privado.sql','utf8'));
  await db.exec(fs.readFileSync('supabase/migrations/20261029152827_marketing_dedicado_solicitacoes_e_atribuicao.sql','utf8'));
  await db.exec(fs.readFileSync(process.env.QF_MD_MIGRATION||'supabase/migrations/20261029162528_marketing_prioridade_paga_gestao_manual.sql','utf8'));
+ await db.exec(fs.readFileSync(process.env.QF_MD_FIX||'supabase/migrations/20261029163059_marketing_excluir_pedido_proprio_e_nao_publicado.sql','utf8'));
  const admin='00000000-0000-4000-8000-000000000001',pro='00000000-0000-4000-8000-000000000002';
  await db.exec(`insert into public.qf_profiles values('${admin}','Admin',true),('${pro}','Profissional',true);
  insert into public.qf_admins values('${admin}');insert into public.qf_profissionais(user_id,online) values('${pro}',true);
@@ -123,5 +124,7 @@ const {PGlite}=requireSite('@electric-sql/pglite');const fs=require('node:fs'),a
  assert.equal(await q('select count(*)::int from public.qf_recargas where profissional_id=$1',[third]),1);
  console.log('PASS SQL conjunto: teste grátis excluído, R$589,90 repartido entre Livre e Marketing, assinatura paga e prioridade ativadas uma única vez.');
 
+ await db.exec(`update private.qf_md_campanhas set status='pausada' where id='${second.id}';insert into public.qf_chamados(id,cliente_id,categoria,cidade,status,marketing_origem) values('00000000-0000-4000-8000-000000000020','${third}','pintor','São Paulo','aberto','{}'),('00000000-0000-4000-8000-000000000021',null,'pintor','São Paulo','cancelado','{}');`);
+ assert.equal(await q("select count(*)::int from private.qf_md_leads where chamado_id in ('00000000-0000-4000-8000-000000000020','00000000-0000-4000-8000-000000000021')"),0,'não reserva pedido próprio ou cancelado');
  await db.close();
 })().catch(e=>{console.error(e);process.exitCode=1;});
