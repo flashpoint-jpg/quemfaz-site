@@ -49,13 +49,13 @@
   if(area.dataset.qfSplitMounted)return;area.dataset.qfSplitMounted='1';
   const segredo=g.localStorage.getItem(prefix+id);
   if(!segredo){area.hidden=true;return;}
-  const endpoint='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-livre-split';
+  const endpoint='https://dczlyrgnzlxmzghzaooz.supabase.co/functions/v1/quemfaz-livre-pix-manual';
   const call=async action=>{
    const r=await g.fetch(endpoint,{method:'POST',cache:'no-store',
     headers:{apikey:key,'Content-Type':'application/json'},
     body:JSON.stringify({action,chamado_id:id,fechamento_id:f.id,segredo})});
    const d=await r.json().catch(()=>({}));
-   if(!d.ok)throw Error(({split_em_preparacao:'Pagamento pelo Quem Faz ainda em preparação.',conta_efi_pendente:'O profissional ainda precisa validar a conta Efí.',cobranca_antiga_existente:'Já existe uma cobrança para este serviço.',pagamento_temporariamente_indisponivel:'Não foi possível emitir Pix seguro. Não faça pagamento fora da plataforma.'})[d.reason]||'Pagamento indisponível. Consulte o suporte.');
+   if(!d.ok)throw Error(({pagamento_em_preparacao:'A emissão do Pix integral está em validação.',conclusao_nao_confirmada:'Aguarde a confirmação do serviço e do código.',cobranca_antiga_existente:'O fechamento já possui outra cobrança: não vamos gerar um segundo Pix.',pagamento_temporariamente_indisponivel:'Não foi possível emitir Pix seguro. Não faça pagamento fora da plataforma.'})[d.reason]||'Pagamento indisponível. Consulte o suporte.');
    return d;
   };
   let busy=false;
