@@ -203,6 +203,12 @@
  }
  function placeServices(){
   const anchor=host();if(!anchor)return;
+  const copy=g.document.querySelector('.qf-landing-copy');
+  if(copy&&!copy.querySelector('.qf-home-visual')){
+   const visual=g.document.createElement('div');visual.className='qf-home-visual';
+   copy.prepend(visual);
+   copy.querySelectorAll('.qf-hero2-head,.qf-customer-sub,.qf-play-badge--hero').forEach(el=>visual.append(el));
+  }
   const mobile=g.document.querySelector('.qf-mobile-services')?.closest('section');
   const desktop=g.document.querySelector('#qf-sec-servicos');
   if(mobile){mobile.classList.add('qf-home-services-mobile');anchor.after(mobile);}
@@ -241,7 +247,7 @@
    if(navButton){selectTab(navButton.hasAttribute('data-home-services')?'services':navButton.hasAttribute('data-support-open')?'help':navButton.dataset.action==='landing-my-orders'?'orders':navButton.dataset.action==='landing-all-services'?'request':'home');if(navButton.dataset.nav==='/'){e.preventDefault();e.stopImmediatePropagation();state.notice='';intro();reveal();return;}}
    // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
-   if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);state.problem='';intro('',cat?.nome||service.dataset.deskService);reveal();return;}
+   if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);const name=cat?.nome||service.dataset.deskService;g.document.querySelectorAll('[data-desk-service],[data-landing-cat]').forEach(b=>{const c=g.DB.categoryById(b.dataset.landingCat);b.setAttribute('aria-pressed',String((c?.nome||b.dataset.deskService)===name));});state.problem='';intro('',name);reveal();return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
    if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}intro();reveal();return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;

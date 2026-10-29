@@ -69,3 +69,25 @@
  #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head .qf-landing-photo{height:280px!important}
 }
 #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head .qf-landing-photo img{object-position:right top!important}
+
+/* Full-width header; independent visual and form columns prevent stretched rows. */
+#app-shell[data-route="inicio"] .qf-landing-topbar.qf-fixed-bar{left:0!important;right:0!important;width:100%!important;max-width:none!important}
+#app-shell[data-route="inicio"] .qf-desk-menu{flex:1!important}
+.qf-home-visual{min-width:0}
+#app-shell[data-route="inicio"] :is(.qf-home-services-desktop,.qf-home-services-mobile) button[aria-pressed="true"]{background:#ff8610!important;border-color:#e87500!important;color:#10233e!important}
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] #app-content{max-width:none!important}
+ #app-shell[data-route="inicio"] .qf-landing-copy{max-width:1366px!important;margin-inline:auto!important;grid-template-rows:auto!important;gap:32px!important;padding:32px!important}
+ #app-shell[data-route="inicio"] .qf-home-visual{grid-column:1;grid-row:1}
+ #app-shell[data-route="inicio"] .qf-landing-actions{grid-column:2!important;grid-row:1!important}
+ #app-shell[data-route="inicio"] .qf-landing-hero{background:#f5f8fc!important}
+ #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head{padding:320px 24px 24px!important;min-height:440px!important;border-radius:18px;overflow:hidden;background:#071c38}
+ #app-shell[data-route="inicio"] .qf-customer-sub{color:#173b66!important;margin:16px 0!important}
+ #app-shell[data-route="inicio"] .qf-play-badge--hero{margin:0!important;height:56px!important;min-height:56px!important;align-items:center!important}
+ #app-shell[data-route="inicio"] .qf-play-badge--hero img{width:190px!important;height:56px!important;object-fit:contain!important}
+}
+@media(max-width:899px){
+ #app-shell[data-route="inicio"] .qf-home-visual{margin-bottom:20px}
+ #app-shell[data-route="inicio"] .qf-home-nav{right:0!important;left:0!important;bottom:0!important}
+ #app-shell[data-route="inicio"] .qf-landing-body{padding-bottom:calc(100px + var(--qf-safe-bottom,0px))!important}
+}
