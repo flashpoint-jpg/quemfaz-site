@@ -62,5 +62,5 @@ test('Saldo das carteiras é exclusivo de Movimentações e ausente da ficha de 
  assert.ok(admin.includes("label: 'Movimentações'"));
  const fin=fs.readFileSync('qf-admin-financeiro.js','utf8');
  assert.ok(fin.includes("'/admin/financeiro','/admin/movimentacoes',"),"Movimentações visível no menu principal");
- assert.ok(admin.includes("qf-admin-financeiro.js?v=20261028-movimentacoes-visible"),"Cache do menu renovado");
+ assert.ok(admin.includes("qf-admin-financeiro.js?v=pix-manual-20261029"),"Cache do menu renovado");
 });
