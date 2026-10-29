@@ -91,7 +91,7 @@
       trialLabel.classList.add('qf-trial-card');trialLabel.dataset.qfTrialReady='';
      }
      const conditions=document.createElement('details');conditions.className='qf-step__opt';
-     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>O Livre oferece desbloqueios ilimitados de pedidos disponíveis e compatíveis, respeitando o limite de profissionais por pedido. O profissional apresenta o orçamento; o cliente aceita a contratação e confirma a conclusão e o valor. A comissão de 13% só é gerada após essa confirmação. Divergências vão à análise. Preste contas em até 48 horas. O pagamento integral do serviço dentro da plataforma e o repasse Pix dependem de liberação bancária; enquanto isso, valem as regras de comissão Pix vigentes. Sem cobrança automática após o teste.</p>';
+     conditions.innerHTML='<summary>Condições do Quem Faz Livre</summary><p>O Livre oferece desbloqueios ilimitados de pedidos disponíveis e compatíveis, respeitando o limite de profissionais por pedido. O profissional apresenta o orçamento; o cliente aceita a contratação e confirma a conclusão e o valor. A comissão de 13% só é gerada após essa confirmação. Divergências vão à análise. Preste contas em até 48 horas. O novo modelo ainda não está disponível: recebimento do pagamento integral do serviço pela plataforma e envio de 87% à sua chave Pix após confirmação bancária são uma funcionalidade em preparação, ainda indisponível. Até sua liberação bancária, valem as regras atuais de comissão Pix. Sem cobrança automática após o teste.</p>';
      group.after(conditions);
      function updateChoice(){
       const test=!!trialInput?.checked;
@@ -101,7 +101,7 @@
       const b=form.querySelector('[data-cad-criar]');
       if(b)b.textContent=test?'COMEÇAR TESTE GRÁTIS · 2 DIAS':planoLivre?'Continuar para pagamento · R$ 39,90':'Continuar para pagamento · R$ 13,00';
       const nota=form.querySelector('[data-plano-nota]');
-      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=test?'2 dias com desbloqueios ilimitados e chat. Nenhum Pix para começar. Depois, assinatura opcional de R$ 39,90/30 dias.':planoLivre?'Ativação após confirmação do Pix de R$ 39,90 por 30 dias; sem recarga de R$ 13.':'R$ 13 de recarga inicial, creditados integralmente na Carteira.';}
+      if(nota){nota.classList.remove('qf-cad-planos__nota--aviso');nota.textContent=test?'2 dias com desbloqueios ilimitados e chat. Nenhum Pix para começar. Depois, assinatura opcional de R$ 39,90/30 dias.':planoLivre?'Ativação após confirmação do Pix de R$ 39,90 por 30 dias; sem recarga de R$ 13.':'R$ 13 de recarga inicial, valor creditado integralmente na Carteira.';}
       conditions.hidden=!planoLivre;
       if(trialLabel)trialLabel.classList.toggle('qf-trial-card--selected',test);
      }
