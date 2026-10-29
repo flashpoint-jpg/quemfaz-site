@@ -21,6 +21,8 @@
   $('acoes').hidden=!opcoes.length;
   $('pagamento').hidden=!(a.financeiro_disponivel&&['concluido','pagamento_pendente'].includes(a.status));
   if(a.status==='concluido'&&!a.financeiro_disponivel)status.textContent='Conclusão registrada. O pagamento está indisponível enquanto a integração financeira estiver em validação.';
+  if(['pago','repasse_pendente'].includes(a.status))status.textContent='Pagamento Pix confirmado. O profissional poderá solicitar o repasse, que será transferido manualmente pela administração após conferência.';
+  if(a.status==='repassado')status.textContent='Repasse registrado após transferência manual e conferência do comprovante.';
   if(a.status==='contestado')status.textContent='Contestação registrada. Cobrança e repasse bloqueados para revisão.';
  }
  select.onchange=()=>{$('form').hidden=true;$('motivo-label').hidden=select.value!=='contestar';$('motivo').required=select.value==='contestar';$('confirmo').checked=false;$('codigo').value='';};
