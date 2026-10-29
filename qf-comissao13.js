@@ -47,15 +47,20 @@
   const cliente=pedido?.profissionalId&&pedido?.clienteId?g.DB?.clienteById?.(pedido.clienteId):null;
   const digits=String(cliente?.telefone||'').replace(/\D/g,'');
   const number=/^55\d{10,11}$/.test(digits)?digits:/^\d{10,11}$/.test(digits)?'55'+digits:'';
-  const msg='Olá, '+String(cliente?.nome||'cliente').split(' ')[0]+'! Sou profissional do Quem Faz. Desbloqueei seu pedido e gostaria de conversar sobre o serviço.';
+  // Abertura oficial: o modelo é definido pelo Quem Faz, nunca por texto digitado pelo profissional.
+   // WhatsApp permite edição antes do envio: o aviso vinculante é mostrado no chat do aplicativo.
+   const msg='Olá, '+String(cliente?.nome||'cliente').split(' ')[0]+'! Sou profissional do Quem Faz e recebi seu pedido #'+String(pedidoId)+'.\n\n'+
+     'AVISO QUEM FAZ LIVRE: O orçamento, aceite, agendamento, confirmação de conclusão e pagamento devem ser registrados pelo aplicativo Quem Faz. O cliente também confirma se contratou ou não.\n\n'+
+     'O Pix do serviço só pode ser o Pix oficial gerado no aplicativo depois da conclusão. Não pague por chaves Pix enviadas por WhatsApp. Omissão, informações falsas ou fraude podem gerar suspensão ou bloqueio após análise e possibilidade de contestação.\n\n'+
+     'Podemos conversar por aqui, mas o fechamento será formalizado pelo aplicativo.';
   const waUrl=number?'https://wa.me/'+number+'?text='+encodeURIComponent(msg):'';
   const links='<div class="qf13-contact-actions" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">'+
    '<a class="btn btn--primary" style="min-width:0;white-space:normal;line-height:1.3;text-align:center;padding:12px 5px" data-nav="/profissional/chat/'+esc(pedidoId)+'" href="#/profissional/chat/'+esc(pedidoId)+'">Chat no app</a>'+
-   (waUrl?'<a class="btn" data-contact="whatsapp" style="min-width:0;white-space:normal;line-height:1.3;text-align:center;padding:12px 5px;background:#119458;color:#fff" href="'+esc(waUrl)+'" target="_blank" rel="noopener noreferrer">WhatsApp do cliente</a>':
+   (waUrl?'<a class="btn" data-contact="whatsapp" style="min-width:0;white-space:normal;line-height:1.3;text-align:center;padding:12px 5px;background:#119458;color:#fff" href="'+esc(waUrl)+'" target="_blank" rel="noopener noreferrer">WhatsApp do cliente · mensagem pronta</a>':
    '<span class="btn btn--outline" aria-disabled="true" style="display:flex;align-items:center;justify-content:center;min-width:0;white-space:normal;text-align:center;opacity:.75">WhatsApp indisponível</span>')+'</div>';
   const chat=chatAtivo?'<div class="qf13-client-chat" style="display:grid;gap:10px;padding:15px;border:2px solid #1769d5;border-radius:14px;background:#eef6ff;margin-top:10px">'+
-   '<strong style="color:#103d7c;font-size:1.05rem">Falar com o cliente</strong><p class="text--sm" style="margin:0;color:#36516f">Após desbloquear, use o chat ou WhatsApp para negociar. Informe o resultado em até 48 horas.</p>'+links+
-   '<p class="text--sm" style="margin:0;color:#36516f"><strong>Plano Livre:</strong> o cliente deve pagar o serviço pelo Pix oficial do Quem Faz, nunca diretamente a você. O repasse de 87% será manual após confirmação bancária.</p></div>':'';
+   '<strong style="color:#103d7c;font-size:1.05rem">Falar com o cliente</strong><p class="text--sm" style="margin:0;color:#36516f">Após desbloquear, use o chat para registrar a proposta, o aceite e eventual agendamento. Informe o andamento em até 48 horas; um agendamento válido não é serviço concluído. O WhatsApp é apenas apoio à conversa.</p>'+links+
+   '<p class="text--sm" style="margin:0;color:#36516f"><strong>Regra obrigatória — Plano Livre:</strong> apresente o orçamento e registre o aceite, a data e o resultado no aplicativo. Não cobre o cliente por fora. Após a conclusão confirmada, o cliente paga 100% por Pix oficial do Quem Faz. Os 13% pertencem à plataforma e o repasse manual de 87% depende de pagamento bancário confirmado. Informações falsas ou omissão de fechamento podem causar suspensão após análise.</p></div>':'';
   return chat+'<details class="qf13-support" style="padding:12px;border:1px solid #cad9ec;border-radius:12px;background:#f8fbff;margin-top:10px"><summary style="font-weight:700;cursor:pointer">Precisou de ajuda? Falar com suporte</summary><p class="text--sm" style="margin:8px 0">O suporte é da equipe Quem Faz, não é o contato do cliente.</p><a class="btn btn--outline btn--sm" href="'+esc(suporte)+'" target="_blank" rel="noopener noreferrer">Abrir suporte no WhatsApp</a></details>';
  }
   function contatoAdminHtml(a) {
