@@ -115,10 +115,11 @@
       try{
         const items=await rpc('qf_repasses_manuais_painel');
         if(manual.isConnected){
-          manual.innerHTML='<h2 class="h3">Meus repasses Pix</h2><p class="text--sm">Quando o pagamento do serviço for confirmado pelo banco e a conclusão estiver validada, você poderá solicitar o repasse de 87% à chave Pix cadastrada. A transferência será feita manualmente pelo Quem Faz.</p>'+
+          const totalReceber=(items||[]).filter(x=>x.situacao!=='pago').reduce((sum,x)=>sum+Number(x.profissional_centavos||0),0);
+          manual.innerHTML='<h2 class="h3">Meus repasses Pix</h2><p style="font-weight:800;color:#1458cc;font-size:20px">Total a receber: '+brl(totalReceber)+'</p><p class="text--sm">Quando o pagamento do serviço for confirmado pelo banco e a conclusão estiver validada, você poderá solicitar o repasse de 87% à chave Pix cadastrada. A transferência será feita manualmente pelo Quem Faz.</p>'+
            (!items?.length?'<p>Você ainda não tem pagamentos de serviços confirmados para solicitar repasse.</p>':
            items.map(x=>'<article class="card stack--sm" data-qf-manual-id="'+esc(x.financeiro_id)+'"><strong>'+esc(x.pedido||'Serviço')+'</strong><p>Cliente pagou: '+brl(x.valor_bruto_centavos)+' · Comissão Quem Faz: '+brl(x.comissao_centavos)+' · Seu repasse: <strong>'+brl(x.profissional_centavos)+'</strong></p><p>Situação: <strong>'+esc(x.situacao)+'</strong></p>'+
-            (x.can_request?'<button class="btn btn--primary" type="button" data-qf-solicitar-manual>Solicitar pagamento</button>':'')+
+            (x.can_request?'<button class="btn btn--primary" type="button" data-qf-solicitar-manual>Solicitar pagamento (saque Pix)</button>':'')+
             '<p role="status" data-qf-manual-msg></p></article>').join(''));
           manual.querySelectorAll('[data-qf-solicitar-manual]').forEach(btn=>btn.onclick=async()=>{
             const row=btn.closest('[data-qf-manual-id]'),msg=row.querySelector('[data-qf-manual-msg]');btn.disabled=true;
