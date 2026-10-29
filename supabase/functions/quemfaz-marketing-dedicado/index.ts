@@ -1,9 +1,7 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import {createClient} from "npm:@supabase/supabase-js@2.58.0";
 import forge from "npm:node-forge@1.3.1";
 
-// Quem Faz Livre: cliente paga o valor INTEGRAL por Pix ao Quem Faz.
-// O banco NÃO faz split; o administrador repassa manualmente 87% após conciliar o recebimento.
+// Marketing Dedicado: cobrança conciliada no banco e prioridade no próprio Quem Faz.
 const projectUrl=Deno.env.get("SUPABASE_URL")||"";
 const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
 const efiId=Deno.env.get("EFI_CLIENT_ID")||"";
@@ -62,11 +60,11 @@ async function professional(req:Request){
  if(!bearer)return null;const r=await admin.auth.getUser(bearer);return r.error?null:r.data.user?.id;
 }
 async function payment(req:Request,b:any,pro:string){
- if(!uid.test(String(b.campanha_id||''))||![55000,58990].includes(b.confirmar_preco))
+ if(!uid.test(String(b.campanha_id||''))||(b.action==='checkout'&&![55000,58990].includes(b.confirmar_preco)))
  return reply(req,{ok:false,reason:'confirme_o_preco'},400);
- const p=await rpc('qf_md_pagamento_preparar',{p_prof:pro,p_campanha:b.campanha_id,p_valor:b.confirmar_preco});
+ const p=await rpc(b.action==='status'?'qf_md_pagamento_consultar':'qf_md_pagamento_preparar',b.action==='status'?{p_prof:pro,p_campanha:b.campanha_id}:{p_prof:pro,p_campanha:b.campanha_id,p_valor:b.confirmar_preco});
  if(!p?.ok)return reply(req,p||{ok:false},409);
- if(p.status==='conciliado')return reply(req,p);
+ if(['conciliado','em_analise'].includes(p.status))return reply(req,p);
  let connection:Deno.HttpClient|null=null;
  try{
   connection=client();const t=await token(connection);
@@ -105,8 +103,8 @@ Deno.serve(async req=>{
    const r=await admin.from('qf_admins').select('user_id').eq('user_id',pro).maybeSingle();
    if(r.error||!r.data)return reply(req,{ok:false,reason:'admin_obrigatorio'},403);
    return reply(req,{ok:true,efi_ambiente:sandbox?'sandbox':'production',
-    meta_configurada:!!Deno.env.get('META_ACCESS_TOKEN'),venda_liberada:false,
-    bloqueio:'Integração Meta com pausa automática e homologação financeira pendentes; nenhum Pix gerado.'});
+    gestao_anuncios:'manual',venda_liberada:true,
+    bloqueio:'Prioridade por pagamento confirmado nos pedidos compatíveis. Campanhas criadas manualmente pelo Quem Faz; sem integração Meta.'});
   }
   if(!['checkout','status'].includes(b.action))return reply(req,{ok:false,reason:'acao_invalida'},400);
   return await payment(req,b,pro);

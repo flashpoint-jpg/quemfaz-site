@@ -1,0 +1,11 @@
+--- quemfaz-efi-pix-sync/index.ts
++++ quemfaz-efi-pix-sync/index.ts
+@@
+ import forge from "npm:node-forge@1.3.1";
++import {syncMarketingDedicado} from "../_shared/marketing-sync.ts";
+@@
+     const access=await token(c);
++    let marketing:any;try{marketing=await syncMarketingDedicado(admin,c,EFI_PIX_BASE,access);}catch(_){marketing={error:'marketing_indisponivel'};}
+@@
+-    return out({ok:true,checked,approved,ignored,charges,comissoes});
++    return out({ok:true,checked,approved,ignored,charges,comissoes,marketing});
