@@ -14,7 +14,7 @@ create function private.qf_livre_acesso_ok(uuid) returns boolean language sql as
 create function private.qf_cadastro_profissional_pago(uuid) returns boolean language sql as $$select false$$;
 create function public.qf_livre_status() returns jsonb language sql as $$select jsonb_build_object('ok',auth.uid() is not null,'ativo',exists(select 1 from public.qf_livre_assinaturas a join public.qf_recargas r on r.id=a.recarga_id where a.profissional_id=auth.uid() and a.inicio_em<=now() and a.fim_em>clock_timestamp() and r.status='aprovado'),'valor_centavos',3990,'recarga_id',null)$$;
 grant usage on schema private,auth to authenticated;grant execute on function auth.uid() to authenticated;
-`);await d.exec(migration);for(let n of [1,2,3,4,5,6,99])await d.query('insert into auth.users values($1,$2,now())',[uid(n),`p${n}@example.com`]);return d;}
+`);await d.exec(migration);await d.exec(fs.readFileSync('supabase/migrations/20261029024128_livre_ficha_profissional.sql','utf8'));for(let n of [1,2,3,4,5,6,99])await d.query('insert into auth.users values($1,$2,now())',[uid(n),`p${n}@example.com`]);return d;}
 async function as(d,n,admin=false){await d.exec('reset role');await d.query("select set_config('request.jwt.claim.sub',$1,false)",[n?uid(n):'']);await d.exec(admin?'reset role':'set role authenticated');}
 async function rpc(d,name,args=[]){return (await d.query('select public.'+name+'('+args.map((_,i)=>'$'+(i+1)).join(',')+') r',args)).rows[0].r;}
 test('Teste de 48 horas: identidade única, contagem após identificação, expiração e acesso anterior preservado',async()=>{const d=await setup();try{
@@ -40,5 +40,5 @@ test('Cortesia 2, 3, 4, 10 dias, prorrogar, encerrar, auditoria, convite e assin
  await assert.rejects(()=>rpc(d,'qf_admin_livre_beneficio',['p1@example.com','ativar',366,'Prazo inválido']),/prazo inválido/);
  assert.ok(Number((await d.query('select count(*) n from private.qf_livre_beneficio_historico')).rows[0].n)>=8);
  await as(d,6);assert.equal((await rpc(d,'qf_livre_status')).tipo_acesso,'pago');
- await as(d,99);const panel=await rpc(d,'qf_admin_livre_painel',['','todos',0]);assert.equal(panel.total,5);assert.equal(panel.kpis.planos_pagos,1);assert.equal(panel.kpis.cortesias,4);assert.ok(panel.itens.some(r=>r.historico.length));
+ await as(d,99);const panel=await rpc(d,'qf_admin_livre_painel',['','todos',0]);assert.equal(panel.total,5);assert.equal(panel.kpis.planos_pagos,1);assert.equal(panel.kpis.cortesias,4);await as(d,99,true);await d.query('insert into qf_profiles(id,tipo,nome,email,telefone) values($1,$2,$3,$4,$5)',[uid(5),'profissional','Convite','p5@example.com','11999999999']);await as(d,99);const linked=await rpc(d,'qf_admin_livre_painel',['p5@example.com','todos',0]);assert.equal(linked.itens[0].profissional_id,uid(5),'pré-cadastro reconhece perfil sem falso pagamento');assert.ok(panel.itens.some(r=>r.historico.length));
 }finally{await d.close();}});
