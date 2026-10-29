@@ -18,14 +18,21 @@ const server=http.createServer((req,res)=>{
   await page.goto(origin+'/?app=1#/auth/profissional/cadastro');
   await page.waitForFunction(()=>window.QFLivre?.installed&&document.querySelector('[data-qf-livre-cadastro]'));
   const read=()=>page.evaluate(()=>{const f=document.querySelector('#cadastro-prof-form');return {plans:[...f.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),button:f.querySelector('[data-cad-criar]').textContent,note:f.querySelector('[data-plano-nota]').textContent,text:f.textContent};});
-  assert.deepEqual((await read()).plans,['avulso','livre']);
-  for(const [plan,price] of [['livre','39,90'],['avulso','13,00']]){
-   await page.evaluate(plan=>{const e=document.querySelector('[name=planoEscolhido][value="'+plan+'"]');e.click();},plan);
-   const state=await read();assert.ok(state.button.includes(price));assert.match(state.button,/pagamento/);
-   assert.match(state.note,plan==='avulso'?/creditado integralmente/:/sem recarga de R\$ 13/);
-   assert.doesNotMatch(state.text,/Criar conta grátis/);assert.match(state.text,/Os R\$ 13 viram saldo integral/);
-  }
-  assert.deepEqual(errors,[]);console.log('PASS cadastro construído '+width+'px: Avulso e Livre preservados, escolha e preços corretos, nenhuma ativação/cobrança.');
+  // Novos cadastros recebem 48h de teste gratuito. Preços pertencem às ofertas posteriores.
+  const initial=await read();
+  assert.deepEqual(initial.plans,['avulso','livre']);
+  assert.match(initial.button,/Concluir cadastro e começar teste grátis/);
+  assert.match(initial.note,/2 dias com desbloqueios ilimitados/);
+  assert.match(initial.note,/Nenhum Pix para começar/);
+  assert.match(initial.text,/R\$ 39,90/);
+  assert.doesNotMatch(initial.button,/pagamento|Pagar/i);
+  // Selecionar avulso durante o cadastro não deve disparar cobrança nem remover o teste inicial.
+  await page.evaluate(()=>document.querySelector('[name=planoEscolhido][value="avulso"]').click());
+  const afterChoice=await read();
+  assert.match(afterChoice.button,/começar teste grátis/);
+  assert.match(afterChoice.note,/Nenhum Pix para começar/);
+  assert.doesNotMatch(afterChoice.button,/pagamento|Pagar/i);
+  assert.deepEqual(errors,[]);console.log('PASS cadastro construído '+width+'px: escolha de plano preservada e teste gratuito sem cobrança inicial.');
   await context.close();
  }}finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
