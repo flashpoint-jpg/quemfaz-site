@@ -7,7 +7,7 @@ test('Página inicial distingue claramente quem contrata e quem oferece serviço
  const s=read('qf-pedido-home.js');new vm.Script(s);
  assert.match(s,/Preciso contratar um profissional/);
  assert.match(s,/Quero oferecer meus serviços/);
- assert.match(s,/Ir para cadastro profissional/);
+ assert.match(s,/Ir para a área de profissionais/);
  assert.match(s,/data-nav="\/auth\/profissional\/login"/);
  assert.match(s,/Já publicou um pedido\?/);
  assert.ok(s.indexOf('data-home-problem')<s.indexOf('Já publicou um pedido?'),'Login aparece depois da descrição do pedido');

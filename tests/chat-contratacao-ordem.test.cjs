@@ -12,6 +12,8 @@ test('Plano Livre prioriza a conversa, oferece orçamento e mostra 13% previstos
  const actions=[];
  w.Screens={};
  w.QFCloud={client:{rpc:async(name,args)=>{
+  if(name==='qf_livre_agendamento_ver')return {data:{ok:true,agendado_em:null,descricao_proposta:data.descricao_proposta}};
+  if(name==='qf_livre_proposta_agendada'){assert.equal(args.p_valor_centavos,35000);assert.equal(args.p_descricao,'Trocar chuveiro do banheiro');actions.push('propor');data={...data,estado:'negociando',proposta_em:new Date().toISOString(),valor_centavos:35000,descricao_proposta:args.p_descricao};return {data:{ok:true}};}
   assert.equal(name,'qf_chat_contratacao');
   actions.push(args.p_acao);
   if(args.p_acao==='propor'){
@@ -35,6 +37,7 @@ test('Plano Livre prioriza a conversa, oferece orçamento e mostra 13% previstos
   assert.equal(panel.querySelector('details.qfc-support').open,false);
   assert.ok(panel.querySelector('[data-qfc-form]').compareDocumentPosition(panel.querySelector('details.qfc-support'))&w.Node.DOCUMENT_POSITION_FOLLOWING,'O orçamento deve aparecer antes do suporte');
   const form=panel.querySelector('[data-qfc-form]');form.querySelector('[data-qfc-valor]').value='350,00';
+  form.elements.descricao.value='Trocar chuveiro do banheiro';
   form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
   await wait(()=>panel.textContent.includes('Atualizar orçamento do cliente'));
   assert.ok(actions.includes('propor'));

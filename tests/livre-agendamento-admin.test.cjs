@@ -19,7 +19,7 @@ test('servidor exige origem do Plano Livre e autenticado para agendamentos',()=>
  assert.match(migration,/d\.origem='comissao13'/);
  assert.match(migration,/revoke all on function public\.qf_livre_proposta_agendada.*from public,anon/);
  assert.match(migration,/grant execute on function public\.qf_livre_proposta_agendada.*to authenticated/);
- assert.match(migration,/p_agendado_em > now\(\)/);
+ assert.match(migration,/p_agendado_em<=now\(\)/);
  assert.match(migration,/servico_ainda_agendado/);
 });
 test('admin: agendamentos com aceite e conclusão, sem efetuar Pix ou saque',()=>{
