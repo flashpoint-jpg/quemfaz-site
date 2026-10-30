@@ -111,7 +111,7 @@ begin
 
   return new;
 end;
-$function$
+$function$;
 
 -- Benefício gratuito antigo não é comprovante de pagamento de cadastro.
 create or replace function private.qf_cadastro_profissional_pago(p_uid uuid)
