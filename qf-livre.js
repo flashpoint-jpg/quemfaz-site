@@ -119,7 +119,7 @@
      // Cadastro de novos profissionais: nenhuma oferta grátis ou cortesia substitui a confirmação Pix.
      group.style.removeProperty('display');
      group.hidden=false;
-     const livre=group.querySelector('input[value="mensal"]');
+     const livre=group.querySelector('input[value="basico_v2"]');
      const avulso=group.querySelector('input[value="avulso"]');
      const courtesyInput=form.elements.cortesiaLivre;
      if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
@@ -182,7 +182,7 @@
       if(test&&livre)livre.checked=true;
       const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'avulso';
       const b=form.querySelector('[data-cad-criar]');
-      if(b){const precos={avulso:'R$ 13,00',mensal:'R$ 39,90',pro:'R$ 79,90',premium:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
+      if(b){const precos={avulso:'R$ 13,00',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
       const note=form.querySelector('[data-plano-nota]');
       if(note){
        note.classList.remove('qf-cad-planos__nota--aviso');
@@ -489,9 +489,9 @@
     ui.setAttribute('aria-label', 'Escolha sua forma de começar');
     const cards=[
       {id:'avulso',badge:'SEM MENSALIDADE',nome:'Avulso',preco:'R$ 13,00',periodo:'crédito inicial',detail:'Recarga mínima integral para desbloqueios',info:'Após o Pix confirmado, R$ 13,00 ficam disponíveis na carteira',botao:'Pagar Avulso'},
-      {id:'mensal',badge:'PLANO BÁSICO',nome:'Básico',preco:'R$ 39,90',periodo:'30 dias',detail:'10 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Básico'},
-      {id:'pro',badge:'PLANO PRO',nome:'Pro',preco:'R$ 79,90',periodo:'30 dias',detail:'25 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Pro'},
-      {id:'premium',badge:'MENSAL COMPLETO',nome:'Mensal completo',preco:'R$ 149,90',periodo:'30 dias',detail:'Até 100 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Completo'}
+      {id:'basico_v2',badge:'PLANO BÁSICO',nome:'Básico',preco:'R$ 39,90',periodo:'30 dias',detail:'10 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Básico'},
+      {id:'pro_v2',badge:'PLANO PRO',nome:'Pro',preco:'R$ 79,90',periodo:'30 dias',detail:'25 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Pro'},
+      {id:'completo_v2',badge:'MENSAL COMPLETO',nome:'Mensal completo',preco:'R$ 149,90',periodo:'30 dias',detail:'Até 100 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Completo'}
     ];
     ui.innerHTML=cards.map(p=>'<section class="qf-options-card qf-options-card--'+p.id+'">'+
       '<span class="qf-options-badge">'+p.badge+'</span>'+
