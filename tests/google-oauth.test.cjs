@@ -272,3 +272,53 @@ test('Google: pedido em andamento tem prioridade sobre Meus pedidos',()=>{
  assert.match(service,/Pedido recuperado! Confira os dados/);
  assert.doesNotMatch(service,/if\(fromGoogle&&reuse&&oldDraft.oauth[\s\S]{0,350}await publish\(\)/);
 });
+
+
+test('Google: retorno OAuth com pedido salvo mostra nome e Sair sem perder formulário',async()=>{
+ const script=fs.readFileSync(require.resolve('../qf-pedido-home.js'),'utf8');
+ const dom=new JSDOM('<!doctype html><html><body><div id="app-shell" data-route="inicio"><div id="app-content"><div class="qf-landing-copy"><form data-landing-service-form><input data-landing-service-search></form></div></div></div></body></html>',{url:'https://quemfazservico.com.br/?app=1#/'});
+ const w=dom.window;
+ w.HTMLElement.prototype.scrollIntoView=()=>{};
+ w.PROAKI_APP={};
+ w.DB={categories:()=>[{id:'cat_pintor',nome:'Pintor'}],categoryById:()=>null,state:{requests:[]}};
+ w.Screens={landing:()=>'',clienteHomeRender:()=>'',afterRender:()=>{},afterRenderAnon:()=>{},authLogin:()=>''};
+ w.QFClienteAcesso={};
+ let connected=true,mounted=0;
+ w.QFAtendimento={hasGoogleDraft:()=>true,hasActiveDraft:()=>true,html:()=>'<section data-qf-atendimento><div data-at-session></div>Pedido mantido em revisão</section>',mount:()=>{mounted++;}};
+ w.sessionStorage.setItem('qf_google_login_return','1');
+ w.sessionStorage.setItem('qf_google_publish_pending','1');
+ w.QFCloud={client:{
+  auth:{
+   getUser:async()=>({data:{user:connected?{id:'11111111-1111-4111-8111-111111111111',email:'cliente@example.com',identities:[{provider:'google'}],user_metadata:{full_name:'Cliente Teste'}}:null},error:null}),
+   onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}}),
+   signOut:async()=>{connected=false;return {error:null};}
+  },
+  from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{id:'11111111-1111-4111-8111-111111111111',tipo:'cliente',nome:'cliente@example.com'},error:null})})})})
+ }};
+ w.navigate=()=>{};
+ vm.runInNewContext(script,{window:w,console,Date},{filename:'qf-pedido-home.js'});
+ await new Promise(resolve=>setTimeout(resolve,300));
+ const header=w.document.querySelector('#qf-connected-header');
+ assert.ok(header,'a sessão Google é observada mesmo ao restaurar rascunho');
+ assert.match(header.textContent,/Olá, Cliente Teste/);
+ assert.ok(header.querySelector('[data-account-signout]'),'botão sair visível durante a revisão');
+ const review=w.document.querySelector('[data-at-session]');
+ assert.ok(review,'identificação dentro do resumo do pedido');
+ assert.match(review.textContent,/Conectado como Cliente Teste/);
+ assert.match(w.document.querySelector('#qf-pedido-facil').textContent,/Pedido mantido em revisão/);
+ review.querySelector('[data-account-signout]').click();
+ await new Promise(resolve=>setTimeout(resolve,100));
+ assert.equal(connected,false,'o logout foi efetuado');
+ assert.match(w.document.querySelector('#qf-pedido-facil').textContent,/Pedido mantido em revisão/,'não apaga o pedido ao sair');
+ assert.ok(mounted>=1);
+ dom.window.close();
+});
+test('Google: ação de conclusão na função publicada exige JWT e vínculo de telefone',()=>{
+ const server=fs.readFileSync(require.resolve('../supabase/functions/quemfaz-cliente-conta/index.ts'),'utf8');
+ assert.match(server,/case "google": return await completarGoogle\(req, b, ipHash\)/);
+ assert.match(server,/const user = await usuarioDoJwt\(req\)/);
+ assert.match(server,/if \(existing && existing\.id !== user\.id\)/);
+ const form=fs.readFileSync(require.resolve('../qf-atendimento.js'),'utf8');
+ assert.match(form,/O pedido ainda não foi publicado\./);
+ assert.match(form,/Seus dados continuam preenchidos\./);
+});

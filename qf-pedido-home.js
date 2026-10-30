@@ -10,7 +10,7 @@
  function accountBar(){
   if(!state.account)return '';
   const a=state.account,initial=String(a.name||'C').trim().slice(0,1).toUpperCase();
-  return '<section class="qf-account-strip" aria-label="Conta do cliente"><span class="qf-account-initial">'+esc(initial)+'</span><div class="qf-account-person"><small>'+(a.google?'Conectado com Google':'Cliente conectado')+'</small><strong>Olá, '+esc(a.name)+'</strong></div><div class="qf-account-buttons"><button type="button" data-account-orders>Meus pedidos</button><button type="button" data-account-signout>Sair</button></div></section>';
+  return '<section class="qf-account-strip" aria-label="Conta conectada"><span class="qf-account-initial">'+esc(initial)+'</span><div class="qf-account-person"><small>'+(a.blocked?'Esta conta não é de cliente':a.google?'Conectado com Google':'Cliente conectado')+'</small><strong>Olá, '+esc(a.name)+'</strong></div><div class="qf-account-buttons">'+(a.blocked?'':'<button type="button" data-account-orders>Meus pedidos</button>')+'<button type="button" data-account-signout>Sair da conta</button></div>'+(a.blocked?'<p class="text--sm" role="alert" style="margin:0;width:100%;color:#9b261c">Para publicar, saia desta conta e entre com seu cadastro de cliente.</p>':'')+'</section>';
  }
  let authBootAttempts=0,authReturnAttempts=0;
  function returningGoogle(){try{return g.sessionStorage?.getItem('qf_google_login_return')==='1';}catch(_){return false;}}
@@ -23,6 +23,13 @@
   if(node){node.textContent=message||'';node.hidden=!message;}
  }
  function paintAccount(){
+  // A identificação fica também na revisão; no celular o cabeçalho pode estar fora da tela.
+  const review=slot?.querySelector('[data-at-session]');
+  if(review){
+   const a=state.account;
+   review.innerHTML=a?'<span style="display:block;font-weight:750">'+(a.blocked?'Conta de profissional conectada':'Conectado como '+esc(a.name))+'</span><button type="button" data-account-signout style="margin-top:6px;border:0;background:transparent;color:#1458cc;font-weight:800;text-decoration:underline;padding:4px 0;cursor:pointer">Sair da conta</button>'
+      :'<span>Seu pedido está preenchido. Entre com Google ou celular ao publicar.</span>';
+  }
   const el=slot?.querySelector('[data-home-account]');
   if(el){el.innerHTML=accountBar();el.hidden=!state.account;}
   const home=g.document.querySelector('#app-shell[data-route="inicio"] #app-content');
@@ -69,7 +76,13 @@
   let profile=null;
   try{const data=await c.from('qf_profiles').select('id,tipo,nome').eq('id',auth.id).maybeSingle();if(!data.error)profile=data.data;}catch(_){}
   if(n!==authSequence)return;
-  if(profile&&profile.tipo!=='cliente'){state.account=null;paintAccount();return;}
+  // Uma sessão não-cliente também precisa exibir o botão Sair; nunca escondê-lo.
+  if(profile&&profile.tipo!=='cliente'){
+   const meta=auth.user_metadata||{};
+   state.account={id:auth.id,google:(auth.identities||[]).some(i=>i.provider==='google'),
+    profile:false,blocked:true,name:String(meta.full_name||meta.name||profile.nome||'Conta conectada').trim().slice(0,80)};
+   paintAccount();return;
+  }
   const google=auth.app_metadata?.provider==='google'||(auth.identities||[]).some(i=>i.provider==='google');
   if(!google&&profile?.tipo!=='cliente'){state.account=null;paintAccount();return;}
   const meta=auth.user_metadata||{};
@@ -100,7 +113,10 @@
  }
  async function signOutCustomer(){
   const c=g.QFCloud?.client,b=slot?.querySelector('[data-account-signout]');if(!c?.auth?.signOut)return;if(b)b.disabled=true;
-  try{const r=await c.auth.signOut();if(r.error)throw r.error;authSequence++;state.account=null;state.user=null;state.notice='Você saiu da conta.';state.mode='intro';intro();paintAccount();setLoginStatus('');selectTab('home');}
+  try{const keepDraft=!!g.QFAtendimento?.hasActiveDraft?.()&&state.mode==='form';
+   const r=await c.auth.signOut();if(r.error)throw r.error;authSequence++;state.account=null;state.user=null;state.notice='Você saiu da conta.';
+   if(keepDraft)showForm('');else{state.mode='intro';intro();selectTab('home');}
+   paintAccount();setLoginStatus('');}
   catch(e){state.notice=e.message||'Não foi possível sair.';reset();}
   finally{if(b?.isConnected)b.disabled=false;}
  }
@@ -345,6 +361,9 @@
   safeAreas();
   if(!host())return;
   placeServices();selectTab(state.tab);
+  // Iniciar acompanhamento do Google ANTES de restaurar o formulário.
+  // Antes, o retorno OAuth saía daqui e nunca exibia nome / Sair da conta.
+  watchAccount();
   if(g.QFAtendimento?.hasGoogleDraft?.()||(pendingPublication()&&g.QFAtendimento?.hasActiveDraft?.())){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
@@ -356,7 +375,6 @@
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
   else intro();
-  watchAccount();
  }
  function install(){
   if(!g.PROAKI_APP||!g.Screens?.landing||!g.QFClienteAcesso||!g.QFAtendimento)return false;
