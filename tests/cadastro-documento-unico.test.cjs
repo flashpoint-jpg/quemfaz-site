@@ -26,10 +26,19 @@ test('Edge exige documento antes de qualquer Pix e não guarda documento em clar
  assert.ok(start>=0 && check>start && money>check);
  assert.match(edge,/documento_obrigatorio/);
  assert.match(edge,/documentoHash = String\(identidade\.data\.documento_hash/);
- assert.match(edge,/documento_tipo: tipoDocumento, documento_hash: documentoHash, documento_final: documentoFinal/);
+ assert.match(edge,/documento_tipo: documentoHash \? tipoDocumento : null/);
  assert.doesNotMatch(edge,/segredo, email, nome: nome \|\| null, telefone: telefone \|\| null,[\s\S]{0,120}documento: documento/);
  assert.match(edge,/ins\.error\?\.code === "23505"/);
  assert.match(edge,/replace\(\/\^55\(\?=\\d\{10,11\}\$\)\/,""\)/);
+});
+test('site antigo não perde checkout: número repetido é barrado e documento vira obrigatório após a publicação',()=>{
+ assert.match(edge,/qf_pre_cadastro_politica_atual/);
+ assert.match(edge,/qf_pre_cadastro_telefone_elegivel/);
+ assert.match(edge,/if \(politica\.data\.exigir_documento\)/);
+ const sqlTransicao=read('supabase/migrations/20261030223000_protecao_telefone_transicao_documento.sql');
+ assert.match(sqlTransicao,/qf_pre_cadastro_um_telefone_global/);
+ assert.match(sqlTransicao,/exigir_documento boolean not null default false/);
+ assert.match(sqlTransicao,/to service_role/);
 });
 test('banco garante CPF/CNPJ e telefone únicos em cobranças pendentes ou pagas',()=>{
  assert.match(sql,/create unique index if not exists qf_pre_cadastro_um_documento_por_pagamento_ativo/);
