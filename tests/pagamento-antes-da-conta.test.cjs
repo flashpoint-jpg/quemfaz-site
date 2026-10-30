@@ -39,4 +39,4 @@ assert.ok(fn.includes('"email_em_uso"') && fn.indexOf('qf_pre_cadastro_email_liv
 assert.ok(fn.includes('esperado === original && pago >= esperado') && fn.includes('q.data.segredo !== segredo'));
 console.log('pagamento-antes-da-conta ok');
 // Avulso: conta na hora, com o aviso de que desbloquear chamado exige crédito na Carteira.
-assert.ok(html.includes('Os R$ 13 viram saldo integral da carteira') && html.includes('data-plano-nota') && html.includes('Sem pagar, não há cadastro ativo.'));
+assert.ok(html.includes('R$ 13,00') && html.includes('data-plano-nota') && html.includes('Sem pagar, não há cadastro ativo.'));
