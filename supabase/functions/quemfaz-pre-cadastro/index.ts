@@ -190,7 +190,8 @@ Deno.serve(async (req) => {
     const metodo = String(body.metodo || "pix");
     const email = String(body.email || "").trim().toLowerCase();
     const nome = String(body.nome || "").trim().slice(0, 160);
-    const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 13);
+    // Canonicalizar Brasil (+55 e DDD): mesmo celular não abre duas cobranças.
+    const telefone = String(body.telefone || "").replace(/\D/g, "").replace(/^55(?=\d{10,11}$)/,"").slice(0,11);
     const tipoDocumento = String(body.tipo_documento || "").toLowerCase();
     // Receber o documento somente no servidor e nunca persisti-lo em claro.
     const documento = String(body.documento || "").trim().slice(0, 32);
