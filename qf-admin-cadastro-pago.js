@@ -44,11 +44,11 @@
   }
   function waNumber(p){let d=String(p||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d.length>=12&&d.length<=13&&d.startsWith('55')?d:'';}
   let records=[],listControls=[],showDeleted=false;
-  const names={pendente:'Aguardando pagamento',teste:'Em teste',vencido:'Teste vencido',cortesia:'Cortesia',pago:'Plano pago',convite:'Convite preparado — prazo inicia após identificação'};
+  const names={pendente:'Sem assinatura Livre ativa',teste:'Em teste legado',vencido:'Teste vencido',cortesia:'Cortesia legada',pago:'Livre legado pago',convite:'Convite legado — prazo inicia após identificação'};
   function record(r,i){
     const until=r.situacao==='pago'?r.pago_ate:r.fim_em;
     const days=until?Math.max(0,Math.ceil((Date.parse(until)-Date.parse(r.servidor_agora||new Date().toISOString())))/86400000):0;
-    return '<details class="qf-pre-record"><summary><span class="qf-pre-record-head"><b>'+esc(r.nome||'Profissional')+'</b><small>'+esc(r.email)+'</small></span><span class="qf-pre-status">'+esc(names[r.situacao]||r.situacao)+'</span></summary><div class="qf-pre-detail"><p><strong>Cadastro:</strong> '+(r.profissional_id?'Profissional cadastrado':'Pré-cadastro — identificação pendente')+'</p><p><strong>Plano:</strong> '+esc(names[r.situacao])+' · '+Math.ceil(days)+' dia(s) restante(s)</p><p><strong>Início:</strong> '+date(r.inicio_em)+' · <strong>Vencimento:</strong> '+date(until)+'</p><p><strong>WhatsApp:</strong> '+esc(r.telefone||'Não informado')+' · Último contato: '+date(r.ultimo_whatsapp)+'</p><p><strong>E-mail:</strong> '+esc(r.email)+' · Último contato: '+date(r.ultimo_email)+'</p><div class="qf-pre-actions">'+
+    return '<details class="qf-pre-record"><summary><span class="qf-pre-record-head"><b>'+esc(r.nome||'Profissional')+'</b><small>'+esc(r.email)+'</small></span><span class="qf-pre-status">'+esc(names[r.situacao]||r.situacao)+'</span></summary><div class="qf-pre-detail"><p><strong>Cadastro:</strong> '+(r.profissional_id?'Profissional cadastrado':'Pré-cadastro — identificação pendente')+'</p><p><strong>Histórico Livre (legado):</strong> '+esc(names[r.situacao])+' · '+Math.ceil(days)+' dia(s) restante(s)</p><p><strong>Início:</strong> '+date(r.inicio_em)+' · <strong>Vencimento:</strong> '+date(until)+'</p><p><strong>WhatsApp:</strong> '+esc(r.telefone||'Não informado')+' · Último contato: '+date(r.ultimo_whatsapp)+'</p><p><strong>E-mail:</strong> '+esc(r.email)+' · Último contato: '+date(r.ultimo_email)+'</p><div class="qf-pre-actions">'+
     (r.situacao!=='pago'?'<button class="btn btn--primary" data-benefit="ativar" data-record="'+i+'">ATIVAR PLANO MANUAL</button>':'<span>Assinatura paga preservada</span>')+
     (r.tipo==='cortesia'&&!r.encerrado_em?'<button class="btn btn--outline" data-benefit="prorrogar" data-record="'+i+'">Prorrogar</button><button class="btn btn--outline" data-benefit="encerrar" data-record="'+i+'">Encerrar cortesia</button>':'')+
     (!r.contato_recusado?((waNumber(r.telefone)?'<button class="btn btn--outline" data-contact="whatsapp" data-record="'+i+'">WhatsApp</button>':'')+(r.email?'<button class="btn btn--outline" data-contact="email" data-record="'+i+'">Enviar e-mail</button>':'')+'<button class="btn btn--outline" data-contact="recusa" data-record="'+i+'">Não receber convites</button>'):'<strong>Contato recusado — não enviar convites</strong>')+
@@ -184,7 +184,7 @@
     try{const r=await api().rpc('qf_admin_livre_painel',{p_busca:panel.dataset.profissionalEmail,p_situacao:'todos',p_offset:0});if(r.error)throw r.error;
       const row=r.data?.itens?.find(x=>String(x.email).toLowerCase()===panel.dataset.profissionalEmail.toLowerCase());if(!row)throw Error('Não foi possível localizar o plano deste cadastro.');
       row.servidor_agora=r.data.servidor_agora;if(!panel.isConnected)return;
-      panel.innerHTML='<h2>Quem Faz Livre — controle de acesso</h2>'+record(row,0);
+      panel.innerHTML='<h2>Acesso profissional — planos e créditos</h2><p class="text--sm">Esta seção mostra apenas benefícios e assinaturas do Livre antigo. <strong>Não informa o saldo de créditos avulsos.</strong> Consulte <a href="#/admin/movimentacoes">Movimentações</a> para verificar recargas Pix e saldo da carteira.</p>'+record(row,0);
       panel.querySelector('details').open=true;
       panel.querySelectorAll('[data-benefit]').forEach(b=>b.onclick=()=>benefit(row,b.dataset.benefit,panel));
       panel.querySelectorAll('[data-contact]').forEach(b=>b.onclick=()=>contact(row,b.dataset.contact,panel));
