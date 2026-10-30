@@ -48,6 +48,7 @@ function page(shared={}){
  Object.defineProperty(w,'crypto',{configurable:true,value:webcrypto});
  Object.defineProperty(w,'indexedDB',{configurable:true,value:shared.idb||indexedDB()});
  Object.defineProperty(w,'sessionStorage',{configurable:true,value:shared.store||storage()});
+ Object.defineProperty(w,'localStorage',{configurable:true,value:shared.local||storage()});
  w.DB={state:{categories:[]},categories:()=>[{id:'cat_faxina',nome:'Faxina'}],categoryById:()=>null,persist:()=>{}};
  w.Screens={authLogin:()=>'',afterRenderAnon:()=>{}};
  const context={window:w,TextEncoder,TextDecoder,console,Uint8Array,Date};
@@ -240,4 +241,34 @@ test('Google: sessão inicial atrasada ainda mostra nome no topo',async()=>{
  assert.match(top.textContent,/Olá, Cliente Google/);
  assert.equal(w.document.querySelector('#qf-pedido-facil .qf-home-auth-wrap')?.hidden,true);
  w.close();
+});
+
+test('Google: pedido cifrado sobrevive retorno em outra aba sem sessionStorage',async()=>{
+ const shared={store:storage(),local:storage(),idb:indexedDB()};
+ const first=page(shared);
+ first.document.body.innerHTML=first.QFAtendimento.html();
+ await first.QFAtendimento.mount(first.document.body,{},null);
+ const input=first.document.querySelector('#at-servico');
+ input.value='Faxina';
+ first.document.querySelector('[data-qf-atendimento] form').dispatchEvent(new first.Event('submit',{bubbles:true,cancelable:true}));
+ await first.QFAtendimento.saveDraftForGoogle();
+ assert.ok(shared.local.getItem('qf_google_draft_v1'));
+ assert.equal(shared.local.getItem('qf_google_draft_v1').includes('Faxina'),false);
+ const second=page({...shared,store:storage()});
+ assert.equal(second.QFAtendimento.hasGoogleDraft(),true,'o novo contexto encontra o rascunho cifrado');
+ second.document.body.innerHTML=second.QFAtendimento.html();
+ await second.QFAtendimento.mount(second.document.body,{embedded:true,service:''},null);
+ assert.ok(second.QFAtendimento.hasActiveDraft(),'não recomeça o formulário');
+ assert.equal(second.QFAtendimento.hasGoogleDraft(),false,'apaga os dados cifrados após restauração bem-sucedida');
+ assert.equal(shared.idb.keys.has('oauth'),false,'remove chave criptográfica temporária');
+ first.close();second.close();
+});
+test('Google: pedido em andamento tem prioridade sobre Meus pedidos',()=>{
+ const script=fs.readFileSync(require.resolve('../qf-pedido-home.js'),'utf8');
+ assert.match(script,/function pendingPublication\(\)/);
+ assert.match(script,/returned&&state.mode==='intro'&&!pendingPublication\(\)/);
+ assert.match(script,/pendingPublication\(\)&&g.QFAtendimento\?\.hasActiveDraft/);
+ const service=fs.readFileSync(require.resolve('../qf-atendimento.js'),'utf8');
+ assert.match(service,/Pedido recuperado! Confira os dados/);
+ assert.doesNotMatch(service,/if\(fromGoogle&&reuse&&oldDraft.oauth[\s\S]{0,350}await publish\(\)/);
 });
