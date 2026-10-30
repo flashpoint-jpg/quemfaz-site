@@ -17,6 +17,8 @@ const server=http.createServer((req,res)=>{
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/?app=1#/auth/profissional/cadastro');
   await page.waitForFunction(()=>window.QFLivre?.installed&&document.querySelector('#cadastro-prof-form .qf-options-final'));
+  // Exibir a etapa 5 na simulação, sem criar conta ou pular a validação real do aplicativo.
+  await page.evaluate(()=>{const f=document.querySelector('#cadastro-prof-form');f.querySelectorAll('[data-step]').forEach(s=>{s.hidden=s.dataset.step!=='5';});});
   const read=()=>page.evaluate(()=>{
    const f=document.querySelector('#cadastro-prof-form'),cards=f.querySelector('.qf-options-final'),old=f.querySelector('.qf-cad-planos');
    return {
