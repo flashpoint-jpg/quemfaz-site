@@ -23,6 +23,13 @@
   if(node){node.textContent=message||'';node.hidden=!message;}
  }
  function paintAccount(){
+  // A identificação fica também na revisão; no celular o cabeçalho pode estar fora da tela.
+  const review=slot?.querySelector('[data-at-session]');
+  if(review){
+   const a=state.account;
+   review.innerHTML=a?'<span style="display:block;font-weight:750">'+(a.blocked?'Conta de profissional conectada':'Conectado como '+esc(a.name))+'</span><button type="button" data-account-signout style="margin-top:6px;border:0;background:transparent;color:#1458cc;font-weight:800;text-decoration:underline;padding:4px 0;cursor:pointer">Sair da conta</button>'
+      :'<span>Seu pedido está preenchido. Entre com Google ou celular ao publicar.</span>';
+  }
   const el=slot?.querySelector('[data-home-account]');
   if(el){el.innerHTML=accountBar();el.hidden=!state.account;}
   const home=g.document.querySelector('#app-shell[data-route="inicio"] #app-content');
