@@ -1,0 +1,39 @@
+name: Publicação visitante — regressão isolada
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/quemfaz-cliente-rapido/index.ts'
+      - 'supabase/migrations/*publicacao_visitante*'
+      - 'qf-cliente-acesso.js'
+      - 'qf-atendimento.js'
+      - 'tests/quemfaz-cliente-rapido.test.cjs'
+      - '.github/workflows/publicacao-visitante-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/quemfaz-cliente-rapido/index.ts'
+      - 'supabase/migrations/*publicacao_visitante*'
+      - 'qf-cliente-acesso.js'
+      - 'qf-atendimento.js'
+      - 'tests/quemfaz-cliente-rapido.test.cjs'
+      - '.github/workflows/publicacao-visitante-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publicacao-visitante:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Testar backend de visitante sem dados reais ou segredos
+        run: node --test tests/quemfaz-cliente-rapido.test.cjs
+      - name: Testar login opcional e preservação de pedido
+        run: node --test tests/google-oauth.test.cjs
