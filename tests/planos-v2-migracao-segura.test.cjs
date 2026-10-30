@@ -24,3 +24,13 @@ test('contagem da cota é única por desbloqueio e nunca autorizada pelo navegad
  assert.match(sql,/alter table private\.qf_planos_v2_consumos enable row level security/);
  assert.match(sql,/revoke all on private\.qf_planos_v2_config/);
 });
+
+test('Avulso exige recarga minima e conciliação Pix antes de creditar',()=>{
+ assert.match(sql,/qf_planos_v2_recargas_avulsas/);
+ assert.match(sql,/valor_centavos integer not null check\(valor_centavos>=1300\)/);
+ assert.match(sql,/qf_avulso_pix_confirmado/);
+ assert.match(sql,/status<>'creditado' or/);
+ assert.match(sql,/confirmada_em is not null and pix_txid is not null and end_to_end_id is not null/);
+ assert.match(sql,/recarga_id uuid not null unique references public\.qf_recargas\(id\)/);
+ assert.match(sql,/alter table private\.qf_planos_v2_recargas_avulsas enable row level security/);
+});
