@@ -8341,15 +8341,18 @@ alt=""></noscript>
     return d2 === Number(cpf[10]);
   }
   function formatCnpj(v) {
-    const d = digits(v).slice(0,14);
-    return d.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+    const d = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,14);
+    return d.replace(/^(.{2})(.)/,'$1.$2').replace(/^(.{2})\.(.{3})(.)/,'$1.$2.$3')
+      .replace(/^(.{2})\.(.{3})\.(.{3})(.)/,'$1.$2.$3/$4')
+      .replace(/^(.{2})\.(.{3})\.(.{3})\/(.{4})(.{1,2})$/,'$1.$2.$3/$4-$5');
   }
   function validCnpj(v) {
-    const cnpj = digits(v);
-    if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+    // Receita Federal: CNPJ numérico e alfanumérico (novo padrão 2026).
+    const cnpj = String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (!/^[A-Z0-9]{12}[0-9]{2}$/.test(cnpj) || /^(.)\1{11}$/.test(cnpj.slice(0,12))) return false;
     const calc = function (base, weights) {
       let sum = 0;
-      for (let i=0;i<weights.length;i++) sum += Number(base[i]) * weights[i];
+      for (let i=0;i<weights.length;i++) sum += (base.charCodeAt(i)-48) * weights[i];
       const rem = sum % 11;
       return rem < 2 ? 0 : 11 - rem;
     };
@@ -10294,6 +10297,7 @@ alt=""></noscript>
         if (documentoInput) {
           if (limparDocumento) documentoInput.value = '';
           documentoInput.maxLength = pj ? 18 : 14;
+          documentoInput.inputMode = pj ? 'text' : 'numeric';
           documentoInput.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
           documentoInput.value = pj ? global.QFGeo.formatCnpj(documentoInput.value) : global.QFGeo.formatCpf(documentoInput.value);
         }
@@ -15436,6 +15440,7 @@ alt=""></noscript>
         fantasiaLabel.textContent = pj ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)';
         fantasia.required = pj;
         doc.maxLength = pj ? 18 : 14;
+        doc.inputMode = pj ? 'text' : 'numeric';
         doc.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
         if (limpar) doc.value = '';
         else doc.value = pj ? global.QFGeo.formatCnpj(doc.value) : global.QFGeo.formatCpf(doc.value);
