@@ -69,12 +69,14 @@ async function publicarVisitante(req: Request, nome: string, telefone: string) {
   const created = await admin.auth.admin.createUser({
     email, email_confirm: true,
     user_metadata: { qf_role: "cliente", qf_nome: nome, qf_telefone: telefone, qf_guest: true },
+    app_metadata: { qf_guest: true },
   });
   if (created.error || !created.data.user)
     return reply({ ok: false, error: "Não foi possível preparar sua publicação agora." }, 500);
   const userId = created.data.user.id;
   const profile = await admin.from("qf_profiles").upsert({
     id: userId, tipo: "cliente", nome, telefone, whatsapp: telefone, ativo: true,
+    visitante_sem_cadastro: true,
     atualizado_em: new Date().toISOString(),
   }, { onConflict: "id" });
   if (profile.error) {
