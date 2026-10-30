@@ -45,9 +45,9 @@ begin
        not (
          (v_pago.plano='avulso' and v_pago.valor_centavos=1300) or
          (v_pago.plano='livre' and v_pago.valor_centavos=3990) or
-         (v_pago.plano='basico' and v_pago.valor_centavos=3990) or
+         (v_pago.plano='basico_v2' and v_pago.valor_centavos=3990) or
          (v_pago.plano='pro_v2' and v_pago.valor_centavos=7990) or
-         (v_pago.plano='completo' and v_pago.valor_centavos=14990)
+         (v_pago.plano='completo_v2' and v_pago.valor_centavos=14990)
        )
     then
       raise exception 'É necessário pagar o plano escolhido para concluir seu cadastro.'
