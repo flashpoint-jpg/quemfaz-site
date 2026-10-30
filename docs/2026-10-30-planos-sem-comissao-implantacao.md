@@ -19,9 +19,20 @@
 - Preservar bônus de indicação de R$10; não criar bônus de cadastro, teste ou nova cortesia.
 - A Efí oferece Pix para envio via API, mas necessita `pix.send`, webhook e limites liberados para a conta. Não foi confirmada autorização desta conta nem política de tarifas.
 
+## Correção final do fluxo de cadastro — 30/10/2026
+**Valor correto do Avulso: R$ 13,00 (não R$ 3,00).**
+O novo profissional deve escolher um plano e pagar **somente o preço daquele plano** para finalizar seu cadastro. Sem Pix liquidado e conciliado no servidor, o pré-cadastro pode ficar pendente, mas não pode haver perfil profissional ativo, nem acesso a desbloqueios.
+- Avulso: recarga inicial mínima R$ 13,00; os R$ 13,00 vão integralmente para saldo de desbloqueios após Pix confirmado.
+- Básico: R$ 39,90, libera a cota do Básico após Pix confirmado. **Não cobrar R$ 13 adicionais.**
+- Pro: R$ 79,90, libera a cota do Pro após Pix confirmado. **Não cobrar R$ 13 adicionais.**
+- Mensal completo: R$ 149,90, libera a cota do Mensal completo após Pix confirmado. **Não cobrar R$ 13 adicionais.**
+- O pré-cadastro necessário para emitir Pix não equivale a cadastro ativo. Somente o servidor, após validar titularidade, valor, status, TXID/E2E e idempotência, pode ativar perfil e crédito/cota.
+- Profissionais já ativos com direitos pagos não podem ser desativados retroativamente por essa nova regra.
+- Esta mudança não altera os pontos ainda pendentes do fluxo de taxa de visita.
+ 
 ## Regra de pagamento antecipado confirmada em 30/10/2026
 - **Todos** os planos exigem pagamento antes de liberar o benefício, inclusive Avulso.
-- Avulso é a modalidade padrão do cadastro, mas começa com saldo R$0,00 e zero desbloqueios: o profissional deve primeiro pagar uma **recarga Pix mínima de R$13**.
+- Avulso é o plano de recarga inicial mínima de R$ 13,00: até o Pix confirmado, o cadastro continua pendente e sem desbloqueios.
 - Os R$13 (ou o valor maior escolhido) são creditados somente após confirmação bancária no servidor; cobrança criada, Pix apenas gerado, Pix pendente, recusado, cancelado ou não conciliado não geram nenhum crédito.
 - O crédito liberado pode então ser consumido conforme o preço de cada desbloqueio. Uma recarga paga não deve ser contabilizada duas vezes.
 - Básico, Pro e Mensal completo exigem Pix confirmado para ativar suas cotas. Se cota acabar, desbloqueio só com saldo de crédito de origem confirmada; sem ambos, bloquear e oferecer recarga.
