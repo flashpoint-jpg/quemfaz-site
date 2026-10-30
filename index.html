@@ -6874,7 +6874,21 @@ alt=""></noscript>
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
+    // Referência do Pix confirmado. O gatilho no banco verificará o pagamento
+    // e o e-mail, em vez de confiar no papel enviado pelo navegador.
+    let prePagoMeta = null;
+    if (role === 'profissional') {
+      try {
+        const guardado = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null');
+        if (guardado?.pag?.id && guardado?.pag?.segredo) prePagoMeta = guardado.pag;
+      } catch (_) {}
+      if (!prePagoMeta) return {ok:false,error:'É necessário pagar o plano escolhido para concluir seu cadastro.'};
+    }
     const meta = {
+      ...(prePagoMeta ? {
+        qf_pre_cadastro_id:prePagoMeta.id,
+        qf_pre_cadastro_segredo:prePagoMeta.segredo
+      } : {}),
       qf_role: role,
       qf_nome: data.nome,
       qf_telefone: data.telefone || '',
