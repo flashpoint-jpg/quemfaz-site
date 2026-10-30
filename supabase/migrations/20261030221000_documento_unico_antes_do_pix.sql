@@ -204,3 +204,89 @@ begin
 end;
 $function$
 ;
+
+-- CNPJ alfanumérico é válido desde julho/2026. Manter os CNPJs numéricos.
+-- O módulo 11 usa código ASCII - 48 para letras A-Z e dígitos 0-9.
+create or replace function private.qf_cnpj_valido(p_cnpj text)
+returns boolean language plpgsql immutable
+set search_path to 'pg_catalog' as $cnpj$
+declare
+  v text := upper(regexp_replace(coalesce(p_cnpj,''),'[^A-Za-z0-9]','','g'));
+  soma integer := 0;
+  resto integer;
+  d1 integer;
+  d2 integer;
+  i integer;
+  pesos1 integer[] := array[5,4,3,2,9,8,7,6,5,4,3,2];
+  pesos2 integer[] := array[6,5,4,3,2,9,8,7,6,5,4,3,2];
+begin
+  if v !~ '^[A-Z0-9]{12}[0-9]{2}$'
+    or substr(v,1,12) ~ '^([A-Z0-9])\1{11}$'
+  then return false; end if;
+  for i in 1..12 loop
+    soma := soma + (ascii(substr(v,i,1))-48)*pesos1[i];
+  end loop;
+  resto := soma % 11;
+  d1 := case when resto < 2 then 0 else 11-resto end;
+  if d1 <> substr(v,13,1)::integer then return false; end if;
+  soma := 0;
+  for i in 1..13 loop
+    soma := soma + (ascii(substr(v,i,1))-48)*pesos2[i];
+  end loop;
+  resto := soma % 11;
+  d2 := case when resto < 2 then 0 else 11-resto end;
+  return d2 = substr(v,14,1)::integer;
+end $cnpj$;
+
+-- Sincronizar validação/hashing com o novo padrão alfanumérico.
+CREATE OR REPLACE FUNCTION public.qf_salvar_cnpj(p_cnpj text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private', 'extensions'
+AS $function$
+declare
+  v_uid uuid := auth.uid();
+  v_cnpj text := upper(regexp_replace(coalesce(p_cnpj,''), '[^A-Za-z0-9]', '', 'g'));
+  v_hash text;
+begin
+  if v_uid is null then
+    raise exception 'authentication required';
+  end if;
+  if not private.qf_cnpj_valido(v_cnpj) then
+    raise exception 'CNPJ inválido';
+  end if;
+
+  v_hash := encode(extensions.digest(v_cnpj, 'sha256'), 'hex');
+
+  if exists (
+    select 1 from private.qf_identidades
+    where cnpj_hash = v_hash and user_id <> v_uid
+  ) then
+    raise exception 'CNPJ já cadastrado em outra conta';
+  end if;
+
+  insert into private.qf_identidades(user_id, cpf_hash, cpf_last4, cnpj_hash, cnpj_last4, atualizado_em)
+  values (v_uid, null, null, v_hash, right(v_cnpj,4), now())
+  on conflict (user_id) do update
+  set cpf_hash = null,
+      cpf_last4 = null,
+      cnpj_hash = excluded.cnpj_hash,
+      cnpj_last4 = excluded.cnpj_last4,
+      atualizado_em = now();
+
+  return jsonb_build_object('ok', true, 'tipo', 'cnpj', 'documento_final', right(v_cnpj,4));
+end;
+$function$
+;
+
+-- Concorrência: dois CPFs diferentes não podem reservar o mesmo celular
+-- enquanto houver um pré-cadastro ativo, mesmo se a verificação chegou simultaneamente.
+create unique index if not exists qf_pre_cadastro_um_telefone_por_pagamento_ativo
+on public.qf_pre_cadastro_pagamentos(telefone)
+where documento_hash is not null and telefone is not null and status in ('pendente','aprovado');
+alter table public.qf_pre_cadastro_pagamentos
+  drop constraint if exists qf_pre_cadastro_telefone_canonico;
+alter table public.qf_pre_cadastro_pagamentos
+  add constraint qf_pre_cadastro_telefone_canonico
+  check (documento_hash is null or length(coalesce(telefone,'')) in (10,11));
