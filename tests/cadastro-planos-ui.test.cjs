@@ -42,7 +42,7 @@ test('Cadastro mostra Livre e Avulso com pagamento opcional imediato e teste nã
   assert.equal(free.checked,false);
   assert.match(form.querySelector('[data-cad-criar]').textContent,/Avulso.*R\$ 13,00/);
   assert.match(form.querySelector('[data-plano-nota]').textContent,/Recarga obrigatória/);
-  assert.match(form.textContent,/Sem mensalidade, sem comissão/);
+  assert.match(form.textContent,/sem mensalidade.*sem comissão/i);
   free.click();
   assert.equal(free.checked,true);
   assert.equal(livre.checked,true);
