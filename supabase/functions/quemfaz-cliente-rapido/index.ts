@@ -66,14 +66,28 @@ async function publicarVisitante(req: Request, nome: string, telefone: string) {
     return reply({ ok: false, error: "Limite de publicações como visitante atingido. Tente mais tarde ou entre na sua conta." }, 429);
 
   const email = "visitante-" + crypto.randomUUID() + "@acesso.quemfaz.app.br";
+  // O trigger de auth.users cria qf_profiles ANTES da API retornar. Se o telefone
+  // já existe, a restrição única bloqueia admin.createUser (SQLSTATE 23505).
+  // Criar a identidade SEM telefone e só associá-lo depois que a marca
+  // server-side qf_guest estiver salva em app_metadata.
   const created = await admin.auth.admin.createUser({
     email, email_confirm: true,
-    user_metadata: { qf_role: "cliente", qf_nome: nome, qf_telefone: telefone, qf_guest: true },
-    app_metadata: { qf_guest: true },
+    user_metadata: { qf_role: "cliente", qf_nome: nome, qf_guest: true },
   });
-  if (created.error || !created.data.user)
+  if (created.error || !created.data.user) {
+    console.error("visitante_criar_auth", created.error?.code || "erro");
     return reply({ ok: false, error: "Não foi possível preparar sua publicação agora." }, 500);
+  }
   const userId = created.data.user.id;
+  const updated = await admin.auth.admin.updateUserById(userId, {
+    app_metadata: { ...(created.data.user.app_metadata || {}), qf_guest: true },
+    user_metadata: { ...(created.data.user.user_metadata || {}), qf_role: "cliente", qf_nome: nome, qf_guest: true },
+  });
+  if (updated.error || updated.data?.user?.app_metadata?.qf_guest !== true) {
+    console.error("visitante_marcar_auth", updated.error?.code || "marca_ausente");
+    await admin.auth.admin.deleteUser(userId);
+    return reply({ ok: false, error: "Não foi possível validar o acesso sem cadastro. Tente novamente." }, 500);
+  }
   const profile = await admin.from("qf_profiles").upsert({
     id: userId, tipo: "cliente", nome, telefone, whatsapp: telefone, ativo: true,
     visitante_sem_cadastro: true,
