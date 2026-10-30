@@ -96,7 +96,7 @@
       if(result.error)throw result.error;
      }catch(err){try{g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}host.querySelector('[role=alert]').textContent=err.message||'Não foi possível entrar com Google.';}
     };
-    host.querySelector('[data-access-cancel]').onclick=()=>end(null,Error('Seu pedido já foi salvo. Depois de entrar, você volta exatamente à publicação. Entre para concluir a publicação.'));
+    host.querySelector('[data-access-cancel]').onclick=()=>end(null,Error('Seu pedido continua preenchido. Entre para concluir a publicação.'));
     host.querySelectorAll('[data-access-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.accessMode;draw();});
     const form=host.querySelector('form');form.onsubmit=async e=>{
      e.preventDefault();if(busy)return;
