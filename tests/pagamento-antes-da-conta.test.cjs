@@ -27,7 +27,8 @@ assert.ok(html.includes('Dados da sua conta') && html.includes("<span>E-mail</sp
 // A senha nunca vai para o armazenamento permanente do aparelho.
 assert.ok(html.includes('const semSenha = Object.assign({}, dados); delete semSenha.senha;'));
 // Formas de pagamento na tela e rede de segurança para quem pagou e entrou depois.
-for (const m of ['pix', 'cartao']) assert.ok(html.includes("metodoBtn('" + m + "'"));
+assert.ok(html.includes("metodoBtn('pix'"));
+assert.ok(!html.slice(html.indexOf('function renderEscolha(aviso)'),html.indexOf('function renderAguardando()')).includes("metodoBtn('cartao'"));
 assert.ok(html.includes('global.QFPreCadastro.tentar()'));
 
 // Banco: tabela fechada, resgate único e só de pagamento aprovado.
