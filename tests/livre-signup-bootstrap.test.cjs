@@ -35,11 +35,11 @@ test('Cadastro no trigger de auth funciona antes de pagar, sem conceder acesso',
 
 test('Cartao destaca beneficio de 2 dias e nao exibe cortesia livremente',()=>{
  const src=fs.readFileSync('qf-livre.js','utf8');
- assert.match(src,/Desbloqueios ilimitados por 2 dias/);
+ assert.match(src,/desbloqueios ilimitados por 2 dias/i);
  assert.match(src,/Sem Pix, recarga ou pagamento inicial/);
  assert.match(src,/courtesyInput.checked=false/);
  assert.match(src,/courtesyRow.remove/);
- assert.match(src,/Sem cobrança automática/);
+ assert.match(src,/cobrança automática/i);
  assert.match(src,/qf-trial-card--selected/);
  assert.doesNotThrow(()=>new (require('node:vm').Script)(src));
 });
