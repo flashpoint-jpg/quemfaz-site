@@ -18,7 +18,7 @@ test('Novos planos exibem cotas, valores e não prometem comissão nem repasse u
 });
 test('Cadastro exige pagamento e não oferece teste grátis como entrada',()=>{
  assert.match(src,/PAGAMENTO OBRIGATÓRIO PARA ATIVAR O CADASTRO/);
- assert.match(src,/Recarga mínima obrigatória/);
+ assert.match(src,/Recarga mínima integral/);
  assert.doesNotMatch(src,/data-qf-opcao="trial"/);
  assert.match(src,/data-qf-opcao=/);
 });
