@@ -1,4 +1,4 @@
-/* Artefato publicado; todas as conexões externas são bloqueadas, sem cobrar. */
+/* Teste visual/funcional da etapa 5 com três opções. Sem rede externa e sem cobranças. */
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
 const root=path.resolve('dist');
@@ -16,28 +16,41 @@ const server=http.createServer((req,res)=>{
   await context.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/?app=1#/auth/profissional/cadastro');
-  await page.waitForFunction(()=>window.QFLivre?.installed&&document.querySelector('[data-qf-livre-cadastro]'));
-  const read=()=>page.evaluate(()=>{const f=document.querySelector('#cadastro-prof-form');const g=f.querySelector('.qf-cad-planos');return {plans:[...f.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),visible:!!g&&getComputedStyle(g).display!=='none',trial:f.elements.testeLivre?.checked,button:f.querySelector('[data-cad-criar]').textContent,note:f.querySelector('[data-plano-nota]').textContent,text:f.textContent};});
+  await page.waitForFunction(()=>window.QFLivre?.installed&&document.querySelector('#cadastro-prof-form .qf-options-final'));
+  const read=()=>page.evaluate(()=>{
+   const f=document.querySelector('#cadastro-prof-form'),cards=f.querySelector('.qf-options-final'),old=f.querySelector('.qf-cad-planos');
+   return {
+    plans:[...f.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),
+    oldHidden:!!old&&getComputedStyle(old).display==='none',
+    trial:f.elements.testeLivre?.checked,
+    buttons:[...cards.querySelectorAll('[data-qf-opcao]')].map(e=>({option:e.dataset.qfOpcao,text:e.textContent})),
+    text:cards.textContent,
+    mobileFits:cards.scrollWidth<=document.documentElement.clientWidth+2
+   };
+  });
   const initial=await read();
   assert.deepEqual(initial.plans,['avulso','livre']);
-  assert.equal(initial.visible,true);
+  assert.equal(initial.oldHidden,true);
   assert.equal(initial.trial,true);
-  assert.match(initial.button,/teste grátis/);
-  assert.match(initial.text,/menos de R\$ 1,50\/dia/i);
-  assert.match(initial.text,/Recarga mínima obrigatória.*R\$ 13,00/i);
-  await page.evaluate(()=>document.querySelector('[name=planoEscolhido][value="avulso"]').click());
-  const avulso=await read();
-  assert.equal(avulso.trial,false);
-  assert.match(avulso.button,/Ativar Avulso.*R\$ 13,00/);
-  assert.match(avulso.note,/Pix ou cartão/);
-  await page.evaluate(()=>document.querySelector('[name=planoEscolhido][value="livre"]').click());
-  const livre=await read();
-  assert.equal(livre.trial,false);
-  assert.match(livre.button,/Livre por Pix.*R\$ 39,90/);
-  assert.match(livre.note,/Pix é gerado no próximo passo/);
-  await page.evaluate(()=>document.querySelector('[name=testeLivre]').click());
-  assert.match((await read()).button,/teste grátis/);
-  assert.deepEqual(errors,[]);console.log('PASS cadastro '+width+'px: Livre, Avulso e teste opcional com CTA correspondente e sem cobrança automática.');
+  assert.deepEqual(initial.buttons.map(x=>x.option),['trial','livre','avulso']);
+  assert.match(initial.text,/Teste grátis.*48 horas/i);
+  assert.match(initial.text,/R\$ 39,90/);
+  assert.match(initial.text,/R\$ 13,00/);
+  assert.match(initial.text,/R\$ 1,33 por dia/);
+  assert.match(initial.text,/recarga mínima obrigatória/i);
+  assert.equal(initial.mobileFits,true);
+  await page.evaluate(()=>{
+    const form=document.querySelector('#cadastro-prof-form');
+    form.requestSubmit=()=>{window.__opcaoEscolhida={plano:new FormData(form).get('planoEscolhido'),teste:new FormData(form).get('testeLivre')==='sim'};};
+  });
+  await page.locator('[data-qf-opcao=trial]').click();
+  assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'livre',teste:true});
+  await page.locator('[data-qf-opcao=livre]').click();
+  assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'livre',teste:false});
+  await page.locator('[data-qf-opcao=avulso]').click();
+  assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'avulso',teste:false});
+  assert.deepEqual(errors,[]);
+  console.log('PASS cadastro '+width+'px: três cartões, opções corretas, sem overflow e sem cobranças.');
   await context.close();
  }}finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
