@@ -17,6 +17,10 @@ values('basico_v2','Básico',3990,10,30,true),
 on conflict(plano) do update
 set nome=excluded.nome,preco_centavos=excluded.preco_centavos,
 chamados=excluded.chamados,dias=excluded.dias,ativo=true;
+-- Retira o catálogo antigo da venda nova, sem cancelar pedidos de Pix pendentes nem
+-- os pacotes já pagos. A resolução do pacote legado continua pelo preço da cobrança.
+update public.qf_planos_catalogo set ativo=false
+where plano in ('livre','mensal','pro','premium') and ativo=true;
 -- Pacotes antigos e suas cotas/expirações NÃO são modificados.
 create or replace function private.qf_ativar_pacote_v2(p_recarga uuid)
 returns text language plpgsql security definer set search_path to '' as $$
