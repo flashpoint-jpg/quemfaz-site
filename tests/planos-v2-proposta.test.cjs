@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
+const {PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,podeFinalizarCadastro,MENSAGEM_PAGAMENTO,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
 const agora='2026-10-30T18:00:00.000Z';
 const ok=(codigo,cota)=>({codigo,cota_contratada:cota,pagamento_confirmado:true,inicio_em:'2026-10-30T12:00:00.000Z',fim_em:'2026-11-29T12:00:00.000Z'});
 const request=(extra={})=>({agora,preco_desbloqueio_centavos:1300,carteira_centavos:0,...extra});
@@ -55,6 +55,23 @@ test('cadastro profissional só ativa após pagamento comprovado do plano escolh
  }
  assert.equal(validarAtivacaoCadastro({...comprovante,plano:'avulso',valor_centavos:300}).ativarCadastro,false);
  assert.equal(validarAtivacaoCadastro({...comprovante,plano:'basico',valor_centavos:5290}).ativarCadastro,false,'Não cobrar taxa extra de R$13');
+});
+test('sem Pix não finaliza cadastro: mostra mensagem de pagamento obrigatório',()=>{
+ const dados={plano:'avulso',valor_centavos:1300,pagamentoStatus:'pendente',confirmadaPeloBanco:false};
+ const bloqueado=podeFinalizarCadastro(dados);
+ assert.equal(bloqueado.podeFinalizar,false);
+ assert.equal(bloqueado.mensagem,'É necessário pagar o plano escolhido para concluir seu cadastro.');
+ assert.equal(MENSAGEM_PAGAMENTO,bloqueado.mensagem);
+ assert.equal(bloqueado.credito_centavos,0);
+ for(const plano of ['basico','pro','completo']){
+  const r=podeFinalizarCadastro({...dados,plano});
+  assert.equal(r.podeFinalizar,false);
+  assert.equal(r.mensagem,bloqueado.mensagem);
+ }
+ const ok=podeFinalizarCadastro({plano:'avulso',valor_centavos:1300,pagamentoStatus:'aprovado',confirmadaPeloBanco:true,txid:'QF_REG_12345',endToEndId:'E12345678901234567890'});
+ assert.equal(ok.podeFinalizar,true);
+ assert.equal(ok.credito_centavos,1300);
+ assert.equal(ok.mensagem,'');
 });
 test('Mensal completo não passa de 100 desbloqueios por cota',()=>{
  assert.equal(decidir(request({assinatura:ok('completo',100),propostaAprovada:true,consumidos:99})).origem,'cota');
