@@ -319,8 +319,18 @@
           let current=currentUser;
           if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
           current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato,container:params.embedded?area:null});currentUser=current;
+          // A identidade vem do login; o contato usado no pedido deve ser o contato do próprio perfil.
+          // Pedir confirmação quando o telefone digitado diverge, sem trocar de conta nem apagar o rascunho.
+          const phone=v=>String(v||'').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
+          const accountPhone=phone(current.whatsapp||current.telefone);
+          if(accountPhone&&accountPhone!==phone(a.contato)){
+            a.contato=accountPhone;
+            publishError('Você está logado, mas o celular informado é diferente do cadastro. Usaremos seu número cadastrado (final '+accountPhone.slice(-4)+'). Toque em Publicar grátis novamente para confirmar.');
+            return;
+          }
           phase='publish';if(button.isConnected)button.textContent='Publicando…';
           const c=category(a.servico),at=payload(a,id,c.id);
+          if(accountPhone)at.contato=accountPhone;
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
           const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:at.tipo==='garante'?1:4});

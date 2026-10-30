@@ -12,6 +12,22 @@
   if(!out?.ok){const e=Error(out?.error||'Não foi possível concluir seu acesso. Tente novamente.');e.codigo=out?.codigo;throw e;}
   return out;
  }
+ // Sessão autenticada: identificar titular pelo JWT, jamais pelo telefone informado no formulário.
+ // A conferência do celular do pedido permanece obrigatória antes de salvar.
+ async function loggedCustomer(){
+  const c=g.QFCloud?.client;
+  if(!c?.auth?.getUser)return null;
+  const result=await c.auth.getUser();
+  if(result.error||!result.data?.user?.id)return null;
+  // Visitantes continuam com identidade isolada; não reaproveitar um visitante como conta cadastrada.
+  if(result.data.user.app_metadata?.qf_guest===true)return null;
+  const p=await c.from('qf_profiles').select('id,tipo,nome,telefone,whatsapp').eq('id',result.data.user.id).maybeSingle();
+  if(p.error)throw Error('Não foi possível conferir seu cadastro de cliente. Atualize a página e tente novamente.');
+  if(p.data&&p.data.tipo!=='cliente')throw Error('Você está conectado na área do profissional. Saia dessa conta e entre como cliente para publicar.');
+  if(!p.data||!/^[1-9]{2}9\d{8}$/.test(phone(p.data.whatsapp||p.data.telefone)))return null;
+  if(g.QFCloud?.syncForCurrentSession)await g.QFCloud.syncForCurrentSession(true);
+  return p.data;
+ }
  async function existing(telefone){
   const c=g.QFCloud?.client;if(!c?.auth?.getUser)return null;
   const r=await c.auth.getUser();const id=r.data?.user?.id;if(r.error||!id)return null;
@@ -60,6 +76,8 @@
  function authenticate({nome,telefone,container}){
   if(active)return active;
   active=(async()=>{
+   const logged=await loggedCustomer();
+   if(logged)return logged;
    const profile=await existing(telefone);
    if(profile)return profile;
    let warning='';
