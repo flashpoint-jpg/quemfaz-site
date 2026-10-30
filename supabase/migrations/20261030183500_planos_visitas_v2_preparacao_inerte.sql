@@ -36,6 +36,26 @@ values ('avulso','Avulso',1300,null),
        ('completo','Mensal completo',14990,100)
 on conflict(codigo) do nothing;
 
+-- Avulso NÃO é gratuito: recarga Pix inicial a partir de R$ 13. Sem pagamento
+-- confirmado, profissional recém-cadastrado mantém saldo zero e não desbloqueia.
+-- Regra da efetiva creditação deve residir no servidor (não habilitada aqui).
+create table if not exists private.qf_planos_v2_recargas_avulsas (
+ id uuid primary key default gen_random_uuid(),
+ profissional_id uuid not null references public.qf_profiles(id),
+ recarga_id uuid not null unique references public.qf_recargas(id),
+ valor_centavos integer not null check(valor_centavos>=1300),
+ status text not null default 'pendente' check(status in ('pendente','creditado','cancelado','estornado')),
+ pix_txid text unique,
+ end_to_end_id text unique,
+ confirmada_em timestamptz,
+ criado_em timestamptz not null default now(),
+ constraint qf_avulso_pix_confirmado check (
+   status<>'creditado' or
+   (confirmada_em is not null and pix_txid is not null and end_to_end_id is not null))
+);
+create index if not exists qf_v2_recargas_avulsas_prof
+ on private.qf_planos_v2_recargas_avulsas(profissional_id,confirmada_em desc);
+
 -- Contrato registra os termos exatos e o pagamento que o financia.
 -- Cliente/navegador NAO tem acesso de escrita. Ativacao exige verificacao bancaria no servidor.
 create table if not exists private.qf_planos_v2_assinaturas (
@@ -112,6 +132,7 @@ create table if not exists private.qf_visitas_v2 (
 
 alter table private.qf_planos_v2_config enable row level security;
 alter table private.qf_planos_v2_catalogo enable row level security;
+alter table private.qf_planos_v2_recargas_avulsas enable row level security;
 alter table private.qf_planos_v2_assinaturas enable row level security;
 alter table private.qf_planos_v2_consumos enable row level security;
 alter table private.qf_visitas_v2_config enable row level security;
@@ -120,6 +141,7 @@ alter table private.qf_visitas_v2 enable row level security;
 revoke all on private.qf_planos_v2_config,
  private.qf_planos_v2_catalogo,
  private.qf_planos_v2_assinaturas,
+ private.qf_planos_v2_recargas_avulsas,
  private.qf_planos_v2_consumos,
  private.qf_visitas_v2_config,
  private.qf_visitas_v2 from public, anon, authenticated;
