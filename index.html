@@ -10480,7 +10480,7 @@ alt=""></noscript>
         } finally { avancando = false; }
       }
       function botaoPlano() {
-        const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'livre'); }) || QF_CAD_PLANOS[1];
+        const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
         const b = form.querySelector('[data-cad-criar]');
         if (b) b.textContent = 'Continuar para pagamento · ' + pl.preco;
         const nota = form.querySelector('[data-plano-nota]');
@@ -10526,7 +10526,6 @@ alt=""></noscript>
         resumoPlano();
         pagArea.innerHTML = pagAviso(aviso) +
           metodoBtn('pix', 'bolt', 'Pix', 'Confirma na hora. A conta é criada em seguida.', 'Mais rápido') +
-          (pre.plano === 'avulso' ? metodoBtn('cartao', 'creditCard', 'Cartão de crédito', 'Pagamento seguro na Efí. Ativação somente após aprovação.') : '') +
           '<div class="text--sm text--secondary" style="text-align:center;">Sua conta será criada com o e-mail <strong>' + esc(pre.dados && pre.dados.email) + '</strong>.</div>' +
           (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-voltar>Voltar e trocar de plano</button>' : '<button class="qf-cad-planos__depois" type="button" data-pag-cancelar>Cancelar e começar de novo</button>');
       }
@@ -10696,7 +10695,7 @@ alt=""></noscript>
         if (!pre) return;
         if (alvo.hasAttribute('data-pag-metodo')) {
           const metodo = alvo.getAttribute('data-pag-metodo');
-          if (metodo !== 'pix' && !(metodo === 'cartao' && pre.plano === 'avulso')) return;
+          if (metodo !== 'pix') return;
           gerarCobranca(metodo);
           return;
         }
