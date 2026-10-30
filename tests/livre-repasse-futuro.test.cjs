@@ -15,12 +15,12 @@ test('Oferta Livre comunica benefício e condições sem prometer pagamento de s
   assert.match(h,/Pagamentos de serviços pela plataforma, quando disponíveis para o pedido/);
   assert.doesNotMatch(h,/o repasse não é automático|saque garantido|Pix sempre disponível/i);
 });
-test('Cadastro mantém preço do Avulso e Livre e alternativa do teste sem checkout automático',()=>{
+test('Cadastro Avulso e Livre exige Pix e nunca seleciona um teste gratuito',()=>{
   assert.match(src,/Recarga mínima obrigatória.*R\$ 13,00/);
   assert.match(src,/R\$ 39,90 por 30 dias/);
-  assert.match(src,/teste grátis de 48 horas/i);
-  assert.match(src,/trialInput\.checked=true/);
-  assert.match(src,/trialInput\)trialInput\.checked=false/);
+  assert.match(src,/PAGAMENTO OBRIGATÓRIO PARA ATIVAR O CADASTRO/);
+  assert.match(src,/trialInput\.checked=false/);
+  assert.doesNotMatch(src,/data-qf-opcao="trial"/);
   assert.match(src,/grupo|planos|checkout/i);
   assert.match(plan.oferta(),/Sem cobrança por contato/);
 });
