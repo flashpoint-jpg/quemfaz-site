@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {PROPOSTA,decidir,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
+const {PROPOSTA,decidir,validarRecargaAvulsa,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
 const agora='2026-10-30T18:00:00.000Z';
 const ok=(codigo,cota)=>({codigo,cota_contratada:cota,pagamento_confirmado:true,inicio_em:'2026-10-30T12:00:00.000Z',fim_em:'2026-11-29T12:00:00.000Z'});
 const request=(extra={})=>({agora,preco_desbloqueio_centavos:1300,carteira_centavos:0,...extra});
@@ -23,8 +23,25 @@ test('a cota é usada antes do saldo da carteira',()=>{
  assert.deepEqual(r,{origem:'cota',custo_centavos:0,restantes:0,liberado:true});
 });
 test('acabou a cota, usa saldo avulso sem custo de comissão',()=>{
- const r=decidir(request({assinatura:ok('basico',10),propostaAprovada:true,consumidos:10,carteira_centavos:5000}));
+ const r=decidir(request({assinatura:ok('basico',10),propostaAprovada:true,consumidos:10,carteira_centavos:5000,creditoAvulsoComprovado:true}));
  assert.equal(r.origem,'credito_avulso');assert.equal(r.custo_centavos,1300);
+});
+test('Avulso precisa pagar R$ 13,00 primeiro: saldo exibido sozinho não autoriza desbloqueio',()=>{
+ assert.equal(decidir(request({carteira_centavos:1300})).origem,'recarga_necessaria');
+ assert.equal(decidir(request({carteira_centavos:1300,creditoAvulsoComprovado:false})).liberado,false);
+ assert.equal(decidir(request({carteira_centavos:1300,creditoAvulsoComprovado:true})).origem,'credito_avulso');
+});
+test('Pix pendente, recusado ou inferior a R$13 nunca disponibiliza crédito',()=>{
+ assert.equal(validarRecargaAvulsa({valor_centavos:1299,status:'aprovado',confirmadaPeloBanco:true}).valorCreditado,0);
+ assert.equal(validarRecargaAvulsa({valor_centavos:1300,status:'pendente',confirmadaPeloBanco:true}).valorCreditado,0);
+ assert.equal(validarRecargaAvulsa({valor_centavos:1300,status:'aprovado',confirmadaPeloBanco:false}).liberarCredito,false);
+ const ok=validarRecargaAvulsa({valor_centavos:1300,status:'aprovado',confirmadaPeloBanco:true});
+ assert.deepEqual(ok,{liberarCredito:true,valorCreditado:1300,motivo:'pix_confirmado'});
+});
+test('todos os demais planos precisam de Pix confirmado para usar sua cota',()=>{
+ for(const [codigo,cota] of [['basico',10],['pro',25],['completo',100]]){
+  assert.equal(decidir(request({assinatura:{...ok(codigo,cota),pagamento_confirmado:false},propostaAprovada:true})).origem,'recarga_necessaria');
+ }
 });
 test('Mensal completo não passa de 100 desbloqueios por cota',()=>{
  assert.equal(decidir(request({assinatura:ok('completo',100),propostaAprovada:true,consumidos:99})).origem,'cota');
