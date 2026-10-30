@@ -5836,17 +5836,13 @@ alt=""></noscript>
     if (role === 'profissional') {
       let prepay = null;
       try { prepay = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null'); } catch (_) {}
-      let trialDraft = null;
-      try { trialDraft=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null'); } catch(_) {}
-      const benefit=await client.rpc('qf_livre_preparar_acesso',{
-        p_teste:!!(trialDraft && trialDraft.email===String(user.email||'').toLowerCase()),
-        p_documento:trialDraft?.documento||'',p_telefone:trialDraft?.telefone||''
-      });
-      if (!(benefit.data && benefit.data.ok===true)) {
-        if (!prepay?.pag?.id || !prepay?.pag?.segredo) throw new Error(benefit.error?.message || 'Escolha o Avulso ou o Livre, ou ative seu teste gratuito, para concluir o cadastro.');
-        const vinculo=await client.rpc('qf_vincular_pre_cadastro',{p_id:prepay.pag.id,p_segredo:prepay.pag.segredo});
-        if(vinculo.error || !vinculo.data?.ok) throw new Error('Pagamento não confirmado para este e-mail. Retome o pagamento antes de continuar.');
-      }
+      // Obrigatório para TODO profissional novo: pagamento confirmado na Efí e vínculo ao titular.
+      // Benefícios de teste/cortesia não podem substituir o pagamento da adesão.
+      if (!prepay?.pag?.id || !prepay?.pag?.segredo)
+        throw new Error('É necessário pagar o plano escolhido para concluir seu cadastro.');
+      const vinculo=await client.rpc('qf_vincular_pre_cadastro',{p_id:prepay.pag.id,p_segredo:prepay.pag.segredo});
+      if(vinculo.error || !vinculo.data?.ok)
+        throw new Error('É necessário pagar o plano escolhido para concluir seu cadastro. Confira o Pix para continuar.');
     }
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || meta.qf_cidade || '').trim() || null;
