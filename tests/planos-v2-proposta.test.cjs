@@ -1,0 +1,47 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {PROPOSTA,decidir,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
+const agora='2026-10-30T18:00:00.000Z';
+const ok=(codigo,cota)=>({codigo,cota_contratada:cota,pagamento_confirmado:true,inicio_em:'2026-10-30T12:00:00.000Z',fim_em:'2026-11-29T12:00:00.000Z'});
+const request=(extra={})=>({agora,preco_desbloqueio_centavos:1300,carteira_centavos:0,...extra});
+test('catálogo proposto: 4 opções, valores e cotas, sem modelo por comissão',()=>{
+ assert.deepEqual(PROPOSTA.map(x=>[x.codigo,x.preco_centavos,x.cota]),[
+  ['avulso',1300,null],['basico',3990,10],['pro',7990,25],['completo',14990,100]]);
+ assert.equal(PROPOSTA.some(p=>Object.keys(p).some(k=>/comissao/i.test(k))),false);
+});
+test('cadastro novo é avulso sem crédito grátis',()=>{
+ assert.equal(saldoInicialNovoCadastro(),0);
+ assert.equal(decidir(request()).origem,'recarga_necessaria');
+});
+test('plano só tem cota com Pix confirmado e preços aprovados',()=>{
+ assert.equal(decidir(request({assinatura:ok('basico',10)})).origem,'recarga_necessaria');
+ assert.equal(decidir(request({propostaAprovada:true,assinatura:{...ok('basico',10),pagamento_confirmado:false}})).origem,'recarga_necessaria');
+ assert.equal(decidir(request({propostaAprovada:true,assinatura:ok('basico',10)})).origem,'cota');
+});
+test('a cota é usada antes do saldo da carteira',()=>{
+ const r=decidir(request({assinatura:ok('pro',25),propostaAprovada:true,consumidos:24,carteira_centavos:5000}));
+ assert.deepEqual(r,{origem:'cota',custo_centavos:0,restantes:0,liberado:true});
+});
+test('acabou a cota, usa saldo avulso sem custo de comissão',()=>{
+ const r=decidir(request({assinatura:ok('basico',10),propostaAprovada:true,consumidos:10,carteira_centavos:5000}));
+ assert.equal(r.origem,'credito_avulso');assert.equal(r.custo_centavos,1300);
+});
+test('Mensal completo não passa de 100 desbloqueios por cota',()=>{
+ assert.equal(decidir(request({assinatura:ok('completo',100),propostaAprovada:true,consumidos:99})).origem,'cota');
+ assert.equal(decidir(request({assinatura:ok('completo',100),propostaAprovada:true,consumidos:100})).origem,'recarga_necessaria');
+});
+test('assinatura expirada não gera cota; requer recarga',()=>{
+ const assinatura={...ok('pro',25),fim_em:'2026-10-29T12:00:00.000Z'};
+ assert.equal(decidir(request({assinatura,propostaAprovada:true})).origem,'recarga_necessaria');
+});
+test('plano Livre antigo pago continua ilimitado até o vencimento',()=>{
+ const legado={...ok('livre_legado',null)};
+ assert.equal(decidir(request({legado})).origem,'plano_legado');
+ assert.equal(decidir(request({legado:{...legado,pagamento_confirmado:false}})).origem,'recarga_necessaria');
+ assert.equal(decidir(request({legado:{...legado,fim_em:'2026-10-29T12:00:00.000Z'}})).origem,'recarga_necessaria');
+});
+test('entrada adulterada não concede desbloqueios',()=>{
+ assert.throws(()=>decidir(request({carteira_centavos:-100})),/saldo/);
+ assert.throws(()=>decidir(request({preco_desbloqueio_centavos:NaN})),/preço/);
+ assert.throws(()=>decidir(request({assinatura:ok('basico',10),propostaAprovada:true,consumidos:-1})),/consumos/);
+});
