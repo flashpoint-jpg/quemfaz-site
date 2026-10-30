@@ -2505,7 +2505,8 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 </script>
 <script src="vendor/supabase-2.117.2.js"></script>
 <script src="qf-client-acquisition.js?v=11.96"></script>
-<script src="qf-atendimento.js?v=iphone-safari-20261025"></script>
+<script src="qf-visita.js?v=20261030-presencial"></script>
+<script src="qf-atendimento.js?v=20261030-presencial"></script>
 
 <!-- QF_CONSENT_V1 — escolha de cookies de medição antes de qualquer tag de anúncio.
      Sem escolha salva, vale QF_CONSENT_PADRAO (granted = comportamento anterior; mude para 'denied' para exigir aceite). -->
@@ -10885,6 +10886,7 @@ alt=""></noscript>
           icon('chevronRight', 'list-item__chevron') +
         '</div>' +
         '<p class="text--sm text--secondary">' + PU.escapeHtml([req.endereco?.bairro, req.endereco?.cidade].filter(Boolean).join(' · ')) + '</p>' +
+        (global.QFVisita ? global.QFVisita.selo(req) : '') +
         '<div class="row-between">' +
           statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) +
           '<span class="text--sm text--muted">' + PU.timeAgo(req.criadoEm) + '</span>' +
@@ -11293,6 +11295,7 @@ alt=""></noscript>
           '<div class="row" style="gap:6px;">' + (global.QFUrgencia && (req.urgencia === 'urgente' || req.urgencia === 'normal') ? global.QFUrgencia.tagHtml(req) : '') + (req.prioridade ? '<span class="badge badge--orange"><span class="badge__dot"></span>Prioritário</span>' : '') + statusBadge(req.aguardandoPagamento ? 'aguardando_pix' : req.status) + '</div>' +
         '</div>' +
 
+        (global.QFVisita ? global.QFVisita.clienteHtml(req) : '') +
         buscandoBlock(req) +
         semProfissionalBlock(req) +
         profissionalEncontradoBlock(req, prof) +
@@ -13453,6 +13456,7 @@ alt=""></noscript>
     return (
       '<button class="card card--pressable' + (novoChamado ? ' qf-new-call-alert' : '') + (urgente ? ' qf-urgent-card' : '') + '" style="width:100%;text-align:left;" data-qf-portfolio-card data-qf-categoria="' + PU.escapeHtml(String((cat && cat.nome) || '')) + '" data-qf-regiao="' + PU.escapeHtml(String(((cidade || {}).nome || req.endereco.cidade || '') + ' ' + (req.endereco.bairro || ''))) + '" data-nav="/profissional/chamada/' + req.id + '">' +
         (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
+        (global.QFVisita ? global.QFVisita.selo(req) : '') +
         '<div class="row">' +
           '<div class="icon-tile icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div class="spacer">' +
@@ -13544,6 +13548,7 @@ alt=""></noscript>
     return (
       '<div class="view">' +
         (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
+        (global.QFVisita ? global.QFVisita.selo(req) : '') +
         '<div class="row" style="gap:7px;flex-wrap:wrap;margin-bottom:8px">' + global.QFUrgencia.tagHtml(req) + (global.QFValor && global.QFValor.seloInteresseHtml ? global.QFValor.seloInteresseHtml(req, true) : '') + '</div>' +
         '<div class="row-between">' +
           '<div class="row"><div class="icon-tile icon-tile--lg icon-tile--orange">' + icon(cat ? cat.icon : 'tag') + '</div><div><div class="h2">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--secondary">Solicitado ' + PU.timeAgo(req.criadoEm) + '</div></div></div>' +
@@ -13681,6 +13686,7 @@ alt=""></noscript>
     return (
       '<button class="card card--pressable" style="width:100%;text-align:left;" data-nav="/profissional/pedido/' + req.id + '">' +
         (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
+        (global.QFVisita ? global.QFVisita.selo(req) : '') +
         '<div class="row-between">' +
           '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div>' +
           '<div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div><div class="text--sm text--secondary">' + PU.escapeHtml((cliente || {}).nome || '') + '</div></div></div>' +
@@ -13707,6 +13713,7 @@ alt=""></noscript>
     return (
       '<div class="view">' +
         (req.atendimentoTipo === 'garante' ? '<span class="qf-garante-badge">QUEM FAZ GARANTE</span>' : '') +
+        (global.QFVisita ? global.QFVisita.selo(req) : '') +
         '<div class="row-between qf-title-row">' +
           '<div class="row"><div class="icon-tile">' + icon(cat ? cat.icon : 'tag') + '</div><div class="h3">' + PU.escapeHtml(cat ? cat.nome : 'Serviço') + '</div></div>' +
           statusBadge(req.status) +
