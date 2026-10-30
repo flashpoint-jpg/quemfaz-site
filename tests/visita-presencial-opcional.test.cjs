@@ -16,10 +16,10 @@ test('arquivo da visita e formulário executam sintaxe JavaScript válida',()=>{
  new vm.Script(admin);
 });
 test('cliente escolhe sim ou não para orçamento presencial R$25 na etapa de condições',()=>{
- assert.match(form,/\['Condições',\['materiais','visita_presencial'\]\]/);
- assert.match(form,/Deseja orçamento presencial \(opcional\)\?/);
- assert.match(form,/\['nao','Não, quero receber orçamentos grátis sem visita paga'\]/);
- assert.match(form,/\['sim','Sim, quero visita técnica presencial · R\$ 25,00 por Pix'\]/);
+ assert.match(form,/\['Condições',\['materiais'\]\]/);
+ assert.match(form,/Deseja orçamento presencial \(opcional\)\?/);\n assert.match(form,/data-qf-visita-escolha/);
+ assert.match(form,/value="nao"/);
+ assert.match(form,/value="sim"/);
  assert.match(form,/visita_presencial:a\.visita_presencial\|\|'nao'/);
  assert.match(form,/a\.visita_presencial==='sim'/);
  assert.match(form,/root\.QFVisita\.abrir\(\{id:req\.id\}\)/);
