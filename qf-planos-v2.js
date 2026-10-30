@@ -28,6 +28,7 @@
   if(!Number.isFinite(instante))throw Error('Data inválida');
   const saldo=inteiroNaoNegativo(carteira_centavos,'saldo');
   const preco=inteiroNaoNegativo(preco_desbloqueio_centavos,'preço do desbloqueio');
+  if(preco===0)throw Error('Preço de desbloqueio precisa ser positivo');
   // Contratos antigos pagos conservam o direito integral até a expiração.
   if(validade(legado,instante)&&legado.codigo==='livre_legado'){
    return {origem:'plano_legado',custo_centavos:0,restantes:null,liberado:true};
