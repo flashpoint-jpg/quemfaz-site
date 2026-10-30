@@ -42,7 +42,7 @@
     if(restantes>0)return {origem:'cota',custo_centavos:0,restantes:restantes-1,liberado:true};
    }
   }
-  // O cadastro Avulso é grátis, mas NÃO oferece desbloqueio grátis.
+  // Pré-cadastro sem pagamento não é cadastro profissional ativo e NÃO oferece desbloqueio.
   // Somente saldo cuja origem paga foi confirmada pelo servidor pode ser usado.
   // O novo Avulso exige uma recarga Pix inicial de pelo menos R$ 13,00.
   if(creditoAvulsoComprovado===true&&saldo>=preco)
@@ -57,6 +57,26 @@
    return Object.freeze({liberarCredito:false,valorCreditado:0,motivo:'aguardando_pix'});
   return Object.freeze({liberarCredito:true,valorCreditado:valor,motivo:'pix_confirmado'});
  }
+ // Modelo somente de validação: o backend deve confirmar o Pix e ativar o cadastro
+ // na mesma operação transacional que cria o direito ao plano escolhido.
+ function validarAtivacaoCadastro({plano,valor_centavos,pagamentoStatus,confirmadaPeloBanco=false,txid='',endToEndId=''}={}){
+  const escolhido=PROPOSTA.find(p=>p.codigo===plano);
+  if(!escolhido) return Object.freeze({ativarCadastro:false,credito_centavos:0,motivo:'plano_invalido'});
+  const pago=Number.isSafeInteger(valor_centavos)&&valor_centavos>0;
+  if(!pago || pagamentoStatus!=='aprovado'||confirmadaPeloBanco!==true||
+     typeof txid!=='string'||!txid.trim()||
+     typeof endToEndId!=='string'||endToEndId.trim().length<16)
+   return Object.freeze({ativarCadastro:false,credito_centavos:0,motivo:'aguardando_pagamento_confirmado'});
+  const valorValido=plano==='avulso' ? valor_centavos>=1300 : valor_centavos===escolhido.preco_centavos;
+  if(!valorValido) return Object.freeze({ativarCadastro:false,credito_centavos:0,motivo:'valor_do_plano_incorreto'});
+  return Object.freeze({
+   ativarCadastro:true,
+   plano,
+   credito_centavos:plano==='avulso'?valor_centavos:0,
+   cota:escolhido.cota,
+   motivo:'plano_pago'
+  });
+ }
  function saldoInicialNovoCadastro(){return 0;}
- return Object.freeze({PROPOSTA,decidir,validarRecargaAvulsa,saldoInicialNovoCadastro});
+ return Object.freeze({PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,saldoInicialNovoCadastro});
 });
