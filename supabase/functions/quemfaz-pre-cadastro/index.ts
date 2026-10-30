@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
     const email = String(body.email || "").trim().toLowerCase();
     const nome = String(body.nome || "").trim().slice(0, 160);
     const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 13);
-    if (!["pix", "cartao"].includes(metodo)) return json({ ok: false, error: "metodo_invalido" }, 400);
+    if (metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
     // Somente duas modalidades de nova adesão; recusar ANTES de gerar qualquer cobrança.
     if (plano !== "avulso" && plano !== "livre") return json({ ok: false, error: "plano_invalido" }, 400);
     if (plano === "livre" && metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
