@@ -6420,6 +6420,33 @@ Screens.adminDashboardRender = function () {
     } catch (err) { console.warn('QuemFaz testes', err); if (!testes) testes = []; }
     testePintar();
   }
+  // O painel pode continuar com dados locais mesmo depois de expirar o token do Supabase.
+  // Antes de simular avisos, exige sessão Auth real para evitar 401 e erros genéricos.
+  async function testeValidarSessao() {
+    const cl = global.QFAdminCloud && global.QFAdminCloud.client;
+    if (!cl || !cl.auth) throw new Error('Painel desconectado. Atualize a página e entre novamente.');
+    const sess = await cl.auth.getSession();
+    if (sess.error) throw new Error('Não foi possível validar sua sessão. Verifique a conexão e tente entrar novamente.');
+    if (!sess.data || !sess.data.session || !sess.data.session.access_token) {
+      throw new Error('Sua sessão de administrador expirou. Saia do painel e entre novamente para enviar o teste.');
+    }
+    const identidade = await cl.auth.getUser();
+    if (identidade.error || !identidade.data || !identidade.data.user) {
+      throw new Error('Sua sessão de administrador não está válida. Entre novamente no painel.');
+    }
+    return cl;
+  }
+  function testeResposta(r) {
+    if (r.error) {
+      const status = Number(r.error.context && r.error.context.status);
+      if (status === 401) throw new Error('Sessão expirada. Entre novamente no painel antes de testar o celular.');
+      if (status === 403) throw new Error('Seu usuário não tem autorização administrativa para enviar testes.');
+      throw r.error;
+    }
+    const dados = r.data || {};
+    if (!dados.ok) throw new Error(dados.error || 'Não foi possível enviar o teste.');
+    return dados;
+  }
   // A situação se atualiza sozinha a cada 5 s enquanto a lista de profissionais estiver aberta.
   function testeAcompanhar() {
     if (testeTimer) clearInterval(testeTimer);
@@ -6438,10 +6465,9 @@ Screens.adminDashboardRender = function () {
     if (testeEnviando[proId]) return;
     testeEnviando[proId] = true; b.disabled = true;
     try {
-      const r = await global.QFAdminCloud.client.functions.invoke('quemfaz-push', { body: { action: 'teste_chamado', profissional_id: proId } });
-      if (r.error) throw r.error;
-      const d = r.data || {};
-      if (!d.ok) throw new Error(d.error || 'Não foi possível enviar o teste.');
+      const cl = await testeValidarSessao();
+      const r = await cl.functions.invoke('quemfaz-push', { body: { action: 'teste_chamado', profissional_id: proId } });
+      const d = testeResposta(r);
       testes = [{ id: d.id, profissional_id: proId, enviado_em: d.enviado_em || new Date().toISOString(), chegou_em: null, confirmado_em: null, envio: { sent: d.sent, total: d.total } }].concat(testes || []);
       testePintar();
       PU.toast(Number(d.total) ? 'Chamado de teste enviado para ' + d.sent + ' de ' + d.total + ' aparelho(s).' : 'Teste registrado, mas este profissional não tem aparelho cadastrado para avisos.', Number(d.total) ? 'success' : 'danger');
@@ -6455,9 +6481,7 @@ Screens.adminDashboardRender = function () {
   let testeTodosRodando = false;
   async function testeEnviarUm(proId) {
     const r = await global.QFAdminCloud.client.functions.invoke('quemfaz-push', { body: { action: 'teste_chamado', profissional_id: proId } });
-    if (r.error) throw r.error;
-    const d = r.data || {};
-    if (!d.ok) throw new Error(d.error || 'falha');
+    const d = testeResposta(r);
     testes = [{ id: d.id, profissional_id: proId, enviado_em: d.enviado_em || new Date().toISOString(), chegou_em: null, confirmado_em: null, envio: { sent: d.sent, total: d.total } }].concat(testes || []);
     return d;
   }
@@ -6472,6 +6496,8 @@ Screens.adminDashboardRender = function () {
     const alvo = daCidade.length ? daCidade : todos;
     const ids = alvo.map(function (p) { return String(p.id); }).filter(Boolean);
     if (!ids.length) { PU.toast('Nenhum profissional na lista.', 'danger'); return; }
+    try { await testeValidarSessao(); }
+    catch (err) { PU.toast((err && err.message) || 'Entre novamente no painel para executar testes.', 'danger'); return; }
     const ok = await PU.confirmDialog({ title: 'Simular chamado para ' + ids.length + ' profissiona' + (ids.length === 1 ? 'l' : 'is'),
       message: 'O celular de cada um vai tocar o chamado de teste em tela cheia, com o toque de chamado, agora. Não cria pedido e não mexe em carteira. Confirma?',
       okLabel: 'Enviar para todos' });
