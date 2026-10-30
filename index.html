@@ -8524,11 +8524,11 @@ alt=""></noscript>
   const QF_CAD_PLANOS = [
     {id:'avulso',nome:'Avulso',preco:'R$ 13,00',valor:1300,per:'recarga mínima',unit:'R$ 13,00 de crédito na carteira',
       itens:['Pagamento obrigatório para finalizar o cadastro','Valor integral convertido em créditos após Pix','Sem mensalidade, sem comissão']},
-    {id:'mensal',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
+    {id:'basico_v2',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
       itens:['10 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
-    {id:'pro',nome:'Pro',preco:'R$ 79,90',valor:7990,per:'30 dias',unit:'25 desbloqueios por mês',
+    {id:'pro_v2',nome:'Pro',preco:'R$ 79,90',valor:7990,per:'30 dias',unit:'25 desbloqueios por mês',
       itens:['25 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
-    {id:'premium',nome:'Mensal completo',preco:'R$ 149,90',valor:14990,per:'30 dias',unit:'100 desbloqueios por mês',
+    {id:'completo_v2',nome:'Mensal completo',preco:'R$ 149,90',valor:14990,per:'30 dias',unit:'100 desbloqueios por mês',
       itens:['Até 100 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']}
   ];
   global.QFCadPlanos = QF_CAD_PLANOS;
@@ -9234,7 +9234,7 @@ alt=""></noscript>
           '<div class="qf-step stack" data-step="5" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Escolha um plano. Seu cadastro profissional só será ativado depois da confirmação bancária.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
-            return '<label class="qf-cad-plano' + (pl.id === 'premium' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
+            return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
               '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'avulso' ? ' checked' : '') + '>' +
               '<span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">' + pl.nome + '</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span>' +
               '<span class="qf-cad-plano__preco"><b>' + pl.preco + '</b><span>' + pl.per + '</span></span>' +
@@ -10820,7 +10820,7 @@ alt=""></noscript>
           if (!(global.QFCloud && global.QFCloud.enabled)) {
             throw new Error('Conexão de pagamentos indisponível. Não é possível ativar cadastro sem pagamento.');
           }
-          if (!planoPago || !['avulso','mensal','pro','premium'].includes(planoPago.id)) {
+          if (!planoPago || !['avulso','basico_v2','pro_v2','completo_v2'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
           }
           localStorage.removeItem('qf_livre_teste_cadastro');
