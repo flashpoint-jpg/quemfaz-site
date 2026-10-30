@@ -325,7 +325,7 @@
      if(active&&last.tipo_acesso==='teste'&&Date.parse(last.valido_ate)-Date.parse(last.servidor_agora)<12*3600000)box.insertAdjacentHTML('beforeend','<p>Seu teste termina em breve. Continue com o Plano Livre por R$ 39,90.</p>');
     }
     if(!cadastro&&!pedido){
-     box.classList.remove('qf-livre--promo');box.classList.add('qf-livre--compact','qf-plan-status');box.innerHTML=planSummary(last);
+     box.classList.remove('qf-livre--promo');box.classList.add('qf-plan-status');if(pattern==='/profissional/planos'||pattern==='/profissional/carteira'){box.classList.remove('qf-livre--compact');box.innerHTML=planSummary(last)+oferta(last);}else{box.classList.add('qf-livre--compact');box.innerHTML=planSummary(last);}
     }
     if(pattern==='/profissional/perfil'){
      const account=Array.from(view.children).find(x=>x.classList.contains('card')&&!x.hasAttribute('data-qf-livre'));const badge=account?.querySelector('.badge');
@@ -353,11 +353,11 @@
     if(busy)return;
     busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
     try{
-     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');if(current.ativo&&!['teste','cortesia'].includes(current.tipo_acesso)){pending=false;render(current);unlock(current);return;}
+     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');
      const r=await rpc('qf_solicitar_plano',{p_plano:plano,p_metodo:'pix'});if(!r||!r.ok)throw Error('Conclua seu cadastro de profissional antes de assinar.');
      const fn=await client.functions.invoke('quemfaz-efi-checkout',{body:{tipo:'recarga',pagamento_id:r.recarga_id}});
      if(fn.error||!fn.data?.ok)throw Error('Não foi possível gerar o Pix. Tente novamente em instantes.');
-     if(await refresh())return;
+     
      const x=fn.data;pending=true;
      if(!x.pix_copy_paste)throw Error('O Pix ainda está sendo preparado. Tente novamente.');
      box.classList.remove('qf-livre--compact','qf-livre--promo');
@@ -372,11 +372,12 @@
        '<p role="status" aria-live="polite" data-qf-livre-msg>Aguardando confirmação bancária do Pix.</p>';
      const pix=box.querySelector('[data-qf-livre-pix]'),status=box.querySelector('[data-qf-livre-msg]');
      pix.querySelector('[data-qf-livre-copiar]').onclick=async()=>{try{await navigator.clipboard.writeText(x.pix_copy_paste);status.textContent='Pix copiado. Abra o aplicativo do seu banco para pagar.';}catch(_){const t=pix.querySelector('textarea');t.focus();t.select();status.textContent='Selecione e copie o código Pix.';}};
-     pix.querySelector('[data-qf-livre-verificar]').onclick=()=>refresh().then(active=>{if(!active&&box.isConnected)status.textContent='Pagamento ainda não confirmado. Você pode verificar novamente.';}).catch(()=>status.textContent='Não foi possível consultar agora. Tente novamente.');
+     const conferir=async()=>{const p=await rpc('qf_plano_v2_pagamento_status',{p_recarga_id:r.recarga_id});if(p?.ativo){pending=false;await refresh();return true;}return false;};
+      pix.querySelector('[data-qf-livre-verificar]').onclick=()=>conferir().then(active=>{if(!active&&box.isConnected)status.textContent='O Pix deste plano ainda não foi confirmado. Tente novamente.';}).catch(()=>status.textContent='Não foi possível consultar agora. Tente novamente.');
      // Troca a oferta pelo checkout: sem botão de assinar ou valores repetidos sobre o QR Code.
      try{box.scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}
 
-     let tries=0;const poll=async()=>{if(!box.isConnected||!pending||++tries>180)return;try{if(await refresh())return;}catch(_){}if(box.isConnected&&pending)setTimeout(poll,5000);};setTimeout(poll,5000);
+     let tries=0;const poll=async()=>{if(!box.isConnected||!pending||++tries>180)return;try{if(await conferir())return;}catch(_){}if(box.isConnected&&pending)setTimeout(poll,5000);};setTimeout(poll,5000);
     }catch(e){pending=false;const visible=box.querySelector('[data-qf-livre-msg]');if(visible)visible.textContent=e.message;}finally{busy=false;if(button&&button.isConnected)button.disabled=false;}
    }
    if(cadastro){render({});return;}
