@@ -5836,17 +5836,13 @@ alt=""></noscript>
     if (role === 'profissional') {
       let prepay = null;
       try { prepay = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null'); } catch (_) {}
-      let trialDraft = null;
-      try { trialDraft=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null'); } catch(_) {}
-      const benefit=await client.rpc('qf_livre_preparar_acesso',{
-        p_teste:!!(trialDraft && trialDraft.email===String(user.email||'').toLowerCase()),
-        p_documento:trialDraft?.documento||'',p_telefone:trialDraft?.telefone||''
-      });
-      if (!(benefit.data && benefit.data.ok===true)) {
-        if (!prepay?.pag?.id || !prepay?.pag?.segredo) throw new Error(benefit.error?.message || 'Escolha o Avulso ou o Livre, ou ative seu teste gratuito, para concluir o cadastro.');
-        const vinculo=await client.rpc('qf_vincular_pre_cadastro',{p_id:prepay.pag.id,p_segredo:prepay.pag.segredo});
-        if(vinculo.error || !vinculo.data?.ok) throw new Error('Pagamento não confirmado para este e-mail. Retome o pagamento antes de continuar.');
-      }
+      // Obrigatório para TODO profissional novo: pagamento confirmado na Efí e vínculo ao titular.
+      // Benefícios de teste/cortesia não podem substituir o pagamento da adesão.
+      if (!prepay?.pag?.id || !prepay?.pag?.segredo)
+        throw new Error('É necessário pagar o plano escolhido para concluir seu cadastro.');
+      const vinculo=await client.rpc('qf_vincular_pre_cadastro',{p_id:prepay.pag.id,p_segredo:prepay.pag.segredo});
+      if(vinculo.error || !vinculo.data?.ok)
+        throw new Error('É necessário pagar o plano escolhido para concluir seu cadastro. Confira o Pix para continuar.');
     }
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || meta.qf_cidade || '').trim() || null;
@@ -6878,7 +6874,21 @@ alt=""></noscript>
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
+    // Referência do Pix confirmado. O gatilho no banco verificará o pagamento
+    // e o e-mail, em vez de confiar no papel enviado pelo navegador.
+    let prePagoMeta = null;
+    if (role === 'profissional') {
+      try {
+        const guardado = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null');
+        if (guardado?.pag?.id && guardado?.pag?.segredo) prePagoMeta = guardado.pag;
+      } catch (_) {}
+      if (!prePagoMeta) return {ok:false,error:'É necessário pagar o plano escolhido para concluir seu cadastro.'};
+    }
     const meta = {
+      ...(prePagoMeta ? {
+        qf_pre_cadastro_id:prePagoMeta.id,
+        qf_pre_cadastro_segredo:prePagoMeta.segredo
+      } : {}),
       qf_role: role,
       qf_nome: data.nome,
       qf_telefone: data.telefone || '',
@@ -8512,10 +8522,14 @@ alt=""></noscript>
       get itens() { const pct = P.pct(id); return extras(pct).filter(Boolean); } };
   }
   const QF_CAD_PLANOS = [
-    { id: 'avulso', nome: 'Avulso', preco: 'R$ 13,00', valor: 1300, per: 'recarga inicial', unit: 'R$ 13,00 de saldo · sem mensalidade',
-      itens: ['Os R$ 13 viram saldo integral da carteira', 'Desbloqueie conforme o valor de cada oportunidade', 'Sem mensalidade e sem comissão'] },
-    { id: 'livre', nome: 'Quem Faz Livre', preco: 'R$ 39,90', valor: 3990, per: 'por 30 dias', unit: '30 dias · desbloqueios ilimitados',
-      itens: ['Desbloqueios ilimitados de pedidos compatíveis', 'Chat interno com as regras do plano', 'Comissão de 13% nos serviços fechados e confirmados', 'Sem recarga inicial adicional'] }
+    {id:'avulso',nome:'Avulso',preco:'R$ 13,00',valor:1300,per:'recarga mínima',unit:'R$ 13,00 de crédito na carteira',
+      itens:['Pagamento obrigatório para finalizar o cadastro','Valor integral convertido em créditos após Pix','Sem mensalidade, sem comissão']},
+    {id:'basico_v2',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
+      itens:['10 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
+    {id:'pro_v2',nome:'Pro',preco:'R$ 79,90',valor:7990,per:'30 dias',unit:'25 desbloqueios por mês',
+      itens:['25 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
+    {id:'completo_v2',nome:'Mensal completo',preco:'R$ 149,90',valor:14990,per:'30 dias',unit:'100 desbloqueios por mês',
+      itens:['Até 100 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']}
   ];
   global.QFCadPlanos = QF_CAD_PLANOS;
 
@@ -9220,18 +9234,18 @@ alt=""></noscript>
           '<div class="qf-step stack" data-step="5" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Escolha um plano. Seu cadastro profissional só será ativado depois da confirmação bancária.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
-            return '<label class="qf-cad-plano' + (pl.id === 'livre' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
-              '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'livre' ? ' checked' : '') + '>' +
+            return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
+              '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'avulso' ? ' checked' : '') + '>' +
               '<span class="qf-cad-plano__topo"><span class="qf-cad-plano__nome">' + pl.nome + '</span><span class="qf-cad-plano__radio" aria-hidden="true"></span></span>' +
               '<span class="qf-cad-plano__preco"><b>' + pl.preco + '</b><span>' + pl.per + '</span></span>' +
               '<span class="qf-cad-plano__unit">' + pl.unit + '</span>' +
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<p class="text--sm text--secondary">Avulso: R$ 13 de saldo, não é taxa. Livre: R$ 39,90 por 30 dias; a comissão de 13% só incide sobre serviços fechados e confirmados.</p>' +
+          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. Avulso: R$ 13,00 em créditos. Básico: R$ 39,90/10 pedidos. Pro: R$ 79,90/25 pedidos. Mensal completo: R$ 149,90/100 pedidos. Nenhuma comissão e nenhuma taxa adicional nos mensais.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
-          '<label class="qf-trial-choice" style="display:flex;gap:10px;padding:14px;background:#eef5ff;border:1px solid #bcd4f2;border-radius:12px;align-items:flex-start"><input type="checkbox" name="testeLivre" value="sim"><span><strong>Experimente o Quem Faz Livre grátis por 2 dias!</strong><br>Sem pagamento para começar e sem cobrança automática. Após 48 horas: R$ 39,90 por 30 dias. Comissão de 13% e prestação de contas mantidas. Um teste por profissional.</span></label><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="cortesiaLivre" value="sim">Recebi uma cortesia da equipe Quem Faz (será validada pelo servidor).</label>' +
-          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Pagar R$ 39,90 e ativar cadastro</button></div>' +
+          '<p class="qf-cad-planos__exigencia" role="status">É necessário pagar o plano escolhido para concluir seu cadastro.</p>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Continuar para pagamento · R$ 13,00</button></div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
           '<div class="qf-step stack" data-step="6" hidden>' +
@@ -10470,18 +10484,18 @@ alt=""></noscript>
         } finally { avancando = false; }
       }
       function botaoPlano() {
-        const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'livre'); }) || QF_CAD_PLANOS[1];
+        const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
         const b = form.querySelector('[data-cad-criar]');
-        if (b) b.textContent = form.elements.testeLivre?.checked ? 'ATIVAR TESTE GRÁTIS — 2 DIAS' : form.elements.cortesiaLivre?.checked ? 'ATIVAR CORTESIA AUTORIZADA' : 'Continuar para pagamento · ' + pl.preco;
+        if (b) b.textContent = 'Continuar para pagamento · ' + pl.preco;
         const nota = form.querySelector('[data-plano-nota]');
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
           nota.textContent = pl.id === 'avulso'
-            ? 'Os R$ 13,00 são 100% saldo para desbloqueios, não taxa de adesão. Sem pagar, não há cadastro ativo.'
-            : 'Assinatura de R$ 39,90 por 30 dias. Não exige os R$ 13 do Avulso. Ativação só após Pix confirmado.';
+            ? 'O Pix de R$ 13,00 vira saldo integral para desbloquear. Sem pagar, não há cadastro ativo.'
+            : 'Pagamento único de '+pl.preco+' por 30 dias, sem taxa de entrada e sem comissão. A cota só é ativada após Pix confirmado.';
         }
       }
-      form.addEventListener('change', function (e) { if (e.target && ['planoEscolhido','testeLivre','cortesiaLivre'].includes(e.target.name)) { if(e.target.checked && ['testeLivre','cortesiaLivre'].includes(e.target.name)){form.elements[e.target.name==='testeLivre'?'cortesiaLivre':'testeLivre'].checked=false;const radio=form.querySelector('[name=planoEscolhido][value=livre]');if(radio)radio.checked=true;} if(e.target.name==='planoEscolhido' && e.target.value==='avulso')form.elements.testeLivre.checked=false;botaoPlano(); } });
+      form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       botaoPlano();
       form.addEventListener('click', function (e) {
         if (e.target.closest('[data-step-next]')) avancar();
@@ -10516,7 +10530,6 @@ alt=""></noscript>
         resumoPlano();
         pagArea.innerHTML = pagAviso(aviso) +
           metodoBtn('pix', 'bolt', 'Pix', 'Confirma na hora. A conta é criada em seguida.', 'Mais rápido') +
-          (pre.plano === 'avulso' ? metodoBtn('cartao', 'creditCard', 'Cartão de crédito', 'Pagamento seguro na Efí. Ativação somente após aprovação.') : '') +
           '<div class="text--sm text--secondary" style="text-align:center;">Sua conta será criada com o e-mail <strong>' + esc(pre.dados && pre.dados.email) + '</strong>.</div>' +
           (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-voltar>Voltar e trocar de plano</button>' : '<button class="qf-cad-planos__depois" type="button" data-pag-cancelar>Cancelar e começar de novo</button>');
       }
@@ -10615,6 +10628,15 @@ alt=""></noscript>
       async function pagamentoConfirmado() {
         clearTimeout(preTimer);
         if (preOcupado || !pre || !pre.pag) return;
+        // Não permitir concluir por clique manual ou estado local adulterado:
+        // sempre refaça a confirmação bancária no servidor antes de criar a conta.
+        let aprovacao = null;
+        try { aprovacao = await global.QFCloud.preCadastroStatus(pre.pag.id,pre.pag.segredo); } catch (_) {}
+        if (!(aprovacao && aprovacao.ok && aprovacao.status === 'aprovado' && aprovacao.plano === pre.plano)) {
+          pagArea.innerHTML = pagAviso('É necessário pagar o plano escolhido para concluir seu cadastro.') +
+            '<button class="btn btn--outline" type="button" data-pag-ja-paguei>Já paguei · conferir Pix</button>';
+          return;
+        }
         if (!pre.dados || !pre.dados.email || !/^data:image\//i.test(String(pre.dados.selfieData || ''))) {
           // Sem os dados do cadastro neste aparelho: o pagamento continua valendo para a conta em que a pessoa entrar.
           pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Preencha o cadastro de novo para criar a conta. Você não paga outra vez: o plano entra assim que a conta for criada.</div></div>' +
@@ -10665,30 +10687,7 @@ alt=""></noscript>
             (conta.ativo ? (conta.plano.id === 'avulso' ? 'Os R$ 13 são saldo seu para desbloqueios e não têm prazo de vencimento.' : 'Quem Faz Livre ativo por 30 dias após o pagamento confirmado.') : 'O saldo ou plano será ativado após a conciliação bancária. Confira sua carteira ao entrar.') + '</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
       }
-      async function criarContaAgora(dados, planoId, metodo) {
-        const res = await global.QFCloud.signUp('profissional', dados);
-        if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return false; }
-        // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
-        if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
-        // Boleto: a conta nasce agora e a Carteira abre o boleto do plano escolhido.
-        try {
-          if (planoId) { sessionStorage.setItem('qf_plano_pos_cadastro', planoId); sessionStorage.setItem('qf_plano_pos_cadastro_metodo', metodo || 'pix'); }
-          else sessionStorage.removeItem('qf_plano_pos_cadastro');
-        } catch (_) {}
-        // Conta criada sem plano com um pagamento ainda guardado: fica só o pagamento (ativa sozinho se cair).
-        const guardado = QFPreCadastro.ler();
-        if (!planoId && guardado && guardado.pag) QFPreCadastro.salvar({ em: guardado.em, plano: guardado.plano, pag: guardado.pag }, ''); else QFPreCadastro.limpar();
-        pre = null; preSenha = '';
-        if (res.needsConfirmation) {
-          PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
-          global.navigate('/auth/profissional/login', true);
-          return true;
-        }
-        PU.toast(planoId && metodo !== 'boleto' ? 'Conta criada! Agora é só pagar o plano. Enquanto não pagar, você fica no Avulso.' : 'Cadastro criado com selfie de segurança!', 'success');
-        if (sessionStorage.getItem('qf_pending_ad_draft')) { global.navigate('/profissional/anuncie', true); return true; }
-        global.navigate(planoId ? '/profissional/carteira' : '/profissional/home', true);
-        return true;
-      }
+      // A antiga criação direta antes do pagamento foi removida do cadastro.
       form.addEventListener('click', async function (e) {
         const alvo = e.target.closest('[data-pag-metodo],[data-pag-voltar],[data-pag-cancelar],[data-pag-copiar],[data-pag-ja-paguei],[data-pag-trocar],[data-pag-outra],[data-pag-email],[data-pag-criar-conta],[data-pag-refazer],[data-conta-entrar]');
         if (!alvo) return;
@@ -10700,7 +10699,7 @@ alt=""></noscript>
         if (!pre) return;
         if (alvo.hasAttribute('data-pag-metodo')) {
           const metodo = alvo.getAttribute('data-pag-metodo');
-          if (metodo !== 'pix' && !(metodo === 'cartao' && pre.plano === 'avulso')) return;
+          if (metodo !== 'pix') return;
           gerarCobranca(metodo);
           return;
         }
@@ -10821,19 +10820,11 @@ alt=""></noscript>
           if (!(global.QFCloud && global.QFCloud.enabled)) {
             throw new Error('Conexão de pagamentos indisponível. Não é possível ativar cadastro sem pagamento.');
           }
-          if (!planoPago || !['avulso','livre'].includes(planoPago.id)) {
+          if (!planoPago || !['avulso','basico_v2','pro_v2','completo_v2'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
           }
-          if(fd.get('testeLivre')==='sim'||fd.get('cortesiaLivre')==='sim') {
-            if(fd.get('testeLivre')==='sim')localStorage.setItem('qf_livre_teste_cadastro',JSON.stringify({email:dados.email,documento:dados.cpf||dados.cnpj,telefone:dados.telefone}));else localStorage.removeItem('qf_livre_teste_cadastro');
-            const r=await global.QFCloud.signUp('profissional',dados);
-            if(!r.ok)throw Error(r.error||'Não foi possível iniciar o teste.');
-            PU.toast(r.needsConfirmation?'Confirme seu e-mail e entre para ativar as 48 horas de teste.':'Acesso Quem Faz Livre ativado. Confira a validade na carteira.','success');
-            global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);
-          } else {
-            localStorage.removeItem('qf_livre_teste_cadastro');
-            abrirPagamento(dados, planoPago, fd.get('indicacao'));
-          }
+          localStorage.removeItem('qf_livre_teste_cadastro');
+          abrirPagamento(dados, planoPago, fd.get('indicacao'));
         } catch (err) {
           console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
           PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');

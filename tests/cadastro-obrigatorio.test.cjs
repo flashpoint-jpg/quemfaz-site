@@ -15,13 +15,15 @@ test('Scripts inline e modulo Livre com sintaxe valida',()=>{
   [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].forEach((m,i)=>new vm.Script(m[1],{filename:'inline-'+i+'.js'}));
   new vm.Script(livre,{filename:'qf-livre.js'});
 });
-test('Apenas dois planos iniciais, com valores exatos',()=>{
+test('Quatro planos novos pagos, com preços exatos',()=>{
   const block=html.slice(html.indexOf('const QF_CAD_PLANOS = ['),html.indexOf('global.QFCadPlanos = QF_CAD_PLANOS;'));
-  assert.match(block,/id: 'avulso'.*valor: 1300/);
-  assert.match(block,/id: 'livre'.*valor: 3990/);
-  assert.doesNotMatch(block,/id: '(mensal|premium|pro)'/);
+  assert.match(block,/id:'avulso'.*valor:1300/);
+  assert.match(block,/id:'basico_v2'.*valor:3990/);
+  assert.match(block,/id:'pro_v2'.*valor:7990/);
+  assert.match(block,/id:'completo_v2'.*valor:14990/);
+  assert.doesNotMatch(block,/id: 'livre'/);
   assert.doesNotMatch(block,/Conta criada na hora, sem pagar nada agora/);
-  assert.match(block,/Os R\$ 13 viram saldo integral/);
+  assert.match(block,/Valor integral convertido em créditos após Pix/);
 });
 test('Nao ha criacao de profissional antes do checkout, nem fallback offline',()=>{
   assert.match(signup,/abrirPagamento\(dados, planoPago/);
@@ -32,13 +34,13 @@ test('Nao ha criacao de profissional antes do checkout, nem fallback offline',()
 test('Pagamento no backend e vinculo antes da insercao do perfil',()=>{
   const ensure=html.slice(html.indexOf('async function ensureProfile('),html.indexOf('async function syncLocalUser('));
   assert.ok(ensure.indexOf("client.rpc('qf_vincular_pre_cadastro'")<ensure.indexOf("client.from('qf_profiles').insert("));
-  assert.match(ensure,/Pagamento não confirmado para este e-mail/);
+  assert.match(ensure,/É necessário pagar o plano escolhido para concluir seu cadastro/);
   assert.match(html,/r\.status === 'aprovado'\) \{ seguir = false; await pagamentoConfirmado/);
 });
 test('Nenhum boleto ou cartao Livre como atalho de conta',()=>{
   assert.doesNotMatch(html,/metodoBtn\('boleto'/);
-  assert.match(html,/pre\.plano === 'avulso' \? metodoBtn\('cartao'/);
-  assert.match(html,/metodo !== 'pix' && !\(metodo === 'cartao' && pre\.plano === 'avulso'\)/);
+  assert.doesNotMatch(html.slice(html.indexOf('function renderEscolha(aviso)'),html.indexOf('function renderAguardando()')),/metodoBtn\('cartao'/);
+  assert.match(html,/if \(metodo !== 'pix'\) return;/);
 });
 test('Plano Livre exibido uma so vez',()=>{
   assert.doesNotMatch(livre,/group\.insertAdjacentHTML\('afterbegin'/);
@@ -70,8 +72,8 @@ test('Efí recusa planos legados, preço divergente e cartão Livre ANTES de cob
  const inicio=edge.indexOf('if (acao === "criar")');
  const gerar=edge.indexOf('const segredo = segredoNovo()',inicio);
  const trecho=edge.slice(inicio,gerar);
- assert.match(trecho,/plano !== "avulso" && plano !== "livre"/);
- assert.match(trecho,/plano === "livre" && metodo !== "pix"/);
- assert.match(trecho,/valorEsperado = plano === "avulso" \? 1300 : 3990/);
+ assert.match(trecho,/\["avulso","basico_v2","pro_v2","completo_v2"\]/);
+ assert.match(trecho,/if \(metodo !== "pix"\)/);
+ assert.match(trecho,/avulso:1300,basico_v2:3990,pro_v2:7990,completo_v2:14990/);
  assert.match(sql,/ADD CONSTRAINT qf_cadastro_preco_valido/);
 });

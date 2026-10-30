@@ -15,7 +15,7 @@
  g.QFLivreTrialProgress=trialProgress;
  function planSummary(s){
   const packages=Array.isArray(s.pacotes_ativos)?s.pacotes_ativos:[],legacy=!s.ativo&&!s.tipo_acesso&&packages.length>0;
-  const packageHtml=packages.map(p=>{const end=Date.parse(p.valido_ate),start=Date.parse(p.inicio_em),now=Date.parse(s.servidor_agora)||Date.now(),left=Math.max(0,Math.ceil((end-now)/60000)),total=Number.isFinite(start)?Math.max(1,Math.ceil((end-start)/60000)):43200;const name=({mensal:'Mensal',pro:'Pro',basico:'Básico'})[p.plano]||p.plano;return '<section class="qf-existing-package"><strong>Plano '+esc(name)+' ativo</strong><p>'+Number(p.restantes||0)+' desbloqueios restantes · vence em '+esc(date(p.valido_ate))+'. Faltam '+Math.floor(left/1440)+' dia(s) e '+Math.floor(left%1440/60)+'h.</p><div class="qf-trial-progress"><progress max="'+total+'" value="'+Math.min(total,left)+'" aria-label="Validade do plano '+esc(name)+'"></progress></div></section>';}).join('');
+  const packageHtml=packages.map(p=>{const end=Date.parse(p.valido_ate),start=Date.parse(p.inicio_em),now=Date.parse(s.servidor_agora)||Date.now(),left=Math.max(0,Math.ceil((end-now)/60000)),total=Number.isFinite(start)?Math.max(1,Math.ceil((end-start)/60000)):43200;const name=({basico_v2:'Básico',pro_v2:'Pro',completo_v2:'Mensal completo',mensal:'Mensal legado'})[p.plano]||p.plano;return '<section class="qf-existing-package"><strong>Plano '+esc(name)+' ativo</strong><p>'+Number(p.restantes||0)+' desbloqueios restantes · vence em '+esc(date(p.valido_ate))+'. Faltam '+Math.floor(left/1440)+' dia(s) e '+Math.floor(left%1440/60)+'h.</p><div class="qf-trial-progress"><progress max="'+total+'" value="'+Math.min(total,left)+'" aria-label="Validade do plano '+esc(name)+'"></progress></div></section>';}).join('');
   const trial=s.tipo_acesso==='teste',courtesy=s.tipo_acesso==='cortesia',paid=s.tipo_acesso==='pago',waiting=!!s.aguarda_identificacao,active=!!s.ativo;
   const end=Date.parse(s.valido_ate),begin=Date.parse(s.inicio_em),now=Date.parse(s.servidor_agora)||Date.now();
   const duration=Number.isFinite(begin)&&Number.isFinite(end)?Math.max(1,Math.round((end-begin)/60000)):Math.max(1,Number(s.duracao_dias)||(trial?2:30))*1440;
@@ -27,30 +27,18 @@
   const timed=trial||courtesy||paid;
   const bar=timed?'<progress max="'+duration+'" value="'+(waiting?0:Math.min(duration,mins))+'" aria-label="Tempo restante do '+(trial?'teste':'plano')+'" aria-valuetext="'+esc(waiting?'Aguardando identificação':active?remaining:'Encerrado')+'"></progress>':'';
   const identify=waiting?'<button type="button" class="btn btn--primary" data-qf-livre-identificar>Concluir identificação</button>':'';
-  const subscribe=!waiting&&(!active||trial||courtesy)?'<button type="button" class="btn btn--primary" data-qf-livre-pagar>Assine agora · R$ 39,90 / 30 dias</button>':'';
-  return '<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+esc(note)+'</p><div class="qf-trial-progress">'+bar+'</div>'+packageHtml+'<div class="qf-plan-actions">'+identify+subscribe+'<button type="button" class="btn btn--outline" data-qf-livre-trocar>Trocar plano</button></div><p class="text--sm">'+(legacy?'Seu pacote atual continua válido.':('Modo escolhido: '+(s.preferencia==='avulso'?'Avulso · pagar por desbloqueio':'Quem Faz Livre')+'.'))+' '+(trial?'Sem cobrança automática. ':'')+(s.preferencia==='avulso'&&active?'Seu benefício atual continua válido até a data acima.':'')+'</p></div><div data-qf-livre-pix></div><p role="status" data-qf-livre-msg></p>';
+  const subscribe=!waiting?'<a class="btn btn--primary" href="#/profissional/planos">Ver planos sem comissão</a>':'';
+  return '<div class="qf-livre__copy"><strong>'+title+'</strong><p>'+esc(note)+'</p><div class="qf-trial-progress">'+bar+'</div>'+packageHtml+'<div class="qf-plan-actions">'+identify+subscribe+'</div><p class="text--sm">'+(legacy?'Seu pacote atual continua válido.':('Modo escolhido: '+(s.preferencia==='avulso'?'Avulso · pagar por desbloqueio':'Quem Faz Livre')+'.'))+' '+(trial?'Sem cobrança automática. ':'')+(s.preferencia==='avulso'&&active?'Seu benefício atual continua válido até a data acima.':'')+'</p></div><div data-qf-livre-pix></div><p role="status" data-qf-livre-msg></p>';
  }
- function divisao(){
-  return '<section class="qf-divisao" aria-label="Divisão do valor do serviço no Quem Faz Livre"><h3>Você faz o serviço e fica com 87% do valor. O Quem Faz recebe 13% pela intermediação.</h3><div class="qf-divisao__bar" role="img" aria-label="87% para o profissional e 13% para o Quem Faz"><span class="qf-divisao__pro">87%</span><span class="qf-divisao__qf">13%</span></div><div class="qf-divisao__legenda"><span><i class="qf-divisao__verde"></i><b>Profissional · 87%</b><strong>R$ 174</strong></span><span><i class="qf-divisao__laranja"></i><b>Quem Faz · 13%</b><strong>R$ 26</strong></span></div><p>Exemplo: serviço de R$ 200. Você define o preço. Esta é a divisão do valor após a comissão no Quem Faz Livre; seus custos e tributos não estão descontados. Não representa lucro líquido garantido. No Avulso, não há comissão.</p></section>';
- }
+ function divisao(){return '<section class="qf-divisao"><h3>Planos novos sem comissão</h3><p>Você recebe o valor combinado com o cliente e paga somente o plano ou os créditos. O histórico anterior permanece registrado.</p></section>';}
  function oferta(s={}){
-  return '<div class="qf-livre__eyebrow">QUEM FAZ LIVRE</div>' +
-    '<h2 class="qf-livre__headline">Desbloqueie o quanto quiser <span>por R$ 1,33 ao dia</span></h2>' +
-    '<p class="qf-livre__price">R$ 39,90 por 30 dias</p>' +
-    (s.ativo ? '<p role="status">Plano ativo — desbloqueios ilimitados'+(s.valido_ate?' até '+esc(date(s.valido_ate)):'')+'</p>' : s.valido_ate ? '<p role="status">Plano vencido em '+esc(date(s.valido_ate))+'. Renove para continuar com os benefícios.</p>' : '') +
-    '<div class="qf-livre__benefits">' +
-      '<div><span aria-hidden="true" class="qf-livre__benefit-icon">∞</span><strong>Pedidos compatíveis ilimitados</strong></div>' +
-      '<div><span aria-hidden="true" class="qf-livre__benefit-icon">%</span><strong>Você fica com 87% do valor do serviço</strong></div>' +
-      '<div><span aria-hidden="true" class="qf-livre__benefit-icon">✓</span><strong>Ativação após a confirmação do Pix da assinatura</strong></div>' +
-    '</div>' +
-    '<p class="text--sm text--secondary">Por menos de R$ 1,50 por dia, tenha desbloqueios ilimitados de pedidos compatíveis durante 30 dias, enquanto houver vagas. Chat e WhatsApp do cliente após o desbloqueio, quando disponíveis. Comissão de 13% sobre serviços fechados e confirmados. Pagamentos de serviços pela plataforma, quando disponíveis para o pedido, seguem as condições informadas antes da confirmação.</p>' + '<details class="qf-livre__details"><summary>Saiba mais sobre o plano</summary>' +
-      '<p>Sem cobrança por contato e sem renovação automática. São elegíveis apenas pedidos compatíveis, disponíveis e não exclusivos, com até 4 profissionais por pedido.</p>' +
-      '<p>Você combina o valor do serviço com o cliente. Caso o pagamento pela plataforma esteja disponível para o pedido, as condições serão apresentadas antes de confirmar. Pagamentos e comissões anteriores permanecem registrados e separados.</p>' +
-      '<p><strong>Como funciona:</strong> converse por chat ou WhatsApp após desbloquear um pedido, quando disponíveis. Informe o andamento em até 48 horas; se estiver negociando, poderá prorrogar uma vez. A comissão de 13% incide sobre serviço fechado e confirmado. Pendências de comissão confirmadas e vencidas precisam ser regularizadas. O plano não garante contratação.</p>' +
-    '</details>' +
-    (s.ativo ? '<a class="btn btn--primary btn--block" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>' :
-      '<button type="button" class="btn btn--primary btn--block qf-livre__cta" data-qf-livre-pagar>Assinar por R$ 39,90</button>') +
-    '<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
+ const plans=[['basico_v2','Básico','R$ 39,90','10 desbloqueios'],['pro_v2','Pro','R$ 79,90','25 desbloqueios'],['completo_v2','Mensal completo','R$ 149,90','até 100 desbloqueios']];
+ return '<div class="qf-livre__eyebrow">PLANOS QUEM FAZ · SEM COMISSÃO</div><h2 class="qf-livre__headline">Escolha seus desbloqueios</h2>'+
+ '<p>Pagamento por Pix, ativação após confirmação bancária. Validade de 30 dias, sem taxa de entrada.</p>'+
+ '<div class="qf-livre__benefits">'+plans.map(p=>'<div style="display:block;padding:14px;border:1px solid #d5e3f2;border-radius:14px"><strong>'+p[1]+' · '+p[2]+'</strong><p>'+p[3]+' em 30 dias · sem comissão.</p><button type="button" class="btn btn--primary" data-qf-v2-pagar="'+p[0]+'">Pagar '+p[2]+' por Pix</button></div>').join('')+'</div>'+
+ '<p>Avulso: recarga mínima de R$ 13,00, integralmente creditada após Pix.</p>'+
+ (s.ativo?'<a class="btn btn--outline" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':'')+
+ '<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
  }
  g.QFLivre={oferta,divisao};if(typeof module!=='undefined')module.exports=g.QFLivre;
  if(!g.document)return;
@@ -116,26 +104,26 @@
     const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
     if(group&&form){
      group.dataset.qfLivreCadastro='';
-     // Reexibir os dois planos de pagamento; o teste e opcional, nunca impede o checkout.
+     // Cadastro de novos profissionais: nenhuma oferta grátis ou cortesia substitui a confirmação Pix.
      group.style.removeProperty('display');
      group.hidden=false;
-     const livre=group.querySelector('input[value="livre"]');
+     const livre=group.querySelector('input[value="basico_v2"]');
      const avulso=group.querySelector('input[value="avulso"]');
      const courtesyInput=form.elements.cortesiaLivre;
      if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
      const trialInput=form.elements.testeLivre,trialLabel=trialInput?.closest('label');
-     if(trialInput){trialInput.type='checkbox';trialInput.value='sim';trialInput.checked=true;trialInput.disabled=false;}
-     if(livre)livre.checked=true;
+     if(trialInput){trialInput.checked=false;trialInput.disabled=true;trialInput.closest('label')?.remove();}
+     if(avulso)avulso.checked=true;
      const step=group.closest('.qf-step');
      if(step){
       const heading=step.querySelector('.qf-step__head .h2'),sub=step.querySelector('.qf-step__head .text--sm');
       if(heading)heading.textContent='Escolha como começar no Quem Faz';
-      if(sub)sub.textContent='Ative o Livre ou o Avulso por Pix agora, ou experimente 2 dias grátis. Você decide.';
+      if(sub)sub.textContent='É necessário pagar o plano escolhido para concluir seu cadastro. Sem Pix confirmado, não há ativação.';
      }
      if(!group.previousElementSibling?.matches('[data-qf-planos-chamada]')){
       const call=document.createElement('p');call.dataset.qfPlanosChamada='';
       call.className='qf-cad-planos__chamada';
-      call.innerHTML='<strong>DESBLOQUEIOS ILIMITADOS POR MENOS DE R$ 1,50/DIA</strong><span>Quem Faz Livre: R$ 39,90 por 30 dias, equivalente a R$ 1,33 por dia.</span>';
+      call.innerHTML='<strong>PAGAMENTO OBRIGATÓRIO PARA ATIVAR O CADASTRO</strong><span>Escolha uma modalidade e pague o valor correspondente antes de concluir o cadastro.</span>';
       group.before(call);
      }
      // Textos comerciais sem modificar preços, cobranças ou permissões do servidor.
@@ -144,7 +132,7 @@
       if(card&&!card.querySelector('[data-qf-avulso-info]')){
        const info=document.createElement('small');info.dataset.qfAvulsoInfo='';
        info.className='qf-cad-plano__complemento';
-       info.textContent='Recarga mínima obrigatória para ativar o Avulso: R$ 13,00. Esse valor vira saldo integral para desbloquear oportunidades. Pix ou cartão no checkout; sem mensalidade, sem comissão sobre o serviço. Chat e WhatsApp após desbloqueio, quando disponíveis.';
+       info.textContent='Pagamento Pix mínimo de R$ 13,00. O valor vira crédito integral na carteira após confirmação. Sem mensalidade nem comissão.';
        card.append(info);
       }
      }
@@ -153,11 +141,11 @@
       if(card&&!card.querySelector('[data-qf-livre-info]')){
        const info=document.createElement('small');info.dataset.qfLivreInfo='';
        info.className='qf-cad-plano__complemento';
-       info.textContent='Menos de R$ 1,50 por dia: desbloqueios ilimitados de pedidos compatíveis durante 30 dias, enquanto houver vagas. Chat e WhatsApp do cliente após o desbloqueio, quando disponíveis. Comissão de 13% apenas sobre serviços fechados e confirmados. Pague R$ 39,90 por Pix, sem recarga Avulso.';
+       info.textContent='Básico R$ 39,90: 10 desbloqueios por 30 dias, sem comissão ou taxa de entrada; ativação depois do Pix confirmado.';
        card.append(info);
       }
      }
-     if(trialLabel&&!trialLabel.dataset.qfTrialReady){
+     if(false&&trialLabel&&!trialLabel.dataset.qfTrialReady){
       const extra=document.createElement('span');extra.className='qf-trial-copy';
       extra.innerHTML='<span class="qf-trial-eyebrow">OPCIONAL · TESTE GRÁTIS DE 48 HORAS</span>'+
        '<strong class="qf-trial-title">Experimente desbloqueios ilimitados por 2 dias</strong>'+
@@ -171,22 +159,22 @@
       conditions=document.createElement('details');conditions.className='qf-step__opt';conditions.dataset.qfCondicoesPlanos='';
       conditions.innerHTML='<summary>Como funcionam os planos e os contatos?</summary><ul>'+
        '<li><strong>Avulso:</strong> recarga inicial mínima obrigatória de R$ 13,00, convertida em créditos; cada desbloqueio usa o saldo. Sem mensalidade e sem comissão.</li>'+
-       '<li><strong>Livre:</strong> R$ 39,90 por 30 dias (R$ 1,33/dia), desbloqueios ilimitados de pedidos compatíveis enquanto houver vagas; comissão de 13% sobre os serviços fechados e confirmados.</li>'+
+       '<li><strong>Básico:</strong> R$ 39,90 por 30 dias, 10 desbloqueios. <strong>Pro:</strong> R$ 79,90, 25 desbloqueios. <strong>Mensal completo:</strong> R$ 149,90, até 100 desbloqueios.</li>'+
        '<li>Depois do desbloqueio, use o chat e, quando o telefone estiver disponível, o WhatsApp do cliente. Até 4 profissionais podem participar de um pedido; não há garantia de contratação.</li>'+
        '<li>O Pix de assinatura ou recarga é apresentado no checkout. Nenhum plano é ativado como pago antes da confirmação do pagamento.</li>'+
-       '<li>O teste de 48 horas é opcional e não gera cobrança automática. Pagamentos de serviços pela plataforma, quando oferecidos, seguem as condições apresentadas no pedido.</li></ul>';
+       '<li>É necessário pagar o plano escolhido para concluir seu cadastro. O QR Code não ativa a conta: é preciso aguardar a confirmação bancária.</li></ul>';
       group.after(conditions);
      }
      function updateChoice(){
-      const test=!!trialInput?.checked;
+      const test=false;
       if(test&&livre)livre.checked=true;
-      const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'livre';
+      const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'avulso';
       const b=form.querySelector('[data-cad-criar]');
-      if(b)b.textContent=test?'Começar meu teste grátis de 2 dias':selected==='avulso'?'Ativar Avulso — pagar recarga R$ 13,00':'Ativar Livre por Pix — R$ 39,90';
+      if(b){const precos={avulso:'R$ 13,00',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
       const note=form.querySelector('[data-plano-nota]');
       if(note){
        note.classList.remove('qf-cad-planos__nota--aviso');
-       note.textContent=test?'Dois dias grátis, sem pagamento nem cobrança automática. Prefere pagar agora? Selecione Livre ou Avulso acima.':selected==='avulso'?'Recarga obrigatória de R$ 13,00 vira saldo integral para desbloquear pedidos. Escolha Pix ou cartão no próximo passo.': 'R$ 39,90 por 30 dias · menos de R$ 1,50/dia · desbloqueios ilimitados. O Pix é gerado no próximo passo, e a ativação ocorre após confirmação.';
+       note.textContent=selected==='avulso'?'É necessário pagar o plano escolhido para concluir seu cadastro. Os R$ 13,00 viram saldo integral após a confirmação Pix.':'É necessário pagar o plano escolhido para concluir seu cadastro. A ativação ocorre somente após confirmação do Pix.';
       }
       if(trialLabel)trialLabel.classList.toggle('qf-trial-card--selected',test);
       if(conditions)conditions.hidden=false;
@@ -245,7 +233,7 @@
    }
    g.QFTrackLivrePurchase=trackLivrePurchase;
    function bind(){
-    const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=pay;
+    const b=box.querySelector('[data-qf-livre-pagar]');if(b)b.onclick=()=>pay('basico_v2');box.querySelectorAll('[data-qf-v2-pagar]').forEach(b=>b.onclick=()=>pay(b.dataset.qfV2Pagar));
     const identify=box.querySelector('[data-qf-livre-identificar]');if(identify)identify.onclick=()=>{identificationPending=true;g.navigate('/profissional/perfil',true);};
     const change=box.querySelector('[data-qf-livre-trocar]');if(change)change.onclick=()=>{
      const dialog=document.createElement('dialog');dialog.className='qf-plan-chooser';dialog.innerHTML='<h2>Como você quer desbloquear pedidos?</h2><p>Mudar a opção não cancela um benefício ainda válido nem faz cobrança automática.</p><button type="button" class="btn btn--primary" data-plan-choice="livre">Quem Faz Livre · R$ 39,90 / 30 dias</button><p>Pedidos compatíveis ilimitados enquanto houver vagas. Comissão de 13% nos serviços fechados e confirmados.</p><button type="button" class="btn btn--outline" data-plan-choice="avulso">Usar Avulso · pagar por desbloqueio</button><p>Usa créditos da carteira. Sem mensalidade e sem comissão sobre o serviço.</p><p role="alert"></p><button class="btn btn--outline" type="button" data-plan-close>Voltar</button>';
@@ -337,7 +325,7 @@
      if(active&&last.tipo_acesso==='teste'&&Date.parse(last.valido_ate)-Date.parse(last.servidor_agora)<12*3600000)box.insertAdjacentHTML('beforeend','<p>Seu teste termina em breve. Continue com o Plano Livre por R$ 39,90.</p>');
     }
     if(!cadastro&&!pedido){
-     box.classList.remove('qf-livre--promo');box.classList.add('qf-livre--compact','qf-plan-status');box.innerHTML=planSummary(last);
+     box.classList.remove('qf-livre--promo');box.classList.add('qf-plan-status');if(pattern==='/profissional/planos'||pattern==='/profissional/carteira'){box.classList.remove('qf-livre--compact');box.innerHTML=planSummary(last)+oferta(last);}else{box.classList.add('qf-livre--compact');box.innerHTML=planSummary(last);}
     }
     if(pattern==='/profissional/perfil'){
      const account=Array.from(view.children).find(x=>x.classList.contains('card')&&!x.hasAttribute('data-qf-livre'));const badge=account?.querySelector('.badge');
@@ -353,42 +341,43 @@
     const req=g.DB&&g.DB.requestById(params.id),pago=content.querySelector('[data-action="desbloquear-chamada"]');
     if(!req||!pago)return;
     if(req.atendimentoTipo==='garante'||req.modalidade==='valor_definido')return;
-    if(!s.ativo||s.preferencia==='avulso')return;
-    box.insertAdjacentHTML('beforeend','<label><input type="checkbox" data-qf-livre-termos><span>Aceito prestar contas e pagar 13% somente por serviço fechado e confirmado, conforme as condições da modalidade.</span></label><button type="button" class="btn btn--primary" data-qf-livre-desbloquear>Desbloquear com Quem Faz Livre</button>');
+    const pacoteAtivo=Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2)$/.test(p.plano)&&Number(p.restantes)>0);if(!s.ativo&&!pacoteAtivo)return;
+    box.insertAdjacentHTML('beforeend','<label><input type="checkbox" data-qf-livre-termos><span>Aceito as regras de uso do plano e o limite de participantes por pedido.</span></label><button type="button" class="btn btn--primary" data-qf-livre-desbloquear>Desbloquear com meu plano</button>');
     const b=box.querySelector('[data-qf-livre-desbloquear]');b.onclick=async()=>{
      const msg=box.querySelector('[data-qf-livre-msg]');if(!box.querySelector('[data-qf-livre-termos]').checked){msg.textContent='Aceite as condições para desbloquear com o plano.';return;}
-     b.disabled=true;try{const r=await rpc('qf_livre_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok&&r.reason==='comissao_pendente'){msg.textContent='Comissão pendente. Abrindo o Pix automático na carteira.';g.navigate('/profissional/carteira',true);return;}if(!r.ok)throw Error(({credito_necessario:'Assine o Quem Faz Livre ou utilize o Avulso com saldo na carteira.',plano_inativo:'Plano vencido ou inativo. Renove ou utilize créditos.',reservado:'O pedido já atingiu o limite de participantes.',nao_elegivel:'Pedido incompatível com sua profissão, região ou raio.',indisponivel:'Pedido indisponível para este plano.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',perfil_inativo:'Confira a situação do seu perfil e do plano.',prestacao_contas_vencida:'Regularize sua prestação de contas na carteira.',comissao_vencida:'Regularize a comissão confirmada na carteira.',comissao_pendente:'A comissão pendente deve ser paga por Pix na carteira antes de outro desbloqueio.'})[r.reason]||'Não foi possível autorizar o desbloqueio. Atualize o pedido.');if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession(true);g.navigate('/profissional/chat/'+params.id,true);}catch(e){msg.textContent=e.message;b.disabled=false;}
+     b.disabled=true;try{const r=pacoteAtivo?await rpc('qf_desbloquear_chamado',{p_chamado_id:params.id,p_exclusivo:false}):await rpc('qf_livre_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok&&r.reason==='comissao_pendente'){msg.textContent='Comissão pendente. Abrindo o Pix automático na carteira.';g.navigate('/profissional/carteira',true);return;}if(!r.ok)throw Error(({credito_necessario:'Assine o Quem Faz Livre ou utilize o Avulso com saldo na carteira.',plano_inativo:'Plano vencido ou inativo. Renove ou utilize créditos.',reservado:'O pedido já atingiu o limite de participantes.',nao_elegivel:'Pedido incompatível com sua profissão, região ou raio.',indisponivel:'Pedido indisponível para este plano.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',perfil_inativo:'Confira a situação do seu perfil e do plano.',prestacao_contas_vencida:'Regularize sua prestação de contas na carteira.',comissao_vencida:'Regularize a comissão confirmada na carteira.',comissao_pendente:'A comissão pendente deve ser paga por Pix na carteira antes de outro desbloqueio.'})[r.reason]||'Não foi possível autorizar o desbloqueio. Atualize o pedido.');if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession(true);g.navigate('/profissional/chat/'+params.id,true);}catch(e){msg.textContent=e.message;b.disabled=false;}
     };
    }
-   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(pending&&s.ativo&&['teste','cortesia'].includes(s.tipo_acesso))return false;if(s.ativo){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
-   async function pay(){
+   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(pending&&s.ativo&&['teste','cortesia'].includes(s.tipo_acesso))return false;if(s.ativo||(Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2)$/.test(p.plano)&&Number(p.restantes)>0))){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
+   async function pay(plano='basico_v2'){
     if(busy)return;
     busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
     try{
-     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');if(current.ativo&&!['teste','cortesia'].includes(current.tipo_acesso)){pending=false;render(current);unlock(current);return;}
-     const r=await rpc('qf_livre_solicitar_pix');if(!r||!r.ok)throw Error('Conclua seu cadastro de profissional antes de assinar.');
+     const current=await rpc('qf_livre_status');if(!current?.ok)throw Error('Não foi possível confirmar a situação do seu plano.');
+     const r=await rpc('qf_solicitar_plano',{p_plano:plano,p_metodo:'pix'});if(!r||!r.ok)throw Error('Conclua seu cadastro de profissional antes de assinar.');
      const fn=await client.functions.invoke('quemfaz-efi-checkout',{body:{tipo:'recarga',pagamento_id:r.recarga_id}});
      if(fn.error||!fn.data?.ok)throw Error('Não foi possível gerar o Pix. Tente novamente em instantes.');
-     if(await refresh())return;
+     
      const x=fn.data;pending=true;
      if(!x.pix_copy_paste)throw Error('O Pix ainda está sendo preparado. Tente novamente.');
      box.classList.remove('qf-livre--compact','qf-livre--promo');
      box.classList.add('qf-livre--checkout');
      box.innerHTML='<div data-qf-livre-pix>' +
        '<h2 class="qf-livre-pix__title">Pague por Pix</h2>' +
-       '<p class="qf-livre-pix__sub">Plano Quem Faz Livre · R$ 39,90</p>' +
+       '<p class="qf-livre-pix__sub">'+esc(({basico_v2:'Básico · R$ 39,90',pro_v2:'Pro · R$ 79,90',completo_v2:'Mensal completo · R$ 149,90'})[plano]||plano)+'</p>' +
        (typeof x.qr_image==='string'&&/^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(x.qr_image)?'<img class="qf-livre-pix__qr" src="'+esc(x.qr_image)+'" alt="QR Code Pix do Quem Faz Livre">':'') +
        '<p class="qf-livre-pix__note">Pix válido por 24 horas. O plano ativa automaticamente após a confirmação do pagamento.</p>' +
        '<textarea class="qf-livre-pix__code" readonly aria-label="Código Pix copia e cola">'+esc(x.pix_copy_paste)+'</textarea>' +
        '<div class="qf-livre-pix__actions"><button type="button" class="btn btn--primary" data-qf-livre-copiar>Copiar Pix</button><button type="button" class="btn btn--outline" data-qf-livre-verificar>Verificar ativação</button></div></div>' +
-       '<p role="status" aria-live="polite" data-qf-livre-msg>Aguardando confirmação do Pix da assinatura de R$ 39,90.</p>';
+       '<p role="status" aria-live="polite" data-qf-livre-msg>Aguardando confirmação bancária do Pix.</p>';
      const pix=box.querySelector('[data-qf-livre-pix]'),status=box.querySelector('[data-qf-livre-msg]');
      pix.querySelector('[data-qf-livre-copiar]').onclick=async()=>{try{await navigator.clipboard.writeText(x.pix_copy_paste);status.textContent='Pix copiado. Abra o aplicativo do seu banco para pagar.';}catch(_){const t=pix.querySelector('textarea');t.focus();t.select();status.textContent='Selecione e copie o código Pix.';}};
-     pix.querySelector('[data-qf-livre-verificar]').onclick=()=>refresh().then(active=>{if(!active&&box.isConnected)status.textContent='Pagamento ainda não confirmado. Você pode verificar novamente.';}).catch(()=>status.textContent='Não foi possível consultar agora. Tente novamente.');
+     const conferir=async()=>{const p=await rpc('qf_plano_v2_pagamento_status',{p_recarga_id:r.recarga_id});if(p?.ativo){pending=false;await refresh();return true;}return false;};
+      pix.querySelector('[data-qf-livre-verificar]').onclick=()=>conferir().then(active=>{if(!active&&box.isConnected)status.textContent='O Pix deste plano ainda não foi confirmado. Tente novamente.';}).catch(()=>status.textContent='Não foi possível consultar agora. Tente novamente.');
      // Troca a oferta pelo checkout: sem botão de assinar ou valores repetidos sobre o QR Code.
      try{box.scrollIntoView({behavior:'smooth',block:'start'});}catch(_){}
 
-     let tries=0;const poll=async()=>{if(!box.isConnected||!pending||++tries>180)return;try{if(await refresh())return;}catch(_){}if(box.isConnected&&pending)setTimeout(poll,5000);};setTimeout(poll,5000);
+     let tries=0;const poll=async()=>{if(!box.isConnected||!pending||++tries>180)return;try{if(await conferir())return;}catch(_){}if(box.isConnected&&pending)setTimeout(poll,5000);};setTimeout(poll,5000);
     }catch(e){pending=false;const visible=box.querySelector('[data-qf-livre-msg]');if(visible)visible.textContent=e.message;}finally{busy=false;if(button&&button.isConnected)button.disabled=false;}
    }
    if(cadastro){render({});return;}
@@ -415,7 +404,7 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 
-/* QF etapa 5: três cartões aprovados - 2026-10-30 */
+/* QF etapa 5: seleção somente paga. Sem teste grátis nem cortesia. */
 (function () {
   'use strict';
   if (typeof document === 'undefined') return; // testes Node sem DOM
@@ -460,7 +449,7 @@
     const form = document.getElementById('cadastro-prof-form');
     if (!form || form.dataset.qfOptions20261030 === 'yes') return;
     const step = form.querySelector('[data-step="5"]');
-    if (!step || !form.querySelector('[name="testeLivre"]') || !form.querySelector('[name="planoEscolhido"][value="livre"]')) return;
+    if (!step || !form.querySelector('[name="planoEscolhido"][value="avulso"]')) return;
     if (!document.getElementById(STYLE_ID)) {
       const style = document.createElement('style');
       style.id = STYLE_ID;
@@ -471,7 +460,7 @@
     if (header) header.innerHTML =
       '<div class="qf-step__count">Etapa 5 de 5</div>' +
       '<div class="h2">Escolha como quer começar</div>' +
-      '<div class="text--sm text--secondary">Seus dados estão preenchidos. Escolha a melhor forma de usar o Quem Faz.</div>' +
+      '<div class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. O Pix é confirmado antes da ativação.</div>' +
       '<div class="qf-step__bar"><span style="width:100%"></span></div>';
     const list = step.querySelector('.qf-cad-planos');
     if (!list) return;
@@ -487,49 +476,34 @@
     const ui = document.createElement('div');
     ui.className = 'qf-options-final';
     ui.setAttribute('aria-label', 'Escolha sua forma de começar');
-    ui.innerHTML = [
-      '<section class="qf-options-card qf-options-card--trial">',
-      '<span class="qf-options-badge">TESTE GRÁTIS · 48 HORAS</span>',
-      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">48h</span><div class="qf-options-headings"><h3 class="qf-options-name">Teste grátis — 48 horas</h3><div class="qf-options-price">R$ 0,00</div></div></div>',
-      '<ul class="qf-options-list"><li>Desbloqueios ilimitados por 2 dias</li><li>Chat com clientes e pedidos compatíveis</li><li>Sem Pix, recarga ou pagamento inicial</li></ul>',
-      '<p class="qf-options-note">O teste começa após a identificação. Um por profissional, sem cobrança automática.</p>',
-      '<button class="qf-options-button" type="button" data-qf-opcao="trial">Começar com teste grátis</button>',
-      '</section>',
-      '<section class="qf-options-card qf-options-card--livre">',
-      '<span class="qf-options-badge">PLANO MENSAL</span>',
-      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">∞</span><div class="qf-options-headings"><h3 class="qf-options-name">Quem Faz Livre</h3><div class="qf-options-price">R$ 39,90 <small>/ 30 dias</small></div></div></div>',
-      '<ul class="qf-options-list"><li>Desbloqueios ilimitados de pedidos compatíveis</li><li>Chat com clientes</li><li>Comissão de 13% somente em serviços fechados e confirmados</li></ul>',
-      '<p class="qf-options-note">Equivale a R$ 1,33 por dia. Pagamento antes da ativação, sem renovação automática.</p>',
-      '<button class="qf-options-button" type="button" data-qf-opcao="livre">Ativar Plano Livre</button>',
-      '</section>',
-      '<section class="qf-options-card qf-options-card--avulso">',
-      '<span class="qf-options-badge">SEM MENSALIDADE</span>',
-      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">R$</span><div class="qf-options-headings"><h3 class="qf-options-name">Avulso — créditos</h3><div class="qf-options-price">R$ 13,00 <small>recarga mínima obrigatória</small></div></div></div>',
-      '<ul class="qf-options-list"><li>Valor integral convertido em saldo na carteira</li><li>Desbloqueie apenas os pedidos que interessarem</li><li>Não é taxa: é crédito para usar</li></ul>',
-      '<p class="qf-options-note">Sem mensalidade e sem comissão sobre os serviços do plano Avulso.</p>',
-      '<button class="qf-options-button" type="button" data-qf-opcao="avulso">Recarregar e começar</button>',
-      '</section>'
-    ].join('');
+    const cards=[
+      {id:'avulso',badge:'SEM MENSALIDADE',nome:'Avulso',preco:'R$ 13,00',periodo:'crédito inicial',detail:'Recarga mínima integral para desbloqueios',info:'Após o Pix confirmado, R$ 13,00 ficam disponíveis na carteira',botao:'Pagar Avulso'},
+      {id:'basico_v2',badge:'PLANO BÁSICO',nome:'Básico',preco:'R$ 39,90',periodo:'30 dias',detail:'10 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Básico'},
+      {id:'pro_v2',badge:'PLANO PRO',nome:'Pro',preco:'R$ 79,90',periodo:'30 dias',detail:'25 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Pro'},
+      {id:'completo_v2',badge:'MENSAL COMPLETO',nome:'Mensal completo',preco:'R$ 149,90',periodo:'30 dias',detail:'Até 100 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Completo'}
+    ];
+    ui.innerHTML=cards.map(p=>'<section class="qf-options-card qf-options-card--'+p.id+'">'+
+      '<span class="qf-options-badge">'+p.badge+'</span>'+
+      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">✓</span><div class="qf-options-headings"><h3 class="qf-options-name">'+p.nome+'</h3>'+
+      '<div class="qf-options-price">'+p.preco+' <small>/ '+p.periodo+'</small></div></div></div>'+
+      '<ul class="qf-options-list"><li>'+p.detail+'</li><li>Pagamento obrigatório para concluir o cadastro</li><li>Somente após Pix confirmado</li></ul>'+
+      '<p class="qf-options-note">'+p.info+'</p>'+
+      '<button class="qf-options-button" type="button" data-qf-opcao="'+p.id+'">'+p.botao+'</button></section>').join('');
     list.parentNode.insertBefore(ui, list);
-    // O teste é a opção padrão, mas qualquer cartão troca o plano antes de enviar.
-    const trialDefault = form.querySelector('[name="testeLivre"]');
-    const livreDefault = form.querySelector('[name="planoEscolhido"][value="livre"]');
-    if (trialDefault && livreDefault) { livreDefault.checked = true; trialDefault.checked = true; }
+    // O Avulso é a opção inicial, mas também exige Pix de R$ 13,00 confirmado.
+    const avulsoDefault = form.querySelector('[name="planoEscolhido"][value="avulso"]');
+    if (avulsoDefault) avulsoDefault.checked = true;
     form.dataset.qfOptions20261030 = 'yes';
     ui.addEventListener('click', function (event) {
       const button = event.target.closest('[data-qf-opcao]');
       if (!button || button.disabled) return;
       const mode = button.getAttribute('data-qf-opcao');
-      const radio = form.querySelector('[name="planoEscolhido"][value="' + (mode === 'avulso' ? 'avulso' : 'livre') + '"]');
-      const trialInput = form.querySelector('[name="testeLivre"]');
-      const courtesyInput = form.querySelector('[name="cortesiaLivre"]');
+      const radio = form.querySelector('[name="planoEscolhido"][value="' + mode + '"]');
       const submit = form.querySelector('[data-cad-criar]');
-      if (!radio || !trialInput || !submit) return;
-      if (courtesyInput) courtesyInput.checked = false;
+      if (!radio || !submit) return;
       radio.checked = true;
-      trialInput.checked = mode === 'trial';
-      // Reaproveitar a validação de cadastro e os fluxos originais de Pix e de ativação do teste.
-      (mode === 'trial' ? trialInput : radio).dispatchEvent(new Event('change', { bubbles:true }));
+      // Seguir somente o fluxo original que gera Pix e aguarda confirmação bancária.
+      radio.dispatchEvent(new Event('change', { bubbles:true }));
       if (typeof form.requestSubmit === 'function') form.requestSubmit(submit);
       else submit.click();
     });

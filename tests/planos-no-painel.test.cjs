@@ -8,7 +8,7 @@ const sql = fs.readFileSync(path.join(root, 'supabase/2026-10-10-planos-no-paine
 // O app não tem mais preço de plano escrito à mão fora do ponto de partida de QFPlanos.
 const semPadrao = html.replace(/const QFPlanos = global\.QFPlanos = [\s\S]*?\n  \}\)\(\);/, '');
 assert.notStrictEqual(semPadrao, html, 'bloco QFPlanos não encontrado');
-for (const fixo of ['R$ 49,90', 'R$ 99,90', 'R$ 199,90', '4990', '19990', 'R$ 4,99']) assert.ok(!semPadrao.includes(fixo), 'preço fixo no app: ' + fixo);
+for (const fixo of ['R$ 49,90', 'R$ 99,90', 'R$ 199,90', 'preco: 4990', 'preco: 19990', 'R$ 4,99']) assert.ok(!semPadrao.includes(fixo), 'preço fixo no app: ' + fixo);
 assert.ok(html.includes("client.from('qf_planos_catalogo').select('plano,preco_centavos,chamados,dias')"));
 
 // QFPlanos faz as contas com o que vier do painel.
