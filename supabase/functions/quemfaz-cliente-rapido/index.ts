@@ -40,6 +40,62 @@ function isInternalEmail(email: string) {
   return /@acesso\.quemfaz\.app\.br$/i.test(email);
 }
 
+
+async function publicarVisitante(req: Request, nome: string, telefone: string) {
+  // Cada visitante recebe identidade isolada: NUNCA autenticar, editar ou recuperar
+  // outra conta pelo simples conhecimento de telefone/nome.
+  const ip = (req.headers.get("cf-connecting-ip") || req.headers.get("x-real-ip") ||
+    (req.headers.get("x-forwarded-for") || "").split(",")[0]).trim().slice(0, 90);
+  const digest = async (value: string) => {
+    const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(SERVICE_ROLE + ":" + value));
+    return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join("");
+  };
+  const ipHash = await digest("guest:ip:" + (ip || "indisponivel"));
+  const phoneHash = await digest("guest:phone:" + telefone);
+  const sinceHour = new Date(Date.now() - 3600000).toISOString();
+  const sinceDay = new Date(Date.now() - 86400000).toISOString();
+  const [byIp, byPhone] = await Promise.all([
+    admin.from("qf_cliente_auth_eventos").select("id", { count: "exact", head: true })
+      .eq("evento", "visitante").eq("ip_hash", ipHash).gte("criado_em", sinceHour),
+    admin.from("qf_cliente_auth_eventos").select("id", { count: "exact", head: true })
+      .eq("evento", "visitante").eq("chave_hash", phoneHash).gte("criado_em", sinceDay),
+  ]);
+  if (byIp.error || byPhone.error)
+    return reply({ ok: false, error: "Não conseguimos validar o acesso de visitante agora. Tente novamente." }, 503);
+  if ((byIp.count || 0) >= 6 || (byPhone.count || 0) >= 4)
+    return reply({ ok: false, error: "Limite de publicações como visitante atingido. Tente mais tarde ou entre na sua conta." }, 429);
+
+  const email = "visitante-" + crypto.randomUUID() + "@acesso.quemfaz.app.br";
+  const created = await admin.auth.admin.createUser({
+    email, email_confirm: true,
+    user_metadata: { qf_role: "cliente", qf_nome: nome, qf_telefone: telefone, qf_guest: true },
+  });
+  if (created.error || !created.data.user)
+    return reply({ ok: false, error: "Não foi possível preparar sua publicação agora." }, 500);
+  const userId = created.data.user.id;
+  const profile = await admin.from("qf_profiles").upsert({
+    id: userId, tipo: "cliente", nome, telefone, whatsapp: telefone, ativo: true,
+    atualizado_em: new Date().toISOString(),
+  }, { onConflict: "id" });
+  if (profile.error) {
+    await admin.auth.admin.deleteUser(userId);
+    return reply({ ok: false, error: "Não foi possível validar seu contato." }, 500);
+  }
+  const generated = await admin.auth.admin.generateLink({ type: "magiclink", email });
+  const tokenHash = String(generated.data?.properties?.hashed_token || "");
+  if (generated.error || !tokenHash) {
+    await admin.auth.admin.deleteUser(userId);
+    return reply({ ok: false, error: "Não foi possível abrir o acompanhamento protegido." }, 500);
+  }
+  await admin.from("qf_cliente_auth_eventos").insert({
+    evento: "visitante", ok: true, user_id: userId,
+    telefone_fim: telefone.slice(-4), ip_hash: ipHash, chave_hash: phoneHash,
+    detalhe: "acesso_isolado_sem_senha",
+  });
+  return reply({ ok: true, user_id: userId, token_hash: tokenHash,
+    otp_type: "magiclink", guest: true });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return reply({ ok: false, error: "Método não permitido." }, 405);
@@ -59,6 +115,8 @@ Deno.serve(async (req) => {
   if (!validMobile(telefone)) {
     return reply({ ok: false, error: "Esse número não parece um celular válido. Digite o seu WhatsApp com DDD e o 9 na frente." }, 400);
   }
+  if (String(body.modo || "") === "visitante")
+    return await publicarVisitante(req, nome, telefone);
 
   const canonical = await admin.rpc("qf_cliente_canonico_por_whatsapp", { p_whatsapp: telefone });
   if (canonical.error) {
@@ -72,6 +130,12 @@ Deno.serve(async (req) => {
 
   // Mesma resposta para número sem conta e para código errado: não revela quem é cliente.
   if (entrar && !userId) return reply({ ok: false, error: ERRO_ENTRAR }, 401);
+
+  // SECURITY: unauthenticated registration must never mint a session for an existing account.
+  // Existing clients must prove possession of their legacy access code in entrar mode.
+  if (!entrar && userId) {
+    return reply({ ok: false, error: "Este telefone já possui cadastro. Entre com seu código de acesso." }, 409);
+  }
 
   if (entrar) {
     const conf = await admin.rpc("qf_conferir_codigo_acesso", { p_cliente: userId, p_codigo: codigo });
