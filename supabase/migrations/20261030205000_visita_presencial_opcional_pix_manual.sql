@@ -121,7 +121,10 @@ begin
   select v.id,v.chamado_id,v.cliente_id,v.valor_centavos,v.status,v.repasse_status,
    v.provedor_id,v.end_to_end_id,v.aprovado_em,v.repassado_em,v.profissional_id,
    v.observacao_repasse,v.criado_em,c.titulo,c.cidade,c.bairro,
-   p.nome as cliente_nome
+   p.nome as cliente_nome,
+   coalesce((select jsonb_agg(distinct jsonb_build_object('id',d.profissional_id,'nome',pf.nome))
+     from public.qf_desbloqueios d join public.qf_profiles pf on pf.id=d.profissional_id
+     where d.chamado_id=v.chamado_id and coalesce(d.ativo,true)),'[]'::jsonb) as profissionais
   from public.qf_visita_pagamentos v
   join public.qf_chamados c on c.id=v.chamado_id
   left join public.qf_profiles p on p.id=v.cliente_id
