@@ -43,6 +43,20 @@
   await g.QFCloud.syncForCurrentSession(true);
   return profile;
  }
+ async function guest(nome,telefone){
+  const c=g.QFCloud?.client;
+  if(!c?.functions?.invoke||!c?.auth?.verifyOtp)throw Error('A publicação sem cadastro está indisponível. Atualize a página e tente novamente.');
+  const res=await c.functions.invoke('quemfaz-cliente-rapido',{body:{modo:'visitante',nome,telefone}});
+  let data=res.data;
+  if(res.error){try{data=await res.error.context.json();}catch(_){}}
+  if(!data?.ok||data.guest!==true||!data.token_hash||!data.user_id)throw Error(data?.error||'Não foi possível preparar sua publicação sem cadastro.');
+  const session=await c.auth.verifyOtp({type:'magiclink',token_hash:data.token_hash});
+  if(session.error||session.data?.user?.id!==data.user_id)throw Error('Não conseguimos validar seu acesso de visitante. Seus dados permanecem preenchidos.');
+  const profile=await existing(telefone);
+  if(!profile||profile.id!==data.user_id)throw Error('A identificação de visitante não corresponde ao pedido. Seus dados permanecem preenchidos.');
+  await g.QFCloud.syncForCurrentSession(true);
+  return profile;
+ }
  function authenticate({nome,telefone,container}){
   if(active)return active;
   active=(async()=>{
@@ -65,20 +79,29 @@
   return new Promise((resolve,reject)=>{
    const embedded=!!container;const dialog=g.document.createElement(embedded?'section':'dialog');dialog.className='qf-client-access';if(embedded)dialog.style.cssText='margin:16px 0;width:100%;max-height:none';
    dialog.setAttribute('aria-label','Acesso para publicar seu pedido');
-   dialog.innerHTML='<style>.qf-client-access{width:min(440px,calc(100% - 24px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #dce6f3;border-radius:20px;padding:20px;color:#173150;background:#fff;box-sizing:border-box}.qf-client-access::backdrop{background:#10233a99}.qf-client-access h2{font-size:22px;margin:0 0 8px}.qf-client-access p{font-size:14px;line-height:1.45}.qf-client-access form,.qf-client-access label{display:flex;flex-direction:column;gap:9px}.qf-client-access form{gap:14px}.qf-client-access .input{width:100%;box-sizing:border-box}.qf-client-access .btn{min-height:46px;white-space:normal}.qf-client-access__links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.qf-client-access__links button{padding:8px;background:#fff;border:1px solid #dce6f3;border-radius:9px;color:#075bbb;font:inherit;font-size:13px;cursor:pointer}.qf-client-access [role=alert]{color:#9b261c;min-height:1em;margin:0}.qf-client-access__cancel{margin-top:12px;width:100%}.qf-client-access__google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1458cc;border:1.5px solid #b7cff0;font-weight:750;min-height:52px!important;margin:12px 0 4px}.qf-client-access__google img{width:22px;height:22px}.qf-client-access__or{text-align:center;color:#64748b;margin:4px 0 12px!important}</style><div data-access-body></div>';
+   dialog.innerHTML='<style>.qf-client-access{width:min(440px,calc(100% - 24px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #dce6f3;border-radius:20px;padding:20px;color:#173150;background:#fff;box-sizing:border-box}.qf-client-access::backdrop{background:#10233a99}.qf-client-access h2{font-size:22px;margin:0 0 8px}.qf-client-access p{font-size:14px;line-height:1.45}.qf-client-access form,.qf-client-access label{display:flex;flex-direction:column;gap:9px}.qf-client-access form{gap:14px}.qf-client-access .input{width:100%;box-sizing:border-box}.qf-client-access .btn{min-height:46px;white-space:normal}.qf-client-access__links{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.qf-client-access__links button{padding:8px;background:#fff;border:1px solid #dce6f3;border-radius:9px;color:#075bbb;font:inherit;font-size:13px;cursor:pointer}.qf-client-access [role=alert]{color:#9b261c;min-height:1em;margin:0}.qf-client-access__cancel{margin-top:12px;width:100%}.qf-client-access__google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1458cc;border:1.5px solid #b7cff0;font-weight:750;min-height:52px!important;margin:12px 0 4px}.qf-client-access__google img{width:22px;height:22px}.qf-client-access__or{text-align:center;color:#64748b;margin:8px 0 12px!important}.qf-client-access__guest{width:100%;display:block;background:#ff8200;color:#102a4f;border:1px solid #ff8200;min-height:54px!important;font-weight:850;border-radius:12px;font-size:17px;cursor:pointer}.qf-client-access__guest:disabled{opacity:.62;cursor:wait}</style><div data-access-body></div>';
    (container||g.document.body).appendChild(dialog);
    const host=dialog.querySelector('[data-access-body]');let mode='entrar',busy=false;
    const end=(value,error)=>{if(!embedded)dialog.close();dialog.remove();if(error)reject(error);else resolve(value);};
    dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)end(null,Error('Seu pedido está salvo nesta tela. Entre para concluir a publicação.'));});
    function draw(message=''){
     const register=mode==='cadastrar',legacy=mode==='primeiro_acesso',forgot=mode==='esqueci_senha';
-    host.innerHTML='<p style="display:inline-flex;background:#edf5ff;color:#1458cc;border-radius:12px;padding:6px 10px;font-weight:750;font-size:12px;margin:0 0 10px">Área do cliente · preciso contratar</p><h2>'+({entrar:'Entre para publicar',cadastrar:'Crie seu acesso grátis',primeiro_acesso:'Primeiro acesso com senha',esqueci_senha:'Recuperar minha senha'})[mode]+'</h2><p>Seu pedido já foi salvo. Depois de entrar, você volta exatamente à publicação. '+(legacy?'Use o código antigo uma única vez para criar sua senha. Ele não é enviado por SMS.':forgot?'Enviaremos o link somente para o e-mail cadastrado e verificado.':'Escolha Google ou celular, sem precisar preencher o pedido novamente.')+'</p><button type="button" class="btn btn--outline qf-client-access__google" data-google-login><img src="/assets/google-g.svg" alt="" width="22" height="22">Continuar com Google</button><p class="qf-client-access__or">ou</p><form novalidate>'+
+    host.innerHTML='<p style="display:inline-flex;background:#edf5ff;color:#1458cc;border-radius:12px;padding:6px 10px;font-weight:750;font-size:12px;margin:0 0 10px">Área do cliente · preciso contratar</p><h2>'+({entrar:'Como deseja publicar?',cadastrar:'Crie seu acesso grátis',primeiro_acesso:'Primeiro acesso com senha',esqueci_senha:'Recuperar minha senha'})[mode]+'</h2><p>Seu pedido está preenchido. Você pode publicar sem conta e sem senha. O acompanhamento ficará protegido neste navegador.</p><button type="button" class="btn btn--primary qf-client-access__guest" data-guest-publish>Publicar sem cadastro</button><p class="text--sm" style="margin:8px 0 12px;color:#52647c">Não exige Google, senha ou SMS. Para acessar em outro aparelho, pode ser necessária ajuda do suporte.</p><p class="qf-client-access__or">ou entre com sua conta</p><button type="button" class="btn btn--outline qf-client-access__google" data-google-login><img src="/assets/google-g.svg" alt="" width="22" height="22">Continuar com Google</button><p class="qf-client-access__or">ou</p><form novalidate>'+
     (!forgot?'<label>Telefone<input class="input" name="telefone" type="tel" autocomplete="tel" value="'+esc(telefone)+'" readonly></label>':'')+
     (register?'<label>Seu nome<input class="input" name="nome" autocomplete="name" value="'+esc(nome)+'" required></label>':'')+
     (legacy?'<label>Código de acesso antigo<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><p>Se ainda estiver conectado no aparelho anterior, publique por ele. Se perdeu o código e o acesso, fale com o suporte para recuperar sua conta.</p>':'')+
     (register||legacy||forgot?'<label>E-mail'+(forgot?' cadastrado':' para recuperar sua senha')+'<input class="input" name="email" type="email" autocomplete="email" required></label>':'')+
     (!forgot?'<label>'+(register||legacy?'Crie uma senha':'Sua senha')+'<input class="input" name="senha" type="password" autocomplete="'+(register||legacy?'new-password':'current-password')+'" '+(register||legacy?'minlength="6" ':'')+'required></label>'+(register||legacy?'<p>Senha simples com 6 ou mais posições. Pode usar só números ou só letras. Você receberá um e-mail para verificar seu endereço.</p>':''):'')+
     '<p role="alert">'+esc(message)+'</p><button class="btn btn--primary" type="submit">'+(forgot?'Enviar link de recuperação':register||legacy?'Criar acesso e continuar':'Entrar e publicar pedido')+'</button></form><p class="text--sm" style="border-top:1px solid #dce6f3;padding-top:12px;margin-top:12px"><strong>Quer se cadastrar para trabalhar?</strong> Este acesso é somente para clientes. <a href="/#/auth/profissional/login" style="color:#1458cc;font-weight:700">Ir para cadastro de profissionais</a>.</p><div class="qf-client-access__links">'+[['entrar','Já tenho senha'],['cadastrar','Criar conta'],['primeiro_acesso','Tenho cadastro antigo'],['esqueci_senha','Esqueci minha senha']].filter(x=>x[0]!==mode).map(x=>'<button type="button" data-access-mode="'+x[0]+'">'+x[1]+'</button>').join('')+'</div><button type="button" class="btn btn--outline qf-client-access__cancel" data-access-cancel>Voltar ao pedido</button>';
+    host.querySelector('[data-guest-publish]').onclick=async()=>{
+     if(busy)return;
+     busy=true;const btn=host.querySelector('[data-guest-publish]');
+     host.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+     if(btn)btn.textContent='Preparando publicação…';
+     try{const profile=await guest(nome,telefone);end(profile);}
+     catch(err){const notice=host.querySelector('[role=alert]');if(notice)notice.textContent=err.message||'Não foi possível publicar. Tente novamente.';}
+     finally{busy=false;host.querySelectorAll('input,button').forEach(el=>el.disabled=false);if(btn?.isConnected)btn.textContent='Publicar sem cadastro';}
+    };
     host.querySelector('[data-google-login]').onclick=async()=>{
      const client=g.QFCloud?.client;
      if(!client?.auth?.signInWithOAuth){host.querySelector('[role=alert]').textContent='Login Google indisponível no momento.';return;}
@@ -135,7 +158,7 @@
    host.querySelector('form').onsubmit=async e=>{e.preventDefault();const btn=e.target.querySelector('button');btn.disabled=true;try{await call('redefinir_senha',{token,senha:e.target.elements.senha.value});host.innerHTML='<h1 class="h2">Senha atualizada</h1><p>Entre com seu telefone e a nova senha ao publicar o pedido.</p><a class="btn btn--primary" href="/?app=1#/auth/cliente/cadastro">Voltar ao Quem Faz</a>';}catch(err){host.querySelector('[role=alert]').textContent=err.message;btn.disabled=false;}};
   }
  }
- g.QFClienteAcesso={authenticate,existing,tokenPage};
+ g.QFClienteAcesso={authenticate,existing,guest,tokenPage};
  const install=()=>{if(!g.Screens)return false;if(g.QFClienteAcesso.installed)return true;g.QFClienteAcesso.installed=true;const login=g.Screens.authLogin;
  g.Screens.authLogin=function(params){if(params.role!=='cliente')return login.apply(this,arguments);return '<div class="view card stack" style="max-width:480px;margin:auto"><h1 class="h2">Entrar como cliente</h1><p>Use seu telefone e senha para ver seus pedidos.</p><form class="stack" data-client-login><label>Telefone<input class="input" type="tel" name="telefone" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Continuar</button><p role="alert"></p></form><a href="/?app=1#/auth/cliente/cadastro">Publicar um pedido grátis</a></div>';};
  const before=g.Screens.afterRenderAnon;g.Screens.afterRenderAnon=function(pattern,content,params){
