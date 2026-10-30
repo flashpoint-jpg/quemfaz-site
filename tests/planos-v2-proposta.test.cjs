@@ -1,6 +1,6 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
-const {PROPOSTA,decidir,validarRecargaAvulsa,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
+const {PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,saldoInicialNovoCadastro}=require('../qf-planos-v2.js');
 const agora='2026-10-30T18:00:00.000Z';
 const ok=(codigo,cota)=>({codigo,cota_contratada:cota,pagamento_confirmado:true,inicio_em:'2026-10-30T12:00:00.000Z',fim_em:'2026-11-29T12:00:00.000Z'});
 const request=(extra={})=>({agora,preco_desbloqueio_centavos:1300,carteira_centavos:0,...extra});
@@ -42,6 +42,19 @@ test('todos os demais planos precisam de Pix confirmado para usar sua cota',()=>
  for(const [codigo,cota] of [['basico',10],['pro',25],['completo',100]]){
   assert.equal(decidir(request({assinatura:{...ok(codigo,cota),pagamento_confirmado:false},propostaAprovada:true})).origem,'recarga_necessaria');
  }
+});
+test('cadastro profissional só ativa após pagamento comprovado do plano escolhido',()=>{
+ const comprovante={pagamentoStatus:'aprovado',confirmadaPeloBanco:true,txid:'QF_PLANOS_PIX_20261030',endToEndId:'E12345678901234567890'};
+ for (const [plano,valor] of [['avulso',1300],['basico',3990],['pro',7990],['completo',14990]]){
+  const ativo=validarAtivacaoCadastro({...comprovante,plano,valor_centavos:valor});
+  assert.equal(ativo.ativarCadastro,true,plano);
+  assert.equal(ativo.credito_centavos,plano==='avulso'?valor:0);
+  assert.equal(validarAtivacaoCadastro({...comprovante,plano,valor_centavos:valor,pagamentoStatus:'pendente'}).ativarCadastro,false);
+  assert.equal(validarAtivacaoCadastro({...comprovante,plano,valor_centavos:valor,confirmadaPeloBanco:false}).ativarCadastro,false);
+  assert.equal(validarAtivacaoCadastro({...comprovante,plano,valor_centavos:valor-100}).ativarCadastro,false);
+ }
+ assert.equal(validarAtivacaoCadastro({...comprovante,plano:'avulso',valor_centavos:300}).ativarCadastro,false);
+ assert.equal(validarAtivacaoCadastro({...comprovante,plano:'basico',valor_centavos:5290}).ativarCadastro,false,'Não cobrar taxa extra de R$13');
 });
 test('Mensal completo não passa de 100 desbloqueios por cota',()=>{
  assert.equal(decidir(request({assinatura:ok('completo',100),propostaAprovada:true,consumidos:99})).origem,'cota');
