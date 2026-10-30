@@ -41,7 +41,7 @@ on conflict(codigo) do nothing;
 create table if not exists private.qf_planos_v2_assinaturas (
  id uuid primary key default gen_random_uuid(),
  profissional_id uuid not null references public.qf_profiles(id),
- codigo text not null references private.qf_planos_v2_catalogo(codigo),
+ codigo text not null references private.qf_planos_v2_catalogo(codigo) check(codigo<>'avulso'),
  recarga_id uuid unique references public.qf_recargas(id),
  preco_contratado_centavos integer not null check(preco_contratado_centavos>=1300),
  cota_contratada integer not null check(cota_contratada between 1 and 100),
