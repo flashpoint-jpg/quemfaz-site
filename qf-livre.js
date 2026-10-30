@@ -116,7 +116,7 @@
     const group=content.querySelector('.qf-cad-planos'),form=content.querySelector('form');
     if(group&&form){
      group.dataset.qfLivreCadastro='';
-     // Reexibir os dois planos de pagamento; o teste e opcional, nunca impede o checkout.
+     // Cadastro de novos profissionais: nenhuma oferta grátis ou cortesia substitui a confirmação Pix.
      group.style.removeProperty('display');
      group.hidden=false;
      const livre=group.querySelector('input[value="livre"]');
@@ -124,18 +124,18 @@
      const courtesyInput=form.elements.cortesiaLivre;
      if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
      const trialInput=form.elements.testeLivre,trialLabel=trialInput?.closest('label');
-     if(trialInput){trialInput.type='checkbox';trialInput.value='sim';trialInput.checked=true;trialInput.disabled=false;}
+     if(trialInput){trialInput.checked=false;trialInput.disabled=true;trialInput.closest('label')?.remove();}
      if(livre)livre.checked=true;
      const step=group.closest('.qf-step');
      if(step){
       const heading=step.querySelector('.qf-step__head .h2'),sub=step.querySelector('.qf-step__head .text--sm');
       if(heading)heading.textContent='Escolha como começar no Quem Faz';
-      if(sub)sub.textContent='Ative o Livre ou o Avulso por Pix agora, ou experimente 2 dias grátis. Você decide.';
+      if(sub)sub.textContent='É necessário pagar o plano escolhido para concluir seu cadastro. Sem Pix confirmado, não há ativação.';
      }
      if(!group.previousElementSibling?.matches('[data-qf-planos-chamada]')){
       const call=document.createElement('p');call.dataset.qfPlanosChamada='';
       call.className='qf-cad-planos__chamada';
-      call.innerHTML='<strong>DESBLOQUEIOS ILIMITADOS POR MENOS DE R$ 1,50/DIA</strong><span>Quem Faz Livre: R$ 39,90 por 30 dias, equivalente a R$ 1,33 por dia.</span>';
+      call.innerHTML='<strong>PAGAMENTO OBRIGATÓRIO PARA ATIVAR O CADASTRO</strong><span>Escolha uma modalidade e pague o valor correspondente antes de concluir o cadastro.</span>';
       group.before(call);
      }
      // Textos comerciais sem modificar preços, cobranças ou permissões do servidor.
@@ -157,7 +157,7 @@
        card.append(info);
       }
      }
-     if(trialLabel&&!trialLabel.dataset.qfTrialReady){
+     if(false&&trialLabel&&!trialLabel.dataset.qfTrialReady){
       const extra=document.createElement('span');extra.className='qf-trial-copy';
       extra.innerHTML='<span class="qf-trial-eyebrow">OPCIONAL · TESTE GRÁTIS DE 48 HORAS</span>'+
        '<strong class="qf-trial-title">Experimente desbloqueios ilimitados por 2 dias</strong>'+
@@ -174,19 +174,19 @@
        '<li><strong>Livre:</strong> R$ 39,90 por 30 dias (R$ 1,33/dia), desbloqueios ilimitados de pedidos compatíveis enquanto houver vagas; comissão de 13% sobre os serviços fechados e confirmados.</li>'+
        '<li>Depois do desbloqueio, use o chat e, quando o telefone estiver disponível, o WhatsApp do cliente. Até 4 profissionais podem participar de um pedido; não há garantia de contratação.</li>'+
        '<li>O Pix de assinatura ou recarga é apresentado no checkout. Nenhum plano é ativado como pago antes da confirmação do pagamento.</li>'+
-       '<li>O teste de 48 horas é opcional e não gera cobrança automática. Pagamentos de serviços pela plataforma, quando oferecidos, seguem as condições apresentadas no pedido.</li></ul>';
+       '<li>É necessário pagar o plano escolhido para concluir seu cadastro. O QR Code não ativa a conta: é preciso aguardar a confirmação bancária.</li></ul>';
       group.after(conditions);
      }
      function updateChoice(){
-      const test=!!trialInput?.checked;
+      const test=false;
       if(test&&livre)livre.checked=true;
       const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'livre';
       const b=form.querySelector('[data-cad-criar]');
-      if(b)b.textContent=test?'Começar meu teste grátis de 2 dias':selected==='avulso'?'Ativar Avulso — pagar recarga R$ 13,00':'Ativar Livre por Pix — R$ 39,90';
+      if(b)b.textContent=selected==='avulso'?'Continuar para pagamento · R$ 13,00':'Continuar para pagamento · R$ 39,90';
       const note=form.querySelector('[data-plano-nota]');
       if(note){
        note.classList.remove('qf-cad-planos__nota--aviso');
-       note.textContent=test?'Dois dias grátis, sem pagamento nem cobrança automática. Prefere pagar agora? Selecione Livre ou Avulso acima.':selected==='avulso'?'Recarga obrigatória de R$ 13,00 vira saldo integral para desbloquear pedidos. Escolha Pix ou cartão no próximo passo.': 'R$ 39,90 por 30 dias · menos de R$ 1,50/dia · desbloqueios ilimitados. O Pix é gerado no próximo passo, e a ativação ocorre após confirmação.';
+       note.textContent=selected==='avulso'?'É necessário pagar o plano escolhido para concluir seu cadastro. Os R$ 13,00 viram saldo integral após a confirmação Pix.':'É necessário pagar o plano escolhido para concluir seu cadastro. A ativação ocorre somente após confirmação do Pix.';
       }
       if(trialLabel)trialLabel.classList.toggle('qf-trial-card--selected',test);
       if(conditions)conditions.hidden=false;
