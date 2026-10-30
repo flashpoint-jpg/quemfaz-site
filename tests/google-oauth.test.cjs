@@ -324,7 +324,7 @@ test('Google: ação de conclusão na função publicada exige JWT e vínculo de
 });
 
 test('Visitante: publica sem criar senha ou usar Google, em identidade isolada',async()=>{
- const w=page();
+ const w=page();w.HTMLElement.prototype.scrollIntoView=()=>{};
  const newId='33333333-3333-4333-8333-333333333333';
  let authenticated=false,received=null,verified=0, synced=0;
  w.QFCloud={
