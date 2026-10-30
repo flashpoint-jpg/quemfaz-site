@@ -167,6 +167,30 @@ async function estadoConta(userId: string) {
 
 const ERRO_LOGIN = "Telefone ou senha incorretos. Se você já fez pedidos antes e ainda não criou senha, use “Primeiro acesso”.";
 
+// Complete only the authenticated Google customer's own profile. Never merge by phone.
+async function completarGoogle(req: Request, b: any, ipHash: string) {
+  const user = await usuarioDoJwt(req);
+  if (!user || !user.identities?.some(i => i.provider === "google"))
+    return reply({ ok: false, error: "Entre com Google para continuar." }, 401);
+  const { data: profile, error } = await admin.from("qf_profiles").select("id,tipo,nome,telefone,whatsapp").eq("id", user.id).maybeSingle();
+  if (error) throw error;
+  if (!profile || profile.tipo !== "cliente")
+    return reply({ ok: false, error: "Esta conta não é de cliente. Use outra conta Google." }, 403);
+  const telefone = normalizePhone(b.telefone);
+  if (!validMobile(telefone)) return reply({ ok: false, error: "Informe seu celular com DDD." }, 400);
+  const currentPhone = normalizePhone(profile.whatsapp || profile.telefone);
+  if (currentPhone && currentPhone !== telefone)
+    return reply({ ok: false, error: "O telefone do pedido não corresponde à sua conta. Confira seus dados." }, 409);
+  const existing = await clientePorTelefone(telefone);
+  if (existing && existing.id !== user.id)
+    return reply({ ok: false, codigo: "telefone_cadastrado", error: "Esse telefone pertence a outro cadastro. Entre com o acesso original para preservar seus pedidos." }, 409);
+  const nome = String(b.nome || profile.nome || user.user_metadata?.full_name || "Cliente").trim().slice(0, 120);
+  const updated = await admin.from("qf_profiles").update({ nome, telefone, whatsapp: telefone, atualizado_em: new Date().toISOString() }).eq("id", user.id).eq("tipo", "cliente");
+  if (updated.error) throw updated.error;
+  await logEvent("google", true, { userId: user.id, telefone, ipHash });
+  return reply({ ok: true });
+}
+
 // ---------- ações ----------
 async function cadastrar(req: Request, b: any, ipHash: string) {
   const nome = String(b.nome || "").replace(/\s+/g, " ").trim().slice(0, 120);
@@ -414,6 +438,7 @@ Deno.serve(async (req) => {
   const ipHash = await clientIpHash(req);
   try {
     switch (acao) {
+      case "google": return await completarGoogle(req, b, ipHash);
       case "cadastrar": return await cadastrar(req, b, ipHash);
       case "entrar": return await entrar(b, ipHash);
       case "verificar_email": return await verificarEmail(b, ipHash);
