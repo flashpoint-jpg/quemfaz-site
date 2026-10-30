@@ -19,8 +19,10 @@ test('cliente escolhe sim ou não para orçamento presencial R$25 na etapa de co
  assert.match(form,/\['Condições',\['materiais'\]\]/);
  assert.match(form,/Deseja orçamento presencial \(opcional\)\?/);
  assert.match(form,/data-qf-visita-escolha/);
- assert.match(form,/value="nao"/);
- assert.match(form,/value="sim"/);
+ assert.match(form,/data-qf-visita-value/);
+ assert.doesNotMatch(form,/input type="radio" name="at-visita-presencial"/);
+ assert.match(form,/data-qf-visita-opt="nao"/);
+ assert.match(form,/data-qf-visita-opt="sim"/);
  assert.match(form,/visita_presencial:a\.visita_presencial\|\|'nao'/);
  assert.match(form,/a\.visita_presencial==='sim'/);
  assert.match(form,/root\.QFVisita\.abrir\(\{id:req\.id\}\)/);
