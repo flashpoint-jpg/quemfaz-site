@@ -17,7 +17,8 @@ test('arquivo da visita e formulário executam sintaxe JavaScript válida',()=>{
 });
 test('cliente escolhe sim ou não para orçamento presencial R$25 na etapa de condições',()=>{
  assert.match(form,/\['Condições',\['materiais'\]\]/);
- assert.match(form,/Deseja orçamento presencial \(opcional\)\?/);\n assert.match(form,/data-qf-visita-escolha/);
+ assert.match(form,/Deseja orçamento presencial \(opcional\)\?/);
+ assert.match(form,/data-qf-visita-escolha/);
  assert.match(form,/value="nao"/);
  assert.match(form,/value="sim"/);
  assert.match(form,/visita_presencial:a\.visita_presencial\|\|'nao'/);
@@ -46,7 +47,7 @@ test('selo está presente na listagem, detalhes e desbloqueios do profissional',
 });
 test('Pix da visita é exatamente R$25 e só vira pago com Efí E2E; repasse nunca é automático',()=>{
  assert.match(db,/valor_centavos integer not null default 2500 check\(valor_centavos=2500\)/);
- assert.match(db,/status<>'aprovado' or/i);
+ assert.match(db,/status\s*<>\s*'aprovado'\s+or/i);
  assert.match(db,/end_to_end_id is not null/);
  assert.match(db,/visita_nao_escolhida/);
  assert.match(db,/a\.respostas->>'visita_presencial'='sim'/);
