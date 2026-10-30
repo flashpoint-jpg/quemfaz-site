@@ -122,7 +122,7 @@
      const livre=group.querySelector('input[value="livre"]');
      const avulso=group.querySelector('input[value="avulso"]');
      const courtesyInput=form.elements.cortesiaLivre;
-     if(courtesyInput){courtesyInput.checked=false;const row=courtesyInput.closest('label');if(row)row.remove();}
+     if(courtesyInput){courtesyInput.checked=false;const courtesyRow=courtesyInput.closest('label');if(courtesyRow)courtesyRow.remove();}
      const trialInput=form.elements.testeLivre,trialLabel=trialInput?.closest('label');
      if(trialInput){trialInput.type='checkbox';trialInput.value='sim';trialInput.checked=true;trialInput.disabled=false;}
      if(livre)livre.checked=true;
