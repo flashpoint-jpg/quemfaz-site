@@ -415,6 +415,130 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 
-
-
+/* QF etapa 5: três cartões aprovados - 2026-10-30 */
+(function () {
+  'use strict';
+  const STYLE_ID = 'qf-planos-etapa5-20261030';
+  const CSS = [
+    '#cadastro-prof-form [data-step="5"] .qf-options-final{display:grid;gap:14px;margin:18px 0 12px;padding-bottom:8px}',
+    '#cadastro-prof-form [data-step="5"] .qf-step__head .h2{font-size:clamp(23px,5vw,30px);line-height:1.2;letter-spacing:-.025em;color:#123666}',
+    '#cadastro-prof-form [data-step="5"] .qf-step__head .text--sm{font-size:14px;line-height:1.5}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card{position:relative;min-width:0;display:grid;gap:10px;padding:20px 16px 16px;border:1px solid #dce4ee;border-radius:20px;background:#fff;box-shadow:0 7px 25px rgba(16,46,81,.075);overflow:hidden}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--trial{background:linear-gradient(145deg,#eff7ff,#e6f1ff);border:2px solid #1886f3}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--trial .qf-options-price{color:#085eb8}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-price{color:#f36b09}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-price{color:#08804c}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-top{display:flex;gap:12px;align-items:flex-start;min-width:0}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:14px;background:#0966cd;color:#fff;font-weight:900;font-size:20px;letter-spacing:-.05em}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-icon{background:#ff8c1a}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-icon{background:#079d62}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-headings{flex:1;min-width:0}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-name{font-size:20px;line-height:1.25;font-weight:800;color:#13335d;margin:0}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-price{margin-top:5px;font-size:28px;line-height:1.1;font-weight:900;letter-spacing:-.025em}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-price small{font-size:14px;color:#5b6879;font-weight:600;letter-spacing:0}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-badge{display:inline-block;justify-self:start;padding:5px 10px;background:#d0ecff;color:#074f99;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.025em}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-badge{background:#fff0d9;color:#b85b00}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-list{margin:0;padding:0;display:grid;gap:7px;list-style:none}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-list li{display:flex;gap:9px;align-items:start;font-size:14px;line-height:1.35;color:#264565}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-list li::before{content:"✓";display:grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:#096bcd;color:#fff;font-size:12px;font-weight:900}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-list li::before{background:#f6790e}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-list li::before{background:#008e53}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-note{font-size:12.5px;color:#526478;line-height:1.4}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-button{display:block;width:100%;min-height:51px;margin-top:4px;padding:12px;border:0;border-radius:13px;background:#0869db;color:#fff;font-size:15px;font-weight:800;line-height:1.3;cursor:pointer;white-space:normal;text-align:center;box-shadow:0 5px 12px rgba(5,85,178,.12)}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-button{background:#ff7b0a}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-button{background:#08945a}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-button:focus-visible{outline:3px solid #123c74;outline-offset:3px}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-button:disabled{opacity:.7;cursor:wait}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-original,.qf-options-original{display:none!important}',
+    '#cadastro-prof-form [data-step="5"] .qf-step__nav{padding-bottom:calc(90px + env(safe-area-inset-bottom,0px));margin-top:4px;display:flex;flex-direction:row!important;justify-content:flex-start}',
+    '#cadastro-prof-form [data-step="5"] .qf-step__nav button[data-step-back]{flex:0 0 auto;width:auto;min-height:44px}',
+    '#cadastro-prof-form [data-step="5"] .qf-step__nav [data-cad-criar]{display:none!important}',
+    '@media(max-width:390px){#cadastro-prof-form [data-step="5"] .qf-options-card{padding:16px 13px 14px}#cadastro-prof-form [data-step="5"] .qf-options-name{font-size:18px}#cadastro-prof-form [data-step="5"] .qf-options-price{font-size:25px}#cadastro-prof-form [data-step="5"] .qf-options-button{font-size:14px}}'
+  ].join('\n');
+  function mount() {
+    const form = document.getElementById('cadastro-prof-form');
+    if (!form || form.dataset.qfOptions20261030 === 'yes') return;
+    const step = form.querySelector('[data-step="5"]');
+    if (!step || !form.querySelector('[name="testeLivre"]') || !form.querySelector('[name="planoEscolhido"][value="livre"]')) return;
+    if (!document.getElementById(STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = STYLE_ID;
+      style.textContent = CSS;
+      document.head.appendChild(style);
+    }
+    const header = step.querySelector('.qf-step__head');
+    if (header) header.innerHTML =
+      '<div class="qf-step__count">Etapa 5 de 5</div>' +
+      '<div class="h2">Escolha como quer começar</div>' +
+      '<div class="text--sm text--secondary">Seus dados estão preenchidos. Escolha a melhor forma de usar o Quem Faz.</div>' +
+      '<div class="qf-step__bar"><span style="width:100%"></span></div>';
+    const list = step.querySelector('.qf-cad-planos');
+    if (!list) return;
+    list.classList.add('qf-options-original');
+    const note = step.querySelector('[data-plano-nota]');
+    if (note) note.classList.add('qf-options-original');
+    const trial = step.querySelector('[name="testeLivre"]');
+    if (trial && trial.closest('label')) trial.closest('label').classList.add('qf-options-original');
+    const courtesy = step.querySelector('[name="cortesiaLivre"]');
+    if (courtesy && courtesy.closest('label')) courtesy.closest('label').classList.add('qf-options-original');
+    const notes = Array.from(step.children).filter(node => node.tagName === 'P' && node.textContent.includes('Avulso: R$ 13'));
+    notes.forEach(node => node.classList.add('qf-options-original'));
+    const ui = document.createElement('div');
+    ui.className = 'qf-options-final';
+    ui.setAttribute('aria-label', 'Escolha sua forma de começar');
+    ui.innerHTML = [
+      '<section class="qf-options-card qf-options-card--trial">',
+      '<span class="qf-options-badge">TESTE GRÁTIS · 48 HORAS</span>',
+      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">48h</span><div class="qf-options-headings"><h3 class="qf-options-name">Teste grátis — 48 horas</h3><div class="qf-options-price">R$ 0,00</div></div></div>',
+      '<ul class="qf-options-list"><li>Desbloqueios ilimitados por 2 dias</li><li>Chat com clientes e pedidos compatíveis</li><li>Sem Pix, recarga ou pagamento inicial</li></ul>',
+      '<p class="qf-options-note">O teste começa após a identificação. Um por profissional, sem cobrança automática.</p>',
+      '<button class="qf-options-button" type="button" data-qf-opcao="trial">Começar com teste grátis</button>',
+      '</section>',
+      '<section class="qf-options-card qf-options-card--livre">',
+      '<span class="qf-options-badge">PLANO MENSAL</span>',
+      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">∞</span><div class="qf-options-headings"><h3 class="qf-options-name">Quem Faz Livre</h3><div class="qf-options-price">R$ 39,90 <small>/ 30 dias</small></div></div></div>',
+      '<ul class="qf-options-list"><li>Desbloqueios ilimitados de pedidos compatíveis</li><li>Chat com clientes</li><li>Comissão de 13% somente em serviços fechados e confirmados</li></ul>',
+      '<p class="qf-options-note">Equivale a R$ 1,33 por dia. Pagamento antes da ativação, sem renovação automática.</p>',
+      '<button class="qf-options-button" type="button" data-qf-opcao="livre">Ativar Plano Livre</button>',
+      '</section>',
+      '<section class="qf-options-card qf-options-card--avulso">',
+      '<span class="qf-options-badge">SEM MENSALIDADE</span>',
+      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">R$</span><div class="qf-options-headings"><h3 class="qf-options-name">Avulso — créditos</h3><div class="qf-options-price">R$ 13,00 <small>recarga mínima</small></div></div></div>',
+      '<ul class="qf-options-list"><li>Valor integral convertido em saldo na carteira</li><li>Desbloqueie apenas os pedidos que interessarem</li><li>Não é taxa: é crédito para usar</li></ul>',
+      '<p class="qf-options-note">Sem mensalidade e sem comissão sobre os serviços do plano Avulso.</p>',
+      '<button class="qf-options-button" type="button" data-qf-opcao="avulso">Recarregar e começar</button>',
+      '</section>'
+    ].join('');
+    list.parentNode.insertBefore(ui, list);
+    form.dataset.qfOptions20261030 = 'yes';
+    ui.addEventListener('click', function (event) {
+      const button = event.target.closest('[data-qf-opcao]');
+      if (!button || button.disabled) return;
+      const mode = button.getAttribute('data-qf-opcao');
+      const radio = form.querySelector('[name="planoEscolhido"][value="' + (mode === 'avulso' ? 'avulso' : 'livre') + '"]');
+      const trialInput = form.querySelector('[name="testeLivre"]');
+      const courtesyInput = form.querySelector('[name="cortesiaLivre"]');
+      const submit = form.querySelector('[data-cad-criar]');
+      if (!radio || !trialInput || !submit) return;
+      if (courtesyInput) courtesyInput.checked = false;
+      radio.checked = true;
+      trialInput.checked = mode === 'trial';
+      // Reaproveitar a validação de cadastro e os fluxos originais de Pix e de ativação do teste.
+      (mode === 'trial' ? trialInput : radio).dispatchEvent(new Event('change', { bubbles:true }));
+      if (typeof form.requestSubmit === 'function') form.requestSubmit(submit);
+      else submit.click();
+    });
+  }
+  function install() {
+    mount();
+    if (!document.body) return;
+    const observer = new MutationObserver(function () {
+      const form = document.getElementById('cadastro-prof-form');
+      if (form && form.dataset.qfOptions20261030 !== 'yes') mount();
+    });
+    observer.observe(document.body, { childList:true, subtree:true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once:true });
+  else install();
+})();
 
