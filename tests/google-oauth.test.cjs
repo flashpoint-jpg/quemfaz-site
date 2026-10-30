@@ -284,7 +284,7 @@ test('Google: retorno OAuth com pedido salvo mostra nome e Sair sem perder formu
  w.Screens={landing:()=>'',clienteHomeRender:()=>'',afterRender:()=>{},afterRenderAnon:()=>{},authLogin:()=>''};
  w.QFClienteAcesso={};
  let connected=true,mounted=0;
- w.QFAtendimento={hasGoogleDraft:()=>true,hasActiveDraft:()=>true,html:()=>'<section data-qf-atendimento>Pedido mantido em revisão</section>',mount:()=>{mounted++;}};
+ w.QFAtendimento={hasGoogleDraft:()=>true,hasActiveDraft:()=>true,html:()=>'<section data-qf-atendimento><div data-at-session></div>Pedido mantido em revisão</section>',mount:()=>{mounted++;}};
  w.sessionStorage.setItem('qf_google_login_return','1');
  w.sessionStorage.setItem('qf_google_publish_pending','1');
  w.QFCloud={client:{
@@ -302,8 +302,11 @@ test('Google: retorno OAuth com pedido salvo mostra nome e Sair sem perder formu
  assert.ok(header,'a sessão Google é observada mesmo ao restaurar rascunho');
  assert.match(header.textContent,/Olá, Cliente Teste/);
  assert.ok(header.querySelector('[data-account-signout]'),'botão sair visível durante a revisão');
+ const review=w.document.querySelector('[data-at-session]');
+ assert.ok(review,'identificação dentro do resumo do pedido');
+ assert.match(review.textContent,/Conectado como Cliente Teste/);
  assert.match(w.document.querySelector('#qf-pedido-facil').textContent,/Pedido mantido em revisão/);
- header.querySelector('[data-account-signout]').click();
+ review.querySelector('[data-account-signout]').click();
  await new Promise(resolve=>setTimeout(resolve,100));
  assert.equal(connected,false,'o logout foi efetuado');
  assert.match(w.document.querySelector('#qf-pedido-facil').textContent,/Pedido mantido em revisão/,'não apaga o pedido ao sair');
