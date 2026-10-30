@@ -17,13 +17,13 @@ test('Scripts inline e modulo Livre com sintaxe valida',()=>{
 });
 test('Quatro planos novos pagos, com preços exatos',()=>{
   const block=html.slice(html.indexOf('const QF_CAD_PLANOS = ['),html.indexOf('global.QFCadPlanos = QF_CAD_PLANOS;'));
-  assert.match(block,/id: 'avulso'.*valor: 1300/);
-  assert.match(block,/id: 'basico_v2'.*valor: 3990/);
-  assert.match(block,/id: 'pro_v2'.*valor: 7990/);
-  assert.match(block,/id: 'completo_v2'.*valor: 14990/);
+  assert.match(block,/id:'avulso'.*valor:1300/);
+  assert.match(block,/id:'basico_v2'.*valor:3990/);
+  assert.match(block,/id:'pro_v2'.*valor:7990/);
+  assert.match(block,/id:'completo_v2'.*valor:14990/);
   assert.doesNotMatch(block,/id: 'livre'/);
   assert.doesNotMatch(block,/Conta criada na hora, sem pagar nada agora/);
-  assert.match(block,/Os R\$ 13 viram saldo integral/);
+  assert.match(block,/Valor integral convertido em créditos após Pix/);
 });
 test('Nao ha criacao de profissional antes do checkout, nem fallback offline',()=>{
   assert.match(signup,/abrirPagamento\(dados, planoPago/);
