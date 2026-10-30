@@ -504,13 +504,17 @@
       '</section>',
       '<section class="qf-options-card qf-options-card--avulso">',
       '<span class="qf-options-badge">SEM MENSALIDADE</span>',
-      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">R$</span><div class="qf-options-headings"><h3 class="qf-options-name">Avulso — créditos</h3><div class="qf-options-price">R$ 13,00 <small>recarga mínima</small></div></div></div>',
+      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">R$</span><div class="qf-options-headings"><h3 class="qf-options-name">Avulso — créditos</h3><div class="qf-options-price">R$ 13,00 <small>recarga mínima obrigatória</small></div></div></div>',
       '<ul class="qf-options-list"><li>Valor integral convertido em saldo na carteira</li><li>Desbloqueie apenas os pedidos que interessarem</li><li>Não é taxa: é crédito para usar</li></ul>',
       '<p class="qf-options-note">Sem mensalidade e sem comissão sobre os serviços do plano Avulso.</p>',
       '<button class="qf-options-button" type="button" data-qf-opcao="avulso">Recarregar e começar</button>',
       '</section>'
     ].join('');
     list.parentNode.insertBefore(ui, list);
+    // O teste é a opção padrão, mas qualquer cartão troca o plano antes de enviar.
+    const trialDefault = form.querySelector('[name="testeLivre"]');
+    const livreDefault = form.querySelector('[name="planoEscolhido"][value="livre"]');
+    if (trialDefault && livreDefault) { livreDefault.checked = true; trialDefault.checked = true; }
     form.dataset.qfOptions20261030 = 'yes';
     ui.addEventListener('click', function (event) {
       const button = event.target.closest('[data-qf-opcao]');
@@ -534,6 +538,9 @@
     mount();
     if (!document.body) return;
     const observer = new MutationObserver(function () {
+      if (typeof document === 'undefined' || !document || typeof document.getElementById !== 'function') {
+        observer.disconnect(); return;
+      }
       const form = document.getElementById('cadastro-prof-form');
       if (form && form.dataset.qfOptions20261030 !== 'yes') mount();
     });
