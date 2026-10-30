@@ -32,13 +32,13 @@ test('Nao ha criacao de profissional antes do checkout, nem fallback offline',()
 test('Pagamento no backend e vinculo antes da insercao do perfil',()=>{
   const ensure=html.slice(html.indexOf('async function ensureProfile('),html.indexOf('async function syncLocalUser('));
   assert.ok(ensure.indexOf("client.rpc('qf_vincular_pre_cadastro'")<ensure.indexOf("client.from('qf_profiles').insert("));
-  assert.match(ensure,/Pagamento não confirmado para este e-mail/);
+  assert.match(ensure,/É necessário pagar o plano escolhido para concluir seu cadastro/);
   assert.match(html,/r\.status === 'aprovado'\) \{ seguir = false; await pagamentoConfirmado/);
 });
 test('Nenhum boleto ou cartao Livre como atalho de conta',()=>{
   assert.doesNotMatch(html,/metodoBtn\('boleto'/);
-  assert.match(html,/pre\.plano === 'avulso' \? metodoBtn\('cartao'/);
-  assert.match(html,/metodo !== 'pix' && !\(metodo === 'cartao' && pre\.plano === 'avulso'\)/);
+  assert.doesNotMatch(html.slice(html.indexOf('function renderEscolha(aviso)'),html.indexOf('function renderAguardando()')),/metodoBtn\('cartao'/);
+  assert.match(html,/if \(metodo !== 'pix'\) return;/);
 });
 test('Plano Livre exibido uma so vez',()=>{
   assert.doesNotMatch(livre,/group\.insertAdjacentHTML\('afterbegin'/);
@@ -71,7 +71,7 @@ test('Efí recusa planos legados, preço divergente e cartão Livre ANTES de cob
  const gerar=edge.indexOf('const segredo = segredoNovo()',inicio);
  const trecho=edge.slice(inicio,gerar);
  assert.match(trecho,/plano !== "avulso" && plano !== "livre"/);
- assert.match(trecho,/plano === "livre" && metodo !== "pix"/);
+ assert.match(trecho,/if \(metodo !== "pix"\)/);
  assert.match(trecho,/valorEsperado = plano === "avulso" \? 1300 : 3990/);
  assert.match(sql,/ADD CONSTRAINT qf_cadastro_preco_valido/);
 });
