@@ -19,6 +19,16 @@
 - Preservar bônus de indicação de R$10; não criar bônus de cadastro, teste ou nova cortesia.
 - A Efí oferece Pix para envio via API, mas necessita `pix.send`, webhook e limites liberados para a conta. Não foi confirmada autorização desta conta nem política de tarifas.
 
+## Exigência final de conclusão do cadastro — 30/10/2026, 18h57
+- **Não finalizar o cadastro profissional sem Pix confirmado**. O profissional só pode preencher um pré-cadastro pendente necessário para emitir o QR Code.
+- Se tentar concluir sem pagar, mostrar exatamente: **"É necessário pagar o plano escolhido para concluir seu cadastro."** e mantê-lo na etapa de pagamento com formulário preenchido.
+- A opção Avulso exige **R$ 13,00**, creditados integralmente no saldo após confirmação.
+- Nos demais planos, cobrar apenas o preço selecionado; nenhuma recarga extra de R$ 13,00.
+- Mesmo após gerar o QR Code, não concluir cadastro nem dar permissão de desbloqueio; somente a liquidação Pix validada em servidor pode acionar criação/ativação.
+- Existe atualmente um caminho `preCadastroStatus(...)` em `index.html` que só chama `pagamentoConfirmado` após status `aprovado`. Preservar essa proteção; remover caminhos alternativos de **teste grátis** e **cortesia** antes da liberação da versão 2.
+- A transição deve tratar pré-cadastro pendente de forma que a cobrança seja consultável e recuperável, sem duplicidade de pagamento.
+- Esta etapa está ainda **somente na proposta separada**: nenhuma mudança em produção até checkout e banco implementados e testados de ponta a ponta.
+
 ## Correção final do fluxo de cadastro — 30/10/2026
 **Valor correto do Avulso: R$ 13,00 (não R$ 3,00).**
 O novo profissional deve escolher um plano e pagar **somente o preço daquele plano** para finalizar seu cadastro. Sem Pix liquidado e conciliado no servidor, o pré-cadastro pode ficar pendente, mas não pode haver perfil profissional ativo, nem acesso a desbloqueios.
