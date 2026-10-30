@@ -175,11 +175,59 @@
     root.querySelector('[data-qff-keys]').onchange=e=>{keyFilter=e.target.value;render();};
     root.querySelector('[data-qff-search]').oninput=e=>{query=e.target.value;const pos=e.target.selectionStart;render();const next=root.querySelector('[data-qff-search]');next.focus();next.setSelectionRange(pos,pos);};
    }
+   // Visitas técnicas: dinheiro recebido pela plataforma, repasse feito pelo administrador NO BANCO.
+   async function carregarVisitas(){
+    let host=root.querySelector('[data-qff-visitas]');
+    if(!host){host=g.document.createElement('section');host.dataset.qffVisitas='';root.querySelector('.qff-head')?.after(host);}
+    host.innerHTML='<h3>Orçamento presencial · Pix R$ 25,00</h3><p role="status">Consultando visitas...</p>';
+    try{
+      const reply=await client.rpc('qf_admin_visitas_pagamentos');
+      if(reply.error||!Array.isArray(reply.data))throw Error('Ainda não foi possível consultar os pagamentos de visitas.');
+      const visits=reply.data,paid=visits.filter(x=>x.status==='aprovado'),
+        repassados=visits.filter(x=>x.repasse_status==='realizado'),
+        pending=paid.filter(x=>x.repasse_status!=='realizado');
+      host.innerHTML='<h3>Orçamento presencial · Visitas técnicas</h3>'+
+       '<p>Pagamento opcional de R$ 25,00 recebido pelo Quem Faz. <strong>O repasse é sempre manual:</strong> primeiro transfira no seu banco e depois registre o comprovante aqui. Não há transferência automática.</p>'+
+       '<div class="qff-cards"><div class="qff-card">Pix confirmados<strong>'+paid.length+'</strong></div><div class="qff-card">A repassar manualmente<strong>'+money(pending.length*2500)+'</strong></div><div class="qff-card">Repasses registrados<strong>'+money(repassados.length*2500)+'</strong></div></div>'+
+       (visits.length?visits.map(x=>{
+          const paidOk=x.status==='aprovado',done=x.repasse_status==='realizado',
+            pros=Array.isArray(x.profissionais)?x.profissionais:[],
+            status=done?'REPASSE MANUAL REGISTRADO':paidOk?'VISITA TÉCNICA PAGA':'VISITA AINDA NÃO PAGA';
+          return '<article class="qff-prof-item" data-qff-visita="'+esc(x.id)+'" style="margin:10px 0">'+
+            '<strong>'+esc(x.titulo||'Serviço')+' — '+esc(x.cliente_nome||'Cliente')+'</strong>'+
+            '<p>'+esc(x.bairro||'')+' · '+esc(x.cidade||'')+' · Pedido '+esc(x.chamado_id)+'</p>'+
+            '<p><b>'+esc(status)+'</b> · Valor '+money(x.valor_centavos)+' · '+esc(date(x.criado_em))+'</p>'+
+            (paidOk?'<p>Efí confirmou: '+esc(date(x.aprovado_em))+' · E2E '+esc(x.end_to_end_id||'não informado')+'</p>':'<p>Não realizar repasse: Pix pendente.</p>')+
+            (done?'<p><strong>Transferência manual registrada em '+esc(date(x.repassado_em))+'</strong> · '+esc(x.observacao_repasse||'')+'</p>':'')+
+            (paidOk&&!done?
+              '<div class="stack--sm" data-qff-visita-form>'+
+              '<label>Profissional escolhido para receber os R$ 25,00<select class="input" name="profissional"><option value="">Selecione quem realizou a visita</option>'+
+              pros.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.nome||p.id)+'</option>').join('')+'</select></label>'+
+              (!pros.length?'<p class="text--sm">Nenhum profissional desbloqueou este pedido. O repasse será registrado quando houver profissional vinculado.</p>':'')+
+              '<label>Referência do comprovante bancário<input class="input" name="referencia" placeholder="Identificador do Pix enviado no seu banco" maxlength="180"></label>'+
+              '<label style="display:flex;align-items:center;gap:8px"><input type="checkbox" name="confirmou"> Eu já transferi os R$ 25,00 manualmente e conferi o comprovante</label>'+
+              '<button class="btn btn--primary" type="button" data-qff-visita-marcar'+(!pros.length?' disabled':'')+'>Registrar repasse já realizado</button>'+
+              '<p role="status"></p></div>':'')+
+            '</article>';
+       }).join(''):'<p>Nenhuma visita técnica com Pix registrada ainda.</p>');
+      host.querySelectorAll('[data-qff-visita-marcar]').forEach(btn=>btn.onclick=async()=>{
+        const card=btn.closest('[data-qff-visita]'),form=card.querySelector('[data-qff-visita-form]'),status=form.querySelector('[role=status]'),
+          profissional=form.querySelector('[name=profissional]').value,ref=form.querySelector('[name=referencia]').value.trim(),checked=form.querySelector('[name=confirmou]').checked;
+        if(!profissional||ref.length<8||!checked){status.textContent='Realize a transferência no banco antes de registrar. Escolha o profissional, informe a referência bancária e confirme.';return;}
+        btn.disabled=true;status.textContent='Registrando repasse manual...';
+        try{
+          const resp=await client.rpc('qf_admin_visita_marcar_repasse',{p_pagamento_id:card.dataset.qffVisita,p_profissional_id:profissional,p_observacao:ref});
+          if(resp.error||!resp.data?.ok)throw Error(resp.error?.message||resp.data?.reason||'Não foi possível registrar o repasse.');
+          await carregarVisitas();
+        }catch(e){status.textContent=e.message;btn.disabled=false;}
+      });
+    }catch(e){host.innerHTML='<h3>Orçamento presencial · Visitas técnicas</h3><p role="status" class="qff-error">'+esc(e.message)+'</p><button class="btn btn--outline" type="button" data-qff-visita-tentar>Tentar novamente</button>';host.querySelector('[data-qff-visita-tentar]').onclick=carregarVisitas;}
+   }
    async function load(){if(busy)return;busy=true;root.setAttribute('aria-busy','true');try{
     const [a,b,c]=await Promise.all([client.rpc('qf_operacao_financeira_admin'),client.rpc('qf_admin_negociacoes'),client.rpc('qf_repasses_manuais_painel')]);
     if(a.error||b.error||c.error)throw Error('Não foi possível consultar os dados protegidos dos pagamentos ou repasses.');
     if(!a.data||!Array.isArray(b.data)||!Array.isArray(c.data))throw Error('Resposta financeira inválida.');
-    if(!root.isConnected)return;data=a.data;neg=b.data;repasses=c.data;render();
+    if(!root.isConnected)return;data=a.data;neg=b.data;repasses=c.data;render();await carregarVisitas();
    }catch(e){let status=root.querySelector('[data-qff-status]');if(!status){root.innerHTML='<p role="status" data-qff-status></p><button class="btn btn--outline" data-qff-refresh>Tentar novamente</button>';status=root.querySelector('[data-qff-status]');root.querySelector('[data-qff-refresh]').onclick=load;}status.className='qff-error';status.textContent=e.message;}finally{busy=false;root.removeAttribute('aria-busy');}}
    await load();
    const clock=g.setInterval(()=>{if(!root.isConnected){g.clearInterval(clock);return;}if(g.document.visibilityState!=='hidden')load().catch(()=>{});},30000);
