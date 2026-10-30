@@ -123,7 +123,7 @@ test('Google: telefone de outra conta exige acesso original e não vincula autom
  await new Promise(resolve=>setTimeout(resolve,25));
  assert.equal(signedOut,1);
  assert.ok(w.document.querySelector('.qf-client-access [name="senha"]'),'oferece login da conta original');
- assert.match(w.document.querySelector('.qf-client-access [role="alert"]').textContent,/Escolha a mesma conta Google/,'explica por que o login não foi aceito');
+ assert.match(w.document.querySelector('.qf-client-access [role="alert"]').textContent,/Publicar sem cadastro/,'explica alternativa segura para número vinculado');
  w.document.querySelector('[data-access-cancel]').click();
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();
