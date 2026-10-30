@@ -8,7 +8,9 @@ test('Cadastro exige pagamento: opções Avulso R$13 e plano mensal, sem teste o
   <div class="qf-step" data-step="5"><div class="qf-step__head"><h2 class="h2">Planos</h2><p class="text--sm"></p></div>
    <div class="qf-cad-planos">
     <label class="qf-cad-plano"><input type="radio" name="planoEscolhido" value="avulso"><span class="qf-cad-plano__lista">Os R$ 13 viram saldo integral da carteira</span></label>
-    <label class="qf-cad-plano"><input type="radio" name="planoEscolhido" value="livre" checked><span>R$ 39,90 por 30 dias</span></label>
+    <label class="qf-cad-plano"><input type="radio" name="planoEscolhido" value="basico_v2"><span>R$ 39,90 por 30 dias</span></label>
+    <label class="qf-cad-plano"><input type="radio" name="planoEscolhido" value="pro_v2"><span>R$ 79,90</span></label>
+    <label class="qf-cad-plano"><input type="radio" name="planoEscolhido" value="completo_v2"><span>R$ 149,90</span></label>
    </div>
    <p data-plano-nota></p>
    <button type="submit" data-cad-criar></button>
@@ -20,7 +22,7 @@ test('Cadastro exige pagamento: opções Avulso R$13 e plano mensal, sem teste o
   Object.defineProperty(w.document,'readyState',{value:'complete'});
   w.eval(fs.readFileSync('qf-livre.js','utf8'));
   const form=w.document.querySelector('#cadastro-prof-form');
-  assert.deepEqual([...form.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),['avulso','livre']);
+  assert.deepEqual([...form.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),['avulso','basico_v2','pro_v2','completo_v2']);
   assert.equal(form.querySelector('[name=testeLivre]'),null);
   assert.equal(form.querySelector('[name=cortesiaLivre]'),null);
   assert.match(w.document.querySelector('[data-qf-planos-chamada]').textContent,/PAGAMENTO OBRIGATÓRIO/i);
@@ -32,7 +34,7 @@ test('Cadastro exige pagamento: opções Avulso R$13 e plano mensal, sem teste o
   const avulso=form.querySelector('[value=avulso]');
   avulso.click();
   assert.match(form.querySelector('[data-cad-criar]').textContent,/R\$ 13,00/);
-  const livre=form.querySelector('[value=livre]');
+  const livre=form.querySelector('[value=basico_v2]');
   livre.click();
   assert.match(form.querySelector('[data-cad-criar]').textContent,/R\$ 39,90/);
   assert.equal(form.querySelectorAll('[data-qf-condicoes-planos]').length,1);
