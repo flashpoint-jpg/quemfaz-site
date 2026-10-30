@@ -7264,7 +7264,11 @@ alt=""></noscript>
     return fn.data || { ok: false, error: 'falha_conexao' };
   }
   async function preCadastroCriar(plano, metodo, pessoa) {
-    return preCadastroInvoke({ acao: 'criar', plano: plano, metodo: metodo, email: pessoa.email, nome: pessoa.nome, telefone: pessoa.telefone });
+    // Nunca pedir Pix antes de verificar o CPF/CNPJ na base toda.
+    return preCadastroInvoke({ acao: 'criar', plano: plano, metodo: metodo,
+      email: pessoa.email, nome: pessoa.nome, telefone: pessoa.telefone,
+      tipo_documento: pessoa.cnpj ? 'cnpj' : 'cpf',
+      documento: pessoa.cnpj || pessoa.cpf || '' });
   }
   async function preCadastroStatus(id, segredo) {
     return preCadastroInvoke({ acao: 'status', id: id, segredo: segredo });
@@ -10556,7 +10560,10 @@ alt=""></noscript>
         const antigo = QFPreCadastro.ler();
         // Mesmo e-mail e mesmo plano com cobrança já aberta: continua nela em vez de abrir outra.
         // Também vale para quem pagou e precisou preencher o cadastro de novo (aí o plano é o que foi pago).
-        const reusa = !!(antigo && antigo.pag && (!antigo.dados || (antigo.plano === pl.id && antigo.dados.email === dados.email)));
+        const reusa = !!(antigo && antigo.pag && antigo.dados &&
+          antigo.plano === pl.id && antigo.dados.email === dados.email &&
+          String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
+            String(dados.cpf || dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase());
         pre = { em: reusa ? antigo.em : Date.now(), plano: reusa ? antigo.plano : pl.id, planoEscolhido: pl.id, indicacao: String(indicacao || ''), dados: semSenha, pag: reusa ? antigo.pag : null };
         preSenha = String(dados.senha || '');
         formPreenchido = true;
@@ -10569,11 +10576,28 @@ alt=""></noscript>
         preOcupado = true;
         pagArea.innerHTML = pagStatus(metodo === 'pix' ? 'Gerando o Pix…' : 'Preparando o pagamento com cartão…');
         try {
-          const r = await global.QFCloud.preCadastroCriar(pre.plano, metodo, { email: pre.dados.email, nome: pre.dados.nome, telefone: pre.dados.telefone });
+          const r = await global.QFCloud.preCadastroCriar(pre.plano, metodo, {
+            email: pre.dados.email, nome: pre.dados.nome, telefone: pre.dados.telefone,
+            cpf: pre.dados.cpf || '', cnpj: pre.dados.cnpj || ''
+          });
           if (!naTela() || !pre) return;
           if (!r || !r.ok) {
             const erro = r && r.error;
-            if (erro === 'email_em_uso') renderErroPagamento('Esse e-mail já tem conta no QuemFaz. Nada foi cobrado.', '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>' + (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-email>Usar outro e-mail</button>' : ''));
+            if (['documento_ja_cadastrado','documento_cobranca_existente'].includes(erro)) {
+              renderErroPagamento('Este CPF/CNPJ já foi usado em um cadastro ou possui cobrança aberta. Não geramos outro Pix. Entre na sua conta ou solicite ajuda para recuperar o acesso.',
+                '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>');
+            }
+            else if (erro === 'telefone_ja_cadastrado') {
+              renderErroPagamento('Este telefone já está associado a um profissional. Não geramos Pix. Entre na conta existente ou fale com o suporte se o número for compartilhado.',
+                '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>');
+            }
+            else if (['documento_obrigatorio','documento_invalido','tipo_documento_invalido'].includes(erro)) {
+              renderErroPagamento('Informe um CPF ou CNPJ válido antes de escolher o pagamento. Nenhum Pix foi gerado.');
+            }
+            else if (erro === 'verificacao_indisponivel') {
+              renderErroPagamento('Não foi possível conferir seu CPF/CNPJ no banco. Tente novamente: nenhum Pix foi gerado.');
+            }
+            else if (erro === 'email_em_uso') renderErroPagamento('Esse e-mail já tem conta no Quem Faz. Nada foi cobrado.', '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>' + (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-email>Usar outro e-mail</button>' : ''));
             else if (erro === 'muitas_tentativas') renderErroPagamento('Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.');
             else if (erro === 'cobranca_indisponivel' && metodo === 'cartao') renderErroPagamento('Pagamento com cartão indisponível no momento. Use o Pix: confirma na hora.');
             else renderErroPagamento('Não foi possível gerar o pagamento. Confira a internet e tente de novo. Nada foi cobrado.');
