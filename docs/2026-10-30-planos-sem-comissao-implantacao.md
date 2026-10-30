@@ -19,6 +19,16 @@
 - Preservar bônus de indicação de R$10; não criar bônus de cadastro, teste ou nova cortesia.
 - A Efí oferece Pix para envio via API, mas necessita `pix.send`, webhook e limites liberados para a conta. Não foi confirmada autorização desta conta nem política de tarifas.
 
+## Regra de pagamento antecipado confirmada em 30/10/2026
+- **Todos** os planos exigem pagamento antes de liberar o benefício, inclusive Avulso.
+- Avulso é a modalidade padrão do cadastro, mas começa com saldo R$0,00 e zero desbloqueios: o profissional deve primeiro pagar uma **recarga Pix mínima de R$13**.
+- Os R$13 (ou o valor maior escolhido) são creditados somente após confirmação bancária no servidor; cobrança criada, Pix apenas gerado, Pix pendente, recusado, cancelado ou não conciliado não geram nenhum crédito.
+- O crédito liberado pode então ser consumido conforme o preço de cada desbloqueio. Uma recarga paga não deve ser contabilizada duas vezes.
+- Básico, Pro e Mensal completo exigem Pix confirmado para ativar suas cotas. Se cota acabar, desbloqueio só com saldo de crédito de origem confirmada; sem ambos, bloquear e oferecer recarga.
+- Não conceder bônus inicial de cadastro, dois dias grátis nem cortesia. Preservar bônus de indicação conforme política já existente, sem confundir com pagamento inicial do Avulso.
+- Não eliminar saldos antigos efetivamente pagos ou direitos de assinaturas antigas vigentes.
+- As regras novas ainda estão apenas numa branch **inativa** e não habilitam cobrança em produção. Ao implementar RPC real, verificar `qf_recargas.status='aprovado'`, valor, TXID/E2E, identidade e unicidade antes de registrar crédito.
+ 
 ## Código de confirmação: NÃO remover
 `qf_comissao13_codigo_criar` e `qf_comissao13_cliente_confirmar` fazem mais do que comissão: validam a posse do contato por código, registram aceite da contratação, conclusão e contestação, impedem certas contratações conflitantes e registram eventos. Há também código de seis dígitos fixo do pedido, usado para outros fluxos. Antes de remover qualquer um, separar essas funções da lógica financeira e preservar a prova de consentimento do cliente. Portanto o código fica intocado nesta etapa.
 
