@@ -71,8 +71,8 @@
   function attribution() {
     var touch = global.QFMarketingTouch || campaign || {};
     var out = {};
-    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type'].forEach(function (key) {
-      if (touch[key]) out[key] = String(touch[key]).slice(0, key === 'click_id' ? 512 : 240);
+    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type', 'gclid', 'gbraid', 'gad_campaignid'].forEach(function (key) {
+      if (touch[key]) out[key] = String(touch[key]).slice(0, /^(click_id|gclid|gbraid)$/.test(key) ? 512 : 240);
     });
     // Sem UTM não significa anúncio: registra apenas o referenciador conhecido,
     // sem classificar esse acesso como campanha paga.

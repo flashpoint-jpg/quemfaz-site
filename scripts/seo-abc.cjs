@@ -134,7 +134,7 @@ const confianca = `<section class="card full" aria-labelledby="conf"><h2 id="con
 <li><strong>Avaliação:</strong> depois do serviço, você pode dar nota ao profissional e ajudar outros clientes.</li>
 </ul><p class="note">Leia a <a href="/privacidade/">Política de privacidade</a>.</p></section>`;
 
-const passaUtm = `<script>(function(){try{var q=new URLSearchParams(location.search),k=['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','gbraid','wbraid','msclkid','fbclid','ttclid'],e=[];k.forEach(function(n){var v=q.get(n);if(v)e.push([n,v.slice(0,500)]);});if(!e.length)return;document.querySelectorAll('a[data-request],a[data-qf-seo-cta]').forEach(function(a){var u=new URL(a.getAttribute('href'),location.origin);e.forEach(function(p){if(!u.searchParams.has(p[0]))u.searchParams.set(p[0],p[1]);});a.setAttribute('href',u.pathname+u.search+u.hash);});}catch(_){}})();</script>`;
+const passaUtm = `<script>(function(){try{var q=new URLSearchParams(location.search),k=['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','gbraid','gad_campaignid','wbraid','msclkid','fbclid','ttclid'],e=[];k.forEach(function(n){var v=q.get(n);if(v)e.push([n,v.slice(0,500)]);});if(!e.length)return;document.querySelectorAll('a[data-request],a[data-qf-seo-cta]').forEach(function(a){var u=new URL(a.getAttribute('href'),location.origin);e.forEach(function(p){if(!u.searchParams.has(p[0]))u.searchParams.set(p[0],p[1]);});a.setAttribute('href',u.pathname+u.search+u.hash);});}catch(_){}})();</script>`;
 
 function ctaHref(s, route) {
   return '/?' + new URLSearchParams({ servico: s.cat, seo_page: route }).toString() + '#/auth/cliente/cadastro';

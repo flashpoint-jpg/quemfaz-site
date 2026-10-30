@@ -88,7 +88,15 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
     var clickKeys = [['gclid','google'],['gbraid','google'],['wbraid','google'],['msclkid','microsoft'],['fbclid','meta'],['ttclid','tiktok']];
     var click = null;
     for (var i = 0; i < clickKeys.length; i++) { if (p.get(clickKeys[i][0])) { click = clickKeys[i]; break; } }
-    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || click;
+    // Google Ads: cada identificador fica em campo próprio (gclid, gbraid, gad_campaignid),
+    // mesmo quando chegam juntos, para permitir conversão offline e atribuição por campanha.
+    var gads = {
+      gclid: (p.get('gclid') || '').slice(0, 512),
+      gbraid: (p.get('gbraid') || '').slice(0, 512),
+      gad_campaignid: (p.get('gad_campaignid') || '').slice(0, 64)
+    };
+    var hasGads = !!(gads.gclid || gads.gbraid || gads.gad_campaignid);
+    var hasCampaign = p.get('utm_source') || p.get('utm_medium') || p.get('utm_campaign') || click || hasGads;
     if (!hasCampaign) {
       var touch = JSON.parse(sessionStorage.getItem('qf_marketing_touch') || 'null');
       if (!touch) {
@@ -110,6 +118,9 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
       term: p.get('utm_term') || '',
       click_id: click ? p.get(click[0]) : '',
       click_type: click ? click[0] : '',
+      gclid: gads.gclid,
+      gbraid: gads.gbraid,
+      gad_campaignid: gads.gad_campaignid,
       landing_url: window.location.origin + window.location.pathname,
       referrer: document.referrer ? (function () { try { return new URL(document.referrer).origin; } catch (_) { return ''; } })() : '',
       first_seen_at: new Date().toISOString()

@@ -125,6 +125,23 @@ test('atribuição guarda msclkid (Microsoft Ads) com o tipo do clique', () => {
   assert.ok(!t.landing_url.includes('msclkid'), 'URL guardada sem parâmetros');
 });
 
+test('atribuição guarda gclid, gbraid e gad_campaignid em campos separados', () => {
+  const bloco = html.slice(html.indexOf('/* QF_MARKETING_ATTRIBUTION_V2'), html.indexOf('})();', html.indexOf('/* QF_MARKETING_ATTRIBUTION_V2')) + 5);
+  const { win, session } = sandbox({ search: '?gclid=G123&gbraid=B456&gad_campaignid=24417481402&utm_source=google' });
+  win.URLSearchParams = URLSearchParams; win.URL = URL; win.JSON = JSON; win.Date = Date;
+  vm.runInContext(bloco, win);
+  const t = JSON.parse(session.getItem('qf_marketing_touch'));
+  assert.strictEqual(t.gclid, 'G123');
+  assert.strictEqual(t.gbraid, 'B456');
+  assert.strictEqual(t.gad_campaignid, '24417481402');
+  assert.strictEqual(t.click_id, 'G123', 'click_id antigo continua preenchido');
+  // só gad_campaignid (sem gclid) também é guardado
+  const outro = sandbox({ search: '?gad_campaignid=777' });
+  outro.win.URLSearchParams = URLSearchParams; outro.win.URL = URL; outro.win.JSON = JSON; outro.win.Date = Date;
+  vm.runInContext(bloco, outro.win);
+  assert.strictEqual(JSON.parse(outro.session.getItem('qf_marketing_touch')).gad_campaignid, '777');
+});
+
 test('consentimento definido antes das tags do Google e da Meta', () => {
   const c = html.indexOf('QF_CONSENT_V1'), meta = html.indexOf("fbq('init','1124265238584181')"), g = html.indexOf("gtag('config', 'AW-18273159663')"), d = html.indexOf("gtag('consent', 'default'");
   assert.ok(c > 0 && c < meta && d > 0 && d < g, 'ordem das tags');
