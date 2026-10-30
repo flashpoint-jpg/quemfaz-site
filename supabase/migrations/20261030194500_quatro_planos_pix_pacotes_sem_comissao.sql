@@ -278,3 +278,23 @@ begin
 exception when unique_violation then return jsonb_build_object('ok',false,'reason','ja_participou');
 end $function$
 ;
+
+-- Consulta segura e idempotente do Pix por titular, sem permitir creditar pela interface.
+create or replace function public.qf_plano_v2_pagamento_status(p_recarga_id uuid)
+returns jsonb language plpgsql stable security definer set search_path to '' as $$
+declare v_status text; v_plano text; v_pacote uuid;
+begin
+ if auth.uid() is null then return jsonb_build_object('ok',false,'reason','nao_autenticado'); end if;
+ select status,plano into v_status,v_plano from public.qf_recargas
+ where id=p_recarga_id and profissional_id=auth.uid();
+ if not found then return jsonb_build_object('ok',false,'reason','nao_encontrado'); end if;
+ if v_plano not in ('basico_v2','pro_v2','completo_v2')
+ then return jsonb_build_object('ok',false,'reason','plano_invalido'); end if;
+ select id into v_pacote from public.qf_planos_profissional
+ where recarga_id=p_recarga_id and profissional_id=auth.uid()
+ and valido_ate>now() limit 1;
+ return jsonb_build_object('ok',true,'status',v_status,
+   'ativo',v_status='aprovado' and v_pacote is not null,'plano',v_plano);
+end $$;
+revoke all on function public.qf_plano_v2_pagamento_status(uuid) from public,anon,authenticated;
+grant execute on function public.qf_plano_v2_pagamento_status(uuid) to authenticated,service_role;
