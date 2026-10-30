@@ -322,3 +322,43 @@ test('Google: ação de conclusão na função publicada exige JWT e vínculo de
  assert.match(form,/O pedido ainda não foi publicado\./);
  assert.match(form,/Seus dados continuam preenchidos\./);
 });
+
+test('Visitante: publica sem criar senha ou usar Google, em identidade isolada',async()=>{
+ const w=page();w.HTMLElement.prototype.scrollIntoView=()=>{};
+ const newId='33333333-3333-4333-8333-333333333333';
+ let authenticated=false,received=null,verified=0, synced=0;
+ w.QFCloud={
+  client:{
+   auth:{
+    getUser:async()=>({data:{user:authenticated?{id:newId}:null},error:null}),
+    verifyOtp:async args=>{
+     assert.equal(args.type,'magiclink');
+     assert.equal(args.token_hash,'hash-guest-aleatorio');
+     authenticated=true;verified++;return {data:{user:{id:newId}},error:null};
+    }
+   },
+   from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:authenticated?{id:newId,tipo:'cliente',nome:'Visitante',telefone:'11987654321',whatsapp:'11987654321'}:null,error:null})})})}),
+   functions:{invoke:async(slug,{body})=>{received={slug,body};return {data:{ok:true,guest:true,user_id:newId,token_hash:'hash-guest-aleatorio'},error:null};}}
+  },syncForCurrentSession:async()=>{synced++;}
+ };
+ const pending=w.QFClienteAcesso.authenticate({nome:'Visitante',telefone:'11987654321',container:w.document.body});
+ await new Promise(resolve=>setTimeout(resolve,20));
+ const b=w.document.querySelector('[data-guest-publish]');
+ assert.ok(b,'botão publicar sem cadastro fica visível');
+ b.click();
+ const owner=await pending;
+ assert.equal(owner.id,newId);
+ assert.deepEqual(JSON.parse(JSON.stringify(received)),{slug:'quemfaz-cliente-rapido',body:{modo:'visitante',nome:'Visitante',telefone:'11987654321'}});
+ assert.equal(verified,1);
+ assert.equal(synced,1);
+ assert.equal(w.document.querySelector('.qf-client-access'),null);
+ w.close();
+});
+test('Visitante: cliente existente nunca é autenticado só pelo conhecimento do telefone',()=>{
+ const server=fs.readFileSync(require.resolve('../supabase/functions/quemfaz-cliente-rapido/index.ts'),'utf8');
+ assert.match(server,/modo\s*\|\|\s*""\)\s*===\s*"visitante"/);
+ assert.match(server,/const email = "visitante-" \+ crypto\.randomUUID\(\)/);
+ assert.match(server,/if \(!entrar && userId\)/);
+ assert.match(server,/eq\("evento", "visitante"\)/);
+ assert.doesNotMatch(server,/modo.*visitante[\s\S]{0,150}generateLink\(\{ type: "magiclink", email:.*found/);
+});
