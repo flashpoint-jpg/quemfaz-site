@@ -418,6 +418,7 @@
 /* QF etapa 5: três cartões aprovados - 2026-10-30 */
 (function () {
   'use strict';
+  if (typeof document === 'undefined') return; // testes Node sem DOM
   const STYLE_ID = 'qf-planos-etapa5-20261030';
   const CSS = [
     '#cadastro-prof-form [data-step="5"] .qf-options-final{display:grid;gap:14px;margin:18px 0 12px;padding-bottom:8px}',
