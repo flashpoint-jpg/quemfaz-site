@@ -9228,9 +9228,9 @@ alt=""></noscript>
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<p class="text--sm text--secondary">Avulso: R$ 13 de saldo, não é taxa. Livre: R$ 39,90 por 30 dias; a comissão de 13% só incide sobre serviços fechados e confirmados.</p>' +
+          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. No Avulso, R$ 13,00 viram crédito integral após o pagamento confirmado. Os planos mensais não têm recarga inicial adicional.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
-          '<label class="qf-trial-choice" style="display:flex;gap:10px;padding:14px;background:#eef5ff;border:1px solid #bcd4f2;border-radius:12px;align-items:flex-start"><input type="checkbox" name="testeLivre" value="sim"><span><strong>Experimente o Quem Faz Livre grátis por 2 dias!</strong><br>Sem pagamento para começar e sem cobrança automática. Após 48 horas: R$ 39,90 por 30 dias. Comissão de 13% e prestação de contas mantidas. Um teste por profissional.</span></label><label style="display:flex;gap:10px;align-items:center"><input type="checkbox" name="cortesiaLivre" value="sim">Recebi uma cortesia da equipe Quem Faz (será validada pelo servidor).</label>' +
+          '<p class="qf-cad-planos__exigencia" role="status">É necessário pagar o plano escolhido para concluir seu cadastro.</p>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Pagar R$ 39,90 e ativar cadastro</button></div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
@@ -10472,7 +10472,7 @@ alt=""></noscript>
       function botaoPlano() {
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'livre'); }) || QF_CAD_PLANOS[1];
         const b = form.querySelector('[data-cad-criar]');
-        if (b) b.textContent = form.elements.testeLivre?.checked ? 'ATIVAR TESTE GRÁTIS — 2 DIAS' : form.elements.cortesiaLivre?.checked ? 'ATIVAR CORTESIA AUTORIZADA' : 'Continuar para pagamento · ' + pl.preco;
+        if (b) b.textContent = 'Continuar para pagamento · ' + pl.preco;
         const nota = form.querySelector('[data-plano-nota]');
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
@@ -10481,7 +10481,7 @@ alt=""></noscript>
             : 'Assinatura de R$ 39,90 por 30 dias. Não exige os R$ 13 do Avulso. Ativação só após Pix confirmado.';
         }
       }
-      form.addEventListener('change', function (e) { if (e.target && ['planoEscolhido','testeLivre','cortesiaLivre'].includes(e.target.name)) { if(e.target.checked && ['testeLivre','cortesiaLivre'].includes(e.target.name)){form.elements[e.target.name==='testeLivre'?'cortesiaLivre':'testeLivre'].checked=false;const radio=form.querySelector('[name=planoEscolhido][value=livre]');if(radio)radio.checked=true;} if(e.target.name==='planoEscolhido' && e.target.value==='avulso')form.elements.testeLivre.checked=false;botaoPlano(); } });
+      form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       botaoPlano();
       form.addEventListener('click', function (e) {
         if (e.target.closest('[data-step-next]')) avancar();
@@ -10615,6 +10615,15 @@ alt=""></noscript>
       async function pagamentoConfirmado() {
         clearTimeout(preTimer);
         if (preOcupado || !pre || !pre.pag) return;
+        // Não permitir concluir por clique manual ou estado local adulterado:
+        // sempre refaça a confirmação bancária no servidor antes de criar a conta.
+        let aprovacao = null;
+        try { aprovacao = await global.QFCloud.preCadastroStatus(pre.pag.id,pre.pag.segredo); } catch (_) {}
+        if (!(aprovacao && aprovacao.ok && aprovacao.status === 'aprovado' && aprovacao.plano === pre.plano)) {
+          pagArea.innerHTML = pagAviso('É necessário pagar o plano escolhido para concluir seu cadastro.') +
+            '<button class="btn btn--outline" type="button" data-pag-ja-paguei>Já paguei · conferir Pix</button>';
+          return;
+        }
         if (!pre.dados || !pre.dados.email || !/^data:image\//i.test(String(pre.dados.selfieData || ''))) {
           // Sem os dados do cadastro neste aparelho: o pagamento continua valendo para a conta em que a pessoa entrar.
           pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Preencha o cadastro de novo para criar a conta. Você não paga outra vez: o plano entra assim que a conta for criada.</div></div>' +
@@ -10665,30 +10674,7 @@ alt=""></noscript>
             (conta.ativo ? (conta.plano.id === 'avulso' ? 'Os R$ 13 são saldo seu para desbloqueios e não têm prazo de vencimento.' : 'Quem Faz Livre ativo por 30 dias após o pagamento confirmado.') : 'O saldo ou plano será ativado após a conciliação bancária. Confira sua carteira ao entrar.') + '</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
       }
-      async function criarContaAgora(dados, planoId, metodo) {
-        const res = await global.QFCloud.signUp('profissional', dados);
-        if (!res.ok) { PU.toast(res.error || 'Não foi possível criar a conta.', 'danger'); return false; }
-        // V11.12: primeira entrada depois do cadastro mostra as boas-vindas no cartão de ativação.
-        if (global.QFAtivacao && res.user && res.user.id) global.QFAtivacao.boasVindas(res.user.id);
-        // Boleto: a conta nasce agora e a Carteira abre o boleto do plano escolhido.
-        try {
-          if (planoId) { sessionStorage.setItem('qf_plano_pos_cadastro', planoId); sessionStorage.setItem('qf_plano_pos_cadastro_metodo', metodo || 'pix'); }
-          else sessionStorage.removeItem('qf_plano_pos_cadastro');
-        } catch (_) {}
-        // Conta criada sem plano com um pagamento ainda guardado: fica só o pagamento (ativa sozinho se cair).
-        const guardado = QFPreCadastro.ler();
-        if (!planoId && guardado && guardado.pag) QFPreCadastro.salvar({ em: guardado.em, plano: guardado.plano, pag: guardado.pag }, ''); else QFPreCadastro.limpar();
-        pre = null; preSenha = '';
-        if (res.needsConfirmation) {
-          PU.toast('Cadastro com selfie registrado. Confirme o e-mail e depois entre no QuemFaz.', 'success');
-          global.navigate('/auth/profissional/login', true);
-          return true;
-        }
-        PU.toast(planoId && metodo !== 'boleto' ? 'Conta criada! Agora é só pagar o plano. Enquanto não pagar, você fica no Avulso.' : 'Cadastro criado com selfie de segurança!', 'success');
-        if (sessionStorage.getItem('qf_pending_ad_draft')) { global.navigate('/profissional/anuncie', true); return true; }
-        global.navigate(planoId ? '/profissional/carteira' : '/profissional/home', true);
-        return true;
-      }
+      // A antiga criação direta antes do pagamento foi removida do cadastro.
       form.addEventListener('click', async function (e) {
         const alvo = e.target.closest('[data-pag-metodo],[data-pag-voltar],[data-pag-cancelar],[data-pag-copiar],[data-pag-ja-paguei],[data-pag-trocar],[data-pag-outra],[data-pag-email],[data-pag-criar-conta],[data-pag-refazer],[data-conta-entrar]');
         if (!alvo) return;
@@ -10824,16 +10810,8 @@ alt=""></noscript>
           if (!planoPago || !['avulso','livre'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
           }
-          if(fd.get('testeLivre')==='sim'||fd.get('cortesiaLivre')==='sim') {
-            if(fd.get('testeLivre')==='sim')localStorage.setItem('qf_livre_teste_cadastro',JSON.stringify({email:dados.email,documento:dados.cpf||dados.cnpj,telefone:dados.telefone}));else localStorage.removeItem('qf_livre_teste_cadastro');
-            const r=await global.QFCloud.signUp('profissional',dados);
-            if(!r.ok)throw Error(r.error||'Não foi possível iniciar o teste.');
-            PU.toast(r.needsConfirmation?'Confirme seu e-mail e entre para ativar as 48 horas de teste.':'Acesso Quem Faz Livre ativado. Confira a validade na carteira.','success');
-            global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);
-          } else {
-            localStorage.removeItem('qf_livre_teste_cadastro');
-            abrirPagamento(dados, planoPago, fd.get('indicacao'));
-          }
+          localStorage.removeItem('qf_livre_teste_cadastro');
+          abrirPagamento(dados, planoPago, fd.get('indicacao'));
         } catch (err) {
           console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
           PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
