@@ -77,6 +77,16 @@
    motivo:'plano_pago'
   });
  }
+ const MENSAGEM_PAGAMENTO='É necessário pagar o plano escolhido para concluir seu cadastro.';
+ function podeFinalizarCadastro({plano,valor_centavos,pagamentoStatus,confirmadaPeloBanco=false,txid='',endToEndId=''}={}){
+  const decisao=validarAtivacaoCadastro({plano,valor_centavos,pagamentoStatus,confirmadaPeloBanco,txid,endToEndId});
+  return Object.freeze({
+   podeFinalizar:decisao.ativarCadastro,
+   mensagem:decisao.ativarCadastro?'':MENSAGEM_PAGAMENTO,
+   plano:decisao.ativarCadastro?decisao.plano:null,
+   credito_centavos:decisao.ativarCadastro?decisao.credito_centavos:0
+  });
+ }
  function saldoInicialNovoCadastro(){return 0;}
- return Object.freeze({PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,saldoInicialNovoCadastro});
+ return Object.freeze({PROPOSTA,decidir,validarRecargaAvulsa,validarAtivacaoCadastro,podeFinalizarCadastro,MENSAGEM_PAGAMENTO,saldoInicialNovoCadastro});
 });
