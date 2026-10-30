@@ -69,8 +69,8 @@ test('conta visitante não é reutilizada como cadastro de outro telefone',async
 
 test('o envio exige confirmação visível se celular do perfil não coincide',()=>{
  const content=fs.readFileSync(path.join(__dirname,'../qf-atendimento.js'),'utf8');
- assert.match(content,/accountPhone!==phone\\(a\\.contato\\)/);
- assert.match(content,/a\\.contato=accountPhone;/);
- assert.match(content,/Toque em Publicar grátis novamente para confirmar/);
- assert.match(content,/if\\(accountPhone\\)at\\.contato=accountPhone;/);
+ assert.ok(content.includes('accountPhone!==phone(a.contato)'));
+ assert.ok(content.includes('a.contato=accountPhone;'));
+ assert.ok(content.includes('Toque em Publicar grátis novamente para confirmar'));
+ assert.ok(content.includes('if(accountPhone)at.contato=accountPhone;'));
 });
