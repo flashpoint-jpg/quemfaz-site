@@ -193,14 +193,14 @@ Deno.serve(async (req) => {
     const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 13);
     if (metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
     // Somente duas modalidades de nova adesão; recusar ANTES de gerar qualquer cobrança.
-    if (plano !== "avulso" && plano !== "livre") return json({ ok: false, error: "plano_invalido" }, 400);
-    if (plano === "livre" && metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
+    if (!["avulso","mensal","pro","premium"].includes(plano)) return json({ ok: false, error: "plano_invalido" }, 400);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return json({ ok: false, error: "email_invalido" }, 400);
 
     const cat = await admin.from("qf_planos_catalogo").select("plano,nome,preco_centavos,ativo").eq("plano", plano).maybeSingle();
     if (cat.error || !cat.data || !cat.data.ativo) return json({ ok: false, error: "plano_invalido" }, 400);
-    const valorEsperado = plano === "avulso" ? 1300 : 3990;
+    const precos: Record<string,number> = {avulso:1300,mensal:3990,pro:7990,premium:14990};
+    const valorEsperado = precos[plano];
     if (Number(cat.data.preco_centavos) !== valorEsperado) {
       console.error("QF_PRECADASTRO_PRECO_INCONSISTENTE", plano);
       return json({ ok: false, error: "preco_indisponivel" }, 503);
