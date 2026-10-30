@@ -17,22 +17,27 @@ const server=http.createServer((req,res)=>{
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto(origin+'/?app=1#/auth/profissional/cadastro');
   await page.waitForFunction(()=>window.QFLivre?.installed&&document.querySelector('[data-qf-livre-cadastro]'));
-  const read=()=>page.evaluate(()=>{const f=document.querySelector('#cadastro-prof-form');return {plans:[...f.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),button:f.querySelector('[data-cad-criar]').textContent,note:f.querySelector('[data-plano-nota]').textContent,text:f.textContent};});
-  // Novos cadastros recebem 48h de teste gratuito. Preços pertencem às ofertas posteriores.
+  const read=()=>page.evaluate(()=>{const f=document.querySelector('#cadastro-prof-form');const g=f.querySelector('.qf-cad-planos');return {plans:[...f.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),visible:!!g&&getComputedStyle(g).display!=='none',trial:f.elements.testeLivre?.checked,button:f.querySelector('[data-cad-criar]').textContent,note:f.querySelector('[data-plano-nota]').textContent,text:f.textContent};});
   const initial=await read();
   assert.deepEqual(initial.plans,['avulso','livre']);
-  assert.match(initial.button,/Concluir cadastro e começar teste grátis/);
-  assert.match(initial.note,/2 dias com desbloqueios ilimitados/);
-  assert.match(initial.note,/Nenhum Pix para começar/);
-  assert.match(initial.text,/R\$ 39,90/);
-  assert.doesNotMatch(initial.button,/pagamento|Pagar/i);
-  // Selecionar avulso durante o cadastro não deve disparar cobrança nem remover o teste inicial.
+  assert.equal(initial.visible,true);
+  assert.equal(initial.trial,true);
+  assert.match(initial.button,/teste grátis/);
+  assert.match(initial.text,/menos de R\$ 1,50\/dia/i);
+  assert.match(initial.text,/Recarga mínima obrigatória.*R\$ 13,00/i);
   await page.evaluate(()=>document.querySelector('[name=planoEscolhido][value="avulso"]').click());
-  const afterChoice=await read();
-  assert.match(afterChoice.button,/começar teste grátis/);
-  assert.match(afterChoice.note,/Nenhum Pix para começar/);
-  assert.doesNotMatch(afterChoice.button,/pagamento|Pagar/i);
-  assert.deepEqual(errors,[]);console.log('PASS cadastro construído '+width+'px: escolha de plano preservada e teste gratuito sem cobrança inicial.');
+  const avulso=await read();
+  assert.equal(avulso.trial,false);
+  assert.match(avulso.button,/Ativar Avulso.*R\$ 13,00/);
+  assert.match(avulso.note,/Pix ou cartão/);
+  await page.evaluate(()=>document.querySelector('[name=planoEscolhido][value="livre"]').click());
+  const livre=await read();
+  assert.equal(livre.trial,false);
+  assert.match(livre.button,/Livre por Pix.*R\$ 39,90/);
+  assert.match(livre.note,/Pix é gerado no próximo passo/);
+  await page.evaluate(()=>document.querySelector('[name=testeLivre]').click());
+  assert.match((await read()).button,/teste grátis/);
+  assert.deepEqual(errors,[]);console.log('PASS cadastro '+width+'px: Livre, Avulso e teste opcional com CTA correspondente e sem cobrança automática.');
   await context.close();
  }}finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
