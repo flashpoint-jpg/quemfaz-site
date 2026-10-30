@@ -1,4 +1,4 @@
-/* Teste visual/funcional da etapa 5 com três opções. Sem rede externa e sem cobranças. */
+/* Teste visual da etapa 5 com escolha obrigatoriamente paga, sem rede bancária. */
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium}=require('playwright');
 const root=path.resolve('dist');
@@ -33,9 +33,9 @@ const server=http.createServer((req,res)=>{
   const initial=await read();
   assert.deepEqual(initial.plans,['avulso','livre']);
   assert.equal(initial.oldHidden,true);
-  assert.equal(initial.trial,true);
-  assert.deepEqual(initial.buttons.map(x=>x.option),['trial','livre','avulso']);
-  assert.match(initial.text,/Teste grátis.*48 horas/i);
+  assert.equal(initial.trial,undefined);
+  assert.deepEqual(initial.buttons.map(x=>x.option),['livre','avulso']);
+  assert.doesNotMatch(initial.text,/Teste grátis|48 horas|cortesia/i);
   assert.match(initial.text,/R\$ 39,90/);
   assert.match(initial.text,/R\$ 13,00/);
   assert.match(initial.text,/R\$ 1,33 por dia/);
@@ -45,14 +45,12 @@ const server=http.createServer((req,res)=>{
     const form=document.querySelector('#cadastro-prof-form');
     form.requestSubmit=()=>{window.__opcaoEscolhida={plano:new FormData(form).get('planoEscolhido'),teste:new FormData(form).get('testeLivre')==='sim'};};
   });
-  await page.locator('[data-qf-opcao=trial]').click();
-  assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'livre',teste:true});
   await page.locator('[data-qf-opcao=livre]').click();
   assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'livre',teste:false});
   await page.locator('[data-qf-opcao=avulso]').click();
   assert.deepEqual(await page.evaluate(()=>window.__opcaoEscolhida),{plano:'avulso',teste:false});
   assert.deepEqual(errors,[]);
-  console.log('PASS cadastro '+width+'px: três cartões, opções corretas, sem overflow e sem cobranças.');
+  console.log('PASS cadastro '+width+'px: duas opções pagas, sem teste grátis, sem overflow ou cobranças reais.');
   await context.close();
  }}finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1;});
