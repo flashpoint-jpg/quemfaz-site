@@ -1,7 +1,7 @@
 /* Quem Faz: orçamento presencial opcional. Pix Efí validado no servidor; repasse sempre manual. */
 (function(root){
  'use strict';
- const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c]));
+ const escape=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const paidStatus=s=>s==='paga';
  function selo(req){
   const status=String(req?.visitaPresencialStatus||'');
@@ -73,6 +73,7 @@
     aviso.textContent='Pagamento confirmado pela Efí! Visita técnica paga · R$ 25,00.';
     aviso.style.color='#167348';
     area.querySelector('[data-qf-visita-verificar]').disabled=true;
+    area.querySelector('[data-qf-visita-verificar]').setAttribute('data-paid','1');
     try{await root.QFCloud.syncForCurrentSession?.(true);}catch(_){}
     return true;
    }
