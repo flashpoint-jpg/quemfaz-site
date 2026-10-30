@@ -415,7 +415,7 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 
-/* QF etapa 5: três cartões aprovados - 2026-10-30 */
+/* QF etapa 5: seleção somente paga. Sem teste grátis nem cortesia. */
 (function () {
   'use strict';
   if (typeof document === 'undefined') return; // testes Node sem DOM
@@ -460,7 +460,7 @@
     const form = document.getElementById('cadastro-prof-form');
     if (!form || form.dataset.qfOptions20261030 === 'yes') return;
     const step = form.querySelector('[data-step="5"]');
-    if (!step || !form.querySelector('[name="testeLivre"]') || !form.querySelector('[name="planoEscolhido"][value="livre"]')) return;
+    if (!step || !form.querySelector('[name="planoEscolhido"][value="avulso"]')) return;
     if (!document.getElementById(STYLE_ID)) {
       const style = document.createElement('style');
       style.id = STYLE_ID;
@@ -471,7 +471,7 @@
     if (header) header.innerHTML =
       '<div class="qf-step__count">Etapa 5 de 5</div>' +
       '<div class="h2">Escolha como quer começar</div>' +
-      '<div class="text--sm text--secondary">Seus dados estão preenchidos. Escolha a melhor forma de usar o Quem Faz.</div>' +
+      '<div class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. O Pix é confirmado antes da ativação.</div>' +
       '<div class="qf-step__bar"><span style="width:100%"></span></div>';
     const list = step.querySelector('.qf-cad-planos');
     if (!list) return;
@@ -488,13 +488,6 @@
     ui.className = 'qf-options-final';
     ui.setAttribute('aria-label', 'Escolha sua forma de começar');
     ui.innerHTML = [
-      '<section class="qf-options-card qf-options-card--trial">',
-      '<span class="qf-options-badge">TESTE GRÁTIS · 48 HORAS</span>',
-      '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">48h</span><div class="qf-options-headings"><h3 class="qf-options-name">Teste grátis — 48 horas</h3><div class="qf-options-price">R$ 0,00</div></div></div>',
-      '<ul class="qf-options-list"><li>Desbloqueios ilimitados por 2 dias</li><li>Chat com clientes e pedidos compatíveis</li><li>Sem Pix, recarga ou pagamento inicial</li></ul>',
-      '<p class="qf-options-note">O teste começa após a identificação. Um por profissional, sem cobrança automática.</p>',
-      '<button class="qf-options-button" type="button" data-qf-opcao="trial">Começar com teste grátis</button>',
-      '</section>',
       '<section class="qf-options-card qf-options-card--livre">',
       '<span class="qf-options-badge">PLANO MENSAL</span>',
       '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">∞</span><div class="qf-options-headings"><h3 class="qf-options-name">Quem Faz Livre</h3><div class="qf-options-price">R$ 39,90 <small>/ 30 dias</small></div></div></div>',
@@ -506,30 +499,25 @@
       '<span class="qf-options-badge">SEM MENSALIDADE</span>',
       '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">R$</span><div class="qf-options-headings"><h3 class="qf-options-name">Avulso — créditos</h3><div class="qf-options-price">R$ 13,00 <small>recarga mínima obrigatória</small></div></div></div>',
       '<ul class="qf-options-list"><li>Valor integral convertido em saldo na carteira</li><li>Desbloqueie apenas os pedidos que interessarem</li><li>Não é taxa: é crédito para usar</li></ul>',
-      '<p class="qf-options-note">Sem mensalidade e sem comissão sobre os serviços do plano Avulso.</p>',
+      '<p class="qf-options-note">Os R$ 13,00 pagos por Pix viram crédito integral depois da confirmação do banco.</p>',
       '<button class="qf-options-button" type="button" data-qf-opcao="avulso">Recarregar e começar</button>',
       '</section>'
     ].join('');
     list.parentNode.insertBefore(ui, list);
-    // O teste é a opção padrão, mas qualquer cartão troca o plano antes de enviar.
-    const trialDefault = form.querySelector('[name="testeLivre"]');
-    const livreDefault = form.querySelector('[name="planoEscolhido"][value="livre"]');
-    if (trialDefault && livreDefault) { livreDefault.checked = true; trialDefault.checked = true; }
+    // O Avulso é a opção inicial, mas também exige Pix de R$ 13,00 confirmado.
+    const avulsoDefault = form.querySelector('[name="planoEscolhido"][value="avulso"]');
+    if (avulsoDefault) avulsoDefault.checked = true;
     form.dataset.qfOptions20261030 = 'yes';
     ui.addEventListener('click', function (event) {
       const button = event.target.closest('[data-qf-opcao]');
       if (!button || button.disabled) return;
       const mode = button.getAttribute('data-qf-opcao');
       const radio = form.querySelector('[name="planoEscolhido"][value="' + (mode === 'avulso' ? 'avulso' : 'livre') + '"]');
-      const trialInput = form.querySelector('[name="testeLivre"]');
-      const courtesyInput = form.querySelector('[name="cortesiaLivre"]');
       const submit = form.querySelector('[data-cad-criar]');
-      if (!radio || !trialInput || !submit) return;
-      if (courtesyInput) courtesyInput.checked = false;
+      if (!radio || !submit) return;
       radio.checked = true;
-      trialInput.checked = mode === 'trial';
-      // Reaproveitar a validação de cadastro e os fluxos originais de Pix e de ativação do teste.
-      (mode === 'trial' ? trialInput : radio).dispatchEvent(new Event('change', { bubbles:true }));
+      // Seguir somente o fluxo original que gera Pix e aguarda confirmação bancária.
+      radio.dispatchEvent(new Event('change', { bubbles:true }));
       if (typeof form.requestSubmit === 'function') form.requestSubmit(submit);
       else submit.click();
     });
