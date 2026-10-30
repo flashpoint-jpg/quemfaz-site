@@ -32,7 +32,7 @@
    if(err.codigo==='telefone_cadastrado'||/telefone do pedido não corresponde/i.test(err.message||'')){
     // Não misturar perfis diferentes apenas por telefone.
     await client.auth.signOut();
-    const mismatch=Error('Este telefone já está vinculado a outra conta. Escolha a mesma conta Google usada anteriormente ou entre com telefone e senha. Seu pedido permanece preenchido.');
+    const mismatch=Error('Este telefone já pertence a outra conta. Para publicar sem entrar nela, toque em Publicar sem cadastro. Seu pedido permanece preenchido.');
     mismatch.codigo='conta_google_diferente';
     throw mismatch;
    }

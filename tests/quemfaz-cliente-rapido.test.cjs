@@ -30,8 +30,25 @@ function fixture(options = {}) {
       createUser: async attrs => {
         calls.push(['createUser', attrs]);
         if (options.createError) return { data: null, error: { message: 'unavailable' } };
-        const user = { id: visitorId, email: attrs.email, app_metadata: attrs.app_metadata };
+        // Simula o trigger real de auth.users: inserção automática de qf_profiles.
+        // Um telefone duplicado ANTES de marcar o visitante deve bloquear a criação.
+        const initialPhone = String(attrs.user_metadata?.qf_telefone || '');
+        if (options.oldAccount && initialPhone === '11987654239') {
+          return { data: null, error: { code: '23505', message: 'duplicate key phone' } };
+        }
+        const user = { id: visitorId, email: attrs.email, app_metadata: { provider: 'email' }, user_metadata: attrs.user_metadata };
         users.set(visitorId, user);
+        profiles.set(visitorId, { id: visitorId, tipo: 'cliente', telefone: initialPhone, whatsapp: initialPhone, visitante_sem_cadastro: false });
+        return { data: { user }, error: null };
+      },
+      updateUserById: async (id, attrs) => {
+        calls.push(['updateUserById', attrs]);
+        if (options.markError) return { data: null, error: { code: 'mark_failed' } };
+        const old = users.get(id);
+        if (!old) return { data: null, error: { message: 'missing' } };
+        const user = { ...old, app_metadata: { ...old.app_metadata, ...(attrs.app_metadata || {}) },
+          user_metadata: { ...old.user_metadata, ...(attrs.user_metadata || {}) } };
+        users.set(id, user);
         return { data: { user }, error: null };
       },
       deleteUser: async id => {
@@ -80,8 +97,12 @@ function fixture(options = {}) {
           if (users.get(value.id)?.app_metadata?.qf_guest !== true) {
             throw Error('A marca de visitante deve vir de app_metadata do servidor.');
           }
-          if (profiles.get(value.id)) throw Error('Identidade repetida.');
-          profiles.set(value.id, value);
+          const previous = profiles.get(value.id);
+          if (!previous) throw Error('Trigger auth.users não criou o perfil inicial.');
+          if (previous.telefone && options.oldAccount && previous.telefone === '11987654239') {
+            throw Error('Telefone foi associado antes da marca protegida de visitante.');
+          }
+          profiles.set(value.id, { ...previous, ...value });
           return { error: null };
         }};
       }
@@ -120,6 +141,10 @@ test('Publica como visitante sem Google, senha, SMS ou service_role no cliente',
   assert.equal(f.profiles.get(f.visitorId).visitante_sem_cadastro, true);
   assert.equal(f.profiles.get(f.visitorId).telefone, '11987654239');
   assert.equal(f.users.get(f.visitorId).app_metadata.qf_guest, true);
+  const created = f.calls.find(x => x[0] === 'createUser')[1];
+  assert.equal(created.user_metadata.qf_telefone, undefined, 'nunca duplicar telefone no trigger de criação');
+  assert.ok(f.calls.findIndex(x=>x[0]==='updateUserById') < f.calls.findIndex(x=>x[0]==='upsert'),
+    'marca server-side deve ser aplicada antes de associar o telefone');
   assert.equal(f.events.length, 1);
   assert.equal(f.calls.filter(x => x[0] === 'rpc').length, 0);
   assert.ok(!JSON.stringify(body).includes('chave-somente-mock'));
@@ -168,7 +193,7 @@ test('Contador indisponível bloqueia a publicação sem liberar criação ilimi
 });
 
 test('Falha de perfil ou geração de token limpa somente o visitante recém-criado', async () => {
-  for (const settings of [{ profileError: true }, { linkError: true }]) {
+  for (const settings of [{ markError: true }, { profileError: true }, { linkError: true }]) {
     const f = fixture({ ...settings, oldAccount: true });
     const r = await f.request({ modo: 'visitante', nome: 'Teste', telefone: '11987654239' });
     assert.equal(r.status, 500);
