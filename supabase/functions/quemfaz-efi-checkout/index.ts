@@ -95,7 +95,7 @@ async function makePix(pay:any,tipo:string,pagamentoId:string){
       calendario:{expiracao:86400},
       valor:{original:value},
       chave:EFI_PIX_KEY,
-      solicitacaoPagador:tipo === "prioridade" ? "Prioridade de chamado no QuemFaz" : (tipo === "anuncio" ? "Anúncio no QuemFaz" : (pay.plano === "livre" ? "Plano Quem Faz Livre - 30 dias" : "Recarga de carteira no QuemFaz")),
+      solicitacaoPagador:tipo === "visita" ? "Orçamento presencial Quem Faz - R$ 25" : tipo === "prioridade" ? "Prioridade de chamado no QuemFaz" : (tipo === "anuncio" ? "Anúncio no QuemFaz" : (pay.plano === "livre" ? "Plano Quem Faz Livre - 30 dias" : "Recarga de carteira no QuemFaz")),
       infoAdicionais:[{nome:"QuemFaz",valor:"qf:" + tipo + ":" + pagamentoId}]
     };
 
@@ -151,7 +151,7 @@ Deno.serve(async (req)=>{
   const body = await req.json().catch(()=>({}));
   const tipo = String(body.tipo || "");
   const pagamentoId = String(body.pagamento_id || "");
-  if(!["prioridade","recarga","anuncio"].includes(tipo) || !pagamentoId) return json({ok:false,error:"invalid_request"},400);
+  if(!["prioridade","recarga","anuncio","visita"].includes(tipo) || !pagamentoId) return json({ok:false,error:"invalid_request"},400);
 
   let table = "";
   let pay:any = null;
@@ -170,8 +170,8 @@ Deno.serve(async (req)=>{
     if(owner.error || !owner.data) return json({ok:false,error:"ad_not_found"},404);
     if(String(owner.data.anunciante_id)!==user.id) return json({ok:false,error:"forbidden"},403);
   } else {
-    table = tipo==="prioridade" ? "qf_prioridade_pagamentos" : "qf_recargas";
-    const ownerField = tipo==="prioridade" ? "cliente_id" : "profissional_id";
+    table = tipo==="prioridade" ? "qf_prioridade_pagamentos" : tipo==="visita" ? "qf_visita_pagamentos" : "qf_recargas";
+    const ownerField = (tipo==="prioridade" || tipo==="visita") ? "cliente_id" : "profissional_id";
     const q = await admin.from(table)
       .select("id,valor_centavos,metodo,status,provedor,provedor_id,checkout_url,"+(tipo==="recarga"?"plano,":"")+ownerField)
       .eq("id",pagamentoId).maybeSingle();
@@ -184,6 +184,7 @@ Deno.serve(async (req)=>{
 
   if(pay.status!=="pendente") return json({ok:false,error:"payment_closed"},409);
   if(pay.plano==="livre" && (Number(pay.valor_centavos)!==3990 || pay.metodo!=="pix")) return json({ok:false,error:"invalid_subscription_payment"},400);
+  if(tipo==="visita" && (Number(pay.valor_centavos)!==2500 || pay.metodo!=="pix")) return json({ok:false,error:"invalid_visita_payment"},400);
   const method = String(pay.metodo || "pix").toLowerCase();
 
   if(method==="pix"){
@@ -192,7 +193,8 @@ Deno.serve(async (req)=>{
       const pix = await makePix(pay,tipo,pagamentoId);
       const update:any={provedor:"efi",provedor_id:pix.txid};
       if(pix.checkoutUrl) update.checkout_url=pix.checkoutUrl;
-      if(pix.status==="aprovado") update.status="aprovado";
+      // Visita só vira aprovada com E2E conferido no sync; o QR não é prova de pagamento.
+      if(pix.status==="aprovado" && tipo!=="visita") update.status="aprovado";
       const {error:updErr}=await admin.from(table).update(update).eq("id",pagamentoId);
       if(updErr) return json({ok:false,error:"db_update_failed"},500);
       return json({
