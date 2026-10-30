@@ -6,7 +6,7 @@ const listSql=fs.readFileSync('supabase/migrations/20261028191000_admin_pre_cada
 
 test('Painel administrativo carrega com sintaxe válida e conexão realmente existente',()=>{
  new vm.Script(front,{filename:'qf-admin-cadastro-pago.js'});
- assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261029-excluir-lista/);
+ assert.match(admin,/qf-admin-cadastro-pago\.js\?v=20261030-credito-avulso/);
  assert.match(front,/global\.QFAdminCloud/,'usa cliente real do administrativo');
  assert.doesNotMatch(front,/global\.QFCloud\b/,'não usar o nome errado que escondia cadastros');
  assert.match(admin,/global\.QFAdminCloud\s*=/);

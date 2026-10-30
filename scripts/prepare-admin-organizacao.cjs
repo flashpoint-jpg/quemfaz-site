@@ -5,9 +5,10 @@ module.exports=function prepareAdmin(source){
  const replacement='<script src="qf-admin-organizacao.js?v=20261029-listas-balanco"></script>\n<script src="qf-admin-negociacoes.js?v=20261029-editar-excluir"></script>';
  if(!source.includes(original))throw Error('Integração de negociações não encontrada');
  source=source.replace(original,replacement);
- const cadastro='qf-admin-cadastro-pago.js?v=20261028-saldo-movimentacoes';
- if(!source.includes(cadastro))throw Error('Integração de cadastros não encontrada');
- source=source.replace(cadastro,'qf-admin-cadastro-pago.js?v=20261029-excluir-lista');
+ // Os scripts administrativos têm cache versionado. Preservar a versão
+ // mais recente, inclusive quando um hotfix atualiza o nome do arquivo.
+ const cadastro=/qf-admin-cadastro-pago\.js\?v=[a-zA-Z0-9-]+/;
+ if(!cadastro.test(source))throw Error('Integração de cadastros não encontrada');
  const start=source.indexOf('  function admMovHtml(d) {');
  const end=source.indexOf('  async function admMovCarregar',start);
  if(start<0||end<0)throw Error('Integração de movimentações não encontrada');

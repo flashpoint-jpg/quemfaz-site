@@ -7264,7 +7264,11 @@ alt=""></noscript>
     return fn.data || { ok: false, error: 'falha_conexao' };
   }
   async function preCadastroCriar(plano, metodo, pessoa) {
-    return preCadastroInvoke({ acao: 'criar', plano: plano, metodo: metodo, email: pessoa.email, nome: pessoa.nome, telefone: pessoa.telefone });
+    // Nunca pedir Pix antes de verificar o CPF/CNPJ na base toda.
+    return preCadastroInvoke({ acao: 'criar', plano: plano, metodo: metodo,
+      email: pessoa.email, nome: pessoa.nome, telefone: pessoa.telefone,
+      tipo_documento: pessoa.cnpj ? 'cnpj' : 'cpf',
+      documento: pessoa.cnpj || pessoa.cpf || '' });
   }
   async function preCadastroStatus(id, segredo) {
     return preCadastroInvoke({ acao: 'status', id: id, segredo: segredo });
@@ -8337,15 +8341,18 @@ alt=""></noscript>
     return d2 === Number(cpf[10]);
   }
   function formatCnpj(v) {
-    const d = digits(v).slice(0,14);
-    return d.replace(/(\d{2})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1/$2').replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+    const d = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,14);
+    return d.replace(/^(.{2})(.)/,'$1.$2').replace(/^(.{2})\.(.{3})(.)/,'$1.$2.$3')
+      .replace(/^(.{2})\.(.{3})\.(.{3})(.)/,'$1.$2.$3/$4')
+      .replace(/^(.{2})\.(.{3})\.(.{3})\/(.{4})(.{1,2})$/,'$1.$2.$3/$4-$5');
   }
   function validCnpj(v) {
-    const cnpj = digits(v);
-    if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+    // Receita Federal: CNPJ numérico e alfanumérico (novo padrão 2026).
+    const cnpj = String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (!/^[A-Z0-9]{12}[0-9]{2}$/.test(cnpj) || /^(.)\1{11}$/.test(cnpj.slice(0,12))) return false;
     const calc = function (base, weights) {
       let sum = 0;
-      for (let i=0;i<weights.length;i++) sum += Number(base[i]) * weights[i];
+      for (let i=0;i<weights.length;i++) sum += (base.charCodeAt(i)-48) * weights[i];
       const rem = sum % 11;
       return rem < 2 ? 0 : 11 - rem;
     };
@@ -10290,6 +10297,7 @@ alt=""></noscript>
         if (documentoInput) {
           if (limparDocumento) documentoInput.value = '';
           documentoInput.maxLength = pj ? 18 : 14;
+          documentoInput.inputMode = pj ? 'text' : 'numeric';
           documentoInput.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
           documentoInput.value = pj ? global.QFGeo.formatCnpj(documentoInput.value) : global.QFGeo.formatCpf(documentoInput.value);
         }
@@ -10556,7 +10564,10 @@ alt=""></noscript>
         const antigo = QFPreCadastro.ler();
         // Mesmo e-mail e mesmo plano com cobrança já aberta: continua nela em vez de abrir outra.
         // Também vale para quem pagou e precisou preencher o cadastro de novo (aí o plano é o que foi pago).
-        const reusa = !!(antigo && antigo.pag && (!antigo.dados || (antigo.plano === pl.id && antigo.dados.email === dados.email)));
+        const reusa = !!(antigo && antigo.pag && antigo.dados &&
+          antigo.plano === pl.id && antigo.dados.email === dados.email &&
+          String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
+            String(dados.cpf || dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase());
         pre = { em: reusa ? antigo.em : Date.now(), plano: reusa ? antigo.plano : pl.id, planoEscolhido: pl.id, indicacao: String(indicacao || ''), dados: semSenha, pag: reusa ? antigo.pag : null };
         preSenha = String(dados.senha || '');
         formPreenchido = true;
@@ -10569,11 +10580,28 @@ alt=""></noscript>
         preOcupado = true;
         pagArea.innerHTML = pagStatus(metodo === 'pix' ? 'Gerando o Pix…' : 'Preparando o pagamento com cartão…');
         try {
-          const r = await global.QFCloud.preCadastroCriar(pre.plano, metodo, { email: pre.dados.email, nome: pre.dados.nome, telefone: pre.dados.telefone });
+          const r = await global.QFCloud.preCadastroCriar(pre.plano, metodo, {
+            email: pre.dados.email, nome: pre.dados.nome, telefone: pre.dados.telefone,
+            cpf: pre.dados.cpf || '', cnpj: pre.dados.cnpj || ''
+          });
           if (!naTela() || !pre) return;
           if (!r || !r.ok) {
             const erro = r && r.error;
-            if (erro === 'email_em_uso') renderErroPagamento('Esse e-mail já tem conta no QuemFaz. Nada foi cobrado.', '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>' + (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-email>Usar outro e-mail</button>' : ''));
+            if (['documento_ja_cadastrado','documento_cobranca_existente'].includes(erro)) {
+              renderErroPagamento('Este CPF/CNPJ já foi usado em um cadastro ou possui cobrança aberta. Não geramos outro Pix. Entre na sua conta ou solicite ajuda para recuperar o acesso.',
+                '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>');
+            }
+            else if (erro === 'telefone_ja_cadastrado') {
+              renderErroPagamento('Este telefone já está associado a um profissional. Não geramos Pix. Entre na conta existente ou fale com o suporte se o número for compartilhado.',
+                '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>');
+            }
+            else if (['documento_obrigatorio','documento_invalido','tipo_documento_invalido'].includes(erro)) {
+              renderErroPagamento('Informe um CPF ou CNPJ válido antes de escolher o pagamento. Nenhum Pix foi gerado.');
+            }
+            else if (erro === 'verificacao_indisponivel') {
+              renderErroPagamento('Não foi possível conferir seu CPF/CNPJ no banco. Tente novamente: nenhum Pix foi gerado.');
+            }
+            else if (erro === 'email_em_uso') renderErroPagamento('Esse e-mail já tem conta no Quem Faz. Nada foi cobrado.', '<button class="btn btn--primary" type="button" data-nav="/auth/profissional/login">Entrar na minha conta</button>' + (formPreenchido ? '<button class="btn btn--outline" type="button" data-pag-email>Usar outro e-mail</button>' : ''));
             else if (erro === 'muitas_tentativas') renderErroPagamento('Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.');
             else if (erro === 'cobranca_indisponivel' && metodo === 'cartao') renderErroPagamento('Pagamento com cartão indisponível no momento. Use o Pix: confirma na hora.');
             else renderErroPagamento('Não foi possível gerar o pagamento. Confira a internet e tente de novo. Nada foi cobrado.');
@@ -15412,6 +15440,7 @@ alt=""></noscript>
         fantasiaLabel.textContent = pj ? 'Nome fantasia da empresa (obrigatório)' : 'Nome fantasia (opcional)';
         fantasia.required = pj;
         doc.maxLength = pj ? 18 : 14;
+        doc.inputMode = pj ? 'text' : 'numeric';
         doc.placeholder = pj ? '00.000.000/0000-00' : '000.000.000-00';
         if (limpar) doc.value = '';
         else doc.value = pj ? global.QFGeo.formatCnpj(doc.value) : global.QFGeo.formatCpf(doc.value);
