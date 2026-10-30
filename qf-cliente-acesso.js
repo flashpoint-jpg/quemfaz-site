@@ -19,6 +19,8 @@
   if(!c?.auth?.getUser)return null;
   const result=await c.auth.getUser();
   if(result.error||!result.data?.user?.id)return null;
+  // Visitantes continuam com identidade isolada; não reaproveitar um visitante como conta cadastrada.
+  if(result.data.user.app_metadata?.qf_guest===true)return null;
   const p=await c.from('qf_profiles').select('id,tipo,nome,telefone,whatsapp').eq('id',result.data.user.id).maybeSingle();
   if(p.error)throw Error('Não foi possível conferir seu cadastro de cliente. Atualize a página e tente novamente.');
   if(p.data&&p.data.tipo!=='cliente')throw Error('Você está conectado na área do profissional. Saia dessa conta e entre como cliente para publicar.');
