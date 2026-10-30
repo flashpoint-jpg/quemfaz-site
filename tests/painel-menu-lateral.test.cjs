@@ -65,7 +65,7 @@ console.log('PASS painel com menu lateral: menu, rotas, início, módulos e core
 {
   const site = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
   // V11.55: os números do Premium vêm de QFPlanos (painel); 19990 / 60 é só o ponto de partida.
-  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 35, dias: 30 }") && site.includes("id: 'avulso', nome: 'Avulso'") && site.includes("id:'basico_v2',nome:'Básico'"));
+  assert.ok(site.includes("premium: { nome: 'Premium', preco: 19990, chamados: 35, dias: 30 }") && site.includes("id:'avulso',nome:'Avulso'") && site.includes("id:'basico_v2',nome:'Básico'"));
   assert.ok(site.includes('Etapa 5 de 5') && !site.includes('Etapa 4 de 4') && site.includes('name="planoEscolhido"'));
   assert.ok(site.includes("goStep(Math.min(5, stepAtual + 1));") && site.includes("if (stepAtual < 5) { avancar(); return; }"));
   // V11.50: plano pago vai para o pagamento antes da conta; só o boleto ainda abre na Carteira depois do cadastro.
