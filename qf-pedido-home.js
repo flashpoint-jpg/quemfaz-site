@@ -14,6 +14,7 @@
  }
  let authBootAttempts=0,authReturnAttempts=0;
  function returningGoogle(){try{return g.sessionStorage?.getItem('qf_google_login_return')==='1';}catch(_){return false;}}
+ function pendingPublication(){try{return g.sessionStorage?.getItem('qf_google_publish_pending')==='1';}catch(_){return false;}}
  function setLoginStatus(message){
   const shell=g.document.querySelector('#app-shell[data-route="inicio"] #app-content');
   if(!shell)return;
@@ -78,7 +79,8 @@
    name:String(realProfileName||meta.full_name||meta.name||meta.given_name||profileName||auth.email?.split('@')[0]||'Cliente').trim().slice(0,80)};
   paintAccount();
   let returned=false;try{returned=returningGoogle();if(returned)g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}
-  if(returned&&state.mode==='intro'&&!g.QFAtendimento?.hasGoogleDraft?.())orders();
+  // Nunca trocar o formulário recuperado por "Meus pedidos" após login Google.
+  if(returned&&state.mode==='intro'&&!pendingPublication()&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.())orders();
  }
  function watchAccount(){
   const c=g.QFCloud?.client;
@@ -151,6 +153,8 @@
   return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text||name.length>=4&&text.includes(name)?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
  }
  function intro(prefill,service){
+  // Retorno OAuth: formulário salvo é prioridade até o cliente revisar/publicar.
+  if(pendingPublication()&&g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
   try{const saved=JSON.parse(sessionStorage.getItem('qf_home_oauth_draft')||'null');if(saved){state.problem=saved.problem;state.service=saved.service;sessionStorage.removeItem('qf_home_oauth_draft');}}catch(_){}
   state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill)state.problem=prefill;reset();
   const target=work();if(!target)return;
@@ -186,7 +190,7 @@
    else if(e.key==='Enter'){e.preventDefault();buttons[active<0?0:active].click();}
   };
   target.querySelector('[data-home-login-start]').onclick=()=>{state.service=select.value;login();};
-  target.querySelector('[data-home-google]').onclick=async()=>{state.problem=input.value;state.service=select.value;try{sessionStorage.setItem('qf_home_oauth_draft',JSON.stringify({problem:input.value,service:select.value}));sessionStorage.setItem('qf_google_login_return','1');const r=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){sessionStorage.removeItem('qf_google_login_return');target.querySelector('[role=alert]').textContent=e.message||'Não foi possível entrar com Google.';}};
+  target.querySelector('[data-home-google]').onclick=async()=>{state.problem=input.value;state.service=select.value;try{if(g.QFAtendimento?.hasActiveDraft?.()){await g.QFAtendimento.saveDraftForGoogle();sessionStorage.setItem('qf_google_publish_pending','1');}sessionStorage.setItem('qf_home_oauth_draft',JSON.stringify({problem:input.value,service:select.value}));sessionStorage.setItem('qf_google_login_return','1');const r=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){sessionStorage.removeItem('qf_google_login_return');target.querySelector('[role=alert]').textContent=e.message||'Não foi possível entrar com Google.';}};
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
   if(service||state.service){const category=categories.find(c=>c.id===(service||state.service)||norm(c.nome)===norm(service));if(category)pick(category);}
   input.onfocus=()=>track('home_focus');
@@ -229,7 +233,7 @@
  function login(){
   state.mode='login';const target=work();if(!target)return;
   target.innerHTML='<h2 class="h3">Já sou cliente</h2><p>Entre com Google ou com telefone e senha para acompanhar seus pedidos.</p><button type="button" class="btn btn--outline" data-home-google-entry>Continuar com Google</button><form class="stack" data-home-login><label>Telefone com DDD<input class="input" name="telefone" type="tel" autocomplete="tel" required></label><button class="btn btn--primary" type="submit">Entrar com telefone</button><p role="alert"></p></form><div data-home-access></div><button type="button" class="btn btn--outline" data-home-back style="margin-top:12px">Voltar ao pedido</button>';
-  target.querySelector('[data-home-back]').onclick=()=>intro();
+  target.querySelector('[data-home-back]').onclick=()=>g.QFAtendimento?.hasActiveDraft?.()||g.QFAtendimento?.hasGoogleDraft?.()?showForm(''):intro();
   target.querySelector('[data-home-google-entry]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;
    try{g.sessionStorage.setItem('qf_google_login_return','1');const x=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(x.error)throw x.error;}
    catch(err){g.sessionStorage.removeItem('qf_google_login_return');message(err.message||'Não foi possível entrar com Google.');b.disabled=false;}
@@ -308,6 +312,7 @@
  }
  function inlinePath(path){return /^\/auth\/cliente\/(verificar|redefinir)\//.test(path||'')||path==='/auth/cliente/cadastro'||path==='/auth/cliente/login'||/^\/cliente\/(home|pedidos|pedido\/|chat\/|novo-pedido)/.test(path);}
  async function published(req,owner){
+  try{g.sessionStorage.removeItem('qf_google_publish_pending');}catch(_){}
   state.user=owner;state.notice='Pedido publicado! Estamos buscando profissionais para você.';state.mode='detail';state.selected=req.id;
   try{await detail(req.id,false);reveal();}catch(err){reset();message('Pedido publicado. Toque em Meus pedidos para atualizar o acompanhamento.');}
  }
@@ -340,7 +345,7 @@
   safeAreas();
   if(!host())return;
   placeServices();selectTab(state.tab);
-  if(g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
+  if(g.QFAtendimento?.hasGoogleDraft?.()||(pendingPublication()&&g.QFAtendimento?.hasActiveDraft?.())){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
   if(action)execute(action);
