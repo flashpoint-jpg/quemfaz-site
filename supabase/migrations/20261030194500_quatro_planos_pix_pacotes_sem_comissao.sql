@@ -220,3 +220,15 @@ end $function$
 -- A nova contratação e consumo de pacote não geram cobrança de comissão.
 -- Preserva histórico anterior, código de contratação e contestações antigas.
 update private.qf_comissao13_config set ativo=false,atualizado_em=now() where id=true;
+
+-- Plano Livre com comissão não pode mais ser vendido a novos assinantes.
+-- As assinaturas antigas permanecem válidas até a expiração.
+create or replace function private.qf_livre_solicitar_pix()
+returns jsonb language sql security definer set search_path to ''
+as $$ select jsonb_build_object('ok',false,'reason','plano_substituido',
+'message','O plano Livre foi substituído. Escolha Básico, Pro ou Mensal completo.') $$;
+-- Não registrar novas adesões a uma modalidade remunerada por comissão.
+create or replace function public.qf_comissao13_aderir(p_aceitar boolean)
+returns jsonb language sql security definer set search_path to ''
+as $$ select jsonb_build_object('ok',false,'reason','modalidade_encerrada',
+'message','A modalidade com comissão foi encerrada. Escolha um plano sem comissão.') $$;
