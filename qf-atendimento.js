@@ -144,9 +144,12 @@
   // A chave não exportável fica no IndexedDB; respostas nunca vão em texto puro ao storage.
   const OAUTH_DRAFT='qf_google_draft_v1';
   function hasActiveDraft(){return !!inMemoryDraft?.answers?.servico;}
-  function hasGoogleDraft(){
-    try{return !!root.sessionStorage.getItem(OAUTH_DRAFT);}catch(_){return false;}
+  function googleDraftStored(){
+    // OAuth pode voltar em outra aba: manter apenas dados CIFRADOS em ambos os armazenamentos.
+    try{const value=root.sessionStorage.getItem(OAUTH_DRAFT);if(value)return value;}catch(_){}
+    try{return root.localStorage?.getItem(OAUTH_DRAFT)||null;}catch(_){return null;}
   }
+  function hasGoogleDraft(){return !!googleDraftStored();}
   async function googleDraftKey(action,key){
     if(!root.indexedDB)throw Error('Seu navegador não permite proteger o pedido para entrar pelo Google. Use telefone e senha.');
     const db=await new Promise((resolve,reject)=>{
@@ -168,6 +171,7 @@
   }
   async function clearGoogleDraft(){
     try{root.sessionStorage.removeItem(OAUTH_DRAFT);}catch(_){}
+    try{root.localStorage?.removeItem(OAUTH_DRAFT);}catch(_){}
     try{await googleDraftKey('delete');}catch(_){}
   }
   async function saveDraftForGoogle(){
@@ -179,12 +183,15 @@
     const cipher=await root.crypto.subtle.encrypt({name:'AES-GCM',iv},key,data);
     try{
       await googleDraftKey('write',key);
-      root.sessionStorage.setItem(OAUTH_DRAFT,JSON.stringify({v:1,expires:Date.now()+30*60*1000,iv:Array.from(iv),data:Array.from(new Uint8Array(cipher))}));
+      const encrypted=JSON.stringify({v:1,expires:Date.now()+30*60*1000,iv:Array.from(iv),data:Array.from(new Uint8Array(cipher))});
+      let saved=false;
+      try{root.sessionStorage.setItem(OAUTH_DRAFT,encrypted);saved=true;}catch(_){}
+      try{root.localStorage?.setItem(OAUTH_DRAFT,encrypted);saved=true;}catch(_){}
+      if(!saved)throw Error('Armazenamento do pedido indisponível.');
     }catch(e){await clearGoogleDraft();throw Error('Não foi possível guardar o pedido com segurança. Use telefone e senha.');}
   }
   async function restoreGoogleDraft(){
-    let stored;
-    try{stored=root.sessionStorage.getItem(OAUTH_DRAFT);}catch(_){}
+    const stored=googleDraftStored();
     if(!stored)return null;
     try{
       const p=JSON.parse(stored);
@@ -195,8 +202,8 @@
       const d=JSON.parse(new TextDecoder().decode(raw));
       if(!d?.answers||typeof d.answers!=='object'||typeof d.answers.servico!=='string'||!Number.isInteger(d.step)||d.step<0||d.step>3||!Number.isInteger(d.questionIndex)||d.questionIndex<0||d.questionIndex>25)throw Error('Rascunho inválido.');
       return d;
-    }catch(_){return null;}
-    finally{await clearGoogleDraft();}
+    }catch(_){await clearGoogleDraft();return null;}
+    // O chamador só apaga o rascunho depois de confirmar que o formulário permanece montado.
   }
   async function mount(content,params,user) {
     const box=content.querySelector('[data-qf-atendimento]'); if(!box || box.dataset.mounted) return;
@@ -208,6 +215,8 @@
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
     const restored=!inMemoryDraft&&hasGoogleDraft()?await restoreGoogleDraft():null;
+    if(!box.isConnected)return; // Outro render não pode descartar o único rascunho salvo.
+    if(restored)await clearGoogleDraft();
     if(!box.isConnected)return;
     const oldDraft=inMemoryDraft||restored;
     const fromGoogle=!!restored?.oauth;
@@ -312,6 +321,7 @@
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
           await clearGoogleDraft();
+          try{root.sessionStorage.removeItem('qf_google_publish_pending');}catch(_){}
           // Publicação confirmada: mantém formulário, pedidos e conversa na index.
           redirecting=true;
           if(root.QFPedidoHome){await root.QFPedidoHome.published(req,current);}
@@ -321,13 +331,10 @@
         finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);if(button.isConnected){button.disabled=false;button.textContent='Publicar grátis';}}}
     };
     draw();
-    // O cliente já tocou em "Publicar grátis" antes do OAuth; retoma sem pedir tudo de novo.
-    if(fromGoogle&&reuse&&oldDraft.oauth&&step===3&&questionIndex===stages(a)[step].questions.length-1){
-      try{
-        const auth=await root.QFCloud?.client?.auth?.getUser();
-        if(!auth?.error&&auth?.data?.user&&box.isConnected)await publish();
-        else if(box.isConnected)area.querySelector('[data-at-error]').textContent='Entre com Google e toque em Publicar grátis para continuar.';
-      }catch(_){if(box.isConnected)area.querySelector('[data-at-error]').textContent='Seu pedido foi recuperado. Toque em Publicar grátis para continuar.';}
+    // Após OAuth, apresentar a revisão aprovada. Não publicar silenciosamente e nem voltar ao início.
+    if(fromGoogle&&reuse&&oldDraft.oauth&&box.isConnected){
+      const status=area.querySelector('[data-at-error]');
+      if(status)status.textContent='Pedido recuperado! Confira os dados e toque em Publicar grátis para enviar aos profissionais.';
     }
   }
   async function enrich(reqs) {
