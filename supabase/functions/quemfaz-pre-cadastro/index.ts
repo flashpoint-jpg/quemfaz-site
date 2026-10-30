@@ -191,11 +191,34 @@ Deno.serve(async (req) => {
     const email = String(body.email || "").trim().toLowerCase();
     const nome = String(body.nome || "").trim().slice(0, 160);
     const telefone = String(body.telefone || "").replace(/\D/g, "").slice(0, 13);
+    const tipoDocumento = String(body.tipo_documento || "").toLowerCase();
+    // Receber o documento somente no servidor e nunca persisti-lo em claro.
+    const documento = String(body.documento || "").trim().slice(0, 32);
     if (metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
     // Somente duas modalidades de nova adesão; recusar ANTES de gerar qualquer cobrança.
     if (!["avulso","basico_v2","pro_v2","completo_v2"].includes(plano)) return json({ ok: false, error: "plano_invalido" }, 400);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return json({ ok: false, error: "email_invalido" }, 400);
+    if (!["cpf", "cnpj"].includes(tipoDocumento) || !documento) {
+      return json({ ok: false, error: "documento_obrigatorio" }, 400);
+    }
+    // A verificação é da base inteira, inclusive e-mails distintos, e ocorre
+    // ANTES do checkout Efí. Somente a função service_role pode consultar os hashes.
+    const identidade = await admin.rpc("qf_pre_cadastro_documento_elegivel", {
+      p_tipo: tipoDocumento, p_documento: documento, p_telefone: telefone,
+    });
+    if (identidade.error || !identidade.data) {
+      console.error("QF_DOCUMENTO_VERIFICACAO_INDISPONIVEL", identidade.error?.code || "sem_resultado");
+      return json({ ok: false, error: "verificacao_indisponivel" }, 503);
+    }
+    if (identidade.data.ok !== true) {
+      return json({ ok: false, error: identidade.data.error || "documento_invalido" }, 409);
+    }
+    const documentoHash = String(identidade.data.documento_hash || "");
+    const documentoFinal = String(identidade.data.documento_final || "");
+    if (!/^[a-f0-9]{64}$/.test(documentoHash) || !/^[A-Z0-9]{4}$/.test(documentoFinal)) {
+      return json({ ok: false, error: "verificacao_indisponivel" }, 503);
+    }
 
     const cat = await admin.from("qf_planos_catalogo").select("plano,nome,preco_centavos,ativo").eq("plano", plano).maybeSingle();
     if (cat.error || !cat.data || !cat.data.ativo) return json({ ok: false, error: "plano_invalido" }, 400);
@@ -221,8 +244,10 @@ Deno.serve(async (req) => {
     const segredo = segredoNovo();
     const ins = await admin.from(TABLE).insert({
       segredo, email, nome: nome || null, telefone: telefone || null,
+      documento_tipo: tipoDocumento, documento_hash: documentoHash, documento_final: documentoFinal,
       plano: cat.data.plano, valor_centavos: cat.data.preco_centavos, metodo,
     }).select("id,email,valor_centavos,metodo").single();
+    if (ins.error?.code === "23505") return json({ ok: false, error: "documento_cobranca_existente" }, 409);
     if (ins.error || !ins.data) return json({ ok: false, error: "falha_interna" }, 500);
     const row = ins.data;
 
