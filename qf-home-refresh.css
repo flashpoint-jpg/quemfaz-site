@@ -217,9 +217,6 @@
 #app-shell .qf-prof-status--compact .qf-prof-welcome__avatar{width:56px;height:56px}
 #app-shell .qf-prof-status--compact .qf-prof-welcome__title{font-size:20px}
 
-#qf-pedido-facil .qf-intent-choice--client{border:2px solid #1769d5;box-shadow:0 8px 20px rgba(23,105,213,.32)}
-#qf-pedido-facil .qf-intent-choice--professional{border:2px solid #d85f00;background:linear-gradient(135deg,#ff8f1f,#f26a00);color:#fff;box-shadow:0 8px 20px rgba(240,106,0,.42)}
-#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__body strong{color:#fff;font-size:17px}
-#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__body>span:not(.qf-intent-choice__badge){color:#fff3e6}
-#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__icon{background:#fff;color:#f26a00}
-#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__arrow{background:#fff;color:#f26a00;width:36px;height:36px}
+#qf-pedido-facil .qf-intent-choice--client{border:2px solid #1769d5;box-shadow:0 6px 16px rgba(23,105,213,.22)}
+#qf-pedido-facil .qf-intent-choice--professional{border:2px solid #f28c28;background:#fff7ee;box-shadow:0 6px 16px rgba(242,140,40,.22)}
+#qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__arrow{width:36px;height:36px}
