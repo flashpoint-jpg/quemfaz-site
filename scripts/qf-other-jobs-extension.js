@@ -170,7 +170,7 @@ Screens.profHomeRender = function(params,user) {
   if(status&&update)status.textContent=update;
   // Estado online continua funcional em uma linha; preferências passam para o resumo recolhido.
   const statusCard=holder.querySelector('.qf-prof-status');
-  if(statusCard){statusCard.classList.add('qf-prof-status--compact');statusCard.querySelectorAll('.qf-prof-welcome,.qf-radar-meta,#qf-horario-lembrete').forEach(el=>el.remove());}
+  if(statusCard){statusCard.classList.add('qf-prof-status--compact');statusCard.querySelectorAll('.qf-radar-meta,#qf-horario-lembrete').forEach(el=>el.remove());}
   return holder.innerHTML;
 };
 const qfOutrosDisponiveisRender = Screens.profServicosDisponiveisRender;

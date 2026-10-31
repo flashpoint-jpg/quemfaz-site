@@ -212,3 +212,7 @@
  #app-shell[data-route="inicio"] .qf-landing-copy{align-items:start!important}
  #app-shell[data-route="inicio"] .qf-landing-actions{min-width:0}
 }
+
+#app-shell .qf-prof-status--compact .qf-prof-welcome{margin-bottom:10px}
+#app-shell .qf-prof-status--compact .qf-prof-welcome__avatar{width:56px;height:56px}
+#app-shell .qf-prof-status--compact .qf-prof-welcome__title{font-size:20px}
