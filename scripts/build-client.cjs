@@ -63,6 +63,10 @@ html=html.replace("!function(f,b,e,v,n,t,s){if(f.fbq)return;", "if (!("+authToke
  .replace("fbq('track','PageView');", "fbq('track','PageView'); }");
 const googleTag='<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663"></script>';
 html=html.replace(googleTag,'<script>if (!('+authTokenCheck+')) { var tag=document.createElement("script");tag.async=true;tag.src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663";document.head.appendChild(tag); }</script>');
+// Medicao Google Ads: a unica conversao que vale e 'Pedido publicado', disparada em qfGoogleLead()
+// depois que o Supabase confirma o pedido. O page_view automatico entrava no painel como
+// 'Visualizacao de pagina' e contava cada visita como resultado, inflando o custo por pedido.
+html=html.replace(/gtag\('config',\s*'AW-18273159663'\)/g,"gtag('config', 'AW-18273159663', { send_page_view: false });");
 html=html.replaceAll('e chamar você no WhatsApp.','e conversar com você aqui.');
 html=html.replaceAll('Sem cadastro obrigatório · Pedido gratuito','Pedido gratuito · Acesso por telefone e senha').replaceAll('Grátis e sem cadastro.','Grátis. Acompanhe tudo aqui mesmo.');
 html=html.replace('    const found = matchRoute(path);',"    if (global.QFPedidoHome?.isInlinePath(path)) { global.QFPedidoHome.openPath(path); return; }\n    const found = matchRoute(path);");
