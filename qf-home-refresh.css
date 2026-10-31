@@ -220,3 +220,37 @@
 #qf-pedido-facil .qf-intent-choice--client{border:2px solid #1769d5;box-shadow:0 6px 16px rgba(23,105,213,.22)}
 #qf-pedido-facil .qf-intent-choice--professional{border:2px solid #f28c28;background:#fff7ee;box-shadow:0 6px 16px rgba(242,140,40,.22)}
 #qf-pedido-facil .qf-intent-choice--professional .qf-intent-choice__arrow{width:36px;height:36px}
+
+
+/* Formulário destacado aprovado em 31/10/2026 — mantém a posição original. */
+#app-shell[data-route="inicio"] #qf-pedido-facil:has([data-home-problem]){
+ border:2px solid #4eb8f9!important;
+ background:#fff!important;
+ box-shadow:0 0 0 3px rgba(42,158,239,.09),0 16px 32px rgba(8,61,115,.20)!important;
+}
+#qf-pedido-facil .qf-home-problem-heading{display:flex;align-items:center;gap:14px;margin:0 0 12px;min-width:0}
+#qf-pedido-facil .qf-home-problem-icon{display:grid;place-items:center;flex:0 0 56px;width:56px;height:56px;border-radius:16px;background:linear-gradient(135deg,#1472e3,#1853b5);color:#fff;box-shadow:0 5px 15px #1472e330}
+#qf-pedido-facil .qf-home-problem-icon svg{width:30px;height:30px}
+#app-shell[data-route="inicio"] #qf-pedido-facil .qf-home-problem-title{margin:0!important;color:#0d3162!important;font-size:clamp(23px,2.7vw,30px)!important;font-weight:850!important;line-height:1.16!important;letter-spacing:-.025em}
+#app-shell[data-route="inicio"] #qf-pedido-facil .qf-home-problem-sub{color:#405c7b!important;font-size:15px!important;line-height:1.5!important;margin:0 0 18px!important}
+#app-shell[data-route="inicio"] #qf-pedido-facil [data-home-problem]>label{color:#123966!important;font-weight:750!important;line-height:1.3!important}
+#app-shell[data-route="inicio"] #qf-pedido-facil [data-home-problem] .input{width:100%;border:1.5px solid #c8d9eb!important;border-radius:13px!important;background:#fff!important;font-size:16px!important;box-sizing:border-box}
+#app-shell[data-route="inicio"] #qf-pedido-facil [data-home-problem] .input:focus{outline:2px solid #a0d7ff!important;outline-offset:1px;border-color:#1677d6!important}
+#app-shell[data-route="inicio"] #qf-pedido-facil [data-home-problem]>button[type=submit]{min-height:54px!important;border-radius:14px!important;background:#ff8610!important;border:1px solid #f57a00!important;color:#102747!important;font-size:20px!important;font-weight:850!important;box-shadow:0 7px 18px rgba(255,134,16,.28)!important}
+#app-shell[data-route="inicio"] #qf-pedido-facil [data-home-problem]>button[type=submit]:focus-visible{outline:3px solid #195ecb!important;outline-offset:3px!important}
+#qf-pedido-facil .qf-home-free-note{display:flex;align-items:center;gap:12px;margin:18px 0 0;padding:12px 14px;border-radius:13px;background:#eaf4ff;color:#163d72;font-size:14px;line-height:1.5}
+#qf-pedido-facil .qf-home-free-note svg{width:28px;height:28px;flex:0 0 28px;color:#126bd3}
+#qf-pedido-facil .qf-home-free-note strong{color:#0962cd;font-weight:800}
+#qf-pedido-facil .qf-home-benefits-inline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:20px 0 0;padding-top:16px;border-top:1px solid #dbe8f7;gap:0;color:#153755;font-size:12px;line-height:1.4;font-weight:750;text-align:center}
+#qf-pedido-facil .qf-home-benefits-inline span{padding:0 8px}
+#qf-pedido-facil .qf-home-benefits-inline span+span{border-left:1px solid #d7e1ef}
+#qf-pedido-facil [data-home-intent-prof][aria-busy="true"],#app-shell .qf-home-prof-btn[aria-busy="true"]{cursor:progress!important;opacity:.85}
+@media(max-width:599px){
+ #app-shell[data-route="inicio"] #qf-pedido-facil:has([data-home-problem]){border-radius:20px!important}
+ #qf-pedido-facil .qf-home-problem-heading{gap:10px}
+ #qf-pedido-facil .qf-home-problem-icon{width:48px;height:52px;flex-basis:48px;border-radius:13px}
+ #qf-pedido-facil .qf-home-problem-icon svg{width:27px;height:27px}
+ #app-shell[data-route="inicio"] #qf-pedido-facil .qf-home-problem-title{font-size:24px!important}
+ #qf-pedido-facil .qf-home-benefits-inline{font-size:11px}
+ #qf-pedido-facil .qf-home-benefits-inline span{padding:0 5px}
+}
