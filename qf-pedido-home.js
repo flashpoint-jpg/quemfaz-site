@@ -214,7 +214,9 @@
   select.onchange=()=>{select.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';};
   form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;
    // A escolha explícita usa o catálogo dos profissionais, inclusive categorias novas.
-   const category=categories.find(c=>c.id===select.value);
+   let category=categories.find(c=>c.id===select.value);
+   // Nome exato do catalogo pode ser enviado sem segundo toque.
+   if(!category){const exact=categories.filter(c=>norm(c.nome)===norm(search.value));if(exact.length===1){category=exact[0];pick(category);}}
    if(!category){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Digite o serviço e escolha uma das opções encontradas.';search.setAttribute('aria-invalid','true');search.focus();return;}
    if(problem.length<8||problem.length>1500){track('validation_error',{error_code:'description'});form.querySelector('[role=alert]').textContent='Descreva o que precisa ser feito, com 8 a 1.500 caracteres. Ex.: meu computador não liga.';input.setAttribute('aria-invalid','true');input.focus();return;}
    showForm(category.nome,problem);

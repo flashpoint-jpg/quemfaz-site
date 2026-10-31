@@ -4108,7 +4108,7 @@ alt=""></noscript>
     maxSize = maxSize || 640;
     return new Promise(function (resolve, reject) {
       const reader = new FileReader();
-      reader.onerror = reject;
+      reader.onerror = function () { reject(new Error('Não foi possível abrir a foto. Escolha uma imagem JPG ou PNG.')); };
       reader.onload = function () {
         const img = new Image();
         img.onload = function () {
@@ -4121,7 +4121,7 @@ alt=""></noscript>
           ctx.drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL('image/jpeg', 0.72));
         };
-        img.onerror = reject;
+        img.onerror = function () { reject(new Error('O celular não conseguiu ler esta foto. Escolha JPG, PNG ou WebP da galeria.')); };
         img.src = reader.result;
       };
       reader.readAsDataURL(file);
@@ -6901,10 +6901,6 @@ alt=""></noscript>
     }
 
     if (!String(data.nome || '').trim()) return { ok: false, error: 'Informe seu nome.' };
-    if (role === 'profissional' && !/^data:image\//i.test(String(data.selfieData || ''))) {
-      return { ok: false, error: 'Escolha uma foto simples do profissional ou a marca da empresa.' };
-    }
-
     const city = data.cidadeId ? cityFromId(data.cidadeId) : null;
     const cityName = String(data.cidade || (city ? city.nome : '') || '').trim() || null;
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
@@ -9256,11 +9252,11 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="4" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 5</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Obrigatória para o cliente saber quem vai atender.</div><div class="qf-step__bar"><span style="width:80%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 4 de 5</div><div class="h2">Sua foto</div><div class="text--sm text--secondary">Você pode adicionar sua foto agora ou depois no Perfil.</div><div class="qf-step__bar"><span style="width:80%"></span></div></div>' +
           '<div class="card stack qf-cad-foto" style="background:var(--warning-100);border:2px solid #efc46e;">' +
-            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO OBRIGATÓRIA</div><div class="text--sm text--secondary">Envie sua selfie ou o logotipo oficial da sua empresa.</div></div></div>' +
+            '<div class="row"><div class="icon-tile icon-tile--orange">' + icon('camera') + '</div><div class="spacer"><div class="text--strong" style="color:var(--warning-600);">FOTO DE IDENTIFICAÇÃO (OPCIONAL)</div><div class="text--sm text--secondary">Envie sua selfie ou o logotipo oficial da sua empresa.</div></div></div>' +
             '<div id="cadastro-selfie-preview" style="display:none;"><img id="cadastro-selfie-img" alt="Prévia da identificação" style="width:112px;height:112px;object-fit:cover;border-radius:18px;border:2px solid #fff;box-shadow:var(--shadow-card);"></div>' +
-            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Escolher minha foto do profissional<input type="file" id="cadastro-prof-selfie" accept="image/*"  style="display:none;"></label>' +
+            '<label class="btn btn--outline" style="cursor:pointer;">' + icon('camera') + ' Escolher foto da galeria<input type="file" id="cadastro-prof-selfie" accept="image/*"  style="display:none;"></label>' +
             '<label class="btn btn--outline" style="cursor:pointer;">' + icon('image') + ' Sou empresa: escolher logo/marca<input type="file" id="cadastro-prof-logo" accept="image/*" style="display:none;"></label>' +
             '<div class="text--sm text--secondary">Na selfie, mostre o rosto de frente e com boa iluminação.</div>' +
           '</div>' +
@@ -10498,11 +10494,6 @@ alt=""></noscript>
             return false;
           }
         }
-        if (n === 4 && !selfieData) {
-          try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
-          PU.toast('Falta a foto: toque em "Escolher minha foto" (ou, se for empresa, escolha o logo).', 'danger');
-          return false;
-        }
         if (n === 3) {
           if (!global.QFGeo.normalizeCep(fd.get('cep'))) { PU.toast('Toque em Usar GPS ou digite um CEP válido.', 'danger'); marcarErro('cep'); return false; }
           if (!String(fd.get('rua') || '').trim()) { PU.toast('Informe a rua ou avenida do seu endereço.', 'danger'); marcarErro('rua'); return false; }
@@ -10834,12 +10825,6 @@ alt=""></noscript>
         for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
         if (!(await confirmarCidade())) { goStep(3); return; }
         const fd = new FormData(form);
-        if (!selfieData) {
-          goStep(4);
-          try { form.querySelector('#cadastro-prof-selfie').closest('.card').scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) {}
-          PU.toast('Falta a foto: toque em "Escolher minha foto" (ou, se for empresa, escolha o logo).', 'danger');
-          return;
-        }
         if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
         if (!selected.length) {
           if (chipsWrap.qfHighlight) chipsWrap.qfHighlight();
