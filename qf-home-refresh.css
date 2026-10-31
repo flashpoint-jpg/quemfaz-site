@@ -111,6 +111,8 @@
 #app-shell[data-route="profissional-carteira"] [data-qf-livre]{order:-2}
 #app-shell[data-route="profissional-carteira"] [data-qf-livre-pix-cadastro]{order:2}
 #app-shell[data-route="profissional-carteira"] .qf13-wallet{order:3}
+#app-shell .qf-plan-status:not(.qf-livre--compact){display:block!important}
+#app-shell .qf-plan-status .qf-livre__benefits{display:grid!important;grid-template-columns:1fr!important;gap:12px}
 #app-shell .qf-plan-status{padding:16px!important;min-height:0!important;border:1px solid #bad2ef!important;border-radius:16px!important;background:#f2f7ff!important;box-shadow:none!important}
 #app-shell .qf-plan-status .qf-livre__copy{width:100%}
 #app-shell .qf-plan-status strong{font-size:17px!important;color:#075bbb!important}
