@@ -54,7 +54,7 @@ html=html.replace(googleRoleBefore,`const googleIdentity = user.app_metadata?.pr
     const role = expectedRole || meta.qf_role || (googleIdentity ? 'cliente' : null);`);
 html=html.replace("nome: data.nome || meta.qf_nome || user.email || 'Usuário',","nome: data.nome || meta.qf_nome || meta.full_name || meta.name || user.email || 'Usuário',");
 
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.0'");
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.2'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
@@ -71,7 +71,9 @@ html=html.replaceAll('e chamar você no WhatsApp.','e conversar com você aqui.'
 html=html.replaceAll('Sem cadastro obrigatório · Pedido gratuito','Pedido gratuito · Acesso por telefone e senha').replaceAll('Grátis e sem cadastro.','Grátis. Acompanhe tudo aqui mesmo.');
 html=html.replace('    const found = matchRoute(path);',"    if (global.QFPedidoHome?.isInlinePath(path)) { global.QFPedidoHome.openPath(path); return; }\n    const found = matchRoute(path);");
 // Clientes permanecem na home inclusive com sessão ativa; preserva a entrada profissional.
-html=html.replace("if (found && found.route.publicPage) { renderAnon(found); return; }", "if (found && (found.route.publicPage || (path === '/' && currentSession()?.role === 'cliente'))) { renderAnon(found); return; }");
+// A vitrine pública aprovada é a entrada tanto de visitantes como de clientes e profissionais conectados.
+// A sessão continua ativa; o profissional entra no painel pelo botão "Quero oferecer meus serviços".
+html=html.replace("if (found && found.route.publicPage) { renderAnon(found); return; }", "if (found && (found.route.publicPage || path === '/')) { renderAnon(found); return; }");
 html=html.replace('function userIsEditing() {','function userIsEditing() { if (global.QFPedidoHome?.isBusy()) return true;');
 // O login por senha substitui o redirecionamento do login antigo para a home.
 html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); return; }",'');
@@ -195,6 +197,22 @@ const qfPlayStoreLinkFix = `<script>
 </script>`;
 html=html.replace('</body>',qfPlayStoreLinkFix+'</body>');
 
+
+// A abertura normal do app/PWA começa pela vitrine (segunda tela), mesmo com a sessão salva.
+// Preserva links profundos de pedidos, chats, orçamentos, cadastro e pagamentos.
+const landingOnAppOpen = `<script>
+(function(){
+ try {
+   var inApp = new URLSearchParams(location.search).get('app') === '1' ||
+     (window.matchMedia && matchMedia('(display-mode: standalone)').matches) ||
+     navigator.standalone === true;
+   if(!inApp) return;
+   var normalTab = /^#\\/(?:profissional\\/(?:home|servicos(?:\\/disponiveis)?|avisos|configuracoes|perfil)|cliente\\/(?:home|pedidos|avisos|perfil))$/.test(location.hash);
+   if(normalTab) history.replaceState(null,'',location.pathname+location.search+'#/');
+ } catch(_) {}
+})();
+</script>`;
+html=html.replace('</head>',landingOnAppOpen+'</head>');
 
 // A home já mostra o conteúdo aprovado enquanto os scripts chegam. Não é uma tela de espera.
 const iconStart=main[1].indexOf('(function (global) {');
