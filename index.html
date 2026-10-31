@@ -2461,6 +2461,17 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
 .qf-landing-brand .qf-brandmark--services svg,.topbar__title--brand .qf-brandmark--services svg{width:100%;height:100%}
 @media(max-width:430px){.qf-landing-brand .qf-brandmark--services{width:29px;height:33px}.qf-landing-brand .qf-brand-words{font-size:16px}.qf-brand-words small{font-size:7px}}
 #app-shell .qf-calc .qf-request-header .h2,#app-shell .qf-calc .qf-request-header .h2 *{color:#fff!important}
+
+/* V12.0.4 — acabamento visual: sem sobra de espaço no fim da home no celular e selo do Google Play alinhado à esquerda no computador.
+   Não mexe na foto, no carrossel "Anuncie sua marca aqui" nem na ordem dos blocos. */
+@media (max-width:899px){
+  #app-shell[data-route="inicio"] #app-content .qf-landing,
+  #app-shell[data-route="inicio"] #app-content .qf-landing .qf-landing-body{padding-bottom:var(--qf-safe-bottom,0px)!important}
+}
+@media (min-width:900px){
+  /* a imagem do selo tem ~23px de margem transparente; compensa para alinhar com o texto */
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 a.qf-play-badge--hero{margin:14px 0 0 -23px!important}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
