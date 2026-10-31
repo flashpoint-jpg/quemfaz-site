@@ -2472,6 +2472,16 @@ html.qf-scrolled .qf-request-header.qf-fixed-bar{
   /* a imagem do selo tem ~23px de margem transparente; compensa para alinhar com o texto */
   #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 a.qf-play-badge--hero{margin:14px 0 0 -23px!important}
 }
+
+/* V12.0.5 — home no computador: frase, formulário e selo do Google Play juntos na coluna da direita, centralizados na altura da foto.
+   Só vale a partir de 900px; a foto, o título e o celular não mudam. */
+@media (min-width:900px){
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2{grid-template-rows:1fr auto auto auto 1fr!important;column-gap:32px!important}
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 > .qf-hero2-head{grid-column:1!important;grid-row:1 / 6!important}
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 > .qf-customer-sub{grid-column:2!important;grid-row:2!important;align-self:end!important;margin:0 0 14px!important;font-size:19px!important;line-height:1.35!important;color:#0f2a52!important}
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 > .qf-landing-actions{grid-column:2!important;grid-row:3!important}
+  #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 > a.qf-play-badge--hero{grid-column:2!important;grid-row:4!important;margin:18px 0 0 -23px!important;align-self:start!important}
+}
 </style>
 <script>
 /* QF_CONNECTION_V11_14_47: a abertura nunca espera uma consulta indefinidamente. */
