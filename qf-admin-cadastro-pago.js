@@ -197,18 +197,14 @@
     const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';h.prepend(panel);loadDetail(panel);
   }
   function place(){
-    insertMenu();
+    // Pré-cadastros saem do painel; registros e pagamentos continuam no banco.
+    // Conserva ativação manual no detalhe do profissional e saldos em Movimentações.
     placeDetail();
     placeWallet();
-    const h=host();if(!h)return;
-    let panel=h.querySelector('#'+PANEL);
-    if(!panel){
-      panel=document.createElement('section');panel.className='qf-pre-panel card';panel.id=PANEL;
-      panel.setAttribute('aria-label','Pré-cadastros e pagamentos de profissionais');
-      panel.innerHTML='<p>Carregando pré-cadastros...</p>';
-      h.prepend(panel);lastAt=0;
-    }
-    if(!busy&&(lastAt===0||Date.now()-lastAt>120000))load(panel);
+    const antigoMenu=document.querySelector('[data-qf-pre-nav]');
+    if(antigoMenu)antigoMenu.remove();
+    const antigoPainel=document.getElementById(PANEL);
+    if(antigoPainel)antigoPainel.remove();
   }
   function install(){
     if(installed)return;installed=true;
