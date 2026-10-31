@@ -13935,7 +13935,7 @@ alt=""></noscript>
           '<div class="card" style="padding:4px 16px;">' +
             ((global.QFBonusCadastro || {}).texto ? walletInfoRow('money', global.QFBonusCadastro.texto + ' de bônus de cadastro', 'Todo novo profissional começa com ' + global.QFBonusCadastro.texto + ' em créditos. Cada chamado desbloqueado desconta o valor correspondente da carteira.') : '') +
             walletInfoRow('phoneCall', 'Contato liberado', 'Depois do desbloqueio, você recebe o WhatsApp do cliente e combina o serviço direto com ele.') +
-            walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço. No Avulso, não há comissão sobre o serviço.') +
+            walletInfoRow('money', 'Serviço é combinado à parte', 'Cliente e profissional escolhem como pagar o serviço.') +
             '<div class="list-item" data-nav="/profissional/planos"><div class="icon-tile icon-tile--orange">' + icon('crown') + '</div><div class="list-item__body"><div class="list-item__title">Modalidades atuais</div><div class="list-item__sub">Dúvidas sobre planos e preços.</div></div><div class="list-item__chevron">' + icon('chevronRight') + '</div></div>' +
             walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta, mesmo que o cliente não responda. Por isso, chame o cliente no WhatsApp assim que desbloquear.') +
           '</div>' +
@@ -14089,7 +14089,7 @@ alt=""></noscript>
           cfStep(3, 'Fique online', 'Toque no botão para ficar online (verde). Assim você recebe os pedidos dentro do seu horário de atendimento.') +
           cfStep(4, 'O pedido chega no seu celular', 'Antes de decidir você vê o serviço, a distância até o cliente, para quando ele precisa e o valor para desbloquear.') +
           cfStep(5, 'Desbloqueie e chame no WhatsApp', 'Gostou do pedido? Desbloqueie e chame o cliente direto no WhatsApp para passar o orçamento.') +
-          cfStep(6, 'Feche o serviço', 'No Avulso, você paga pelo contato e não há comissão. No Quem Faz Livre, confira a divisão do serviço no card do plano abaixo.') +
+          cfStep(6, 'Feche o serviço', 'Você paga só pelo contato ou pelo plano. O valor do serviço é todo seu.') +
         '</div>' +
       '</section>' +
 
@@ -14118,7 +14118,6 @@ alt=""></noscript>
         '<div class="section-head"><div><h2 class="h3">Por que o QuemFaz é diferente</h2><div class="text--sm text--secondary">O que você ganha aqui e não encontra em muitos apps.</div></div></div>' +
         '<div class="card" style="padding:4px 16px;">' +
           walletInfoRow('lock', 'O cliente escolhe quantos orçamentos quer', 'Em muitos apps, o mesmo pedido vai para um monte de profissionais e ganha quem cobra menos. No QuemFaz, o cliente escolhe quantos orçamentos quer (de 1 a 4), e você vê quantas vagas ainda tem antes de desbloquear.') +
-          walletInfoRow('percent', 'Comissão conforme a modalidade', 'Avulso não tem comissão. Confira a divisão do Quem Faz Livre no card do plano acima.') +
           walletInfoRow('info', 'Desbloqueio sem devolução', 'O crédito é usado na hora do desbloqueio e não volta. Você recebe o WhatsApp do cliente na hora para chamar direto.') +
           walletInfoRow('bell', 'Você escolhe o horário', 'Fique online e receba os pedidos dentro do horário que você escolheu. Fora dele, ninguém te incomoda.') +
           walletInfoRow('shieldCheck', 'Clientes confiam mais', 'Todo profissional tem selfie no perfil, e o cliente avalia o serviço. Quem trabalha bem aparece melhor.') +
