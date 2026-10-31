@@ -14,6 +14,15 @@ for (const name of fs.readdirSync(root)) {
   if (skip.has(name) || (name.startsWith('.') && name !== '.well-known')) continue;
   fs.cpSync(path.join(root,name),path.join(out,name),{recursive:true});
 }
+// Renova os arquivos do painel admin no navegador após a atualização financeira.
+const adminDistPath = path.join(out, 'admin.html');
+if (fs.existsSync(adminDistPath)) {
+  const previousAdmin = fs.readFileSync(adminDistPath, 'utf8');
+  const newAdmin = previousAdmin
+    .replace('qf-admin-financeiro.js?v=visita-manual-20261030', 'qf-admin-financeiro.js?v=receitas-planos-20261031')
+    .replace('qf-admin-cadastro-pago.js?v=20261030-credito-avulso', 'qf-admin-cadastro-pago.js?v=sem-pre-cadastros-20261031');
+  fs.writeFileSync(adminDistPath, newAdmin);
+}
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 html=html.replace("if (existing.data.tipo === 'profissional') {",`if (existing.data.tipo === 'profissional') {
         // O bootstrap de auth já pode ter criado o perfil: preparar o teste antes do retorno.
