@@ -238,3 +238,75 @@
  if(typeof module!=='undefined')module.exports={totals,bankIn,bankOut};
  if(g.document){if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});else install();}
 })(typeof window!=='undefined'?window:globalThis);
+
+
+/* Faturamento dos planos e recargas: consulta protegida e sem duplicar pré-cadastros. */
+(function(g){
+ 'use strict';
+ if(!g.document)return;
+ const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const brl=v=>(Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+ const data=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'—';
+ function install(){
+  if(!g.Screens||g.Screens._qfReceitasPlano)return;
+  g.Screens._qfReceitasPlano=true;
+  const css=g.document.createElement('style');
+  css.textContent='.qfr{margin-bottom:18px;padding:16px;border:1px solid #d5e2f1;border-radius:16px;background:#fff;color:#17324d}.qfr h2,.qfr h3,.qfr p{margin:0}.qfr-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.qfr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:10px;margin:14px 0}.qfr-kpi{padding:12px;border:1px solid #dbe5f1;border-radius:12px;background:#f6f9ff}.qfr-kpi b{display:block;color:#1458cc;font-size:20px;margin-top:5px}.qfr-note{font-size:12px;line-height:1.55;color:#53677e;margin-top:10px!important}.qfr details{margin:10px 0;border:1px solid #dae4ef;border-radius:12px;padding:12px}.qfr summary{font-weight:750;cursor:pointer}.qfr-scroll{overflow-x:auto;margin-top:10px}.qfr table{border-collapse:collapse;width:100%;min-width:500px;font-size:13px}.qfr th,.qfr td{text-align:left;padding:9px;border-bottom:1px solid #e6ecf3}.qfr [role=status]{color:#52657c;font-size:13px;margin:7px 0}.qfr button{min-height:40px}.qfr ul{padding-left:20px;margin:10px 0}.qfr li{margin:6px 0}@media(max-width:500px){.qfr{padding:12px}.qfr-kpi b{font-size:17px}}';
+  g.document.head.appendChild(css);
+  function mount(pattern,content){
+   if(!['/admin/dashboard','/admin/financeiro'].includes(pattern)||!content)return;
+   if(g.DB?.getSession?.()?.role!=='admin')return;
+   const client=g.QFAdminCloud?.client;if(!client)return;
+   const host=content.querySelector('.view')||content;
+   if(host.querySelector('[data-qfr]'))return;
+   const section=g.document.createElement('section');
+   section.className='qfr';section.dataset.qfr='1';section.setAttribute('aria-label','Recebimentos e serviços fechados por plano');
+   section.innerHTML='<h2>Recebimentos por plano</h2><p role="status">Consultando pagamentos confirmados…</p>';
+   host.prepend(section);
+   async function carregar(){
+    section.setAttribute('aria-busy','true');
+    const pos=section.querySelector('[role=status]');if(pos)pos.textContent='Atualizando recebimentos...';
+    try{
+     const {data:ret,error}=await client.rpc('qf_admin_receitas_por_plano');
+     if(error||!ret||!Array.isArray(ret.pagamentos)||!Array.isArray(ret.por_plano))throw Error('Não foi possível carregar os pagamentos. Confira o acesso administrativo.');
+     if(!section.isConnected)return;
+     const names=['Avulso','Livre','Marketing / anúncios'];
+     const groups=ret.por_plano.slice();
+     names.forEach(n=>{if(!groups.some(x=>x.categoria===n))groups.push({categoria:n,quantidade:0,total_centavos:0});});
+     const order=n=>names.indexOf(n)<0?100:names.indexOf(n);
+     groups.sort((a,b)=>order(a.categoria)-order(b.categoria)||String(a.categoria).localeCompare(String(b.categoria),'pt-BR'));
+     const fech=Array.isArray(ret.fechamentos)?ret.fechamentos:[];
+     const fechamentoTotal=fech.reduce((v,x)=>v+Number(x.quantidade||0),0);
+     const fechValor=fech.reduce((v,x)=>v+Number(x.valor_confirmado_centavos||0),0);
+     const recibos=ret.pagamentos;
+     const detail=groups.map(gr=>{
+      const rows=recibos.filter(p=>p.categoria===gr.categoria);
+      return '<details'+(rows.length?' open':'')+'><summary>'+esc(gr.categoria)+' · '+rows.length+' pagamento(s) · '+brl(gr.total_centavos)+'</summary>'+
+       (rows.length?'<div class="qfr-scroll"><table><thead><tr><th>Quem pagou</th><th>Valor</th><th>Confirmado em</th></tr></thead><tbody>'+
+        rows.map(p=>'<tr><td>'+esc(p.nome)+'</td><td>'+brl(p.valor_centavos)+'</td><td>'+esc(data(p.aprovado_em))+'</td></tr>').join('')+
+        '</tbody></table></div>':'<p class="qfr-note">Nenhum pagamento confirmado nesta modalidade.</p>')+'</details>';
+     }).join('');
+     const fechamentoGroups=fech.length?fech:[];
+     const present=new Set(fechamentoGroups.map(x=>x.categoria));
+     ['Avulso','Livre'].forEach(n=>{if(!present.has(n))fechamentoGroups.push({categoria:n,quantidade:0,sem_valor:0,com_valor_confirmado:0,valor_confirmado_centavos:0,comissao_centavos:0});});
+     const fechamentoHtml=fechamentoGroups.map(f=>'<li><b>'+esc(f.categoria)+':</b> '+Number(f.quantidade||0)+' fechamento(s) informado(s) · Valor confirmado: '+brl(f.valor_confirmado_centavos)+' · '+Number(f.sem_valor||0)+' sem valor registrado'+(Number(f.comissao_centavos||0)?' · Comissão: '+brl(f.comissao_centavos):'')+'</li>').join('');
+     section.innerHTML='<div class="qfr-head"><div><h2>Recebimentos por plano</h2><p class="qfr-note">Apenas pagamentos aprovados · atualização '+esc(data(ret.gerado_em))+'</p></div><button type="button" class="btn btn--outline" data-qfr-refresh>Atualizar</button></div>'+
+      '<div class="qfr-grid"><div class="qfr-kpi">Total recebido em planos e recargas<b>'+brl(ret.total_centavos)+'</b><small>'+Number(ret.qtd_pagamentos||0)+' pagamentos</small></div>'+
+      groups.map(x=>'<div class="qfr-kpi">'+esc(x.categoria)+'<b>'+brl(x.total_centavos)+'</b><small>'+Number(x.quantidade||0)+' pagamento(s)</small></div>').join('')+
+      '<div class="qfr-kpi">Serviços fechados informados<b>'+fechamentoTotal+'</b><small>Valor de serviços confirmado: '+brl(fechValor)+'</small></div></div>'+
+      '<h3>Quem pagou (separado por plano)</h3>'+detail+
+      '<h3>Fechamentos de serviços por plano</h3><ul>'+fechamentoHtml+'</ul>'+
+      '<p class="qfr-note">Avulso: pagamento da recarga é adiantamento de créditos, não lucro. O valor do serviço fechado não é dinheiro recebido pelo Quem Faz. Serviços sem valor confirmado não entram na soma de fechamentos em reais. Pix de serviço e repasses têm controle próprio acima/abaixo.</p>';
+     section.querySelector('[data-qfr-refresh]').onclick=carregar;
+    }catch(e){if(!section.isConnected)return;section.innerHTML='<div class="qfr-head"><h2>Recebimentos por plano</h2><button class="btn btn--outline" data-qfr-refresh>Tentar novamente</button></div><p role="status">'+esc(e.message)+'</p>';section.querySelector('[data-qfr-refresh]').onclick=carregar;}
+    finally{section.removeAttribute('aria-busy');}
+   }
+   carregar();
+  }
+  const old=g.Screens.afterRender;
+  g.Screens.afterRender=function(){if(old)old.apply(this,arguments);mount(arguments[0],arguments[1]);};
+  const here=g.document.getElementById('app-content');
+  if(here)mount((g.location.hash||'').replace(/^#/,'').split('?')[0],here);
+ }
+ if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});else install();
+})(typeof window!=='undefined'?window:globalThis);
