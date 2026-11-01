@@ -3,7 +3,7 @@
   'use strict';
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const digits=s=>String(s||'').replace(/\D/g,'').replace(/^55(?=\d{11}$)/,'');
-  const state={opened:false,busy:false,user:null,profile:null,photo:null,photoUrl:'',result:null,status:'',error:'',category:''};
+  const state={opened:false,busy:false,user:null,profile:null,photo:null,photoUrl:'',result:null,status:'',error:'',category:'',draft:{}};
   const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const categories=()=>w.DB?.categories?.().filter(x=>x.id!=='cat_outros')||[];
   const client=()=>w.QFCloud?.client;
@@ -30,6 +30,14 @@
     if(p.error)throw Error('Não foi possível conferir sua conta. Atualize a página.');
     if(p.data&&p.data.tipo!=='cliente')throw Error('Esta é uma conta profissional. Entre com uma conta de cliente.');
     state.user=u;state.profile=p.data||null;
+    // Reaproveita localização de pedido anterior do próprio cliente quando disponível.
+    try{
+      const last=(w.DB?.state?.requests||[]).filter(x=>x.clienteId===u.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0))[0];
+      const loc=last?.endereco||{};
+      for(const [key,value] of Object.entries({cidade:loc.cidade||'',uf:loc.uf||'',bairro:loc.bairro||''})){
+        if(value&&!state.draft[key])state.draft[key]=String(value);
+      }
+    }catch(_){}
     return u;
   }
   async function login(){
@@ -49,7 +57,7 @@
     }else if(!state.result){
       step='<p>Olá, <strong>'+esc(nm)+'</strong>! Fotografe o defeito ou envie uma imagem. A análise sugere o profissional, mas não substitui avaliação técnica.</p><div class="qff-file"><strong>Selecione a foto do problema</strong><input aria-label="Selecionar foto do problema" style="margin:12px auto;max-width:100%" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" capture="environment" data-qff-file>'+photo+'<p class="qff-hint">A foto só será usada na análise e não será publicada automaticamente.</p></div><button class="qff-button" type="button" data-qff-analyze '+(!state.photo?'disabled':'')+'>Identificar profissional pela foto</button><button class="qff-button qff-alt" type="button" data-qff-manual>Escolher profissional manualmente</button>';
     }else{
-      step='<div class="qff-result"><span class="qff-preview-pill">'+(state.result.manual?'Escolha manual':'Sugestão da foto — confirme')+'</span><p><strong>'+esc(state.result.titulo||'Profissional sugerido')+'</strong></p><p>'+esc(state.result.problema||'Confira o problema com o profissional.')+'</p></div><p>Olá, <strong>'+esc(nm)+'</strong>. Confira apenas os dados necessários para publicar.</p><form data-qff-publish><label>Profissional indicado<select name="categoria" required><option value="">Escolha a profissão</option>'+options+'</select></label><label>O que aconteceu?<textarea rows="2" minlength="8" maxlength="1500" name="descricao" required>'+esc(state.result.descricao||'')+'</textarea></label><label>Cidade e estado</label><div class="qff-grid"><input name="cidade" autocomplete="address-level2" placeholder="Cidade" required maxlength="100"><select name="uf" required><option value="">UF</option>'+'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>'<option value="'+x+'">'+x+'</option>').join('')+'</select></div><label>Bairro</label><input name="bairro" placeholder="Bairro onde será o serviço" maxlength="100" required><label>Quando precisa?</label><select name="urgencia"><option value="hoje">Hoje</option><option value="normal">Quero agendar</option><option value="urgente">Urgente</option></select>'+(!contact?'<label>Seu WhatsApp com DDD (primeira vez)</label><input name="telefone" type="tel" autocomplete="tel" required inputmode="numeric" placeholder="(11) 99999-9999">':'<p class="qff-hint">WhatsApp do cadastro: final '+esc(contact.slice(-4))+'</p>')+'<label class="qff-consent"><input name="consent" type="checkbox" required> Concordo em publicar este pedido e receber contatos de profissionais pelo Quem Faz. A publicação é gratuita.</label><button type="submit" class="qff-button">Publicar pedido grátis</button><button type="button" class="qff-button qff-alt" data-qff-restart>Trocar foto</button><p class="qff-hint">Seu pedido só será enviado após tocar em Publicar. A análise da foto é uma sugestão, não um diagnóstico.</p></form>';
+      step='<div class="qff-result"><span class="qff-preview-pill">'+(state.result.manual?'Escolha manual':'Sugestão da foto — confirme')+'</span><p><strong>'+esc(state.result.titulo||'Profissional sugerido')+'</strong></p><p>'+esc(state.result.problema||'Confira o problema com o profissional.')+'</p></div><p>Olá, <strong>'+esc(nm)+'</strong>. Confira apenas os dados necessários para publicar.</p><form data-qff-publish><label>Profissional indicado<select name="categoria" required><option value="">Escolha a profissão</option>'+options+'</select></label><label>O que aconteceu?<textarea rows="2" minlength="8" maxlength="1500" name="descricao" required>'+esc(state.result.descricao||'')+'</textarea></label><label>Cidade e estado</label><div class="qff-grid"><input name="cidade" autocomplete="address-level2" placeholder="Cidade" required maxlength="100"><select name="uf" required><option value="">UF</option>'+'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').map(x=>'<option value="'+x+'">'+x+'</option>').join('')+'</select></div><label>Bairro</label><input name="bairro" placeholder="Bairro onde será o serviço" maxlength="100" required><label>Quando precisa?</label><select name="urgencia"><option value="hoje">Hoje</option><option value="normal">Sem pressa / a combinar</option><option value="urgente">Urgente</option></select>'+(!contact?'<label>Seu WhatsApp com DDD (primeira vez)</label><input name="telefone" type="tel" autocomplete="tel" required inputmode="numeric" placeholder="(11) 99999-9999">':'<p class="qff-hint">WhatsApp do cadastro: final '+esc(contact.slice(-4))+'</p>')+'<label class="qff-consent"><input name="consent" type="checkbox" required> Concordo em publicar este pedido e receber contatos de profissionais pelo Quem Faz. A publicação é gratuita.</label><button type="submit" class="qff-button">Publicar pedido grátis</button><button type="button" class="qff-button qff-alt" data-qff-restart>Trocar foto</button><p class="qff-hint">Seu pedido só será enviado após tocar em Publicar. A análise da foto é uma sugestão, não um diagnóstico.</p></form>';
     }
     overlay.innerHTML='<div class="qff-panel" role="dialog" aria-modal="true" aria-label="Quem Faz Foto"><div class="qff-head"><h2>Quem Faz <span style="color:#f47720">Foto</span></h2><button class="qff-x" aria-label="Fechar" data-qff-close>×</button></div><p class="qff-hint">Tire uma foto. Descubra quem pode resolver.</p>'+(state.error?'<div class="qff-error" role="alert">'+esc(state.error)+'</div>':'')+(state.status?'<div class="qff-status" role="status">'+esc(state.status)+'</div>':'')+step+'</div>';
     overlay.querySelector('[data-qff-close]').onclick=close;
@@ -58,8 +66,14 @@
     const sign=overlay.querySelector('[data-qff-login]');if(sign)sign.onclick=()=>run(login);
     const analyze=overlay.querySelector('[data-qff-analyze]');if(analyze)analyze.onclick=()=>run(analyse);
     const manual=overlay.querySelector('[data-qff-manual]');if(manual)manual.onclick=()=>{state.error='';state.result={manual:true,titulo:'Escolha a profissão',problema:'Se preferir, informe o profissional sem análise por IA.',descricao:''};content();};
-    const restart=overlay.querySelector('[data-qff-restart]');if(restart)restart.onclick=()=>{state.result=null;state.category='';content();};
-    const form=overlay.querySelector('[data-qff-publish]');if(form)form.onsubmit=e=>{e.preventDefault();run(()=>publish(form));};
+    const restart=overlay.querySelector('[data-qff-restart]');if(restart)restart.onclick=()=>{state.result=null;state.category='';state.draft={};content();};
+    const form=overlay.querySelector('[data-qff-publish]');
+    if(form){
+      Object.entries(state.draft).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(field&&field.type!=='checkbox')field.value=value;});
+      form.addEventListener('input',e=>{if(e.target.name&&e.target.type!=='checkbox')state.draft[e.target.name]=e.target.value;});
+      form.addEventListener('change',e=>{if(e.target.name&&e.target.type!=='checkbox')state.draft[e.target.name]=e.target.value;});
+      form.onsubmit=e=>{e.preventDefault();for(const [k,v] of new FormData(form))if(k!=='consent')state.draft[k]=String(v);run(()=>publish(form));};
+    }
   }
   async function shrink(file){
     if(!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type))throw Error('Use uma foto JPG, PNG ou WebP.');
@@ -99,6 +113,7 @@
       let out=r.data;if(r.error){try{out=await r.error.context.json();}catch(_){}}
       if(!out?.ok)throw Error(out?.error||'Não foi possível confirmar seu WhatsApp. Entre pela opção normal para vincular seu telefone.');
       await account();
+      if(w.QFCloud?.syncForCurrentSession)await w.QFCloud.syncForCurrentSession(true);
     }
     if(!w.QFAtendimento?.payload||!w.QFAcompanhamento?.draft||!w.QFAcompanhamento?.remember)throw Error('Atualize a página para publicar com segurança.');
     const id=crypto.randomUUID();const a={servico:cat.nome,detalhes:'outro',escopo:'avaliar',cidade:loc.cidade,uf:loc.uf,bairro:loc.bairro,urgencia:String(f.get('urgencia')||'hoje'),materiais:'combinar',nome,contato:phone,aceite_app:'sim',intencao:'contratar',autorizacao:'sim',visita_presencial:'nao',__problem:descricao};
@@ -109,7 +124,7 @@
     const req=await w.QFCloud.createCall({clienteId:u.id,categoriaId:cat.id,descricao:at.detalhes,endereco:{...loc,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:4});
     w.QFAcompanhamento.remember(req.id,secret);
     try{w.QFClientAcquisition?.published(req,cat.id);}catch(_){}
-    close();if(w.QFPedidoHome?.published)await w.QFPedidoHome.published(req,{id:u.id,nome,telefone:phone,whatsapp:phone});
+    state.draft={};close();if(w.QFPedidoHome?.published)await w.QFPedidoHome.published(req,{id:u.id,nome,telefone:phone,whatsapp:phone});
     else w.location.hash='#/cliente/pedidos';
   }
   async function run(fn){if(state.busy)return;state.busy=true;state.error='';try{await fn();}catch(e){state.error=String(e?.message||'Falha inesperada. Tente novamente.');state.status='';}finally{state.busy=false;if(state.opened)content();}}
