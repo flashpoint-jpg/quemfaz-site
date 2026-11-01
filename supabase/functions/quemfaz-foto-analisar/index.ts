@@ -40,6 +40,10 @@ Deno.serve(async req=>{
   const count=await admin.from("qf_foto_analises").select("id",{count:"exact",head:true}).eq("user_id",user.id).gte("criado_em",day);
   if(count.error)return reply({ok:false,error:"Controle de uso indisponível. Tente mais tarde."},503,origin);
   if((count.count||0)>=5)return reply({ok:false,error:"Você chegou ao limite de 5 análises nas últimas 24 horas."},429,origin);
+  // Piloto com teto global de uso: evita surpresas de cobrança quando a IA for ativada.
+  const globalCount=await admin.from("qf_foto_analises").select("id",{count:"exact",head:true}).gte("criado_em",day);
+  if(globalCount.error)return reply({ok:false,error:"Controle de uso indisponível."},503,origin);
+  if((globalCount.count||0)>=60)return reply({ok:false,error:"O limite diário do piloto foi atingido. Tente amanhã."},429,origin);
   const record=await admin.from("qf_foto_analises").insert({user_id:user.id,status:"iniciada"}).select("id").single();
   if(record.error||!record.data)return reply({ok:false,error:"Controle de uso indisponível."},503,origin);
   const finish=async(status:"concluida"|"falhou")=>{
