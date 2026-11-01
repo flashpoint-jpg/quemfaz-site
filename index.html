@@ -2745,6 +2745,7 @@ window.qfGoogleLead = function (requestId) {
 .qf-mob-extra + .section { margin-top: 0; }
 .qf-mob-extra:empty { display: none; }
 .qf-mob-card { background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 18px; padding: 16px; }
+.qf-mob-sub { margin: 2px 0 12px; font-size: 13px; line-height: 1.4; color: #4a5f7f; }
 .qf-mob-h { margin: 0; font-family: var(--qf-display); font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: var(--navy-900); }
 .qf-mob-steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 12px; }
 .qf-mob-steps li { display: flex; gap: 12px; align-items: center; }
@@ -8669,7 +8670,7 @@ alt=""></noscript>
         '<li><span class="qf-mob-num">2</span><div><strong>Profissionais da região são avisados</strong><p>Até 4 podem desbloquear seu pedido.</p></div></li>' +
         '<li><span class="qf-mob-num qf-mob-num--zap">' + icon('whatsapp') + '</span><div><strong>Converse com os profissionais</strong><p>Acompanhe as respostas em Meus pedidos.</p></div></li>' +
       '</ol></section>' +
-      '<section class="qf-mob-card"><h2 class="qf-mob-h">Serviços mais procurados</h2><div class="qf-mobile-services">'+DESK_SERVICES.map(function(x){return '<button type="button" data-desk-service="'+(x[2]||x[0])+'">'+icon(x[1])+'<span>'+x[0]+'</span></button>';}).join('')+'</div></section>'+
+      '<section class="qf-mob-card"><h2 class="qf-mob-h">Qual serviço você precisa?</h2><p class="qf-mob-sub">Toque no serviço e já abra o pedido grátis.</p><div class="qf-mobile-services">'+DESK_SERVICES.map(function(x){return '<button type="button" data-desk-service="'+(x[2]||x[0])+'">'+icon(x[1])+'<span>'+x[0]+'</span></button>';}).join('')+'<button type="button" data-desk-other class="qf-mobile-services__other">'+icon('search')+'<span>Outro serviço</span></button></div></section>'+
       mobFold('Benefícios para o cliente', deskList(['Pedir é grátis. Acesso por telefone e senha','Você escreve uma vez e até 4 profissionais chamam você','Acompanhe as respostas e conversas em Meus pedidos','Calculadora para ter ideia do preço antes de pedir'])) +
       mobFold('Sou profissional', deskList(((global.QFBonusCadastro || {}).texto ? [global.QFBonusCadastro.texto + ' em créditos grátis no cadastro, sem validade'] : []).concat(['Você vê o serviço e a distância antes de desbloquear','Conversa pelo chat no Plano Livre; WhatsApp no avulso','Escolhe a região onde quer atender'])) + '<button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero receber pedidos</button>') +
       mobFold('Recrutamento para empresas', '<p>Precisa contratar funcionário? Você cadastra a vaga, o QuemFaz divulga em anúncios e os candidatos chegam no seu painel, com contato e currículo liberados. Para o candidato é grátis.</p><button class="btn btn--outline" type="button" data-nav="/auth/profissional/cadastro">Quero recrutar</button>') +

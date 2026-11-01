@@ -54,7 +54,7 @@ html=html.replace(googleRoleBefore,`const googleIdentity = user.app_metadata?.pr
     const role = expectedRole || meta.qf_role || (googleIdentity ? 'cliente' : null);`);
 html=html.replace("nome: data.nome || meta.qf_nome || user.email || 'Usuário',","nome: data.nome || meta.qf_nome || meta.full_name || meta.name || user.email || 'Usuário',");
 
-html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.2'");
+html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.3'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
 html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
@@ -81,7 +81,7 @@ html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); re
 html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
-html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=busca-profissao-20261028"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=servicos-20261031"></script></body>');
 html=html.replace('</body>','<script defer src="/qf-marketing-dedicado.js"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
