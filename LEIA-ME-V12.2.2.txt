@@ -1,0 +1,6 @@
+V12.2.2 - Home no computador (cliente conectado)
+- Corrigido o formulario "O que voce precisa?" empurrado para baixo da coluna da esquerda.
+- Corrigida a faixa em branco antes de "profissionais cadastrados" (linhas 1fr da grade se igualavam a altura do bloco da foto).
+- Aviso "Atualizacao disponivel" no canto inferior direito no computador, sem cobrir o conteudo.
+- Celular nao muda (regras so valem a partir de 900px).
+Arquivos: qf-home-refresh.css, index.html (versao do CSS e APP_VERSION 12.2.2).

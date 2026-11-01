@@ -250,3 +250,17 @@
  #qf-pedido-facil .qf-home-benefits-inline{font-size:11px}
  #qf-pedido-facil .qf-home-benefits-inline span{padding:0 5px}
 }
+
+/* V12.2.2 — home no computador (cliente conectado): a coluna da esquerda (foto + vantagens) e o formulário
+   ficam lado a lado, no topo. A regra V12.0.5 supunha foto/frase/selo como filhos diretos da grade; depois que
+   a home agrupa tudo em .qf-home-visual, as duas linhas "1fr" se igualavam à altura do bloco (formulário empurrado
+   para baixo e faixa em branco antes de "profissionais cadastrados"). Só vale a partir de 900px. */
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2:has(>.qf-home-visual){grid-template-rows:auto!important;align-items:start!important;row-gap:0!important}
+ #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2 > .qf-home-visual{grid-column:1!important;grid-row:1!important}
+ #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2:has(>.qf-home-visual) > .qf-landing-actions{grid-column:2!important;grid-row:1!important;align-self:start!important}
+ #app-shell[data-route="inicio"] .qf-home-visual .qf-customer-sub{margin:14px 0!important;font-size:17px!important;line-height:1.4!important}
+ #app-shell[data-route="inicio"] .qf-home-visual a.qf-play-badge--hero{margin:0 0 16px -23px!important}
+ /* aviso de atualização no canto, sem cobrir o conteúdo */
+ body .qf-update-banner.qf-update-float{left:auto!important;right:20px!important;transform:none!important;bottom:20px!important;width:auto!important;max-width:420px!important}
+}
