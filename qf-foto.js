@@ -19,13 +19,13 @@
     const host=document.querySelector('#qf-pedido-facil')||document.querySelector('[data-landing-service-form]')||document.querySelector('.qf-landing-hero');
     if(!host)return;
     const b=document.createElement('button');b.type='button';b.id='qff-entry';b.className='qff-entry';
-    b.innerHTML='<span aria-hidden="true">📷</span><span>Descubra o profissional pela foto <small style="display:block">Sem preencher o formulário inicial · Grátis</small></span>';
+    b.innerHTML='<svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f47720" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></svg><span>Descubra o profissional pela foto <small style="display:block">Sem preencher o formulário inicial · Grátis</small></span>';
     b.onclick=()=>open();host.after(b);
   }
   async function account(){
     const c=client();if(!c?.auth?.getUser)return null;
     const auth=await c.auth.getUser();const u=auth.data?.user;
-    if(auth.error||!u||u.app_metadata?.qf_guest===true||!u.identities?.some(x=>x.provider==='google'))return null;
+    if(auth.error||!u||u.app_metadata?.qf_guest===true||!u.identities?.some(x=>x.provider==='google')){state.user=null;state.profile=null;return null;}
     const p=await c.from('qf_profiles').select('id,tipo,nome,telefone,whatsapp').eq('id',u.id).maybeSingle();
     if(p.error)throw Error('Não foi possível conferir sua conta. Atualize a página.');
     if(p.data&&p.data.tipo!=='cliente')throw Error('Esta é uma conta profissional. Entre com uma conta de cliente.');
