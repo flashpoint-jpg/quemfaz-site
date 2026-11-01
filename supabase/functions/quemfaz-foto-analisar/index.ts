@@ -27,7 +27,7 @@ Deno.serve(async req=>{
     return reply({ok:false,error:"Conecte-se com uma conta Google de cliente."},401,origin);
   const admin=createClient(url,service,{auth:{persistSession:false,autoRefreshToken:false}});
   const profile=await admin.from("qf_profiles").select("tipo").eq("id",user.id).maybeSingle();
-  if(profile.error||profile.data?.tipo!=="cliente")return reply({ok:false,error:"Este recurso é exclusivo para clientes."},403,origin);
+  if(profile.error||(profile.data&&profile.data.tipo!=="cliente"))return reply({ok:false,error:"Este recurso é exclusivo para clientes."},403,origin);
   const raw=await req.text();
   if(raw.length>2_100_000)return reply({ok:false,error:"Foto muito grande. Escolha uma imagem menor."},413,origin);
   let body:Record<string,unknown>;
