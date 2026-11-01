@@ -10,7 +10,7 @@
  function accountBar(){
   if(!state.account)return '';
   const a=state.account,initial=String(a.name||'C').trim().slice(0,1).toUpperCase();
-  return '<section class="qf-account-strip" aria-label="Conta conectada"><span class="qf-account-initial">'+esc(initial)+'</span><div class="qf-account-person"><small>'+(a.blocked?'Esta conta não é de cliente':a.google?'Conectado com Google':'Cliente conectado')+'</small><strong>Olá, '+esc(a.name)+'</strong></div><div class="qf-account-buttons">'+(a.blocked?'':'<button type="button" data-account-orders>Meus pedidos</button>')+'<button type="button" data-account-signout>Sair da conta</button></div>'+(a.blocked?'<p class="text--sm" role="alert" style="margin:0;width:100%;color:#9b261c">Para publicar, saia desta conta e entre com seu cadastro de cliente.</p>':'')+'</section>';
+  return '<section class="qf-account-strip" aria-label="Conta conectada"><span class="qf-account-initial">'+esc(initial)+'</span><div class="qf-account-person"><small>'+(a.blocked?'Esta conta não é de cliente':a.google?'Conectado com Google':'Cliente conectado')+'</small><strong>Olá, '+esc(a.name)+'</strong></div><div class="qf-account-buttons">'+(a.blocked?'':'<button type="button" data-account-dashboard>Meu painel</button><button type="button" data-account-orders>Meus pedidos</button>')+'<button type="button" data-account-signout>Sair da conta</button></div>'+(a.blocked?'<p class="text--sm" role="alert" style="margin:0;width:100%;color:#9b261c">Para publicar, saia desta conta e entre com seu cadastro de cliente.</p>':'')+'</section>';
  }
  let authBootAttempts=0,authReturnAttempts=0;
  function returningGoogle(){try{return g.sessionStorage?.getItem('qf_google_login_return')==='1';}catch(_){return false;}}
@@ -38,6 +38,7 @@
    if(!header&&state.account){
     header=g.document.createElement('div');header.id='qf-connected-header';header.className='qf-connected-header';
     header.addEventListener('click',event=>{
+     if(event.target.closest('[data-account-dashboard]')){event.preventDefault();dashboard();}
      if(event.target.closest('[data-account-orders]')){event.preventDefault();orders();}
      if(event.target.closest('[data-account-signout]')){event.preventDefault();signOutCustomer();}
     });
@@ -76,7 +77,7 @@
    state.account=null;state.user=null;paintAccount();retryAuthReturn();return;
   }
   let profile=null;
-  try{const data=await c.from('qf_profiles').select('id,tipo,nome').eq('id',auth.id).maybeSingle();if(!data.error)profile=data.data;}catch(_){}
+  try{const data=await c.from('qf_profiles').select('id,tipo,nome,telefone,whatsapp').eq('id',auth.id).maybeSingle();if(!data.error)profile=data.data;}catch(_){}
   if(n!==authSequence)return;
   // Uma sessão não-cliente também precisa exibir o botão Sair; nunca escondê-lo.
   if(profile&&profile.tipo!=='cliente'){
@@ -91,11 +92,11 @@
   const profileName=String(profile?.nome||'').trim();
   const realProfileName=profileName&&!profileName.includes('@')?profileName:'';
   state.account={id:auth.id,google:!!google,profile:profile?.tipo==='cliente',
-   name:String(realProfileName||meta.full_name||meta.name||meta.given_name||profileName||auth.email?.split('@')[0]||'Cliente').trim().slice(0,80)};
+   name:String(realProfileName||meta.full_name||meta.name||meta.given_name||profileName||auth.email?.split('@')[0]||'Cliente').trim().slice(0,80),contact:!!String(profile?.whatsapp||profile?.telefone||'').trim()};
   paintAccount();
   let returned=false;try{returned=returningGoogle();if(returned)g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}
   // Nunca trocar o formulário recuperado por "Meus pedidos" após login Google.
-  if(returned&&state.mode==='intro'&&!pendingPublication()&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.())orders();
+  if(returned&&state.mode==='intro'&&!pendingPublication()&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.())dashboard();
  }
  function watchAccount(){
   const c=g.QFCloud?.client;
@@ -136,7 +137,7 @@
   const seed=anchor.querySelector('[data-landing-service-search]')?.value||'';if(!state.problem&&seed)state.problem=seed;
   slot=g.document.createElement('section');slot.className='qf-landing-service-search qf-hero-search qf-home-orders';slot.id='qf-pedido-facil';slot.setAttribute('aria-label','Escolha o serviço que você precisa');
   anchor.replaceWith(slot);slot.innerHTML=toolbar();
-  slot.addEventListener('click',e=>{if(e.target.closest('[data-qf-professional-signup]')){e.preventDefault();e.stopPropagation();state.mode='intro';state.pending=null;state.selected=null;if(typeof originalNavigate==='function')originalNavigate.call(g,'/auth/profissional/cadastro');else g.location.hash='#/auth/profissional/cadastro';return;}if(e.target.closest('[data-account-signout]')){e.preventDefault();signOutCustomer();return;}if(e.target.closest('[data-account-orders]')){e.preventDefault();orders();return;}if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
+  slot.addEventListener('click',e=>{if(e.target.closest('[data-qf-professional-signup]')){e.preventDefault();e.stopPropagation();state.mode='intro';state.pending=null;state.selected=null;if(typeof originalNavigate==='function')originalNavigate.call(g,'/auth/profissional/cadastro');else g.location.hash='#/auth/profissional/cadastro';return;}if(e.target.closest('[data-account-signout]')){e.preventDefault();signOutCustomer();return;}if(e.target.closest('[data-account-orders]')){e.preventDefault();orders();return;}if(e.target.closest('[data-account-dashboard]')){e.preventDefault();dashboard();return;}if(!e.target.closest('[data-home-new],[data-home-orders],[data-home-order],[data-home-chats]'))return;if(slot.querySelector('.qf-client-access button:disabled'))return;const cancel=slot.querySelector('[data-access-cancel]');if(cancel)cancel.click();if(e.target.closest('[data-home-new]')){state.notice='';intro();}else if(e.target.closest('[data-home-orders]')){state.notice='';orders();}else if(e.target.closest('[data-home-chats]')){state.notice='Escolha um pedido para acompanhar as conversas.';orders();}else{const order=e.target.closest('[data-home-order]');if(order)detail(order.dataset.homeOrder);}});
   return slot;
  }
  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
@@ -235,6 +236,39 @@
  }
  function list(){return state.user?(g.DB?.state?.requests||[]).filter(r=>r.clienteId===state.user.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0)):[];}
  function reset(){const el=host();if(el)el.innerHTML=toolbar();}
+ // Painel de cliente: só pedidos novos e existentes, sem favoritos nem recontratação.
+ async function dashboard(){
+  selectTab('home');state.mode='dashboard';state.selected=null;state.prof=null;state.notice='';reset();
+  const target=work();if(!target)return;
+  if(!state.account)return login();
+  target.innerHTML='<p role="status">Carregando seu painel…</p>';
+  let rows=[],error=false;
+  try{
+   await user();rows=list();
+   if(state.user?.id){
+    const res=await g.QFCloud.client.from('qf_chamados')
+      .select('id,titulo,categoria,cidade,bairro,status,criado_em')
+      .eq('cliente_id',state.user.id).order('criado_em',{ascending:false}).limit(100);
+    if(res.error)throw res.error;
+    const existing=new Map(rows.map(x=>[x.id,x]));
+    rows=(res.data||[]).map(x=>existing.get(x.id)||{id:x.id,titulo:x.titulo,categoriaId:x.categoria,bairro:x.bairro,cidadeNome:x.cidade,status:x.status,criadoEm:x.criado_em});
+   }
+  }catch(_){error=true;}
+  if(!target.isConnected||state.mode!=='dashboard')return;
+  const statuses={aberto:'Buscando profissionais',buscando:'Buscando profissionais',em_negociacao:'Em negociação',cancelado:'Cancelado',concluido:'Concluído',finalizado:'Finalizado'};
+  const active=rows.filter(x=>['aberto','buscando','em_negociacao'].includes(x.status)).length,done=rows.filter(x=>['concluido','finalizado'].includes(x.status)).length;
+  const value=n=>error?'—':String(n);
+  target.innerHTML='<section class="qf-customer-panel" aria-label="Painel do cliente">'+
+   '<div class="qf-customer-panel__hero"><div><small>ÁREA DO CLIENTE</small><h2>Olá, '+esc(state.account.name)+'!</h2><p>Acompanhe seus pedidos e converse com profissionais.</p></div><button type="button" class="btn btn--primary" data-home-new>+ Fazer pedido grátis</button></div>'+
+   (state.account.google&&!state.account.contact?'<p class="qf-customer-panel__note">Conta Google conectada. Informe seu WhatsApp nas etapas de publicação do primeiro pedido.</p>':'')+
+   (error?'<p class="qf-customer-panel__note" role="status">Não foi possível atualizar os pedidos. Tente novamente em Meus pedidos.</p>':'')+
+   '<div class="qf-customer-panel__stats"><div><strong>'+value(rows.length)+'</strong><span>Pedidos</span></div><div><strong>'+value(active)+'</strong><span>Em andamento</span></div><div><strong>'+value(done)+'</strong><span>Concluídos</span></div></div>'+
+   '<div class="qf-customer-panel__quick"><button type="button" data-home-orders>Meus pedidos</button><button type="button" data-home-chats>Conversas dos pedidos</button></div>'+
+   '<div class="qf-customer-panel__recent"><h3>Pedidos recentes</h3>'+
+   (rows.length?'<div class="qf-customer-panel__items">'+rows.slice(0,3).map(x=>'<button type="button" data-home-order="'+esc(x.id)+'"><strong>'+esc(x.titulo||'Pedido de serviço')+'</strong><span>'+esc(statuses[x.status]||x.status||'Em acompanhamento')+'</span><small>Ver pedido e chat</small></button>').join('')+'</div><button type="button" class="btn btn--outline" data-home-orders>Ver todos os pedidos</button>':
+   '<div class="qf-customer-panel__empty"><strong>Você ainda não publicou um pedido.</strong><p>Publique grátis para receber propostas da sua região.</p><button type="button" class="btn btn--primary" data-home-new>Publicar meu primeiro pedido</button></div>')+
+   '</div><p class="qf-customer-panel__foot">O chat fica vinculado ao pedido. Para solicitar outro serviço, publique um novo pedido.</p></section>';
+ }
  async function orders(){
   selectTab('orders');
   state.mode='orders';state.selected=null;reset();const target=work();if(!target)return;
@@ -318,7 +352,8 @@
  }
  function execute(path){
   state.pending=null;let m;
-  if((m=path.match(/^\/cliente\/chat\/([^/]+)\/([^/]+)$/)))chat(m[1],m[2]);
+  if(path==='/cliente/home')dashboard();
+   else if((m=path.match(/^\/cliente\/chat\/([^/]+)\/([^/]+)$/)))chat(m[1],m[2]);
   else if((m=path.match(/^\/cliente\/pedido\/([^/]+)$/)))detail(m[1]);
   else if((m=path.match(/^\/auth\/cliente\/(verificar|redefinir)\/([^/]+)$/))){state.mode='token';state.tokenPath=path;reset();const node=work();node.innerHTML='<div data-client-token data-kind="'+esc(m[1])+'" data-token="'+esc(m[2])+'"></div>';g.QFClienteAcesso.tokenPage();}
   else if(path==='/auth/cliente/login')login();
@@ -372,6 +407,7 @@
   else if(state.mode==='login')login();
   else if(state.mode==='form')showForm(state.service,state.problem);
   else if(state.mode==='intro')intro();
+   else if(state.mode==='dashboard')dashboard();
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
   else intro();
@@ -382,7 +418,8 @@
   const css=g.document.createElement('style');css.textContent='.qf-hero-search .qf-service-suggestions{position:static;max-height:220px;overflow:auto;margin-top:6px}.qf-home-orders{width:100%;max-width:100%;margin:0;padding:18px;border:1px solid #dce6f3;background:#fff;border-radius:20px;scroll-margin-top:14px;min-width:0;box-sizing:border-box}.qf-home-problem-title{font-size:22px;line-height:1.25;color:#1458cc;margin:0 0 6px}.qf-home-problem-sub{font-size:15px;color:#46566b;margin:0 0 14px}.qf-home-orders textarea{min-height:96px!important;height:auto!important;box-sizing:border-box;max-width:100%;width:100%;font-size:16px;resize:vertical}.qf-home-type-options{display:grid;gap:8px;margin-top:8px}.qf-home-orders__bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}.qf-home-orders__bar h2{font-size:21px;color:#1458cc;margin:0}.qf-home-orders__bar>div{display:flex;gap:8px;flex-wrap:wrap}.qf-home-orders .btn{min-height:44px;white-space:normal}.qf-home-orders__notice{padding:12px;border-radius:12px;background:#eef5ff;color:#1458cc;font-weight:700}.qf-home-orders__list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}.qf-home-order{display:grid;gap:7px;text-align:left;width:100%;color:#173150;cursor:pointer}.qf-home-order>strong{font-size:18px}.qf-home-orders .view{min-height:0!important;max-width:100%;width:100%;padding:0!important;margin:0!important;box-sizing:border-box}.qf-home-orders [data-qf-atendimento-layout]{min-height:0!important;padding:0!important;justify-content:flex-start!important}.qf-home-orders .qf-chat-view{height:auto!important;min-height:0!important;padding:0!important}.qf-home-orders .qf-chat-list{max-height:50vh;overflow:auto;min-height:140px}.qf-home-orders .qf-chat-composer{position:static!important}.qf-home-orders [data-qf-atendimento]{box-shadow:none!important;border:0!important}.qf-home-orders [data-home-work]{min-width:0}.qf-home-orders .view>.row-between,.qf-home-orders .view>.row-between>.row{flex-wrap:wrap;gap:8px;max-width:100%}.qf-home-orders .qf-conversation-card .btn-row{display:grid!important;grid-template-columns:1fr!important}.qf-home-orders .qf-conversation-card .btn-row .btn{font-size:14px!important;padding:10px!important;word-break:normal!important;overflow-wrap:normal!important}.qf-home-orders .qf-cli-vagas__barras .is-on{background:#1469d2}.qf-home-more{border:1px solid #dce6f3;border-radius:12px;padding:12px;margin-top:12px}.qf-home-more>summary{color:#1458cc;font-weight:700;cursor:pointer}.qf-home-orders__bar .btn{font-size:13px;padding:9px 12px}@media(max-width:600px){.qf-home-orders{margin:0;padding:14px}.qf-home-orders__bar{gap:10px}.qf-home-orders__bar h2{font-size:19px}}';g.document.head.appendChild(css);
   css.textContent += '.qf-connected-header{margin:0 auto 14px;max-width:1200px;width:calc(100% - 24px);box-sizing:border-box}.qf-connected-header .qf-account-strip{border-color:#ffbf77;box-shadow:0 5px 14px #111c2e24;background:#fff}#qf-google-login-status{margin:10px 12px 14px;padding:12px 14px;background:#fff5e9;color:#7b4008;font-weight:700;border:1px solid #f6c88b;border-radius:12px}#qf-pedido-facil .qf-home-auth-wrap[hidden]{display:none!important}';
   css.textContent += '#qf-pedido-facil [data-home-empty-orders] .qf-empty-prof-cta{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;max-width:100%;min-height:52px;padding:12px 16px;box-sizing:border-box;border:2px solid #e87900;border-radius:12px;background:#fff5e8;color:#143f74;font:inherit;font-size:15px;font-weight:800;line-height:1.35;text-align:center;white-space:normal;cursor:pointer;box-shadow:0 2px 5px #102f5412}#qf-pedido-facil [data-home-empty-orders] .qf-empty-prof-cta:hover{background:#ffe8ca;border-color:#c96300}#qf-pedido-facil [data-home-empty-orders] .qf-empty-prof-cta:active{transform:translateY(1px)}#qf-pedido-facil [data-home-empty-orders] .qf-empty-prof-cta:focus-visible{outline:3px solid #165cd3;outline-offset:3px}#qf-pedido-facil [data-home-empty-orders] .qf-empty-prof-cta span{font-size:22px;line-height:1}';
-  css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
+  css.textContent += '.qf-customer-panel{display:grid;gap:16px;color:#163655}.qf-customer-panel__hero{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;background:linear-gradient(120deg,#103e77,#1969cb);border-radius:17px;padding:22px;color:white}.qf-customer-panel__hero small{font-size:11px;font-weight:800;letter-spacing:.12em;color:#d0e6ff}.qf-customer-panel__hero h2{margin:7px 0;font-size:26px;color:white}.qf-customer-panel__hero p{margin:0;color:#e7f1ff}.qf-customer-panel__hero .btn{background:#ff891c!important;color:#152c4a!important;border-color:#ff891c!important}.qf-customer-panel__stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.qf-customer-panel__stats div{background:#f5f9ff;border:1px solid #dce8f7;border-radius:14px;padding:15px 8px;display:grid;gap:6px;text-align:center}.qf-customer-panel__stats strong{font-size:25px;color:#175eac}.qf-customer-panel__stats span{font-size:12px;font-weight:750;color:#496986}.qf-customer-panel__quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}.qf-customer-panel__quick button{background:white;border:1px solid #bcd5f5;color:#155aa2;border-radius:12px;padding:16px;font:800 14px Inter,system-ui,sans-serif;text-align:left;cursor:pointer}.qf-customer-panel__recent{display:grid;gap:12px}.qf-customer-panel__recent h3{margin:0;color:#123e72;font-size:19px}.qf-customer-panel__items{display:grid;gap:9px}.qf-customer-panel__items button{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:white;border:1px solid #dce7f2;border-radius:12px;padding:14px;color:#163655;text-align:left;cursor:pointer}.qf-customer-panel__items button strong{flex:1;min-width:130px}.qf-customer-panel__items button span{font-size:12px;border-radius:25px;background:#eaf3ff;color:#165ca0;padding:6px 8px}.qf-customer-panel__items button small{color:#175dae;font-weight:750}.qf-customer-panel__empty{display:grid;gap:10px;background:#f6faff;border:1px dashed #b3d0ed;border-radius:14px;padding:20px}.qf-customer-panel__empty p{margin:0}.qf-customer-panel__empty .btn{justify-self:start}.qf-customer-panel__note{background:#f0f7ff;border:1px solid #bcd5f5;border-radius:12px;padding:12px;font-size:14px;margin:0}.qf-customer-panel__foot{color:#5b7591;font-size:13px;margin:0}@media(max-width:520px){.qf-customer-panel__hero .btn{width:100%}.qf-customer-panel__quick{grid-template-columns:1fr}.qf-account-buttons{grid-template-columns:repeat(3,minmax(0,1fr))!important}.qf-account-buttons button{font-size:12px;padding:9px 5px!important}}';
+   css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
    css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   originalNavigate=g.navigate;
   g.navigate=function(path,replace){if(inlinePath(path)){openPath(path);return;}return originalNavigate.apply(this,arguments);};
