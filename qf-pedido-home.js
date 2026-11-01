@@ -350,16 +350,12 @@
    const visual=g.document.createElement('div');visual.className='qf-home-visual';
    copy.prepend(visual);
    copy.querySelectorAll('.qf-hero2-head,.qf-customer-sub,.qf-play-badge--hero').forEach(el=>visual.append(el));
-   visual.insertAdjacentHTML('beforeend',"<section class=\"qf-client-benefits\" aria-label=\"Vantagens para quem contrata\"><h2>Mais praticidade <em>para você</em></h2><p class=\"qf-client-benefits__lead\">Encontre profissionais da sua região, sem complicação.</p><div class=\"qf-client-benefits__list\"><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Publique seu pedido grátis</strong><p>Descreva o serviço que precisa, sem pagar para publicar.</p></div></article><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Receba contatos da sua região</strong><p>Profissionais compatíveis podem desbloquear o pedido e apresentar propostas.</p></div></article><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Pagamento pela plataforma, quando disponível</strong><p>Essa opção depende do profissional que desbloquear o pedido. Combine o serviço e confira as formas de pagamento disponíveis.</p></div></article></div><p class=\"qf-client-benefits__footer\">Você escolhe o profissional e a forma de pagamento disponível. Publicar o pedido é sempre grátis.</p></section>");
+   visual.insertAdjacentHTML('beforeend',"<section class=\"qf-client-benefits\" aria-label=\"Vantagens para quem contrata\"><h2>Mais praticidade <em>para você</em></h2><p class=\"qf-client-benefits__lead\">Encontre profissionais da sua região, sem complicação.</p><div class=\"qf-client-benefits__list\"><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Publique seu pedido grátis</strong><p>Descreva o serviço que precisa, sem pagar para publicar.</p></div></article><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Receba contatos da sua região</strong><p>Profissionais compatíveis podem desbloquear o pedido e apresentar propostas.</p></div></article></div><p class=\"qf-client-benefits__footer\">Você escolhe o profissional. Publicar o pedido é sempre grátis.</p></section>");
   }
   const mobile=g.document.querySelector('.qf-mobile-services')?.closest('section');
   const desktop=g.document.querySelector('#qf-sec-servicos');
   if(mobile){mobile.classList.add('qf-home-services-mobile');anchor.after(mobile);}
   if(desktop){desktop.classList.add('qf-home-services-desktop');anchor.after(desktop);}
-  if(!g.document.querySelector('.qf-mobile-payment-info')){
-   const note=g.document.createElement('aside');note.className='qf-mobile-payment-info';note.setAttribute('aria-label','Pagamento do serviço');note.innerHTML='<strong>Pagamento pela plataforma, quando disponível</strong><p>Depende do profissional que desbloquear seu pedido. Você combina o serviço e verifica as opções de pagamento disponíveis.</p>';
-   if(mobile)mobile.after(note);else anchor.after(note);
-  }
  }
  function bindHome(){
   safeAreas();

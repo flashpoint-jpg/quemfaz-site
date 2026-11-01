@@ -193,7 +193,6 @@
 #app-shell[data-route="inicio"] .qf-client-benefits__list strong{display:block;font-size:15px;line-height:1.4;color:#0c315f}
 #app-shell[data-route="inicio"] .qf-client-benefits__list p{margin:5px 0 0;font-size:13px;line-height:1.5;color:#4c6077}
 #app-shell[data-route="inicio"] .qf-client-benefits__footer{margin:0;padding:12px 14px;background:#fff1e5;border:1px solid #ffd5ae;border-radius:12px;color:#173654;font-size:13px;font-weight:700;line-height:1.45}
-#app-shell[data-route="inicio"] .qf-mobile-payment-info{display:none}
 @media(max-width:899px){
  #qf-pedido-facil .qf-intent-choice{grid-template-columns:42px minmax(0,1fr) 30px;min-height:91px;padding:13px 10px;gap:9px}
  #qf-pedido-facil .qf-intent-choice__icon{width:40px;height:40px;border-radius:12px}
@@ -203,9 +202,6 @@
  #qf-pedido-facil .qf-intent-choice__body>span:not(.qf-intent-choice__badge){font-size:12px}
  #qf-pedido-facil .qf-intent-choice__badge{font-size:10px}
  #app-shell[data-route="inicio"] .qf-client-benefits{display:none!important}
- #app-shell[data-route="inicio"] .qf-mobile-payment-info{display:block;margin:14px 0;padding:14px 16px;border:1px solid #ffd3aa;border-radius:15px;background:#fff8f1;color:#1a3759;font-size:13px;line-height:1.5}
- #app-shell[data-route="inicio"] .qf-mobile-payment-info strong{font-size:14px;color:#0a3e81}
- #app-shell[data-route="inicio"] .qf-mobile-payment-info p{margin:6px 0 0}
 }
 @media(min-width:900px){
  #app-shell[data-route="inicio"] .qf-home-visual{display:block;min-width:0;align-self:start}
