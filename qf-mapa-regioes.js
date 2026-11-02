@@ -174,9 +174,19 @@
       pintar(); montar();
     }).catch(function () {});
   }
+  // V12.3.1: "Como funciona" sobe para a coluna da direita, logo abaixo de "Serviços mais pedidos",
+  // para as duas colunas terminarem na mesma altura (antes sobrava um vazio ao lado do mapa).
+  function subirComo() {
+    var serv = document.querySelector('#qf-sec-servicos'), como = document.querySelector('#qf-sec-como');
+    if (!serv || !como || !serv.parentNode) return;
+    if (serv.nextElementSibling === como) return;
+    como.classList.add('qf-como-direita');
+    serv.insertAdjacentElement('afterend', como);
+  }
   function montar() {
     agendado = false;
     if (!g.matchMedia || !g.matchMedia('(min-width:900px)').matches) return;
+    subirComo();
     var ben = document.querySelector('.qf-home-visual .qf-client-benefits');
     if (!ben || (ben.nextElementSibling && ben.nextElementSibling.hasAttribute('data-qf-mapa'))) return;
     if (!dados) lerCache();

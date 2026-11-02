@@ -1,0 +1,5 @@
+V12.3.1 - Home no computador: colunas alinhadas
+- "Como funciona" sobe para a coluna da direita, logo abaixo de "Serviços mais pedidos", preenchendo o vazio ao lado do mapa.
+- Espacamento de 20px igual entre os cartoes da coluna da direita.
+- Celular nao muda (cartao fica oculto abaixo de 900px).
+Arquivos: qf-mapa-regioes.js, qf-home-refresh.css, index.html (APP_VERSION 12.3.1).

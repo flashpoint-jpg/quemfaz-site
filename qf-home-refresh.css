@@ -294,3 +294,10 @@
  .qf-mapa__tile span{display:block;font-size:12px;font-weight:600;color:#405c7b}
  .qf-mapa__rodape{margin:14px 0 0;font-size:13px;line-height:1.45;color:#405c7b}.qf-mapa__rodape strong{color:#0d3162}
 }
+
+/* V12.3.1 — "Como funciona" na coluna da direita (computador), mesmo espaçamento dos outros cartões. */
+@media(max-width:899px){#qf-sec-como.qf-como-direita{display:none!important}}
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] .qf-landing-actions > #qf-sec-como.qf-como-direita{margin:20px 0 0!important;box-sizing:border-box}
+ #app-shell[data-route="inicio"] .qf-landing-actions > .qf-home-services-desktop{margin:20px 0 0!important}
+}
