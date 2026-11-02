@@ -6917,18 +6917,20 @@ alt=""></noscript>
     // Referência do Pix confirmado. O gatilho no banco verificará o pagamento
     // e o e-mail, em vez de confiar no papel enviado pelo navegador.
     let prePagoMeta = null;
+    const convite24 = role === 'profissional' && global.QFConvite24h ? global.QFConvite24h.token() : '';
     if (role === 'profissional') {
       try {
         const guardado = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null');
         if (guardado?.pag?.id && guardado?.pag?.segredo) prePagoMeta = guardado.pag;
       } catch (_) {}
-      if (!prePagoMeta) return {ok:false,error:'É necessário pagar o plano escolhido para concluir seu cadastro.'};
+      if (!prePagoMeta && !convite24) return {ok:false,error:'É necessário pagar o plano ou ter um convite individual do administrador.'};
     }
     const meta = {
-      ...(prePagoMeta ? {
+      ...(prePagoMeta && !convite24 ? {
         qf_pre_cadastro_id:prePagoMeta.id,
         qf_pre_cadastro_segredo:prePagoMeta.segredo
       } : {}),
+      ...(convite24 ? {qf_convite_24h:convite24} : {}),
       qf_role: role,
       qf_nome: data.nome,
       qf_telefone: data.telefone || '',
@@ -7023,6 +7025,13 @@ alt=""></noscript>
         await client.auth.signOut();
         DB.setSession(null);
         return { ok: false, error: 'Esta conta está cadastrada como ' + (p.tipo === 'cliente' ? 'cliente' : 'profissional') + '.' };
+      }
+      if(expectedRole==='profissional' && global.QFConvite24h && global.QFConvite24h.token()){
+        try{
+          const r=await client.rpc('qf_convite_24h_resgatar',{p_token:global.QFConvite24h.token()});
+          if(!r.error && r.data && r.data.ok){global.QFConvite24h.limpar();if(global.PU)global.PU.toast('Convite de 24 horas ativado.','success')}
+          else if(global.PU)global.PU.toast('Não foi possível ativar o convite: confira o e-mail ou solicite outro link.','danger');
+        }catch(_){if(global.PU)global.PU.toast('Não foi possível conferir o convite agora.','danger')}
       }
       const local = await syncLocalUser(res.data.user, p.tipo);
       DB.setSession({ role: p.tipo, userId: res.data.user.id });
@@ -8582,6 +8591,24 @@ alt=""></noscript>
 
   // V11.50: plano pago ANTES da conta. O pagamento (id + segredo) e os dados do cadastro ficam guardados
   // no aparelho até a conta ser criada; a senha fica só na sessão do navegador.
+  const QFConvite24h=(function(){
+    const KEY='qf_convite_24h_session';
+    function token(){
+      try{
+        const params=new URLSearchParams(location.search), value=params.get('qf_convite_24h');
+        if(value&&/^[a-f0-9]{64}$/.test(value)){
+          sessionStorage.setItem(KEY,value);
+          params.delete('qf_convite_24h');
+          const q=params.toString();
+          history.replaceState(history.state,'',location.pathname+(q?'?'+q:'')+location.hash);
+        }
+        return sessionStorage.getItem(KEY)||'';
+      }catch(_){return ''}
+    }
+    function limpar(){try{sessionStorage.removeItem(KEY)}catch(_){}}
+    return {token:token,limpar:limpar};
+  })();
+  global.QFConvite24h=QFConvite24h;
   const QFPreCadastro = (function () {
     const KEY = 'qf_pre_cadastro', KEY_SENHA = 'qf_pre_cadastro_s', VALE_MS = 72 * 3600000;
     function ler() {
@@ -10549,6 +10576,11 @@ alt=""></noscript>
         } finally { avancando = false; }
       }
       function botaoPlano() {
+        if(global.QFConvite24h && global.QFConvite24h.token()){
+          const b=form.querySelector('[data-cad-criar]');
+          if(b)b.textContent='Ativar meu convite de 24 horas';
+          return;
+        }
         const pl = QF_CAD_PLANOS.find(function (x) { return x.id === (new FormData(form).get('planoEscolhido') || 'avulso'); }) || QF_CAD_PLANOS[0];
         const b = form.querySelector('[data-cad-criar]');
         if (b) b.textContent = 'Continuar para pagamento · ' + pl.preco;
@@ -10562,6 +10594,36 @@ alt=""></noscript>
       }
       form.addEventListener('change', function (e) { if (e.target && e.target.name === 'planoEscolhido') botaoPlano(); });
       botaoPlano();
+      const conviteToken=global.QFConvite24h && global.QFConvite24h.token();
+      let conviteValido=false, conviteEmail='';
+      if(conviteToken){
+        const tela=form.querySelector('[data-step="5"]'),cab=tela.querySelector('.qf-step__head');
+        const t=cab.querySelector('.h2'), d=cab.querySelector('.text--sm');
+        if(t)t.textContent='Seu convite individual';
+        if(d)d.textContent='24 horas de acesso sem cobrança automática. Exclusivo para o e-mail convidado.';
+        const plans=tela.querySelector('.qf-cad-planos');if(plans)plans.style.display='none';
+        tela.querySelectorAll('p').forEach(function(p){
+          if(p.textContent.indexOf('Avulso: R$ 14,99')!==-1||p.classList.contains('qf-cad-planos__exigencia'))p.hidden=true;
+        });
+        const nota=tela.querySelector('[data-plano-nota]');if(nota)nota.textContent='Depois de 24 horas, será necessário escolher um plano pago para continuar.';
+        const info=document.createElement('div');info.className='card card--tight';
+        info.style.cssText='background:var(--navy-100);border:1px solid var(--border-subtle);padding:14px;margin:12px 0';
+        info.textContent='Validando seu convite individual…';cab.after(info);
+        const btn=form.querySelector('[data-cad-criar]');if(btn)btn.disabled=true;
+        (async function(){
+          try{
+            if(!global.QFCloud || !global.QFCloud.client)throw Error('Sem conexão com o sistema.');
+            const r=await global.QFCloud.client.rpc('qf_convite_24h_info',{p_token:conviteToken});
+            if(r.error||!r.data||!r.data.ok)throw Error('Convite vencido, revogado ou já utilizado. Peça outro link.');
+            conviteValido=true;conviteEmail=String(r.data.email||'').toLowerCase();
+            const em=form.querySelector('[name="email"]');if(em){em.value=conviteEmail;em.readOnly=true}
+            info.innerHTML='<strong>Convite autorizado para:</strong> '+PU.escapeHtml(conviteEmail)+
+              '<div class="text--sm" style="margin-top:6px">O acesso termina automaticamente 24 horas depois da ativação.</div>'+
+              '<button class="btn btn--outline btn--sm" type="button" style="margin-top:10px" data-nav="/auth/profissional/login">Já tenho conta: entrar e ativar</button>';
+            if(btn)btn.disabled=false;
+          }catch(err){info.textContent=(err&&err.message)||'Não foi possível verificar o convite.'}
+        })();
+      }
       form.addEventListener('click', function (e) {
         if (e.target.closest('[data-step-next]')) avancar();
         else if (e.target.closest('[data-step-back]')) goStep(Math.max(1, stepAtual - 1));
@@ -10898,6 +10960,18 @@ alt=""></noscript>
         try {
           if (!(global.QFCloud && global.QFCloud.enabled)) {
             throw new Error('Conexão de pagamentos indisponível. Não é possível ativar cadastro sem pagamento.');
+          }
+          if(conviteToken){
+            if(!conviteValido||dados.email!==conviteEmail)throw Error('Convite inválido ou e-mail diferente do destinatário.');
+            const r=await global.QFCloud.signUp('profissional',dados);
+            if(!r||!r.ok)throw Error(r&&r.error||'Não foi possível criar a conta.');
+            if(r.needsConfirmation){
+              PU.toast('Confirme o e-mail e entre para aproveitar seu convite.','success');
+              global.navigate('/auth/profissional/login',true);return;
+            }
+            if(global.QFConvite24h)global.QFConvite24h.limpar();
+            PU.toast('Seu convite de 24 horas foi ativado!','success');
+            global.navigate('/profissional/home',true);return;
           }
           if (!planoPago || !['avulso','basico_v2','pro_v2','completo_v2'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
