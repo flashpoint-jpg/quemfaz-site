@@ -3910,6 +3910,15 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 </style>
 <link rel="stylesheet" href="/qf-pedido-layout.css?v=20261026-1">
 <link rel="stylesheet" href="/qf-home-refresh.css?v=12.3.2"><script src="/qf-mapa-regioes.js?v=12.3.2" defer></script>
+<style>
+/* QF_SUPORTE_WHATSAPP_FORMS_V1: apoio direto para cliente e profissional */
+.qf-whatsapp-support{margin:10px 0 14px;max-width:100%;}
+.qf-whatsapp-support__link{display:flex;align-items:center;justify-content:center;gap:10px;min-height:46px;padding:10px 14px;box-sizing:border-box;background:#effbf3;border:1px solid #b8e6c9;border-radius:13px;color:#116747!important;font:600 14px/1.3 var(--qf-font,inherit);text-align:center;text-decoration:none!important;cursor:pointer;}
+.qf-whatsapp-support__link:hover,.qf-whatsapp-support__link:focus-visible{background:#ddf6e6;border-color:#25d366;}
+.qf-whatsapp-support__link svg{width:22px;height:22px;flex:none;fill:#19b858;}
+.qf-whatsapp-support__link strong{font-weight:800;text-decoration:underline;text-underline-offset:2px;}
+@media(max-width:380px){.qf-whatsapp-support__link{font-size:12.5px;padding:10px 8px;gap:7px;}}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -8799,8 +8808,9 @@ alt=""></noscript>
                   '<button class="btn btn--ghost btn--block-auto" type="button" id="qf-forgot-password" style="align-self:flex-end;padding:6px 0;margin-left:auto;display:flex;">Esqueci minha senha</button></div>' +
                 '<button class="btn btn--primary" type="submit">Entrar</button>' +
               '</form>' +
+              qfSuporteWhatsAppHtml('acesso') +
               '<div class="divider-label">ou</div>' +
-              '<button class="btn btn--outline qf-lp-signup" type="button" data-nav="/auth/profissional/cadastro">Quero me cadastrar como profissional</button>' +
+              '<button class="btn btn--outline qf-lp-signup' type="button" data-nav="/auth/profissional/cadastro">Quero me cadastrar como profissional</button>' +
             '</div>' +
           '</div>' +
           '<div class="qf-lp-foot"><span>Precisa de um serviço?</span><button class="btn btn--ghost" type="button" data-nav="/">Peça grátis como cliente</button></div>' +
@@ -8946,6 +8956,7 @@ alt=""></noscript>
         '</header>' +
         '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate data-qf-etapa="1">' +
           '<div class="qf-etapas"><div class="qf-etapas__barras" aria-hidden="true"><i class="is-on"></i><i data-qf-etapa-barra2></i><i data-qf-etapa-barra3></i><i data-qf-etapa-barra4></i></div><span data-qf-etapa-rotulo>Etapa 1 de 4</span></div>' +
+          qfSuporteWhatsAppHtml('cliente') +
           '<div class="qf-request-fields">' +
           '<div class="card qf-ticket qf-request-ticket qf-request-unified">' +
           '<div data-qf-etapa-box="1">' +
@@ -9220,6 +9231,7 @@ alt=""></noscript>
       '<div class="view stack--lg">' +
         backRow('/auth/profissional/login', 'Cadastro de profissional') +
         '<form id="cadastro-prof-form" class="stack" novalidate>' +
+          qfSuporteWhatsAppHtml('profissional') +
           '<div class="qf-step stack" data-step="1">' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 1 de 5</div><div class="h2">Seus dados</div><div class="text--sm text--secondary">Para criar sua conta e o cliente falar com você.</div><div class="qf-step__bar"><span style="width:20%"></span></div></div>' +
           field('Nome completo', '<input class="input" name="nome" required placeholder="Seu nome">') +
@@ -9310,6 +9322,25 @@ alt=""></noscript>
   global.QFUI.validPhone = validPhone;
   function field(label, controlHtml) {
     return '<label class="field"><span class="field__label">' + label + '</span>' + controlHtml + '</label>';
+  }
+
+  // Link de apoio simples: abre uma conversa, sem enviar dados do formulário nem mensagens automaticamente.
+  function qfSuporteWhatsAppHtml(contexto) {
+    const mensagens = {
+      cliente: 'Olá! Sou cliente do Quem Faz Serviços e estou com dificuldade para preencher ou publicar meu pedido. Pode me ajudar?',
+      profissional: 'Olá! Sou profissional e estou com dificuldade no cadastro ou pagamento do plano no Quem Faz Serviços. Pode me ajudar?',
+      acesso: 'Olá! Sou profissional e estou com dificuldade para acessar minha conta no Quem Faz Serviços. Pode me ajudar?'
+    };
+    const rotulos = {
+      cliente: 'Problema ao fazer o pedido?',
+      profissional: 'Dificuldade no cadastro ou pagamento?',
+      acesso: 'Precisa de ajuda para entrar?'
+    };
+    const texto = mensagens[contexto] || mensagens.cliente;
+    const rotulo = rotulos[contexto] || rotulos.cliente;
+    const icone = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.058-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.297-.496.1-.198.05-.372-.025-.52-.075-.149-.67-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.009-.372-.01-.57-.01-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.096 3.2 5.077 4.487.709.306 1.262.488 1.693.625.712.227 1.36.195 1.872.118.571-.085 1.758-.718 2.006-1.411.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.36-.214-3.741.981.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.002-5.44 4.43-9.868 9.874-9.868a9.8 9.8 0 0 1 6.985 2.893 9.8 9.8 0 0 1 2.89 6.987c-.003 5.441-4.43 9.869-9.866 9.87m8.403-18.276A11.92 11.92 0 0 0 12.043 0C5.463 0 .108 5.354.105 11.935c-.001 2.104.549 4.16 1.595 5.973L0 24l6.335-1.662a11.97 11.97 0 0 0 5.708 1.454h.005c6.58 0 11.938-5.354 11.941-11.935a11.9 11.9 0 0 0-3.536-8.448Z"/></svg>';
+    const url = 'https://wa.me/5535998845703?text=' + encodeURIComponent(texto);
+    return '<div class="qf-whatsapp-support"><a class="qf-whatsapp-support__link" href="' + url + '" target="_blank" rel="noopener noreferrer" aria-label="' + rotulo + ' Falar com suporte pelo WhatsApp (abre nova aba)">' + icone + '<span>' + rotulo + ' <strong>Fale no WhatsApp</strong></span></a></div>';
   }
   function backRow(to, title) {
     return '<div class="row">' +
