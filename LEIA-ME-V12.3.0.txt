@@ -1,0 +1,8 @@
+V12.3.0 - Mapa das regioes na home do computador
+- Novo cartao "Onde o QuemFaz ja atende" (qf-mapa-regioes.js), abaixo de "Mais praticidade para voce".
+- Mapa estilizado da Grande SP e Baixada Santista; circulo maior = mais profissionais; 1 ou 2 profissionais = ponto vazio.
+- Numeros por regiao (capital, ABC, oeste, Baixada, Alto Tiete, Guarulhos/norte) vindos de qf_home_stats (sem dado pessoal).
+- Se nao houver dados (sem cache e sem resposta do banco), o cartao nao aparece.
+- Contador "Ver cidades" passa a juntar nomes digitados diferente (ex.: "sao paulo", "Saopaulo", "Diadema SP").
+- So no computador (>= 900px). Celular nao muda.
+Arquivos: qf-mapa-regioes.js (novo), qf-home-refresh.css, index.html (APP_VERSION 12.3.0).

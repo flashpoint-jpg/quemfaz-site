@@ -3909,7 +3909,7 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 @media (max-width:390px) {#app-shell .qf-perfil-upload{font-size:13px;padding:11px 10px;gap:8px}}
 </style>
 <link rel="stylesheet" href="/qf-pedido-layout.css?v=20261026-1">
-<link rel="stylesheet" href="/qf-home-refresh.css?v=12.2.2">
+<link rel="stylesheet" href="/qf-home-refresh.css?v=12.3.0"><script src="/qf-mapa-regioes.js?v=12.3.0" defer></script>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -8683,7 +8683,7 @@ alt=""></noscript>
   function statsCity(nome) { return String(nome || '').toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g, function (m, a, b) { return a + b.toUpperCase(); }).replace(/ (De|Do|Da|Dos|Das|E) /g, function (m) { return m.toLowerCase(); }); }
   function statsHtml(d, open) {
     const esc = function (v) { return String(v).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); };
-    const total = Number(d && d.total) || 0, lista = (d && Array.isArray(d.lista)) ? d.lista : [];
+    const total = Number(d && d.total) || 0, lista = (d && Array.isArray(d.lista)) ? (global.QFCidadesNorm ? global.QFCidadesNorm(d.lista) : d.lista) : [];
     if (total < 1 || !lista.length) return '';
     return '<details class="qf-stats"' + (open ? ' open' : '') + '><summary><span class="qf-stats__live" aria-hidden="true"></span><span class="qf-stats__txt"><strong>' + total + ' profissionais</strong> cadastrados em ' + lista.length + ' cidades</span><span class="qf-stats__btn">Ver cidades' + icon('chevronDown') + '</span></summary>' +
       '<div class="qf-stats__body"><p class="qf-stats__note">Atualiza sozinho a cada novo cadastro.</p>' +
@@ -15644,7 +15644,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.2.2';
+  const APP_VERSION = '12.3.0';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------

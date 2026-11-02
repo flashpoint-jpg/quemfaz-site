@@ -264,3 +264,33 @@
  /* aviso de atualização no canto, sem cobrir o conteúdo */
  body .qf-update-banner.qf-update-float{left:auto!important;right:20px!important;transform:none!important;bottom:20px!important;width:auto!important;max-width:420px!important}
 }
+
+/* V12.3.0 — cartão "Onde o QuemFaz já atende" (mapa das regiões), só no computador. */
+.qf-mapa{display:none}
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] .qf-mapa{display:block;position:relative;margin-top:20px;background:#fff;border:2px solid #1764d8;border-radius:18px;padding:22px;box-sizing:border-box;box-shadow:0 10px 26px rgba(8,61,115,.12)}
+ .qf-mapa__head{display:flex;align-items:center;gap:14px}
+ .qf-mapa__icone{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#1472e0,#0b4fb0);display:flex;align-items:center;justify-content:center;flex:none}
+ .qf-mapa h2{margin:0;font-size:24px;line-height:1.15;font-weight:800;letter-spacing:-.02em;color:#0d3162}
+ .qf-mapa__head p{margin:4px 0 0;font-size:14px;line-height:1.4;color:#405c7b}
+ .qf-mapa__head p strong{color:#0962cd}
+ .qf-mapa__mapa{margin-top:16px;border-radius:14px;overflow:hidden;background:#eef4fb;border:1px solid #dbe8f7}
+ .qf-mapa__mapa svg{display:block;font-family:Inter,system-ui,sans-serif}
+ .qf-mapa__terra{fill:#eef4fb}.qf-mapa__grade{stroke:#dce8f5;stroke-width:1;fill:none}
+ .qf-mapa__mar{fill:#cfe3f7}.qf-mapa__costa{fill:none;stroke:#8fb9e6;stroke-width:2;stroke-linejoin:round}
+ .qf-mapa__oceano{font-size:12px;font-style:italic;fill:#4f80b8}
+ .qf-mapa__poucos circle{fill:#fff;stroke:#1764d8;stroke-width:1.5}
+ .qf-mapa__muitos circle{fill:#1764d8;fill-opacity:.62;stroke:#fff;stroke-width:1.5}
+ .qf-mapa__rotulos text{font-size:12px;font-weight:700;fill:#0d3162;stroke:#eef4fb;stroke-width:3;paint-order:stroke;stroke-linejoin:round}
+ .qf-mapa__rotulos .qf-mapa__sp{font-size:11.5px;fill:#fff;stroke:none}.qf-mapa__rotulos .qf-mapa__sp--n{font-size:13px;font-weight:800}
+ .qf-mapa__escala{stroke:#0d3162;stroke-width:2;fill:none}.qf-mapa__escala-t{font-size:11px;font-weight:600;fill:#0d3162}
+ .qf-mapa__legenda{display:flex;align-items:center;gap:18px;margin-top:10px;font-size:12px;color:#405c7b;flex-wrap:wrap}
+ .qf-mapa__legenda span{display:inline-flex;align-items:center;gap:6px}
+ .qf-mapa__bola{display:inline-block;width:12px;height:12px;border-radius:50%;background:#1764d8;opacity:.7}
+ .qf-mapa__bola--vazia{width:9px;height:9px;background:#fff;border:1.5px solid #1764d8;opacity:1}
+ .qf-mapa__tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+ .qf-mapa__tile{border:1px solid #dbe8f7;border-radius:12px;padding:10px 12px;background:#f7fafe}
+ .qf-mapa__tile b{display:block;font-size:20px;font-weight:800;color:#0962cd}
+ .qf-mapa__tile span{display:block;font-size:12px;font-weight:600;color:#405c7b}
+ .qf-mapa__rodape{margin:14px 0 0;font-size:13px;line-height:1.45;color:#405c7b}.qf-mapa__rodape strong{color:#0d3162}
+}
