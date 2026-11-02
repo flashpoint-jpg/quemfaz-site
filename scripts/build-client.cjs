@@ -228,7 +228,15 @@ const landingEnd=main[1].indexOf('  function roleCard(',landingStart);
 vm.runInContext(main[1].slice(landingStart,landingEnd),scope);
 const opening=html.indexOf('<div id="app-shell">'),closing=html.indexOf('<script defer src="app-main-',opening);
 const placeholder=html.slice(opening,closing);
-const landing='<div id="app-shell" data-route="inicio" data-role="anon" data-qf-prerender="home"><main id="app-content">'+scope.Screens.landing()+'</main></div>';
+// Evita exibir o formulário legado antes do formulário atual assumir a home.
+const landingRaw=scope.Screens.landing();
+const oldForm=/(<form\b[^>]*\bdata-landing-service-form\b[^>]*>)[\s\S]*?(<\/form>)/i;
+if(!oldForm.test(landingRaw))throw Error('Formulário pré-renderizado não encontrado');
+const landingClean=landingRaw.replace(oldForm,(_full,open,close)=>open+
+  '<div role="status" aria-live="polite" style="padding:24px 16px;min-height:110px;display:grid;align-content:center;gap:8px;text-align:center;background:#fff;border-radius:16px;color:#123e72">'+
+  '<strong style="font-size:18px">Publique seu pedido grátis</strong>'+
+  '<span style="font-size:14px">Preparando formulário atualizado...</span></div>'+close);
+const landing='<div id="app-shell" data-route="inicio" data-role="anon" data-qf-prerender="home"><main id="app-content">'+landingClean+'</main></div>';
 const early=`(function(w){
   var saved='',fields={},pending=null,loading=${JSON.stringify(placeholder)},ready=false;
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;['data-landing-location','data-landing-neighborhood'].forEach(function(k){var el=document.querySelector('['+k+']');if(el)fields[k]=el.value;});},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search],#home-problem');Object.keys(fields).forEach(function(k){var el=content.querySelector('['+k+']');if(el)el.value=fields[k];});if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};
