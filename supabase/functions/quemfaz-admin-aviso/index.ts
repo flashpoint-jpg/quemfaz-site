@@ -193,7 +193,7 @@ async function montar(event: string, id: string): Promise<any | null> {
     const contato = r.telefone ? " · WhatsApp " + r.telefone : (r.email ? " · " + r.email : "");
     if (event === "precadastro_started") {
       return {
-        title: "Novo cadastro escolhendo plano: " + quem,
+        title: (r.metodo === "pix" ? "Tentativa de cadastro — aguardando Pix: " : "Tentativa de cadastro — pagamento pendente: ") + quem,
         body: "Plano " + plano + " · " + brl(r.valor_centavos) + " no " + metodoNome(r.metodo) + " — aguardando pagamento" + contato,
         url: "/admin.html", tag: "qf-precad-inicio-" + r.id,
       };
