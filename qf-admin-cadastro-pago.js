@@ -202,7 +202,7 @@
     avulso:'Avulso',livre:'Livre (legado)',basico_v2:'Básico',
     pro_v2:'Pro',completo_v2:'Mensal completo',mensal:'Mensal (legado)'
   };
-  const dataNovos={itens:[],filtro:'pendente',carregando:false};
+  const dataNovos={itens:[],filtro:'pendente',carregando:false,atualizadoEm:0};
   function novoMensagem(r){
     const primeiro=String(r.nome||'profissional').trim().split(/\s+/)[0];
     const plano=NOVOS_PLANOS[r.plano]||String(r.plano||'escolhido');
@@ -252,11 +252,19 @@
       const {data,error}=await client.rpc('qf_admin_novos_cadastros_pix');
       if(error||!Array.isArray(data?.itens))throw Error('Não foi possível consultar as tentativas de cadastro.');
       dataNovos.itens=data.itens;
-      desenharNovos(panel);
+      dataNovos.atualizadoEm=Date.now();
+      const atual=document.querySelector('[data-qf-novos-pix]');
+      if(atual)desenharNovos(atual);
     }catch(e){
-      if(panel.isConnected)panel.innerHTML='<p role="alert">'+esc(e.message)+'</p><button class="btn btn--outline" data-novos-retry>Tentar novamente</button>';
-      panel.querySelector('[data-novos-retry]')?.addEventListener('click',()=>carregarNovos(panel));
-    }finally{dataNovos.carregando=false;panel.removeAttribute('aria-busy');}
+      const atual=document.querySelector('[data-qf-novos-pix]');
+      if(atual){
+        atual.innerHTML='<p role="alert">'+esc(e.message)+'</p><button class="btn btn--outline" data-novos-retry>Tentar novamente</button>';
+        atual.querySelector('[data-novos-retry]')?.addEventListener('click',()=>carregarNovos(atual));
+      }
+    }finally{
+      dataNovos.carregando=false;
+      document.querySelector('[data-qf-novos-pix]')?.removeAttribute('aria-busy');
+    }
   }
   function placeNovos(){
     if(!/^#\/admin\/profissionais(?:\?.*)?$/.test(path())||!admin())return;
@@ -264,7 +272,12 @@
     if(!container||container.querySelector('[data-qf-novos-pix]'))return;
     const panel=document.createElement('section');panel.className='qf-novos-pix card';
     panel.dataset.qfNovosPix='';panel.innerHTML='<p>Consultando interessados e pagamentos...</p>';
-    container.prepend(panel);carregarNovos(panel);
+    container.prepend(panel);
+    // A navegação pode recriar a tela antes de o Supabase responder.
+    // Aproveite o resultado em curso ou o último resultado recente sem deixar carregamento preso.
+    if(dataNovos.carregando)return;
+    if(dataNovos.atualizadoEm&&Date.now()-dataNovos.atualizadoEm<30000)desenharNovos(panel);
+    else carregarNovos(panel);
   }
   function hostNovos(){
     if(!document.body.classList.contains('qf-adm-body'))return null;
