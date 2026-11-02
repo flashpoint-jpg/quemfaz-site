@@ -350,6 +350,7 @@
           if(accountPhone&&accountPhone!==phone(a.contato)){
             a.contato=accountPhone;
             publishError('Você está logado, mas o celular informado é diferente do cadastro. Usaremos seu número cadastrado (final '+accountPhone.slice(-4)+'). Toque em Publicar grátis novamente para confirmar.');
+            track('validation_error','telefone_cadastrado');
             return;
           }
           phase='publish';if(button.isConnected)button.textContent='Publicando…';
