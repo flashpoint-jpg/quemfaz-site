@@ -6569,6 +6569,16 @@ Screens.adminDashboardRender = function () {
       '<div class="view">' + migrationBanner() +
         '<div class="card card--tight" style="margin-bottom:10px;"><div class="text--sm text--secondary">' + ordered.length + ' cidade(s) com profissionais · <b>' + novosProf + ' cadastro(s) novo(s) nas últimas ' + NOVO_HORAS + 'h</b>. Maiores: ' + PU.escapeHtml(ordered.slice(0, 3).map(function (g) { return g.label + ' (' + g.itens.length + ')'; }).join(', ')) + '</div></div>' +
         '<section class="qf-adm-numeros qf-adm-numeros--6 qf-teste-resumo" aria-label="Testes de chamado" data-teste-resumo>' + testeResumoHtml() + '</section>' +
+        '<section id="qf-teste-individual" class="qf-teste-todos qf-teste-individual" aria-label="Simular chamado individual">' +
+          '<div style="min-width:210px"><strong>Simular chamado para UM profissional</strong><span>Escolha um profissional. O teste toca somente no aparelho dele e não cria pedidos nem altera o saldo.</span>' +
+          '<label class="field" style="margin-top:10px"><span class="field__label">Buscar profissional por nome, telefone ou e-mail</span><input class="input" id="qf-teste-prof-busca" type="search" placeholder="Digite o nome para localizar"></label>' +
+          '<label class="field"><span class="field__label">Profissional que receberá o teste</span><select class="input" id="qf-teste-prof-selecao"><option value="">Selecione um profissional...</option>' +
+          list.slice().sort(function (a,b) { return String(a.nome||'').localeCompare(String(b.nome||''),'pt-BR'); }).map(function(p) {
+            return '<option value="' + PU.escapeHtml(String(p.id)) + '">' + PU.escapeHtml(String(p.nome||'Sem nome') + ' · ' + String(p.email||p.telefone||'')) + '</option>';
+          }).join('') + '</select></label>' +
+          '<div data-teste-sit="" style="margin-top:8px"></div></div>' +
+          '<button type="button" id="qf-teste-prof-enviar" class="btn btn--primary qf-teste-btn" data-simular-chamado="" disabled>' + icon('bell') + 'Enviar para este profissional</button>' +
+        '</section>' +
         // V11.56: o mesmo "Simular chamado", para todos de uma vez (ou só a cidade escolhida nos filtros).
         (function () {
           const alvo = profCidadeFiltro === 'todas' ? list : (groups[profCidadeFiltro] ? groups[profCidadeFiltro].itens : list);
@@ -6599,6 +6609,29 @@ Screens.adminDashboardRender = function () {
       global.navigate('/admin/profissionais', true);
       window.scrollTo(0, 0);
     });
+    const testeBusca=content.querySelector('#qf-teste-prof-busca');
+    const testeSelect=content.querySelector('#qf-teste-prof-selecao');
+    const testeBotao=content.querySelector('#qf-teste-prof-enviar');
+    if(testeSelect && testeBotao){
+      const todos=Array.from(testeSelect.options).slice(1).map(function(o){return {id:o.value,nome:o.textContent,busca:catNormAdmin(o.textContent)};});
+      const status=content.querySelector('#qf-teste-individual [data-teste-sit]');
+      function escolher(){
+        const id=testeSelect.value;
+        testeBotao.disabled=!id;
+        testeBotao.setAttribute('data-simular-chamado',id);
+        if(status){status.setAttribute('data-teste-sit',id);status.innerHTML=id?testeEtiquetaHtml(id):'Selecione um profissional para ver o último teste.';}
+      }
+      function localizar(){
+        const q=catNormAdmin(testeBusca.value);
+        const encontrados=q?todos.filter(function(o){return o.busca.includes(q);}):todos;
+        testeSelect.innerHTML='<option value="">'+(encontrados.length?'Selecione um profissional...':'Nenhum profissional encontrado')+'</option>';
+        encontrados.slice(0,120).forEach(function(o){const opt=document.createElement('option');opt.value=o.id;opt.textContent=o.nome;testeSelect.appendChild(opt);});
+        escolher();
+      }
+      testeSelect.addEventListener('change',escolher);
+      if(testeBusca)testeBusca.addEventListener('input',localizar);
+      escolher();
+    }
     const busca = content.querySelector('#qf-prof-busca');
     function filtrar() {
       profBusca = busca.value;
@@ -6683,6 +6716,10 @@ Screens.adminDashboardRender = function () {
       (p.verificado ? '<div class="qf-adm-ver__faixa"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l8 3v6c0 5.2-3.4 9.4-8 11-4.6-1.6-8-5.8-8-11V5l8-3z" fill="#e2b24a"/><path d="M8.2 12.2l2.6 2.6 5-5.4" fill="none" stroke="#1458cc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><b>Profissional verificado pelo QuemFaz</b><em>Recomendado</em></div><div class="row qf-adm-ver__corpo">' : '') +
       '<div class="' + (p.verificado ? 'qf-adm-ver__foto' : '') + '" style="flex:none;"><div class="avatar avatar--lg">' + qfFotoHtml(p, 'Selfie do profissional', PU.initials(p.nome)) + '</div>' + (p.verificado ? '<span class="qf-adm-ver__tick" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#3a2a05" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : '') + '</div><div class="spacer"><div class="h3">' + PU.escapeHtml(p.nome) + '</div><div class="text--sm text--secondary">' + PU.escapeHtml(p.email || '') + '</div><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap;">' + (p.verificado ? profBadges(p).replace('<span class="badge badge--success">Verificado</span>', '<span class="badge qf-adm-ver__chip">★ Verificado</span>') : profBadges(p)) + '</div></div>' +
       (p.verificado ? '</div><div class="qf-adm-ver__sub">Documentos conferidos · tem prioridade no chamado</div>' : '') + '</div>' +
+      '<section class="section card stack--sm" aria-label="Teste individual de chamado">' +
+        '<h2 class="h3">Simular chamada somente para este profissional</h2>' +
+        '<p class="text--sm text--secondary">Teste de toque e notificação no aplicativo. Não cria pedido nem movimenta crédito.</p>' +
+        testeLinhaHtml(p.id) + '</section>' +
       '<form id="qf-admin-add-profession" class="section card stack--sm"><label class="field"><span class="field__label">Adicionar profissão ao profissional</span><input class="input" name="profissao" placeholder="Ex.: Gesseiro" maxlength="90" required></label><button class="btn btn--primary" type="submit">Adicionar profissão</button><div class="text--sm text--secondary">Mantém as profissões já cadastradas.</div></form>' +
       adminIndicacaoHtml(p) +
       adminProfAtivHtml(p) +
@@ -8413,7 +8450,7 @@ Screens.adminDashboardRender = function () {
     if (prevAfterRender) prevAfterRender(pattern, content, params, user);
 
     if (pattern === '/admin/profissionais') { bindProfissionaisLista(content); testeAcompanhar(); }
-    if (pattern === '/admin/profissionais/:id') bindProfissionalDetalhe(content, params);
+    if (pattern === '/admin/profissionais/:id') { bindProfissionalDetalhe(content, params); testeAcompanhar(); }
     if (pattern === '/admin/clientes') bindClientes(content);
     if (pattern === '/admin/servicos') bindServicosLista(content, params);
     if (pattern === '/admin/categorias') bindCategorias(content);
