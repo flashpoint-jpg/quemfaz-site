@@ -61,5 +61,19 @@ for (const alias of ['cadastro-profissional', 'seja-profissional', 'profissionai
   fs.writeFileSync(file, '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Cadastro profissional | Quem Faz</title><meta name="robots" content="noindex,follow"></head><body><a href="/#/auth/profissional/cadastro">Abrir cadastro profissional</a></body></html>');
   enhance(file, '/#/auth/profissional/cadastro');
 }
+// O roteador da home também atende URLs sem a barra final no servidor.
+const homeFile = path.join(root, 'index.html');
+let homeHtml = fs.readFileSync(homeFile, 'utf8');
+const proBootstrap = '<script data-qf-pro-organic>(function(){' +
+  'if(/^\/(?:cadastro-profissional|seja-profissional|profissionais\/cadastro)\/?$/.test(location.pathname)){' +
+  'var to=new URL("/#/auth/profissional/cadastro",location.origin);' +
+  'new URLSearchParams(location.search).forEach(function(v,k){to.searchParams.append(k,v);});' +
+  'location.replace(to.href);' +
+  '}' +
+  '})();</script>';
+if (!homeHtml.includes('data-qf-pro-organic')) {
+  homeHtml = homeHtml.replace(/<head(?:\s[^>]*)?>/i, m => m + proBootstrap);
+  fs.writeFileSync(homeFile, homeHtml);
+}
 if (modified < 850) throw Error('SEO direto: páginas insuficientes (' + modified + ')');
 console.log('SEO direto: ' + modified + ' páginas entrando no site sem clique intermediário.');
