@@ -65,7 +65,7 @@ for (const alias of ['cadastro-profissional', 'seja-profissional', 'profissionai
 const homeFile = path.join(root, 'index.html');
 let homeHtml = fs.readFileSync(homeFile, 'utf8');
 const proBootstrap = '<script data-qf-pro-organic>(function(){' +
-  'if(/^\/(?:cadastro-profissional|seja-profissional|profissionais\/cadastro)\/?$/.test(location.pathname)){' +
+  'if(["/cadastro-profissional","/cadastro-profissional/","/seja-profissional","/seja-profissional/","/profissionais/cadastro","/profissionais/cadastro/"].includes(location.pathname)){' +
   'var to=new URL("/#/auth/profissional/cadastro",location.origin);' +
   'new URLSearchParams(location.search).forEach(function(v,k){to.searchParams.append(k,v);});' +
   'location.replace(to.href);' +
