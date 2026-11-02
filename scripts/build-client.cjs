@@ -60,7 +60,7 @@ patchProfLoginOnce("if (role === 'profissional') await syncProfessionalCalls(use
 html=html.replace('</head>','<style>.qf-lp-remember{display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin:-4px 0 10px;line-height:1.3;color:#173653;font-size:14px}.qf-lp-remember input{width:21px;height:21px;min-width:21px;margin:2px 0 0;accent-color:#1865d2;cursor:pointer}.qf-lp-remember span{display:grid;gap:4px}.qf-lp-remember strong{font-weight:800}.qf-lp-remember small{font-size:12px;color:#50647c;line-height:1.45}</style></head>');
 html=html.replace(/const APP_VERSION = '[^']+'/,"const APP_VERSION = '12.2.3'");
 html=html.replace(/qf-livre\.js\?v=[^"']+/g,'qf-livre.js?v=pix-manual-20261029');
-html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=eletrodomesticos-20261027').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=eletrodomesticos-20261027');
+html=html.replace(/qf-client-acquisition\.js\?v=[^"']+/g,'qf-client-acquisition.js?v=servicos-nov26-20261102').replace(/qf-conversao\.js\?v=[^"']+/g,'qf-conversao.js?v=servicos-nov26-20261102');
 // Não expõe links privados de verificação/recuperação a plataformas de medição.
 const authTokenCheck = String.raw`/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)`;
 html=html.replace("!function(f,b,e,v,n,t,s){if(f.fbq)return;", "if (!("+authTokenCheck+")) { !function(f,b,e,v,n,t,s){if(f.fbq)return;")
