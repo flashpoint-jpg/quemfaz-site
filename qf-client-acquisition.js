@@ -36,14 +36,53 @@
     chaveiro: 'cat_chaveiro', antenista: 'cat_antenista', faxina_pos_obra: 'cat_faxina_pos_obra', limpeza_pos_obra: 'cat_faxina_pos_obra',
     pedreiro: 'cat_pedreiro', desentupidor: 'cat_desentupidor', telhadista: 'cat_telhadista',
     limpeza_sofa: 'cat_limpeza_estofados', marido_aluguel: 'cat_marido_aluguel', diarista: 'cat_diarista',
-    azulejista: 'cat_azulejista', gesseiro: 'cat_gesseiro', impermeabilizacao: 'cat_impermeabilizacao', caixa_dagua: 'cat_caixa_dagua'
+    azulejista: 'cat_azulejista', gesseiro: 'cat_gesseiro', impermeabilizacao: 'cat_impermeabilizacao', caixa_dagua: 'cat_caixa_dagua',
+    ar_condicionado: 'cat_arcondicionado', arcondicionado: 'cat_arcondicionado',
+    marceneiro: 'cat_marceneiro', piso: 'cat_azulejista', pisos: 'cat_azulejista',
+    faxina: 'cat_faxina_pos_obra', estofado: 'cat_limpeza_estofados', sofa: 'cat_limpeza_estofados'
   };
+  // Ordem importa: o termo mais especifico vem antes do generico.
+  var textCategories = [
+    ['caixa de agua', 'cat_caixa_dagua'], ['caixa d agua', 'cat_caixa_dagua'],
+    ['pos obra', 'cat_faxina_pos_obra'], ['faxina', 'cat_faxina_pos_obra'],
+    ['estofado', 'cat_limpeza_estofados'], ['sofa', 'cat_limpeza_estofados'],
+    ['diarista', 'cat_diarista'], ['ar condicionado', 'cat_arcondicionado'],
+    ['marceneiro', 'cat_marceneiro'], ['marido de aluguel', 'cat_marido_aluguel'],
+    ['montador', 'cat_montador'], ['montagem', 'cat_montador'],
+    ['azulejista', 'cat_azulejista'], ['piso', 'cat_azulejista'],
+    ['eletricista', 'cat_eletricista'], ['pedreiro', 'cat_pedreiro'],
+    ['pintor', 'cat_pintor'], ['encanador', 'cat_encanador'], ['gesseiro', 'cat_gesseiro']
+  ];
+  function normalizeText(value) {
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ');
+  }
+  function categoryFromText(text) {
+    var norm = normalizeText(text);
+    if (!norm.trim()) return null;
+    for (var i = 0; i < textCategories.length; i++) {
+      if (norm.indexOf(textCategories[i][0]) !== -1) return textCategories[i][1];
+    }
+    return null;
+  }
   function serviceFromLink(search) {
     var p = new URLSearchParams(search || '');
     var explicit = p.get('servico');
     if (explicit) return services[explicit] || (/^cat_[a-z0-9_]+$/.test(explicit) ? explicit : null);
-    if (p.get('utm_source') !== 'google' || !/^quemfaz_clientes_/.test(p.get('utm_campaign') || '')) return null;
-    return services[p.get('utm_content')] || null;
+    var campaign = p.get('utm_campaign') || '';
+    // Somente campanhas de clientes preenchem o servico; campanhas de profissionais nao.
+    var isClientCampaign = /clientes/i.test(campaign) || /^qf_[a-z0-9_]*_nov26$/.test(campaign);
+    if (!isClientCampaign) return null;
+    var source = (p.get('utm_source') || '').toLowerCase();
+    var medium = (p.get('utm_medium') || '').toLowerCase();
+    var paid = source === 'google' || source === 'facebook' || source === 'instagram' || medium === 'cpc' || medium === 'paid_social';
+    if (!paid) return null;
+    var content = (p.get('utm_content') || '').toLowerCase();
+    if (content) {
+      if (services[content]) return services[content];
+      if (/^cat_[a-z0-9_]+$/.test(content)) return content;
+    }
+    // Termo de busca e nome do grupo de anuncios indicam o servico procurado.
+    return categoryFromText([p.get('utm_term') || '', content, campaign].join(' '));
   }
   function applyDestination() {
     var cat = serviceFromLink(location.search);
