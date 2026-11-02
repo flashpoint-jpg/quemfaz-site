@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
 
     const cat = await admin.from("qf_planos_catalogo").select("plano,nome,preco_centavos,ativo").eq("plano", plano).maybeSingle();
     if (cat.error || !cat.data || !cat.data.ativo) return json({ ok: false, error: "plano_invalido" }, 400);
-    const precos: Record<string,number> = {avulso:1300,basico_v2:3990,pro_v2:7990,completo_v2:14990};
+    const precos: Record<string,number> = {avulso:1499,basico_v2:3990,pro_v2:7990,completo_v2:14990};
     const valorEsperado = precos[plano];
     if (Number(cat.data.preco_centavos) !== valorEsperado) {
       console.error("QF_PRECADASTRO_PRECO_INCONSISTENTE", plano);
