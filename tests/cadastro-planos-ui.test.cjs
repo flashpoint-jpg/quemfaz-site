@@ -27,13 +27,13 @@ test('Cadastro exige pagamento: opções Avulso R$13 e plano mensal, sem teste o
   assert.equal(form.querySelector('[name=cortesiaLivre]'),null);
   assert.match(w.document.querySelector('[data-qf-planos-chamada]').textContent,/PAGAMENTO OBRIGATÓRIO/i);
   assert.match(form.textContent,/É necessário pagar o plano escolhido para concluir seu cadastro/i);
-  assert.match(form.textContent,/R\$ 13,00/);
+  assert.match(form.textContent,/R\$ 14,99/);
   assert.match(form.querySelector('[data-cad-criar]').textContent,/Continuar para pagamento/);
-  assert.match(form.querySelector('.qf-options-final').textContent,/R\$ 13,00/);
+  assert.match(form.querySelector('.qf-options-final').textContent,/R\$ 14,99/);
   assert.doesNotMatch(form.querySelector('.qf-options-final').textContent,/teste grátis|48 horas|cortesia/i);
   const avulso=form.querySelector('[value=avulso]');
   avulso.click();
-  assert.match(form.querySelector('[data-cad-criar]').textContent,/R\$ 13,00/);
+  assert.match(form.querySelector('[data-cad-criar]').textContent,/R\$ 14,99/);
   const livre=form.querySelector('[value=basico_v2]');
   livre.click();
   assert.match(form.querySelector('[data-cad-criar]').textContent,/R\$ 39,90/);
