@@ -17,7 +17,7 @@ test('Scripts inline e modulo Livre com sintaxe valida',()=>{
 });
 test('Quatro planos novos pagos, com preços exatos',()=>{
   const block=html.slice(html.indexOf('const QF_CAD_PLANOS = ['),html.indexOf('global.QFCadPlanos = QF_CAD_PLANOS;'));
-  assert.match(block,/id:'avulso'.*valor:1300/);
+  assert.match(block,/id:'avulso'.*valor:1499/);
   assert.match(block,/id:'basico_v2'.*valor:3990/);
   assert.match(block,/id:'pro_v2'.*valor:7990/);
   assert.match(block,/id:'completo_v2'.*valor:14990/);
@@ -74,6 +74,6 @@ test('Efí recusa planos legados, preço divergente e cartão Livre ANTES de cob
  const trecho=edge.slice(inicio,gerar);
  assert.match(trecho,/\["avulso","basico_v2","pro_v2","completo_v2"\]/);
  assert.match(trecho,/if \(metodo !== "pix"\)/);
- assert.match(trecho,/avulso:1300,basico_v2:3990,pro_v2:7990,completo_v2:14990/);
+ assert.match(trecho,/avulso:1499,basico_v2:3990,pro_v2:7990,completo_v2:14990/);
  assert.match(sql,/ADD CONSTRAINT qf_cadastro_preco_valido/);
 });
