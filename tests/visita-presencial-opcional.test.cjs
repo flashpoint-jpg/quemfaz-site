@@ -69,3 +69,21 @@ test('financeiro registra só transferência manual que já ocorreu',()=>{
  assert.match(admin,/Não há transferência automática/);
  assert.match(admin,/profissionais/);
 });
+
+test('visita escolhida reserva o pedido até Pix Efí confirmado',()=>{
+ const file=ler('docs/visita-pix-antes-publicar.sql');
+ const form=ler('qf-atendimento.js');
+ const visitaSrc=ler('qf-visita.js');
+ assert.match(file,/visita_presencial.+aguardando_pagamento/);
+ assert.match(file,/new\.status='aprovado'/);
+ assert.match(file,/new\.end_to_end_id/);
+ assert.match(file,/c\.status='aguardando_pagamento'/);
+ assert.match(file,/SET status='aberto'/);
+ assert.match(file,/qf_visita_publicar_apos_pix/);
+ assert.match(form,/const aguardandoVisita=!!req\.aguardandoPagamento/);
+ assert.match(form,/Falta confirmar o Pix de R\$ 25,00/);
+ assert.match(form,/Como deseja receber seu orçamento/);
+ assert.match(form,/pagamento necessário/);
+ assert.doesNotMatch(form,/O repasse ao profissional é feito manualmente\.<\/p><\/fieldset>/);
+ assert.match(visitaSrc,/QFClientAcquisition\?\.published\(\{id\}/);
+});

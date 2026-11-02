@@ -17,7 +17,7 @@
     selo(req)+
     (paidStatus(status)
       ? '<p class="text--sm">O Quem Faz confirmou o Pix de R$ 25,00. O profissional verá que sua visita técnica está paga. Você escolhe com quem combinar o atendimento.</p>'
-      : '<p class="text--sm">A visita é opcional e só será considerada paga depois do Pix de R$ 25,00 ser confirmado. Seu pedido foi publicado normalmente.</p>'+
+      : '<p class="text--sm">'+(req?.aguardandoPagamento?'Seu pedido está reservado: ainda não foi enviado aos profissionais. Após o Pix de R$ 25,00 ser confirmado, ele será publicado automaticamente.':'A visita só será considerada paga depois da confirmação bancária do Pix de R$ 25,00. Seu pedido gratuito já foi publicado.')+'</p>'+
         '<button class="btn btn--primary" type="button" data-qf-visita-pagar="'+escape(req.id)+'">Pagar visita técnica · R$ 25,00</button>')+
     '</section>';
  }
@@ -55,7 +55,7 @@
   root.PU.openSheet(
    '<section class="stack qf-visita-pix" data-qf-visita-sheet="'+escape(id)+'" style="padding:8px 0">'+
    '<h2 class="h2">Orçamento presencial · R$ 25,00</h2>'+
-   '<p class="text--sm">Pagamento opcional ao Quem Faz por Pix. A visita será marcada como paga somente após confirmação pela Efí. O repasse ao profissional escolhido será manual.</p>'+
+   '<p class="text--sm" style="line-height:1.65;padding:12px;background:#eef5ff;border-radius:10px;color:#16395e">Para liberar o pedido com visita técnica, pague R$ 25,00 por Pix. A confirmação é feita pela Efí. Sem pagar, o pedido permanece reservado.</p>'+
    (/^data:image\/png;base64,[a-zA-Z0-9+/=]+$/.test(qr)?'<img src="'+escape(qr)+'" alt="QR Code Pix da visita técnica" style="width:200px;max-width:90%;height:auto;margin:auto">':'')+
    (code?'<label class="field"><span class="field__label">Pix copia e cola</span><textarea class="textarea" rows="4" readonly data-qf-visita-codigo>'+escape(code)+'</textarea></label>':'')+
    (code?'<button class="btn btn--primary" type="button" data-qf-visita-copiar>Copiar Pix</button>':'')+
@@ -71,6 +71,7 @@
    const d=await rpc('qf_visita_status',{p_chamado_id:id});
    if(d.ok&&d.pago===true&&d.status==='aprovado'){
     aviso.textContent='Pagamento confirmado pela Efí! Visita técnica paga · R$ 25,00.';
+    try{root.QFClientAcquisition?.published({id},req?.categoriaId||undefined);}catch(_){}
     aviso.style.color='#167348';
     area.querySelector('[data-qf-visita-verificar]').disabled=true;
     area.querySelector('[data-qf-visita-verificar]').setAttribute('data-paid','1');
