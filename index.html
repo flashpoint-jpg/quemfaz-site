@@ -8560,7 +8560,7 @@ alt=""></noscript>
       get itens() { const pct = P.pct(id); return extras(pct).filter(Boolean); } };
   }
   const QF_CAD_PLANOS = [
-    {id:'avulso',nome:'Avulso',preco:'R$ 13,00',valor:1300,per:'recarga mínima',unit:'R$ 13,00 de crédito na carteira',
+    {id:'avulso',nome:'Avulso',preco:'R$ 14,99',valor:1499,per:'recarga mínima',unit:'R$ 14,99 de crédito na carteira',
       itens:['Pagamento obrigatório para finalizar o cadastro','Valor integral convertido em créditos após Pix','Sem mensalidade, sem comissão']},
     {id:'basico_v2',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
       itens:['10 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
@@ -9280,10 +9280,10 @@ alt=""></noscript>
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. Avulso: R$ 13,00 em créditos. Básico: R$ 39,90/10 pedidos. Pro: R$ 79,90/25 pedidos. Mensal completo: R$ 149,90/100 pedidos. Nenhuma comissão e nenhuma taxa adicional nos mensais.</p>' +
+          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. Avulso: R$ 14,99 em créditos. Básico: R$ 39,90/10 pedidos. Pro: R$ 79,90/25 pedidos. Mensal completo: R$ 149,90/100 pedidos. Nenhuma comissão e nenhuma taxa adicional nos mensais.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
           '<p class="qf-cad-planos__exigencia" role="status">É necessário pagar o plano escolhido para concluir seu cadastro.</p>' +
-          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Continuar para pagamento · R$ 13,00</button></div>' +
+          '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Continuar para pagamento · R$ 14,99</button></div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
           '<div class="qf-step stack" data-step="6" hidden>' +
@@ -10525,7 +10525,7 @@ alt=""></noscript>
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
           nota.textContent = pl.id === 'avulso'
-            ? 'O Pix de R$ 13,00 vira saldo integral para desbloquear. Sem pagar, não há cadastro ativo.'
+            ? 'O Pix de R$ 14,99 vira saldo integral para desbloquear. Sem pagar, não há cadastro ativo.'
             : 'Pagamento único de '+pl.preco+' por 30 dias, sem taxa de entrada e sem comissão. A cota só é ativada após Pix confirmado.';
         }
       }
@@ -10738,7 +10738,7 @@ alt=""></noscript>
             '<div class="qf-conta-dados__nota">Guarde sua senha com segurança. Você utiliza seu e-mail e a senha que criou para entrar.</div></div>' +
           '<div class="card card--tight row" style="background:var(--success-100);border:none;align-items:flex-start;"><div class="icon-tile icon-tile--orange" style="width:34px;height:34px;">' + icon('wallet') + '</div><div><div class="text--strong" style="color:var(--success-600);">' +
             (conta.ativo ? 'Plano ' + esc(conta.plano.nome) + ' creditado na sua carteira' : 'Pagamento do plano ' + esc(conta.plano.nome) + ' confirmado') + '</div><div class="text--sm">' +
-            (conta.ativo ? (conta.plano.id === 'avulso' ? 'Os R$ 13 são saldo seu para desbloqueios e não têm prazo de vencimento.' : 'Quem Faz Livre ativo por 30 dias após o pagamento confirmado.') : 'O saldo ou plano será ativado após a conciliação bancária. Confira sua carteira ao entrar.') + '</div></div></div>' +
+            (conta.ativo ? (conta.plano.id === 'avulso' ? 'Os R$ 14,99 são saldo seu para desbloqueios e não têm prazo de vencimento.' : 'Quem Faz Livre ativo por 30 dias após o pagamento confirmado.') : 'O saldo ou plano será ativado após a conciliação bancária. Confira sua carteira ao entrar.') + '</div></div></div>' +
           '<button class="btn btn--primary" type="button" data-conta-entrar>Entrar no QuemFaz</button>';
       }
       // A antiga criação direta antes do pagamento foi removida do cadastro.
@@ -15248,7 +15248,7 @@ alt=""></noscript>
 
     action.addEventListener('click', function () {
       const valor = selectedValue();
-      if (valor < 500) { PU.toast('A recarga mínima é R$ 5,00.', 'danger'); return; }
+      if (valor < 1499) { PU.toast('A recarga mínima é R$ 14,99.', 'danger'); return; }
       const method = action.getAttribute('data-wallet-selected-method') || 'pix';
       openRechargeSheet(user, valor, method);
     });
