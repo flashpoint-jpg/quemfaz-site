@@ -15,12 +15,20 @@
     document.head.appendChild(st);
   }
   function entry(){
-    if(document.getElementById('qff-entry'))return;
-    const host=document.querySelector('#qf-pedido-facil')||document.querySelector('[data-landing-service-form]')||document.querySelector('.qf-landing-hero');
+    // O elemento dentro do card do pedido garante visibilidade na primeira dobra.
+    // Ele é reposto caso o roteador redesenhe a home.
+    const host=document.querySelector('#qf-pedido-facil')||
+      document.querySelector('[data-landing-service-form]')||
+      document.querySelector('.qf-landing-hero');
     if(!host)return;
-    const b=document.createElement('button');b.type='button';b.id='qff-entry';b.className='qff-entry';
-    b.innerHTML='<svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f47720" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></svg><span>Descubra o profissional pela foto <small style="display:block">Sem preencher o formulário inicial · Grátis</small></span>';
-    b.onclick=()=>open();host.after(b);
+    let button=document.getElementById('qff-entry');
+    if(!button){
+      button=document.createElement('button');
+      button.type='button';button.id='qff-entry';button.className='qff-entry';
+      button.innerHTML='<svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#f47720" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z"/><circle cx="12" cy="13" r="4"/></svg><span>Descubra o profissional pela foto <small style="display:block">Sem preencher o formulário inicial · Grátis</small></span>';
+      button.onclick=()=>open();
+    }
+    if(button.parentElement!==host)host.prepend(button);
   }
   async function account(){
     const c=client();if(!c?.auth?.getUser)return null;
@@ -136,7 +144,10 @@
   function start(){
     css();entry();const root=document.getElementById('app-shell')||document.body;
     const obs=new MutationObserver(()=>entry());obs.observe(root,{childList:true,subtree:true});
-    if(sessionStorage.getItem('qff-abrir-apos-google')==='1'){sessionStorage.removeItem('qff-abrir-apos-google');setTimeout(()=>open(),500);}
+    const direct=new URLSearchParams(location.search).get('qf_foto')==='1';
+    if(sessionStorage.getItem('qff-abrir-apos-google')==='1'){
+      sessionStorage.removeItem('qff-abrir-apos-google');setTimeout(()=>open(),400);
+    }else if(direct){setTimeout(()=>open(),250);}
   }
   w.QFFoto={open,close};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
