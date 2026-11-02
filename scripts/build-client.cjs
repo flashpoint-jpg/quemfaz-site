@@ -24,19 +24,10 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-html=html.replace("if (existing.data.tipo === 'profissional') {",`if (existing.data.tipo === 'profissional') {
-        // O bootstrap de auth já pode ter criado o perfil: preparar o teste antes do retorno.
-        let trial=null;try{trial=JSON.parse(localStorage.getItem('qf_livre_teste_cadastro')||'null');}catch(_){}
-        if(trial?.email!==String(user.email||'').trim().toLowerCase())trial=null;
-        const documentValue=data.cpf||data.cnpj||trial?.documento||localStorage.getItem(pendingCpfKey(user.email))||localStorage.getItem(pendingCnpjKey(user.email));
-        if(documentValue){
-          const status=await client.rpc('qf_livre_status');
-          if(status.error)throw status.error;
-          if(!status.data?.ativo&&!status.data?.teste_utilizado&&!status.data?.assinatura_id){
-            const benefit=await client.rpc('qf_livre_preparar_acesso',{p_teste:true,p_documento:documentValue,p_telefone:data.telefone||trial?.telefone||meta.qf_telefone||existing.data.telefone||''});
-            if(benefit.error||!benefit.data?.ok)throw new Error(benefit.error?.message||'Não foi possível ativar o teste automático.');
-          }
-        }`);
+// O login de profissional já cadastrado não deve reativar benefícios de teste.
+// O erro 403 na chamada de preparação de acesso impedia até o usuário com Pix aprovado de entrar.
+// A assinatura, o pagamento e a checagem de direitos permanecem no servidor.
+
 html=html.replace("p_teste:!!(trialDraft && trialDraft.email===String(user.email||'').toLowerCase()),","p_teste:true,");
 html=html.replace("p_documento:trialDraft?.documento||'',p_telefone:trialDraft?.telefone||''","p_documento:trialDraft?.documento||data.cpf||data.cnpj||localStorage.getItem(pendingCpfKey(user.email))||localStorage.getItem(pendingCnpjKey(user.email))||'',p_telefone:trialDraft?.telefone||data.telefone||meta.qf_telefone||''");
 html=html.replace("global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/carteira',true);","global.navigate(r.needsConfirmation?'/auth/profissional/login':'/profissional/home',true);");
