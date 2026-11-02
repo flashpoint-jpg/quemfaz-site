@@ -259,7 +259,7 @@
     }finally{dataNovos.carregando=false;panel.removeAttribute('aria-busy');}
   }
   function placeNovos(){
-    if(!/^#\/admin\/profissionais(?:$|[/?])/.test(path())||!admin())return;
+    if(!/^#\/admin\/profissionais(?:\?.*)?$/.test(path())||!admin())return;
     const container=hostNovos();
     if(!container||container.querySelector('[data-qf-novos-pix]'))return;
     const panel=document.createElement('section');panel.className='qf-novos-pix card';
