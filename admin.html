@@ -3205,8 +3205,16 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
   function pushBanner() {
     let on = false; try { on = localStorage.getItem(PUSH_KEY) === '1' && 'Notification' in window && Notification.permission === 'granted'; } catch (_) {}
-    if (on || !client()) return '';
-    return '<div class="qf-admin-push" data-admin-push>' + icon('bell') + '<span>Ative as notificações para ser avisado de novos pedidos e mudanças importantes</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">Ativar</button></div>';
+    if (!client()) return '';
+    // No celular, mantenha o controle de reativação acessível mesmo se o estado local disser
+    // "ativado": a inscrição pode ter expirado no servidor sem mudar a permissão do navegador.
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+    if (on && !mobile) return '';
+    const msg = on ? 'Confirme os alertas neste celular para receber cada novo pedido publicado'
+      : 'Ative as notificações para receber alertas de novos pedidos no celular';
+    const action = on ? 'Verificar notificações' : 'Ativar notificações';
+    return '<div class="qf-admin-push" data-admin-push>' + icon('bell') +
+      '<span>' + msg + '</span><button class="btn btn--primary btn--sm" type="button" data-action="admin-push-ativar">' + action + '</button></div>';
   }
   function bannersHtml() { return '<div data-admin-install-slot>' + installBanner() + '</div>' + pushBanner(); }
   function html() { return bannersHtml() + secaoHtml(); }
