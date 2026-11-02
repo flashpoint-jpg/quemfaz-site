@@ -196,11 +196,87 @@
     const p=global.DB?.profissionalById?.(m[1]);if(!p?.email)return;
     const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';h.prepend(panel);loadDetail(panel);
   }
+
+  // Profissionais > Novos: interessados aguardando Pix ficam separados dos profissionais ativos.
+  const NOVOS_PLANOS={
+    avulso:'Avulso',livre:'Livre (legado)',basico_v2:'Básico',
+    pro_v2:'Pro',completo_v2:'Mensal completo',mensal:'Mensal (legado)'
+  };
+  const dataNovos={itens:[],filtro:'pendente',carregando:false};
+  function novoMensagem(r){
+    const primeiro=String(r.nome||'profissional').trim().split(/\s+/)[0];
+    const plano=NOVOS_PLANOS[r.plano]||String(r.plano||'escolhido');
+    const valor=money(r.valor_centavos);
+    return r.status==='aprovado'
+      ? 'Olá, '+primeiro+'! Aqui é da equipe Quem Faz Serviços. Encontramos seu pagamento do plano '+plano+' ('+valor+'), mas sua conta ainda não aparece como ativada. Pode acessar https://quemfazservico.com.br para concluir o cadastro? Se tiver dificuldade, me avise para conferirmos. Não faça outro pagamento antes da verificação.'
+      : 'Olá, '+primeiro+'! Tudo bem? Aqui é da equipe Quem Faz Serviços. Você iniciou o cadastro e escolheu o plano '+plano+', mas o pagamento Pix ainda aparece pendente. A cobrança registrada foi de '+valor+'. Para ativar sua conta, entre em https://quemfazservico.com.br e confira o Pix disponível. Se já pagou, nos avise para verificarmos antes de qualquer novo pagamento. Posso ajudar?';
+  }
+  function novoCard(r){
+    const n=waNumber(r.telefone),plano=NOVOS_PLANOS[r.plano]||r.plano||'Plano';
+    const msg=novoMensagem(r);
+    return '<article class="qf-novos-registro">'+
+      '<div><strong>'+esc(r.nome||'Interessado')+'</strong><p>'+esc(r.telefone||r.email||'Sem telefone')+'</p>'+
+      '<p>'+esc(plano)+' · Pix '+money(r.valor_centavos)+' · '+date(r.criado_em)+'</p>'+
+      '<small>'+(r.status==='aprovado'?'Pix aprovado, aguardando ativação':'Tentativa de cadastro — aguardando Pix')+'</small></div>'+
+      (n?'<a class="btn btn--primary" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+n+'?text='+encodeURIComponent(msg)+'">Abrir WhatsApp</a>':'<span class="qf-novos-sem-wa">Sem número válido</span>')+
+      '</article>';
+  }
+  function desenharNovos(panel){
+    if(!panel.isConnected)return;
+    const items=dataNovos.itens,pend=items.filter(r=>r.status==='pendente'),
+          pagos=items.filter(r=>r.status==='aprovado'&&r.pago_sem_ativacao),
+          subset=dataNovos.filtro==='pendente'?pend:pagos;
+    const grupos={};
+    subset.forEach(r=>{
+      const key=String(r.plano||'outros')+'_'+String(r.valor_centavos||0);
+      (grupos[key]||(grupos[key]={titulo:(NOVOS_PLANOS[r.plano]||r.plano||'Outros')+' · '+money(r.valor_centavos),itens:[]})).itens.push(r);
+    });
+    panel.innerHTML='<div class="qf-novos-cab"><div><h2>Novos · cadastros e pagamentos</h2><p>Interessados ainda não são profissionais ativos. O Pix precisa ser confirmado.</p></div>'+
+      '<button class="btn btn--outline" type="button" data-novos-refresh>Atualizar</button></div>'+
+      '<div class="qf-novos-contadores"><button type="button" class="'+(dataNovos.filtro==='pendente'?'ativo':'')+'" data-novos-filtro="pendente">Aguardando Pix <b>'+pend.length+'</b></button>'+
+      '<button type="button" class="'+(dataNovos.filtro==='aprovado'?'ativo':'')+'" data-novos-filtro="aprovado">Pagos, sem ativar <b>'+pagos.length+'</b></button></div>'+
+      '<div class="qf-novos-grupos">'+(Object.values(grupos).length?Object.values(grupos).map(g=>
+        '<section class="qf-novos-grupo"><h3>'+esc(g.titulo)+' <small>('+g.itens.length+')</small></h3>'+
+        g.itens.map(novoCard).join('')+'</section>').join(''):
+        '<p class="qf-novos-vazio">Nenhum registro para essa situação.</p>')+'</div>'+
+      '<p class="qf-novos-nota">O WhatsApp abre com mensagem pronta; nenhuma mensagem é enviada automaticamente. Cobranças antigas podem ter preço anterior. Consulte o Pix antes de cobrar novamente.</p>';
+    panel.querySelector('[data-novos-refresh]').onclick=()=>carregarNovos(panel);
+    panel.querySelectorAll('[data-novos-filtro]').forEach(b=>b.onclick=()=>{dataNovos.filtro=b.dataset.novosFiltro;desenharNovos(panel);});
+  }
+  async function carregarNovos(panel){
+    if(dataNovos.carregando||!panel.isConnected)return;
+    dataNovos.carregando=true;
+    panel.setAttribute('aria-busy','true');
+    try{
+      const client=api();if(!client||!admin())throw Error('Entre como administrador.');
+      const {data,error}=await client.rpc('qf_admin_novos_cadastros_pix');
+      if(error||!Array.isArray(data?.itens))throw Error('Não foi possível consultar as tentativas de cadastro.');
+      dataNovos.itens=data.itens;
+      desenharNovos(panel);
+    }catch(e){
+      if(panel.isConnected)panel.innerHTML='<p role="alert">'+esc(e.message)+'</p><button class="btn btn--outline" data-novos-retry>Tentar novamente</button>';
+      panel.querySelector('[data-novos-retry]')?.addEventListener('click',()=>carregarNovos(panel));
+    }finally{dataNovos.carregando=false;panel.removeAttribute('aria-busy');}
+  }
+  function placeNovos(){
+    if(!/^#\/admin\/profissionais(?:$|[/?])/.test(path())||!admin())return;
+    const container=hostNovos();
+    if(!container||container.querySelector('[data-qf-novos-pix]'))return;
+    const panel=document.createElement('section');panel.className='qf-novos-pix card';
+    panel.dataset.qfNovosPix='';panel.innerHTML='<p>Consultando interessados e pagamentos...</p>';
+    container.prepend(panel);carregarNovos(panel);
+  }
+  function hostNovos(){
+    if(!document.body.classList.contains('qf-adm-body'))return null;
+    return document.getElementById('app-content')?.querySelector('.view')||null;
+  }
+
   function place(){
     // Pré-cadastros saem do painel; registros e pagamentos continuam no banco.
     // Conserva ativação manual no detalhe do profissional e saldos em Movimentações.
     placeDetail();
     placeWallet();
+    placeNovos();
     const antigoMenu=document.querySelector('[data-qf-pre-nav]');
     if(antigoMenu)antigoMenu.remove();
     const antigoPainel=document.getElementById(PANEL);
@@ -221,6 +297,7 @@
       +'.qf-wallet-amount{display:block;font-size:27px;letter-spacing:-.02em;color:#1458a8;margin:14px 0 8px}.qf-wallet-note{font-size:13px;line-height:1.5;color:#5b6d7e;margin:0}'
       +'.qf-pre-nav-mark{font-size:20px;color:#fa8b22}@media(max-width:700px){.qf-pre-panel,.qf-wallet-panel{padding:12px!important}.qf-pre-stats{grid-template-columns:1fr 1fr}.qf-pre-stat strong{font-size:20px}.qf-pre-record summary{align-items:flex-start}}';
     css.textContent+='.qf-pre-actions{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}.qf-benefit-modal{border:1px solid #c9d7e8;border-radius:20px;padding:22px;width:min(560px,calc(100% - 24px));max-height:90dvh;overflow:auto;background:#fff;color:#183047}.qf-benefit-modal::backdrop{background:#071c38aa}.qf-benefit-modal h2{font-size:21px;color:#134f98}.qf-benefit-modal input,.qf-benefit-modal textarea{width:100%;padding:10px;border:1px solid #cbd6e5;border-radius:9px;box-sizing:border-box}.qf-benefit-modal form{display:grid;gap:16px}.qf-benefit-modal label{display:grid;gap:8px}.qf-benefit-modal .btn{margin:12px 0;min-height:44px;padding:12px 16px}.qf-benefit-days{display:flex;flex-wrap:wrap;gap:8px}.qf-benefit-days button{min-height:40px;padding:8px 12px;border:1px solid #bcd4ef;border-radius:8px;background:#f1f6fd;color:#134f98}.qf-benefit-modal [role=alert]{color:#a12c23;margin:14px 0}';
+    css.textContent+='.qf-novos-pix{padding:16px!important;margin:0 0 18px!important;border:1px solid #dbe5f0!important;border-radius:18px!important;background:#fff!important;color:#183047}.qf-novos-cab{display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap}.qf-novos-cab h2{margin:0;font-size:18px;color:#153c71}.qf-novos-cab p{margin:4px 0 0;color:#607086;font-size:13px}.qf-novos-contadores{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}.qf-novos-contadores button{border:1px solid #cbdaec;border-radius:12px;padding:10px 12px;background:#f4f7fb;color:#173a62;font-weight:700}.qf-novos-contadores button.ativo{background:#123e75;color:#fff}.qf-novos-contadores b{margin-left:6px}.qf-novos-grupos{display:grid;gap:12px}.qf-novos-grupo{padding:12px;border:1px solid #e0e8f0;border-radius:14px}.qf-novos-grupo h3{font-size:15px;margin:0 0 8px}.qf-novos-grupo h3 small{color:#718197}.qf-novos-registro{border-top:1px solid #edf0f4;padding:12px 0;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px}.qf-novos-registro p{font-size:13px;color:#516783;margin:4px 0}.qf-novos-registro small{font-size:12px;color:#9a6100}.qf-novos-registro .btn{min-height:40px;white-space:nowrap}.qf-novos-nota,.qf-novos-vazio,.qf-novos-sem-wa{font-size:12px;color:#63758b;margin:12px 0 0}@media(max-width:700px){.qf-novos-registro .btn{width:100%}}';
     document.head.appendChild(css);
     let queued=false;
     new MutationObserver(()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;place();},90);}).observe(document.body,{childList:true,subtree:true});
