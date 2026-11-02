@@ -35,7 +35,7 @@
  const plans=[['basico_v2','Básico','R$ 39,90','10','R$ 3,99',''],['pro_v2','Pro','R$ 79,90','25','R$ 3,20',''],['completo_v2','Mensal completo','R$ 149,90','até 100','R$ 1,50','MELHOR PREÇO POR DESBLOQUEIO']];
  return '<div class="qf-livre__eyebrow">PLANOS QUEM FAZ</div><h2 class="qf-livre__headline">Desbloqueie mais pedidos por menos</h2>'+
  '<p>Pague por Pix e comece na hora após a confirmação. Validade de 30 dias, sem taxa de entrada.</p>'+
- '<div class="qf-livre__benefits qf-planos-destaque"><div class="qf-plano-card qf-plano-card--avulso"><span class="qf-plano-card__badge qf-plano-card__badge--verde">SEM MENSALIDADE</span><span class="qf-plano-card__nome">Avulso</span><span class="qf-plano-card__preco">R$ 13,00<small> / recarga mínima</small></span><span class="qf-plano-card__qtd">Pague só o que usar</span><span class="qf-plano-card__un">Cada desbloqueio custa de R$ 5 a R$ 13 · créditos não vencem</span><button type="button" class="btn btn--primary" data-qf-avulso>Recarregar crédito</button></div>'+plans.map(p=>'<div class="qf-plano-card'+(p[5]?' qf-plano-card--top':'')+'">'+(p[5]?'<span class="qf-plano-card__badge">'+p[5]+'</span>':'')+'<span class="qf-plano-card__nome">'+p[1]+'</span><span class="qf-plano-card__preco">'+p[2]+'<small> / 30 dias</small></span><span class="qf-plano-card__qtd">'+p[3]+' desbloqueios</span><span class="qf-plano-card__un">cada um sai por '+(p[3]==='até 100'?'a partir de ':'')+p[4]+'</span><button type="button" class="btn btn--primary" data-qf-v2-pagar="'+p[0]+'">Assinar '+p[1]+' por Pix</button></div>').join('')+'</div>'+
+ '<div class="qf-livre__benefits qf-planos-destaque"><div class="qf-plano-card qf-plano-card--avulso"><span class="qf-plano-card__badge qf-plano-card__badge--verde">SEM MENSALIDADE</span><span class="qf-plano-card__nome">Avulso</span><span class="qf-plano-card__preco">R$ 14,99<small> / recarga mínima</small></span><span class="qf-plano-card__qtd">Pague só o que usar</span><span class="qf-plano-card__un">Cada desbloqueio custa de R$ 5 a R$ 13 · créditos não vencem</span><button type="button" class="btn btn--primary" data-qf-avulso>Recarregar crédito</button></div>'+plans.map(p=>'<div class="qf-plano-card'+(p[5]?' qf-plano-card--top':'')+'">'+(p[5]?'<span class="qf-plano-card__badge">'+p[5]+'</span>':'')+'<span class="qf-plano-card__nome">'+p[1]+'</span><span class="qf-plano-card__preco">'+p[2]+'<small> / 30 dias</small></span><span class="qf-plano-card__qtd">'+p[3]+' desbloqueios</span><span class="qf-plano-card__un">cada um sai por '+(p[3]==='até 100'?'a partir de ':'')+p[4]+'</span><button type="button" class="btn btn--primary" data-qf-v2-pagar="'+p[0]+'">Assinar '+p[1]+' por Pix</button></div>').join('')+'</div>'+
  (s.ativo?'<a class="btn btn--outline" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':'')+
  '<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
  }
@@ -132,7 +132,7 @@
       if(card&&!card.querySelector('[data-qf-avulso-info]')){
        const info=document.createElement('small');info.dataset.qfAvulsoInfo='';
        info.className='qf-cad-plano__complemento';
-       info.textContent='Pagamento Pix mínimo de R$ 13,00. O valor vira crédito integral na carteira após confirmação. Sem mensalidade nem comissão.';
+       info.textContent='Pagamento Pix mínimo de R$ 14,99. O valor vira crédito integral na carteira após confirmação. Sem mensalidade nem comissão.';
        card.append(info);
       }
      }
@@ -158,7 +158,7 @@
      if(!conditions){
       conditions=document.createElement('details');conditions.className='qf-step__opt';conditions.dataset.qfCondicoesPlanos='';
       conditions.innerHTML='<summary>Como funcionam os planos e os contatos?</summary><ul>'+
-       '<li><strong>Avulso:</strong> recarga inicial mínima obrigatória de R$ 13,00, convertida em créditos; cada desbloqueio usa o saldo. Sem mensalidade e sem comissão.</li>'+
+       '<li><strong>Avulso:</strong> recarga inicial mínima obrigatória de R$ 14,99, convertida em créditos; cada desbloqueio usa o saldo. Sem mensalidade e sem comissão.</li>'+
        '<li><strong>Básico:</strong> R$ 39,90 por 30 dias, 10 desbloqueios. <strong>Pro:</strong> R$ 79,90, 25 desbloqueios. <strong>Mensal completo:</strong> R$ 149,90, até 100 desbloqueios.</li>'+
        '<li>Depois do desbloqueio, use o chat e, quando o telefone estiver disponível, o WhatsApp do cliente. Até 4 profissionais podem participar de um pedido; não há garantia de contratação.</li>'+
        '<li>O Pix de assinatura ou recarga é apresentado no checkout. Nenhum plano é ativado como pago antes da confirmação do pagamento.</li>'+
@@ -170,11 +170,11 @@
       if(test&&livre)livre.checked=true;
       const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'avulso';
       const b=form.querySelector('[data-cad-criar]');
-      if(b){const precos={avulso:'R$ 13,00',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
+      if(b){const precos={avulso:'R$ 14,99',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
       const note=form.querySelector('[data-plano-nota]');
       if(note){
        note.classList.remove('qf-cad-planos__nota--aviso');
-       note.textContent=selected==='avulso'?'É necessário pagar o plano escolhido para concluir seu cadastro. Os R$ 13,00 viram saldo integral após a confirmação Pix.':'É necessário pagar o plano escolhido para concluir seu cadastro. A ativação ocorre somente após confirmação do Pix.';
+       note.textContent=selected==='avulso'?'É necessário pagar o plano escolhido para concluir seu cadastro. Os R$ 14,99 viram saldo integral após a confirmação Pix.':'É necessário pagar o plano escolhido para concluir seu cadastro. A ativação ocorre somente após confirmação do Pix.';
       }
       if(trialLabel)trialLabel.classList.toggle('qf-trial-card--selected',test);
       if(conditions)conditions.hidden=false;
@@ -471,13 +471,13 @@
     if (trial && trial.closest('label')) trial.closest('label').classList.add('qf-options-original');
     const courtesy = step.querySelector('[name="cortesiaLivre"]');
     if (courtesy && courtesy.closest('label')) courtesy.closest('label').classList.add('qf-options-original');
-    const notes = Array.from(step.children).filter(node => node.tagName === 'P' && node.textContent.includes('Avulso: R$ 13'));
+    const notes = Array.from(step.children).filter(node => node.tagName === 'P' && node.textContent.includes('Avulso: R$ 14,99'));
     notes.forEach(node => node.classList.add('qf-options-original'));
     const ui = document.createElement('div');
     ui.className = 'qf-options-final';
     ui.setAttribute('aria-label', 'Escolha sua forma de começar');
     const cards=[
-      {id:'avulso',badge:'SEM MENSALIDADE',nome:'Avulso',preco:'R$ 13,00',periodo:'crédito inicial',detail:'Recarga mínima integral para desbloqueios',info:'Após o Pix confirmado, R$ 13,00 ficam disponíveis na carteira',botao:'Pagar Avulso'},
+      {id:'avulso',badge:'SEM MENSALIDADE',nome:'Avulso',preco:'R$ 14,99',periodo:'crédito inicial',detail:'Recarga mínima integral para desbloqueios',info:'Após o Pix confirmado, R$ 14,99 ficam disponíveis na carteira',botao:'Pagar Avulso'},
       {id:'basico_v2',badge:'PLANO BÁSICO',nome:'Básico',preco:'R$ 39,90',periodo:'30 dias',detail:'10 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Básico'},
       {id:'pro_v2',badge:'PLANO PRO',nome:'Pro',preco:'R$ 79,90',periodo:'30 dias',detail:'25 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Pro'},
       {id:'completo_v2',badge:'MENSAL COMPLETO',nome:'Mensal completo',preco:'R$ 149,90',periodo:'30 dias',detail:'Até 100 desbloqueios durante 30 dias',info:'Sem comissão e sem taxa extra de entrada',botao:'Ativar Completo'}
@@ -490,7 +490,7 @@
       '<p class="qf-options-note">'+p.info+'</p>'+
       '<button class="qf-options-button" type="button" data-qf-opcao="'+p.id+'">'+p.botao+'</button></section>').join('');
     list.parentNode.insertBefore(ui, list);
-    // O Avulso é a opção inicial, mas também exige Pix de R$ 13,00 confirmado.
+    // O Avulso é a opção inicial, mas também exige Pix de R$ 14,99 confirmado.
     const avulsoDefault = form.querySelector('[name="planoEscolhido"][value="avulso"]');
     if (avulsoDefault) avulsoDefault.checked = true;
     form.dataset.qfOptions20261030 = 'yes';
