@@ -580,6 +580,44 @@ async function progressivePriorityBoost(callId: string) {
   }
 }
 
+// Admin: avisa imediatamente quando um pedido foi realmente gravado no banco.
+// Registro idempotente impede envio duplicado se o gatilho tentar novamente.
+async function notifyAdminsOnNewCall(callId: string) {
+  try {
+    const { data: call, error: callError } = await admin
+      .from("qf_chamados")
+      .select("id,titulo,cidade,uf,status")
+      .eq("id", callId)
+      .maybeSingle();
+    if (callError || !call) return;
+    const { data: reserved, error: reserveError } = await admin
+      .from("qf_chamado_alertas")
+      .upsert({ chamado_id: callId, tipo: "admin_novo_pedido" }, {
+        onConflict: "chamado_id,tipo", ignoreDuplicates: true
+      })
+      .select("chamado_id");
+    if (reserveError) {
+      console.error("qf_admin_new_call_reserve", reserveError.message);
+      return;
+    }
+    if (!reserved || reserved.length === 0) return;
+    const { data: admins, error: adminError } = await admin
+      .from("qf_admins").select("user_id");
+    if (adminError || !admins?.length) return;
+    const place = [call.cidade, call.uf].filter(Boolean).join("/");
+    const result = await sendToUsers(admins.map((a: any) => a.user_id), {
+      title: "Novo pedido publicado no Quem Faz",
+      body: (call.titulo || "Novo serviço") + (place ? " · " + place : ""),
+      url: "/admin.html#/admin/dashboard",
+      tag: "qf-admin-new-call-" + callId,
+      strong: true,
+    });
+    console.log("qf_admin_new_call", JSON.stringify({ call_id: callId, ...result }));
+  } catch (err) {
+    console.error("qf_admin_new_call", err);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -837,6 +875,7 @@ Deno.serve(async (req) => {
     }
 
     EdgeRuntime.waitUntil(progressiveNewCallPush(callId));
+    EdgeRuntime.waitUntil(notifyAdminsOnNewCall(callId));
     return json({ ok: true, internal: true, ...delivered });
   }
 
