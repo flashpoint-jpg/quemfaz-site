@@ -148,8 +148,9 @@ Deno.serve(async(req)=>{
   let body:any={}; try{body=await req.json();}catch(_){}
   if(!INTERNAL_TOKEN || String(body?.token||"")!==INTERNAL_TOKEN) return out({ok:false,error:"forbidden"},403);
 
-  const c=client();
+  let c:Deno.HttpClient | undefined;
   try{
+    c=client();
     const access=await token(c);
     let marketing:any;try{marketing=await syncMarketingDedicado(admin,c,EFI_PIX_BASE,access);}catch(_){marketing={error:'marketing_indisponivel'};}
     let checked=0,approved=0,ignored=0;
@@ -205,6 +206,11 @@ Deno.serve(async(req)=>{
     catch(e){charges={error:String((e as Error).message||e)};console.warn("QF_EFI_COBRANCAS_SYNC_FAILED",charges.error);}
     let comissoes:any;try{comissoes=await syncComissoesQf13(c,access);}catch(e){comissoes={error:String((e as Error).message||e)};console.warn('QF13_PIX_SYNC_FAILED',comissoes.error);}
     return out({ok:true,checked,approved,ignored,charges,comissoes,marketing});
-  }catch(e){return out({ok:false,error:String((e as Error).message||e)},500);}
-  finally{c.close();}
+  }catch(e){
+    // Log apenas codigo tecnico: nao incluir chaves Efí, JWT, certificado ou payload do cliente.
+    const raw=String((e as any)?.code || (e as Error)?.message || "unexpected");
+    const codigo=/^[A-Za-z0-9_]{3,80}$/.test(raw)?raw:"unclassified";
+    console.error("QF_EFI_PIX_SYNC_FAILED",codigo);
+    return out({ok:false,error:"sync_failure"},500);
+  } finally {c?.close();}
 });
