@@ -232,7 +232,7 @@
       (grupos[key]||(grupos[key]={titulo:(NOVOS_PLANOS[r.plano]||r.plano||'Outros')+' · '+money(r.valor_centavos),itens:[]})).itens.push(r);
     });
     panel.innerHTML='<div class="qf-novos-cab"><div><h2>Novos · cadastros e pagamentos</h2><p>Interessados ainda não são profissionais ativos. O Pix precisa ser confirmado.</p></div>'+
-      '<button class="btn btn--outline" type="button" data-novos-refresh>Atualizar</button></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn--primary" type="button" data-novos-simular-um>Simular chamado individual</button><button class="btn btn--outline" type="button" data-novos-refresh>Atualizar</button></div></div>'+
       '<div class="qf-novos-contadores"><button type="button" class="'+(dataNovos.filtro==='pendente'?'ativo':'')+'" data-novos-filtro="pendente">Aguardando Pix <b>'+pend.length+'</b></button>'+
       '<button type="button" class="'+(dataNovos.filtro==='aprovado'?'ativo':'')+'" data-novos-filtro="aprovado">Pagos, sem ativar <b>'+pagos.length+'</b></button></div>'+
       '<div class="qf-novos-grupos">'+(Object.values(grupos).length?Object.values(grupos).map(g=>
@@ -241,6 +241,13 @@
         '<p class="qf-novos-vazio">Nenhum registro para essa situação.</p>')+'</div>'+
       '<p class="qf-novos-nota">O WhatsApp abre com mensagem pronta; nenhuma mensagem é enviada automaticamente. Cobranças antigas podem ter preço anterior. Consulte o Pix antes de cobrar novamente.</p>';
     panel.querySelector('[data-novos-refresh]').onclick=()=>carregarNovos(panel);
+    panel.querySelector('[data-novos-simular-um]').onclick=()=>{
+      const target=document.getElementById('qf-teste-individual');
+      if(!target){global.navigate('/admin/profissionais',true);return;}
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+      const buscar=target.querySelector('#qf-teste-prof-busca');
+      if(buscar)buscar.focus({preventScroll:true});
+    };
     panel.querySelectorAll('[data-novos-filtro]').forEach(b=>b.onclick=()=>{dataNovos.filtro=b.dataset.novosFiltro;desenharNovos(panel);});
   }
   async function carregarNovos(panel){
