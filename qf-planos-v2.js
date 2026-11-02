@@ -10,7 +10,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
  'use strict';
  const PROPOSTA=Object.freeze([
-  Object.freeze({codigo:'avulso',nome:'Avulso',preco_centavos:1300,cota:null,descricao:'Pix inicial obrigatório de R$ 13 (ou mais). Saldo liberado só após confirmação; sem pagamento, sem desbloqueios'}),
+  Object.freeze({codigo:'avulso',nome:'Avulso',preco_centavos:1499,cota:null,descricao:'Pix inicial obrigatório de R$ 14,99 (ou mais). Saldo liberado só após confirmação; sem pagamento, sem desbloqueios'}),
   Object.freeze({codigo:'basico',nome:'Básico',preco_centavos:3990,cota:10,descricao:'10 desbloqueios a cada 30 dias'}),
   Object.freeze({codigo:'pro',nome:'Pro',preco_centavos:7990,cota:25,descricao:'25 desbloqueios a cada 30 dias'}),
   Object.freeze({codigo:'completo',nome:'Mensal completo',preco_centavos:14990,cota:100,descricao:'Até 100 desbloqueios por período de 30 dias'})
@@ -44,7 +44,7 @@
   }
   // Pré-cadastro sem pagamento não é cadastro profissional ativo e NÃO oferece desbloqueio.
   // Somente saldo cuja origem paga foi confirmada pelo servidor pode ser usado.
-  // O novo Avulso exige uma recarga Pix inicial de pelo menos R$ 13,00.
+  // O novo Avulso exige uma recarga Pix inicial de pelo menos R$ 14,99.
   if(creditoAvulsoComprovado===true&&saldo>=preco)
    return {origem:'credito_avulso',custo_centavos:preco,restantes:0,liberado:true};
   return {origem:'recarga_necessaria',custo_centavos:preco,restantes:0,liberado:false};
@@ -52,7 +52,7 @@
  function validarRecargaAvulsa({valor_centavos,status,confirmadaPeloBanco=false}={}){
   // Previa de regra de negocio: a confirmacao efetiva deve vir da conciliacao Efí no servidor.
   const valor=inteiroNaoNegativo(valor_centavos,'valor da recarga');
-  if(valor<1300) return Object.freeze({liberarCredito:false,valorCreditado:0,motivo:'recarga_minima_13'});
+  if(valor<1499) return Object.freeze({liberarCredito:false,valorCreditado:0,motivo:'recarga_minima_1499'});
   if(status!=='aprovado'||confirmadaPeloBanco!==true)
    return Object.freeze({liberarCredito:false,valorCreditado:0,motivo:'aguardando_pix'});
   return Object.freeze({liberarCredito:true,valorCreditado:valor,motivo:'pix_confirmado'});
@@ -67,7 +67,7 @@
      typeof txid!=='string'||!txid.trim()||
      typeof endToEndId!=='string'||endToEndId.trim().length<16)
    return Object.freeze({ativarCadastro:false,credito_centavos:0,motivo:'aguardando_pagamento_confirmado'});
-  const valorValido=plano==='avulso' ? valor_centavos>=1300 : valor_centavos===escolhido.preco_centavos;
+  const valorValido=plano==='avulso' ? valor_centavos>=1499 : valor_centavos===escolhido.preco_centavos;
   if(!valorValido) return Object.freeze({ativarCadastro:false,credito_centavos:0,motivo:'valor_do_plano_incorreto'});
   return Object.freeze({
    ativarCadastro:true,
