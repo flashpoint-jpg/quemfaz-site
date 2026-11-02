@@ -298,5 +298,7 @@ require('./seo-hub-icons.cjs');
 require('./seo-abc.cjs');
 require('./seo-index-links.cjs');
 require('./check-sitemap.cjs');
+// Páginas orgânicas passam a abrir o pedido na home, sem segundo clique.
+require('./seo-direct-entry.cjs');
 
 
