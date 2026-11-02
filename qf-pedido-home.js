@@ -218,8 +218,23 @@
   form.onsubmit=e=>{e.preventDefault();track('home_submit');const problem=input.value.trim();state.problem=problem;
    // A escolha explícita usa o catálogo dos profissionais, inclusive categorias novas.
    let category=categories.find(c=>c.id===select.value);
-   // Nome exato do catalogo pode ser enviado sem segundo toque.
-   if(!category){const exact=categories.filter(c=>norm(c.nome)===norm(search.value));if(exact.length===1){category=exact[0];pick(category);}}
+   // Permitir serviço inequívoco digitado sem exigir toque na sugestão.
+   if(!category){
+    const typed=norm(search.value),tokens=typed.split(/[^a-z0-9]+/).filter(Boolean);
+    if(typed.length>=3){
+     const exact=categories.filter(c=>norm(c.nome)===typed);
+     if(exact.length===1)category=exact[0];
+     if(!category){
+      const byName=categories.filter(c=>tokens.every(t=>norm(c.nome).includes(t)));
+      if(byName.length===1)category=byName[0];
+      else if(!byName.length){
+       const inferred=classify(typed).filter(x=>categories.some(c=>c.id===x.category.id));
+       if(inferred[0]?.score>=10&&(!inferred[1]||inferred[0].score-inferred[1].score>=3))category=inferred[0].category;
+      }
+     }
+    }
+    if(category)pick(category);
+   }
    if(!category){track('validation_error',{error_code:'service'});form.querySelector('[role=alert]').textContent='Digite o serviço e escolha uma das opções encontradas.';search.setAttribute('aria-invalid','true');search.focus();return;}
    if(problem.length<8||problem.length>1500){track('validation_error',{error_code:'description'});form.querySelector('[role=alert]').textContent='Descreva o que precisa ser feito, com 8 a 1.500 caracteres. Ex.: meu computador não liga.';input.setAttribute('aria-invalid','true');input.focus();return;}
    showForm(category.nome,problem);
