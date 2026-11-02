@@ -100,10 +100,23 @@
 
   var OCEANO = [[-24.25, -46.90], [-24.19, -46.80], [-24.10, -46.62], [-24.03, -46.42], [-23.99, -46.30], [-23.93, -46.20], [-23.85, -46.14], [-23.82, -46.00], [-23.78, -45.85]];
 
-  function mapaSvg(lista) {
-    var costa = OCEANO.map(function (p) { var q = proj(p[0], p[1]); return f1(q[0]) + ',' + f1(q[1]); }).join(' L');
-    var oceano = 'M' + costa + ' L' + W + ',' + H + ' L' + W + ',' + f1(proj(-23.78, -45.85)[1]) + ' Z';
-    oceano = 'M' + costa + ' L' + W + '.0,' + H + '.0 Z';
+  var alturaMapa = H; // altura do desenho (unidades do viewBox); cresce para igualar a coluna da direita
+  function mapaSvg(lista, h) {
+    h = Math.max(H, Math.min(H + 300, Number(h) || H));
+    // costa: segue a linha original e, se o desenho ficou mais alto, continua para o sudoeste
+    var pts = OCEANO.map(function (p) { var q = proj(p[0], p[1]); return [q[0], q[1]]; });
+    var ini = pts[0], base = [];
+    if (h > H) {
+      var k = (pts[1][0] - pts[0][0]) / (pts[1][1] - pts[0][1]); // inclinação do primeiro trecho da costa (x por y; negativa)
+      var xs = ini[0] + k * (h - ini[1]);
+      if (xs < 0) { var ys = ini[1] + (0 - ini[0]) / k; pts.unshift([0, ys]); base = [[0, h]]; }
+      else { pts.unshift([xs, h]); }
+    }
+    var costa = pts.map(function (q) { return f1(q[0]) + ',' + f1(q[1]); }).join(' L');
+    var oceano = 'M' + costa + ' L' + W + ',' + h + (base.length ? ' L0,' + h : '') + ' Z';
+    var grade = '';
+    for (var gy = 87; gy < h; gy += 87) grade += 'M0 ' + gy + 'H' + W;
+    for (var gx = 104; gx < W; gx += 104) grade += 'M' + gx + ' 0V' + h;
     var grandes = '', pequenos = '', sp = null;
     lista.forEach(function (c) {
       var d = CIDADES[c.key]; if (!d || d[1] == null || !dentro(d[1], d[2])) return;
@@ -122,13 +135,14 @@
       '<text x="402" y="146" text-anchor="middle">Mogi das Cruzes</text><text x="172" y="30">Jundiaí</text>' +
       '<text x="498" y="34" text-anchor="end">São José dos Campos</text><text x="288" y="256" text-anchor="middle">Grande ABC</text>' +
       '<text x="300" y="396" text-anchor="middle">Baixada Santista</text></g>';
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Mapa estilizado da Grande São Paulo e da Baixada Santista com a quantidade de profissionais por cidade">' +
-      '<rect width="' + W + '" height="' + H + '" class="qf-mapa__terra"/>' +
-      '<path class="qf-mapa__grade" d="M0 87H520M0 174H520M0 261H520M0 348H520M104 0V436M208 0V436M312 0V436M416 0V436"/>' +
+    var eY = h - 20;
+    return '<svg viewBox="0 0 ' + W + ' ' + f1(h) + '" width="100%" role="img" aria-label="Mapa estilizado da Grande São Paulo e da Baixada Santista com a quantidade de profissionais por cidade">' +
+      '<rect width="' + W + '" height="' + f1(h) + '" class="qf-mapa__terra"/>' +
+      '<path class="qf-mapa__grade" d="' + grade + '"/>' +
       '<path class="qf-mapa__mar" d="' + oceano + '"/><path class="qf-mapa__costa" d="M' + costa + '"/>' +
       '<text x="440" y="372" text-anchor="middle" class="qf-mapa__oceano">Oceano Atlântico</text>' +
       '<g class="qf-mapa__poucos">' + pequenos + '</g><g class="qf-mapa__muitos">' + grandes + '</g>' + txt +
-      '<path class="qf-mapa__escala" d="M18 416H52M18 411V421M52 411V421"/><text x="35" y="406" text-anchor="middle" class="qf-mapa__escala-t">10 km</text></svg>';
+      '<path class="qf-mapa__escala" d="M18 ' + f1(eY) + 'H52M18 ' + f1(eY - 5) + 'V' + f1(eY + 5) + 'M52 ' + f1(eY - 5) + 'V' + f1(eY + 5) + '"/><text x="35" y="' + f1(eY - 10) + '" text-anchor="middle" class="qf-mapa__escala-t">10 km</text></svg>';
   }
 
   function cartaoHtml(d) {
@@ -149,7 +163,7 @@
     return '<section class="qf-mapa" data-qf-mapa aria-labelledby="qf-mapa-t">' +
       '<div class="qf-mapa__head"><div class="qf-mapa__icone" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg></div>' +
       '<div><h2 id="qf-mapa-t">Onde o QuemFaz já atende</h2><p><strong>' + total + ' profissionais</strong> em ' + lista.length + ' cidades' + (maioria ? ', a maioria na Grande São Paulo e na Baixada Santista.' : '.') + '</p></div></div>' +
-      '<div class="qf-mapa__mapa">' + mapaSvg(lista) + '</div>' +
+      '<div class="qf-mapa__mapa">' + mapaSvg(lista, alturaMapa) + '</div>' +
       '<div class="qf-mapa__legenda"><span><i class="qf-mapa__bola"></i>círculo maior = mais profissionais</span><span><i class="qf-mapa__bola qf-mapa__bola--vazia"></i>1 ou 2 profissionais</span></div>' +
       (tiles ? '<div class="qf-mapa__tiles">' + tiles + '</div>' : '') +
       '<p class="qf-mapa__rodape">' + alem + '<strong>Não vê a sua cidade? Publique o pedido mesmo assim.</strong></p></section>';
@@ -164,6 +178,7 @@
       if (!h) { el.remove(); return; }
       var t = document.createElement('div'); t.innerHTML = h; el.replaceWith(t.firstChild);
     });
+    agendarAjuste();
   }
   function buscar() {
     var c = g.QFCloud && g.QFCloud.client;
@@ -183,6 +198,29 @@
     como.classList.add('qf-como-direita');
     serv.insertAdjacentElement('afterend', como);
   }
+  // V12.3.2: o desenho do mapa cresce (ou volta ao normal) para a coluna da esquerda terminar na mesma altura da direita.
+  var ajustando = 0;
+  function ajustar() {
+    var card = document.querySelector('[data-qf-mapa]'); if (!card || !dados) return;
+    var vis = document.querySelector('.qf-home-visual'), act = document.querySelector('.qf-landing-actions');
+    var caixa = card.querySelector('.qf-mapa__mapa'), svg = caixa && caixa.querySelector('svg');
+    if (!vis || !act || !svg || !g.matchMedia('(min-width:900px)').matches) return;
+    var gap = act.getBoundingClientRect().bottom - vis.getBoundingClientRect().bottom;
+    if (Math.abs(gap) < 3 || ajustando > 3) return;
+    var r = svg.getBoundingClientRect(); if (!r.width) return;
+    var alvo = Math.max(H, Math.min(H + 300, (r.height + gap) * W / r.width));
+    if (Math.abs(alvo - alturaMapa) < 1) return;
+    ajustando++; alturaMapa = alvo;
+    caixa.innerHTML = mapaSvg(norm(dados.lista), alturaMapa);
+    setTimeout(function () { ajustando = 0; }, 400);
+    (g.requestAnimationFrame || setTimeout)(ajustar);
+  }
+  var tAj = null;
+  function agendarAjuste() { clearTimeout(tAj); tAj = setTimeout(function () { ajustando = 0; ajustar(); }, 120); }
+  g.addEventListener('resize', agendarAjuste);
+  g.addEventListener('load', agendarAjuste);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(agendarAjuste);
+
   function montar() {
     agendado = false;
     if (!g.matchMedia || !g.matchMedia('(min-width:900px)').matches) return;
@@ -191,7 +229,7 @@
     if (!ben || (ben.nextElementSibling && ben.nextElementSibling.hasAttribute('data-qf-mapa'))) return;
     if (!dados) lerCache();
     var h = dados ? cartaoHtml(dados) : '';
-    if (h) { var t = document.createElement('div'); t.innerHTML = h; ben.insertAdjacentElement('afterend', t.firstChild); }
+    if (h) { var t = document.createElement('div'); t.innerHTML = h; ben.insertAdjacentElement('afterend', t.firstChild); agendarAjuste(); }
     if (!timer) {
       buscar();
       timer = setInterval(function () { if (!document.querySelector('[data-qf-mapa]')) { clearInterval(timer); timer = null; return; } if (!document.hidden) { tentativas = 0; buscar(); } }, 60000);

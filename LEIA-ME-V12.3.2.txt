@@ -1,0 +1,5 @@
+V12.3.2 - Home no computador: colunas terminam na mesma altura
+- O mapa das regioes passa a crescer (ou voltar ao normal) para a coluna da esquerda terminar na mesma altura da coluna da direita, sem faixa em branco embaixo.
+- Recalcula ao carregar, ao redimensionar a janela e quando as fontes terminam de carregar.
+- Celular nao muda.
+Arquivos: qf-mapa-regioes.js, index.html (APP_VERSION 12.3.2).
