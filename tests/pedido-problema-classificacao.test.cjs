@@ -124,3 +124,42 @@ test('Busca mostra até cinco opções, reconhece apelidos e invalida a seleçã
   search.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape'}));assert.equal(results.hidden,true);
  }finally{dom.window.close();}
 });
+
+test('Serviço reconhecido digitado avança sem tocar na sugestão',()=>{
+ const {dom,w,mounted}=home();
+ try{
+  for(const [typed,id] of [
+   ['conserto de geladeira','cat_geladeira'],
+   ['eletricista','cat_eletricista'],
+   ['encanador','cat_encanador'],
+   ['computador não liga','cat_informatica']
+  ]){
+   w.QFPedidoHome.start();
+   const search=w.document.querySelector('#home-service-search');
+   search.value=typed;search.dispatchEvent(new w.Event('input'));
+   const problem=w.document.querySelector('#home-problem');
+   problem.value='Preciso de um profissional para resolver o problema';
+   const before=mounted.length;
+   problem.form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+   assert.equal(mounted.length,before+1,typed+' deve avançar sem segundo toque');
+   assert.equal(mounted.at(-1).service,catalog.find(c=>c.id===id).nome);
+  }
+ }finally{dom.window.close();}
+});
+
+test('Entrada ambígua ou desconhecida exige escolha explícita e não cria categoria',()=>{
+ const {dom,w,mounted}=home();
+ try{
+  for(const typed of ['eletricista e encanador','serviço desconhecido xyz','tecnico']){
+   w.QFPedidoHome.start();
+   const search=w.document.querySelector('#home-service-search');
+   search.value=typed;search.dispatchEvent(new w.Event('input'));
+   const problem=w.document.querySelector('#home-problem');
+   problem.value='Preciso de um profissional para resolver o problema';
+   const before=mounted.length;
+   problem.form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+   assert.equal(mounted.length,before,typed+' deve exigir escolha');
+   assert.match(w.document.querySelector('[role=alert]').textContent,/escolha uma das opções/i);
+  }
+ }finally{dom.window.close();}
+});
