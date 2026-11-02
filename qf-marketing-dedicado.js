@@ -10,7 +10,8 @@
   if(!g.Screens||g.QFMarketingDedicado.installed)return;g.QFMarketingDedicado.installed=true;
   const style=g.document.createElement('style');style.textContent='.qf-md{background:#fff;border:1.5px solid #bed2ee;border-radius:16px;padding:18px;margin:0 0 16px;display:grid;gap:12px;min-width:0;color:#16324f;line-height:1.5}.qf-md h2,.qf-md h3,.qf-md p{margin:0}.qf-md form,.qf-md label{display:grid;gap:8px}.qf-md form{gap:12px}.qf-md input,.qf-md textarea,.qf-md select{max-width:100%;box-sizing:border-box}.qf-md .btn{white-space:normal;min-height:44px;height:auto!important;min-width:0}.qf-md .btn-row{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.qf-md small{display:block;color:#53657b}.qf-md article{border:1px solid #d7e2ee;border-radius:12px;padding:14px;display:grid;gap:10px;overflow-wrap:anywhere}.qf-md__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}.qf-md__metrics>div{border-radius:10px;background:#f0f5fc;padding:10px}.qf-md__metrics strong{display:block;font-size:20px;color:#1458cc}.qf-md__hold{padding:12px;border-radius:10px;background:#fff3dc;color:#70460c}@media(max-width:500px){.qf-md{padding:13px}.qf-md .btn-row{grid-template-columns:minmax(0,1fr)}.qf-md__metrics{grid-template-columns:1fr 1fr}}';g.document.head.append(style);
   async function mount(pattern,content){
-   const admin=pattern==='/admin/marketing-dedicado',pro=false;/* Oferta de R$ 550 retirada da Carteira/Planos do profissional em 31/10/2026. */
+   const admin=pattern==='/admin/marketing-dedicado',pro=false;/* Marketing Dedicado removido do painel administrativo. Histórico financeiro preservado. */
+    if(admin)return;
    if(!admin&&!pro||content.querySelector('[data-md-panel]'))return;
    const c=admin?g.QFAdminCloud?.client:g.QFCloud?.client;if(!c)return;
    const box=g.document.createElement('section');box.dataset.mdPanel='';box.className='section qf-md';
