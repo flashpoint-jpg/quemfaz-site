@@ -77,7 +77,7 @@
    motivo:'plano_pago'
   });
  }
- const MENSAGEM_PAGAMENTO='É necessário pagar o plano escolhido para concluir seu cadastro.';
+ const MENSAGEM_PAGAMENTO='Ative seu perfil com uma recarga inicial a partir de R$ 14,99. O valor vira saldo para desbloquear oportunidades de serviços após a confirmação do Pix.';
  function podeFinalizarCadastro({plano,valor_centavos,pagamentoStatus,confirmadaPeloBanco=false,txid='',endToEndId=''}={}){
   const decisao=validarAtivacaoCadastro({plano,valor_centavos,pagamentoStatus,confirmadaPeloBanco,txid,endToEndId});
   return Object.freeze({
