@@ -251,7 +251,13 @@
   return state.user;
  }
  function list(){return state.user?(g.DB?.state?.requests||[]).filter(r=>r.clienteId===state.user.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0)):[];}
- function reset(){const el=host();if(el)el.innerHTML=toolbar();}
+ function reset(){
+  const el=host();if(el)el.innerHTML=toolbar();
+  // Durante o pedido, ocultar os catálogos que aparecem logo abaixo do formulário.
+  // Não remover do DOM: voltam ao sair do formulário.
+  const editing=state.mode==='form';
+  g.document.querySelectorAll('.qf-home-services-mobile,.qf-home-services-desktop').forEach(section=>{section.hidden=editing;section.style.display=editing?'none':'';});
+}
  // Painel de cliente: só pedidos novos e existentes, sem favoritos nem recontratação.
  async function dashboard(){
   selectTab('home');state.mode='dashboard';state.selected=null;state.prof=null;state.notice='';reset();
