@@ -343,7 +343,17 @@
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
           if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
-          current=await root.QFClienteAcesso.authenticate({nome:a.nome,telefone:a.contato,container:params.embedded?area:null});currentUser=current;
+          // Publicação sem cadastro é o caminho padrão: a função de visitante cria
+          // uma sessão limitada no servidor, sem exigir Google ou senha.
+          // Se não for possível, mostrar o acesso alternativo ao cliente.
+          try{
+            current=await root.QFClienteAcesso.guest(a.nome,a.contato);
+          }catch(guestError){
+            console.warn('Quem Faz: publicação de visitante indisponível',guestError);
+            publishError('Não conseguimos publicar sem cadastro: '+String(guestError?.message||'tente novamente')+'. Você pode tentar novamente ou entrar com sua conta.');
+            return;
+          }
+          currentUser=current;
           // A identidade vem do login; o contato usado no pedido deve ser o contato do próprio perfil.
           // Pedir confirmação quando o telefone digitado diverge, sem trocar de conta nem apagar o rascunho.
           const phone=v=>String(v||'').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
