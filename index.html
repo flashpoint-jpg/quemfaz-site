@@ -3919,6 +3919,13 @@ body { font-family: var(--qf-font); background: var(--qf-bg); color: var(--qf-te
 .qf-whatsapp-support__link strong{font-weight:800;text-decoration:underline;text-underline-offset:2px;}
 @media(max-width:380px){.qf-whatsapp-support__link{font-size:12.5px;padding:10px 8px;gap:7px;}}
 </style>
+<style id="qf-cadastro-mobile-fix">
+body:has(#cadastro-prof-form) {min-height:100dvh}
+#cadastro-prof-form .qf-step[hidden]{display:none!important}
+#cadastro-prof-form .qf-step:not([hidden]){scroll-margin-top:130px}
+#cadastro-prof-form .qf-cad-planos__exigencia{display:none!important}
+@media(max-width:700px){body:has(#cadastro-prof-form) .view{min-height:calc(100dvh - 120px);padding-bottom:24px}#cadastro-prof-form .qf-step__nav{position:relative;bottom:auto}}
+</style>
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -8579,7 +8586,7 @@ alt=""></noscript>
   }
   const QF_CAD_PLANOS = [
     {id:'avulso',nome:'Avulso',preco:'R$ 14,99',valor:1499,per:'recarga mínima',unit:'R$ 14,99 de crédito na carteira',
-      itens:['Pagamento obrigatório para finalizar o cadastro','Valor integral convertido em créditos após Pix','Sem mensalidade, sem comissão']},
+      itens:['R$ 14,99 disponíveis após confirmação do Pix','Valor por desbloqueio varia conforme a profissão e o pedido','Sem mensalidade e sem comissão']},
     {id:'basico_v2',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
       itens:['10 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
     {id:'pro_v2',nome:'Pro',preco:'R$ 79,90',valor:7990,per:'30 dias',unit:'25 desbloqueios por mês',
@@ -9324,9 +9331,9 @@ alt=""></noscript>
               '<span class="qf-cad-plano__lista">' + pl.itens.map(function (t) { return '<span>' + icon('checkCircle') + t + '</span>'; }).join('') + '</span>' +
             '</label>';
           }).join('') + '</div>' +
-          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. Avulso: R$ 14,99 em créditos. Básico: R$ 39,90/10 pedidos. Pro: R$ 79,90/25 pedidos. Mensal completo: R$ 149,90/100 pedidos. Nenhuma comissão e nenhuma taxa adicional nos mensais.</p>' +
+          '<p class="text--sm text--secondary">Compare: Básico R$ 3,99 por desbloqueio (10); Pro R$ 3,20 (25); Completo R$ 1,50 (100). Avulso: preço variável conforme profissão e pedido. Sem comissão por serviço fechado.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
-          '<p class="qf-cad-planos__exigencia" role="status">É necessário pagar o plano escolhido para concluir seu cadastro.</p>' +
+          '' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Continuar para pagamento · R$ 14,99</button></div>' +
           '</div>' +
           // V11.50: pagamento do plano antes da conta e, depois, os dados da conta criada.
@@ -10525,7 +10532,12 @@ alt=""></noscript>
         Array.prototype.forEach.call(document.querySelectorAll('.toast--danger'), function (t) { t.remove(); });
         Array.prototype.forEach.call(form.querySelectorAll('[data-step]'), function (el) { el.hidden = Number(el.getAttribute('data-step')) !== n; });
         try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (_) {}
-        window.scrollTo(0, 0);
+        requestAnimationFrame(function () {
+          const etapa=form.querySelector('[data-step="'+n+'"]');
+          if (!etapa || etapa.hidden || !etapa.isConnected) return;
+          const topo=etapa.getBoundingClientRect().top+window.scrollY-130;
+          window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+        });
       }
       function marcarErro(nome) {
         const el = form.querySelector('[name="' + nome + '"]');
