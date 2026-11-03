@@ -3924,6 +3924,7 @@ body:has(#cadastro-prof-form) {min-height:100dvh}
 #cadastro-prof-form .qf-step[hidden]{display:none!important}
 #cadastro-prof-form .qf-step:not([hidden]){scroll-margin-top:130px}
 #cadastro-prof-form .qf-cad-planos__exigencia{display:none!important}
+@media(max-width:700px){#cadastro-prof-form{min-height:calc(100dvh + 240px);overflow-anchor:none}html:has(#cadastro-prof-form){overflow-anchor:none}}
 @media(max-width:700px){body:has(#cadastro-prof-form) .view{min-height:calc(100dvh - 120px);padding-bottom:24px}#cadastro-prof-form .qf-step__nav{position:relative;bottom:auto}}
 </style>
 </head>
@@ -10535,8 +10536,8 @@ alt=""></noscript>
         requestAnimationFrame(function () {
           const etapa=form.querySelector('[data-step="'+n+'"]');
           if (!etapa || etapa.hidden || !etapa.isConnected) return;
-          const topo=etapa.getBoundingClientRect().top+window.scrollY-130;
-          window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+          const destino=Math.max(0,form.getBoundingClientRect().top+window.scrollY-110);
+          window.scrollTo({top:destino,behavior:'instant'});
         });
       }
       function marcarErro(nome) {
