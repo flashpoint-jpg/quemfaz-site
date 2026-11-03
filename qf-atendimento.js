@@ -342,15 +342,15 @@
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
           let current=currentUser;
-          if(!root.QFClienteAcesso)throw Error('Atualize a página para entrar e publicar seu pedido.');
+          if(!root.QFClienteAcesso?.guest)throw Error('Atualize a página para publicar seu pedido sem cadastro.');
           // Publicação sem cadastro é o caminho padrão: a função de visitante cria
           // uma sessão limitada no servidor, sem exigir Google ou senha.
-          // Se não for possível, mostrar o acesso alternativo ao cliente.
+          // Não abrir formulário de login: em caso de falha, preservar o pedido e mostrar erro.
           try{
             current=await root.QFClienteAcesso.existing(a.contato) || await root.QFClienteAcesso.guest(a.nome,a.contato);
           }catch(guestError){
             console.warn('Quem Faz: publicação de visitante indisponível',guestError);
-            publishError('Não conseguimos publicar sem cadastro: '+String(guestError?.message||'tente novamente')+'. Você pode tentar novamente ou entrar com sua conta.');
+            publishError('Não conseguimos concluir a publicação: '+String(guestError?.message||'tente novamente')+'. Seus dados foram preservados. Tente novamente.');
             return;
           }
           currentUser=current;
