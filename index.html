@@ -8595,12 +8595,15 @@ alt=""></noscript>
     const KEY='qf_convite_24h_session';
     function token(){
       try{
-        const params=new URLSearchParams(location.search), value=params.get('qf_convite_24h');
+        const params=new URLSearchParams(location.search);
+        const h=(location.hash||'').match(/^#\/convite\/24h\/([a-f0-9]{64})$/);
+        const value=h?h[1]:params.get('qf_convite_24h');
         if(value&&/^[a-f0-9]{64}$/.test(value)){
           sessionStorage.setItem(KEY,value);
           params.delete('qf_convite_24h');
           const q=params.toString();
-          history.replaceState(history.state,'',location.pathname+(q?'?'+q:'')+location.hash);
+          history.replaceState(history.state,'',location.pathname+(q?'?'+q:'')+
+            (h?'#/auth/profissional/cadastro':location.hash));
         }
         return sessionStorage.getItem(KEY)||'';
       }catch(_){return ''}
@@ -8609,6 +8612,8 @@ alt=""></noscript>
     return {token:token,limpar:limpar};
   })();
   global.QFConvite24h=QFConvite24h;
+  // Captura o convite antes de o roteador decidir qual tela abrir.
+  QFConvite24h.token();
   const QFPreCadastro = (function () {
     const KEY = 'qf_pre_cadastro', KEY_SENHA = 'qf_pre_cadastro_s', VALE_MS = 72 * 3600000;
     function ler() {
@@ -10597,6 +10602,8 @@ alt=""></noscript>
       const conviteToken=global.QFConvite24h && global.QFConvite24h.token();
       let conviteValido=false, conviteEmail='';
       if(conviteToken){
+        const intro=form.querySelector('[data-step="1"] .qf-step__head .text--sm');
+        if(intro)intro.textContent='Convite especial de 24 horas: preencha seus dados e ative sem Pix ou pagamento.';
         const tela=form.querySelector('[data-step="5"]'),cab=tela.querySelector('.qf-step__head');
         const t=cab.querySelector('.h2'), d=cab.querySelector('.text--sm');
         if(t)t.textContent='Seu convite individual';
@@ -10893,6 +10900,9 @@ alt=""></noscript>
       // Voltou ao cadastro com um pagamento aberto neste aparelho (fechou o app, foi ao banco pagar): continua de onde parou.
       (function retomarPagamento() {
         if (!(global.QFCloud && global.QFCloud.enabled)) return;
+        // Um convite individual tem prioridade sobre qualquer Pix pendente neste aparelho.
+        // Não apagar o pagamento anterior.
+        if (conviteToken) return;
         const salvo = QFPreCadastro.ler();
         if (!salvo || !salvo.pag || !salvo.pag.id) return;
         if (!salvo.dados) {
@@ -18612,6 +18622,22 @@ alt=""></noscript>
         return;
       }
       if (session) {
+        // Profissional que abriu o convite já autenticado: ativar antes de mostrar planos.
+        if (session.role === 'profissional' && path === '/auth/profissional/cadastro'
+          && global.QFConvite24h && global.QFConvite24h.token()) {
+          try {
+            const token = global.QFConvite24h.token();
+            const res = await global.QFCloud.client.rpc('qf_convite_24h_resgatar',{p_token:token});
+            if (res.error || !res.data || !res.data.ok) {
+              PU.toast('Não foi possível ativar o convite nesta conta. Confira se é o e-mail convidado.', 'danger', 8000);
+            } else {
+              global.QFConvite24h.limpar();
+              PU.toast('Convite de 24 horas ativado! Acesse suas oportunidades.', 'success', 7000);
+            }
+          } catch (_) {
+            PU.toast('Falha ao conferir convite. Reabra o link quando a conexão voltar.', 'danger');
+          }
+        }
         navigate('/' + session.role + '/home', true);
         return;
       }
