@@ -1,0 +1,52 @@
+name: Corrigir cadastro profissional mobile
+on:
+  push:
+    paths:
+      - ".github/workflows/corrigir-cadastro-mobile.yml"
+permissions:
+  contents: write
+jobs:
+  corrigir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Corrigir navegacao e apresentacao dos planos
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old="""        window.scrollTo(0, 0);"""
+          new="""        // Mantem a etapa visivel abaixo do cabecalho fixo, sem voltar ao inicio do site.
+        const etapa = form.querySelector('[data-step="' + n + '"]');
+        if (etapa) {
+          requestAnimationFrame(function () {
+            if (!etapa.isConnected || etapa.hidden) return;
+            const cabecalho = document.querySelector('header');
+            const altura = cabecalho ? Math.min(cabecalho.getBoundingClientRect().height, 120) : 0;
+            const topo = etapa.getBoundingClientRect().top + window.scrollY - altura - 16;
+            window.scrollTo({top:Math.max(0,top),behavior:'instant'});
+          });
+        }"""
+          assert s.count(old)>=1, 'scroll marker missing'
+          s=s.replace(old,new,1)
+          old="""          '<p class="text--sm text--secondary">É necessário pagar o plano escolhido para concluir seu cadastro. Avulso: R$ 14,99 em créditos. Básico: R$ 39,90/10 pedidos. Pro: R$ 79,90/25 pedidos. Mensal completo: R$ 149,90/100 pedidos. Nenhuma comissão e nenhuma taxa adicional nos mensais.</p>' +"""
+          new="""          '<p class="text--sm text--secondary">Compare o custo por oportunidade: Básico R$ 3,99 (10 desbloqueios), Pro R$ 3,20 (25) e Completo R$ 1,50 (100). No Avulso, o valor de cada desbloqueio varia conforme a profissão e o pedido. Sem comissão por serviço fechado.</p>' +"""
+          assert old in s, 'plan explanation missing'
+          s=s.replace(old,new,1)
+          old="""          '<p class="qf-cad-planos__exigencia" role="status">É necessário pagar o plano escolhido para concluir seu cadastro.</p>' +"""
+          assert old in s, 'mandatory notice missing'
+          s=s.replace(old,"",1)
+          old="""      itens:['Pagamento obrigatório para finalizar o cadastro','Valor integral convertido em créditos após Pix','Sem mensalidade, sem comissão']},"""
+          new="""      itens:['R$ 14,99 convertidos em saldo após confirmação do Pix','Desbloqueios conforme profissão e pedido','Sem mensalidade e sem comissão']},"""
+          assert old in s, 'avulso copy missing'
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          print('Cadastro corrigido; bytes:',len(s.encode('utf-8')))
+          PY
+          git diff --check
+          git config user.name "QuemFaz Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix: manter cadastro na etapa e simplificar apresentacao dos planos"
+          git push
