@@ -16,10 +16,38 @@ function mount(){
  if(!document.getElementById('qf-retorno-style')){var s=document.createElement('style');s.id='qf-retorno-style';s.textContent=styles;document.head.appendChild(s)}
  r.innerHTML='<section class="qf-retorno"><h2>Contatos para retornar</h2>'+
   '<p>Pessoas que pediram para guardar o contato e continuar o cadastro ou pedido mais tarde. WhatsApp abre uma conversa; nenhuma mensagem é enviada automaticamente.</p>'+
+  '<details class="qf-retorno-card"><summary style="font-weight:800;cursor:pointer;color:#1458cc">Adicionar contato que chamou no WhatsApp</summary>'+
+  '<p class="qf-retorno-sub">Registre uma pessoa que pediu expressamente para guardar o contato e voltar depois.</p>'+
+  '<form id="qf-retorno-manual" class="stack" style="margin-top:12px">'+
+  '<label class="field"><span class="field__label">Tipo</span><select class="select" name="tipo" required><option value="profissional">Profissional</option><option value="cliente">Cliente</option></select></label>'+
+  '<label class="field"><span class="field__label">Nome</span><input class="input" name="nome" required minlength="2" maxlength="120" placeholder="Nome informado no WhatsApp"></label>'+
+  '<label class="field"><span class="field__label">WhatsApp com DDD</span><input class="input" name="whatsapp" required inputmode="tel" type="tel" placeholder="(11) 99999-9999"></label>'+
+  '<label class="field"><span class="field__label">E-mail (se souber)</span><input class="input" name="email" type="email" maxlength="160"></label>'+
+  '<label class="field"><span class="field__label">Quando pretende voltar?</span><select class="select" name="quando"><option value="semana_que_vem">Próxima semana</option><option value="amanha">Amanhã</option><option value="quando_puder">Ainda não sabe</option></select></label>'+
+  '<label class="field"><span class="field__label">Observação</span><input class="input" name="obs" maxlength="350" placeholder="Ex.: vai pagar na próxima semana"></label>'+
+  '<label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" name="autorizado" required> A pessoa pediu para guardar o contato.</label>'+
+  '<button class="btn btn--primary" type="submit">Salvar contato no painel</button><div id="qf-retorno-erro" role="status" class="qf-retorno-sub"></div></form></details>'+
   '<div class="qf-retorno-tabs" role="group" aria-label="Filtrar interessados"><button type="button" data-retorno-filter="pendente" aria-pressed="true">Pendentes</button><button type="button" data-retorno-filter="profissional" aria-pressed="false">Profissionais</button><button type="button" data-retorno-filter="cliente" aria-pressed="false">Clientes</button><button type="button" data-retorno-filter="todos" aria-pressed="false">Todos</button></div>'+
   '<div id="qf-retorno-state" class="qf-retorno-load">Carregando contatos...</div><div id="qf-retorno-list"></div>'+
   '</section>';
  r.addEventListener('click',function(ev){var b=ev.target.closest('[data-retorno-filter]');if(!b)return;current=b.dataset.retornoFilter;render()});
+ r.addEventListener('submit',async function(ev){
+  var f=ev.target.closest('#qf-retorno-manual');if(!f)return;ev.preventDefault();
+  var fd=new FormData(f),b=f.querySelector('[type="submit"]'),msg=f.querySelector('#qf-retorno-erro');
+  if(!f.querySelector('[name="autorizado"]').checked){msg.textContent='Confirme a autorização da pessoa.';return}
+  b.disabled=true;msg.textContent='Salvando...';
+  try{
+   var res=await client().rpc('qf_retorno_salvar',{
+    p_tipo:String(fd.get('tipo')||''),p_nome:String(fd.get('nome')||''),
+    p_whatsapp:String(fd.get('whatsapp')||''),p_email:String(fd.get('email')||''),
+    p_proximo_contato:String(fd.get('quando')||'semana_que_vem'),
+    p_observacao:String(fd.get('obs')||''),p_consent:true
+   });
+   if(res.error||!res.data||!res.data.ok)throw Error(res.error&&res.error.message||res.data&&res.data.error||'Não foi possível salvar.');
+   f.reset();msg.textContent='Contato salvo. Já está na lista.';current='pendente';await load();
+  }catch(e){msg.textContent=e.message||'Não foi possível salvar.'}
+  finally{b.disabled=false}
+ });
  r.addEventListener('change',async function(ev){
   var sel=ev.target.closest('[data-retorno-status]');if(!sel)return;
   var id=sel.dataset.retornoStatus,st=sel.value;sel.disabled=true;
