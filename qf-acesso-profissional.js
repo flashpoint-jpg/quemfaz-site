@@ -138,6 +138,21 @@
   '.qf-prof-passos{margin-top:auto;background:#fff;border-radius:20px;padding:20px;color:#0c3687;box-shadow:0 8px 20px #00357a30}.qf-prof-passos strong{font-size:23px}.qf-prof-passos ol{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;list-style:none;counter-reset:passo;padding:0;margin:18px 0 0}.qf-prof-passos li{counter-increment:passo;display:flex;align-items:center;gap:9px;font-weight:750;font-size:13px;line-height:1.3;color:#0b358a}.qf-prof-passos li:before{content:counter(passo);display:grid;place-items:center;flex:none;width:35px;height:35px;background:#ff8500;color:white;border-radius:50%;font-size:18px}'+
   '#qf-prof-apresentacao .qf-prof-apresentacao-form input,#qf-prof-apresentacao .qf-prof-apresentacao-form select{min-height:46px}'+
   '@media(max-width:850px){.qf-prof-header{padding:12px 16px;min-height:64px}.qf-prof-header nav{display:none}.qf-prof-brand strong{font-size:18px}.qf-prof-brand>b{font-size:30px}.qf-prof-home{font-size:12px;padding:8px 12px}.qf-prof-grid{display:flex;flex-direction:column;gap:12px;padding:12px}.qf-prof-apresentacao-info{padding:15px 8px;gap:14px}.qf-prof-hero h2{font-size:30px}.qf-prof-chip{font-size:13px}.qf-prof-numeros{padding:13px}.qf-prof-numeros strong{font-size:29px}.qf-prof-numeros span{font-size:12px}.qf-prof-beneficios>div{padding:10px;font-size:12px}.qf-prof-beneficios span{font-size:12px}.qf-prof-passos{padding:15px}.qf-prof-passos strong{font-size:20px}.qf-prof-passos ol{grid-template-columns:1fr;gap:9px}.qf-prof-passos li{font-size:13px}#qf-prof-apresentacao .qf-prof-apresentacao-form{padding:18px!important}}';
+  /* Ajustes de identidade visual e legibilidade — desktop e celular. */
+  css.textContent +=
+  '#qf-prof-apresentacao{background:#071d3b!important}'+
+  '#qf-prof-apresentacao .qf-prof-header{position:sticky!important;top:0!important;z-index:100!important;background:#071d3b!important;border-bottom:2px solid #ff8a00!important;box-shadow:0 3px 12px #0003!important}'+
+  '#qf-prof-apresentacao .qf-prof-header nav a,#qf-prof-apresentacao .qf-prof-brand,#qf-prof-apresentacao .qf-prof-home{color:#fff!important}'+
+  '#qf-prof-apresentacao .qf-prof-home{border-color:#7486a0!important}'+
+  '#qf-prof-apresentacao .qf-prof-grid{background:#071d3b!important;align-items:start!important}'+
+  '#qf-prof-apresentacao .qf-prof-apresentacao-info{background:transparent!important;gap:18px!important;padding:20px 12px!important}'+
+  '#qf-prof-apresentacao .qf-prof-numeros{background:#fff!important}'+
+  '#qf-prof-apresentacao .qf-prof-numeros strong{color:#f58212!important}'+
+  '#qf-prof-apresentacao .qf-prof-beneficios>div{background:#12375e!important;border:1px solid #3d648c!important}'+
+  '#qf-prof-apresentacao .qf-prof-passos{margin-top:10px!important}'+
+  '#qf-prof-apresentacao .qf-prof-apresentacao-form{align-self:start!important;overflow:visible!important}'+
+  '#qf-prof-apresentacao .qf-prof-apresentacao-form button[type=submit]{position:relative!important;inset:auto!important;transform:none!important;display:block!important;width:100%!important;min-height:52px!important;margin:20px 0 4px!important;z-index:1!important;background:#ff8500!important;color:#fff!important;border-radius:12px!important}'+
+  '@media(max-width:850px){#qf-prof-apresentacao .qf-prof-header{top:0!important;min-height:62px!important}#qf-prof-apresentacao .qf-prof-grid{padding:10px!important;gap:14px!important}#qf-prof-apresentacao .qf-prof-apresentacao-info{padding:12px 8px!important}#qf-prof-apresentacao .qf-prof-hero h2{font-size:29px!important}#qf-prof-apresentacao .qf-prof-apresentacao-form{padding:18px!important;padding-bottom:32px!important;min-height:0!important}#qf-prof-apresentacao .qf-prof-apresentacao-form button{max-width:100%!important}#qf-prof-apresentacao .qf-prof-apresentacao-form button[type=submit]{position:static!important;margin:20px 0 8px!important}#qf-prof-apresentacao .qf-prof-apresentacao-form input{position:relative!important;z-index:2!important}#qf-prof-apresentacao .qf-prof-numeros{gap:8px!important}#qf-prof-apresentacao .qf-prof-numeros>div{flex-wrap:wrap!important}#qf-prof-apresentacao .qf-prof-passos ol{grid-template-columns:1fr!important}}';
   document.head.appendChild(css);
  }
  function iniciar(){aplicar();var obs=new MutationObserver(function(){aplicar()});obs.observe(document.body,{childList:true,subtree:true});}
