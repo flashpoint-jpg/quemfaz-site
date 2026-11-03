@@ -106,42 +106,40 @@
 })(typeof window !== 'undefined' ? window : globalThis);
 
 
-/* Apresentação visual do cadastro profissional — isolada do formulário e do Pix. */
+/* Cadastro profissional — apresentação aprovada, sem alterar campos ou pagamentos. */
 (function(){
  'use strict';
  if(typeof document==='undefined')return;
- var styleId='qf-prof-apresentacao-estilo';
  function aplicar(){
   if(document.getElementById('qf-prof-apresentacao'))return;
-  var headings=Array.from(document.querySelectorAll('h1,h2,h3,[role=heading]'));
-  var h=headings.find(function(el){return /cadastro de profissional/i.test((el.textContent||'').trim())});
+  var h=Array.from(document.querySelectorAll('h1,h2,h3,[role=heading]')).find(function(e){return /cadastro de profissional/i.test((e.textContent||'').trim())});
   if(!h)return;
   var form=h.closest('section,article,[role=dialog],.card,.modal,.panel')||h.parentElement;
-  if(!form||form.id==='qf-prof-apresentacao'||form.querySelectorAll('input').length<2){
-   var el=h.parentElement;
-   for(var i=0;i<5&&el;i++,el=el.parentElement){if(el.querySelectorAll('input').length>=3){form=el;break}}
+  if(!form||form.querySelectorAll('input').length<3){
+   for(var el=h.parentElement,i=0;el&&i<6;el=el.parentElement,i++){if(el.querySelectorAll('input').length>=3){form=el;break}}
   }
-  if(!form||form.querySelectorAll('input').length<3||!form.parentElement)return;
-  if(form.closest('#qf-prof-apresentacao'))return;
+  if(!form||form.querySelectorAll('input').length<3||!form.parentNode)return;
   var wrap=document.createElement('div');wrap.id='qf-prof-apresentacao';
+  var header=document.createElement('header');header.className='qf-prof-header';
+  header.innerHTML='<a href="/" class="qf-prof-brand" aria-label="Quem Faz Serviços"><b>Q<span>F</span></b><strong>QuemFaz<small>Serviços</small></strong></a><nav aria-label="Navegação"><a href="/">Início</a><a href="/#como-funciona">Como funciona</a><a href="/#profissionais">Profissionais</a><a href="/#servicos">Serviços</a></nav><a class="qf-prof-home" href="/">Sou cliente</a>';
   var info=document.createElement('aside');info.className='qf-prof-apresentacao-info';
-  info.innerHTML='<span class="qf-prof-chip">CADASTRO DE PROFISSIONAL</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua empresa ou profissão e encontre clientes procurando serviços na sua região.</p><div class="qf-prof-numeros"><div><strong>386</strong><span>profissionais cadastrados</span></div><div><strong>76</strong><span>cidades atendidas</span></div></div><ul><li>📍 Escolha onde deseja atender</li><li>🔔 Receba oportunidades da sua região</li><li>💬 Negocie diretamente com o cliente</li><li>✅ Sem comissão sobre serviços fechados</li></ul><div class="qf-prof-passos"><strong>Como funciona?</strong><p>1. Faça seu cadastro<br>2. Configure suas profissões e cidades<br>3. Escolha oportunidades e desbloqueie contatos conforme seu plano</p></div></aside>';
-  form.parentNode.insertBefore(wrap,form);wrap.appendChild(info);wrap.appendChild(form);
+  info.innerHTML='<div class="qf-prof-hero"><span class="qf-prof-chip">Cadastro de Profissional</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua profissão e acompanhe pedidos de clientes da sua região.</p></div><div class="qf-prof-numeros"><div><strong>386</strong><span>profissionais cadastrados</span></div><div><strong>76</strong><span>cidades atendidas</span></div></div><div class="qf-prof-beneficios"><div>🎯<span>Receba oportunidades</span></div><div>💬<span>Negocie diretamente</span></div><div>📅<span>Defina seu raio e horários</span></div><div>🛡️<span>Sem comissão por serviço fechado</span></div></div><div class="qf-prof-passos"><strong>Como funciona?</strong><ol><li>Faça seu cadastro</li><li>Configure profissão, região e horários</li><li>Escolha oportunidades disponíveis</li></ol></div>';
+  var grid=document.createElement('div');grid.className='qf-prof-grid';
+  form.parentNode.insertBefore(wrap,form);wrap.appendChild(header);wrap.appendChild(grid);grid.appendChild(info);grid.appendChild(form);
   form.classList.add('qf-prof-apresentacao-form');
-  if(!document.getElementById(styleId)){
-   var css=document.createElement('style');css.id=styleId;css.textContent=
-   '#qf-prof-apresentacao{width:min(1200px,calc(100% - 24px));max-width:1200px;margin:20px auto 45px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start;box-sizing:border-box;font-family:inherit}'+
-   '#qf-prof-apresentacao *{box-sizing:border-box}#qf-prof-apresentacao .qf-prof-apresentacao-form{width:100%!important;max-width:none!important;margin:0!important;min-width:0}'+
-   '.qf-prof-apresentacao-info{border-radius:25px;padding:32px;background:linear-gradient(145deg,#0755b8,#073a80 70%,#e8f4ff 70.1%);color:white;min-height:600px;box-shadow:0 12px 30px #0c438022}'+
-   '.qf-prof-apresentacao-info h2{font-size:clamp(28px,3vw,43px);line-height:1.12;margin:20px 0;color:#fff;font-weight:850}.qf-prof-apresentacao-info h2 em{color:#ff9c22;font-style:normal}'+
-   '.qf-prof-apresentacao-info>p{font-size:17px;line-height:1.5;color:#fff}.qf-prof-chip{display:inline-block;background:#ff850e;color:white;border-radius:99px;padding:10px 16px;font-weight:800;font-size:13px}'+
-   '.qf-prof-numeros{display:flex;gap:20px;background:white;color:#093c86;border-radius:18px;padding:18px;margin:25px 0;box-shadow:0 5px 15px #0002}.qf-prof-numeros div{flex:1;display:flex;flex-direction:column}.qf-prof-numeros strong{font-size:36px;line-height:1}.qf-prof-numeros span{font-size:13px;font-weight:700}'+
-   '.qf-prof-apresentacao-info ul{list-style:none;padding:0;margin:22px 0;color:#0d305f;font-weight:750;line-height:1.5}.qf-prof-apresentacao-info li{padding:9px 0;border-bottom:1px solid #cbdff4}'+
-   '.qf-prof-passos{background:#fff;border-radius:16px;padding:18px;color:#123f80}.qf-prof-passos strong{font-size:21px}.qf-prof-passos p{line-height:1.9;margin:8px 0 0;color:#26466e;font-size:14px}'+
-   '@media(max-width:800px){#qf-prof-apresentacao{display:flex;flex-direction:column;width:calc(100% - 20px);gap:14px;margin:10px auto 30px}.qf-prof-apresentacao-info{width:100%;min-height:0;padding:20px;border-radius:20px;background:linear-gradient(145deg,#0755b8,#073a80 65%,#e8f4ff 65.1%)}.qf-prof-apresentacao-info h2{font-size:30px;margin:14px 0}.qf-prof-apresentacao-info>p{font-size:14px}.qf-prof-numeros{margin:16px 0;padding:12px}.qf-prof-numeros strong{font-size:27px}.qf-prof-apresentacao-info ul{font-size:13px}.qf-prof-passos{padding:12px}.qf-prof-passos strong{font-size:18px}}';
-   document.head.appendChild(css);
-  }
+  var css=document.createElement('style');css.id='qf-prof-apresentacao-estilo';css.textContent=
+  '#qf-prof-apresentacao{width:100%;max-width:1440px;margin:0 auto 40px;font-family:Inter,system-ui,Arial,sans-serif;color:#102b65;box-sizing:border-box}#qf-prof-apresentacao *{box-sizing:border-box}'+
+  '.qf-prof-header{min-height:75px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px clamp(18px,4vw,65px);border-bottom:1px solid #dce5f2}.qf-prof-brand{display:flex;align-items:center;gap:8px;text-decoration:none!important;color:#0b3595!important}.qf-prof-brand>b{font-size:37px;letter-spacing:-5px}.qf-prof-brand>b span{color:#ff7900}.qf-prof-brand strong{font-size:22px;line-height:1}.qf-prof-brand small{display:block;color:#ff7900;font-size:14px}.qf-prof-header nav{display:flex;gap:22px}.qf-prof-header nav a{color:#123378!important;text-decoration:none;font-weight:750;font-size:14px}.qf-prof-home{border:2px solid #1255bf;border-radius:24px;padding:10px 18px;color:#0b3595!important;text-decoration:none!important;font-weight:750;white-space:nowrap}'+
+  '.qf-prof-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:24px;padding:24px;align-items:stretch;background:linear-gradient(120deg,#0754bf,#0868d5 65%,#e6f1ff)}'+
+  '#qf-prof-apresentacao .qf-prof-apresentacao-form{width:100%!important;max-width:none!important;margin:0!important;min-width:0;background:#fff!important;border-radius:24px!important;padding:clamp(18px,3vw,34px)!important;box-shadow:0 12px 28px #003d8520!important;align-self:stretch}'+
+  '.qf-prof-apresentacao-info{min-width:0;display:flex;flex-direction:column;gap:20px;padding:18px 8px;color:#fff!important}.qf-prof-hero h2{font-size:clamp(29px,3.3vw,49px);line-height:1.12;letter-spacing:-.025em;color:#fff!important;margin:18px 0;font-weight:850}.qf-prof-hero h2 em{color:#ffab24;font-style:normal}.qf-prof-hero p{color:#fff!important;font-size:clamp(16px,1.5vw,20px);line-height:1.5;max-width:560px}.qf-prof-chip{display:inline-block;background:#ff8a00;color:#fff;border-radius:28px;padding:10px 18px;font-weight:800;font-size:16px}'+
+  '.qf-prof-numeros{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#fff;border-radius:18px;padding:18px;color:#0b358a;box-shadow:0 8px 18px #002e6a25}.qf-prof-numeros>div{display:flex;align-items:center;gap:12px}.qf-prof-numeros strong{font-size:clamp(30px,3vw,43px);color:#ff8000;line-height:1}.qf-prof-numeros span{font-size:clamp(13px,1.2vw,16px);font-weight:800;line-height:1.25;color:#0b358a}'+
+  '.qf-prof-beneficios{display:grid;grid-template-columns:1fr 1fr;gap:12px}.qf-prof-beneficios>div{display:flex;align-items:center;gap:10px;background:#ffffff17;border:1px solid #ffffff55;border-radius:14px;padding:13px;font-weight:750;color:#fff;line-height:1.3}.qf-prof-beneficios span{font-size:14px}'+
+  '.qf-prof-passos{margin-top:auto;background:#fff;border-radius:20px;padding:20px;color:#0c3687;box-shadow:0 8px 20px #00357a30}.qf-prof-passos strong{font-size:23px}.qf-prof-passos ol{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;list-style:none;counter-reset:passo;padding:0;margin:18px 0 0}.qf-prof-passos li{counter-increment:passo;display:flex;align-items:center;gap:9px;font-weight:750;font-size:13px;line-height:1.3;color:#0b358a}.qf-prof-passos li:before{content:counter(passo);display:grid;place-items:center;flex:none;width:35px;height:35px;background:#ff8500;color:white;border-radius:50%;font-size:18px}'+
+  '#qf-prof-apresentacao .qf-prof-apresentacao-form input,#qf-prof-apresentacao .qf-prof-apresentacao-form select{min-height:46px}'+
+  '@media(max-width:850px){.qf-prof-header{padding:12px 16px;min-height:64px}.qf-prof-header nav{display:none}.qf-prof-brand strong{font-size:18px}.qf-prof-brand>b{font-size:30px}.qf-prof-home{font-size:12px;padding:8px 12px}.qf-prof-grid{display:flex;flex-direction:column;gap:12px;padding:12px}.qf-prof-apresentacao-info{padding:15px 8px;gap:14px}.qf-prof-hero h2{font-size:30px}.qf-prof-chip{font-size:13px}.qf-prof-numeros{padding:13px}.qf-prof-numeros strong{font-size:29px}.qf-prof-numeros span{font-size:12px}.qf-prof-beneficios>div{padding:10px;font-size:12px}.qf-prof-beneficios span{font-size:12px}.qf-prof-passos{padding:15px}.qf-prof-passos strong{font-size:20px}.qf-prof-passos ol{grid-template-columns:1fr;gap:9px}.qf-prof-passos li{font-size:13px}#qf-prof-apresentacao .qf-prof-apresentacao-form{padding:18px!important}}';
+  document.head.appendChild(css);
  }
- function iniciar(){aplicar();var count=0;var obs=new MutationObserver(function(){if(++count>300){obs.disconnect();return}aplicar()});obs.observe(document.body,{childList:true,subtree:true});}
+ function iniciar(){aplicar();var obs=new MutationObserver(function(){aplicar()});obs.observe(document.body,{childList:true,subtree:true});}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
 })();
