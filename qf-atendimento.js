@@ -30,7 +30,7 @@
   function budgetLabel(v,service) { return budgetChoices(service).find(c=>c[0]===v)?.[1] || v; }
   function tipoPorOrcamento(a) { return 'tradicional'; }
   function stages(a) {
-    const groups=[['Serviço',['servico','aceite_app','detalhes','escopo']],['Local e prazo',a.__cepRequired?['cep','bairro','urgencia']:['cidade','uf','bairro','urgencia']],['Condições',['materiais']],['Confirmar e publicar',['nome','contato','intencao','autorizacao']]];
+    const groups=[['Serviço',['servico','aceite_app','detalhes','escopo']],['Local e prazo',a.__cepRequired?['cep','bairro','urgencia']:['cidade','uf','bairro','urgencia']],['Condições',['materiais']],['Confirmar e publicar',['nome','contato','intencao','max_orcamentos','autorizacao']]];
     return groups.map(([title,keys])=>({title,questions:keys.flatMap(key=>questions(a).filter(q=>q.key===key && !(key==='servico'&&a.__servicePrefilled) && !(a.__problem&&['detalhes','escopo'].includes(key))))}));
   }
   function questions(a) {
@@ -70,6 +70,7 @@
       {key:'nome',label:'Seu nome',autocomplete:'name'},
       {key:'contato',label:'Celular com DDD',type:'tel',autocomplete:'tel'},
       {key:'aceite_app',label:requiresInstalledApp()?'Para receber contato dos profissionais, é necessário instalar e usar o aplicativo Quem Faz.':'Você pode publicar e acompanhar seu pedido pelo navegador, sem instalar aplicativo.',consent:true},
+      options('max_orcamentos','Quantos orçamentos deseja receber?',[['1','1 orçamento'],['2','2 orçamentos'],['3','3 orçamentos'],['4','4 orçamentos']]),
       options('intencao','Pretende contratar?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
       options('autorizacao',requiresInstalledApp()?'Você autoriza o contato dos profissionais dentro do aplicativo Quem Faz?':'Você autoriza o contato dos profissionais pelo Quem Faz no navegador?',[['sim','Sim, autorizo'],['nao','Não autorizo']])
     ];
@@ -369,7 +370,7 @@
           if(accountPhone)at.contato=accountPhone;
           if(!root.QFAcompanhamento)throw Error('Atualize a página para proteger o acompanhamento do pedido.');
           const segredo=root.QFAcompanhamento.draft(id);at.segredo_acompanhamento=segredo;
-          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:at.tipo==='garante'?1:4});
+          const req=await Cloud.createCall({clienteId:current.id,categoriaId:c.id,descricao:at.detalhes,endereco:{cidade:a.cidade,uf:a.uf,bairro:a.bairro,cep:''},urgencia:a.urgencia,atendimento:at,prioridade:false,maxOrcamentos:Number(a.max_orcamentos)});
           // Exibir solicitação logo após publicar, mas nunca como Pix pago sem Efí.
           if(a.visita_presencial==='sim')req.visitaPresencialStatus='solicitada';
           root.QFAcompanhamento.remember(req.id,segredo);
@@ -414,7 +415,7 @@
     // Fail closed: no stale normal-price action while the metadata could not load.
     const res=await root.QFCloud.client.rpc('qf_atendimento_info',{p_ids:reqs.map(r=>r.id).slice(0,500)});
     if(res.error)throw Error('Não foi possível conferir a modalidade dos pedidos. Atualize a lista.');
-    for(const row of res.data||[]){const r=reqs.find(x=>x.id===row.chamado_id);if(r){r.atendimentoTipo=row.tipo;r.maxOrcamentos=row.tipo==='garante'?1:4;r.limiteParticipantes=r.maxOrcamentos;}}
+    for(const row of res.data||[]){const r=reqs.find(x=>x.id===row.chamado_id);if(r){r.atendimentoTipo=row.tipo;r.maxOrcamentos=Number(row.max_orcamentos)||4;r.limiteParticipantes=r.maxOrcamentos;}}
     // Nunca confiar no formulário para afirmar que a visita está paga.
     try{
       const visitas=await root.QFCloud.client.rpc('qf_visita_info_chamados',{p_ids:reqs.map(r=>r.id).slice(0,500)});
