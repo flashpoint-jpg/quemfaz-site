@@ -347,7 +347,7 @@
           // uma sessão limitada no servidor, sem exigir Google ou senha.
           // Se não for possível, mostrar o acesso alternativo ao cliente.
           try{
-            current=await root.QFClienteAcesso.guest(a.nome,a.contato);
+            current=await root.QFClienteAcesso.existing(a.contato) || await root.QFClienteAcesso.guest(a.nome,a.contato);
           }catch(guestError){
             console.warn('Quem Faz: publicação de visitante indisponível',guestError);
             publishError('Não conseguimos publicar sem cadastro: '+String(guestError?.message||'tente novamente')+'. Você pode tentar novamente ou entrar com sua conta.');
