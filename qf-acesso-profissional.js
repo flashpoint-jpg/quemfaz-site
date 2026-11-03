@@ -104,3 +104,44 @@
     } catch (_) {}
   }
 })(typeof window !== 'undefined' ? window : globalThis);
+
+
+/* Apresentação visual do cadastro profissional — isolada do formulário e do Pix. */
+(function(){
+ 'use strict';
+ if(typeof document==='undefined')return;
+ var styleId='qf-prof-apresentacao-estilo';
+ function aplicar(){
+  if(document.getElementById('qf-prof-apresentacao'))return;
+  var headings=Array.from(document.querySelectorAll('h1,h2,h3,[role=heading]'));
+  var h=headings.find(function(el){return /cadastro de profissional/i.test((el.textContent||'').trim())});
+  if(!h)return;
+  var form=h.closest('section,article,[role=dialog],.card,.modal,.panel')||h.parentElement;
+  if(!form||form.id==='qf-prof-apresentacao'||form.querySelectorAll('input').length<2){
+   var el=h.parentElement;
+   for(var i=0;i<5&&el;i++,el=el.parentElement){if(el.querySelectorAll('input').length>=3){form=el;break}}
+  }
+  if(!form||form.querySelectorAll('input').length<3||!form.parentElement)return;
+  if(form.closest('#qf-prof-apresentacao'))return;
+  var wrap=document.createElement('div');wrap.id='qf-prof-apresentacao';
+  var info=document.createElement('aside');info.className='qf-prof-apresentacao-info';
+  info.innerHTML='<span class="qf-prof-chip">CADASTRO DE PROFISSIONAL</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua empresa ou profissão e encontre clientes procurando serviços na sua região.</p><div class="qf-prof-numeros"><div><strong>386</strong><span>profissionais cadastrados</span></div><div><strong>76</strong><span>cidades atendidas</span></div></div><ul><li>📍 Escolha onde deseja atender</li><li>🔔 Receba oportunidades da sua região</li><li>💬 Negocie diretamente com o cliente</li><li>✅ Sem comissão sobre serviços fechados</li></ul><div class="qf-prof-passos"><strong>Como funciona?</strong><p>1. Faça seu cadastro<br>2. Configure suas profissões e cidades<br>3. Escolha oportunidades e desbloqueie contatos conforme seu plano</p></div></aside>';
+  form.parentNode.insertBefore(wrap,form);wrap.appendChild(info);wrap.appendChild(form);
+  form.classList.add('qf-prof-apresentacao-form');
+  if(!document.getElementById(styleId)){
+   var css=document.createElement('style');css.id=styleId;css.textContent=
+   '#qf-prof-apresentacao{width:min(1200px,calc(100% - 24px));max-width:1200px;margin:20px auto 45px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start;box-sizing:border-box;font-family:inherit}'+
+   '#qf-prof-apresentacao *{box-sizing:border-box}#qf-prof-apresentacao .qf-prof-apresentacao-form{width:100%!important;max-width:none!important;margin:0!important;min-width:0}'+
+   '.qf-prof-apresentacao-info{border-radius:25px;padding:32px;background:linear-gradient(145deg,#0755b8,#073a80 70%,#e8f4ff 70.1%);color:white;min-height:600px;box-shadow:0 12px 30px #0c438022}'+
+   '.qf-prof-apresentacao-info h2{font-size:clamp(28px,3vw,43px);line-height:1.12;margin:20px 0;color:#fff;font-weight:850}.qf-prof-apresentacao-info h2 em{color:#ff9c22;font-style:normal}'+
+   '.qf-prof-apresentacao-info>p{font-size:17px;line-height:1.5;color:#fff}.qf-prof-chip{display:inline-block;background:#ff850e;color:white;border-radius:99px;padding:10px 16px;font-weight:800;font-size:13px}'+
+   '.qf-prof-numeros{display:flex;gap:20px;background:white;color:#093c86;border-radius:18px;padding:18px;margin:25px 0;box-shadow:0 5px 15px #0002}.qf-prof-numeros div{flex:1;display:flex;flex-direction:column}.qf-prof-numeros strong{font-size:36px;line-height:1}.qf-prof-numeros span{font-size:13px;font-weight:700}'+
+   '.qf-prof-apresentacao-info ul{list-style:none;padding:0;margin:22px 0;color:#0d305f;font-weight:750;line-height:1.5}.qf-prof-apresentacao-info li{padding:9px 0;border-bottom:1px solid #cbdff4}'+
+   '.qf-prof-passos{background:#fff;border-radius:16px;padding:18px;color:#123f80}.qf-prof-passos strong{font-size:21px}.qf-prof-passos p{line-height:1.9;margin:8px 0 0;color:#26466e;font-size:14px}'+
+   '@media(max-width:800px){#qf-prof-apresentacao{display:flex;flex-direction:column;width:calc(100% - 20px);gap:14px;margin:10px auto 30px}.qf-prof-apresentacao-info{width:100%;min-height:0;padding:20px;border-radius:20px;background:linear-gradient(145deg,#0755b8,#073a80 65%,#e8f4ff 65.1%)}.qf-prof-apresentacao-info h2{font-size:30px;margin:14px 0}.qf-prof-apresentacao-info>p{font-size:14px}.qf-prof-numeros{margin:16px 0;padding:12px}.qf-prof-numeros strong{font-size:27px}.qf-prof-apresentacao-info ul{font-size:13px}.qf-prof-passos{padding:12px}.qf-prof-passos strong{font-size:18px}}';
+   document.head.appendChild(css);
+  }
+ }
+ function iniciar(){aplicar();var count=0;var obs=new MutationObserver(function(){if(++count>300){obs.disconnect();return}aplicar()});obs.observe(document.body,{childList:true,subtree:true});}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',iniciar);else iniciar();
+})();
