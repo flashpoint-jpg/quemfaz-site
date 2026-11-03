@@ -10118,6 +10118,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/admin/profissionais', role: 'admin', tab: 'profissionais', title: 'Profissionais', render: Screens.adminProfissionaisRender },
     { pattern: '/admin/profissionais/:id', role: 'admin', title: 'Profissional', back: '/admin/profissionais', render: Screens.adminProfissionalDetalheRender },
     { pattern: '/admin/clientes', role: 'admin', title: 'Clientes', render: Screens.adminClientesRender },
+    { pattern: '/admin/retornos', role: 'admin', title: 'Contatos para retornar', render: function(){return '<div class="view" data-qf-retornos></div>';} },
     { pattern: '/admin/servicos', role: 'admin', tab: 'servicos', title: 'Pedidos', render: Screens.adminServicosRender },
     { pattern: '/admin/servicos/:id', role: 'admin', title: 'Detalhe do serviço', back: '/admin/servicos', render: Screens.adminServicoDetalheRender },
     { pattern: '/admin/categorias', role: 'admin', title: 'Categorias', back: '/admin/configuracoes', render: Screens.adminCategoriasRender },
@@ -10358,6 +10359,7 @@ Screens.adminDashboardRender = function () {
     { id: 'verificacoes', label: 'Verificações', icon: 'shieldCheck', route: '/admin/verificacoes' },
     { id: 'cidades', label: 'Profissionais por cidade', icon: 'mapPin', route: '/admin/por-cidade' },
     { id: 'clientes', label: 'Clientes', icon: 'user', route: '/admin/clientes' },
+    { id: 'retornos', label: 'Contatos para retornar', icon: 'bookmark', route: '/admin/retornos' },
     { section: 'Dinheiro e planos' },
     { id: 'movimentacoes', label: 'Movimentações', icon: 'dashboard', route: '/admin/movimentacoes' },
     { id: 'receita', label: 'Receita', icon: 'money', route: '/admin/pagamentos' },
@@ -10602,6 +10604,7 @@ Screens.adminDashboardRender = function () {
 <script defer src="qf-prof-entregas.js?v=20261026"></script>
 <script src="qf-admin-cadastro-pago.js?v=20261102-novos-pix-fix1"></script>
 <script src="qf-admin-convites-24h.js?v=20261102-convite24-v1" defer></script>
+<script src="qf-admin-retornos.js?v=20261103-retorno-v1" defer></script>
 </body>
 </html>
 
