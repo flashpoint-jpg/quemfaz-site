@@ -144,12 +144,7 @@ test('Google: retorno OAuth sempre usa site oficial sem hash nem localhost',asyn
  const pending=w.QFClienteAcesso.authenticate({nome:'Cliente',telefone:'11987654321',container:w.document.body});
  await new Promise(resolve=>setTimeout(resolve,20));
  const login=w.document.querySelector('[data-google-login]');
- assert.ok(login);
- login.click();
- await new Promise(resolve=>setTimeout(resolve,20));
- assert.equal(options.provider,'google');
- assert.equal(options.options.redirectTo,'https://quemfazservico.com.br/?app=1');
- assert.equal(options.options.queryParams.prompt,'select_account');
+ assert.equal(login,null); // botão de login Google removido do pedido
  w.document.querySelector('[data-access-cancel]').click();
  await assert.rejects(pending,/pedido continua preenchido/);
  w.close();

@@ -104,7 +104,7 @@
    dialog.addEventListener('cancel',e=>{e.preventDefault();if(!busy)end(null,Error('Seu pedido está salvo nesta tela. Entre para concluir a publicação.'));});
    function draw(message=''){
     const register=mode==='cadastrar',legacy=mode==='primeiro_acesso',forgot=mode==='esqueci_senha';
-    host.innerHTML='<p style="display:inline-flex;background:#edf5ff;color:#1458cc;border-radius:12px;padding:6px 10px;font-weight:750;font-size:12px;margin:0 0 10px">Área do cliente · preciso contratar</p><h2>'+({entrar:'Como deseja publicar?',cadastrar:'Crie seu acesso grátis',primeiro_acesso:'Primeiro acesso com senha',esqueci_senha:'Recuperar minha senha'})[mode]+'</h2><p>Seu pedido está preenchido. Você pode publicar sem conta e sem senha. O acompanhamento ficará protegido neste navegador.</p><button type="button" class="btn btn--primary qf-client-access__guest" data-guest-publish>Publicar sem cadastro</button><p class="text--sm" style="margin:8px 0 12px;color:#52647c">Não exige Google, senha ou SMS. Para acessar em outro aparelho, pode ser necessária ajuda do suporte.</p><p class="qf-client-access__or">ou entre com sua conta</p><button type="button" class="btn btn--outline qf-client-access__google" data-google-login><img src="/assets/google-g.svg" alt="" width="22" height="22">Continuar com Google</button><p class="qf-client-access__or">ou</p><form novalidate>'+
+    host.innerHTML='<p style="display:inline-flex;background:#edf5ff;color:#1458cc;border-radius:12px;padding:6px 10px;font-weight:750;font-size:12px;margin:0 0 10px">Área do cliente · preciso contratar</p><h2>'+({entrar:'Como deseja publicar?',cadastrar:'Crie seu acesso grátis',primeiro_acesso:'Primeiro acesso com senha',esqueci_senha:'Recuperar minha senha'})[mode]+'</h2><p>Seu pedido está preenchido. Você pode publicar sem conta e sem senha. O acompanhamento ficará protegido neste navegador.</p><button type="button" class="btn btn--primary qf-client-access__guest" data-guest-publish>Publicar sem cadastro</button><p class="text--sm" style="margin:8px 0 12px;color:#52647c">Não exige Google, senha ou SMS. Para acessar em outro aparelho, pode ser necessária ajuda do suporte.</p><p class="qf-client-access__or">ou entre com sua conta</p><form novalidate>'+
     (!forgot?'<label>Telefone<input class="input" name="telefone" type="tel" autocomplete="tel" value="'+esc(telefone)+'" readonly></label>':'')+
     (register?'<label>Seu nome<input class="input" name="nome" autocomplete="name" value="'+esc(nome)+'" required></label>':'')+
     (legacy?'<label>Código de acesso antigo<input class="input" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required></label><p>Se ainda estiver conectado no aparelho anterior, publique por ele. Se perdeu o código e o acesso, fale com o suporte para recuperar sua conta.</p>':'')+
@@ -120,7 +120,7 @@
      catch(err){const notice=host.querySelector('[role=alert]');if(notice)notice.textContent=err.message||'Não foi possível publicar. Tente novamente.';}
      finally{busy=false;host.querySelectorAll('input,button').forEach(el=>el.disabled=false);if(btn?.isConnected)btn.textContent='Publicar sem cadastro';}
     };
-    host.querySelector('[data-google-login]').onclick=async()=>{
+    const googleBtn=host.querySelector('[data-google-login]');if(googleBtn)googleBtn.onclick=async()=>{
      const client=g.QFCloud?.client;
      if(!client?.auth?.signInWithOAuth){host.querySelector('[role=alert]').textContent='Login Google indisponível no momento.';return;}
      try{

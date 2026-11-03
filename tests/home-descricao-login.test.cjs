@@ -66,7 +66,7 @@ test('catálogo sem serralheiro preserva o problema sem inventar serviço genér
 test('entrada por Google ou telefone é anunciada na tela inicial',()=>{
  const p=page();p.w.QFPedidoHome.start();
  const button=p.w.document.querySelector('[data-home-login-start]');
- assert.match(button.textContent,/telefone/);assert.match(p.w.document.querySelector('[data-home-google]').textContent,/Entrar com Google/);
+ assert.match(button.textContent,/telefone/);assert.equal(p.w.document.querySelector('[data-home-google]'),null);
  button.click();
  assert.match(p.w.document.querySelector('[data-home-work]').textContent,/telefone e senha/);
  assert.ok(p.w.document.querySelector('[data-home-login] input[type="tel"]'));
