@@ -97,7 +97,7 @@
   let returned=false;try{returned=returningGoogle();if(returned)g.sessionStorage.removeItem('qf_google_login_return');}catch(_){}
   // Nunca trocar o formulário recuperado por "Meus pedidos" após login Google.
   // Quem digitou o problema na home antes de entrar com Google continua no pedido (texto já restaurado), em vez de cair em "Meus pedidos" vazio.
-  if(returned&&state.mode==='intro'&&!pendingPublication()&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()&&!String(state.problem||'').trim())dashboard();
+  if(returned&&state.mode==='intro'&&!pendingPublication()&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()&&!String(state.problem||'').trim()&&!(()=>{try{return !!g.sessionStorage.getItem('qf_home_oauth_draft');}catch(_){return false;}})())dashboard();
  }
  function watchAccount(){
   const c=g.QFCloud?.client;
