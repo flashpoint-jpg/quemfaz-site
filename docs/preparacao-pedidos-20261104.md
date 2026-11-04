@@ -97,3 +97,5 @@ Teste visual a 390px e publicação com espera de 60 segundos NÃO concluídos: 
 - tests/visual-comanda.test.cjs
 
 Push por git CLI indisponível por falta de credencial no terminal; entrega da branch e PR feita pelo conector GitHub.
+
+Validação final completa: 549 testes, 518 passaram, 29 falharam. As 29 falhas têm os mesmos nomes da base anterior; nenhuma falha nova. Testes direcionados: 3/3; SEO integrado: 2/2. git diff --check passou.
