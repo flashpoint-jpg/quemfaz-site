@@ -13,12 +13,17 @@
     email_invalido:'Confira o e-mail.', plano_invalido:'Plano indisponível. Atualize a lista.',
     preco_indisponivel:'O preço está em atualização. Tente mais tarde.',
     muitas_tentativas:'Muitas tentativas. Aguarde antes de tentar novamente.',
-    cobranca_indisponivel:'A Efí não conseguiu emitir o Pix. Nenhum pagamento foi confirmado.'
+    cobranca_indisponivel:'A Efí não conseguiu emitir o Pix. Nenhum pagamento foi confirmado.',
+    cadastro_ja_ativado:'Este pagamento já ativou uma conta. Consulte o profissional.',
+    cobranca_incompativel:'Os dados da cobrança não conferem com o banco. Consulte o suporte.',
+    cobranca_nao_recuperavel:'A cobrança foi cancelada ou não está disponível para pagamento. Consulte o suporte.',
+    renovacao_indisponivel:'O banco não permitiu renovar o Pix vencido. Nenhum segundo Pix foi gerado.',
+    consulta_indisponivel:'Não foi possível consultar a cobrança no banco. Tente novamente mais tarde.'
   };
   async function invoke(body) {
     const c = client();
     if (!c) throw Error('Entre como administrador.');
-    const result = await c.functions.invoke('quemfaz-pre-cadastro', {body});
+    const result = await c.functions.invoke(body.acao === 'recuperar' ? 'quemfaz-admin-recuperar-pix' : 'quemfaz-pre-cadastro', {body});
     let data = result.data;
     if (result.error) {
       try { data = await result.error.context.json(); } catch (_) {}
@@ -67,11 +72,10 @@
         const pending = await c.rpc('qf_admin_novos_cadastros_pix');
         if (pending.error || !Array.isArray(pending.data?.itens)) throw Error('Não foi possível conferir cobranças existentes. Tente atualizar o painel.');
         const email = fields.email.trim().toLowerCase();
-        if (pending.data.itens.some(r => ['pendente','aprovado'].includes(r.status) &&
-          (String(r.email || '').toLowerCase() === email || String(r.telefone || '').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'') === fields.telefone))) {
-          throw Error('Este interessado já possui cobrança pendente ou aprovada. Confira o registro antes de cobrar novamente.');
-        }
-        const data = await invoke({...fields, email, acao:'criar', metodo:'pix'});
+        const existing = pending.data.itens.filter(r => ['pendente','aprovado'].includes(r.status) &&
+          (String(r.email || '').toLowerCase() === email || String(r.telefone || '').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'') === fields.telefone));
+        if (existing.length > 1) throw Error('Há mais de uma cobrança para estes dados. Confira os registros antes de continuar.');
+        const data = existing.length ? await invoke({acao:'recuperar',id:existing[0].id}) : await invoke({...fields, email, acao:'criar', metodo:'pix'});
         payment = data;
         form.hidden = true;
         form.elements.documento.value = '';
@@ -80,12 +84,18 @@
         area.querySelector('[data-manual-pix-summary]').textContent = data.nome_plano + ' · ' + money(data.valor_centavos) + ' · Referência: ' + data.id;
         const linkLabel = document.createElement('label'); linkLabel.textContent = 'Link para concluir o cadastro (envie somente ao titular)';
         const link = document.createElement('textarea'); link.className = 'input'; link.readOnly = true;
-        link.value = 'https://quemfazservico.com.br/#/pix-cadastro/' + encodeURIComponent(JSON.stringify({id:data.id,segredo:data.segredo,plano:fields.plano,email}));
+        link.value = 'https://quemfazservico.com.br/#/pix-cadastro/' + encodeURIComponent(JSON.stringify({id:data.id,segredo:data.segredo,plano:data.plano,email:data.email || email}));
         link.style.cssText = 'width:100%;min-height:75px'; linkLabel.append(link); area.append(linkLabel);
         const copyLink = document.createElement('button'); copyLink.type = 'button'; copyLink.className = 'btn btn--outline'; copyLink.textContent = 'Copiar link de cadastro'; area.append(copyLink);
         copyLink.onclick = async () => { try { await g.navigator.clipboard.writeText(link.value); status.textContent = 'Link copiado. Envie somente ao titular da cobrança.'; } catch (_) { link.select(); status.textContent = 'Selecione e copie o link de cadastro.'; } };
         const code = area.querySelector('[data-manual-pix-code]'); code.value = data.pix_copy_paste || '';
         status.textContent = code.value ? 'Pix gerado. Aguardando confirmação do banco.' : 'Cobrança registrada, mas o código não foi retornado. Consulte o suporte antes de gerar outra.';
+        if (data.recuperado) status.textContent = 'Cobrança existente recuperada. Aguardando confirmação bancária; nenhum segundo Pix foi criado.';
+        if (data.status === 'aprovado') {
+          code.parentElement.hidden = true;
+          area.querySelector('[data-manual-pix-copy]').hidden = true;
+          status.textContent = 'Este pagamento já está confirmado. Envie o link para concluir o cadastro. Não cobre novamente.';
+        }
         area.querySelector('[data-manual-pix-copy]').onclick = async () => {
           try { await g.navigator.clipboard.writeText(code.value); status.textContent = 'Pix copiado.'; }
           catch (_) { code.select(); status.textContent = 'Selecione e copie o código Pix.'; }
