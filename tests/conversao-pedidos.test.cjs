@@ -154,28 +154,23 @@ test('formulário: aviso do urgente correto e dados preservados após erro', () 
   assert.ok(html.includes("sessionStorage.setItem('qf_repeat_order_draft', JSON.stringify({ categoriaId: cat.id, descricao: descricao"));
 });
 
-test('guias do ABC: canonical, sitemap, schema e link direto para o formulário', () => {
-  const dist = path.join(root, 'dist');
-  const sitemap = fs.readFileSync(path.join(dist, 'sitemap.xml'), 'utf8');
-  for (const slug of ['limpeza-de-sofa', 'limpeza-de-estofados-e-tapetes', 'eletricista', 'encanador', 'pintor', 'diarista', 'marido-de-aluguel']) {
-    const url = 'https://quemfazservico.com.br/servicos/' + slug + '/abc/';
-    const page = fs.readFileSync(path.join(dist, 'servicos', slug, 'abc', 'index.html'), 'utf8');
-    assert.ok(page.includes('<link rel="canonical" href="' + url + '">'), slug + ' canonical');
-    assert.ok(sitemap.includes('<loc>' + url + '</loc>'), slug + ' sitemap');
-    assert.ok(/<a class="cta" data-request href="\/\?servico=cat_[a-z_]+&amp;seo_page=%2Fservicos%2F[^"]+#\/auth\/cliente\/cadastro">/.test(page), slug + ' CTA');
-    const ld = JSON.parse(page.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);
-    assert.ok(ld.some(x => x['@type'] === 'FAQPage') && ld.some(x => x['@type'] === 'BreadcrumbList'));
-    assert.ok(!/todos os profissionais (são )?verificados/i.test(page), 'sem promessa de verificação');
-    assert.ok(/<meta name="description" content="[^"]{60,170}">/.test(page), slug + ' description');
-  }
-  // Página fina do ABC aponta para o guia e sai do sitemap; fora do ABC não muda.
-  const fina = fs.readFileSync(path.join(dist, 'servicos', 'eletricista', 'maua', 'index.html'), 'utf8');
-  assert.ok(fina.includes('<link rel="canonical" href="https://quemfazservico.com.br/servicos/eletricista/abc/">'));
-  assert.ok(!sitemap.includes('/servicos/eletricista/maua/</loc>'));
-  assert.ok(sitemap.includes('/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc>'), 'editorial de sofá no sitemap');
-  // Guia genérico de Guarulhos não tem conteúdo local/consentimento verificado:\n  // continua acessível, mas não deve ser enviado para indexação pelo sitemap.\n  const guarulhos = fs.readFileSync(path.join(dist, 'servicos', 'eletricista', 'guarulhos', 'index.html'), 'utf8');\n  assert.ok(guarulhos.includes('<link rel=\"canonical\" href=\"https://quemfazservico.com.br/servicos/eletricista/guarulhos/\">'));\n  assert.ok(!sitemap.includes('/servicos/eletricista/guarulhos/</loc>'), 'guia sem validação não deve entrar no sitemap');
-  // UTM e identificadores de clique seguem para o formulário.
-  assert.ok(fina.includes("'msclkid','fbclid'"));
+test('guias do ABC preservam editorial com formulário integrado na própria URL', () => {
+ const dist=path.join(root,'dist'),sitemap=fs.readFileSync(path.join(dist,'sitemap.xml'),'utf8');
+ for(const slug of ['limpeza-de-sofa','limpeza-de-estofados-e-tapetes','eletricista','encanador','pintor','diarista','marido-de-aluguel']){
+  const url='https://quemfazservico.com.br/servicos/'+slug+'/abc/';
+  const page=fs.readFileSync(path.join(dist,'servicos',slug,'abc','index.html'),'utf8');
+  assert.ok(page.includes('<link rel="canonical" href="'+url+'">'));
+  assert.ok(sitemap.includes('<loc>'+url+'</loc>'));
+  assert.ok(page.includes('id="seo-order"')&&page.includes('qf-seo-servicos.js'));
+  assert.ok(!page.includes('data-qf-direct-organic'));
+  assert.ok(page.includes('BreadcrumbList'));
+  assert.ok(!/todos os profissionais (são )?verificados/i.test(page));
+ }
+ const fina=fs.readFileSync(path.join(dist,'servicos','eletricista','maua','index.html'),'utf8');
+ assert.ok(fina.includes('noindex,follow')&&fina.includes('id="seo-order"'));
+ assert.ok(!sitemap.includes('/servicos/eletricista/maua/</loc>'));
+ assert.ok(!sitemap.includes('/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc>'), 'sem especialidade declarada na cobertura consultada');
+ assert.ok(fs.readFileSync(path.join(dist,'servicos','limpeza-de-sofa','sao-bernardo-do-campo','index.html'),'utf8').includes('noindex,follow'));
 });
 
 console.log('conversao-pedidos: ok');

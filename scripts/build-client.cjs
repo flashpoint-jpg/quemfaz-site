@@ -302,3 +302,6 @@ require('./check-sitemap.cjs');
 require('./seo-direct-entry.cjs');
 
 
+
+// Páginas de serviço com formulário integrado e cobertura real (issue #205).
+require('./seo-servicos-205.cjs');
