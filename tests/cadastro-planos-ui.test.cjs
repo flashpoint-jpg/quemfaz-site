@@ -25,8 +25,9 @@ test('Cadastro exige pagamento: opções Avulso R$13 e plano mensal, sem teste o
   assert.deepEqual([...form.querySelectorAll('[name=planoEscolhido]')].map(e=>e.value),['avulso','basico_v2','pro_v2','completo_v2']);
   assert.equal(form.querySelector('[name=testeLivre]'),null);
   assert.equal(form.querySelector('[name=cortesiaLivre]'),null);
-  assert.match(w.document.querySelector('[data-qf-planos-chamada]').textContent,/PAGAMENTO OBRIGATÓRIO/i);
-  assert.match(form.textContent,/É necessário pagar o plano escolhido para concluir seu cadastro/i);
+  assert.match(w.document.querySelector('[data-qf-planos-chamada]').textContent,/ESCOLHA COMO COMEÇAR/i);
+  assert.doesNotMatch(form.querySelector('.qf-options-final').textContent,/pagamento obrigatório|somente após Pix confirmado/i);
+  assert.match(form.textContent,/Compare as opções e escolha a melhor para você/i);
   assert.match(form.textContent,/R\$ 14,99/);
   assert.match(form.querySelector('[data-cad-criar]').textContent,/Continuar para pagamento/);
   assert.match(form.querySelector('.qf-options-final').textContent,/R\$ 14,99/);
