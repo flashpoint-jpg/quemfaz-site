@@ -1,0 +1,1488 @@
+{
+  "consultadoEm": "2026-11-04",
+  "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
+  "cidades": [
+    {
+      "cidade": "Alphaville",
+      "uf": "SP",
+      "especialidades": [
+        "cat_diarista"
+      ]
+    },
+    {
+      "cidade": "Aparecida",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
+        "cat_custom_impermeabilizacao_e_pintura_1y07yvf",
+        "cat_custom_pintor_residencial_ssivpc",
+        "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_maquina_lavar",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Aparecida de Goiânia",
+      "uf": "GO",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Araguari",
+      "uf": "MG",
+      "especialidades": [
+        "cat_montador"
+      ]
+    },
+    {
+      "cidade": "Barueri",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_baba",
+        "cat_chaveiro",
+        "cat_eletricista",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_maquina_lavar",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_outros",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Belo Horizonte",
+      "uf": "MG",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_baba",
+        "cat_caixa_dagua",
+        "cat_cuidador_idosos",
+        "cat_diarista",
+        "cat_faxina_pos_obra",
+        "cat_funileiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Bragança Paulista",
+      "uf": "SP",
+      "especialidades": [
+        "cat_caixa_dagua",
+        "cat_custom_ajudante_carga_e_descarga_1mi0u28",
+        "cat_custom_ajudante_ygvzj7",
+        "cat_custom_auxiliar_de_limpeza_k9k92v",
+        "cat_custom_servicos_limpeza_tkmwkf",
+        "cat_diarista",
+        "cat_faxina_pos_obra",
+        "cat_jardinagem",
+        "cat_marido_aluguel",
+        "cat_pet_sitter",
+        "cat_poda_paisagista"
+      ]
+    },
+    {
+      "cidade": "Cabo Frio",
+      "uf": "RJ",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Caçapava",
+      "uf": "SP",
+      "especialidades": [
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_marido_aluguel",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Caieiras",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_eletricista"
+      ]
+    },
+    {
+      "cidade": "Cajamar",
+      "uf": "SP",
+      "especialidades": [
+        "cat_custom_ajudante_carga_e_descarga_1mi0u28",
+        "cat_custom_auxiliar_de_limpeza_k9k92v",
+        "cat_eletricista",
+        "cat_fogao_microondas",
+        "cat_maquina_lavar",
+        "cat_mecanico",
+        "cat_montador"
+      ]
+    },
+    {
+      "cidade": "Campo Limpo Paulista",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Caraguatatuba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_cftv_alarmes",
+        "cat_custom_tecnico_em_intefone_e_alarme_de_incend_1b3x2x1"
+      ]
+    },
+    {
+      "cidade": "Carapicuíba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_celular",
+        "cat_cozinheira",
+        "cat_cuidador_idosos",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_frete",
+        "cat_impermeabilizacao",
+        "cat_limpeza_estofados",
+        "cat_maquina_lavar",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_serralheiro",
+        "cat_toldos_cortinas",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Contagem",
+      "uf": "MG",
+      "especialidades": [
+        "cat_autoeletrico",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_caixa_dagua",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_faxina_pos_obra",
+        "cat_mecanico",
+        "cat_passadeira"
+      ]
+    },
+    {
+      "cidade": "Cordeirópolis",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_custom_manutencao_de_ar_condicionado_196jqg"
+      ]
+    },
+    {
+      "cidade": "Cotia",
+      "uf": "SP",
+      "especialidades": [
+        "cat_baba",
+        "cat_cuidador_idosos",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_faxina_pos_obra",
+        "cat_marido_aluguel"
+      ]
+    },
+    {
+      "cidade": "Cubatão",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Diadema",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_arcondicionado",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_celular",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_cozinheira",
+        "cat_custom_aquecedores_a_gas_marido_de_aluguel_va_1nfycvw",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_eletricista_industrial_residencial_sen_th8mvn",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_custom_limpeza_recepcao_portaria_telemarketin_10cn29d",
+        "cat_custom_manutencao_13jx2ii",
+        "cat_custom_manutencao_de_ar_condicionado_196jqg",
+        "cat_custom_refrigeracao_2cksun",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_garcom_buffet",
+        "cat_gasista",
+        "cat_geladeira",
+        "cat_informatica",
+        "cat_manicure",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_outros",
+        "cat_passadeira",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Diadema SP",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista"
+      ]
+    },
+    {
+      "cidade": "Diadema, Jabaquara, são Paulo, ABCD",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_eletricista_industrial_residencial_sen_th8mvn",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_eletricista"
+      ]
+    },
+    {
+      "cidade": "Duque de Caxias",
+      "uf": "RJ",
+      "especialidades": [
+        "cat_piscineiro"
+      ]
+    },
+    {
+      "cidade": "Embu das Artes",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_azulejista",
+        "cat_baba",
+        "cat_caixa_dagua",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_cozinheira",
+        "cat_custom_manutencao_13jx2ii",
+        "cat_diarista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_frete",
+        "cat_internet_redes",
+        "cat_jardinagem",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_mudancas",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Embu-Guaçu",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_gesseiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Ferraz de Vasconcelos",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_custom_encarregado_de_manutencao_predial_18yc365",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_marido_aluguel"
+      ]
+    },
+    {
+      "cidade": "Franco da Rocha",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_entregador",
+        "cat_lava_jato",
+        "cat_limpeza_estofados"
+      ]
+    },
+    {
+      "cidade": "Guariba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_eletricista"
+      ]
+    },
+    {
+      "cidade": "Guarujá",
+      "uf": "SP",
+      "especialidades": [
+        "cat_geladeira",
+        "cat_maquina_lavar"
+      ]
+    },
+    {
+      "cidade": "Guarulhos",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_cozinheira",
+        "cat_cuidador_idosos",
+        "cat_custom_aquecedores_a_gas_marido_de_aluguel_va_1nfycvw",
+        "cat_custom_azulejista_ou_pintor_de_casa_vaffp2",
+        "cat_custom_encanador_e_pintor_h3lxb5",
+        "cat_custom_eu_conserto_tambem_placa_de_esteira_de_1oucfxt",
+        "cat_custom_eu_sou_tecnico_de_placas_inverter_de_a_eocnby",
+        "cat_custom_gesso_6uj6js",
+        "cat_custom_impermeabilizacao_e_pintura_1y07yvf",
+        "cat_custom_pedreiro_azulejista_1kpmei9",
+        "cat_custom_pintor_residencial_ssivpc",
+        "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_custom_tec_de_enfermagem_c1zrvb",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_fogao_microondas",
+        "cat_gasista",
+        "cat_geladeira",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_mudancas",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_telhadista",
+        "cat_toldos_cortinas",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Indaiatuba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_energia_solar",
+        "cat_passadeira"
+      ]
+    },
+    {
+      "cidade": "Itanhaém",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_calheiro",
+        "cat_custom_dedetizacao_1y01si0",
+        "cat_custom_empreiteiro_1c0fob8",
+        "cat_dedetizador",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_encanador",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Itapecerica da Serra",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_custom_ar_condicionado_19i3cue",
+        "cat_custom_engenheiro_civil_1g71d1q",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_faxina_pos_obra",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_internet_redes",
+        "cat_jardinagem",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_pintor",
+        "cat_telhadista",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Itapevi",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_faxina_pos_obra",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_outros",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Itaquaquecetuba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_fogao_microondas",
+        "cat_frete",
+        "cat_geladeira",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_limpeza_estofados",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_mudancas",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "Itu",
+      "uf": "SP",
+      "especialidades": [
+        "cat_diarista",
+        "cat_marido_aluguel"
+      ]
+    },
+    {
+      "cidade": "Jacareí",
+      "uf": "SP",
+      "especialidades": [
+        "cat_custom_tecnico_em_reparos_gerais_580trg",
+        "cat_marido_aluguel",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Jaguariúna",
+      "uf": "SP",
+      "especialidades": [
+        "cat_eletricista",
+        "cat_marido_aluguel"
+      ]
+    },
+    {
+      "cidade": "Jandira",
+      "uf": "SP",
+      "especialidades": [
+        "cat_banho_tosa",
+        "cat_caixa_dagua",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_custom_manutencao_de_bicicleta_1iqs5k7",
+        "cat_custom_montagem_de_moveis_13agfr1",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_faxina_pos_obra",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pintor",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "Jundiaí",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_residencial",
+        "cat_caixa_dagua",
+        "cat_cftv_alarmes",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_informatica",
+        "cat_jardinagem",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pintor",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "Mairinque",
+      "uf": "SP",
+      "especialidades": [
+        "cat_entregador",
+        "cat_frete"
+      ]
+    },
+    {
+      "cidade": "Mauá",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_custom_servicos_limpeza_tkmwkf",
+        "cat_custom_tecnico_em_reparos_gerais_580trg",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_frete",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_mudancas",
+        "cat_pintor",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Mogi das cruzes",
+      "uf": "SP",
+      "especialidades": [
+        "cat_montador"
+      ]
+    },
+    {
+      "cidade": "Mogi das Cruzes",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_baba",
+        "cat_calheiro",
+        "cat_chaveiro",
+        "cat_cozinheira",
+        "cat_custom_ajudante_carga_e_descarga_1mi0u28",
+        "cat_custom_aquecedores_a_gas_marido_de_aluguel_va_1nfycvw",
+        "cat_custom_azulejista_ou_pintor_de_casa_vaffp2",
+        "cat_custom_cartomante_q38zin",
+        "cat_custom_chapeiro_sis1mu",
+        "cat_custom_cozinheiro_p7ruax",
+        "cat_custom_limpador_de_vidro_1b74ru",
+        "cat_custom_manutencao_geral_14bqchx",
+        "cat_custom_pintor_residencial_ssivpc",
+        "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_custom_pizzaiolo_1k0jewo",
+        "cat_custom_reparo_em_drywall_1u9p2wr",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_energia_solar",
+        "cat_faxina_pos_obra",
+        "cat_gasista",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_professor",
+        "cat_telhadista",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "Mogi Guaçu",
+      "uf": "SP",
+      "especialidades": [
+        "cat_custom_higienizador_de_estofados_em_geral_e_l_4dijb2",
+        "cat_limpeza_estofados",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Mogi Mirim",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_eletricista"
+      ]
+    },
+    {
+      "cidade": "Mongaguá",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_custom_pedreiro_azulejista_1kpmei9",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_fogao_microondas",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Monte Carmelo",
+      "uf": "MG",
+      "especialidades": [
+        "cat_diarista"
+      ]
+    },
+    {
+      "cidade": "Muzambinho",
+      "uf": "MG",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_funileiro",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_piscineiro"
+      ]
+    },
+    {
+      "cidade": "Osasco",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_caixa_dagua",
+        "cat_cftv_alarmes",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_custom_limpeza_de_piscina_1yfrzs3",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_faxina_pos_obra",
+        "cat_fogao_microondas",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_jardinagem",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pintor",
+        "cat_piscineiro",
+        "cat_soldador",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Paulista",
+      "uf": "PE",
+      "especialidades": [
+        "cat_custom_pintor_industrial_6em128",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Peruíbe",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Piracaia",
+      "uf": "SP",
+      "especialidades": [
+        "cat_eletricista"
+      ]
+    },
+    {
+      "cidade": "Piracicaba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_faxina_pos_obra",
+        "cat_impermeabilizacao",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Porto Velho",
+      "uf": "RO",
+      "especialidades": [
+        "cat_marceneiro",
+        "cat_montador",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Potim",
+      "uf": "SP",
+      "especialidades": [
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Praia Grande",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_arcondicionado",
+        "cat_autoeletrico",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_cftv_alarmes",
+        "cat_custom_assistente_de_negocios_do_dia_dia_b0zitf",
+        "cat_custom_organizacao_1ao5kg5",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_frete",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_internet_redes",
+        "cat_marido_aluguel",
+        "cat_mecanico",
+        "cat_montador",
+        "cat_motorista",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Registro",
+      "uf": "SP",
+      "especialidades": [
+        "cat_custom_refrigeracao_2cksun",
+        "cat_fogao_microondas",
+        "cat_geladeira",
+        "cat_maquina_lavar"
+      ]
+    },
+    {
+      "cidade": "Ribeirão Pires",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_custom_construcao_reformas_e_acabamentos_xncq0e",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_outros",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Ribeirão Preto",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_faxina_pos_obra",
+        "cat_jardinagem",
+        "cat_limpeza_estofados",
+        "cat_marido_aluguel",
+        "cat_pintor",
+        "cat_piscineiro",
+        "cat_telhadista",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "Rio grande da serra",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_marido_aluguel",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "Salto",
+      "uf": "SP",
+      "especialidades": [
+        "cat_outros"
+      ]
+    },
+    {
+      "cidade": "Santa Maria da Serra",
+      "uf": "SP",
+      "especialidades": [
+        "cat_cftv_alarmes",
+        "cat_eletricista",
+        "cat_impermeabilizacao",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Santana de Parnaíba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_diarista",
+        "cat_impermeabilizacao",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "santo andre",
+      "uf": "SP",
+      "especialidades": [
+        "cat_entregador",
+        "cat_frete",
+        "cat_montador",
+        "cat_mudancas"
+      ]
+    },
+    {
+      "cidade": "Santo André",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_arcondicionado",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_cftv_alarmes",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_tv_som",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Santos",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_baba",
+        "cat_cftv_alarmes",
+        "cat_cozinheira",
+        "cat_cuidador_idosos",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_faxina_pos_obra",
+        "cat_fogao_microondas",
+        "cat_geladeira",
+        "cat_internet_redes",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_outros",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "São Bernardo do Campo",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_arcondicionado",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_dedetizador",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_frete",
+        "cat_geladeira",
+        "cat_gesseiro",
+        "cat_guincho",
+        "cat_impermeabilizacao",
+        "cat_informatica",
+        "cat_internet_redes",
+        "cat_jardinagem",
+        "cat_lava_jato",
+        "cat_maquina_lavar",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_outros",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas",
+        "cat_tv_som",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "São Caetano",
+      "uf": "SP",
+      "especialidades": [
+        "cat_impermeabilizacao",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "São Caetano do Sul",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_desentupidor",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_frete",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_informatica",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_pintor",
+        "cat_telhadista",
+        "cat_tv_som"
+      ]
+    },
+    {
+      "cidade": "São José do Rio Preto",
+      "uf": "SP",
+      "especialidades": [
+        "cat_caixa_dagua",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_jardinagem",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_pintor",
+        "cat_soldador",
+        "cat_toldos_cortinas"
+      ]
+    },
+    {
+      "cidade": "São José dos Campos",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_custom_tecnico_em_reparos_gerais_580trg",
+        "cat_encanador",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "sao paulo",
+      "uf": "SP",
+      "especialidades": [
+        "cat_entregador",
+        "cat_frete",
+        "cat_montador",
+        "cat_mudancas"
+      ]
+    },
+    {
+      "cidade": "São Paulo",
+      "uf": "SP",
+      "especialidades": [
+        "cat_antenista",
+        "cat_arcondicionado",
+        "cat_autoeletrico",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_baba",
+        "cat_bateria_auto",
+        "cat_cabeleireiro",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_celular",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_cozinheira",
+        "cat_cuidador_idosos",
+        "cat_custom_ajudante_carga_e_descarga_1mi0u28",
+        "cat_custom_ajudante_ygvzj7",
+        "cat_custom_aquecedores_a_gas_h8pjrw",
+        "cat_custom_aquecedores_a_gas_marido_de_aluguel_va_1nfycvw",
+        "cat_custom_ar_condicionado_19i3cue",
+        "cat_custom_auxiliar_de_limpeza_k9k92v",
+        "cat_custom_auxiliar_de_producao_1291v5s",
+        "cat_custom_colocador_de_piso_laminado_8htl2w",
+        "cat_custom_construcao_reformas_e_acabamentos_xncq0e",
+        "cat_custom_diarista_cozinheira_forno_e_fogao_15ypasn",
+        "cat_custom_diarista_e_passadoria_13e7dqs",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_eletricista_encanador_ceramicas_em_ger_jzjojy",
+        "cat_custom_eletricista_industrial_residencial_sen_th8mvn",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_custom_encanador_e_pintor_h3lxb5",
+        "cat_custom_gesseiro_admin_20261026",
+        "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
+        "cat_custom_higienizador_de_estofados_em_geral_e_l_4dijb2",
+        "cat_custom_instalacao_de_drywall_1oarhsa",
+        "cat_custom_instalacao_manutencao_vendas_e_consert_1papjwy",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_custom_limpador_de_vidro_1b74ru",
+        "cat_custom_limpeza_de_piscina_1yfrzs3",
+        "cat_custom_manutencao_de_bicicleta_1iqs5k7",
+        "cat_custom_massoterapeuta_1ayc4mp",
+        "cat_custom_mecanico_ar_condicionado_w8vmhd",
+        "cat_custom_monta_em_drayll_2ouyd0",
+        "cat_custom_montador_em_drayll_gesso_1w9i1ny",
+        "cat_custom_montagem_de_moveis_13agfr1",
+        "cat_custom_mr_nmu666",
+        "cat_custom_pedreiros_59p4p2",
+        "cat_custom_pintor_e_decorador_eq8bbr",
+        "cat_custom_pintor_residencial_ssivpc",
+        "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_custom_reparo_em_drywall_1u9p2wr",
+        "cat_custom_tecnico_ar_condicionados_residencial_e_1prelzn",
+        "cat_custom_tecnico_de_informatica_oe3tos",
+        "cat_custom_tecnico_em_cameras_cftv_1lrkajd",
+        "cat_custom_tecnico_em_intefone_e_alarme_de_incend_1b3x2x1",
+        "cat_custom_tecnico_em_reparos_gerais_580trg",
+        "cat_dedetizador",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_dj_som",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_energia_solar",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_fogao_microondas",
+        "cat_frete",
+        "cat_garcom_buffet",
+        "cat_gasista",
+        "cat_geladeira",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_informatica",
+        "cat_internet_redes",
+        "cat_jardinagem",
+        "cat_lava_jato",
+        "cat_limpeza_estofados",
+        "cat_maquina_lavar",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_mecanico",
+        "cat_montador",
+        "cat_motorista",
+        "cat_mudancas",
+        "cat_outros",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_pintor",
+        "cat_piscineiro",
+        "cat_poda_paisagista",
+        "cat_professor",
+        "cat_serralheiro",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas",
+        "cat_tv_som",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "São Pauloq",
+      "uf": "SP",
+      "especialidades": [
+        "cat_montador"
+      ]
+    },
+    {
+      "cidade": "São Vicente",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_cftv_alarmes",
+        "cat_custom_carretos_kqu7a2",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_fogao_microondas",
+        "cat_frete",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_internet_redes",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Saopaulo",
+      "uf": "SP",
+      "especialidades": [
+        "cat_eletricista",
+        "cat_encanador"
+      ]
+    },
+    {
+      "cidade": "Sorocaba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_calheiro",
+        "cat_cftv_alarmes",
+        "cat_chaveiro",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_impermeabilizacao",
+        "cat_jardinagem",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pet_sitter",
+        "cat_serralheiro",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Sumaré",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_caixa_dagua",
+        "cat_eletricista",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_limpeza_estofados",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Suzano",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_cftv_alarmes",
+        "cat_custom_aquecedores_a_gas_h8pjrw",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_eletricista_encanador_ceramicas_em_ger_jzjojy",
+        "cat_custom_eletricista_industrial_residencial_sen_th8mvn",
+        "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
+        "cat_custom_eu_sou_tecnico_de_placas_inverter_de_a_eocnby",
+        "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
+        "cat_custom_manutencao_de_ar_condicionado_196jqg",
+        "cat_custom_manutencao_de_bicicleta_1iqs5k7",
+        "cat_custom_montagem_de_moveis_13agfr1",
+        "cat_custom_refrigeracao_2cksun",
+        "cat_custom_tecnico_em_reparos_gerais_580trg",
+        "cat_desentupidor",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_fogao_microondas",
+        "cat_gasista",
+        "cat_geladeira",
+        "cat_impermeabilizacao",
+        "cat_maquina_lavar",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Taboão da Serra",
+      "uf": "SP",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_calheiro",
+        "cat_diarista",
+        "cat_fogao_microondas",
+        "cat_geladeira",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_informatica",
+        "cat_limpeza_estofados",
+        "cat_maquina_lavar",
+        "cat_marido_aluguel",
+        "cat_outros",
+        "cat_passadeira",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Ubatuba",
+      "uf": "SP",
+      "especialidades": [
+        "cat_pedreiro"
+      ]
+    },
+    {
+      "cidade": "Uberaba",
+      "uf": "MG",
+      "especialidades": [
+        "cat_caixa_dagua",
+        "cat_chaveiro",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_poda_paisagista",
+        "cat_soldador"
+      ]
+    },
+    {
+      "cidade": "Uberlândia",
+      "uf": "MG",
+      "especialidades": [
+        "cat_antenista",
+        "cat_baba",
+        "cat_cftv_alarmes",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_energia_solar",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Vargem Grande Paulista",
+      "uf": "SP",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_custom_eletricista_encanador_ceramicas_em_ger_jzjojy",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_gesseiro",
+        "cat_marceneiro",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Votorantim",
+      "uf": "SP",
+      "especialidades": [
+        "cat_arcondicionado",
+        "cat_automacao_residencial",
+        "cat_cftv_alarmes",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_faxina_pos_obra",
+        "cat_marido_aluguel",
+        "cat_vidraceiro"
+      ]
+    }
+  ]
+}
