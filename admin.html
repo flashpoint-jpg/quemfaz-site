@@ -6123,19 +6123,8 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
 
 Screens.adminDashboardRender = function () {
-    const s = DB.dashboardStats();
-    const meta = DB.state.meta || {};
-    return (
-      '<div class="view qf-painel">' + migrationBanner() +
-        (global.QFAdminParados ? global.QFAdminParados.banners() : '') +
-        (cloudOn() && meta.snapshotEm ? '<div class="qf-painel__topo"><span class="text--sm text--secondary">Atualizado em ' + PU.formatDateTime(meta.snapshotEm) + '</span><button class="btn btn--sm btn--outline btn--block-auto" data-action="admin-refresh" type="button">' + icon('refresh') + ' Atualizar</button></div>' : '') +
-        admNumerosHtml(s) + admUltimosHtml() +
-        '<div class="qf-painel__grid">' +
-          '<div class="qf-painel__col">' + receitaHtml(s) + notaAppSecaoHtml() + comoEstaIndoHtml(s) + '</div>' +
-          '<div class="qf-painel__col">' + precisaHtml(s) + '</div>' +
-        '</div>' +
-      '</div>'
-    );
+    return '<div class="view qf-painel">' + migrationBanner() +
+      (global.QFAdminParados ? global.QFAdminParados.banners() : '') + '</div>';
   };
 
   // V11.16.32: quadros do resumo abrem a lista de serviços já na aba certa.
@@ -10034,7 +10023,7 @@ Screens.adminDashboardRender = function () {
 </script>
 <script src="qf-recrutamento.js?v=11.95"></script>
 <script src="qf-admin-acquisition.js?v=11.75.1"></script>
-<script src="qf-admin-commercial.js?v=1"></script>
+<script src="qf-admin-commercial.js?v=painel-limpo-20261104-1"></script>
 <script src="qf-admin-monitoramento.js?v=1"></script>
 <script src="qf-admin-devolucao.js?v=1"></script>
 <script src="qf-admin-push-diagnostico.js?v=1"></script>
@@ -10114,7 +10103,7 @@ Screens.adminDashboardRender = function () {
     { pattern: '/profissional/perfil', role: 'profissional', tab: 'perfil', title: 'Perfil profissional', render: Screens.profPerfilRender },
     { pattern: '/profissional/avaliacoes', role: 'profissional', title: 'Avaliações', back: '/profissional/perfil', render: Screens.profAvaliacoesRender },
 
-    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard', title: 'Início', render: Screens.adminDashboardRender },
+    { pattern: '/admin/dashboard', role: 'admin', tab: 'dashboard', title: 'Visão geral', render: Screens.adminDashboardRender },
     { pattern: '/admin/profissionais', role: 'admin', tab: 'profissionais', title: 'Profissionais', render: Screens.adminProfissionaisRender },
     { pattern: '/admin/profissionais/:id', role: 'admin', title: 'Profissional', back: '/admin/profissionais', render: Screens.adminProfissionalDetalheRender },
     { pattern: '/admin/clientes', role: 'admin', title: 'Clientes', render: Screens.adminClientesRender },
@@ -10341,7 +10330,7 @@ Screens.adminDashboardRender = function () {
   // V11.45: menu lateral do painel. Cada rota do admin acende um item (as telas internas acendem o item de origem).
   // V11.95: menu organizado por assunto, cada função em um lugar só (sem itens repetidos).
   const ADMIN_MENU = [
-    { id: 'inicio', label: 'Início', icon: 'home', route: '/admin/dashboard', also: ['/admin/mais'] },
+    { id: 'inicio', label: 'Visão geral', icon: 'home', route: '/admin/dashboard', also: ['/admin/mais'] },
     { section: 'Pedidos' },
     { id: 'pedidos', label: 'Todos os pedidos', icon: 'clipboard', route: '/admin/servicos', also: ['/admin/servicos/:id'] },
     { id: 'paineis', label: 'Parados na tela', icon: 'smartphone', route: '/admin/paineis' },
@@ -10600,11 +10589,11 @@ Screens.adminDashboardRender = function () {
 <script src="qf-atendimento.js?v=codigo-visivel-20261024"></script>
 <script src="qf-comissao13.js?v=direto-saque-20261029"></script>
 <script src="qf-admin-negociacoes.js?v=20261027-cards3"></script>
-<script src="qf-admin-financeiro.js?v=visita-manual-20261030"></script>
+<script src="qf-admin-financeiro.js?v=painel-limpo-20261104"></script>
 <script defer src="qf-prof-entregas.js?v=20261026"></script>
-<script src="qf-admin-cadastro-pago.js?v=20261102-novos-pix-fix1"></script>
+<script src="qf-admin-cadastro-pago.js?v=painel-limpo-20261104"></script>
 <script src="qf-admin-convites-24h.js?v=20261102-convite24-v1" defer></script>
 <script src="qf-admin-retornos.js?v=20261103-retorno-v1" defer></script>
-</body>
+<script src="qf-admin-dashboard.js?v=20261104-painel"></script></body>
 </html>
 

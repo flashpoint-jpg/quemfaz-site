@@ -11,3 +11,34 @@
 .qf-reset-tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding:18px;margin-bottom:18px}
 .qf-reset-tools p{margin:6px 0;font-size:14px}
 .qf-benefit-modal [hidden]{display:none!important}
+
+/* Dashboard: hierarquia clara, leitura confortável e controles acessíveis. */
+.qf-adm-body #app-content{min-width:0}
+.qf-adm-body #app-content :is(h2,h3){line-height:1.3}
+.qf-adm-body #app-content .row-between{gap:12px;flex-wrap:wrap;padding-block:7px}
+.qf-adm-body #app-content :is(.qf-dashboard-detail,.qf-pre-legacy){margin-top:16px;padding:16px;border:1px solid #d6e2ee;border-radius:14px;background:#f8fbff}
+.qf-adm-body #app-content :is(.qf-dashboard-detail,.qf-pre-legacy)>summary{cursor:pointer;font-weight:750;font-size:16px;min-height:28px;color:#173e69}
+.qf-adm-body #app-content :is(button,a,input,select,textarea):focus-visible{outline:3px solid #ef8a24;outline-offset:3px}
+.qf-adm-body #app-content .qfo-stat small{display:block;font-size:13px;color:#465c73;margin-bottom:8px}
+.qf-adm-body #app-content .qfo-stat strong{overflow-wrap:anywhere}
+@media(max-width:600px){.qf-adm-body #app-content :is(.qf-dashboard-detail,.qf-pre-legacy){padding:12px}.qf-adm-body #app-content .qfo-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.qf-adm-body .qf-adm-head h1{color:#134ca6}
+.qfd{display:grid;gap:20px;color:#183653;min-width:0}
+.qfd-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.qfd-toolbar p,.qfd-status{margin:0}.qfd-status{font-size:13px;color:#536a80;line-height:1.5}
+.qfd-period{display:flex;flex-wrap:wrap;gap:5px;padding:4px;background:#eff5fd;border:1px solid #c9daed;border-radius:12px}
+.qfd-period button{padding:10px 15px;min-height:44px;border:0;border-radius:8px;background:transparent;color:#173d72;font:inherit;font-size:14px;cursor:pointer}
+.qfd-period button[aria-pressed=true]{background:#145ccc;color:#fff;font-weight:700}
+.qfd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.qfd-stats article{display:grid;gap:10px;padding:20px;border:1px solid #d1dfef;border-radius:16px;background:linear-gradient(135deg,#fff,#f2f7ff);min-width:0}
+.qfd-stats article>span{font-size:14px;font-weight:750}.qfd-stats strong{font-size:30px;color:#123f7d;line-height:1.15;overflow-wrap:anywhere}.qfd-stats small{font-size:12px;color:#5b7188;line-height:1.4}
+.qfd-attention,.qfd-quick{border:1px solid #cddfee;border-radius:16px;background:#fff;overflow:hidden}
+.qfd h2{margin:0;font-size:19px;color:#124693}.qfd-attention h2,.qfd-quick h2{padding:17px 20px;background:#e9f2ff}
+.qfd-attention>div{display:flex;justify-content:space-between;align-items:center;gap:14px;margin:0 20px;padding:16px 0;border-bottom:1px solid #e3ebf5}.qfd-attention>div:last-child{border:0}
+.qfd-attention a{background:#d45b00;color:white;border-radius:9px;padding:12px 18px;min-width:150px;text-align:center;font-weight:700;text-decoration:none;min-height:44px;box-sizing:border-box}.qfd a>span{margin-left:16px}
+.qfd-columns{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,1fr);gap:20px;align-items:start}.qfd-columns>div{min-width:0}
+.qfd .qfo-balance{margin:0;padding:18px}.qfd .qfo-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.qfd .qfo-stat strong{font-size:21px}
+.qfd-quick>a{display:flex;justify-content:space-between;margin:12px 16px;padding:14px;border:1px solid #d8e4f1;border-radius:10px;text-decoration:none;color:#173d72;font-weight:650;min-height:44px;box-sizing:border-box;background:#f8fbff}
+.qfd-fold{border:1px solid #d0dfef;border-radius:13px;background:#fff;margin-bottom:12px;padding:16px;min-width:0}.qfd-fold>summary{font-size:16px;font-weight:750;color:#134693;cursor:pointer;min-height:28px}.qfd-fold[open]>summary{margin-bottom:16px}.qfd-fold .section{margin:0}.qfd-fold .card{box-shadow:none}
+@media(max-width:1100px){.qfd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.qfd-columns{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.qfd{gap:14px}.qfd-stats{gap:10px}.qfd-stats article{padding:14px}.qfd-stats strong{font-size:24px}.qfd-toolbar{align-items:stretch}.qfd-period{width:100%;justify-content:space-between}.qfd-period button{padding:10px}.qfd-attention>div{display:grid;margin:0 14px;gap:10px}.qfd-attention a{width:100%}.qfd-attention h2,.qfd-quick h2{padding:15px}.qfd-fold{padding:13px}}

@@ -23,7 +23,8 @@
   function simplifyMenu(){
     const menu=g.document.querySelector('.qf-adm-nav');
     if(!menu||menu.querySelector('[data-qff-nav-more]'))return;
-    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/movimentacoes','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes','/admin/marketing-dedicado']);
+    menu.querySelectorAll('[data-nav="/admin/marketing-dedicado"],[data-nav="/admin/trafego-dedicado"]').forEach(item=>item.remove());
+    const important=new Set(['/admin/dashboard','/admin/servicos','/admin/negociacoes','/admin/financeiro','/admin/movimentacoes','/admin/pagamentos','/admin/profissionais','/admin/clientes','/admin/planos','/admin/suporte','/admin/configuracoes']);
     const more=g.document.createElement('details');
     more.className='qff-nav-more';more.dataset.qffNavMore='1';
     const heading=g.document.createElement('summary');heading.textContent='Mais ferramentas';
@@ -270,7 +271,7 @@
      const {data:ret,error}=await client.rpc('qf_admin_receitas_por_plano');
      if(error||!ret||!Array.isArray(ret.pagamentos)||!Array.isArray(ret.por_plano))throw Error('Não foi possível carregar os pagamentos. Confira o acesso administrativo.');
      if(!section.isConnected)return;
-     const names=['Avulso','Livre','Marketing / anúncios'];
+     const names=['Avulso','Livre'];
      const groups=ret.por_plano.slice();
      names.forEach(n=>{if(!groups.some(x=>x.categoria===n))groups.push({categoria:n,quantidade:0,total_centavos:0});});
      const order=n=>names.indexOf(n)<0?100:names.indexOf(n);

@@ -22,12 +22,12 @@
         '<hr class="hairline">' + row('Recargas aprovadas no banco · histórico', d.recargas.aprovadas_banco) +
         '<div class="row-between"><span>Valor aprovado · histórico</span><strong>' + esc((Number(d.recargas.valor_aprovado_centavos) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })) + '</strong></div>' +
         row('Recargas pendentes', d.recargas.pendentes) + '<p class="text--sm text--secondary">' + esc(d.pagamentos_status) + '</p>';
-      h += '<hr class="hairline"><h3 class="h3">Notificações · histórico</h3>';
+      h += '<details class="qf-dashboard-detail"><summary>Notificações e publicações</summary><h3 class="h3">Notificações · histórico</h3>';
       var labels = { enviado: 'Aceitas pelo serviço de push', falhou: 'Falhas de envio', sem_inscricao: 'Sem inscrição push', legado: 'Histórico sem confirmação', fora_horario: 'Fora do horário', reenvio_solicitado: 'Reenvio solicitado', processando: 'Em processamento' };
       Object.keys(d.notificacoes).forEach(function (k) { h += row(labels[k] || k, d.notificacoes[k]); });
       h += '<p class="text--sm text--secondary">Envio aceito não comprova exibição ou leitura no celular.</p><hr class="hairline"><h3 class="h3">Publicações por dia · últimos 7 dias</h3>';
       (d.publicacoes_dia || []).forEach(function (x) { h += row(x.dia, x.total); });
-      h += '<p class="text--sm text--secondary">Pedidos publicados ainda presentes na base; exclusões posteriores podem reduzir o histórico.</p><hr class="hairline"><h3 class="h3">Pedidos e impedimentos observáveis</h3>';
+      h += '<p class="text--sm text--secondary">Pedidos publicados ainda presentes na base; exclusões posteriores podem reduzir o histórico.</p></details><details class="qf-dashboard-detail"><summary>Pedidos que precisam de atenção</summary>';
       (d.pedidos || []).forEach(function (p) {
         var reason = Number(p.desbloqueios) >= Number(p.limite) ? 'Limite preenchido' :
           !Number(p.aptos_raio) ? 'Sem profissional elegível no raio' :
@@ -39,10 +39,10 @@
           row('Elegíveis no raio', p.aptos_raio) + row('Online no horário', p.aptos_online_horario) +
           row('Com saldo suficiente ou plano', p.aptos_com_credito_ou_plano) + row('Envios aceitos pelo push', p.enviados) + '</div>';
       });
-      h += '<hr class="hairline"><h3 class="h3">Recuperação automática</h3>';
+      h += '</details><details class="qf-dashboard-detail"><summary>Recuperação automática</summary>';
       (d.recuperacoes || []).forEach(function (x) { h += row(x.etapa_minutos + ' min · ' + x.resultado, x.total); });
       h += '<p class="text--sm text--secondary">Custo por pedido: indisponível. ' + esc(d.google_ads_status) + '</p>';
-      report.innerHTML = h;
+      report.innerHTML = h + '</details>';
     }).catch(function () { if (report.isConnected) report.textContent = 'Indicadores indisponíveis. Atualize o painel para tentar novamente.'; });
   };
 })(window);

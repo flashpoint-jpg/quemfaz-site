@@ -63,10 +63,7 @@
   }
   function contactText(r,channel){
     const first=String(r.nome||'Profissional').trim().split(/\s+/)[0];
-    if(['cortesia','teste'].includes(r.situacao))return {subject:'Seu Quem Faz Livre está ativo',body:'Olá, '+first+'! Seu Quem Faz Livre está liberado '+(r.situacao==='cortesia'?'como cortesia administrativa':'em teste grátis')+' até '+date(r.fim_em)+'. Acesse sua carteira para acompanhar a validade. Comissão de 13% e prestação de contas mantidas. Não haverá cobrança automática.\n\nhttps://quemfazservico.com.br\n\nEquipe Quem Faz'};
-    if(r.teste_utilizado||r.situacao==='pago')return {subject:first+', continue com o Quem Faz Livre',body:'Olá, '+first+'! Tudo bem?\n\nAqui é da equipe Quem Faz.\n\nPara continuar conhecendo as oportunidades da sua região e desbloqueando novos pedidos, ative o Quem Faz Livre por R$ 39,90 por 30 dias — menos de R$ 1,50 por dia.\n\nNão haverá cobrança automática. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nSe precisar, podemos ajudar com seu cadastro.\n\nQuem Faz — Precisou? Encontre quem faz!'};
-    if(channel==='email')return {subject:String(r.nome||first)+', você ganhou 2 dias para conhecer o Quem Faz Livre!',body:'Olá, '+String(r.nome||first)+'!\n\nVocê iniciou seu cadastro no Quem Faz e queremos te ajudar a conhecer nossa plataforma.\n\nAgora é possível experimentar o Quem Faz Livre gratuitamente por 2 dias.\n\nDurante o teste, você poderá conhecer oportunidades profissionais na sua região e utilizar os recursos do plano.\n\nApós o período gratuito, para continuar desbloqueando novas oportunidades, basta contratar o Quem Faz Livre por R$ 39,90 por 30 dias.\n\nNão existe cobrança automática depois do teste. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nEquipe Quem Faz'};
-    return {subject:first+', você ganhou 2 dias para conhecer o Quem Faz Livre!',body:'Olá, '+first+'! Tudo bem?\n\nAqui é da equipe Quem Faz.\n\nPercebemos que você começou seu cadastro para trabalhar pela plataforma, mas ainda não concluiu sua ativação.\n\nQueremos te oferecer uma oportunidade especial:\n\nTESTE O QUEM FAZ LIVRE GRÁTIS POR 2 DIAS!\n\nDurante esse período, você poderá conhecer as oportunidades da sua região e experimentar os recursos do plano.\n\nDepois dos 2 dias, para continuar desbloqueando novas oportunidades, o Quem Faz Livre custa R$ 39,90 por 30 dias — menos de R$ 1,50 por dia.\n\nVocê não precisa pagar para começar o teste e não haverá cobrança automática ao final. Comissão de 13% e prestação de contas mantidas.\n\nAcesse: https://quemfazservico.com.br\n\nSe precisar, podemos te ajudar a concluir seu cadastro.\n\nQuem Faz — Precisou? Encontre quem faz!'};
+    return {subject:first+', confira seu cadastro no Quem Faz',body:'Olá, '+first+'! Aqui é da equipe Quem Faz. Acesse sua conta para conferir as oportunidades da sua região, os planos disponíveis e a situação do seu cadastro.\n\nhttps://quemfazservico.com.br\n\nSe precisar, podemos ajudar.\n\nEquipe Quem Faz'};
   }
   function contact(r,channel,panel){
     const m=contactText(r,channel);const last=channel==='whatsapp'?r.ultimo_whatsapp:r.ultimo_email;
@@ -77,15 +74,15 @@
     if(!panel.isConnected)return;
     const entries=(Array.isArray(d.itens)?d.itens:[]).filter(r=>!!listControls.find(c=>c.chave===String(r.email||'').trim().toLowerCase())?.excluido===showDeleted);records=entries.map(r=>({...r,servidor_agora:d.servidor_agora}));
     const total=asNum(d.total);
-    panel.innerHTML='<div class="qf-pre-top"><div><h2>Pré-cadastros dos profissionais</h2><p>Quem escolheu Avulso ou Livre, mesmo sem pagar</p></div>'
+    panel.innerHTML='<div class="qf-pre-top"><div><h2>Cadastros e pagamentos</h2><p>Quem escolheu Avulso ou Livre, mesmo sem pagar</p></div>'
       +'<button type="button" class="btn btn--outline" data-qf-pre-refresh>Atualizar dados</button></div>'
       +'<div class="qf-pre-stats">'
       +stat('Aguardando pagamento',asNum(s.pre_cadastros_pendentes))
       +stat('Pagos, sem ativar',asNum(s.pagos_ainda_nao_resgatados))
-      +stat('Testes ativos',asNum(d.kpis?.testes_ativos))+stat('Vencem hoje',asNum(d.kpis?.vencem_hoje))+stat('Testes vencidos',asNum(d.kpis?.testes_vencidos))+stat('Cortesias',asNum(d.kpis?.cortesias))+stat('Planos pagos ativos',asNum(d.kpis?.planos_pagos))+stat('Contrataram após teste',asNum(d.kpis?.convertidos))+stat('Conversão teste → pago',d.kpis?.total_testes?((asNum(d.kpis.convertidos)/d.kpis.total_testes)*100).toFixed(1)+'%':'0%')+'</div>'
-      +'<p class="qf-pre-explain">Cadastro ativo exige pagamento bancário, teste válido ou cortesia autorizada. Testes e cortesias não geram receita nem saldo financeiro.</p>'
+      +stat('Planos pagos ativos',asNum(d.kpis?.planos_pagos))+'</div>'
+      +'<details class="qf-pre-legacy"><summary>Histórico de testes e cortesias</summary><p>Registros antigos para consulta; não representam ofertas atuais.</p><div class="qf-pre-stats">'+stat('Testes antigos ativos',asNum(d.kpis?.testes_ativos))+stat('Testes antigos vencidos',asNum(d.kpis?.testes_vencidos))+stat('Cortesias registradas',asNum(d.kpis?.cortesias))+'</div></details>'
       +'<form class="qf-pre-filters" data-qf-pre-form><label>Buscar nome, e-mail ou telefone<input type="search" name="busca" maxlength="120" placeholder="Ex.: Nilson" value="'+esc(state.busca)+'"></label>'
-      +'<label>Situação<select name="situacao">'+[['todos','Todos'],['pendente','Aguardando pagamento'],['teste','Em teste'],['vencido','Teste vencido'],['cortesia','Cortesia'],['pago','Plano pago'],['convite','Convites preparados']]
+      +'<label>Situação<select name="situacao">'+[['todos','Todos'],['pendente','Aguardando pagamento'],['teste','Teste antigo'],['vencido','Teste antigo vencido'],['cortesia','Cortesia'],['pago','Plano pago'],['convite','Convites preparados']]
         .map(v=>'<option value="'+v[0]+'"'+(v[0]===state.situacao?' selected':'')+'>'+v[1]+'</option>').join('')+'</select></label>'
       +'<button type="submit" class="btn btn--primary">Filtrar</button></form>'
       +'<div class="qf-pre-list-meta">'+total+' cadastro(s) no banco · '+entries.length+' '+(showDeleted?'excluído(s)':'visível(is)')+' nesta página · a partir de '+(state.offset+1)+'</div>'
