@@ -167,6 +167,15 @@
   '.qf-prof-extra-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.qf-prof-extra-grid>div{background:#071d3b;border-radius:12px;padding:13px;display:flex;flex-direction:column;gap:7px}'+
   '.qf-prof-extra-grid b{color:#fff;font-size:15px}.qf-prof-extra-grid span{color:#e5efff;font-size:13px;line-height:1.45}.qf-prof-info-extra .qf-prof-extra-nota{margin:16px 0 0;font-size:12px;color:#d9e7f8}'+
   '@media(max-width:850px){#qf-prof-apresentacao{padding-top:64px!important}#qf-prof-apresentacao .qf-prof-grid{min-height:0!important;align-items:start!important}#qf-prof-apresentacao .qf-prof-info-extra{padding:14px;margin-top:0}#qf-prof-apresentacao .qf-prof-info-extra h3{font-size:19px}#qf-prof-apresentacao .qf-prof-info-extra>p{font-size:13px}#qf-prof-apresentacao .qf-prof-extra-grid{grid-template-columns:1fr 1fr;gap:8px}#qf-prof-apresentacao .qf-prof-extra-grid>div{padding:10px}#qf-prof-apresentacao .qf-prof-extra-grid b{font-size:12px}#qf-prof-apresentacao .qf-prof-extra-grid span{font-size:11px}}';
+  /* Na escolha de planos, usar a largura disponível em vez de uma coluna longa. */
+  css.textContent +=
+  '#qf-prof-apresentacao:has(#cadastro-prof-form [data-step="5"]:not([hidden])) .qf-prof-apresentacao-info{display:none!important}'+
+  '#qf-prof-apresentacao:has(#cadastro-prof-form [data-step="5"]:not([hidden])) .qf-prof-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;align-items:start!important;min-height:0!important;max-width:1100px;margin:0 auto;padding:24px!important}'+
+  '#qf-prof-apresentacao:has(#cadastro-prof-form [data-step="5"]:not([hidden])) .qf-prof-apresentacao-form{padding:24px!important}'+
+  '#qf-prof-apresentacao #cadastro-prof-form{min-height:0!important}'+
+  '#qf-prof-apresentacao #cadastro-prof-form:has([data-step="5"]:not([hidden])) [data-qf-planos-chamada]{display:none!important}'+
+  '@media(min-width:851px){#qf-prof-apresentacao #cadastro-prof-form [data-step="5"] .qf-options-final{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}#qf-prof-apresentacao #cadastro-prof-form [data-step="5"] .qf-options-card{grid-template-rows:auto auto auto 1fr auto;align-content:start}}'+
+  '@media(max-width:850px){#qf-prof-apresentacao:has(#cadastro-prof-form [data-step="5"]:not([hidden])) .qf-prof-grid{padding:12px!important}#qf-prof-apresentacao:has(#cadastro-prof-form [data-step="5"]:not([hidden])) .qf-prof-apresentacao-form{padding:18px!important;border-radius:18px!important}}';
   document.head.appendChild(css);
  }
  function iniciar(){aplicar();var obs=new MutationObserver(function(){aplicar()});obs.observe(document.body,{childList:true,subtree:true});}
