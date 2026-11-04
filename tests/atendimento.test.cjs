@@ -120,7 +120,11 @@ test('quatro etapas: pedido sem orçamento ou data obrigatórios e materiais per
  assert.equal(A.validAll({...a,tipo:'garante',qualificacao:'sim',materiais:'cliente'}),'');
  assert.equal(A.payload({...a,servico:'Pedreiro',detalhes:'reparo',escopo:'pequena',orcamento:'15000:30000'},uid(200),'pedreiro').tipo,'tradicional');
  assert.ok(!A.questions(a).some(q=>['orcamento','data','disponibilidade'].includes(q.key)));
- assert.match(A.validAll({...a,aceite_app:'nao'}),/concordância/);
+ assert.equal(A.validAll({...a,aceite_app:undefined}),'');
+ assert.equal(A.payload({...a,aceite_app:undefined},uid(200),'faxina').aceite_app,'sim');
+ assert.ok(!A.questions(a).some(q=>q.key==='aceite_app'));
+ assert.ok(A.validAll({...a,autorizacao:'nao'}));
+ assert.ok(A.validAll({...a,contato:'123'}));
 });
 
 test('banco: faixa não vira preço exato; avaliação publica, preserva privacidade e retry',async()=>{
@@ -148,4 +152,13 @@ test('banco: rejeita faixas inválidas, preço inventado na avaliação e Garant
  await assert.rejects(pub(d,answers({prazo:'hoje'})),/prazo_invalido/);
  await d.exec('reset role');assert.equal(await scalar(d,'select count(*) from private.test_dispatch'),0);
  }finally{await d.close();}
+});
+
+test('navegador dispensa checkbox informativo, mantém autorização e celular',()=>{
+ const a={servico:'Pedreiro',detalhes:'reparo',escopo:'pequena',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'urgente',materiais:'combinar',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',max_orcamentos:'4',autorizacao:'sim'};
+ assert.equal(A.validAll(a),'');
+ assert.equal(A.payload(a,uid(201),'pedreiro').aceite_app,'sim');
+ assert.ok(!A.questions(a).some(q=>q.key==='aceite_app'));
+ assert.match(A.validAll({...a,autorizacao:'nao'}),/Sem autorização/);
+ assert.match(A.validAll({...a,contato:'123'}),/celular/);
 });

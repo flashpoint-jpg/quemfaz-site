@@ -60,7 +60,7 @@ test('formulário atual mede etapas, falhas de acesso e de publicação sem resp
  const form=()=>target.querySelector('form');
  form().dispatchEvent(new g.Event('submit',{cancelable:true}));assert.ok(events.some(e=>e[0]==='validation_error'));
  function answer(key,value){const el=target.querySelector('#at-'+key)||target.querySelector('[name="at-'+key+'"][value="'+value+'"]');assert.ok(el,key);if(el.type==='checkbox'||el.type==='radio')el.checked=true;else el.value=value;form().dispatchEvent(new g.Event('submit',{cancelable:true}));}
- for(const [k,v] of [['aceite_app','sim'],['detalhes','tomada'],['escopo','um']])answer(k,v);
+ for(const [k,v] of [['detalhes','tomada'],['escopo','um']])answer(k,v);
  assert.ok(events.some(e=>e[0]==='step_service_completed'));assert.ok(events.some(e=>e[0]==='step_location_view'));assert.ok(!JSON.stringify(events).includes('tomada'));dom.window.close();
 });
 test('formulário atual publica no PostgreSQL local e apresenta o pedido salvo na própria página',async()=>{

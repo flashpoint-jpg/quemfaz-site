@@ -17,7 +17,7 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  }});
  try{await new Promise((resolve,reject)=>{let n=0;const t=setInterval(()=>{if(dom.window.document.querySelector('#seo-description')){clearInterval(t);resolve();}else if(++n>150){clearInterval(t);reject(Error('Form não iniciou: '+errors.join('\n')+'\n'+dom.window.document.getElementById('seo-order').textContent));}},20);});
  dom.window.document.querySelector('#seo-problem').value='Minha tomada está com defeito e precisa de reparo';dom.window.document.querySelector('#seo-description').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
- assert.ok(dom.window.QFCloud?.createCall);assert.ok(dom.window.QFClienteAcesso?.authenticate);assert.equal(dom.window.document.querySelector('[data-qf-atendimento]').dataset.mounted,'1');assert.match(dom.window.document.querySelector('#seo-order').textContent,/Li e concordo/);assert.equal(writes.filter(x=>/qf_chamados|publicar|cliente-conta/.test(x)).length,0);
+ assert.ok(dom.window.QFCloud?.createCall);assert.ok(dom.window.QFClienteAcesso?.authenticate);assert.equal(dom.window.document.querySelector('[data-qf-atendimento]').dataset.mounted,'1');assert.equal(dom.window.document.querySelector('#at-aceite_app'),null);assert.ok(dom.window.document.querySelector('#at-cep'));assert.equal(writes.filter(x=>/qf_chamados|publicar|cliente-conta/.test(x)).length,0);
  // Publicação real em PostgreSQL isolado, usando o mesmo RPC e Cloud.createCall.
  const {db,as,uid}=require('./helpers/atendimento-db.cjs');const d=await db();
  try{
