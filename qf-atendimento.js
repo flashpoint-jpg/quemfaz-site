@@ -342,6 +342,22 @@
         track('submit');let phase='access';
         try{
           const Cloud=root.QFCloud;if(!Cloud||!Cloud.enabled)throw Error('Conecte-se à internet para publicar com segurança.');
+          // Verifica cobertura antes de criar conta de visitante ou publicar pedido.
+          // Falha fechada: se a consulta estiver indisponível, não promete atendimento.
+          const categoriaCobertura=category(a.servico)?.id;
+          if(!categoriaCobertura)throw Error('Selecione um serviço válido para verificar a cobertura.');
+          if(button.isConnected)button.textContent='Verificando profissionais na região…';
+          const sb=Cloud.client||Cloud.supabase||root.supabase;
+          if(!sb?.rpc)throw Error('Não foi possível verificar os profissionais da região. Tente novamente em instantes.');
+          const {data:cobertura,error:erroCobertura}=await sb.rpc('qf_cobertura_regiao',{
+            p_categoria:categoriaCobertura,p_cidade:a.cidade,p_uf:a.uf,p_lat:null,p_lng:null
+          });
+          if(erroCobertura||!cobertura||cobertura.ok!==true)throw Error('Não foi possível verificar a cobertura. Tente novamente em instantes.');
+          if(Number(cobertura.profissionais||0)<1){
+            track('validation_error','sem_cobertura');
+            publishError('Ainda não temos profissionais de '+a.servico+' que atendam '+a.cidade+' / '+a.uf+'. Seu pedido não foi publicado para evitar que você fique esperando sem resposta.');
+            return;
+          }
           let current=currentUser;
           if(!root.QFClienteAcesso?.guest)throw Error('Atualize a página para publicar seu pedido sem cadastro.');
           // Publicação sem cadastro é o caminho padrão: a função de visitante cria
