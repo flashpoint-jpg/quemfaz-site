@@ -229,7 +229,7 @@
       (grupos[key]||(grupos[key]={titulo:(NOVOS_PLANOS[r.plano]||r.plano||'Outros')+' · '+money(r.valor_centavos),itens:[]})).itens.push(r);
     });
     panel.innerHTML='<div class="qf-novos-cab"><div><h2>Novos · cadastros e pagamentos</h2><p>Interessados ainda não são profissionais ativos. O Pix precisa ser confirmado.</p></div>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn--primary" type="button" data-novos-simular-um>Simular chamado individual</button><button class="btn btn--outline" type="button" data-novos-refresh>Atualizar</button></div></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn--primary" type="button" data-admin-pix-manual>Gerar Pix manual</button><button class="btn btn--outline" type="button" data-novos-simular-um>Simular chamado individual</button><button class="btn btn--outline" type="button" data-novos-refresh>Atualizar</button></div></div>'+
       '<div class="qf-novos-contadores"><button type="button" class="'+(dataNovos.filtro==='pendente'?'ativo':'')+'" data-novos-filtro="pendente">Aguardando Pix <b>'+pend.length+'</b></button>'+
       '<button type="button" class="'+(dataNovos.filtro==='aprovado'?'ativo':'')+'" data-novos-filtro="aprovado">Pagos, sem ativar <b>'+pagos.length+'</b></button></div>'+
       '<div class="qf-novos-grupos">'+(Object.values(grupos).length?Object.values(grupos).map(g=>

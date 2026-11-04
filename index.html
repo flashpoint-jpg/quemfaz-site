@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+<script src="/qf-pre-cadastro-manual.js?v=20261104"></script>
 <meta charset="UTF-8">
 <meta name="google-site-verification" content="NryNLw-PohY4iFWiT0v9_Ob5hAG02_NZfxrLHVaybfI" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -10704,8 +10705,8 @@ alt=""></noscript>
         // Também vale para quem pagou e precisou preencher o cadastro de novo (aí o plano é o que foi pago).
         const reusa = !!(antigo && antigo.pag && antigo.dados &&
           antigo.plano === pl.id && antigo.dados.email === dados.email &&
-          String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
-            String(dados.cpf || dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase());
+          (antigo.manual === true || String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
+            String(dados.cpf || dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase()));
         pre = { em: reusa ? antigo.em : Date.now(), plano: reusa ? antigo.plano : pl.id, planoEscolhido: pl.id, indicacao: String(indicacao || ''), dados: semSenha, pag: reusa ? antigo.pag : null };
         preSenha = String(dados.senha || '');
         formPreenchido = true;
