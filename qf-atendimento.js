@@ -74,7 +74,7 @@
       options('intencao','Pretende contratar?',[['contratar','Sim, quero receber propostas para contratar'],['pesquisando','Estou apenas pesquisando preços']]),
       options('autorizacao',requiresInstalledApp()?'Você autoriza o contato dos profissionais dentro do aplicativo Quem Faz?':'Você autoriza o contato dos profissionais pelo Quem Faz no navegador?',[['sim','Sim, autorizo'],['nao','Não autorizo']])
     ];
-    return list.filter(q=>(q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal'));
+    return list.filter(q=>(q.key!=='aceite_app'||requiresInstalledApp()) && (q.key!=='materiais'||materialsApplicable(a.servico)) && (q.key!=='data'||a.urgencia==='normal'));
   }
   function budget(v) {
     if (['a combinar','avaliacao','preciso de uma avaliacao'].includes(norm(v))) return null;
@@ -127,7 +127,7 @@
     const detalhes=a.__problem?String(a.__problem)+' — '+answerLabel('detalhes'):answerLabel('detalhes');
     const escopo=answerLabel('escopo');
     if(detalhes.length<8||escopo.length<3)throw Error('Escolha o tipo e o tamanho do serviço antes de publicar.');
-    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:'a combinar',orcamento_centavos:null,materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:null,disponibilidade:'A combinar diretamente entre cliente e profissional',nome:a.nome,contato:a.contato.replace(/\D/g,''),canal_contato:'chat',aceite_app:a.aceite_app,intencao:a.intencao,autorizacao:a.autorizacao,visita_presencial:a.visita_presencial||'nao',tipo:tipoPorOrcamento(a)};
+    return {versao:1,chave:id,categoria,servico:a.servico,detalhes,escopo,cidade:a.cidade,uf:a.uf,bairro:a.bairro,urgencia:a.urgencia==='hoje'?'normal':a.urgencia,prazo:a.urgencia,orcamento_faixa:'a combinar',orcamento_centavos:null,materiais:materialsApplicable(a.servico)?a.materiais:'nao_aplica',data:null,disponibilidade:'A combinar diretamente entre cliente e profissional',nome:a.nome,contato:a.contato.replace(/\D/g,''),canal_contato:'chat',aceite_app:requiresInstalledApp()?a.aceite_app:'sim',intencao:a.intencao,autorizacao:a.autorizacao,visita_presencial:a.visita_presencial||'nao',tipo:tipoPorOrcamento(a)};
   }
   function html() {
     return '<div class="view" data-qf-atendimento-layout><header class="qf-at-topo"><img src="/assets/qf-logo-branco-20261014.webp" alt="QuemFaz Serviços" width="600" height="200"></header><section class="card stack" style="max-width:620px;margin:0 auto;width:100%" data-qf-atendimento><h1 class="h2">Pedir serviço</h1><p>É grátis e rapidinho.</p><div data-at-question></div><p class="text--sm text--secondary">Seus dados ficam protegidos. Você decide se contrata.</p></section></div>';
@@ -260,6 +260,8 @@
     };
     const draw=()=>{
       a.tipo=tipoPorOrcamento(a);delete a.qualificacao;
+      // Serviço e descrição vindos da home/SEO podem deixar a etapa inicial vazia.
+      while(step<3&&!stages(a)[step].questions.length){step++;questionIndex=0;}
       // Preserva o atendimento na memória caso banners ou dados públicos remontem a tela.
       inMemoryDraft={answers:a,step,questionIndex,categoryId};
       const stage=stages(a)[step];
@@ -307,7 +309,7 @@
         for(const q of list){const error=validate(q,a[q.key],a);if(error){track('validation_error',q.key);const el=area.querySelector('[data-error="'+q.key+'"]')||area.querySelector('[data-at-error]');el.textContent=error;area.querySelector('#at-'+q.key)?.focus();return;}}
         if(active.key==='aceite_app'&&requiresInstalledApp()&&!inApp()){area.querySelector('[data-at-error]').innerHTML='Para continuar, abra o aplicativo Quem Faz instalado no celular. A Play Store não confirma a instalação ao navegador. '+installText();return;}if(questionIndex<stages(a)[step].questions.length-1){questionIndex++;draw();}else if(step<3){track(['step_service_completed','step_location_completed','step_options_completed'][step],null,true);step++;questionIndex=0;draw();}else {const err=validAll(a);if(err){area.querySelector('[data-at-error]').textContent=err;return;}publish();}
       };
-      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(step===0&&questionIndex===0){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.start();else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){step--;questionIndex=stages(a)[step].questions.length-1;}draw();};
+      area.querySelector('[data-at-back]').onclick=()=>{if(busy)return;read();if(questionIndex===0&&!stages(a).slice(0,step).some(s=>s.questions.length)){if(params.embedded&&root.QFPedidoHome)root.QFPedidoHome.start();else root.navigate('/',true);return;}if(questionIndex>0)questionIndex--;else if(step>0){do{step--;}while(step>0&&!stages(a)[step].questions.length);questionIndex=stages(a)[step].questions.length-1;}draw();};
       if(active.key==='aceite_app'){
         const agreement=area.querySelector('#at-aceite_app');
         agreement.addEventListener('change',()=>{
@@ -337,6 +339,7 @@
           status.style.cssText='display:block;background:#fff2ed;border:1px solid #ffb0a2;color:#9b261c;font-weight:750;padding:12px 14px;border-radius:12px;line-height:1.45;';
           try{status.scrollIntoView({block:'center',behavior:'smooth'});}catch(_){}
         };
+        if(!requiresInstalledApp())a.aceite_app='sim';
         if(a.aceite_app!=='sim'||(requiresInstalledApp()&&!inApp())){publishError(requiresInstalledApp()?'É necessário abrir o aplicativo Quem Faz instalado para publicar e receber contatos.':'Marque a concordância para publicar o pedido pelo navegador.');return;}
         busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Verificando acesso…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
         track('submit');let phase='access';
