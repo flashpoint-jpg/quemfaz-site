@@ -40,6 +40,24 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 
 
 
+
+.qf-brand-tagline{margin:14px 0 10px;font-size:clamp(18px,2.2vw,24px);line-height:1.3;font-weight:800;color:var(--orange-400)}
+.qf-brand-tagline--light{color:var(--navy-900);padding:0 18px}
+.qf-app-install-action{margin-top:18px}
+@media(max-width:899px){
+ #app-shell[data-route="inicio"] .qf-desk-wide{display:block;margin:20px 18px 80px}
+ #app-shell[data-route="inicio"] .qf-desk-wide>section:not(.qf-desk-app){display:none}
+ .qf-desk-app{background:var(--navy-900);color:#fff;border-radius:24px;padding:24px 18px}
+ .qf-desk-app h2{color:#fff;font-size:24px;margin:0}
+ .qf-desk-app__head p,.qf-desk-app__card p{color:var(--text-on-navy-muted);font-size:14px;line-height:1.5}
+ .qf-desk-app .qf-desk-two{display:grid;gap:14px;margin-top:18px}
+ .qf-desk-app__card{display:flex;flex-wrap:wrap;gap:12px;padding:16px;border:1px solid rgba(255,255,255,.14);border-radius:18px;background:rgba(255,255,255,.07)}
+ .qf-desk-app__card>svg{width:26px;height:26px;flex:none;color:var(--orange-400)}
+ .qf-desk-app__card>div{flex:1;min-width:0}
+ .qf-desk-app__card--pc{margin-top:14px}
+ .qf-desk-play{display:flex;align-items:center;gap:8px;max-width:100%;border:0;border-radius:12px;padding:12px 16px;background:var(--orange-500);color:var(--text-on-orange);font-weight:800}
+ .qf-desk-play svg{width:22px;height:22px}.qf-desk-play small{display:block}
+}
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
 <title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
@@ -8676,7 +8694,7 @@ alt=""></noscript>
     const heroBanner = "./assets/qf-approved-2.webp";
     return '<div class="qf-landing">' +
       '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '</div>' + deskMenu() + '<div class="qf-home-prof"><button type="button" class="qf-home-prof-btn" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span class="qf-prof-full">Área de profissionais</span><span class="qf-prof-short">Profissionais</span></button></div><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><p class="qf-customer-sub">Publique seu pedido grátis e encontre profissionais da sua região.</p>' +
+      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><p class="qf-brand-tagline">Conectando você ao profissional certo.</p><p class="qf-customer-sub">Publique seu pedido grátis e encontre profissionais da sua região.</p>' +
       // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
       '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Qual serviço você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura" autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
         '<p class="qf-home-promessa">Sem cadastro obrigatório · Pedido gratuito</p></form></div>' +
@@ -8687,7 +8705,6 @@ alt=""></noscript>
       deskExtra() + mobExtra() +
       '<section class="section">' +
         '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
-        (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-landing-install">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       '</section>' +
       '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><nav class="qf-footer-links" aria-label="Links institucionais"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button><a href="/servicos/">Serviços</a><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir conta</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
       deskWide() +
@@ -8788,6 +8805,7 @@ alt=""></noscript>
         '<div class="qf-desk-app__card">' + icon('user') + '<div><strong>Sou cliente</strong><p>Faça pedidos e acompanhe quem respondeu, direto pelo app.</p></div>' + play + '</div>' +
         '<div class="qf-desk-app__card">' + icon('briefcase') + '<div><strong>Sou profissional</strong><p>Receba o aviso de pedido novo com toque alto, mesmo com o celular no bolso.</p></div>' + play + '</div>' +
       '</div>' +
+      (global.QFApp && global.QFApp.topInstallHtml ? '<div class="qf-app-install-action">' + global.QFApp.topInstallHtml() + '</div>' : '') +
       // V11.84: atalho para usar o QuemFaz no computador (abre pelo ícone, como um programa).
       '<div class="qf-desk-app__card qf-desk-app__card--pc">' + icon('laptop') + '<div><strong>No computador</strong><p>Crie o atalho do QuemFaz no seu computador e abra pelo ícone, sem procurar o site.</p></div><button class="qf-desk-play" type="button" data-install-app>' + icon('download') + '<span>Criar atalho<small>no computador</small></span></button></div>' +
       '</section>' +
@@ -8995,7 +9013,7 @@ alt=""></noscript>
           '<h1 class="h2">Pedir serviço</h1>' +
           '<button class="qf-request-help" type="button" data-support-open aria-label="Abrir suporte">' + icon('info') + '</button>' +
         '</header>' +
-        '<form id="cadastro-cliente-form" class="stack qf-request-form" novalidate data-qf-etapa="1">' +
+        '<p class="qf-brand-tagline qf-brand-tagline--light">Conectando você ao profissional certo.</p><form id="cadastro-cliente-form" class="stack qf-request-form" novalidate data-qf-etapa="1">' +
           '<div class="qf-etapas"><div class="qf-etapas__barras" aria-hidden="true"><i class="is-on"></i><i data-qf-etapa-barra2></i><i data-qf-etapa-barra3></i><i data-qf-etapa-barra4></i></div><span data-qf-etapa-rotulo>Etapa 1 de 4</span></div>' +
           qfSuporteWhatsAppHtml('cliente') +
           '<div class="qf-request-fields">' +
@@ -11207,7 +11225,7 @@ alt=""></noscript>
     const outros=ativos.slice(1,3);
     const cats=DB.categories();
     return '<div class="view">'+
-      '<div class="qf-hero"><div class="qf-hero__in"><div class="qf-hero__hi">Olá, '+PU.escapeHtml(user.nome.split(' ')[0])+'</div><h1 class="qf-hero__title">O que você precisa hoje?</h1></div><div class="qf-tape" aria-hidden="true"></div></div>'+
+      '<div class="qf-hero"><div class="qf-hero__in"><div class="qf-hero__hi">Olá, '+PU.escapeHtml(user.nome.split(' ')[0])+'</div><h1 class="qf-hero__title">O que você precisa hoje?</h1><p class="qf-brand-tagline">Conectando você ao profissional certo.</p></div><div class="qf-tape" aria-hidden="true"></div></div>'+
       '<div class="qf-home-ads-top">'+anunciosCarousel(user)+'</div>'+
       clienteAgoraCard(principal)+
       (outros.length?'<div class="section"><div class="section-head"><h2 class="h3">Outros pedidos ativos</h2></div><div class="stack--sm">'+outros.map(pedidoCard).join('')+'</div></div>':'')+

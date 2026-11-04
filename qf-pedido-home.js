@@ -406,7 +406,7 @@
   if(copy&&!copy.querySelector('.qf-home-visual')){
    const visual=g.document.createElement('div');visual.className='qf-home-visual';
    copy.prepend(visual);
-   copy.querySelectorAll('.qf-hero2-head,.qf-customer-sub,.qf-play-badge--hero').forEach(el=>visual.append(el));
+   copy.querySelectorAll('.qf-hero2-head,.qf-brand-tagline,.qf-customer-sub,.qf-play-badge--hero').forEach(el=>visual.append(el));
    visual.insertAdjacentHTML('beforeend',"<section class=\"qf-client-benefits\" aria-label=\"Vantagens para quem contrata\"><h2>Mais praticidade <em>para você</em></h2><p class=\"qf-client-benefits__lead\">Encontre profissionais da sua região, sem complicação.</p><div class=\"qf-client-benefits__list\"><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Publique seu pedido grátis</strong><p>Descreva o serviço que precisa, sem pagar para publicar.</p></div></article><article><span class=\"qf-client-benefits__icon\" aria-hidden=\"true\">✓</span><div><strong>Receba contatos da sua região</strong><p>Profissionais compatíveis podem desbloquear o pedido e apresentar propostas.</p></div></article></div><p class=\"qf-client-benefits__footer\">Você escolhe o profissional. Publicar o pedido é sempre grátis.</p></section>");
   }
   const mobile=g.document.querySelector('.qf-mobile-services')?.closest('section');
