@@ -27,6 +27,16 @@ const appAssets=connection+styles.map(x=>'<link rel="stylesheet" href="/'+x+'">'
 const base='https://quemfazservico.com.br';
 const links=(list)=>'<ul class="seo-links">'+list.map(([url,label])=>'<li><a href="'+url+'">'+esc(label)+'</a></li>').join('')+'</ul>';
 const urlFor=(s,c)=>'/servicos/'+s.slug+'/'+(c?c.slug+'/':'');
+// Preserve os guias editoriais já indexáveis antes de atualizar o catálogo.
+const editorial=[];const previousSitemap=fs.readFileSync(path.join(out,'sitemap.xml'),'utf8');
+for(const match of previousSitemap.matchAll(/<loc>([^<]+)<\/loc>/g)){
+ const u=new URL(match[1]);if(!u.pathname.startsWith('/servicos/')||u.pathname.split('/').filter(Boolean).length<3)continue;
+ const f=path.join(out,u.pathname,'index.html');if(!fs.existsSync(f))continue;
+ const h=fs.readFileSync(f,'utf8');const parts=u.pathname.split('/').filter(Boolean);const service=services.find(s=>s.slug===parts[1]||(parts[1]==='limpeza-de-sofa'&&s.id==='cat_limpeza_estofados'));if(!service)continue;
+ if(parts[2]!=='abc'&&!covered.some(c=>c.slug===parts[2]&&c.ids.has(service.id)))continue;
+ const content=h.match(/<main\b[^>]*>([\s\S]*?)<\/main>/i)?.[1];if(!content)continue;
+ editorial.push({url:u.pathname,service,title:h.match(/<title>([^<]+)<\/title>/)?.[1]||service.nome+' | Quem Faz',description:h.match(/<meta name="description" content="([^"]+)"/)?.[1]||'Publique seu pedido grátis no Quem Faz.',content:content.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<noscript>[\s\S]*?<\/noscript>/gi,'').replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/i,'').replace(/href="\/\?[^"]*"/g,'href="#pedido"')});
+}
 const generated=[];
 function write(url,title,desc,content,service,city,index=true){
  const dir=path.join(out,url);fs.mkdirSync(dir,{recursive:true});
@@ -46,6 +56,7 @@ for(const s of services){
  // Páginas locais repetitivas são navegáveis, mas ficam fora do índice até terem conteúdo editorial local próprio.
  for(const c of local){const others=services.filter(x=>c.ids.has(x.id)&&x.id!==s.id);write(urlFor(s,c),s.nome+' em '+c.nome+' / '+c.uf+' | Quem Faz','Solicite '+s.nome.toLowerCase()+' em '+c.nome+' / '+c.uf+'. Descreva o serviço e publique seu pedido grátis no Quem Faz.', '<h2>'+esc(s.nome)+' em '+esc(c.nome)+'</h2><p>Há cadastro de profissional com esta especialidade e região de atendimento em '+esc(c.nome)+' / '+c.uf+' na consulta de 04/11/2026. Isso não representa disponibilidade imediata: o atendimento depende do endereço, do raio e da agenda de cada profissional. O CEP informado no pedido determina o local real do serviço.</p>'+guide+'<h2>Outros serviços com cobertura cadastrada em '+esc(c.nome)+'</h2>'+links(others.map(x=>[urlFor(x,c),x.nome]))+'<h2>Outras regiões para '+esc(s.nome)+'</h2>'+links(local.filter(x=>x!==c).map(x=>[urlFor(s,x),x.nome+' / '+x.uf])),s,c,false);}
 }
+for(const e of editorial){const i=generated.findIndex(p=>p.url===e.url);if(i>=0)generated.splice(i,1);write(e.url,e.title,e.description,e.content,e.service,null,true);}
 // Atualiza também combinações antigas sem cobertura confirmada, preservando a URL.
 function preserve(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())preserve(p);else if(e.name==='index.html'){
  const url='/'+path.relative(out,path.dirname(p)).split(path.sep).join('/')+'/';
@@ -66,7 +77,7 @@ walk(path.join(out,'servicos'));
 let sitemap=fs.readFileSync(path.join(out,'sitemap.xml'),'utf8').replace(/<url>\s*<loc>https:\/\/quemfazservico\.com\.br\/servicos\/[\s\S]*?<\/url>/g,'');
 sitemap=sitemap.replace('</urlset>',generated.filter(x=>x.index).map(x=>'<url><loc>'+base+x.url+'</loc></url>').join('\n')+'\n</urlset>');fs.writeFileSync(path.join(out,'sitemap.xml'),sitemap);
 const indexFile=path.join(out,'servicos','index.html');let indexHtml=fs.readFileSync(indexFile,'utf8');
-const discover=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]).filter(u=>!u.includes('/servicos/')&&u!==base+'/').map(u=>{const p=new URL(u).pathname;const f=path.join(out,p,'index.html');const t=fs.existsSync(f)?fs.readFileSync(f,'utf8').match(/<title>([^<]+)<\/title>/)?.[1]:p;return [u,t||p];});
+const discover=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]).filter(u=>u!==base+'/servicos/'&&u!==base+'/').map(u=>{const p=new URL(u).pathname;const f=path.join(out,p,'index.html');const t=fs.existsSync(f)?fs.readFileSync(f,'utf8').match(/<title>([^<]+)<\/title>/)?.[1]:p;return [u,t||p];});
 indexHtml=indexHtml.replace('</article>','<h2>Guias de serviços e regiões</h2>'+links(discover)+'</article>');fs.writeFileSync(indexFile,indexHtml);
 fs.writeFileSync(path.join(out,'seo-205-manifest.json'),JSON.stringify({date:'2026-11-04',regions:covered.map(c=>({cidade:c.nome,uf:c.uf})),pages:generated},null,2));
 console.log('Issue 205: '+covered.length+' regiões, '+generated.length+' páginas com formulário e navegação; locais genéricas noindex.');
