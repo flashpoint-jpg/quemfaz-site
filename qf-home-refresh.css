@@ -301,3 +301,36 @@
  #app-shell[data-route="inicio"] .qf-landing-actions > #qf-sec-como.qf-como-direita{margin:20px 0 0!important;box-sizing:border-box}
  #app-shell[data-route="inicio"] .qf-landing-actions > .qf-home-services-desktop{margin:20px 0 0!important}
 }
+
+/* Modelo aprovado: hierarquia e alinhamento, preservando textos e ações. */
+@media(max-width:899px){
+ #app-shell[data-route="inicio"] .qf-landing-copy.qf-hero2{padding:0 18px 24px!important}
+ #app-shell[data-route="inicio"] .qf-home-visual{margin:0 0 18px!important}
+ #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head{padding:126px 0 14px!important;min-height:0!important;box-sizing:border-box}
+ #app-shell[data-route="inicio"] .qf-landing-hero .qf-landing-copy.qf-hero2 .qf-hero2-head .qf-landing-photo{left:-18px!important;right:-18px!important;width:calc(100% + 36px)!important;height:242px!important}
+ #app-shell[data-route="inicio"] .qf-hero2-title{font-size:clamp(25px,6.4vw,32px)!important;line-height:1.14!important;letter-spacing:-.025em!important;text-align:left!important}
+ #app-shell[data-route="inicio"] .qf-home-visual .qf-brand-tagline{margin:12px 0 10px!important;font-size:18px!important;line-height:1.3!important;text-align:left!important;color:#ff8a13!important}
+ #app-shell[data-route="inicio"] .qf-home-visual .qf-customer-sub{margin:0 0 16px!important;font-size:15px!important;line-height:1.5!important;text-align:left!important;color:#edf5ff!important}
+ #app-shell[data-route="inicio"] .qf-home-visual .qf-contact-privacy{margin:0 0 16px!important;padding:13px!important;gap:12px!important;border-radius:14px!important;align-items:flex-start!important}
+ #app-shell[data-route="inicio"] .qf-contact-privacy>svg{width:28px!important;height:32px!important;margin-top:1px!important}
+ #app-shell[data-route="inicio"] .qf-contact-privacy p{font-size:13px!important;line-height:1.45!important}
+ #app-shell[data-route="inicio"] .qf-contact-privacy strong{font-size:15px!important;line-height:1.35!important;margin-bottom:5px!important}
+ #app-shell[data-route="inicio"] .qf-home-visual a.qf-play-badge--hero{margin:0 auto!important;width:166px!important;height:49px!important;min-height:49px!important;justify-content:center!important}
+ #app-shell[data-route="inicio"] .qf-home-visual a.qf-play-badge--hero img{width:166px!important;height:49px!important;object-fit:contain!important}
+ #app-shell[data-route="inicio"] #qf-pedido-facil:has([data-home-problem]){padding:16px!important;border:1px solid #d6e3f1!important;border-radius:20px!important;box-shadow:0 8px 24px #03122524!important}
+ #qf-pedido-facil .qf-intent-chooser>h2{font-size:23px!important;line-height:1.2!important;margin:0 0 16px!important;text-align:left!important}
+ #qf-pedido-facil .qf-intent-choices{gap:12px!important}
+ #qf-pedido-facil .qf-intent-choice{grid-template-columns:30px minmax(0,1fr) 30px!important;padding:14px 12px!important;gap:10px!important;border-radius:14px!important;box-shadow:none!important;min-height:0!important}
+ #qf-pedido-facil .qf-intent-choice__icon{width:30px!important;height:34px!important;background:transparent!important}
+ #qf-pedido-facil .qf-intent-choice__icon svg{width:25px!important;height:25px!important}
+ #qf-pedido-facil .qf-intent-choice__body{gap:6px!important}
+ #qf-pedido-facil .qf-intent-choice__body strong{font-size:15px!important;line-height:1.3!important}
+ #qf-pedido-facil .qf-intent-choice__body>span:not(.qf-intent-choice__badge){font-size:12px!important;line-height:1.45!important}
+ #qf-pedido-facil .qf-intent-choice__badge{font-size:10px!important;padding:4px 8px!important}
+ #qf-pedido-facil .qf-intent-choice__arrow{width:30px!important;height:30px!important;font-size:27px!important}
+}
+@media(max-width:370px){
+ #app-shell[data-route="inicio"] .qf-landing-topbar{gap:6px!important;padding:10px 12px!important}
+ #app-shell[data-route="inicio"] .qf-landing-topbar .qf-landing-brand{width:100px!important}
+ #app-shell[data-route="inicio"] .qf-home-prof-btn,#app-shell[data-route="inicio"] .qf-landing-login{font-size:11px!important;padding:0 8px!important;gap:4px!important}
+}
