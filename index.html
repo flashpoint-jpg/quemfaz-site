@@ -2017,6 +2017,30 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-catpick__editor{margin-top:12px}
 .qf-catpick__editor label{display:block;margin-bottom:6px;font-weight:700;color:var(--navy-900)}
 .qf-catpick [hidden]{display:none!important}
+/* Seleção de serviços aprovada: cartões com exemplos e profissões com caixinhas. */
+.qf-catpick__list{display:flex;flex-direction:column;gap:10px}
+.qf-catpick--cards{gap:16px}
+.qf-catpick--cards .qf-catpick__search{order:-3}
+.qf-catpick--cards .qf-catpick__list{order:-2;max-height:480px;overflow:auto;scrollbar-gutter:stable;padding:3px}
+.qf-catpick--cards .qf-catpick__summary{order:-1;background:transparent;padding:0 3px;font-size:14px}
+.qf-catpick--cards .qf-catpick__group{border:1.5px solid #d6dde7;border-radius:14px;background:#fff}
+.qf-catpick--cards .qf-catpick__group.has-selection{border-color:#1555ad;background:#edf5ff}
+.qf-catpick--cards .qf-catpick__group>summary{padding:20px;min-height:96px;gap:14px;font-size:19px;line-height:1.35}
+.qf-catpick--cards .qf-catpick__examples{display:block;font-size:14px;line-height:1.5;font-weight:400;color:#586174;margin-top:6px}
+.qf-catpick--cards .qf-catpick__chips{flex-direction:column;flex-wrap:nowrap;padding:0 16px 16px}
+.qf-catpick--cards .chip{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;border:1px solid #d6dde7;border-radius:10px;background:#fff;color:#17243b;padding:14px;font-size:16px;min-height:52px}
+.qf-catpick--cards .chip::after{content:'';width:23px;height:23px;flex:none;border:2px solid #8a94a4;border-radius:5px;display:grid;place-items:center}
+.qf-catpick--cards .chip.is-selected{border-color:#1555ad;background:#e8f2ff;color:#123e72}
+.qf-catpick--cards .chip.is-selected::after{content:'✓';background:#1555ad;border-color:#1555ad;color:white;font-weight:800}
+.qf-catpick--cards .chip:focus-visible,.qf-catpick--cards summary:focus-visible{outline:3px solid #1555ad;outline-offset:3px}
+.qf-catpick--cards .qf-catpick__count{background:#1555ad}
+.qf-catpick--cards .qf-catpick__create{padding:12px;border:1px dashed #d6dde7;background:#fff}
+.qf-catpick--cards .qf-catpick__create-title{font-size:14px}
+.qf-catpick--cards .qf-catpick__search .input{min-height:54px;font-size:16px}
+#cadastro-prof-form [data-step="2"] .qf-step__nav{padding:12px 0;background:#fff}
+#cadastro-prof-form [data-step="2"] [data-step-next]{background:#f58320;color:#fff;min-height:54px}
+@media(min-width:900px){body:has(#cadastro-prof-cats) .view{max-width:900px;margin-inline:auto;width:100%}}
+@media(max-width:600px){.qf-catpick--cards .qf-catpick__group>summary{padding:16px;font-size:17px}.qf-catpick--cards .qf-catpick__list{max-height:52vh;max-height:52dvh}.qf-catpick--cards .qf-catpick__examples{font-size:14px}.qf-catpick--cards .qf-catpick__chips{padding:0 12px 12px}}
 /* cartão de anúncio da tela inicial */
 .qf-ad-cta{border:2px solid var(--orange-500)!important;background:var(--bg-surface)}
 /* faixa de notificação do cliente */
@@ -9120,23 +9144,24 @@ alt=""></noscript>
   }
   function catPickerHtml(id, selectedIds) {
     const sel = selectedIds || [];
+    const registration = id === 'cadastro-prof-cats';
     const all = DB.categories().filter(function (c) { return c.id !== 'cat_outros'; });
     const known = CAT_GROUPS.map(function (g) { return g[0]; });
     const groups = CAT_GROUPS.map(function (g) {
       const list = all.filter(function (c) { return (known.indexOf(c.grupoId) === -1 ? 'outros' : c.grupoId) === g[0]; });
       if (!list.length) return '';
-      return '<details class="qf-catpick__group" data-catpick-group="' + g[0] + '"><summary><span class="qf-catpick__gname">' + PU.escapeHtml(g[1]) + '</span><span class="qf-catpick__count" data-catpick-count></span>' + icon('chevronDown') + '</summary>' +
+      return '<details class="qf-catpick__group" data-catpick-group="' + g[0] + '"><summary><span class="qf-catpick__gname">' + PU.escapeHtml(g[1]) + (registration ? '<span class="qf-catpick__examples">' + PU.escapeHtml(list.slice(0, 5).map(function(c){ return c.nome; }).join(', ')) + '</span>' : '') + '</span><span class="qf-catpick__count" data-catpick-count></span>' + icon('chevronDown') + '</summary>' +
         '<div class="qf-catpick__chips">' + list.map(function (c) {
           const customAttr = (c.custom || String(c.id || '').indexOf('cat_custom_') === 0) ? ' data-cat-custom-name="' + PU.escapeHtml(c.nome) + '"' : '';
           return '<button type="button" class="chip' + (sel.indexOf(c.id) !== -1 ? ' is-selected' : '') + '" data-chip-cat="' + c.id + '" data-cat-search="' + PU.escapeHtml(catNorm(c.nome)) + '"' + customAttr + '>' + PU.escapeHtml(c.nome) + '</button>';
         }).join('') + '</div></details>';
     }).join('');
-    return '<div class="qf-catpick" id="' + id + '">' +
+    return '<div class="qf-catpick' + (registration ? ' qf-catpick--cards' : '') + '" id="' + id + '">' +
       '<div class="qf-catpick__create"><span class="qf-catpick__create-title">Não encontrou sua profissão?</span><button class="btn btn--primary" type="button" data-catpick-open aria-expanded="false" aria-controls="' + id + '-new">Adicionar profissão</button>' +
       '<div class="qf-catpick__editor" id="' + id + '-new" data-catpick-editor hidden><label for="' + id + '-name">Qual é sua profissão?</label><input class="input" id="' + id + '-name" data-catpick-name maxlength="80" autocomplete="off" placeholder="Informe o nome da profissão"><button class="btn btn--primary qf-catpick__add" type="button" data-catpick-add>Adicionar e selecionar</button><button class="btn btn--ghost" type="button" data-catpick-cancel>Cancelar</button></div></div>' +
-      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar profissão na lista" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
+      '<label class="qf-catpick__search">' + icon('search') + '<input class="input" type="search" placeholder="Buscar serviço ou profissão" autocomplete="off" enterkeyhint="search" data-catpick-search aria-label="Buscar profissão"></label>' +
       '<div class="qf-catpick__summary" data-catpick-summary aria-live="polite"></div>' +
-      groups + '<div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Profissão não encontrada na lista.</div><div class="qf-catpick__empty-text">Toque em “Adicionar profissão” acima para incluir a sua.</div></div></div>';
+      '<div class="qf-catpick__list">' + groups + '</div><div class="qf-catpick__empty" data-catpick-empty hidden><div class="qf-catpick__empty-title">Profissão não encontrada na lista.</div><div class="qf-catpick__empty-text">Toque em “Adicionar profissão” acima para incluir a sua.</div></div></div>';
   }
   function bindCatPicker(root) {
     if (!root || root.dataset.catpickBound) return;
@@ -9184,7 +9209,9 @@ alt=""></noscript>
         const badge = g.querySelector('[data-catpick-count]');
         badge.textContent = n ? String(n) : '';
         badge.classList.toggle('is-on', n > 0);
+        g.classList.toggle('has-selection', n > 0);
       });
+      root.querySelectorAll('[data-chip-cat]').forEach(function(c){ c.setAttribute('aria-pressed', String(c.classList.contains('is-selected'))); });
       const sum = root.querySelector('[data-catpick-summary]');
       sum.innerHTML = '<span class="qf-catpick__sumtitle">Selecionadas: ' + selected.length + '</span>' +
         (selected.length ? '<span class="qf-catpick__sumlist">' + selected.map(function (c) { return PU.escapeHtml(c.textContent); }).join(' · ') + '</span>'
@@ -9303,7 +9330,7 @@ alt=""></noscript>
           '<div class="qf-step__nav"><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
           '<div class="qf-step stack" data-step="2" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 5</div><div class="h2">Quais serviços você faz?</div><div class="text--sm text--secondary">Busque e selecione as profissões que você atende.</div><div class="qf-step__bar"><span style="width:40%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 2 de 5</div><div class="h2">Quais serviços você realiza?</div><div class="text--sm text--secondary">Abra as categorias e marque as profissões em que você trabalha.</div><div class="qf-step__bar"><span style="width:40%"></span></div></div>' +
           '<div class="field">' + catPickerHtml('cadastro-prof-cats', []) + '<input type="hidden" name="categorias" id="cadastro-prof-cats-input"></div>' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="button" data-step-next>Continuar</button></div>' +
           '</div>' +
