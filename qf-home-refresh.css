@@ -334,3 +334,13 @@
  #app-shell[data-route="inicio"] .qf-landing-topbar .qf-landing-brand{width:100px!important}
  #app-shell[data-route="inicio"] .qf-home-prof-btn,#app-shell[data-route="inicio"] .qf-landing-login{font-size:11px!important;padding:0 8px!important;gap:4px!important}
 }
+
+/* Mapa em faixa inteira: evita uma coluna vazia ao lado da cobertura. */
+@media(min-width:900px){
+ #app-shell[data-route="inicio"] .qf-hero2 > .qf-mapa{grid-column:1/-1!important;grid-row:2!important;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px 24px;margin-top:22px}
+ .qf-hero2 > .qf-mapa .qf-mapa__head{grid-column:1/-1}
+ .qf-hero2 > .qf-mapa .qf-mapa__mapa{grid-column:1;grid-row:2;margin:0}
+ .qf-hero2 > .qf-mapa .qf-mapa__tiles{grid-column:2;grid-row:2;margin:0;align-content:center}
+ .qf-hero2 > .qf-mapa .qf-mapa__legenda{grid-column:1;grid-row:3;margin:0}
+ .qf-hero2 > .qf-mapa .qf-mapa__rodape{grid-column:2;grid-row:3;margin:0;align-self:center}
+}

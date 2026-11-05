@@ -260,7 +260,7 @@ html=html.replace('</body>','<script defer src="/qf-wallet-balance-rules.js?v=20
 // Relogio da validade do bonus, consultando o valor promocional no Supabase.
 html=html.replace('</body>','<script defer src="/qf-bonus-clock.js?v=20261014"></script></body>');
 // Monitoramento de como o profissional acessa (app Android, PWA ou navegador). So grava com sessao de profissional.
-html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=20261018"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=20261105-contador"></script></body>');
 fs.copyFileSync(path.join(__dirname,'qf-seo-consent-widget.js'),path.join(out,'qf-seo-consent-widget.js'));
 // Consentimento opcional: telas de cadastro e perfil profissional, sem bloquear fluxos existentes.
 html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></script></body>');

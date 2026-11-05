@@ -198,38 +198,18 @@
     como.classList.add('qf-como-direita');
     serv.insertAdjacentElement('afterend', como);
   }
-  // V12.3.2: o desenho do mapa cresce (ou volta ao normal) para a coluna da esquerda terminar na mesma altura da direita.
-  var ajustando = 0;
-  function ajustar() {
-    var card = document.querySelector('[data-qf-mapa]'); if (!card || !dados) return;
-    var vis = document.querySelector('.qf-home-visual'), act = document.querySelector('.qf-landing-actions');
-    var caixa = card.querySelector('.qf-mapa__mapa'), svg = caixa && caixa.querySelector('svg');
-    if (!vis || !act || !svg || !g.matchMedia('(min-width:900px)').matches) return;
-    var gap = act.getBoundingClientRect().bottom - vis.getBoundingClientRect().bottom;
-    if (Math.abs(gap) < 3 || ajustando > 3) return;
-    var r = svg.getBoundingClientRect(); if (!r.width) return;
-    var alvo = Math.max(H, Math.min(H + 300, (r.height + gap) * W / r.width));
-    if (Math.abs(alvo - alturaMapa) < 1) return;
-    ajustando++; alturaMapa = alvo;
-    caixa.innerHTML = mapaSvg(norm(dados.lista), alturaMapa);
-    setTimeout(function () { ajustando = 0; }, 400);
-    (g.requestAnimationFrame || setTimeout)(ajustar);
-  }
-  var tAj = null;
-  function agendarAjuste() { clearTimeout(tAj); tAj = setTimeout(function () { ajustando = 0; ajustar(); }, 120); }
-  g.addEventListener('resize', agendarAjuste);
-  g.addEventListener('load', agendarAjuste);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(agendarAjuste);
+  // O mapa ocupa uma faixa própria; a altura não estica a coluna da esquerda.
+  function agendarAjuste() {}
 
   function montar() {
     agendado = false;
     if (!g.matchMedia || !g.matchMedia('(min-width:900px)').matches) return;
     subirComo();
-    var ben = document.querySelector('.qf-home-visual .qf-client-benefits');
-    if (!ben || (ben.nextElementSibling && ben.nextElementSibling.hasAttribute('data-qf-mapa'))) return;
+    var visual = document.querySelector('.qf-home-visual');
+    if (!visual || !visual.parentNode || document.querySelector('[data-qf-mapa]')) return;
     if (!dados) lerCache();
     var h = dados ? cartaoHtml(dados) : '';
-    if (h) { var t = document.createElement('div'); t.innerHTML = h; ben.insertAdjacentElement('afterend', t.firstChild); agendarAjuste(); }
+    if (h) { var t = document.createElement('div'); t.innerHTML = h; visual.parentNode.appendChild(t.firstChild); agendarAjuste(); }
     if (!timer) {
       buscar();
       timer = setInterval(function () { if (!document.querySelector('[data-qf-mapa]')) { clearInterval(timer); timer = null; return; } if (!document.hidden) { tentativas = 0; buscar(); } }, 60000);

@@ -8,7 +8,7 @@ assert.ok(src.includes("c.rpc('qf_home_stats')"));
 assert.ok(/case when n >= 3 then n end/.test(sql)&&/grant execute on function public\.qf_home_stats\(\) to anon/.test(sql));
 assert.ok(!/nome|telefone|whatsapp|email|documento/i.test(sql.replace(/--.*$/gm,'')),'a função não pode expor dado pessoal');
 const a=src.indexOf('  function statsCity('),b=src.indexOf('  let statsData = null');
-const ctx={icon:()=>'' };vm.createContext(ctx);vm.runInContext(src.slice(a,b)+';this.statsHtml=statsHtml;this.statsCity=statsCity;',ctx);
+const ctx={icon:()=>'',global:{}};vm.createContext(ctx);vm.runInContext(src.slice(a,b)+';this.statsHtml=statsHtml;this.statsCity=statsCity;',ctx);
 assert.equal(ctx.statsCity('SÃO BERNARDO DO CAMPO'),'São Bernardo do Campo');
 assert.equal(ctx.statsHtml(null),'');assert.equal(ctx.statsHtml({total:0,lista:[]}),'');
 const html=ctx.statsHtml({total:12,lista:[{cidade:'São Paulo',uf:'SP',n:9},{cidade:'itu',uf:'SP',n:null},{cidade:'<i>x</i>',uf:'SP',n:2}]});

@@ -123,10 +123,25 @@
   var header=document.createElement('header');header.className='qf-prof-header';
   header.innerHTML='<a href="/" class="qf-prof-brand" aria-label="Quem Faz Serviços"><b>Q<span>F</span></b><strong>QuemFaz<small>Serviços</small></strong></a><nav aria-label="Navegação"><a href="/">Início</a><a href="/#como-funciona">Como funciona</a><a href="/#profissionais">Profissionais</a><a href="/#servicos">Serviços</a></nav><a class="qf-prof-home" href="/">Sou cliente</a>';
   var info=document.createElement('aside');info.className='qf-prof-apresentacao-info';
-  info.innerHTML='<div class="qf-prof-hero"><span class="qf-prof-chip">Cadastro de Profissional</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua profissão e acompanhe pedidos de clientes da sua região.</p></div><div class="qf-prof-numeros"><div><strong>386</strong><span>profissionais cadastrados</span></div><div><strong>76</strong><span>cidades atendidas</span></div></div><div class="qf-prof-beneficios"><div>🎯<span>Receba oportunidades</span></div><div>💬<span>Negocie diretamente</span></div><div>📅<span>Defina seu raio e horários</span></div><div>🛡️<span>Sem comissão por serviço fechado</span></div></div><div class="qf-prof-passos"><strong>Como funciona?</strong><ol><li>Faça seu cadastro</li><li>Configure profissão, região e horários</li><li>Escolha oportunidades disponíveis</li></ol></div>';
+  info.innerHTML='<div class="qf-prof-hero"><span class="qf-prof-chip">Cadastro de Profissional</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua profissão e acompanhe pedidos de clientes da sua região.</p></div><div class="qf-prof-numeros"><div><strong data-qf-prof-total>—</strong><span>profissionais cadastrados</span></div><div><strong data-qf-city-total>—</strong><span>cidades atendidas</span></div></div><div class="qf-prof-beneficios"><div>🎯<span>Receba oportunidades</span></div><div>💬<span>Negocie diretamente</span></div><div>📅<span>Defina seu raio e horários</span></div><div>🛡️<span>Sem comissão por serviço fechado</span></div></div><div class="qf-prof-passos"><strong>Como funciona?</strong><ol><li>Faça seu cadastro</li><li>Configure profissão, região e horários</li><li>Escolha oportunidades disponíveis</li></ol></div>';
   var grid=document.createElement('div');grid.className='qf-prof-grid';
   form.parentNode.insertBefore(wrap,form);wrap.appendChild(header);wrap.appendChild(grid);grid.appendChild(info);grid.appendChild(form);
   form.classList.add('qf-prof-apresentacao-form');
+  // A mesma consulta pública usada pela home e pelo mapa, sem total fixo.
+  function atualizarContadores(tentativa){
+   if(!wrap.isConnected)return;
+   var client=window.QFCloud&&window.QFCloud.client;
+   if(!client){if((tentativa||0)<12)setTimeout(function(){atualizarContadores((tentativa||0)+1)},1500);return;}
+   Promise.resolve(client.rpc('qf_home_stats')).then(function(r){
+    if(!wrap.isConnected||!r||r.error||!r.data||!Number.isFinite(Number(r.data.total)))return;
+    var lista=Array.isArray(r.data.lista)?r.data.lista:[];
+    if(window.QFCidadesNorm)lista=window.QFCidadesNorm(lista);
+    wrap.querySelector('[data-qf-prof-total]').textContent=String(Number(r.data.total));
+    wrap.querySelector('[data-qf-city-total]').textContent=String(lista.length);
+   }).catch(function(){});
+  }
+  atualizarContadores();
+  var contadorTimer=setInterval(function(){if(!wrap.isConnected){clearInterval(contadorTimer);return;}if(!document.hidden)atualizarContadores();},60000);
   var css=document.createElement('style');css.id='qf-prof-apresentacao-estilo';css.textContent=
   '#qf-prof-apresentacao{width:100%;max-width:1440px;margin:0 auto 40px;font-family:Inter,system-ui,Arial,sans-serif;color:#102b65;box-sizing:border-box}#qf-prof-apresentacao *{box-sizing:border-box}'+
   '.qf-prof-header{min-height:75px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px clamp(18px,4vw,65px);border-bottom:1px solid #dce5f2}.qf-prof-brand{display:flex;align-items:center;gap:8px;text-decoration:none!important;color:#0b3595!important}.qf-prof-brand>b{font-size:37px;letter-spacing:-5px}.qf-prof-brand>b span{color:#ff7900}.qf-prof-brand strong{font-size:22px;line-height:1}.qf-prof-brand small{display:block;color:#ff7900;font-size:14px}.qf-prof-header nav{display:flex;gap:22px}.qf-prof-header nav a{color:#123378!important;text-decoration:none;font-weight:750;font-size:14px}.qf-prof-home{border:2px solid #1255bf;border-radius:24px;padding:10px 18px;color:#0b3595!important;text-decoration:none!important;font-weight:750;white-space:nowrap}'+
