@@ -25,7 +25,15 @@ if (fs.existsSync(adminDistPath)) {
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 // Atualiza os arquivos de cobertura também nos navegadores que já visitaram a home.
-html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-mapa').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-mapa');
+html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-alinhamento2').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-alinhamento2');
+// Textos públicos alinhados ao fluxo atual; remove benefícios descontinuados.
+html=html.replaceAll(",'Calculadora para ter ideia do preço antes de pedir'",'')
+ .replaceAll('Pedir é grátis. Acesso por telefone e senha','Publique seu pedido grátis e acompanhe em Meus pedidos')
+ .replaceAll('Acesso por telefone e senha','Acompanhe em Meus pedidos')
+ .replaceAll('Conversa pelo chat no Plano Livre; WhatsApp no avulso','Negocie diretamente com o cliente')
+ .replaceAll('Acompanhe as respostas e conversas em Meus pedidos','Acompanhe seu pedido em Meus pedidos')
+ .replaceAll('Só até 4 profissionais veem o seu WhatsApp','Seu contato é liberado apenas a quem desbloqueia seu pedido')
+ .replaceAll('No app, o aviso de pedido novo toca alto mesmo com o celular no bolso','Acompanhe as oportunidades pelo aplicativo');
 // Mesma orientação do anúncio na home, inclusive no HTML inicial antes de carregar o app.
 html=html.replace('Publique seu pedido grátis e encontre profissionais da sua região.','Descreva o serviço, publique grátis e compare as propostas que receber.')
  .replace('É grátis. Crie seu acesso com telefone e senha ao publicar.','Descreva o serviço e publique seu pedido grátis.');

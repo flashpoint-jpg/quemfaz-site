@@ -1,4 +1,4 @@
-/* QuemFaz V12.3.0 — "Onde o QuemFaz já atende": mapa das regiões na home do computador.
+/* QuemFaz V12.3.0 — "Onde estão os profissionais cadastrados": mapa das regiões na home do computador.
    Usa os mesmos números do contador (qf_home_stats: só totais por cidade, sem dado pessoal).
    Sem resposta do banco e sem cache, o cartão não aparece: nunca mostra número inventado.
    Também expõe QFCidadesNorm, que junta nomes digitados diferente (ex.: "sao paulo", "Saopaulo")
@@ -162,7 +162,7 @@
     }
     return '<section class="qf-mapa" data-qf-mapa aria-labelledby="qf-mapa-t">' +
       '<div class="qf-mapa__head"><div class="qf-mapa__icone" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg></div>' +
-      '<div><h2 id="qf-mapa-t">Onde o QuemFaz já atende</h2><p><strong>' + total + ' profissionais</strong> em ' + lista.length + ' cidades' + (maioria ? ', a maioria na Grande São Paulo e na Baixada Santista.' : '.') + '</p></div></div>' +
+      '<div><h2 id="qf-mapa-t">Onde estão os profissionais cadastrados</h2><p><strong>' + total + ' profissionais</strong> em ' + lista.length + ' cidades' + (maioria ? ', a maioria na Grande São Paulo e na Baixada Santista.' : '.') + '</p></div></div>' +
       '<div class="qf-mapa__mapa">' + mapaSvg(lista, alturaMapa) + '</div>' +
       '<div class="qf-mapa__legenda"><span><i class="qf-mapa__bola"></i>círculo maior = mais profissionais</span><span><i class="qf-mapa__bola qf-mapa__bola--vazia"></i>1 ou 2 profissionais</span></div>' +
       (tiles ? '<div class="qf-mapa__tiles">' + tiles + '</div>' : '') +
@@ -189,14 +189,16 @@
       pintar(); montar();
     }).catch(function () {});
   }
-  // Distribui os cartões nas duas colunas, sem deixar o lado do mapa vazio.
+  // Os cartões compartilham uma linha: mesmo início e mesma altura.
   function subirComo() {
     var serv = document.querySelector('#qf-sec-servicos'), como = document.querySelector('#qf-sec-como');
-    var visual = document.querySelector('.qf-home-visual'), actions = document.querySelector('.qf-landing-actions');
-    if (!serv || !como || !visual || !actions) return;
-    if (serv.parentNode !== visual) visual.appendChild(serv);
+    var visual = document.querySelector('.qf-home-visual');
+    if (!serv || !como || !visual || !visual.parentNode) return;
+    var row = document.querySelector('.qf-home-guide-row');
+    if (!row) { row = document.createElement('div'); row.className = 'qf-home-guide-row'; visual.parentNode.appendChild(row); }
+    if (serv.parentNode !== row) row.appendChild(serv);
     como.classList.add('qf-como-direita');
-    if (como.parentNode !== actions) actions.appendChild(como);
+    if (como.parentNode !== row) row.appendChild(como);
   }
   // O mapa ocupa uma faixa própria; a altura não estica a coluna da esquerda.
   function agendarAjuste() {}

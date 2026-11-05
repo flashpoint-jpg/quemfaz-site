@@ -335,14 +335,19 @@
  #app-shell[data-route="inicio"] .qf-home-prof-btn,#app-shell[data-route="inicio"] .qf-landing-login{font-size:11px!important;padding:0 8px!important;gap:4px!important}
 }
 
-/* Mapa em faixa inteira: evita uma coluna vazia ao lado da cobertura. */
+/* Cartões alinhados em uma linha comum; cobertura sem faixa vazia. */
+.qf-home-guide-row{display:contents}
 @media(min-width:900px){
- #app-shell[data-route="inicio"] .qf-hero2 > .qf-mapa{grid-column:1/-1!important;grid-row:2!important;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px 24px;margin-top:22px}
+ #app-shell[data-route="inicio"] .qf-hero2 > .qf-home-guide-row{display:grid;grid-column:1/-1!important;grid-row:2!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:20px;align-items:stretch}
+ #app-shell[data-route="inicio"] .qf-home-guide-row > #qf-sec-servicos,
+ #app-shell[data-route="inicio"] .qf-home-guide-row > #qf-sec-como{margin:0!important;min-width:0;box-sizing:border-box}
+ #app-shell[data-route="inicio"] .qf-hero2 > .qf-mapa{grid-column:1/-1!important;grid-row:3!important;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px 24px;margin-top:22px}
  .qf-hero2 > .qf-mapa .qf-mapa__head{grid-column:1/-1}
  .qf-hero2 > .qf-mapa .qf-mapa__mapa{grid-column:1;grid-row:2;margin:0}
- .qf-hero2 > .qf-mapa .qf-mapa__tiles{grid-column:2;grid-row:2;margin:0;align-content:center}
+ .qf-hero2 > .qf-mapa .qf-mapa__tiles{grid-column:2;grid-row:2;margin:0;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));align-content:stretch}
+ .qf-hero2 > .qf-mapa .qf-mapa__tile{display:flex;flex-direction:column;justify-content:center;padding:16px}
+ .qf-hero2 > .qf-mapa .qf-mapa__tile b{font-size:28px}
+ .qf-hero2 > .qf-mapa .qf-mapa__tile span{font-size:14px}
  .qf-hero2 > .qf-mapa .qf-mapa__legenda{grid-column:1;grid-row:3;margin:0}
  .qf-hero2 > .qf-mapa .qf-mapa__rodape{grid-column:2;grid-row:3;margin:0;align-self:center}
 }
-
-@media(min-width:900px){#app-shell[data-route="inicio"] .qf-home-visual > #qf-sec-servicos{margin:20px 0 0!important}}
