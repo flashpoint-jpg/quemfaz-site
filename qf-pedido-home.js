@@ -212,7 +212,13 @@
   target.querySelector('[data-home-login-start]').onclick=()=>{state.service=select.value;login();};
   if(target.querySelector('[data-home-google]'))target.querySelector('[data-home-google]').onclick=async()=>{state.problem=input.value;state.service=select.value;try{if(g.QFAtendimento?.hasActiveDraft?.()){await g.QFAtendimento.saveDraftForGoogle();sessionStorage.setItem('qf_google_publish_pending','1');}sessionStorage.setItem('qf_home_oauth_draft',JSON.stringify({problem:input.value,service:select.value}));sessionStorage.setItem('qf_google_login_return','1');const r=await g.QFCloud.client.auth.signInWithOAuth({provider:'google',options:{redirectTo:'https://quemfazservico.com.br/?app=1',queryParams:{prompt:'select_account'}}});if(r.error)throw r.error;}catch(e){sessionStorage.removeItem('qf_google_login_return');target.querySelector('[role=alert]').textContent=e.message||'Não foi possível entrar com Google.';}};
   const track=(name,detail)=>{try{g.QFClientAcquisition?.track(name,detail||{},true);}catch(_){}};
-  if(service||state.service){const category=categories.find(c=>c.id===(service||state.service)||norm(c.nome)===norm(service));if(category)pick(category);}
+  // O card substitui o campo antigo da landing. Leia a campanha aqui também:
+  // applyDestination não encontra mais o input antigo depois dessa montagem.
+  // Uma escolha explícita ou rascunho sempre prevalece sobre o anúncio.
+  const selectedService=service||state.service||g.QFClientAcquisition?.serviceFromLink(g.location.search);
+  if(selectedService){const category=categories.find(c=>c.id===selectedService||norm(c.nome)===norm(selectedService));if(category)pick(category);}
+  search.addEventListener('focus',()=>track('home_focus'));
+  search.addEventListener('input',()=>track('home_type'));
   input.onfocus=()=>track('home_focus');
   input.oninput=()=>{input.removeAttribute('aria-invalid');track('home_type');state.problem=input.value;form.querySelector('[role=alert]').textContent='';};
   select.onchange=()=>{select.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';};
