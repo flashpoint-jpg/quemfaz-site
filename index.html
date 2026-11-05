@@ -104,6 +104,25 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 (function () {
   try {
     var p = new URLSearchParams(window.location.search || '');
+    // Algumas ferramentas acrescentam UTM depois do # da rota do cadastro.
+    // Recupera a origem e limpa a rota antes de o roteador tentar abri-la.
+    var hash = window.location.hash || '';
+    if (/^#\/auth\/profissional\/cadastro[?&]/.test(hash)) {
+      var split = hash.search(/[?&]/);
+      var hashParams = new URLSearchParams(hash.slice(split + 1));
+      var moved = false;
+      hashParams.forEach(function (value, key) {
+        if (/^(utm_(source|medium|campaign|content|term|id)|fbclid|gclid|gbraid|wbraid|msclkid|ttclid|gad_campaignid)$/.test(key)) {
+          if (!p.has(key)) p.set(key, value);
+          moved = true;
+        }
+      });
+      if (moved && window.history && window.history.replaceState) {
+        p.forEach(function (_, key) { hashParams.delete(key); });
+        var remaining = hashParams.toString();
+        window.history.replaceState(window.history.state, '', window.location.pathname + '?' + p.toString() + hash.slice(0, split) + (remaining ? '?' + remaining : ''));
+      }
+    }
     var clickKeys = [['gclid','google'],['gbraid','google'],['wbraid','google'],['msclkid','microsoft'],['fbclid','meta'],['ttclid','tiktok']];
     var click = null;
     for (var i = 0; i < clickKeys.length; i++) { if (p.get(clickKeys[i][0])) { click = clickKeys[i]; break; } }
@@ -6767,7 +6786,7 @@ alt=""></noscript>
     if (res.error) throw res.error;
     return res.data || null;
   }
-  async function applyPendingIdentity(email, role) {
+  async function applyPendingIdentity(email, role, user) {
     try {
       const k = pendingCpfKey(email); const cpf = localStorage.getItem(k);
       if (cpf) { await saveCpf(cpf); localStorage.removeItem(k); }
@@ -6832,28 +6851,33 @@ alt=""></noscript>
           const mr = await client.from('qf_marketing_attribution').upsert(row, { onConflict: 'user_id', ignoreDuplicates: true });
           if (mr.error) throw mr.error;
           localStorage.removeItem('qf_marketing_attribution');
-          if (role === 'profissional') trackCompleteRegistrationOnce(uRes.data.user, role);
         }
       }
     } catch (e) { console.warn('QuemFaz origem de marketing pendente', e); }
+    // Cadastro confirmado independe de UTM e de a tabela de atribuição responder.
+    if (role === 'profissional') trackCompleteRegistrationOnce(user, role);
   }
 
   // V11.86: CompleteRegistration do pixel dispara UMA vez por profissional e só para conta recém-criada.
   // Antes disparava também em login de conta antiga que veio por anúncio e em execuções paralelas da sincronização,
   // inflando os "Registros concluídos" no Meta (~20% a mais que os cadastros reais).
   const QF_CR_MAX_IDADE_MS = 2 * 60 * 60 * 1000;
+  const qfCrSent = new Set();
   function trackCompleteRegistrationOnce(user, role) {
     try {
-      if (!user || !user.id || typeof global.fbq !== 'function') return false;
+      if (role !== 'profissional' || !user || !user.id || typeof global.fbq !== 'function') return false;
       const criadoEm = Date.parse(user.created_at || '');
-      if (!Number.isFinite(criadoEm) || Date.now() - criadoEm > QF_CR_MAX_IDADE_MS) return false;
+      const idade = Date.now() - criadoEm;
+      if (!Number.isFinite(criadoEm) || idade < 0 || idade > QF_CR_MAX_IDADE_MS) return false;
       const flag = 'qf_cr_sent:' + user.id;
-      if (localStorage.getItem(flag)) return false;
-      localStorage.setItem(flag, '1');
+      if (qfCrSent.has(user.id)) return false;
+      try { if (localStorage.getItem(flag)) return false; } catch (_) {}
       global.fbq('track', 'CompleteRegistration', {
         content_name: role === 'profissional' ? 'QuemFaz Profissional' : 'QuemFaz Cliente',
         content_category: role
       }, { eventID: 'cr-' + user.id });
+      qfCrSent.add(user.id);
+      try { localStorage.setItem(flag, '1'); } catch (_) {}
       return true;
     } catch (_) { return false; }
   }
@@ -6913,7 +6937,7 @@ alt=""></noscript>
         const user = sbSession.user;
         const profile = await ensureProfile(user, null, null);
         const role = profile.tipo;
-        await applyPendingIdentity(user.email || '', role);
+        await applyPendingIdentity(user.email || '', role, user);
         const localUser = await syncLocalUser(user, role);
         DB.setSession({ role: role, userId: user.id });
         if (role === 'cliente') await syncClientCalls(user.id);
@@ -7050,7 +7074,7 @@ alt=""></noscript>
 
     try {
       await ensureProfile(res.data.user, role, data);
-      await applyPendingIdentity(email, role);
+      await applyPendingIdentity(email, role, res.data.user);
       const local = await syncLocalUser(res.data.user, role);
       DB.setSession({ role: role, userId: res.data.user.id });
       if (role === 'cliente') await syncClientCalls(res.data.user.id); else await syncProfessionalCalls(res.data.user.id);
@@ -7071,7 +7095,7 @@ alt=""></noscript>
     }
     try {
       const p = await ensureProfile(res.data.user, expectedRole, null);
-      await applyPendingIdentity(email, p.tipo);
+      await applyPendingIdentity(email, p.tipo, res.data.user);
       if (p.tipo !== expectedRole) {
         await client.auth.signOut();
         DB.setSession(null);
