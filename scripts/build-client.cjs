@@ -24,6 +24,9 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// Mesma orientação do anúncio na home, inclusive no HTML inicial antes de carregar o app.
+html=html.replace('Publique seu pedido grátis e encontre profissionais da sua região.','Descreva o serviço, publique grátis e compare as propostas que receber.')
+ .replace('É grátis. Crie seu acesso com telefone e senha ao publicar.','Descreva o serviço e publique seu pedido grátis.');
 // O login de profissional já cadastrado não deve reativar benefícios de teste.
 // O erro 403 na chamada de preparação de acesso impedia até o usuário com Pix aprovado de entrar.
 // A assinatura, o pagamento e a checagem de direitos permanecem no servidor.
