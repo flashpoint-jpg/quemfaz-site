@@ -189,14 +189,14 @@
       pintar(); montar();
     }).catch(function () {});
   }
-  // V12.3.1: "Como funciona" sobe para a coluna da direita, logo abaixo de "Serviços mais pedidos",
-  // para as duas colunas terminarem na mesma altura (antes sobrava um vazio ao lado do mapa).
+  // Distribui os cartões nas duas colunas, sem deixar o lado do mapa vazio.
   function subirComo() {
     var serv = document.querySelector('#qf-sec-servicos'), como = document.querySelector('#qf-sec-como');
-    if (!serv || !como || !serv.parentNode) return;
-    if (serv.nextElementSibling === como) return;
+    var visual = document.querySelector('.qf-home-visual'), actions = document.querySelector('.qf-landing-actions');
+    if (!serv || !como || !visual || !actions) return;
+    if (serv.parentNode !== visual) visual.appendChild(serv);
     como.classList.add('qf-como-direita');
-    serv.insertAdjacentElement('afterend', como);
+    if (como.parentNode !== actions) actions.appendChild(como);
   }
   // O mapa ocupa uma faixa própria; a altura não estica a coluna da esquerda.
   function agendarAjuste() {}
