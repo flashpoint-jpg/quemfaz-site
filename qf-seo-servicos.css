@@ -3,3 +3,33 @@
 .seo-hero:not(:has(.seo-form)){grid-template-columns:1fr}.seo-page #seo-description{display:grid;gap:12px}
 
 .seo-brand-tagline{margin:0 0 16px;color:#0b1d3a;font-size:clamp(18px,2.2vw,24px);font-weight:800;line-height:1.3}
+
+/* Landing de serviço: formulário completo, sem saída para a home. */
+.seo-page{background:radial-gradient(ellipse at 10% 10%,#e8f1ff,transparent 50%),#f6f8fc;line-height:1.55}
+.seo-header{background:#063e85;border:0;padding-top:14px;padding-bottom:14px}
+.seo-header>a:last-child{border:1px solid #ffffff55;padding:9px 16px;border-radius:10px;font-size:14px}
+.seo-main{padding-top:24px}.seo-main nav{margin-bottom:26px;color:#64748b}
+.seo-hero{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:64px}
+.seo-hero>div:first-child{padding-top:44px}.seo-brand-tagline{font-size:16px;color:#47627e;font-weight:600;max-width:320px}
+.seo-page h1{font-size:clamp(34px,4.6vw,60px);color:#072f67;line-height:1.07;max-width:570px;overflow-wrap:anywhere}
+.seo-lead{color:#49617b;line-height:1.65;max-width:440px;margin:24px 0}
+.seo-eyebrow{display:inline-block;background:#e1edff;color:#1256ac;padding:7px 11px;border-radius:7px;font-size:10px;letter-spacing:.08em}
+.seo-benefits{display:grid;gap:12px;font-size:15px;font-weight:650;color:#244f75;margin:26px 0}
+.seo-cta{background:#d75d00;border-radius:12px;box-shadow:0 5px 15px #d75d0020}
+.seo-form{padding:30px;border:1px solid #e1e9f4;border-radius:24px;box-shadow:0 20px 64px #12345b10}
+.seo-form-eyebrow{font-size:10px;letter-spacing:.12em;font-weight:800;color:#59738f;margin:0 0 8px}
+.seo-page .seo-form>h2{font-size:26px;letter-spacing:-.03em;margin:0;color:#093e80}.seo-form-intro{font-size:14px;color:#60738a;margin:8px 0 22px}
+.seo-page #seo-order [data-qf-atendimento]>.text--sm{display:none}
+.landing-request{display:grid;gap:19px}.landing-service{background:#edf4ff;color:#1455a0;border-radius:9px;padding:10px 13px;font-size:13px;font-weight:750}
+.landing-field{display:grid;gap:8px;min-width:0;color:#193b5d;font-size:14px;font-weight:700}
+.seo-page #seo-order .landing-field .input{width:100%;min-height:50px;padding:12px 13px;border:1px solid #cbd8e6;border-radius:10px;background:#fff;color:#183b5b;line-height:1.4;font-family:inherit;font-weight:400;box-shadow:0 1px 2px #102b4b05}
+.seo-page #seo-order .landing-field textarea{resize:vertical;min-height:100px}.landing-field .input::placeholder{color:#7a899b;opacity:1}
+.seo-page #seo-order .landing-field input[readonly]{background:#f3f6fa;color:#56708c}
+.landing-location{display:grid;grid-template-columns:1fr 1fr;gap:14px}.landing-hint{font-size:12px;color:#60738a;margin:-9px 0 0;line-height:1.5}
+.landing-options{border-top:1px solid #e8edf4;border-bottom:1px solid #e8edf4;padding:14px 0}.landing-options summary{cursor:pointer;font-size:14px;font-weight:650;color:#24578e}.landing-options .landing-field{margin-top:16px}
+.landing-consent{font-size:12px;line-height:1.65;color:#5b6d82;margin:0}.landing-consent a{text-decoration:underline}.landing-request [data-at-error]:empty{display:none}.landing-request [data-at-error]{margin:0;color:#9b261c;font-size:14px}
+.seo-page #seo-order .landing-submit{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#d75d00;border:0;color:#fff;min-height:56px;width:100%;border-radius:12px;padding:15px 20px;font:750 17px/1.4 system-ui;cursor:pointer;box-shadow:0 5px 14px #d75d0020}
+.seo-page #seo-order .landing-submit:hover{background:#bc5100}.seo-page #seo-order .landing-submit:disabled{opacity:.65;cursor:wait}
+.landing-protection{text-align:center;color:#315f8c;font-size:12px;margin:-7px 0 0}.seo-content{border:1px solid #e4ebf4}.seo-content h2{color:#123f72}.seo-footer{color:#64748b}
+@media(max-width:760px){.seo-main{padding:18px 16px}.seo-main nav{font-size:12px;margin-bottom:20px}.seo-hero{grid-template-columns:1fr;gap:24px}.seo-hero>div:first-child{padding-top:0}.seo-page h1{font-size:38px;margin:13px 0;max-width:100%}.seo-brand-tagline{font-size:14px;margin:0 0 12px}.seo-lead{font-size:17px;margin:14px 0;max-width:100%}.seo-benefits{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0 0;font-size:12px}.seo-hero>div>.seo-cta{display:none}.seo-form{padding:24px 18px}.seo-page .seo-form>h2{font-size:24px}.landing-location{gap:12px}.seo-header img{width:135px;height:44px}.seo-header>a:last-child{padding:8px 12px;font-size:12px}}
+@media(max-width:380px){.landing-location{grid-template-columns:1fr}.seo-page h1{font-size:33px}.seo-page .seo-form>h2{font-size:22px}}

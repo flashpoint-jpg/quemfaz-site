@@ -15,9 +15,14 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  w.fetch=async(url,opts={})=>{if(opts.method&&opts.method!=='GET')writes.push(String(url));return new Response(JSON.stringify([]),{status:200,headers:{'content-type':'application/json'}});};
  w.Response=Response;w.Request=Request;w.Headers=Headers;w.AbortController=AbortController;w.matchMedia=()=>({matches:false,addListener(){},addEventListener(){}});w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.crypto.randomUUID=require('node:crypto').randomUUID;
  }});
- try{await new Promise((resolve,reject)=>{let n=0;const t=setInterval(()=>{if(dom.window.document.querySelector('#seo-description')){clearInterval(t);resolve();}else if(++n>150){clearInterval(t);reject(Error('Form não iniciou: '+errors.join('\n')+'\n'+dom.window.document.getElementById('seo-order').textContent));}},20);});
- dom.window.document.querySelector('#seo-problem').value='Minha tomada está com defeito e precisa de reparo';dom.window.document.querySelector('#seo-description').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));
- assert.ok(dom.window.QFCloud?.createCall);assert.ok(dom.window.QFClienteAcesso?.authenticate);assert.equal(dom.window.document.querySelector('[data-qf-atendimento]').dataset.mounted,'1');assert.equal(dom.window.document.querySelector('#at-aceite_app'),null);assert.ok(dom.window.document.querySelector('#at-cep'));assert.equal(writes.filter(x=>/qf_chamados|publicar|cliente-conta/.test(x)).length,0);
+ try{await new Promise((resolve,reject)=>{let n=0;const t=setInterval(()=>{if(dom.window.document.querySelector('.landing-request')){clearInterval(t);resolve();}else if(++n>150){clearInterval(t);reject(Error('Form não iniciou: '+errors.join('\n')+'\n'+dom.window.document.getElementById('seo-order').textContent));}},20);});
+ assert.ok(dom.window.QFCloud?.createCall);assert.ok(dom.window.QFClienteAcesso?.authenticate);
+ assert.equal(dom.window.document.querySelector('[data-qf-atendimento]').dataset.mounted,'1');
+ for(const key of ['problem','cep','cidade','bairro','urgencia','nome','contato'])assert.ok(dom.window.document.querySelector('#at-'+key));
+ assert.equal(writes.filter(x=>/qf_chamados|publicar|cliente-conta/.test(x)).length,0);
+ // Campos vazios não publicam e recebem uma mensagem clara.
+ await dom.window.document.querySelector('.landing-request').onsubmit({preventDefault(){}});
+ assert.match(dom.window.document.querySelector('[data-at-error]').textContent,/8 caracteres/);
  // Publicação real em PostgreSQL isolado, usando o mesmo RPC e Cloud.createCall.
  const {db,as,uid}=require('./helpers/atendimento-db.cjs');const d=await db();
  try{
@@ -32,17 +37,25 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  w.QFGeo.geocodeCity=async()=>({latitude:-23.66,longitude:-46.53});w.QFGeo.geocodeBairro=w.QFGeo.geocodeCity;
  w.QFConnection.fetch=async()=>new Response(JSON.stringify({localidade:'Santo André',uf:'SP',bairro:'Centro'}),{headers:{'content-type':'application/json'}});
  w.fetch=async()=>new Response(JSON.stringify({localidade:'Santo André',uf:'SP',bairro:'Centro'}),{headers:{'content-type':'application/json'}});
- const values={aceite_app:'sim',cep:'09171000',bairro:'Centro',urgencia:'normal',materiais:'profissional',nome:'Cliente Teste',contato:'11986427539',intencao:'contratar',max_orcamentos:'4',autorizacao:'sim'};
- for(let n=0;n<16&&!w.document.querySelector('#seo-order h2')?.textContent.includes('Pedido publicado');n++){
- const form=w.document.querySelector('[data-at-question] form');assert.ok(form,'form continua montado');
- const input=form.querySelector('input[id^="at-"],textarea[id^="at-"],select[id^="at-"]');
- if(input){const k=input.id.slice(3);if(input.type==='checkbox')input.checked=true;else input.value=values[k]||input.value;}
- else {const radio=[...form.querySelectorAll('input[type=radio]')].find(x=>x.value===values[x.name.slice(3)]);assert.ok(radio,'alternativa disponível');radio.checked=true;}
+ let cepFails=true;
+ w.fetch=async()=>cepFails?new Response('{}',{status:503}):new Response(JSON.stringify({localidade:'Santo André',uf:'SP',bairro:'Centro'}),{headers:{'content-type':'application/json'}});
+ const values={problem:'Minha tomada está com defeito e precisa de reparo',cep:'09171000',bairro:'Centro',urgencia:'normal',materiais:'profissional',nome:'Cliente Teste',contato:'11986427539',intencao:'contratar',max_orcamentos:'2'};
+ for(const [key,value] of Object.entries(values))w.document.querySelector('#at-'+key).value=value;
+ const form=w.document.querySelector('.landing-request');
+ assert.equal(typeof w.qfGoogleLead,'function');
+ let conversionCalls=0;w.qfGoogleLead=()=>{conversionCalls++;};
  await form.onsubmit({preventDefault(){}});
- const alerts=[...form.querySelectorAll('[data-error],[data-at-error]')].map(e=>e.textContent).filter(Boolean);assert.deepEqual(alerts,[]);
- }
+ assert.equal(published,0);assert.match(w.document.querySelector('[data-at-error]').textContent,/CEP/);
+ assert.equal(w.document.querySelector('#at-problem').value,values.problem,'falha preserva dados');
+ cepFails=false;
+ w.document.querySelector('#at-contato').value='123';
+ await form.onsubmit({preventDefault(){}});
+ assert.equal(published,0);assert.match(w.document.querySelector('[data-at-error]').textContent,/celular/i);
+ w.document.querySelector('#at-contato').value=values.contato;
+ await form.onsubmit({preventDefault(){}});
  await new Promise(resolve=>{let n=0;const t=setInterval(()=>{if(w.document.querySelector('#seo-order h2')?.textContent.includes('Pedido publicado')||++n>150){clearInterval(t);resolve();}},20);});
- assert.equal(published,1,w.document.querySelector('#seo-order').textContent);assert.match(w.document.querySelector('#seo-order').textContent,/Pedido publicado/);
+ assert.equal(published,1,w.document.querySelector('#seo-order').textContent);
+ assert.equal(conversionCalls,1,'conversão enviada após publicação confirmada');assert.match(w.document.querySelector('#seo-order').textContent,/Pedido publicado/);
  const rows=(await d.query("select id,descricao,cidade from public.qf_chamados where descricao like '%Minha tomada%'")).rows;assert.equal(rows.length,1);assert.equal(rows[0].cidade,'Santo André');assert.equal(w.DB.state.requests[0].id,rows[0].id,'pedido acessível ao painel pelo registro oficial');
  }finally{await d.close();}
  assert.deepEqual(errors.filter(x=>!x.includes('navigation')&&!x.includes('Not implemented')),[]);
