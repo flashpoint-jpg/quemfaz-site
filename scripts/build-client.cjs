@@ -24,6 +24,8 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+// Atualiza os arquivos de cobertura também nos navegadores que já visitaram a home.
+html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-mapa').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-mapa');
 // Mesma orientação do anúncio na home, inclusive no HTML inicial antes de carregar o app.
 html=html.replace('Publique seu pedido grátis e encontre profissionais da sua região.','Descreva o serviço, publique grátis e compare as propostas que receber.')
  .replace('É grátis. Crie seu acesso com telefone e senha ao publicar.','Descreva o serviço e publique seu pedido grátis.');
