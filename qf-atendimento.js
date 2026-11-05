@@ -212,7 +212,7 @@
     const area=box.querySelector('[data-at-question]');
     // PII stays in memory. Persist only the random idempotency key, never answers.
     let id; try{id=root.sessionStorage.getItem('qf_atendimento_key');}catch(_){}
-    if(!id) {id=root.crypto.randomUUID();try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
+    if(!id) {id=root.crypto.randomUUID?root.crypto.randomUUID():'10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(Number(c)^root.crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16));try{root.sessionStorage.setItem('qf_atendimento_key',id);}catch(_){}}
     let categoryId=params.catId;
     if(!categoryId){try{categoryId=root.sessionStorage.getItem('qf_pending_category');}catch(_){}}
     const restored=!inMemoryDraft&&hasGoogleDraft()?await restoreGoogleDraft():null;
@@ -227,8 +227,8 @@
     a.__cepRequired=true; // CEP consultado para todos os novos pedidos, sem solicitar rua ou número.
     if(cat&&!fromGoogle) {a.servico=cat.nome;a.__servicePrefilled=true;}
     else if(homeService&&!fromGoogle) {a.servico=String(homeService).trim().slice(0,120);a.__servicePrefilled=true;}
-    if(params.problem&&!fromGoogle){
-      a.__problem=String(params.problem).trim().slice(0,1500);
+    function setProblem(problem){
+      a.__problem=String(problem).trim().slice(0,1500);
       // A descrição original é a fonte do pedido; metadados exigidos pelo servidor
       // são preenchidos sem obrigar o cliente a repetir o tipo ou tamanho.
       const qs=questions(a),detail=qs.find(q=>q.key==='detalhes'),scope=qs.find(q=>q.key==='escopo');
@@ -239,6 +239,7 @@
       }
       if(!a.escopo&&scope)a.escopo=scope.choices.find(([id])=>id==='avaliar')?.[0]||scope.choices[0]?.[0];
     }
+    if(params.problem&&!fromGoogle)setProblem(params.problem);
     if(user&&!fromGoogle){a.nome=user.nome||'';a.contato=user.telefone||'';} // OAuth: nunca sobrescrever o telefone salvo no pedido.
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     if(step>1&&!a.__cepValidado){step=1;questionIndex=0;} // Rascunho anterior sem CEP deve validar local antes de publicar.
@@ -257,6 +258,54 @@
       // não aumenta as perguntas obrigatórias nem atrapalha a publicação gratuita.
       const visita=area.querySelector('[data-qf-visita-value]');
       if(visita)a.visita_presencial=visita.value==='sim'?'sim':'nao';
+    };
+    // Entrada dedicada às landing pages; reutiliza a mesma publicação, sessão e idempotência.
+    const drawCompact=()=>{
+      a.tipo=tipoPorOrcamento(a);
+      inMemoryDraft={answers:a,step,questionIndex,categoryId};
+      const select=(key,label,choices,value)=>'<label class="landing-field"><span>'+esc(label)+'</span><select class="input" id="at-'+key+'" required>'+choices.map(([v,t])=>'<option value="'+esc(v)+'"'+(v===value?' selected':'')+'>'+esc(t)+'</option>').join('')+'</select></label>';
+      const input=(key,label,type,placeholder,extra='')=>'<label class="landing-field"><span>'+esc(label)+'</span><input class="input" id="at-'+key+'" type="'+type+'" value="'+esc(a[key]||'')+'" placeholder="'+esc(placeholder)+'" '+extra+' required></label>';
+      area.innerHTML='<form class="landing-request" novalidate><div class="landing-service">✓ '+esc(a.servico)+' selecionado</div><label class="landing-field"><span>O que precisa fazer?</span><textarea class="input" id="at-problem" rows="3" minlength="8" maxlength="1500" placeholder="'+esc(params.placeholder||'Descreva o serviço e o que precisa ser feito')+'" required>'+esc(a.__problem||'')+'</textarea></label><div class="landing-location">'+input('cep','CEP do serviço','text','00000-000','inputmode="numeric" autocomplete="postal-code" maxlength="9"')+input('cidade','Cidade / UF','text','Preenchida pelo CEP','readonly autocomplete="address-level2"')+'</div><p class="landing-hint" data-landing-location role="status">Informe o CEP para confirmar a cidade. Não pedimos rua nem número.</p>'+input('bairro','Bairro','text','Bairro do serviço','autocomplete="address-level3"')+select('urgencia','Para quando?',[['','Selecione o prazo'],['urgente','Urgente'],['hoje','Hoje'],['normal','Quero agendar']],a.urgencia||'')+'<div class="landing-location">'+input('nome','Seu nome','text','Como podemos te chamar?','autocomplete="name" maxlength="120"')+input('contato','Celular com WhatsApp','tel','(11) 99999-9999','autocomplete="tel" maxlength="20"')+'</div><details class="landing-options"><summary>Preferências do pedido</summary>'+(materialsApplicable(a.servico)?select('materiais','Materiais e ferramentas',questions(a).find(q=>q.key==='materiais').choices,a.materiais||'combinar'):'')+select('max_orcamentos','Quantos orçamentos deseja receber?',questions(a).find(q=>q.key==='max_orcamentos').choices,a.max_orcamentos||'4')+select('intencao','Qual é sua intenção?',questions(a).find(q=>q.key==='intencao').choices,a.intencao||'contratar')+'</details><p class="landing-consent">Ao publicar, você autoriza o contato de até <span data-landing-max>'+esc(a.max_orcamentos||'4')+'</span> profissionais pelo Quem Faz. <a href="/privacidade/" target="_blank" rel="noopener">Privacidade</a></p><p role="alert" aria-live="assertive" data-at-error></p><button class="btn btn--primary landing-submit" type="submit" data-at-publish>Publicar pedido grátis <span aria-hidden="true">→</span></button><p class="landing-protection">Seu número não fica exposto publicamente.</p></form>';
+      const form=area.querySelector('form'),cep=area.querySelector('#at-cep'),status=area.querySelector('[data-landing-location]');
+      const readCompact=()=>{
+        for(const key of ['cep','bairro','urgencia','nome','contato','materiais','max_orcamentos','intencao']){const el=area.querySelector('#at-'+key);if(el)a[key]=el.value.trim();}
+        a.__problem=area.querySelector('#at-problem').value.trim();
+        a.aceite_app='sim';a.visita_presencial='nao';
+      };
+      let lookup=null;
+      const locate=async()=>{
+        const digits=cep.value.replace(/\D/g,'');
+        if(a.__cepValidado===digits)return;
+        if(lookup)return lookup;
+        delete a.__cepValidado;delete a.__bairroCep;a.cidade='';a.uf='';
+        area.querySelector('#at-cidade').value='';
+        area.querySelector('#at-bairro').readOnly=false;
+        status.textContent='Consultando CEP…';
+        lookup=(async()=>{
+          const loc=await consultarCep(digits);
+          if(cep.value.replace(/\D/g,'')!==digits)throw Error('O CEP mudou. Confirme o novo CEP antes de publicar.');
+          a.cep=loc.cep;a.__cepValidado=loc.cep;a.cidade=loc.cidade;a.uf=loc.uf;a.__bairroCep=loc.bairro;a.bairro=loc.bairro||a.bairro||'';
+          area.querySelector('#at-cidade').value=loc.cidade+' / '+loc.uf;
+          area.querySelector('#at-bairro').value=a.bairro;
+          area.querySelector('#at-bairro').readOnly=!!loc.bairro;
+          status.textContent='Local confirmado: '+loc.cidade+' / '+loc.uf;
+        })();
+        try{await lookup;}catch(e){status.textContent=e.message;throw e;}finally{lookup=null;}
+      };
+      if(a.__cepValidado){area.querySelector('#at-cidade').value=a.cidade+' / '+a.uf;area.querySelector('#at-bairro').readOnly=!!a.__bairroCep;status.textContent='Local confirmado: '+a.cidade+' / '+a.uf;}
+      cep.addEventListener('blur',()=>{if(cep.value.replace(/\D/g,'').length===8)locate().catch(()=>{});});
+      form.addEventListener('input',()=>{readCompact();track('form_start',null,true);});
+      area.querySelector('#at-max_orcamentos').addEventListener('change',e=>area.querySelector('[data-landing-max]').textContent=e.target.value);
+      form.onsubmit=async e=>{
+        e.preventDefault();if(busy)return;
+        const error=area.querySelector('[data-at-error]'),button=area.querySelector('[data-at-publish]');error.textContent='';readCompact();
+        if(a.__problem.length<8){error.textContent='Descreva o serviço com pelo menos 8 caracteres.';area.querySelector('#at-problem').focus();return;}
+        busy=true;button.disabled=true;button.textContent='Confirmando local…';
+        try{await locate();readCompact();setProblem(a.__problem);a.autorizacao='sim';const invalid=questions(a).find(q=>validate(q,a[q.key],a));if(invalid){error.textContent=invalid.label+': '+validate(invalid,a[invalid.key],a);area.querySelector('#at-'+invalid.key)?.focus();return;}}
+        catch(err){error.textContent=err.message;cep.focus();return;}
+        finally{busy=false;button.disabled=false;button.textContent='Publicar pedido grátis';}
+        await publish();
+      };
     };
     const draw=()=>{
       a.tipo=tipoPorOrcamento(a);delete a.qualificacao;
@@ -405,9 +454,9 @@
             .replace(/localizacao_indisponivel.*/,'Não foi possível localizar sua cidade. Confira cidade e estado e tente novamente.');
           publishError('O pedido ainda não foi publicado. '+reason+' Seus dados continuam preenchidos.');
         }
-        finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);if(button.isConnected){button.disabled=false;button.textContent='Publicar grátis';}}}
+        finally{if(!redirecting){busy=false;area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=false);if(params.compact&&area.querySelector('#at-contato'))area.querySelector('#at-contato').value=a.contato||'';if(button.isConnected){button.disabled=false;button.textContent=params.compact?'Publicar pedido grátis':'Publicar grátis';}}}
     };
-    draw();
+    if(params.compact)drawCompact();else draw();
     // Após OAuth, apresentar a revisão aprovada. Não publicar silenciosamente e nem voltar ao início.
     if(fromGoogle&&reuse&&oldDraft.oauth&&box.isConnected){
       const status=area.querySelector('[data-at-error]');

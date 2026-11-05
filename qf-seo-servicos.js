@@ -14,12 +14,9 @@
   g.QFPedidoHome={start:()=>intro(),isBusy:()=>!!target.querySelector('[data-qf-atendimento]'),published:async(req)=>{
    target.replaceChildren();const h=document.createElement('h2');h.textContent='Pedido publicado!';const p=document.createElement('p');p.textContent='Seu pedido foi registrado. Acompanhe as respostas dos profissionais no Quem Faz.';const a=document.createElement('a');a.className='seo-cta';a.href='/#/cliente/pedido/'+encodeURIComponent(req.id);a.textContent='Acompanhar meu pedido';target.append(h,p,a);
   }};
-  function start(){target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{catId:config.id,embedded:true,service:config.service},null);}
-  function intro(){
-   target.innerHTML='<form id="seo-description"><label for="seo-problem">Descreva o serviço que você precisa</label><textarea id="seo-problem" class="input" rows="4" minlength="8" maxlength="1500" required placeholder="Explique o problema e o que precisa ser feito"></textarea><p role="alert" id="seo-problem-error"></p><button class="btn btn--primary" type="submit">Continuar</button></form>';
-   target.querySelector('form').onsubmit=e=>{e.preventDefault();const problem=target.querySelector('textarea').value.trim();if(problem.length<8){target.querySelector('[role=alert]').textContent='Descreva seu serviço com pelo menos 8 caracteres.';return;}target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{catId:config.id,embedded:true,service:config.service,problem},null);};
-  }
-  if(g.QFAtendimento.hasGoogleDraft?.()||g.QFAtendimento.hasActiveDraft?.())start();else intro();
+  function intro(){start();}
+  function start(){target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{catId:config.id,embedded:true,compact:true,service:config.service,placeholder:config.placeholder},null);}
+  start();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();
 })(window);
