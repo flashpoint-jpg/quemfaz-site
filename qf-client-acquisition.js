@@ -187,7 +187,7 @@
         content_name: 'QuemFaz Pedido de Serviço', content_category: category || 'servico', role: 'cliente'
       }, { eventID: 'qf_pedido_' + req.id });
     } catch (_) {}
-    try { if (typeof global.qfGoogleLead === 'function') global.qfGoogleLead(req.id); } catch (_) {}
+    // Google Ads é enviado por QFConversao, para a conta nova e com consentimento.
     // GA4 e Microsoft Ads: mesmo momento e mesma regra (pedido confirmado no Supabase, uma vez por pedido).
     adEvent('pedido_publicado', { request_id: req.id, categoria: category });
   }
