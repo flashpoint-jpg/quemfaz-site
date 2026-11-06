@@ -13,7 +13,8 @@
   // IDs reais: preencha somente com valores tirados dos painéis. Vazio = plataforma desligada.
   var CONFIG = global.QF_TRACKING_CONFIG = Object.assign({
     ga4: '',                 // ex.: 'G-XXXXXXXXXX' (Google Analytics 4 → Administrador → Fluxos de dados)
-    googleAds: 'AW-18273159663', // já instalado no site (tag QF_GOOGLE_ADS_V1)
+    googleAds: 'AW-18559499124', // conta Quem Faz Serviços 253-898-5891
+    googleAdsLabel: 'k4GCCL3koLMdEPT27ZFF', // somente pedido confirmado
     uet: '343279366'                  // ex.: '343XXXXX' (Microsoft Advertising → Ferramentas → Tags UET)
   }, global.QF_TRACKING_CONFIG || {});
 
@@ -53,7 +54,23 @@
   }
 
   // ---------- Carregamento das tags opcionais (somente com ID real e consentimento) ----------
-  var carregado = { ga4: false, uet: false };
+  var carregado = { googleAds: false, ga4: false, uet: false };
+  function carregarGoogleAds() {
+    if (carregado.googleAds || !/^AW-\d+$/.test(CONFIG.googleAds)) return;
+    global.dataLayer = global.dataLayer || [];
+    if (typeof global.gtag !== 'function') {
+      global.gtag = function () { global.dataLayer.push(arguments); };
+      global.gtag('js', new Date());
+    }
+    if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+      var tag = document.createElement('script');
+      tag.async = true;
+      tag.src = 'https://www.googletagmanager.com/gtag/js?id=' + CONFIG.googleAds;
+      (document.head || document.documentElement).appendChild(tag);
+    }
+    global.gtag('config', CONFIG.googleAds, { send_page_view: false });
+    carregado.googleAds = true;
+  }
   function carregarGa4() {
     if (carregado.ga4 || !/^G-[A-Z0-9]{4,20}$/.test(CONFIG.ga4) || typeof global.gtag !== 'function') return;
     carregado.ga4 = true;
@@ -86,7 +103,7 @@
     } catch (_) {}
     try { if (typeof global.fbq === 'function') global.fbq('consent', g === 'granted' ? 'grant' : 'revoke'); } catch (_) {}
     try { if (global.uetq && global.uetq.push) global.uetq.push('consent', 'update', { ad_storage: g }); } catch (_) {}
-    if (g === 'granted') { carregarGa4(); carregarUet(); }
+    if (g === 'granted') { carregarGoogleAds(); carregarGa4(); carregarUet(); }
   }
 
   // ---------- Envio dos eventos ----------
@@ -103,6 +120,16 @@
       global.dataLayer.push(Object.assign({ event: nome, qf_consentimento: consentimento() }, params, idPedido ? { transaction_id: idPedido } : {}));
     } catch (_) {}
     if (!permitido()) return true;
+    // Google Ads: apenas publicação confirmada; cliques e etapas nunca são conversão.
+    if (nome === 'pedido_publicado' && /^[A-Za-z0-9_-]+$/.test(CONFIG.googleAdsLabel || '')) {
+      carregarGoogleAds();
+      if (carregado.googleAds && typeof global.gtag === 'function') {
+        try { global.gtag('event', 'conversion', {
+          send_to: CONFIG.googleAds + '/' + CONFIG.googleAdsLabel,
+          transaction_id: idPedido, value: 1, currency: 'BRL'
+        }); } catch (_) {}
+      }
+    }
     // Google Analytics 4 (evento recomendado de lead no pedido publicado).
     if (carregado.ga4 && typeof global.gtag === 'function') {
       try {
@@ -204,7 +231,7 @@
 
   global.QFConversao = { evento: evento, consentimento: consentimento, escolher: escolher, config: CONFIG };
 
-  if (permitido()) { carregarGa4(); carregarUet(); }
+  if (permitido()) { carregarGoogleAds(); carregarGa4(); carregarUet(); }
   global.QFConversao.mostrarAviso = mostrarAviso;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', agendarAviso);
   else agendarAviso();
