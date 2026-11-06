@@ -8695,14 +8695,16 @@ alt=""></noscript>
       try {
         const v = JSON.parse(localStorage.getItem(KEY) || 'null');
         if (!v || typeof v !== 'object') return null;
-        if (v.em && Date.now() - Number(v.em) > VALE_MS) { limpar(); return null; }
+        // A cobrança pode estar paga mesmo dias depois. Só o servidor decide seu estado.
+        if (!v.pag?.id && v.em && Date.now() - Number(v.em) > VALE_MS) { limpar(); return null; }
         return v;
       } catch (_) { return null; }
     }
     function salvar(v, senha) {
       try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (_) {
         // Sem espaço para a foto: guarda pelo menos o pagamento.
-        try { localStorage.setItem(KEY, JSON.stringify({ em: v.em, plano: v.plano, pag: v.pag })); } catch (__) {}
+        try { localStorage.setItem(KEY, JSON.stringify({ em: v.em, plano: v.plano, pag: v.pag, manual: v.manual, incompleto: true,
+          dados: v.dados?.email ? { email: v.dados.email } : null })); } catch (__) {}
       }
       try { if (senha) sessionStorage.setItem(KEY_SENHA, senha); } catch (_) {}
     }
@@ -8728,7 +8730,20 @@ alt=""></noscript>
         return true;
       } catch (_) { return false; } finally { tentando = false; }
     }
-    return { ler: ler, salvar: salvar, senha: senha, limpar: limpar, tentar: tentar };
+    async function retomarLogin(email, novaSenha) {
+      const v = ler();
+      if (!v?.pag?.id || !v.pag.segredo || !v.dados?.email ||
+          String(v.dados.email).trim().toLowerCase() !== String(email || '').trim().toLowerCase()) return false;
+      try {
+        const st = await global.QFCloud.preCadastroStatus(v.pag.id, v.pag.segredo);
+        if (!st?.ok || st.status !== 'aprovado' || st.resgatado) return false;
+        salvar(v, novaSenha);
+        PU.toast('Pagamento confirmado. Vamos concluir seu cadastro sem outro Pix.', 'success');
+        global.navigate('/auth/profissional/cadastro', true);
+        return true;
+      } catch (_) { return false; }
+    }
+    return { ler: ler, salvar: salvar, senha: senha, limpar: limpar, tentar: tentar, retomarLogin: retomarLogin };
   })();
   global.QFPreCadastro = QFPreCadastro;
 
@@ -9750,6 +9765,15 @@ alt=""></noscript>
       });
       const form = content.querySelector('#login-form');
       const forgot = content.querySelector('#qf-forgot-password');
+      if (params.role === 'profissional' && QFPreCadastro.ler()?.pag?.id) {
+        const aviso = document.createElement('div');
+        aviso.className = 'card stack--sm';
+        aviso.innerHTML = '<strong>Seu cadastro ainda está em andamento</strong><span class="text--sm">Se você já pagou, continue para conferir o Pix e concluir sua conta.</span><button class="btn btn--primary" type="button" data-retomar-cadastro>Continuar meu cadastro</button>';
+        form.before(aviso);
+        aviso.querySelector('button').addEventListener('click', function () {
+          global.navigate('/auth/profissional/cadastro', true);
+        });
+      }
       if (forgot) forgot.addEventListener('click', function () {
         const emailInput = form && form.querySelector('[name="email"]');
         openPasswordRecovery(emailInput ? emailInput.value : '');
@@ -9768,6 +9792,8 @@ alt=""></noscript>
             : (global.QFCloud && global.QFCloud.enabled)
               ? await global.QFCloud.signIn(params.role, fd.get('email').trim(), fd.get('senha'))
               : DB.login(params.role, fd.get('email').trim(), fd.get('senha'));
+          if (!res.ok && params.role === 'profissional' &&
+              await QFPreCadastro.retomarLogin(fd.get('email'), fd.get('senha'))) return;
           if (!res.ok) { PU.toast(res.error || 'Não foi possível entrar.', 'danger'); return; }
           if (res.mustChangePassword && global.QFPasswordRecovery && global.QFPasswordRecovery.openForcedPassword) {
             try { sessionStorage.setItem('qf_force_password_change', '1'); } catch (_) {}
@@ -10767,14 +10793,25 @@ alt=""></noscript>
         pagArea.innerHTML = '<div class="card stack--sm" style="text-align:center;"><div class="icon-tile icon-tile--lg icon-tile--orange" style="margin:0 auto;">' + icon('alertTriangle') + '</div><div class="text--strong">' + esc(msg) + '</div></div>' + (extra || '') +
           '<button class="btn btn--outline" type="button" data-pag-outra>Escolher outra forma de pagamento</button>';
       }
-      function abrirPagamento(dados, pl, indicacao) {
+      async function abrirPagamento(dados, pl, indicacao) {
         const semSenha = Object.assign({}, dados); delete semSenha.senha;
         const antigo = QFPreCadastro.ler();
+        // Um Pix aprovado deve ser aproveitado mesmo se outra opção ficou marcada ao refazer.
+        if (antigo?.pag?.id && antigo.dados?.email === dados.email) {
+          const st = await global.QFCloud.preCadastroStatus(antigo.pag.id, antigo.pag.segredo);
+          if (!st?.ok) throw new Error('Não foi possível conferir seu Pix anterior. Tente novamente antes de gerar outro.');
+          if (st.status === 'aprovado') {
+            const pago = QF_CAD_PLANOS.find(function (x) { return x.id === st.plano; });
+            if (!pago || st.resgatado) throw new Error('Este pagamento já possui vínculo ou precisa de suporte. Não geramos outro Pix.');
+            pl = pago;
+            antigo.incompleto = true;
+          }
+        }
         // Mesmo e-mail e mesmo plano com cobrança já aberta: continua nela em vez de abrir outra.
         // Também vale para quem pagou e precisou preencher o cadastro de novo (aí o plano é o que foi pago).
         const reusa = !!(antigo && antigo.pag && antigo.dados &&
           antigo.plano === pl.id && antigo.dados.email === dados.email &&
-          (antigo.manual === true || String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
+          (antigo.manual === true || antigo.incompleto === true || String(antigo.dados.cpf || antigo.dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase() ===
             String(dados.cpf || dados.cnpj || '').replace(/[^A-Za-z0-9]/g,'').toUpperCase()));
         pre = { em: reusa ? antigo.em : Date.now(), plano: reusa ? antigo.plano : pl.id, planoEscolhido: pl.id, indicacao: String(indicacao || ''), dados: semSenha, pag: reusa ? antigo.pag : null };
         preSenha = String(dados.senha || '');
@@ -10850,6 +10887,18 @@ alt=""></noscript>
           if (seguir) agendarConsulta();
         }
       }
+      // No celular, o navegador suspende os timers enquanto o titular paga no banco.
+      function voltouDoBanco() {
+        if (!naTela()) {
+          document.removeEventListener('visibilitychange', voltouDoBanco);
+          global.removeEventListener('pageshow', voltouDoBanco);
+          return;
+        }
+        if (document.visibilityState === 'visible' && pre?.pag && stepAtual === 6 && !preOcupado &&
+            !pagArea.querySelector('[data-pag-criar-conta],[data-pag-refazer]')) consultarPagamento(false);
+      }
+      document.addEventListener('visibilitychange', voltouDoBanco);
+      global.addEventListener('pageshow', voltouDoBanco);
       function renderPedirSenha() {
         pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Crie a senha da sua conta <strong>' + esc(pre.dados.email) + '</strong> para terminar.</div></div>' +
           '<label class="field"><span class="field__label">Senha</span><input class="input" type="password" data-pag-senha minlength="6" autocomplete="new-password" placeholder="Mínimo 6 caracteres"></label>' +
@@ -10932,7 +10981,13 @@ alt=""></noscript>
           global.navigate(sessionStorage.getItem('qf_pending_ad_draft') ? '/profissional/anuncie' : '/profissional/carteira', true);
           return;
         }
-        if (alvo.hasAttribute('data-pag-refazer')) { pre.dados = null; preGuardar(); goStep(1); return; }
+        if (alvo.hasAttribute('data-pag-refazer')) {
+          const email = pre.dados?.email || '';
+          pre.dados = { email: email }; pre.incompleto = true; preGuardar();
+          const campo = form.querySelector('[name="email"]');
+          if (campo && email) { campo.value = email; campo.readOnly = true; }
+          goStep(1); return;
+        }
         if (!pre) return;
         if (alvo.hasAttribute('data-pag-metodo')) {
           const metodo = alvo.getAttribute('data-pag-metodo');
@@ -11070,7 +11125,7 @@ alt=""></noscript>
             throw new Error('Escolha um plano válido antes de continuar.');
           }
           localStorage.removeItem('qf_livre_teste_cadastro');
-          abrirPagamento(dados, planoPago, fd.get('indicacao'));
+          await abrirPagamento(dados, planoPago, fd.get('indicacao'));
         } catch (err) {
           console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
           PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
