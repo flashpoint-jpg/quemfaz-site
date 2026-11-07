@@ -10854,6 +10854,27 @@ alt=""></noscript>
           }
           pre.pag = { id: r.id, segredo: r.segredo, metodo: metodo, valor: Number(r.valor_centavos || 0), pix: r.pix_copy_paste || '', qr: r.qr_image || '', url: r.checkout_url || '' };
           preGuardar();
+          // Funil Meta: formulário concluído + cobrança criada = checkout iniciado.
+          // Não libera acesso e não significa pagamento; serve para a Meta otimizar pessoas que realmente chegam ao Pix.
+          try {
+            const idCheckout = String(pre.pag.id || '');
+            const flagCheckout = 'qf_ic_sent:' + idCheckout;
+            const consentOk = !(global.QFConversao && typeof global.QFConversao.consentimento === 'function') || global.QFConversao.consentimento() === 'granted';
+            if (idCheckout && consentOk && !/[?&]demo=1(&|$)/.test(location.search || '') && typeof global.fbq === 'function' && !localStorage.getItem(flagCheckout)) {
+              global.fbq('track', 'InitiateCheckout', {
+                value: Math.max(0, Number(pre.pag.valor || 0)) / 100,
+                currency: 'BRL',
+                content_name: 'Cadastro profissional - ' + String(pre.plano || ''),
+                content_category: 'profissional',
+                num_items: 1
+              }, { eventID: 'qf-checkout-' + idCheckout });
+              localStorage.setItem(flagCheckout, '1');
+              try {
+                global.dataLayer = global.dataLayer || [];
+                global.dataLayer.push({ event: 'qf_profissional_checkout', transaction_id: idCheckout, value: Math.max(0, Number(pre.pag.valor || 0)) / 100, currency: 'BRL' });
+              } catch (_) {}
+            }
+          } catch (_) {}
           renderAguardando();
           preInicio = Date.now();
           agendarConsulta();
@@ -10923,6 +10944,28 @@ alt=""></noscript>
             '<button class="btn btn--outline" type="button" data-pag-ja-paguei>Já paguei · conferir Pix</button>';
           return;
         }
+        // Funil Meta: Purchase só depois da confirmação bancária lida do servidor.
+        // O ID da cobrança deduplica a venda; abrir a tela novamente não conta outra compra.
+        try {
+          const idCompra = String(pre.pag.id || '');
+          const flagCompra = 'qf_pre_purchase_sent:' + idCompra;
+          const consentOk = !(global.QFConversao && typeof global.QFConversao.consentimento === 'function') || global.QFConversao.consentimento() === 'granted';
+          if (idCompra && consentOk && !/[?&]demo=1(&|$)/.test(location.search || '') && typeof global.fbq === 'function' && !localStorage.getItem(flagCompra)) {
+            global.fbq('track', 'Purchase', {
+              value: Math.max(0, Number(pre.pag.valor || 0)) / 100,
+              currency: 'BRL',
+              content_name: 'Ativação profissional - ' + String(pre.plano || ''),
+              content_ids: [String(pre.plano || 'profissional')],
+              content_type: 'product',
+              num_items: 1
+            }, { eventID: 'qf-pre-purchase-' + idCompra });
+            localStorage.setItem(flagCompra, '1');
+            try {
+              global.dataLayer = global.dataLayer || [];
+              global.dataLayer.push({ event: 'qf_profissional_purchase', transaction_id: idCompra, value: Math.max(0, Number(pre.pag.valor || 0)) / 100, currency: 'BRL' });
+            } catch (_) {}
+          }
+        } catch (_) {}
         if (!pre.dados || !pre.dados.email || !/^data:image\//i.test(String(pre.dados.selfieData || ''))) {
           // Sem os dados do cadastro neste aparelho: o pagamento continua valendo para a conta em que a pessoa entrar.
           pagArea.innerHTML = '<div class="card stack--sm" style="background:var(--success-100);border:none;"><div class="text--strong" style="color:var(--success-600);">' + icon('checkCircle') + ' Pagamento confirmado!</div><div class="text--sm">Preencha o cadastro de novo para criar a conta. Você não paga outra vez: o plano entra assim que a conta for criada.</div></div>' +
