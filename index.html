@@ -10868,6 +10868,15 @@ alt=""></noscript>
                 content_category: 'profissional',
                 num_items: 1
               }, { eventID: 'qf-checkout-' + idCheckout });
+              // A campanha Meta atual usa objetivo Leads. Nesse objetivo a API não aceita
+              // INITIATED_CHECKOUT como evento de otimização; portanto o mesmo marco real
+              // (Pix criado) também envia Lead, para a campanha aprender quem chega ao pagamento.
+              global.fbq('track', 'Lead', {
+                value: Math.max(0, Number(pre.pag.valor || 0)) / 100,
+                currency: 'BRL',
+                content_name: 'Cadastro profissional - Pix gerado',
+                content_category: 'profissional'
+              }, { eventID: 'qf-lead-pix-' + idCheckout });
               localStorage.setItem(flagCheckout, '1');
               try {
                 global.dataLayer = global.dataLayer || [];
