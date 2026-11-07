@@ -6991,9 +6991,10 @@ alt=""></noscript>
     const cityUf = String(data.uf || (city ? city.uf : '') || '').trim().toUpperCase() || null;
     // Referência do Pix confirmado. O gatilho no banco verificará o pagamento
     // e o e-mail, em vez de confiar no papel enviado pelo navegador.
+    const cadastroExploracao = role === 'profissional' ? data.cadastroExploracaoToken : '';
     let prePagoMeta = null;
     const convite24 = role === 'profissional' && global.QFConvite24h ? global.QFConvite24h.token() : '';
-    if (role === 'profissional') {
+    if (role === 'profissional' && !cadastroExploracao) {
       try {
         const guardado = JSON.parse(localStorage.getItem('qf_pre_cadastro') || 'null');
         if (guardado?.pag?.id && guardado?.pag?.segredo) prePagoMeta = guardado.pag;
@@ -7006,6 +7007,7 @@ alt=""></noscript>
         qf_pre_cadastro_segredo:prePagoMeta.segredo
       } : {}),
       ...(convite24 ? {qf_convite_24h:convite24} : {}),
+      ...(cadastroExploracao ? {qf_cadastro_exploracao_token: cadastroExploracao} : {}),
       qf_role: role,
       qf_nome: data.nome,
       qf_telefone: data.telefone || '',
@@ -9413,7 +9415,12 @@ alt=""></noscript>
           '</div>' +
           // V11.49: etapa 5 — escolha do plano. V11.62: a conta é criada na hora em qualquer plano; cada plano mostra o seu aviso.
           '<div class="qf-step stack" data-step="5" hidden>' +
-          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha seu plano</div><div class="text--sm text--secondary">Escolha um plano. Seu cadastro profissional só será ativado depois da confirmação bancária.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha como começar</div><div class="text--sm text--secondary">Crie sua conta grátis para conhecer o painel ou escolha uma opção paga para começar com crédito.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<div class="card stack--sm" data-cadastro-exploracao>' +
+            '<div class="text--strong">Cadastre-se e conheça a plataforma</div>' +
+            '<p class="text--sm text--secondary">Cadastro gratuito. Veja o painel e as oportunidades. Adicione saldo na carteira quando quiser desbloquear um pedido.</p>' +
+            '<button class="btn btn--outline" type="submit" data-cad-explorar>Criar conta grátis</button>' +
+          '</div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
               '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'avulso' ? ' checked' : '') + '>' +
@@ -10708,7 +10715,7 @@ alt=""></noscript>
         if (nota) {
           nota.classList.add('qf-cad-planos__nota--aviso');
           nota.textContent = pl.id === 'avulso'
-            ? 'O Pix de R$ 14,99 vira saldo integral para desbloquear. Sem pagar, não há cadastro ativo.'
+            ? 'O Pix de R$ 14,99 vira saldo integral para desbloquear pedidos após a confirmação bancária.'
             : 'Pagamento único de '+pl.preco+' por 30 dias, sem taxa de entrada e sem comissão. A cota só é ativada após Pix confirmado.';
         }
       }
@@ -10723,6 +10730,7 @@ alt=""></noscript>
         const t=cab.querySelector('.h2'), d=cab.querySelector('.text--sm');
         if(t)t.textContent='Seu convite individual';
         if(d)d.textContent='24 horas de acesso sem cobrança automática. Exclusivo para o e-mail convidado.';
+        tela.querySelector('[data-cadastro-exploracao]').hidden=true;
         const plans=tela.querySelector('.qf-cad-planos');if(plans)plans.style.display='none';
         tela.querySelectorAll('p').forEach(function(p){
           if(p.textContent.indexOf('Avulso: R$ 14,99')!==-1||p.classList.contains('qf-cad-planos__exigencia'))p.hidden=true;
@@ -11116,14 +11124,17 @@ alt=""></noscript>
         consultarPagamento(false);
       })();
 
+      let enviandoCadastro = false;
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        if (enviandoCadastro) return;
         // Pagamento e conta criada não reenviam o formulário (Enter no campo da senha = criar a conta).
         if (stepAtual > 5) { const cc = form.querySelector('[data-pag-criar-conta]'); if (stepAtual === 6 && cc) cc.click(); return; }
         // Enter no teclado numa etapa do meio = Continuar.
         if (stepAtual < 5) { avancar(); return; }
         for (let n = 1; n <= 3; n++) { if (!validarEtapa(n)) { goStep(n); return; } }
         if (!(await confirmarCidade())) { goStep(3); return; }
+        if (enviandoCadastro) return;
         const fd = new FormData(form);
         if (!selected.length && chipsWrap.qfAutoPick) chipsWrap.qfAutoPick();
         if (!selected.length) {
@@ -11159,13 +11170,32 @@ alt=""></noscript>
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
           selfieData: selfieData
         };
-        const btn = form.querySelector('button[type="submit"]');
+        const cadastroExploracao = !conviteToken && !!e.submitter?.hasAttribute('data-cad-explorar');
+        const botoesCadastro = form.querySelectorAll('[data-cad-criar], [data-cad-explorar]');
         const planoEscolhido = String(fd.get('planoEscolhido') || '');
         const planoPago = QF_CAD_PLANOS.find(function (x) { return x.id === planoEscolhido; });
-        if (btn) btn.disabled = true;
+        enviandoCadastro = true;
+        botoesCadastro.forEach(function (b) { b.disabled = true; });
         try {
           if (!(global.QFCloud && global.QFCloud.enabled)) {
-            throw new Error('Conexão de pagamentos indisponível. Não é possível ativar cadastro sem pagamento.');
+            throw new Error('Conexão indisponível. Tente novamente em instantes.');
+          }
+          if (cadastroExploracao) {
+            const preparo = await global.QFCloud.client.rpc('qf_preparar_cadastro_exploracao', {
+              p_email: dados.email, p_tipo: tipoPessoa, p_documento: documento, p_telefone: dados.telefone
+            });
+            if (preparo.error) throw Error('Não foi possível conferir seus dados. Tente novamente.');
+            if (!preparo.data?.ok || !preparo.data.token) throw Error('Confira seu CPF, CNPJ e telefone. Se já tiver cadastro ou um Pix em aberto, entre na sua conta ou fale com o suporte.');
+            const r = await global.QFCloud.signUp('profissional', {...dados, cadastroExploracaoToken: preparo.data.token});
+            if (!r?.ok) throw Error(r?.error || 'Não foi possível criar a conta.');
+            if (r.needsConfirmation) {
+              PU.toast('Confirme seu e-mail e entre para conhecer o painel.', 'success');
+              global.navigate('/auth/profissional/login', true);
+            } else {
+              PU.toast('Conta gratuita criada. Bem-vindo ao Quem Faz!', 'success');
+              global.navigate('/profissional/home', true);
+            }
+            return;
           }
           if(conviteToken){
             if(!conviteValido||dados.email!==conviteEmail)throw Error('Convite inválido ou e-mail diferente do destinatário.');
@@ -11188,7 +11218,8 @@ alt=""></noscript>
           console.warn('QuemFaz: cadastro profissional não concluído', err && err.message);
           PU.toast((err && err.message) || 'Falha de conexão ao criar conta. Verifique a internet e tente novamente.', 'danger');
         } finally {
-          if (btn) btn.disabled = false;
+          enviandoCadastro = false;
+          botoesCadastro.forEach(function (b) { b.disabled = false; });
         }
       });
     }
@@ -15955,7 +15986,7 @@ alt=""></noscript>
 
 /* QuemFaz V10.2 — versão do app, atualização obrigatória, instalar app e integração com o Service Worker. */
 (function (global) {
-  const APP_VERSION = '12.3.2';
+  const APP_VERSION = '12.3.4';
   const PU = global.PU, icon = global.icon;
 
   // ---------------- Plataforma ----------------
