@@ -3,7 +3,7 @@
    - HTML/JS sempre buscados na rede primeiro (sem cache HTTP) para não prender versão antiga.
    - Cache só é usado quando o aparelho está sem internet.
    - Nova versão só assume o controle quando o app pede (SKIP_WAITING) ou na próxima abertura. */
-const SW_VERSION = '12.3.2';
+const SW_VERSION = '12.3.3';
 const CACHE = 'quemfaz-' + SW_VERSION;
 const CORE = ['/assets/notifications/quemfaz-badge-96.png?v=1','./qf-acompanhamento.js?v=livre-seguro-20261026', './acompanhar-pedido.html', './qf-livre.js?v=cadastro-pago-ci-20261028','./qf-atendimento.js?v=codigo-visivel-20261024', './qf-chat-contratacao.js?v=livre-seguro-20261026', './qf-admin-commercial.js?v=1', './qf-admin-monitoramento.js?v=1', './qf-admin-devolucao.js?v=1', './qf-admin-push-diagnostico.js?v=1', './qf-recharge-return.js?v=1', './assets/qf-logo-20261013.webp', './assets/qf-logo-branco-20261014.webp', './icon-192.png?v=20261013', './icon-512.png?v=20261013', './qf-carteirinha.js?v=11.84.2', './carteirinha.html', './avaliar.html', './vendor/supabase-2.117.2.js', './qf-client-acquisition.js?v=11.96', './qf-conversao.js?v=11.96', './qf-admin-acquisition.js?v=11.75.1', './assets/qf-approved-1.webp', './assets/qf-approved-2.webp', './', './index.html', './admin.html', './manifest.webmanifest', './admin-manifest.webmanifest', './qf-recrutamento.js?v=11.33.1', './qf-recrutamento.css?v=11.33.1', './icon.svg', './quemfaz.png', './quemfaz_chamado.mp3'];
 
@@ -63,6 +63,31 @@ function qfTesteChegou(data) {
   }).catch(() => null);
 }
 
+// V12.3.3: compatibilidade de notificação Web.
+async function qfShowNotification(title, options) {
+  try {
+    await self.registration.showNotification(title, options);
+    return true;
+  } catch (err) {
+    // Se o navegador rejeitar alguma opção opcional, tenta de novo com o mínimo seguro.
+    console.warn('QuemFaz showNotification: usando fallback compatível', err && (err.name || err.message));
+    const safe = {
+      body: options && options.body ? options.body : 'Abra o QuemFaz para ver os detalhes.',
+      icon: options && options.icon ? options.icon : './icon-192.png?v=20261013',
+      badge: options && options.badge ? options.badge : '/assets/notifications/quemfaz-badge-96.png?v=1',
+      tag: options && options.tag ? options.tag : 'quemfaz-alerta',
+      data: options && options.data ? options.data : {}
+    };
+    try {
+      await self.registration.showNotification(title, safe);
+      return true;
+    } catch (fallbackErr) {
+      console.error('QuemFaz showNotification falhou', fallbackErr);
+      return false;
+    }
+  }
+}
+
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (_) {
@@ -80,7 +105,8 @@ self.addEventListener('push', event => {
     renotify: true,
     requireInteraction: strong,
     silent: false,
-    vibrate: strong ? [400, 150, 400, 150, 600, 150, 400] : [200, 100, 200],
+    // Chrome está removendo/alterando opções antigas de vibração em notificações Web.
+    // Não deixar uma opção opcional impedir a exibição inteira do aviso.
     timestamp: Date.now(),
     data: {
       url: data.url || './index.html#/',
@@ -100,7 +126,9 @@ self.addEventListener('push', event => {
     // V11.16.33: mensagem da conversa que já está aberta e visível não vira notificação — o chat mostra na hora.
     const chatHash = String(data.tag || '').indexOf('qf-chat-') === 0 ? (String(data.url || '').split('#')[1] || '').split('?')[0] : '';
     const inChat = !!chatHash && list.some(c => c.visibilityState === 'visible' && (String(c.url || '').split('#')[1] || '').split('?')[0] === chatHash);
-    if (!inChat) await self.registration.showNotification(data.title || 'QuemFaz', options);
+    if (!inChat) await qfShowNotification(data.title || 'QuemFaz', options);
+    // Avisa janelas abertas mesmo se o sistema operacional bloquear a faixa:
+    // o painel/app ainda atualiza a tela e toca o alerta quando estiver aberto.
     // Avisa janelas abertas para atualizarem a tela e tocarem o som do app.
     list.forEach(c => c.postMessage({ type: 'QF_PUSH', payload: data }));
     await chegou;

@@ -8312,6 +8312,12 @@ alt=""></noscript>
     if (!supported()) throw new Error('Notificações em segundo plano exigem o app online instalado por HTTPS.');
     let reg = await navigator.serviceWorker.getRegistration();
     if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
+    // V12.3.3: força a busca da versão nova ao abrir/reconectar.
+    // Evita celular e computador ficarem presos num Service Worker antigo mesmo com token válido.
+    try {
+      const updated = await reg.update();
+      if (updated && updated.waiting) updated.waiting.postMessage({ type: 'SKIP_WAITING' });
+    } catch (_) {}
     await navigator.serviceWorker.ready;
     return reg;
   }
