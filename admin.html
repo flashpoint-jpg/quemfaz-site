@@ -3151,6 +3151,39 @@ button.qf-adm-num__item:focus-visible{outline:2px solid var(--navy-700);outline-
   }
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(function () {});
+    // V12.3.3: o SW também avisa as abas abertas. O painel antigo não escutava QF_PUSH,
+    // então um push aceito pelo navegador podia não dar nenhum sinal dentro do admin.
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      const msg = e && e.data || {};
+      if (msg.type !== 'QF_PUSH') return;
+      const payload = msg.payload || {};
+      const tag = String(payload.tag || '');
+      const now = Date.now();
+      try {
+        const last = JSON.parse(sessionStorage.getItem('qf_admin_last_push') || 'null');
+        if (last && last.tag === tag && now - Number(last.at || 0) < 5000) return;
+        sessionStorage.setItem('qf_admin_last_push', JSON.stringify({ tag: tag, at: now }));
+      } catch (_) {}
+      const titulo = String(payload.title || 'Novo aviso no Quem Faz');
+      const corpo = String(payload.body || '');
+      try { PU.toast(titulo + (corpo ? ' — ' + corpo : ''), 'success'); } catch (_) {}
+      try { if (navigator.vibrate) navigator.vibrate([250, 100, 350]); } catch (_) {}
+      // Beep curto quando o navegador já permitiu áudio após alguma interação.
+      try {
+        const AC = global.AudioContext || global.webkitAudioContext;
+        if (AC) {
+          const ctx = new AC();
+          if (ctx.state === 'running') {
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.frequency.value = 880; gain.gain.value = 0.08;
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.18);
+          }
+          setTimeout(function () { try { ctx.close(); } catch (_) {} }, 400);
+        }
+      } catch (_) {}
+      try { refresh(); } catch (_) {}
+    });
   }
   global.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
