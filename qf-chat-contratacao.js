@@ -200,3 +200,34 @@
  install();
  if(g.document?.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
 })(window);
+
+/* Contratação simples para qualquer chat: só o cliente dono pode encerrar a busca. */
+(function(g){
+'use strict';
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const errors={somente_cliente:'Somente o cliente pode confirmar a contratação.',sem_permissao:'Você não tem acesso a este pedido.',outro_profissional_contratado:'O cliente já contratou outro profissional.',pedido_encerrado:'Este pedido já foi encerrado.',nao_autenticado:'Entre na sua conta para confirmar.'};
+function mount(root,params,user,role){
+ if(!root||!g.QFCloud?.client||!user?.id||root.querySelector('[data-qf-hired]'))return;
+ const prof=role==='cliente'?params.profId:user.id;if(!prof||!params.id)return;
+ const box=g.document.createElement('section');box.dataset.qfHired='';box.className='card';box.style.cssText='padding:16px;margin:12px 0;border:1px solid #c7dcf6;border-radius:14px;background:#f4f8ff;color:#173b66';
+ box.innerHTML='<strong>Contratação do profissional</strong><p role="status">Consultando contratação…</p>';
+ const composer=root.querySelector('[data-qf-chat-form]');if(composer)composer.after(box);else root.prepend(box);
+ let busy=false,timer;
+ async function update(confirm=false){
+  if(busy||!box.isConnected)return;busy=true;clearTimeout(timer);
+  try{
+   const r=await g.QFCloud.client.rpc('qf_chat_confirmar_contratacao',{p_chamado_id:params.id,p_profissional_id:prof,p_confirmar:confirm});
+   if(r.error||!r.data?.ok)throw Error(errors[r.data?.reason]||r.error?.message||'Não foi possível consultar a contratação.');
+   const d=r.data;
+   if(d.encerrado){box.innerHTML='<strong>'+ (d.contratado?'Contratação registrada':'Pedido encerrado')+'</strong><p role="status" style="margin:8px 0 0">'+(d.contratado?'O cliente contratou este profissional.':'Este pedido já foi encerrado ou contratado com outro profissional.')+' Não são permitidos novos desbloqueios. A contratação não confirma conclusão nem pagamento.</p>';}
+   else if(role==='cliente'&&d.pode_contratar){box.innerHTML='<strong>Já escolheu este profissional?</strong><p style="margin:8px 0">Se você já combinou a contratação com <b>'+esc(d.profissional_nome||'este profissional')+'</b>, confirme abaixo para encerrar a busca e impedir novos desbloqueios.</p><button type="button" class="btn btn--primary" data-qf-hire>Já contratei este profissional</button><p role="status" style="margin:8px 0 0;font-size:13px">Confirme somente após combinar com o profissional.</p>';box.querySelector('[data-qf-hire]').onclick=()=>{clearTimeout(timer);box.innerHTML='<strong>Confirmar contratação de '+esc(d.profissional_nome||'este profissional')+'?</strong><p>O pedido deixará de aceitar novos desbloqueios. Isto não confirma que o serviço foi concluído nem que houve pagamento.</p><div class="btn-row"><button type="button" class="btn btn--primary" data-qf-hire-confirm>Confirmar contratação</button><button type="button" class="btn btn--outline" data-qf-hire-back>Voltar</button></div><p role="status"></p>';box.querySelector('[data-qf-hire-confirm]').onclick=()=>update(true);box.querySelector('[data-qf-hire-back]').onclick=()=>update();};}
+   else box.innerHTML='<strong>Aguardando escolha do cliente</strong><p role="status" style="margin:8px 0 0">Quando o cliente confirmar a contratação no chat, o pedido deixará de aceitar novos desbloqueios.</p>';
+   if(confirm){g.dispatchEvent(new Event('qf-chat-refresh'));try{await g.QFCloud.syncForCurrentSession?.(true);}catch(_){}}
+  }catch(e){box.innerHTML='<strong>Contratação do profissional</strong><p role="status">'+esc(e.message)+'</p><button type="button" class="btn btn--outline" data-qf-hire-retry>Tentar novamente</button>';box.querySelector('[data-qf-hire-retry]').onclick=()=>update();}
+  finally{busy=false;if(box.isConnected)timer=setTimeout(()=>update(),15000);}
+ }
+ update();
+}
+function install(){const S=g.Screens;if(!S||S._qfHiredInstalled)return;S._qfHiredInstalled=true;const previous=S.afterRender;S.afterRender=function(pattern,content,params,user){if(previous)previous.apply(this,arguments);if(pattern==='/cliente/chat/:id/:profId'||pattern==='/profissional/chat/:id')mount(content.querySelector('[data-qf-chat-root]'),params,user,pattern.startsWith('/cliente/')?'cliente':'profissional');};}
+g.QFChatFechamento={mount,install};install();if(g.document.readyState==='loading')g.document.addEventListener('DOMContentLoaded',install,{once:true});
+})(window);
