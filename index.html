@@ -6066,10 +6066,14 @@ alt=""></noscript>
         };
       }
     } catch (_) {}
+    const exploracaoRes = await client.rpc('qf_meu_cadastro_exploracao');
+    if (exploracaoRes.error) throw exploracaoRes.error;
+    const cadastroExploracao = exploracaoRes.data === true;
     const local = {
       id: user.id,
       nome: p.nome,
       email: user.email || '',
+      cadastroExploracao: cadastroExploracao,
       telefone: p.telefone || '',
       tipoPessoa: p.tipo_pessoa || '',
       nomeFantasia: p.nome_fantasia || '',
@@ -7535,7 +7539,8 @@ alt=""></noscript>
   async function unlockCall(chamadoId, profissionalId, exclusivo) {
     // V11.90: exclusivo = só ele recebe o contato do cliente (paga N× o preço, enquanto ninguém desbloqueou).
     const cachedReq = DB.requestById(chamadoId);
-    const cortesia = !exclusivo && cachedReq && cachedReq.precoDesbloqueio != null && Number(cachedReq.precoDesbloqueio) === 0;
+    const proAtual = DB.profissionalById(profissionalId);
+    const cortesia = !(proAtual && proAtual.cadastroExploracao) && !exclusivo && cachedReq && cachedReq.precoDesbloqueio != null && Number(cachedReq.precoDesbloqueio) === 0;
     const res = await client.rpc(cortesia ? 'qf_usar_cortesia_reativacao' : 'qf_desbloquear_chamado', exclusivo ? { p_chamado_id: chamadoId, p_exclusivo: true } : { p_chamado_id: chamadoId });
     if (res.error) return { ok: false, reason: 'erro', error: res.error.message };
     const out = res.data || {};
@@ -9418,7 +9423,7 @@ alt=""></noscript>
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha como começar</div><div class="text--sm text--secondary">Crie sua conta grátis para conhecer o painel ou escolha uma opção paga para começar com crédito.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
           '<div class="card stack--sm" data-cadastro-exploracao>' +
             '<div class="text--strong">Cadastre-se e conheça a plataforma</div>' +
-            '<p class="text--sm text--secondary">Cadastro gratuito. Veja o painel e as oportunidades. Adicione saldo na carteira quando quiser desbloquear um pedido.</p>' +
+            '<p class="text--sm text--secondary">Cadastro gratuito para conhecer o painel e as oportunidades. Para desbloquear um pedido, adicione saldo: cada desbloqueio custa R$ 2,00 a mais que no Avulso. O valor total aparece antes da confirmação.</p>' +
             '<button class="btn btn--outline" type="submit" data-cad-explorar>Criar conta grátis</button>' +
           '</div>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
@@ -13739,7 +13744,7 @@ alt=""></noscript>
       return '~' + m + ' min';
     },
     usaPlano: function (user) { return !!(user && user.plano && user.plano.restantes > 0); },
-    precoTxt: function (req, user) { if (req.atendimentoTipo === 'garante') return PU.formatCurrency(DB.leadFeeForRequest(req) * (CallInfo.vagas(req).limite === 4 ? 4 : 1)); return (CallInfo.usaPlano(user)) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req)); },
+    precoTxt: function (req, user) { const adicional = user && user.cadastroExploracao ? 200 : 0; if (req.atendimentoTipo === 'garante') return PU.formatCurrency(DB.leadFeeForRequest(req) * (CallInfo.vagas(req).limite === 4 ? 4 : 1) + adicional); return (CallInfo.usaPlano(user) && !adicional) ? 'Pelo plano' : PU.formatCurrency(DB.leadFeeForRequest(req) + adicional); },
     midias: function (req) {
       const list = (req && Array.isArray(req.fotos) ? req.fotos : []).map(function (x) { return String(x || ''); }).filter(Boolean);
       const videos = list.filter(function (x) { return /^data:video\//i.test(x) || /\.(mp4|webm|mov)(\?|$)/i.test(x); });
@@ -15299,9 +15304,9 @@ alt=""></noscript>
         const exclusivo = act === 'desbloquear-exclusivo' || (DB.requestById(params.id) || {}).atendimentoTipo === 'garante';
         const req = DB.requestById(params.id);
         const valorBase = req ? DB.leadFeeForRequest(req) : 0;
-        const valor = req && req.atendimentoTipo === 'garante' ? valorBase * (CallInfo.vagas(req).limite === 4 ? 4 : 1) : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase);
-        const primeiraGratis = !exclusivo && !!req && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
-        const usaPlano = !exclusivo && !!(user && user.plano && user.plano.restantes > 0);
+        const valor = (req && req.atendimentoTipo === 'garante' ? valorBase * (CallInfo.vagas(req).limite === 4 ? 4 : 1) : (exclusivo && global.QFExclusivo ? global.QFExclusivo.preco(valorBase) : valorBase)) + (user && user.cadastroExploracao ? 200 : 0);
+        const primeiraGratis = !(user && user.cadastroExploracao) && !exclusivo && !!req && req.precoDesbloqueio != null && Number(req.precoDesbloqueio) === 0;
+        const usaPlano = !exclusivo && !!(user && !user.cadastroExploracao && user.plano && user.plano.restantes > 0);
         const vg = CallInfo.vagas(req || {});
         const vagasFrase = 'O cliente escolheu receber ' + (vg.limite === 1 ? '1 orçamento' : 'até ' + vg.limite + ' orçamentos') + (vg.ocupadas ? ' e ' + vg.ocupadas + (vg.ocupadas === 1 ? ' profissional já desbloqueou' : ' profissionais já desbloquearam') : ' e ninguém desbloqueou ainda') + ': você será o ' + (vg.ocupadas + 1) + 'º de ' + vg.limite + '. Sem devolução: se o cliente não te responder ou fechar com outro, o valor não volta. ';
         PU.confirmDialog(exclusivo ? {
