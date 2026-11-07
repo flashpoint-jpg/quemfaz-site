@@ -6,7 +6,7 @@ const manifest=JSON.parse(fs.readFileSync(path.join(root,'seo-205-manifest.json'
 test('76 regiões normalizadas; só categorias cadastradas; canonical, formulário e sitemap coerentes',()=>{
  assert.equal(manifest.regions.length,76);
  const sitemap=fs.readFileSync(path.join(root,'sitemap.xml'),'utf8');
- for(const p of manifest.pages){const h=fs.readFileSync(path.join(root,p.url,'index.html'),'utf8');assert.ok(h.includes('href="https://quemfazservico.com.br'+p.url+'"'));assert.ok(!h.includes('data-qf-direct-organic'));if(p.service)assert.ok(h.includes('id="seo-order"'));if(p.city)assert.ok(h.includes('noindex,follow'));assert.equal(sitemap.includes('<loc>https://quemfazservico.com.br'+p.url+'</loc>'),p.index);}
+ for(const p of manifest.pages){const h=fs.readFileSync(path.join(root,p.url,'index.html'),'utf8');assert.ok(h.includes('href="https://quemfazservico.com.br'+p.url+'"'));assert.ok(!h.includes('data-qf-direct-organic'));if(p.service)assert.ok(h.includes('id="seo-order"'));if(p.city)assert.ok(h.includes('index,follow')&&!h.includes('noindex,follow'));assert.equal(sitemap.includes('<loc>https://quemfazservico.com.br'+p.url+'</loc>'),p.index);}
  const redirects=JSON.parse(fs.readFileSync('vercel.json')).redirects;assert.ok(!redirects.some(r=>r.source.startsWith('/servicos/')));
 });
 test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pedido fictício',async()=>{

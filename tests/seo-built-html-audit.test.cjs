@@ -21,12 +21,20 @@ test('SEO release: sitemap points to distinct, public HTML pages with metadata',
   assert.doesNotMatch(html,/\b(?:CPF|CNPJ)\s*[:=]\s*\d{3}|\b(?:senha|password|access_token|refresh_token)\s*[:=]\s*["'][^"']+/i,url+' sensitive data');
  }
 });
-test('SEO release: generic local pages cannot be indexed',()=>{
- const samples=['eletricista/guarulhos','pintor/guarulhos','diarista/suzano'];
- for(const slug of samples){
-  const url=origin+'/servicos/'+slug+'/';
-  assert.ok(!locs.includes(url),url+' absent from sitemap');
-  const head=readUrl(url).split('</head>')[0];
-  assert.match(head,/<meta name="robots" content="noindex,follow">/i,url+' noindex');
+test('SEO release: covered local services are in the sitemap and unconfirmed legacy pages stay noindex',()=>{
+ const manifest=JSON.parse(fs.readFileSync(path.join(root,'seo-205-manifest.json'),'utf8'));
+ const covered=manifest.pages.filter(page=>page.service&&page.city);
+ assert.ok(covered.length>0);
+ for(const page of covered) assert.ok(locs.includes(origin+page.url),page.url);
+ for(const route of ['/servicos/eletricista/muzambinho/','/servicos/encanador/santo-andre/']){
+  assert.ok(locs.includes(origin+route),route);
+ }
+ const unconfirmed=manifest.pages.filter(page=>page.service&&!page.city&&!page.index
+  &&page.url.split('/').filter(Boolean).length===3);
+ assert.ok(unconfirmed.length>0);
+ for(const page of unconfirmed){
+  const url=origin+page.url;
+  assert.ok(!locs.includes(url),url);
+  assert.match(readUrl(url).split('</head>')[0],/<meta name="robots" content="noindex,follow">/i,url);
  }
 });
