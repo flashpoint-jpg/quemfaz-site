@@ -123,6 +123,7 @@
         else if (/(^|\.)bing\.com$/.test(host)) out.source = 'bing_referral';
       } catch (_) {}
     }
+    if (!out.source) out.source = 'direto';
     try { if (!out.content) out.content = sessionStorage.getItem('qf_seo_page') || undefined; } catch (_) {}
     return Object.assign(out,global.QFMarketingDedicado?.attribution?.()||{});
   }
