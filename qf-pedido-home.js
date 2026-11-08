@@ -498,8 +498,8 @@
       info.setAttribute('aria-label','Preços, planos e dúvidas');
       info.innerHTML='<h3>Preços, planos e dúvidas</h3>'+
         '<p><strong>Para clientes:</strong> publicar um pedido é grátis. Até quatro profissionais podem desbloquear o contato.</p>'+
-        '<p><strong>Para profissionais:</strong> no avulso, cada contato é pago individualmente, sem comissão por serviço. No Quem Faz Livre são R$ 39,90 por 30 dias, com desbloqueios compatíveis ilimitados; em serviços fechados e confirmados, 87% ficam com o profissional e 13% com o Quem Faz.</p>'+
-        '<p><strong>Plano Livre:</strong> o cliente paga o valor integral do serviço pelo Pix oficial gerado no acompanhamento. O Quem Faz retém 13% e faz o repasse dos 87% manualmente, após a confirmação bancária. No Avulso, o pagamento direto ao profissional é permitido.</p>'+
+        '<p><strong>Para profissionais:</strong> você pode criar um cadastro gratuito para conhecer a plataforma. O acesso aos contatos de clientes depende de desbloqueios pagos; os valores e as condições são apresentados no painel. O cadastro gratuito e o Avulso têm preços de desbloqueio diferentes.</p>'+
+        '<p><strong>Contratação:</strong> o valor do serviço é combinado entre cliente e profissional. Publicar um pedido é gratuito para o cliente.</p>'+
         '<p>Você acompanha seu pedido em <strong>Meus pedidos</strong>. Profissionais podem acessar cadastro, plano e carteira pela <strong>Área de profissionais</strong>.</p>';
       pricing.insertAdjacentElement('afterend',info);
       pricing.setAttribute('aria-controls','qf-precos-duvidas');
