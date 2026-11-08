@@ -9,6 +9,8 @@
   let inMemoryDraft=null;
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const norm = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  // Aceita celular nacional com ou sem +55. A validação e o cadastro usam o mesmo formato.
+  const normalizeClientPhone = value => String(value == null ? '' : value).replace(/\D/g, '').replace(/^55(?=\d{11}$)/, '');
   const isMobile=()=>/Android|iPhone|iPad|iPod/i.test(root.navigator?.userAgent||'');
   // Safari do iPhone/iPad publica diretamente; instalação obrigatória permanece no Android.
   const isIos=()=>/iPhone|iPad|iPod/i.test(root.navigator?.userAgent||'')||(root.navigator?.platform==='MacIntel'&&root.navigator?.maxTouchPoints>1);
@@ -98,7 +100,7 @@
     if (q.key==='uf' && !'AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ').includes(v.toUpperCase())) return 'Informe a sigla do estado, por exemplo SP.';
     if (q.choices && !q.choices.some(c=>c[0]===v)) return 'Escolha uma das opções.';
     if (v.length<(q.min||1)) return 'Descreva um pouco melhor para continuar.';
-    if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(v.replace(/\D/g,'')) || (root.QFUI?.validPhone && !root.QFUI.validPhone(v)))) return 'Confira o celular com DDD.';
+    if (q.key==='contato' && (!/^[1-9]{2}9\d{8}$/.test(normalizeClientPhone(v)) || (root.QFUI?.validPhone && !root.QFUI.validPhone(normalizeClientPhone(v))))) return 'Confira o celular com DDD.';
     if (q.budget && Number.isNaN(budget(v))) return 'Informe um valor válido, como 300 ou 1.500,00, ou “a combinar”.';
     if (q.key==='data' && ['hoje','urgente'].includes(a.urgencia) && v!==today()) return 'Para este prazo, selecione a data de hoje ou altere o prazo.';
     if (q.key==='data' && (!/^\d{4}-\d{2}-\d{2}$/.test(v) || v < new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()))) return 'Escolha hoje ou uma data futura.';
@@ -390,6 +392,9 @@
         };
         if(!requiresInstalledApp())a.aceite_app='sim';
         if(a.aceite_app!=='sim'||(requiresInstalledApp()&&!inApp())){publishError(requiresInstalledApp()?'É necessário abrir o aplicativo Quem Faz instalado para publicar e receber contatos.':'Marque a concordância para publicar o pedido pelo navegador.');return;}
+        // Preserva as respostas para uma nova tentativa e evita enviar o prefixo internacional ao login visitante.
+        a.contato=normalizeClientPhone(a.contato);
+        inMemoryDraft={answers:a,step,questionIndex,categoryId};
         busy=true;const button=area.querySelector('[data-at-publish]');button.disabled=true;button.textContent='Verificando acesso…';area.querySelectorAll('input,select,textarea,[data-at-back]').forEach(el=>el.disabled=true);
         track('submit');let phase='access';
         try{
@@ -409,7 +414,7 @@
           currentUser=current;
           // A identidade vem do login; o contato usado no pedido deve ser o contato do próprio perfil.
           // Pedir confirmação quando o telefone digitado diverge, sem trocar de conta nem apagar o rascunho.
-          const phone=v=>String(v||'').replace(/\D/g,'').replace(/^55(?=\d{10,11}$)/,'');
+          const phone=normalizeClientPhone;
           const accountPhone=phone(current.whatsapp||current.telefone);
           if(accountPhone&&accountPhone!==phone(a.contato)){
             a.contato=accountPhone;
