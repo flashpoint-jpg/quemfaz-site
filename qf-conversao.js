@@ -10,6 +10,7 @@
   // Links de verificação/recuperação contêm tokens privados: não carregar tags de medição.
   if (/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)) return;
 
+  var QF_DOMINIO_OFICIAL = /^(?:www\.)?quemfazservico\.com\.br$/i.test(location.hostname);
   // IDs reais: preencha somente com valores tirados dos painéis. Vazio = plataforma desligada.
   var CONFIG = global.QF_TRACKING_CONFIG = Object.assign({
     ga4: '',                 // ex.: 'G-XXXXXXXXXX' (Google Analytics 4 → Administrador → Fluxos de dados)
@@ -31,7 +32,7 @@
     return null;
   }
   function consentimento() { return lerConsentimento() || global.QF_CONSENT_PADRAO || 'granted'; }
-  function permitido() { return consentimento() === 'granted' && !demo(); }
+  function permitido() { return QF_DOMINIO_OFICIAL && consentimento() === 'granted' && !demo(); }
 
   // Parâmetros seguros: só categoria do serviço (código interno) e origem da campanha.
   function parametrosSeguros(extra) {
@@ -56,7 +57,7 @@
   // ---------- Carregamento das tags opcionais (somente com ID real e consentimento) ----------
   var carregado = { googleAds: false, ga4: false, uet: false };
   function carregarGoogleAds() {
-    if (carregado.googleAds || !/^AW-\d+$/.test(CONFIG.googleAds)) return;
+    if (!permitido() || carregado.googleAds || !/^AW-\d+$/.test(CONFIG.googleAds)) return;
     global.dataLayer = global.dataLayer || [];
     if (typeof global.gtag !== 'function') {
       global.gtag = function () { global.dataLayer.push(arguments); };
@@ -72,12 +73,12 @@
     carregado.googleAds = true;
   }
   function carregarGa4() {
-    if (carregado.ga4 || !/^G-[A-Z0-9]{4,20}$/.test(CONFIG.ga4) || typeof global.gtag !== 'function') return;
+    if (!permitido() || carregado.ga4 || !/^G-[A-Z0-9]{4,20}$/.test(CONFIG.ga4) || typeof global.gtag !== 'function') return;
     carregado.ga4 = true;
     global.gtag('config', CONFIG.ga4, { send_page_view: true });
   }
   function carregarUet() {
-    if (carregado.uet || !/^\d{4,12}$/.test(String(CONFIG.uet))) return;
+    if (!permitido() || carregado.uet || !/^\d{4,12}$/.test(String(CONFIG.uet))) return;
     carregado.uet = true;
     global.uetq = global.uetq || [];
     global.uetq.push('consent', 'default', { ad_storage: consentimento() === 'granted' ? 'granted' : 'denied' });
@@ -103,12 +104,12 @@
     } catch (_) {}
     try { if (typeof global.fbq === 'function') global.fbq('consent', g === 'granted' ? 'grant' : 'revoke'); } catch (_) {}
     try { if (global.uetq && global.uetq.push) global.uetq.push('consent', 'update', { ad_storage: g }); } catch (_) {}
-    if (g === 'granted') { carregarGoogleAds(); carregarGa4(); carregarUet(); }
+    if (g === 'granted' && permitido()) { carregarGoogleAds(); carregarGa4(); carregarUet(); }
   }
 
   // ---------- Envio dos eventos ----------
   function evento(nome, extra) {
-    if (!EVENTOS[nome]) return false;
+    if (!EVENTOS[nome] || !QF_DOMINIO_OFICIAL) return false;
     extra = extra || {};
     var idPedido = nome === 'pedido_publicado' ? String(extra.request_id || '') : '';
     if (nome === 'pedido_publicado' && !/^[0-9a-f-]{8,64}$/i.test(idPedido)) return false; // sem confirmação do banco, nada é enviado
