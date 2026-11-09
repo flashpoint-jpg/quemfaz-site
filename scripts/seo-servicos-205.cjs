@@ -23,8 +23,9 @@ const assets=[...home.matchAll(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g)].
 const styles=[...home.matchAll(/<link[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g)].map(m=>m[1]).filter(x=>x.startsWith('app-style-'));
 const connection=[...home.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)].find(m=>!m[1].includes('src=')&&m[2].includes('QF_CONNECTION_V11_14_47'))?.[0];
 if(!connection)throw Error('Conexão existente não encontrada');
-const googleTracking=home.match(/<!-- QF_GOOGLE_ADS_V1[^>]*-->\s*(<script[\s\S]*?<\/script>\s*<script[\s\S]*?<\/script>)/)?.[1];
-if(!googleTracking)throw Error('Medição existente do Google Ads não encontrada');
+// O rastreamento passa a ser gerenciado somente por qf-conversao.js, com validação do domínio.
+const googleTracking='';
+if(!assets.some(url=>/qf-conversao\.js/.test(url)))throw Error('Módulo de conversão do Google Ads não encontrado');
 const consent='<script>try{window.QFConsentInicial=JSON.parse(localStorage.getItem("qf_consent_v1")||"null")?.medicao||"granted";}catch(_){window.QFConsentInicial="granted";}</script>';
 const appAssets=consent+googleTracking+connection+styles.map(x=>'<link rel="stylesheet" href="/'+x+'">').join('')+assets.map(x=>'<script defer src="/'+x.replace(/^\//,'')+'"></script>').join('');
 const base='https://quemfazservico.com.br';
