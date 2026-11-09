@@ -4,6 +4,7 @@ on:
     paths:
       - 'scripts/build-client.cjs'
       - 'scripts/seo-semrush-20261109.cjs'
+      - 'scripts/seo-search-console-prioridades.cjs'
       - '.github/workflows/seo-semrush-ci.yml'
   workflow_dispatch:
 permissions:
@@ -19,6 +20,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci --ignore-scripts
+      - run: node --check scripts/seo-search-console-prioridades.cjs
       - name: Verificar sintaxe da correção
         run: node --check scripts/seo-semrush-20261109.cjs
       - name: Compilar páginas de SEO
@@ -40,6 +42,10 @@ jobs:
           }
           const fax=fs.readFileSync('dist/faxineira/index.html','utf8');
           if(!fax.includes('data-semrush-seo="20261109"'))throw Error('Faxineira sem conteúdo');
+          for(const p of ['eletricista/santo-andre','eletricista/diadema','limpeza-de-sofa/santo-andre','limpeza-de-sofa/sao-bernardo-do-campo']){
+            const file=path.join('dist','servicos',p,'index.html');
+            if(fs.existsSync(file)&&fs.readFileSync(file,'utf8').includes('content="index,follow"')&&!fs.readFileSync(file,'utf8').includes('data-qf-gsc-20261109'))throw Error('Faltou conteúdo GSC: '+p);
+          }
           console.log('Páginas com melhorias verificadas:',ok,'+ faxineira');
           if(ok<10)throw Error('Poucas páginas com correção ativa: '+ok);
           NODE
