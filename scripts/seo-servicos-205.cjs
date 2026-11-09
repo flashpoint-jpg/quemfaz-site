@@ -116,6 +116,42 @@ const keywordTargetMeta={
   description:'Precisa de pintor em Santo André? Descreva os cômodos, estado das paredes e quando deseja pintar. Solicite orçamentos grátis.'
  }
 };
+// Segunda leva: termos de busca de contratação com dados do Keyword Planner.
+// Cobertura é confirmada por id de especialidade no catálogo antes da aplicação.
+Object.assign(keywordTargetMeta,{
+ 'chaveiro/diadema':{
+  title:'Chaveiro em Diadema | Solicite serviço grátis no Quem Faz',
+  description:'Precisa de chaveiro em Diadema? Explique qual fechadura ou chave precisa de atendimento, informe seu bairro e publique um pedido grátis.'
+ },
+ 'desentupidor/santo-andre':{
+  title:'Desentupidor em Santo André | Quem Faz Serviços',
+  description:'Ralo, pia ou vaso entupido em Santo André? Descreva o problema, local e urgência e solicite um orçamento pelo Quem Faz.'
+ },
+ 'desentupidor/guarulhos':{
+  title:'Desentupidor em Guarulhos | Quem Faz Serviços',
+  description:'Precisa desentupir pia, ralo ou vaso em Guarulhos? Informe bairro e detalhes do entupimento para solicitar orçamento gratuitamente.'
+ },
+ 'eletricista/diadema':{
+  title:'Eletricista em Diadema para reparos e instalações | Quem Faz',
+  description:'Tomada com defeito, disjuntor desarmando ou instalação em Diadema? Publique seu pedido grátis e consulte a cobertura pelo CEP.'
+ },
+ 'conserto-de-geladeira/diadema':{
+  title:'Conserto de geladeira em Diadema | Quem Faz',
+  description:'Geladeira sem gelar ou com defeito em Diadema? Descreva marca, modelo e problema e solicite contato de profissionais.'
+ },
+ 'instalacao-de-ar-condicionado/guarulhos':{
+  title:'Instalação de ar-condicionado em Guarulhos | Quem Faz',
+  description:'Precisa instalar ar-condicionado em Guarulhos? Informe modelo, capacidade, local da instalação e solicite orçamento grátis.'
+ },
+ 'vidraceiro/santo-andre':{
+  title:'Vidraceiro em Santo André | Reparos e vidros | Quem Faz',
+  description:'Precisa trocar vidro, instalar espelho ou fazer reparo em Santo André? Informe medidas e tipo de serviço e peça orçamento grátis.'
+ },
+ 'diarista/guarulhos':{
+  title:'Diarista em Guarulhos para faxina | Quem Faz',
+  description:'Procura diarista em Guarulhos? Informe os cômodos, tipo de faxina e quando precisa. Publique o pedido gratuitamente.'
+ }
+});
 const metaForLocal=(s,c)=>c?keywordTargetMeta[s.slug+'/'+c.slug]||null:null;
 for(const s of services){
  const local=covered.filter(c=>c.ids.has(s.id));
