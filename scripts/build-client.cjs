@@ -310,7 +310,6 @@ require('./seo-hub-icons.cjs');
 // V11.96: guias do ABC, consolidação de páginas finas e passagem de UTM/gclid/msclkid.
 require('./seo-abc.cjs');
 require('./seo-index-links.cjs');
-require('./check-sitemap.cjs');
 // Páginas orgânicas passam a abrir o pedido na home, sem segundo clique.
 require('./seo-direct-entry.cjs');
 
@@ -318,3 +317,5 @@ require('./seo-direct-entry.cjs');
 
 // Páginas de serviço com formulário integrado e cobertura real (issue #205).
 require('./seo-servicos-205.cjs');
+// Confira somente depois de todas as gerações e reescritas de SEO.
+require('./check-sitemap.cjs');
