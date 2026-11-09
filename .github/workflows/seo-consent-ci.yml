@@ -68,3 +68,29 @@ jobs:
           PGPASSWORD: local_only_dummy
         run: psql -h localhost -U postgres -d seo_consent_test -v ON_ERROR_STOP=1 -f tests/seo-consent-rls.integration.sql
 
+
+  seo-semrush:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: node --check scripts/seo-semrush-20261109.cjs
+      - run: npm run build
+      - name: Verificar conteúdo SEO em páginas geradas
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'), path=require('path');
+          const pages=['servicos/automacao-industrial','servicos/baba','servicos/guincho','servicos/professor-particular','servicos/tecnico-de-maquina-de-lavar','faxineira'];
+          for(const p of pages){
+            const file=path.join('dist',p,'index.html');
+            if(!fs.existsSync(file)) throw Error('Página ausente: '+p);
+            const html=fs.readFileSync(file,'utf8');
+            if(!html.includes('data-semrush-seo="20261109"'))throw Error('Melhoria não aplicada: '+p);
+          }
+          console.log('Páginas prioritárias geradas com sucesso');
+          NODE
