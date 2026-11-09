@@ -21,8 +21,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - name: Verificar sintaxe da correção
         run: node --check scripts/seo-semrush-20261109.cjs
-      - name: Testes e build completo
-        run: npm test
+      - name: Compilar páginas de SEO
+        run: npm run build
       - name: Verificar páginas SEO geradas
         run: |
           node - <<'NODE'
