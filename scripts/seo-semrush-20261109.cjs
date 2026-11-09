@@ -43,4 +43,17 @@ for(const [slug,name] of Object.entries(cities)){
  '<h2>O pedido tem custo?</h2><p>Publicar o pedido no Quem Faz é grátis. A plataforma pode encaminhá-lo a profissionais interessados conforme a especialidade e o local informados, até o limite de quatro orçamentos. Você escolhe se deseja contratar e pode acompanhar as respostas pelo site. Não há promessa de resposta imediata ou disponibilidade em todos os bairros.</p>';
  patch('servicos/cidades/'+slug,section);
 }
+
+const faxFile=path.join(root,'faxineira','index.html');
+if(fs.existsSync(faxFile)){
+ let html=fs.readFileSync(faxFile,'utf8');
+ if(!html.includes('data-semrush-seo="20261109"')){
+  const marker='<section class="panel"><h2>Outros serviços</h2>';
+  const section='<section class="panel" data-semrush-seo="20261109"><h2>Como pedir faxineira para sua casa ou apartamento?</h2><p>Descreva o número de cômodos e banheiros, a condição dos ambientes, o dia e o período que prefere. Explique se é limpeza de rotina, detalhada ou preparação antes de receber visitas. Isso ajuda a profissional a entender o tempo necessário e preparar uma proposta.</p><h2>O que combinar antes da faxina?</h2><p>Informe quais atividades são prioridades: cozinha, banheiro, pisos, janelas ou armários. Atividades extras, como limpar forno, passar roupas e organizar objetos, devem ser combinadas antes. Confira se haverá materiais e equipamentos no local e quem será responsável por fornecê-los.</p><h2>Como comparar orçamentos?</h2><p>Compare duração, escopo, valor total, deslocamento e disponibilidade. Informe o CEP e bairro para consultar profissionais que atendam sua região. A publicação do pedido é gratuita, mas o atendimento depende da disponibilidade de profissionais cadastrados.</p></section>';
+  if(!html.includes(marker))throw Error('Página faxineira sem bloco de serviços esperado');
+  html=html.replace(marker,section+marker);
+  fs.writeFileSync(faxFile,html);updated.push('faxineira');
+ }
+}
+
 console.log('SEO Semrush: '+updated.length+' páginas aprofundadas: '+updated.join(', '));
