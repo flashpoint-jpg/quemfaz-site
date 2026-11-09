@@ -50,12 +50,50 @@ function write(url,title,desc,content,service,city,index=true){
  const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(title)+'</title><meta name="description" content="'+esc(desc)+'"><meta name="robots" content="'+(index?'index':'noindex')+',follow"><link rel="canonical" href="'+base+url+'"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(desc)+'"><meta property="og:url" content="'+base+url+'"><meta property="og:type" content="website"><link rel="icon" href="/icon.svg"><script type="application/ld+json">'+JSON.stringify(schema).replace(/</g,'\\u003c')+'</script>'+(service?appAssets:'')+'<link rel="stylesheet" href="/qf-seo-servicos.css"></head><body class="seo-page"><header class="seo-header"><a href="/"><img src="/assets/qf-logo-branco-20261014.webp" width="180" height="60" alt="Quem Faz Serviços"></a><a href="/#/cliente/pedidos">Meus pedidos</a></header><main class="seo-main"><nav aria-label="Caminho"><a href="/">Início</a> / <a href="/servicos/">Serviços</a>'+(service?' / <a href="'+urlFor(service)+'">'+esc(service.nome)+'</a>':'')+(city?' / <a href="/servicos/cidades/'+city.slug+'/">'+esc(city.nome)+' / '+esc(city.uf)+'</a>':'')+'</nav><div class="seo-hero"><div><p class="seo-eyebrow">QUEM FAZ • SERVIÇOS NA SUA REGIÃO</p><p class="seo-brand-tagline">Conectando você ao profissional certo.</p><h1>'+esc(service?('Precisa de '+service.nome.toLowerCase()+(city?' em '+city.nome:'')+'?'):title.replace(' | Quem Faz',''))+'</h1><p class="seo-lead">'+esc(service?'Conte o que você precisa e solicite até 4 orçamentos. Você escolhe com quem contratar.':desc)+'</p><div class="seo-benefits"><span>✓ Publicação gratuita</span><span>✓ Contato protegido</span><span>✓ Sem obrigação de contratar</span></div>'+(service?'<a class="seo-cta" href="#pedido">Preencher meu pedido <span aria-hidden="true">→</span></a>':'')+'</div>'+form+'</div><article class="seo-content">'+content+(city?'<section aria-label="Mais serviços na cidade"><h2>Outros serviços em '+esc(city.nome)+'</h2><p><a href="/servicos/cidades/'+city.slug+'/">Ver profissões cadastradas em '+esc(city.nome)+' / '+esc(city.uf)+'</a></p></section>':'')+'</article></main><footer class="seo-footer"><a href="/privacidade/">Privacidade</a> · Quem Faz Serviços</footer>'+(service?'<div id="app-shell" hidden><main id="app-content"></main></div>'+config+'<script defer src="/qf-seo-servicos.js"></script>':'')+'</body></html>';
  fs.writeFileSync(path.join(dir,'index.html'),html);generated.push({url,index,city:city?.nome,uf:city?.uf,service:service?.nome});
 }
+// Conteudo util por servico: detalhes que realmente ajudam o cliente a pedir e comparar orcamentos.
+const practicalAdvice={
+ cat_eletricista:{
+  issue:'Disjuntor desarmando, tomada aquecendo ou iluminação falhando são motivos para pedir avaliação de um eletricista. Se houver cheiro de queimado ou faíscas, afaste-se do ponto, desligue a energia somente se for seguro e não tente reparar a instalação por conta própria.',
+  details:'Informe se o problema ocorre em um único cômodo ou na casa toda, quando começou, se acontece ao ligar um aparelho e se é uma instalação nova ou um reparo. Em prédio, esclareça eventuais regras de acesso.',
+  compare:'Pergunte se a visita de diagnóstico é cobrada, se o orçamento discrimina materiais e mão de obra e quais condições de garantia são oferecidas.'
+ },
+ cat_encanador:{
+  issue:'Vazamento no registro, descarga que não para de correr, sifão pingando e umidade na parede são exemplos de pedidos para encanador. Vazamento intenso exige fechar o registro de água quando isso puder ser feito com segurança.',
+  details:'Diga onde ocorre o vazamento, há quanto tempo, se é aparente ou embutido, e se o local é casa ou apartamento. Informe se há risco de atingir móveis ou rede elétrica.',
+  compare:'Peça que o profissional esclareça custos de diagnóstico, peças, mão de obra e eventuais reparos de parede ou piso antes de autorizar o serviço.'
+ },
+ cat_diarista:{
+  issue:'Limpeza de rotina, faxina mais detalhada e preparação do imóvel antes de mudança exigem tempos e materiais diferentes. Explique o tipo de faxina desejada para receber propostas comparáveis.',
+  details:'Informe quantidade de cômodos e banheiros, metragem aproximada se souber, presença de animais, escadas e se há necessidade de limpar vidros, forno, armários ou áreas externas.',
+  compare:'Combine duração, tarefas incluídas, materiais e equipamentos necessários, transporte e valor total antes da diária.'
+ },
+ cat_pintor:{
+  issue:'Paredes descascando, pintura antes de mudança, manchas de umidade e fachadas desgastadas têm preparações diferentes. Problemas de infiltração devem ser avaliados antes de pintar.',
+  details:'Diga quais ambientes serão pintados, medidas aproximadas, estado das paredes, necessidade de massa e se móveis precisam de proteção ou deslocamento.',
+  compare:'Confira preparação da superfície, número de demãos, fornecimento de tintas e materiais, limpeza ao final e prazo previsto.'
+ },
+ cat_montador:{
+  issue:'Guarda-roupas, cômodas, painéis e móveis comprados desmontados podem exigir diferentes ferramentas e tempo de montagem. Se o móvel já foi usado, informe se é remontagem.',
+  details:'Informe marca e modelo quando souber, quantidade de peças, estado da embalagem, existência de manual e ferragens, andar do imóvel e necessidade de fixação na parede.',
+  compare:'Confirme se desmontagem, fixação, deslocamento e eventual falta de peças entram no valor, além da data disponível.'
+ },
+ cat_limpeza_estofados:{
+  issue:'Sofá com manchas, odores, pelos de animais ou sujeira acumulada pode precisar de métodos diferentes conforme tecido e instruções do fabricante. Não há garantia de remoção total das manchas.',
+  details:'Informe quantidade de lugares, se é retrátil ou reclinável, tipo de tecido se souber, idade das manchas, odores e se pretende incluir poltronas, colchões ou cadeiras.',
+  compare:'Pergunte o método e os produtos usados, adequação ao tecido, tempo estimado de secagem, preço por peça e possíveis custos de deslocamento.'
+ }
+};
+function practicalSection(service){
+ const a=practicalAdvice[service.id];
+ if(!a)return '';
+ return '<section class="seo-practical"><h2>Quando solicitar '+esc(service.nome.toLowerCase())+'?</h2><p>'+esc(a.issue)+'</p><h2>Quais detalhes ajudam no orçamento?</h2><p>'+esc(a.details)+'</p><h2>O que comparar antes de contratar?</h2><p>'+esc(a.compare)+'</p></section>';
+}
 for(const s of services){
  const local=covered.filter(c=>c.ids.has(s.id));
  const detail=fs.readFileSync(path.join(out,'servicos',s.slug,'index.html'),'utf8').match(/<meta name="description" content="([^"]+)"/)?.[1]||'';
  const options=require('../qf-atendimento.js').questions({servico:s.nome}).find(q=>q.key==='detalhes')?.choices||[];
  const examples='<h2>O que você pode solicitar</h2><ul>'+options.filter(x=>!/^outro/i.test(x[1])).map(x=>'<li>'+esc(x[1])+'</li>').join('')+'</ul>';
- const guide=examples+'<p>'+esc(detail)+'</p><h2>Como preparar seu pedido de '+esc(s.nome)+'</h2><p>Descreva o problema, o tipo de local e o que espera resolver. Se houver equipamentos ou materiais envolvidos, informe modelo, quantidade e condições de acesso. Esses detalhes ajudam o profissional a avaliar o trabalho antes de combinar o orçamento.</p><h2>Como funciona</h2><ol><li>Preencha o formulário nesta página.</li><li>Confirme o local pelo CEP e escolha o prazo.</li><li>Confira seus dados e publique o pedido.</li><li>Acompanhe o pedido e combine o atendimento.</li></ol><h2>Quanto custa?</h2><p>A publicação do pedido é gratuita. O preço do serviço depende do trabalho e deve ser combinado antes da contratação. Não há garantia de resposta imediata.</p>';
+ const guide=examples+'<p>'+esc(detail)+'</p>'+practicalSection(s)+'<h2>Como preparar seu pedido de '+esc(s.nome)+'</h2><p>Descreva o problema, o tipo de local e o que espera resolver. Se houver equipamentos ou materiais envolvidos, informe modelo, quantidade e condições de acesso. Esses detalhes ajudam o profissional a avaliar o trabalho antes de combinar o orçamento.</p><h2>Como funciona</h2><ol><li>Preencha o formulário nesta página.</li><li>Confirme o local pelo CEP e escolha o prazo.</li><li>Confira seus dados e publique o pedido.</li><li>Acompanhe o pedido e combine o atendimento.</li></ol><h2>Quanto custa?</h2><p>A publicação do pedido é gratuita. O preço do serviço depende do trabalho e deve ser combinado antes da contratação. Não há garantia de resposta imediata.</p>';
  write(urlFor(s),s.nome+' | Quem Faz','Precisa de '+s.nome.toLowerCase()+'? Publique seu pedido grátis e consulte as regiões com profissionais cadastrados.',guide+'<h2>Regiões com cadastro nesta profissão</h2>'+(local.length?links(local.map(c=>[urlFor(s,c)+'#pedido',c.nome+' / '+c.uf])):'<p>A cobertura desta profissão ainda não está confirmada nesta atualização. A disponibilidade será verificada para o local informado.</p>'),s,null,!!local.length);
  // Só publique no índice combinações com cobertura cadastrada e formulário próprio.
  for(const c of local){const others=services.filter(x=>c.ids.has(x.id)&&x.id!==s.id);write(urlFor(s,c),s.nome+' em '+c.nome+' / '+c.uf+' | Quem Faz','Solicite '+s.nome.toLowerCase()+' em '+c.nome+' / '+c.uf+'. Descreva o serviço e publique seu pedido grátis no Quem Faz.', '<h2>'+esc(s.nome)+' em '+esc(c.nome)+'</h2><p>Há cadastro de profissional com esta especialidade e região de atendimento em '+esc(c.nome)+' / '+c.uf+' na consulta de 04/11/2026. Isso não representa disponibilidade imediata: o atendimento depende do endereço, do raio e da agenda de cada profissional. O CEP informado no pedido determina o local real do serviço.</p>'+guide+'<h2>Outros serviços com cobertura cadastrada em '+esc(c.nome)+'</h2>'+links(others.map(x=>[urlFor(x,c),x.nome]))+'<h2>Outras regiões para '+esc(s.nome)+'</h2>'+links(local.filter(x=>x!==c).map(x=>[urlFor(s,x),x.nome+' / '+x.uf])),s,c);}
@@ -75,7 +113,7 @@ const localSearchMeta={
   description:'Sofá manchado, encardido ou com odores em São Bernardo do Campo? Descreva o tecido e os lugares e solicite orçamentos gratuitamente.'
  }
 };
-for(const e of editorial){const i=generated.findIndex(p=>p.url===e.url);if(i>=0)generated.splice(i,1);const citySlug=e.url.split('/').filter(Boolean)[2];const editorialCity=covered.find(c=>c.slug===citySlug&&c.ids.has(e.service.id))||null;const meta=localSearchMeta[e.url];write(e.url,meta?.title||e.title,meta?.description||e.description,e.content,e.service,editorialCity,true);}
+for(const e of editorial){const i=generated.findIndex(p=>p.url===e.url);if(i>=0)generated.splice(i,1);const citySlug=e.url.split('/').filter(Boolean)[2];const editorialCity=covered.find(c=>c.slug===citySlug&&c.ids.has(e.service.id))||null;const meta=localSearchMeta[e.url];write(e.url,meta?.title||e.title,meta?.description||e.description,e.content+practicalSection(e.service),e.service,editorialCity,true);}
 // Atualiza também combinações antigas sem cobertura confirmada, preservando a URL.
 function preserve(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())preserve(p);else if(e.name==='index.html'){
  const url='/'+path.relative(out,path.dirname(p)).split(path.sep).join('/')+'/';
