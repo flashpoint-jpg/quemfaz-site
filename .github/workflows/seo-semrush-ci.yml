@@ -1,0 +1,45 @@
+name: Validar SEO Semrush
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-client.cjs'
+      - 'scripts/seo-semrush-20261109.cjs'
+      - '.github/workflows/seo-semrush-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Verificar sintaxe da correção
+        run: node --check scripts/seo-semrush-20261109.cjs
+      - name: Compilar páginas de SEO
+        run: npm run build
+      - name: Verificar páginas SEO geradas
+        run: |
+          node - <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const services=['automacao-industrial','baba','guincho','professor-particular','tecnico-de-maquina-de-lavar'];
+          const cities=['caieiras','duque-de-caxias','embu-guacu','ferraz-de-vasconcelos','guaruja','mairinque','mogi-das-cruzes','sao-jose-dos-campos','taboao-da-serra'];
+          let ok=0;
+          for(const p of [...services.map(s=>'servicos/'+s),...cities.map(c=>'servicos/cidades/'+c)]){
+            const file=path.join('dist',p,'index.html');
+            if(!fs.existsSync(file)){console.log('SEM PÁGINA:',p);continue}
+            const html=fs.readFileSync(file,'utf8');
+            if(!html.includes('data-semrush-seo="20261109"'))throw Error('Conteúdo ausente '+p);
+            if(!html.includes('rel="canonical"'))throw Error('Canonical ausente '+p);
+            ok++;
+          }
+          const fax=fs.readFileSync('dist/faxineira/index.html','utf8');
+          if(!fax.includes('data-semrush-seo="20261109"'))throw Error('Faxineira sem conteúdo');
+          console.log('Páginas com melhorias verificadas:',ok,'+ faxineira');
+          if(ok<10)throw Error('Poucas páginas com correção ativa: '+ok);
+          NODE

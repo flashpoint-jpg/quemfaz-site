@@ -317,5 +317,7 @@ require('./seo-direct-entry.cjs');
 
 // Páginas de serviço com formulário integrado e cobertura real (issue #205).
 require('./seo-servicos-205.cjs');
+// Conteúdo editorial da auditoria Semrush (mantém formulários e regras existentes).
+require('./seo-semrush-20261109.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
