@@ -319,5 +319,7 @@ require('./seo-direct-entry.cjs');
 require('./seo-servicos-205.cjs');
 // Conteúdo editorial da auditoria Semrush (mantém formulários e regras existentes).
 require('./seo-semrush-20261109.cjs');
+// Melhorias pontuais para consultas locais que já têm impressões no Search Console.
+require('./seo-search-console-prioridades.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
