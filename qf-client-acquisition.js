@@ -5,10 +5,11 @@
   // Links de verificação/recuperação contêm tokens privados: não carregar tags de medição.
   if (/^#\/auth\/cliente\/(verificar|redefinir)\//.test(location.hash)) return;
 
+  var QF_DOMINIO_OFICIAL = /^(?:www\.)?quemfazservico\.com\.br$/i.test(location.hostname);
   // Meta Pixel: mede PageView e permite que o evento Lead abaixo seja enviado somente após o pedido salvo.
   var QF_META_PIXEL_ID = '1124265238584181';
   function ensureMetaPixel() {
-    if (location.search.indexOf('demo=1') !== -1 || typeof global.fbq === 'function') return;
+    if (!QF_DOMINIO_OFICIAL || location.search.indexOf('demo=1') !== -1 || typeof global.fbq === 'function') return;
     try {
       var n = global.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
       if (!global._fbq) global._fbq = n;
@@ -110,9 +111,10 @@
   function attribution() {
     var touch = global.QFMarketingTouch || campaign || {};
     var out = {};
-    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type', 'gclid', 'gbraid', 'gad_campaignid'].forEach(function (key) {
+    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type', 'gclid', 'gbraid', 'gad_campaignid', 'fbclid'].forEach(function (key) {
       if (touch[key]) out[key] = String(touch[key]).slice(0, /^(click_id|gclid|gbraid)$/.test(key) ? 512 : 240);
     });
+    if (!out.fbclid && touch.click_type === 'fbclid' && touch.click_id) out.fbclid = String(touch.click_id).slice(0, 512);
     // Sem UTM não significa anúncio: registra apenas o referenciador conhecido,
     // sem classificar esse acesso como campanha paga.
     if (!out.source) {
@@ -184,7 +186,7 @@
     seen[key] = true;
     try { localStorage.setItem(key, '1'); } catch (_) {}
     try {
-      if (typeof global.fbq === 'function') global.fbq('track', 'Lead', {
+      if (QF_DOMINIO_OFICIAL && typeof global.fbq === 'function') global.fbq('track', 'Lead', {
         content_name: 'QuemFaz Pedido de Serviço', content_category: category || 'servico', role: 'cliente'
       }, { eventID: 'qf_pedido_' + req.id });
     } catch (_) {}
