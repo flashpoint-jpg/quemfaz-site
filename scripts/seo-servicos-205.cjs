@@ -120,7 +120,7 @@ const keywordTargetMeta={
 // Cobertura é confirmada por id de especialidade no catálogo antes da aplicação.
 Object.assign(keywordTargetMeta,{
  'chaveiro/diadema':{
-  title:'Chaveiro em Diadema | Solicite serviço grátis no Quem Faz',
+  title:'Chaveiro em Diadema | Peça orçamento no Quem Faz',
   description:'Precisa de chaveiro em Diadema? Explique qual fechadura ou chave precisa de atendimento, informe seu bairro e publique um pedido grátis.'
  },
  'desentupidor/santo-andre':{
@@ -135,11 +135,11 @@ Object.assign(keywordTargetMeta,{
   title:'Eletricista em Diadema para reparos e instalações | Quem Faz',
   description:'Tomada com defeito, disjuntor desarmando ou instalação em Diadema? Publique seu pedido grátis e consulte a cobertura pelo CEP.'
  },
- 'conserto-de-geladeira/diadema':{
+ 'tecnico-de-geladeira/diadema':{
   title:'Conserto de geladeira em Diadema | Quem Faz',
   description:'Geladeira sem gelar ou com defeito em Diadema? Descreva marca, modelo e problema e solicite contato de profissionais.'
  },
- 'instalacao-de-ar-condicionado/guarulhos':{
+ 'ar-condicionado/guarulhos':{
   title:'Instalação de ar-condicionado em Guarulhos | Quem Faz',
   description:'Precisa instalar ar-condicionado em Guarulhos? Informe modelo, capacidade, local da instalação e solicite orçamento grátis.'
  },
