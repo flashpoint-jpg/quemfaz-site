@@ -1,5 +1,5 @@
 {
-  "consultadoEm": "2026-11-04",
+  "consultadoEm": "2026-11-09",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
     {
@@ -609,6 +609,15 @@
         "cat_automacao_residencial",
         "cat_caixa_dagua",
         "cat_cftv_alarmes",
+        "cat_custom_ar_condicionado_19i3cue",
+        "cat_custom_eletrica_1s1r5cs",
+        "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
+        "cat_custom_instalacao_manutencao_vendas_e_consert_1papjwy",
+        "cat_custom_instalacoes_eletricas_4n7bsf",
+        "cat_custom_manutencao_de_ar_condicionado_196jqg",
+        "cat_custom_mecanico_ar_condicionado_w8vmhd",
+        "cat_custom_refrigeracao_2cksun",
+        "cat_custom_tecnico_ar_condicionados_residencial_e_1prelzn",
         "cat_eletricista",
         "cat_encanador",
         "cat_geladeira",
@@ -617,6 +626,7 @@
         "cat_jardinagem",
         "cat_maquina_lavar",
         "cat_marido_aluguel",
+        "cat_mecanico",
         "cat_montador",
         "cat_pintor",
         "cat_soldador",
@@ -896,6 +906,16 @@
       ]
     },
     {
+      "cidade": "Recife",
+      "uf": "PE",
+      "especialidades": [
+        "cat_custom_pintura_ku5m6q",
+        "cat_impermeabilizacao",
+        "cat_marceneiro",
+        "cat_pintor"
+      ]
+    },
+    {
       "cidade": "Registro",
       "uf": "SP",
       "especialidades": [
@@ -1012,6 +1032,8 @@
         "cat_automacao_residencial",
         "cat_azulejista",
         "cat_cftv_alarmes",
+        "cat_custom_dedetizacao_1y01si0",
+        "cat_dedetizador",
         "cat_desentupidor",
         "cat_diarista",
         "cat_eletricista",
@@ -1296,7 +1318,10 @@
         "cat_arcondicionado",
         "cat_automacao_residencial",
         "cat_azulejista",
+        "cat_baba",
         "cat_cftv_alarmes",
+        "cat_cozinheira",
+        "cat_cuidador_idosos",
         "cat_custom_carretos_kqu7a2",
         "cat_custom_eletrica_1s1r5cs",
         "cat_desentupidor",
@@ -1311,6 +1336,7 @@
         "cat_internet_redes",
         "cat_maquina_lavar",
         "cat_marido_aluguel",
+        "cat_passadeira",
         "cat_pedreiro",
         "cat_pintor"
       ]
