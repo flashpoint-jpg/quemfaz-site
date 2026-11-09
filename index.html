@@ -158,6 +158,7 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
       click_type: click ? click[0] : '',
       gclid: gads.gclid,
       gbraid: gads.gbraid,
+      fbclid: p.get('fbclid') || '',
       gad_campaignid: gads.gad_campaignid,
       landing_url: window.location.origin + window.location.pathname,
       referrer: document.referrer ? (function () { try { return new URL(document.referrer).origin; } catch (_) { return ''; } })() : '',
@@ -2612,39 +2613,22 @@ window.QFConsentInicial = (function () {
   return window.QF_CONSENT_PADRAO;
 })();
 </script>
-<!-- QF_META_PIXEL_V1 — Meta Pixel / dataset CAMPANHA ATUALIZADA -->
+<!-- QF_META_PIXEL_V1 — Meta Pixel somente no domínio oficial -->
 <script>
-!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
-n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
-(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
-if (window.QFConsentInicial === 'denied') fbq('consent','revoke');
-fbq('init','1124265238584181');
-fbq('track','PageView');
+(function (w, d) {
+  if (!/^(?:www\.)?quemfazservico\.com\.br$/i.test(location.hostname) || /[?&]demo=1(?:&|$)/.test(location.search)) return;
+  if (typeof w.fbq === 'function') return;
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+  (w,d,'script','https://connect.facebook.net/en_US/fbevents.js');
+  if (w.QFConsentInicial === 'denied') w.fbq('consent','revoke');
+  w.fbq('init','1124265238584181');
+  w.fbq('track','PageView');
+})(window, document);
 </script>
-
-<!-- QF_GOOGLE_ADS_V1 — Google Ads / conversão de pedido publicado -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18273159663"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-(function (c) {
-  gtag('consent', 'default', { ad_storage: c, ad_user_data: c, ad_personalization: c, analytics_storage: c, wait_for_update: 500 });
-})(window.QFConsentInicial === 'denied' ? 'denied' : 'granted');
-gtag('set', 'url_passthrough', true);
-gtag('js', new Date());
-gtag('config', 'AW-18273159663');
-window.qfGoogleLead = function (requestId) {
-  try {
-    var id = String(requestId || '');
-    if (!id) return; // conversão só com pedido confirmado no banco
-    if (!/^[0-9a-f-]{36}$/i.test(id) || /[?&]demo=1(&|$)/.test(location.search || '')) return;
-    if (window.QFConversao && window.QFConversao.consentimento() !== 'granted') return;
-    gtag('event', 'conversion', { 'send_to': 'AW-18273159663/RIX-CKfD1cUcEO-TqYlE', 'transaction_id': id });
-  } catch (_) {}
-};
-</script>
+<!-- Google Ads: carregado exclusivamente por qf-conversao.js, mediante consentimento e domínio oficial. -->
 <script src="qf-conversao.js?v=12.0.1"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
