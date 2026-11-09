@@ -19,8 +19,8 @@ for (const url of urls) {
   const file = path.join(__dirname, '..', 'dist', pathname, 'index.html');
   if (!fs.existsSync(file)) throw Error('Sitemap: missing service page ' + url);
   const html = fs.readFileSync(file, 'utf8');
-  const head = html.split(/<\\/head>/i)[0];
-  if (/<meta\\s+name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(head)) throw Error('Sitemap: noindex service page ' + url);
+  const head = html.split(/<\/head>/i)[0];
+  if (/<meta\s+name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(head)) throw Error('Sitemap: noindex service page ' + url);
   if (!head.includes('rel="canonical" href="' + url + '"')) throw Error('Sitemap: canonical mismatch ' + url);
 }
 if (Buffer.byteLength(xml) > 50 * 1024 * 1024) throw Error('Sitemap exceeds 50 MB');
