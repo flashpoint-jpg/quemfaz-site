@@ -139,7 +139,9 @@
   } catch (_) {}
   function attribution() {
     var live = global.QFMarketingTouch || {};
-    var touch = Object.assign({}, capturedTouch, live);
+    // O identificador explicito de campanha/click tem prioridade sobre referenciadores genericos.
+    // Evita que chatgpt.com ou outra origem de navegacao sobrescreva utm_source=google.
+    var touch = Object.assign({}, live, capturedTouch);
     // Identificadores de clique confirmam origem paga mesmo sem UTM.
     if (!touch.source && (touch.gclid || touch.gbraid || touch.wbraid)) {
       touch.source = 'google'; touch.medium = touch.medium || 'cpc';
