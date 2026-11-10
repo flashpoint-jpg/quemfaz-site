@@ -23,7 +23,36 @@
     } catch (_) {}
   }
   ensureMetaPixel();
-  var campaign = global.QFMarketingTouch || {};
+  // Preserva o clique pago ao longo do formulario, sem transformar busca organica em anuncio.
+  // Sem identificador de clique ou UTM, nao atribuir uma visita paga.
+  var QF_ATTR_KEY = 'qf_ads_attribution_v1';
+  function readAdTouch() {
+    var saved = {};
+    try { saved = JSON.parse(global.sessionStorage.getItem(QF_ATTR_KEY) || '{}') || {}; } catch (_) {}
+    var p = new URLSearchParams(location.search || '');
+    var fresh = {};
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','gbraid','wbraid','fbclid'].forEach(function (k) {
+      var v = p.get(k);
+      if (v) fresh[k] = String(v).slice(0, /^(gclid|gbraid|wbraid)$/.test(k) ? 512 : 240);
+    });
+    var hasFresh = Object.keys(fresh).length > 0;
+    if (hasFresh) {
+      var touch = {
+        source: fresh.utm_source || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'google' : (fresh.fbclid ? 'facebook' : '')),
+        medium: fresh.utm_medium || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'cpc' : (fresh.fbclid ? 'paid_social' : '')),
+        campaign: fresh.utm_campaign || '',
+        content: fresh.utm_content || '',
+        term: fresh.utm_term || '',
+        gclid: fresh.gclid || '', gbraid: fresh.gbraid || '', wbraid: fresh.wbraid || '',
+        fbclid: fresh.fbclid || ''
+      };
+      try { global.sessionStorage.setItem(QF_ATTR_KEY, JSON.stringify(touch)); } catch (_) {}
+      return touch;
+    }
+    return saved;
+  }
+  var capturedTouch = readAdTouch();
+  var campaign = global.QFMarketingTouch || capturedTouch || {};
   var sid;
   try {
     sid = sessionStorage.getItem('qf_funnel_session_v2');
@@ -109,9 +138,14 @@
     if (seoPage && /^\/servicos\/[a-z0-9-]+\/[a-z0-9-]+\/$/.test(seoPage)) sessionStorage.setItem('qf_seo_page', seoPage);
   } catch (_) {}
   function attribution() {
-    var touch = global.QFMarketingTouch || campaign || {};
+    var live = global.QFMarketingTouch || {};
+    var touch = Object.assign({}, capturedTouch, live);
+    // Identificadores de clique confirmam origem paga mesmo sem UTM.
+    if (!touch.source && (touch.gclid || touch.gbraid || touch.wbraid)) {
+      touch.source = 'google'; touch.medium = touch.medium || 'cpc';
+    }
     var out = {};
-    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type', 'gclid', 'gbraid', 'gad_campaignid', 'fbclid'].forEach(function (key) {
+    ['source', 'medium', 'campaign', 'content', 'term', 'click_id', 'click_type', 'gclid', 'gbraid', 'wbraid', 'gad_campaignid', 'fbclid'].forEach(function (key) {
       if (touch[key]) out[key] = String(touch[key]).slice(0, /^(click_id|gclid|gbraid)$/.test(key) ? 512 : 240);
     });
     if (!out.fbclid && touch.click_type === 'fbclid' && touch.click_id) out.fbclid = String(touch.click_id).slice(0, 512);
