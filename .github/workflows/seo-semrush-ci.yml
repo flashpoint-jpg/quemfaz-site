@@ -49,7 +49,8 @@ jobs:
             if(fs.existsSync(file)&&fs.readFileSync(file,'utf8').includes('content="index,follow"')&&!fs.readFileSync(file,'utf8').includes('data-qf-gsc-20261109'))throw Error('Faltou conteúdo GSC: '+p);
           }
           const hub=fs.readFileSync('dist/servicos/index.html','utf8');
-          if(!hub.includes('data-qf-discovery-20261109')||!hub.includes('/servicos/eletricista/muzambinho/'))throw Error('Links locais prioritários ausentes');
+          if(!hub.includes('data-qf-discovery-20261109')||!hub.includes('/servicos/eletricista/guarulhos/'))throw Error('Links locais prioritários ausentes');
+          if(hub.includes('data-qf-discovery-20261109') && /<section data-qf-discovery-20261109[\s\S]*?Muzambinho[\s\S]*?<\/section>/.test(hub))throw Error('Muzambinho ainda em destaque');
           console.log('Páginas com melhorias verificadas:',ok,'+ faxineira');
           if(ok<10)throw Error('Poucas páginas com correção ativa: '+ok);
           NODE
