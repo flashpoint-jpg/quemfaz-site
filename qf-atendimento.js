@@ -301,10 +301,11 @@
       form.onsubmit=async e=>{
         e.preventDefault();if(busy)return;
         const error=area.querySelector('[data-at-error]'),button=area.querySelector('[data-at-publish]');error.textContent='';readCompact();
-        if(a.__problem.length<8){error.textContent='Descreva o serviço com pelo menos 8 caracteres.';area.querySelector('#at-problem').focus();return;}
+        if(a.__problem.length<8){track('validation_error','description');error.textContent='Descreva o serviço com pelo menos 8 caracteres.';area.querySelector('#at-problem').focus();return;}
+        if(!/^[1-9]{2}9\d{8}$/.test(normalizeClientPhone(a.contato))){track('validation_error','contato');error.textContent='Confira o WhatsApp: informe DDD + 9 dígitos, como (11) 99999-9999.';area.querySelector('#at-contato').focus();return;}
         busy=true;button.disabled=true;button.textContent='Confirmando local…';
-        try{await locate();readCompact();setProblem(a.__problem);a.autorizacao='sim';const invalid=questions(a).find(q=>validate(q,a[q.key],a));if(invalid){error.textContent=invalid.label+': '+validate(invalid,a[invalid.key],a);area.querySelector('#at-'+invalid.key)?.focus();return;}}
-        catch(err){error.textContent=err.message;cep.focus();return;}
+        try{await locate();readCompact();setProblem(a.__problem);a.autorizacao='sim';const invalid=questions(a).find(q=>validate(q,a[q.key],a));if(invalid){track('validation_error',invalid.key);error.textContent=invalid.label+': '+validate(invalid,a[invalid.key],a);area.querySelector('#at-'+invalid.key)?.focus();return;}}
+        catch(err){track('validation_error','cep');error.textContent=err.message;cep.focus();return;}
         finally{busy=false;button.disabled=false;button.textContent='Publicar pedido grátis';}
         await publish();
       };
