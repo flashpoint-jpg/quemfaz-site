@@ -432,6 +432,9 @@
           // Exibir solicitação logo após publicar, mas nunca como Pix pago sem Efí.
           if(a.visita_presencial==='sim')req.visitaPresencialStatus='solicitada';
           root.QFAcompanhamento.remember(req.id,segredo);
+          // Só registra conversão após o servidor confirmar um pedido com ID.
+          // O módulo de aquisição ignora pedidos aguardando Pix e evita duplicidade por ID.
+          try{root.QFClientAcquisition?.published?.(req,c.id);}catch(_){/* medição não bloqueia o pedido */}
           try{root.sessionStorage.removeItem('qf_atendimento_key');}catch(_){}
           inMemoryDraft=null;
           await clearGoogleDraft();
