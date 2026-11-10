@@ -52,6 +52,11 @@
     return saved;
   }
   var capturedTouch = readAdTouch();
+  // A publicacao de pedidos usa tambem QFMarketingTouch. Sincroniza dados de campanha
+  // identificados no URL para que o referenciador ChatGPT nao substitua utm_source.
+  if (capturedTouch.source && (capturedTouch.medium || capturedTouch.campaign || capturedTouch.gclid || capturedTouch.gbraid || capturedTouch.fbclid)) {
+    global.QFMarketingTouch = Object.assign({}, global.QFMarketingTouch || {}, capturedTouch);
+  }
   var campaign = global.QFMarketingTouch || capturedTouch || {};
   var sid;
   try {
