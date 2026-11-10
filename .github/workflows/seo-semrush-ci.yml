@@ -5,6 +5,7 @@ on:
       - 'scripts/build-client.cjs'
       - 'scripts/seo-semrush-20261109.cjs'
       - 'scripts/seo-search-console-prioridades.cjs'
+      - 'scripts/seo-discovery-prioridades.cjs'
       - '.github/workflows/seo-semrush-ci.yml'
   workflow_dispatch:
 permissions:
@@ -21,6 +22,7 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: node --check scripts/seo-search-console-prioridades.cjs
+      - run: node --check scripts/seo-discovery-prioridades.cjs
       - name: Verificar sintaxe da correção
         run: node --check scripts/seo-semrush-20261109.cjs
       - name: Compilar páginas de SEO
@@ -46,6 +48,8 @@ jobs:
             const file=path.join('dist','servicos',p,'index.html');
             if(fs.existsSync(file)&&fs.readFileSync(file,'utf8').includes('content="index,follow"')&&!fs.readFileSync(file,'utf8').includes('data-qf-gsc-20261109'))throw Error('Faltou conteúdo GSC: '+p);
           }
+          const hub=fs.readFileSync('dist/servicos/index.html','utf8');
+          if(!hub.includes('data-qf-discovery-20261109')||!hub.includes('/servicos/eletricista/muzambinho/'))throw Error('Links locais prioritários ausentes');
           console.log('Páginas com melhorias verificadas:',ok,'+ faxineira');
           if(ok<10)throw Error('Poucas páginas com correção ativa: '+ok);
           NODE

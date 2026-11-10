@@ -321,5 +321,7 @@ require('./seo-servicos-205.cjs');
 require('./seo-semrush-20261109.cjs');
 // Melhorias pontuais para consultas locais que já têm impressões no Search Console.
 require('./seo-search-console-prioridades.cjs');
+// Links visíveis no catálogo para páginas locais com cobertura e indexação liberada.
+require('./seo-discovery-prioridades.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
