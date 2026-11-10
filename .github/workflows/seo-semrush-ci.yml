@@ -50,6 +50,7 @@ jobs:
           }
           const hub=fs.readFileSync('dist/servicos/index.html','utf8');
           if(!hub.includes('data-qf-discovery-20261109')||!hub.includes('/servicos/eletricista/guarulhos/'))throw Error('Links locais prioritários ausentes');
+          if(!hub.includes('/servicos/pintor/sao-paulo/')||!hub.includes('/servicos/eletricista/sao-bernardo-do-campo/'))throw Error('Prioridades de maior oferta ausentes');
           const destaque=hub.match(/<section data-qf-discovery-20261109[\s\S]*?<\/section>/)?.[0]||'';
           if(destaque.includes('Muzambinho'))throw Error('Muzambinho ainda em destaque');
           console.log('Páginas com melhorias verificadas:',ok,'+ faxineira');
