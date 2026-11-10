@@ -5,10 +5,11 @@ const root=path.join(__dirname,'..','dist');
 const hub=path.join(root,'servicos','index.html');
 let html=fs.readFileSync(hub,'utf8');
 const candidates=[
- ['eletricista/muzambinho','Eletricista em Muzambinho'],
+ ['eletricista/sao-bernardo-do-campo','Eletricista em São Bernardo do Campo'],
  ['eletricista/guarulhos','Eletricista em Guarulhos'],
  ['diarista/guarulhos','Diarista em Guarulhos'],
  ['eletricista/santo-andre','Eletricista em Santo André'],
+ ['eletricista/suzano','Eletricista em Suzano'],
  ['eletricista/diadema','Eletricista em Diadema'],
  ['limpeza-de-sofa/santo-andre','Limpeza de sofá em Santo André']
 ];
