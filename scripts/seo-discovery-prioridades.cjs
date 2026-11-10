@@ -4,14 +4,20 @@ const fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'..','dist');
 const hub=path.join(root,'servicos','index.html');
 let html=fs.readFileSync(hub,'utf8');
+// Priorizado após consulta de profissionais por cidade/especialidade em 09/11/2026.
+// A checagem abaixo impede destacar páginas noindex ou ausentes.
 const candidates=[
+ ['pintor/sao-paulo','Pintor em São Paulo'],
+ ['eletricista/sao-paulo','Eletricista em São Paulo'],
+ ['encanador/sao-paulo','Encanador em São Paulo'],
  ['eletricista/sao-bernardo-do-campo','Eletricista em São Bernardo do Campo'],
+ ['encanador/sao-bernardo-do-campo','Encanador em São Bernardo do Campo'],
+ ['montador-de-moveis/sao-bernardo-do-campo','Montador de móveis em São Bernardo do Campo'],
+ ['pintor/guarulhos','Pintor em Guarulhos'],
  ['eletricista/guarulhos','Eletricista em Guarulhos'],
- ['diarista/guarulhos','Diarista em Guarulhos'],
  ['eletricista/santo-andre','Eletricista em Santo André'],
- ['eletricista/suzano','Eletricista em Suzano'],
- ['eletricista/diadema','Eletricista em Diadema'],
- ['limpeza-de-sofa/santo-andre','Limpeza de sofá em Santo André']
+ ['eletricista/praia-grande','Eletricista em Praia Grande'],
+ ['pintor/praia-grande','Pintor em Praia Grande']
 ];
 const links=candidates.filter(([slug])=>{
  const f=path.join(root,'servicos',slug,'index.html');
