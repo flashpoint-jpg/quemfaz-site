@@ -10,7 +10,7 @@ assert.ok(names.indexOf(mainName)<names.indexOf('qf-recrutamento.js'));
 assert.ok(names.indexOf('qf-recrutamento.js')<names.indexOf(shellName));
 for(const name of names)assert.ok(fs.existsSync(path.join(root,'dist',name.split('?')[0])),name);
 assert.ok(sw.includes('./'+mainName)&&sw.includes('./'+shellName));
-assert.ok(html.includes('Precisando de um profissional <em>perto de você?</em>'));
+assert.ok(html.includes('Precisa de um profissional <em>perto de você?</em>'));
 assert.ok(!fs.existsSync(path.join(root,'dist/node_modules')));
 assert.ok(Buffer.byteLength(html)<210000,'HTML inicial deve ficar abaixo de 210 KB');
 const cssName=html.match(/<link rel="stylesheet" href="(app-style-[^"]+\.css)">/)[1];

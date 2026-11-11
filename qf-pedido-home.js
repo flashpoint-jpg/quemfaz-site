@@ -248,7 +248,12 @@
   };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
- function reveal(){host()?.scrollIntoView({behavior:'auto',block:'start'});}
+ function reveal(){
+  const panel=host();
+  if(!panel)return;
+  panel.classList.add('qf-public-order-open');
+  panel.scrollIntoView({behavior:'auto',block:'start'});
+ }
  function message(text){const node=work();if(node)node.innerHTML='<p role="status">'+esc(text)+'</p>';}
  async function user(){
   let session=null;try{session=await g.QFCloud?.syncForCurrentSession(true);}catch(_){}
@@ -429,9 +434,10 @@
   // Iniciar acompanhamento do Google ANTES de restaurar o formulário.
   // Antes, o retorno OAuth saía daqui e nunca exibia nome / Sair da conta.
   watchAccount();
-  if(g.QFAtendimento?.hasGoogleDraft?.()||(pendingPublication()&&g.QFAtendimento?.hasActiveDraft?.())){showForm('');return;}
+  if(g.QFAtendimento?.hasGoogleDraft?.()||(pendingPublication()&&g.QFAtendimento?.hasActiveDraft?.())){showForm('');reveal();return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
+  if(action||state.mode!=='intro')slot.classList.add('qf-public-order-open');
   if(action)execute(action);
   else if(state.mode==='token')execute(state.tokenPath);
   else if(state.mode==='login')login();
@@ -460,6 +466,12 @@
   g.Screens.afterRenderAnon=function(pattern){const result=anon?.apply(this,arguments);if(pattern==='/')bindHome();return result;};
   g.document.addEventListener('submit',e=>{if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();e.stopImmediatePropagation();const value=e.target.querySelector('[data-landing-service-search]')?.value.trim();showForm(value);},true);
   g.document.addEventListener('click',e=>{
+   const how=e.target.closest('[data-public-how]');
+   if(how){
+    how.closest('details')?.removeAttribute('open');
+    g.document.getElementById('qf-public-como')?.focus();
+    return;
+   }
    const navButton=e.target.closest('.qf-home-nav button');
    if(navButton){selectTab(navButton.hasAttribute('data-home-services')?'services':navButton.hasAttribute('data-support-open')?'help':navButton.dataset.action==='landing-my-orders'?'orders':navButton.dataset.action==='landing-all-services'?'request':'home');if(navButton.dataset.nav==='/'){e.preventDefault();e.stopImmediatePropagation();state.notice='';intro();reveal();return;}}
    // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
@@ -467,10 +479,10 @@
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
    if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);const name=cat?.nome||service.dataset.deskService;g.document.querySelectorAll('[data-desk-service],[data-landing-cat]').forEach(b=>{const c=g.DB.categoryById(b.dataset.landingCat);b.setAttribute('aria-pressed',String((c?.nome||b.dataset.deskService)===name));});state.problem='';intro('',name);reveal();g.setTimeout(()=>{host()?.querySelector('form textarea')?.focus();},80);return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
-   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}intro();reveal();return;}
+   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}const linked=g.DB.categoryById(g.QFClientAcquisition?.serviceFromLink(g.location.search));intro('',linked?.nome);reveal();host()?.querySelector('#home-service-search')?.focus({preventScroll:true});return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
-   if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
+   if(button.dataset.action==='landing-my-orders'||inlinePath(path)){button.closest('details')?.removeAttribute('open');e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
   },true);
 
   // Atalhos públicos: não reutilizar o estado de pedidos do cliente para entrar como profissional.

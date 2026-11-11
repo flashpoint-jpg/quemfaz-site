@@ -24,6 +24,13 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const clientLanding=fs.readFileSync(path.join(__dirname,'landing-client.html'),'utf8').trim();
+const homeStart=html.indexOf('  Screens.landing = function () {');
+const homeEnd=html.indexOf('  // Conteúdo extra',homeStart);
+if(homeStart<0||homeEnd<0)throw Error('Renderização da home não encontrada');
+html=html.slice(0,homeStart)+'  Screens.landing = function () { return `'+clientLanding+'`; };\n\n'+html.slice(homeEnd);
+html=html.replace('<title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>','<title>Encontre Profissionais Perto de Você | Quem Faz Serviços</title>')
+  .replace('</head>','<link rel="stylesheet" href="/qf-public-pages.css?v=1"></head>');
 // Atualiza os arquivos de cobertura também nos navegadores que já visitaram a home.
 html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-alinhamento2').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-alinhamento2');
 // Textos públicos alinhados ao fluxo atual; remove benefícios descontinuados.
@@ -98,7 +105,7 @@ html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); re
 html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
-html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=painel-cliente-20261101"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=home-publica-20261111"></script></body>');
 html=html.replace('</body>','<script defer src="/qf-marketing-dedicado.js"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
@@ -249,7 +256,7 @@ const placeholder=html.slice(opening,closing);
 const landingRaw=scope.Screens.landing();
 const oldForm=/(<form\b[^>]*\bdata-landing-service-form\b[^>]*>)[\s\S]*?(<\/form>)/i;
 if(!oldForm.test(landingRaw))throw Error('Formulário pré-renderizado não encontrado');
-const landingClean=landingRaw.replace(oldForm,(_full,open,close)=>open+
+const landingClean=landingRaw.includes('qf-public--client') ? landingRaw : landingRaw.replace(oldForm,(_full,open,close)=>open+
   '<div role="status" aria-live="polite" style="padding:24px 16px;min-height:110px;display:grid;align-content:center;gap:8px;text-align:center;background:#fff;border-radius:16px;color:#123e72">'+
   '<strong style="font-size:18px">Publique seu pedido grátis</strong>'+
   '<span style="font-size:14px">Preparando formulário atualizado...</span></div>'+close);
@@ -259,7 +266,9 @@ const early=`(function(w){
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;['data-landing-location','data-landing-neighborhood'].forEach(function(k){var el=document.querySelector('['+k+']');if(el)fields[k]=el.value;});},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search],#home-problem');Object.keys(fields).forEach(function(k){var el=content.querySelector('['+k+']');if(el)el.value=fields[k];});if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};
   if(location.hash&&location.hash!=='#/')document.getElementById('app-shell').outerHTML=loading;
   document.addEventListener('submit',function(e){if(ready)return;if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();early.capture();w.QFHomeDraft={service:(saved||'').trim()};pending='[data-home-problem]';},true);
-  document.addEventListener('click',function(e){if(ready)return;var b=e.target.closest('[data-nav],[data-action="landing-login"],[data-support-open]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;}else pending=b.hasAttribute('data-support-open')?'[data-support-open]':'[data-action="landing-login"]';},true);
+  document.addEventListener('click',function(e){if(ready)return;var publicButton=e.target.closest('[data-landing-cat],[data-action="landing-all-services"],[data-action="landing-my-orders"],[data-public-how]');
+  if(publicButton){e.preventDefault();e.stopImmediatePropagation();pending=publicButton.dataset.landingCat?'[data-landing-cat="'+publicButton.dataset.landingCat+'"]':publicButton.dataset.action?'[data-action="'+publicButton.dataset.action+'"]':'[data-public-how]';return;}
+  var b=e.target.closest('[data-nav],[data-action="landing-login"],[data-support-open]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;}else pending=b.hasAttribute('data-support-open')?'[data-support-open]':'[data-action="landing-login"]';},true);
 })(window);`;
 new vm.Script(early);
 html=html.slice(0,opening)+landing+'<script>'+early+'</script>\n'+html.slice(closing);
