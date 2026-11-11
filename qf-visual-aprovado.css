@@ -26,6 +26,11 @@
 .qf-approved-desktop-menu { display: flex; align-items: center; gap: clamp(16px, 2.6vw, 40px); font-size: 14px; font-weight: 650; }
 .qf-approved-header nav button { background: transparent; color: inherit; border: 0; padding: 8px 0; font: inherit; }
 .qf-approved-header nav .qf-approved-login { border: 1px solid #d5e4f9; border-radius: 12px; padding: 8px 14px; }
+.qf-approved-header-actions { display: flex; align-items: center; gap: 8px; }
+.qf-approved-header-actions a { display: flex; align-items: center; justify-content: center; min-height: 44px; }
+.qf-approved-header-actions .qf-approved-prof-signin { border: 1px solid #d5e4f9; border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 750; line-height: 1.15; text-align: center; }
+.qf-approved-prof-signin:hover { background: #ffffff1a; }
+.qf-approved-play img { display: block; width: 108px; height: auto; }
 .qf-approved-mobile-menu { display: none; position: relative; }
 .qf-approved-mobile-menu summary { display: grid; place-items: center; min-width: 44px; min-height: 44px; cursor: pointer; font-size: 22px; list-style: none; }
 .qf-approved-mobile-menu summary::-webkit-details-marker { display: none; }
@@ -117,10 +122,14 @@
 .qf-approved-faq details p { padding: 0 14px 12px; }
 @media (max-width: 899px) {
   .qf-approved-wrap { width: min(100% - 36px, 650px); }
-  .qf-approved-header-inner { min-height: 52px; }
+  .qf-approved-header-inner { min-height: 52px; gap: 4px; }
+  .qf-approved-header-inner .qf-approved-brand { min-width: 0; }
+  .qf-approved-header-actions { margin-left: auto; gap: 4px; flex: none; }
+  .qf-approved-header-actions .qf-approved-prof-signin { width: 88px; padding-inline: 5px; font-size: 12px; }
+  .qf-approved-play img { width: clamp(72px, 23vw, 108px); }
   .qf-approved-brand img { width: 112px; height: 38px; }
   .qf-approved-desktop-menu { display: none; }
-  .qf-approved-mobile-menu { display: block; }
+  .qf-approved-mobile-menu { display: block; flex: none; }
   .qf-approved-hero-inner { min-height: 0; }
   .qf-approved-hero-copy { width: min(100%, 480px); padding: 20px 0 29px; }
   .qf-approved h1 { font-size: clamp(32px, 8.6vw, 54px); line-height: 1.01; }
