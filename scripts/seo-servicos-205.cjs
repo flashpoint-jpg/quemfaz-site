@@ -202,6 +202,7 @@ let sitemap=fs.readFileSync(path.join(out,'sitemap.xml'),'utf8').replace(/<url>\
 sitemap=sitemap.replace('</urlset>',generated.filter(x=>x.index).map(x=>'<url><loc>'+base+x.url+'</loc></url>').join('\n')+'\n</urlset>');fs.writeFileSync(path.join(out,'sitemap.xml'),sitemap);
 const indexFile=path.join(out,'servicos','index.html');let indexHtml=fs.readFileSync(indexFile,'utf8');
 const discover=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]).filter(u=>u!==base+'/servicos/'&&u!==base+'/').map(u=>{const p=new URL(u).pathname;const f=path.join(out,p,'index.html');const t=fs.existsSync(f)?fs.readFileSync(f,'utf8').match(/<title>([^<]+)<\/title>/)?.[1]:p;return [u,t||p];});
-indexHtml=indexHtml.replace('</article>','<h2>Guias de serviços e regiões</h2>'+links(discover)+'</article>');fs.writeFileSync(indexFile,indexHtml);
+indexHtml=indexHtml.replace('</article>','<h2>Guias de serviços e regiões</h2>'+links(discover)+'</article>');indexHtml=require('./seo-directory-layout.cjs')(indexHtml,services.filter(s=>covered.some(c=>c.ids.has(s.id))),covered,urlFor,esc);
+fs.writeFileSync(indexFile,indexHtml);
 fs.writeFileSync(path.join(out,'seo-205-manifest.json'),JSON.stringify({date:'2026-11-04',regions:covered.map(c=>({cidade:c.nome,uf:c.uf})),pages:generated},null,2));
 console.log('Issue 205: '+covered.length+' regiões, '+generated.length+' páginas com formulário e navegação; locais sem cobertura confirmada com noindex.');
