@@ -2835,7 +2835,7 @@ window.QFConsentInicial = (function () {
   .qf-desk-trust { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: auto auto 1fr; gap: 10px 22px; }
   .qf-desk-trust li { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--navy-800); }
   .qf-desk-trust svg { width: 19px; height: 19px; flex: none; color: var(--orange-600); }
-  #app-shell[data-route="inicio"] .qf-landing-body .qf-landing-footer { display: none; }
+  #app-shell[data-route="inicio"] .qf-landing-body .qf-landing-footer:not(.qf-approved-footer) { display: none; }
   /* A foto não acompanha mais a rolagem: agora há seções de largura inteira abaixo dela. */
   #app-shell[data-route="inicio"] .qf-landing-hero { position: relative; top: auto; }
   #app-shell[data-route="inicio"] .qf-landing-body { padding-bottom: 0; }
@@ -8774,7 +8774,7 @@ alt=""></noscript>
         '<a class="qf-approved-prof-signin" href="/#/auth/profissional/login">Entrar como profissional</a>' +
         '<a class="qf-approved-play" href="https://play.google.com/store/apps/details?id=br.app.quemfaz"><img src="/assets/google-play-badge.png" width="646" height="250" alt="Baixar o app Quem Faz no Google Play"></a>' +
         '</div>' +
-        '<details class="qf-approved-mobile-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button></nav></details>' +
+        '<details class="qf-approved-mobile-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button>' + QF_SOCIAL.map(s => '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer">' + s.name + '</a>').join('') + '</nav></details>' +
       '</div></header>' +
       '<section class="qf-landing-hero"><div class="qf-approved-wrap qf-approved-hero-inner">' +
         '<div class="qf-approved-hero-copy"><h1>Precisa de um profissional <em>perto de você?</em></h1><p class="qf-customer-sub">Descreva o serviço e receba propostas de profissionais da sua região.</p></div>' +
