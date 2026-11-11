@@ -37,15 +37,15 @@
 /* Padrão visual único (igual à home): cabeçalho, paleta, botões e títulos. */
 .seo-page{--qf-navy:#051d49;--qf-ink:#091449;--qf-orange:#ff8000;--qf-border:#d8e0eb;--qf-paper:#f6f8fb;--qf-cta:#d45000;background:#fff;color:var(--qf-ink);font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.5}
 .seo-header{background:linear-gradient(105deg,#041a45,#08366f);border:0;border-bottom:4px solid var(--qf-orange);padding:0;display:block}
-.seo-header-inner{width:min(100% - 72px,1180px);margin-inline:auto;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative}
+.seo-header-inner{width:min(100% - 72px,1180px);margin-inline:auto;min-height:96px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative}
 .seo-brand{display:flex;align-items:center}
 .seo-header img{display:block;width:150px;height:50px;object-fit:contain}
-.seo-menu{display:flex;align-items:center;gap:24px;font-size:14px;font-weight:650}
+.seo-menu{display:flex;align-items:center;gap:24px;font-size:15px;font-weight:700}
 .seo-header a,.seo-menu-prof summary{color:#fff;text-decoration:none;font-weight:inherit}
 .seo-header>.seo-header-inner>a:last-child{border:0;padding:0}
 .seo-menu a{padding:8px 0}
 .seo-menu-prof{position:relative}
-.seo-menu-prof summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;list-style:none;white-space:nowrap;font-size:14px;font-weight:750}
+.seo-menu-prof summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;list-style:none;white-space:nowrap;font-size:15px;font-weight:700}
 .seo-menu-prof summary::-webkit-details-marker{display:none}
 .seo-menu-prof summary::after{content:"";width:7px;height:7px;border-right:2px solid #ffb463;border-bottom:2px solid #ffb463;transform:translateY(-2px) rotate(45deg)}
 .seo-menu-prof[open] summary,.seo-menu-prof summary:hover{border-color:#d5e4f9}
