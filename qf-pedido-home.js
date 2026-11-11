@@ -258,7 +258,7 @@
  }
  function list(){return state.user?(g.DB?.state?.requests||[]).filter(r=>r.clienteId===state.user.id).sort((a,b)=>new Date(b.criadoEm||0)-new Date(a.criadoEm||0)):[];}
  function reset(){
-  const el=host();if(el)el.innerHTML=toolbar();
+  const el=host();if(el){el.hidden=false;el.innerHTML=toolbar();}
   // Durante o pedido, ocultar os catálogos que aparecem logo abaixo do formulário.
   // Não remover do DOM: voltam ao sair do formulário.
   const editing=state.mode==='form';
@@ -436,8 +436,12 @@
   else if(state.mode==='token')execute(state.tokenPath);
   else if(state.mode==='login')login();
   else if(state.mode==='form')showForm(state.service,state.problem);
-  else if(state.mode==='intro')intro();
-   else if(state.mode==='dashboard')dashboard();
+  else if(state.mode==='intro'){
+   intro();
+   if (slot?.closest('.qf-approved-client') && !state.problem && !state.service &&
+       !g.QFClientAcquisition?.serviceFromLink(g.location.search)) slot.hidden=true;
+  }
+  else if(state.mode==='dashboard')dashboard();
   else if(state.mode==='chat'&&state.selected&&state.prof)chat(state.selected,state.prof);
   else if(state.mode==='detail'&&state.selected)detail(state.selected);
   else intro();
@@ -460,6 +464,8 @@
   g.Screens.afterRenderAnon=function(pattern){const result=anon?.apply(this,arguments);if(pattern==='/')bindHome();return result;};
   g.document.addEventListener('submit',e=>{if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();e.stopImmediatePropagation();const value=e.target.querySelector('[data-landing-service-search]')?.value.trim();showForm(value);},true);
   g.document.addEventListener('click',e=>{
+   const menuButton=e.target.closest('.qf-approved-mobile-menu nav button');
+   if(menuButton)menuButton.closest('details').open=false;
    const navButton=e.target.closest('.qf-home-nav button');
    if(navButton){selectTab(navButton.hasAttribute('data-home-services')?'services':navButton.hasAttribute('data-support-open')?'help':navButton.dataset.action==='landing-my-orders'?'orders':navButton.dataset.action==='landing-all-services'?'request':'home');if(navButton.dataset.nav==='/'){e.preventDefault();e.stopImmediatePropagation();state.notice='';intro();reveal();return;}}
    // O formulário antigo é substituído na home; seus atalhos precisam apontar ao card atual.
@@ -467,7 +473,7 @@
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
    if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);const name=cat?.nome||service.dataset.deskService;g.document.querySelectorAll('[data-desk-service],[data-landing-cat]').forEach(b=>{const c=g.DB.categoryById(b.dataset.landingCat);b.setAttribute('aria-pressed',String((c?.nome||b.dataset.deskService)===name));});state.problem='';intro('',name);reveal();g.setTimeout(()=>{host()?.querySelector('form textarea')?.focus();},80);return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
-   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}intro();reveal();return;}
+   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-approved-picker,.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}const linked=g.QFClientAcquisition?.serviceFromLink(g.location.search);intro('',g.DB.categoryById(linked)?.nome);reveal();return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}

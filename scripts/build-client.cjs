@@ -249,17 +249,14 @@ const placeholder=html.slice(opening,closing);
 const landingRaw=scope.Screens.landing();
 const oldForm=/(<form\b[^>]*\bdata-landing-service-form\b[^>]*>)[\s\S]*?(<\/form>)/i;
 if(!oldForm.test(landingRaw))throw Error('Formulário pré-renderizado não encontrado');
-const landingClean=landingRaw.replace(oldForm,(_full,open,close)=>open+
-  '<div role="status" aria-live="polite" style="padding:24px 16px;min-height:110px;display:grid;align-content:center;gap:8px;text-align:center;background:#fff;border-radius:16px;color:#123e72">'+
-  '<strong style="font-size:18px">Publique seu pedido grátis</strong>'+
-  '<span style="font-size:14px">Preparando formulário atualizado...</span></div>'+close);
+const landingClean=landingRaw.replace(oldForm,(_full,open,close)=>open+close);
 const landing='<div id="app-shell" data-route="inicio" data-role="anon" data-qf-prerender="home"><main id="app-content">'+landingClean+'</main></div>';
 const early=`(function(w){
   var saved='',fields={},pending=null,loading=${JSON.stringify(placeholder)},ready=false;
   var early=w.QFEarly={capture:function(){if(ready)return;var x=document.querySelector('[data-landing-service-search]');if(x)saved=x.value;['data-landing-location','data-landing-neighborhood'].forEach(function(k){var el=document.querySelector('['+k+']');if(el)fields[k]=el.value;});},restore:function(content){if(ready)return;var x=content.querySelector('[data-landing-service-search],#home-problem');Object.keys(fields).forEach(function(k){var el=content.querySelector('['+k+']');if(el)el.value=fields[k];});if(x&&saved){x.value=saved;x.dispatchEvent(new Event('input',{bubbles:true}));}},finish:function(){ready=true;if(pending){var e=document.querySelector(pending);pending=null;if(e){if(e.tagName==='FORM')e.requestSubmit();else e.click();}}}};
   if(location.hash&&location.hash!=='#/')document.getElementById('app-shell').outerHTML=loading;
   document.addEventListener('submit',function(e){if(ready)return;if(!e.target.matches('[data-landing-service-form]'))return;e.preventDefault();early.capture();w.QFHomeDraft={service:(saved||'').trim()};pending='[data-home-problem]';},true);
-  document.addEventListener('click',function(e){if(ready)return;var b=e.target.closest('[data-nav],[data-action="landing-login"],[data-support-open]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;}else pending=b.hasAttribute('data-support-open')?'[data-support-open]':'[data-action="landing-login"]';},true);
+  document.addEventListener('click',function(e){if(ready)return;var b=e.target.closest('[data-nav],[data-action],[data-support-open],[data-landing-cat],[data-desk-go],[data-home-services]');if(!b)return;e.preventDefault();early.capture();var nav=b.getAttribute('data-nav');if(nav){location.hash='#'+nav;document.getElementById('app-shell').outerHTML=loading;return;}var attrs=['data-landing-cat','data-desk-go','data-action','data-home-services','data-support-open'];var attr=attrs.find(function(key){return b.hasAttribute(key);});if(attr){var value=b.getAttribute(attr);pending=value?'['+attr+'="'+CSS.escape(value)+'"]':'['+attr+']';}},true);
 })(window);`;
 new vm.Script(early);
 html=html.slice(0,opening)+landing+'<script>'+early+'</script>\n'+html.slice(closing);

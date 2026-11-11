@@ -13,4 +13,8 @@ for(const s of services){for(const city of cities){const dir=path.join(out,s.slu
 // Elas continuam navegáveis e com canonical, mas não entram no sitemap.
 // Apenas URLs com conteúdo editorial suficiente entram no sitemap.
 // O catálogo local permanece noindex até consentimento público e elegibilidade confirmados.
-const sm=['<?xml version="1.0" encoding="UTF-8"?>','<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">','<url><loc>https://quemfazservico.com.br/</loc></url>',...services.map(s=>'<url><loc>https://quemfazservico.com.br/servicos/'+s.slug+'/</loc></url>'),/* Páginas locais aguardam conteúdo e profissionais públicos verificados */,'</urlset>'].join('\n');fs.writeFileSync(path.join(__dirname,'..','dist','sitemap.xml'),sm);console.log('SEO: '+services.length+' páginas de serviços + '+(services.length*cities.length)+' páginas locais geradas.');
+// Mantém no sitemap gerado as páginas profissionais publicadas no repositório.
+const professionalPages = [...fs.readFileSync(path.join(__dirname, '..', 'sitemap.xml'), 'utf8')
+  .matchAll(/<loc>(https:\/\/quemfazservico\.com\.br\/para-profissionais\/[^<]*)<\/loc>/g)]
+  .map(([, url]) => '<url><loc>' + url + '</loc></url>');
+const sm=['<?xml version="1.0" encoding="UTF-8"?>','<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">','<url><loc>https://quemfazservico.com.br/</loc></url>',...professionalPages,...services.map(s=>'<url><loc>https://quemfazservico.com.br/servicos/'+s.slug+'/</loc></url>'),/* Páginas locais aguardam conteúdo e profissionais públicos verificados */,'</urlset>'].join('\n');fs.writeFileSync(path.join(__dirname,'..','dist','sitemap.xml'),sm);console.log('SEO: '+services.length+' páginas de serviços + '+(services.length*cities.length)+' páginas locais geradas.');

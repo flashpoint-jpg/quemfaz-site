@@ -60,16 +60,16 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 }
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
-<title>Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis</title>
+<title>Encontre profissionais perto de você | Quem Faz Serviços</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
 <!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
-<meta name="description" content="Precisa de um profissional? Publique seu pedido grátis no Quem Faz e receba até 4 contatos de profissionais da sua região.">
+<meta name="description" content="Encontre diarista, pintor, eletricista, encanador e outros profissionais em Santo André, Guarulhos e no ABC. Publique grátis e receba até 4 contatos.">
 <link rel="canonical" href="https://quemfazservico.com.br/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Quem Faz">
-<meta property="og:title" content="Quem Faz | Encontre Profissionais e Receba até 4 Contatos Grátis">
+<meta property="og:title" content="Encontre profissionais perto de você | Quem Faz Serviços">
 <meta property="og:description" content="Publique seu pedido grátis e receba até 4 contatos de profissionais da sua região.">
 <meta property="og:url" content="https://quemfazservico.com.br/">
 <meta name="twitter:card" content="summary">
@@ -3973,6 +3973,7 @@ body:has(#cadastro-prof-form) {min-height:100dvh}
 @media(max-width:700px){#cadastro-prof-form{min-height:calc(100dvh + 240px);overflow-anchor:none}html:has(#cadastro-prof-form){overflow-anchor:none}}
 @media(max-width:700px){body:has(#cadastro-prof-form) .view{min-height:calc(100dvh - 120px);padding-bottom:24px}#cadastro-prof-form .qf-step__nav{position:relative;bottom:auto}}
 </style>
+<link rel="stylesheet" href="/qf-visual-aprovado.css">
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -8750,24 +8751,51 @@ alt=""></noscript>
   };
 
   Screens.landing = function () {
-    const cats = DB.categories();
-    const heroBanner = "./assets/qf-approved-2.webp";
-    return '<div class="qf-landing">' +
-      '<div class="qf-landing-topbar"><div class="qf-landing-brand">' + (global.QF_BRAND_MARK || '') + '</div>' + deskMenu() + '<div class="qf-home-prof"><button type="button" class="qf-home-prof-btn" data-nav="/auth/profissional/login">' + icon('briefcase') + '<span class="qf-prof-full">Área de profissionais</span><span class="qf-prof-short">Profissionais</span></button></div><button class="btn btn--primary qf-landing-login" type="button" data-action="landing-my-orders">Meus pedidos</button></div>' +
-      '<section class="qf-landing-hero"><div class="qf-landing-copy qf-hero2"><div class="qf-hero2-head"><h1 class="qf-hero2-title">Precisando de um profissional <em>perto de você?</em></h1><div class="qf-landing-photo"><img src="' + heroBanner + '" width="1200" height="800" alt="QuemFaz: Precisou? Encontre quem faz. Serviços, reparos e soluções perto de você."></div></div><p class="qf-brand-tagline">Conectando você ao profissional certo.</p><p class="qf-customer-sub">Publique seu pedido grátis e encontre profissionais da sua região.</p>' +
-      // V11.72: mini carrossel "Anuncie sua marca aqui", logo abaixo da foto, com botão para os planos de divulgação.
-      '<div class="qf-landing-actions"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form><label class="qf-hero-search__label" for="qf-hero-search-input">Qual serviço você precisa?</label><div class="qf-hero2-fields"><div class="qf-hero2-input"><label class="category-browser-search" style="margin:0;"><span class="category-browser-search__icon">'+icon('search')+'</span><input class="input" id="qf-hero-search-input" type="search" data-landing-service-search placeholder="Ex.: limpeza de sofá, pintura" autocomplete="off" enterkeyhint="search"></label><div class="qf-service-suggestions" data-landing-service-suggestions hidden></div></div><button class="btn btn--primary" type="submit"><span>Pedir grátis</span>' + icon('arrowRight') + '</button></div>' +
-        '<p class="qf-home-promessa">Sem cadastro obrigatório · Pedido gratuito</p></form></div>' +
-        '<a class="qf-play-badge qf-play-badge--hero" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer" aria-label="QuemFaz na Google Play Store"><img src="/assets/google-play-badge.png" alt="Disponível no Google Play" width="190" height="56" onerror="this.parentNode.classList.add(\'qf-play-badge--txt\');this.remove()"></a>' +
-        '<a class="qf-play-link" href="https://play.google.com/store/apps/details?id=br.app.quemfaz" target="_blank" rel="noopener noreferrer">' + icon('download') + '<span>Baixar direto da Play Store</span></a>' +
-        '</div><div class="qf-tape" aria-hidden="true"></div></section>' +
-      '<div class="qf-landing-body">' +
-      deskExtra() + mobExtra() +
-      '<section class="section">' +
-        '<button class="btn btn--outline" type="button" data-nav="/como-funciona" style="margin-top:12px;">Preços, planos e dúvidas</button>' +
-      '</section>' +
-      '<footer class="qf-landing-footer"><p class="text text--sm text--secondary" style="text-align:center;">Seus dados ficam protegidos e o CPF nunca é mostrado a outros usuários. QuemFaz ' + (global.QFApp ? 'v' + global.QFApp.VERSION : '') + '.</p><nav class="qf-footer-links" aria-label="Links institucionais"><button class="qf-footer-help" type="button" data-support-open>Ajuda</button><a href="/servicos/">Serviços</a><a href="./privacidade/">Política de privacidade</a><a href="./excluir-conta/">Excluir conta</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
-      deskWide() +
+    const services = [
+      ['cat_diarista', 'Diarista', 'broom', 'diarista', 'Limpeza residencial e organização da casa.'],
+      ['cat_pintor', 'Pintor', 'paintRoller', 'pintor', 'Pintura interna e externa, de paredes a fachadas.'],
+      ['cat_eletricista', 'Eletricista', 'bolt', 'eletricista', 'Instalações, reparos e manutenção elétrica.'],
+      ['cat_encanador', 'Encanador', 'droplet'],
+      ['cat_pedreiro', 'Pedreiro', 'trowel'],
+      ['cat_limpeza_estofados', 'Limpeza de Sofá', 'broom'],
+    ];
+    const cities = [
+      ['Santo André', 'santo-andre', '/servicos/eletricista/santo-andre/', 'Informe se é instalação ou reparo e se o atendimento é em casa ou condomínio.'],
+      ['Guarulhos', 'guarulhos', '/servicos/diarista/guarulhos/', 'Para uma faxina, diga o tamanho do imóvel e se é limpeza de rotina ou pós-obra.'],
+      ['ABC Paulista', 'abc', '/servicos/encanador/sao-bernardo-do-campo/', 'Para reparos hidráulicos em São Bernardo, descreva onde há vazamento ou entupimento.'],
+    ];
+    const photoCard = (href, photo, title, copy) => '<article class="qf-approved-card"><a href="' + href + '"><img src="/assets/aprovado/' + photo + '.webp" alt="" loading="lazy" decoding="async"><div><h3>' + title + '</h3><p>' + copy + '</p><span class="qf-approved-arrow" aria-hidden="true">›</span></div></a></article>';
+    const step = (n, glyph, title, copy) => '<li><span class="qf-approved-step-icon" aria-hidden="true"><b>' + n + '</b>' + icon(glyph) + '</span><div><h3>' + title + '</h3><p>' + copy + '</p></div></li>';
+    return '<div class="qf-landing qf-approved qf-approved-client">' +
+      '<header class="qf-landing-topbar qf-approved-header"><div class="qf-approved-wrap qf-approved-header-inner">' +
+        '<a href="/" class="qf-approved-brand"><img src="/assets/qf-logo-branco-20261014.webp" alt="Quem Faz Serviços" width="150" height="50"></a>' +
+        '<nav class="qf-approved-desktop-menu" aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" class="qf-approved-login" data-action="landing-my-orders">Meus pedidos</button></nav>' +
+        '<details class="qf-approved-mobile-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button></nav></details>' +
+      '</div></header>' +
+      '<section class="qf-landing-hero"><div class="qf-approved-wrap qf-approved-hero-inner">' +
+        '<div class="qf-approved-hero-copy"><h1>Precisa de um profissional <em>perto de você?</em></h1><p class="qf-customer-sub">Descreva o serviço e receba propostas de profissionais da sua região.</p></div>' +
+        '<img class="qf-approved-hero-photo" src="/assets/aprovado/cliente.webp" width="368" height="232" alt="" fetchpriority="high">' +
+      '</div></section>' +
+      '<div class="qf-approved-wrap qf-approved-client-main">' +
+        '<section class="qf-approved-picker" aria-labelledby="qf-approved-picker-title"><h2 id="qf-approved-picker-title">Qual serviço você precisa?</h2>' +
+          '<div class="qf-approved-chips">' + services.map(s => '<button type="button" data-landing-cat="' + s[0] + '" aria-pressed="false">' + icon(s[2]) + '<span>' + s[1] + '</span><span class="qf-approved-chip-arrow" aria-hidden="true">›</span></button>').join('') + '</div>' +
+          '<button type="button" class="qf-approved-cta" data-action="landing-all-services">Publicar pedido grátis ' + icon('chevronRight') + '</button>' +
+        '</section>' +
+        '<ul class="qf-approved-trust"><li>' + icon('checkCircle') + 'Grátis para publicar</li><li>' + icon('users') + 'Até 4 contatos</li><li>' + icon('shieldCheck') + 'Você escolhe</li></ul>' +
+        '<div class="qf-landing-actions qf-approved-work"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form hidden><label for="qf-hero-search-input">Qual serviço você precisa?</label><input id="qf-hero-search-input" type="search" data-landing-service-search autocomplete="off"><button type="submit"><span>Pedir grátis</span></button></form></div>' +
+        '<section class="qf-approved-services" id="qf-sec-servicos" aria-labelledby="qf-approved-services-title"><h2 class="qf-sr-only" id="qf-approved-services-title">Serviços em destaque</h2>' +
+          '<div class="qf-approved-cards">' + services.slice(0, 3).map(s => photoCard('/servicos/' + s[3] + '/', s[3], s[1], s[4])).join('') + '</div>' +
+          '<a class="qf-approved-more" href="/servicos/">Ver todos os serviços</a></section>' +
+        '<section class="qf-approved-how" id="qf-sec-como"><h2>Como funciona</h2><ol>' +
+          step(1, 'clipboard', 'Descreva o serviço', 'Conte o que você precisa, com os detalhes do serviço.') +
+          step(2, 'users', 'Receba contatos', 'Até quatro profissionais da região podem ver o pedido e entrar em contato.') +
+          step(3, 'checkCircle', 'Escolha o profissional', 'Converse, compare as propostas e contrate quem for melhor para você.') +
+        '</ol></section>' +
+      '</div>' +
+      '<section class="qf-approved-cities"><div class="qf-approved-wrap"><h2>' + icon('mapPin') + 'Profissionais em Santo André, Guarulhos e ABC</h2><p>Encontre profissionais da região para serviços residenciais e comerciais.</p>' +
+        '<div class="qf-approved-cards">' + cities.map(c => photoCard(c[2], c[1], c[0], c[3])).join('') + '</div>' +
+        '<div class="qf-stats-slot" data-home-stats></div></div></section>' +
+      '<div class="qf-landing-body qf-approved-wrap"><footer class="qf-landing-footer qf-approved-footer"><nav aria-label="Links institucionais"><button type="button" data-support-open>Ajuda</button><button type="button" data-nav="/como-funciona">Preços, planos e dúvidas</button><a href="/#/auth/profissional/login">Entrar como profissional</a><a href="/privacidade/">Privacidade</a><a href="/excluir-conta/">Excluir conta</a><a href="https://play.google.com/store/apps/details?id=br.app.quemfaz">Baixar o app</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
       '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-action="landing-my-orders">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-support-open>' + icon('info') + '<span>Ajuda</span></button></nav></div>';
   };
 

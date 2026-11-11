@@ -31,7 +31,7 @@ test('nome e icone do servico escolhido acompanham a troca', () => {
 });
 
 test('titulo, descricao, calculadora e app usam limite de ate 4', () => {
-  assert.match(html, /Receba até 4 Contatos Grátis/);
+  assert.match(html, /<meta name="description" content="[^"]*receba até 4 contatos/i);
   assert.doesNotMatch(html, /Receba até 3 Contatos Grátis/);
   assert.doesNotMatch(html, /receba até 3 contatos de profissionais/);
   assert.match(html, /até 4 profissionais podem chamar você no WhatsApp/);
