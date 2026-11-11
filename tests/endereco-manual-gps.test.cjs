@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
+const path = require('node:path');
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
 
@@ -58,10 +59,10 @@ test('GPS é um botão de escolha explícita, sem substituir local manual automa
 });
 
 
-test('index tem um campo só e o botão Pedir grátis; GPS fica no pedido', () => {
-  const landing = html.slice(html.indexOf('  Screens.landing = function () {'), html.indexOf('  function roleCard('));
+test('a home abre o formulário pelo botão Publicar pedido grátis; GPS fica no pedido', () => {
+  const landing = fs.readFileSync(path.join(__dirname, '../scripts/landing-client.html'), 'utf8');
   assert.ok(!landing.includes('data-home-gps') && !landing.includes('data-landing-location'));
-  assert.equal((landing.match(/<input /g) || []).length, 1);
-  assert.match(landing, /<span>Pedir grátis<\/span>/);
+  assert.equal((landing.match(/<input /g) || []).length, 0);
+  assert.match(landing, /data-action="landing-all-services">Publicar pedido grátis/);
   assert.match(html, /data-cliente-gps[^>]*>Usar minha localização \(GPS\)/);
 });
