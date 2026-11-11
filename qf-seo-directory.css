@@ -1,182 +1,54 @@
-.seo-directory {
-  --directory-navy: #092b5b;
-  --directory-border: #c7d3e3;
-  background: #f7f9fc;
-  color: var(--directory-navy);
-  font-family: Inter, system-ui, sans-serif;
-  line-height: 1.4;
+/* Página /servicos/: mesma paleta, cabeçalho e proporções da home. */
+.seo-directory{background:#fff;color:var(--qf-ink);font-family:Inter,system-ui,sans-serif;line-height:1.4}
+.seo-directory .seo-main nav{margin:0 0 16px;font-size:14px;color:#5b6a80}
+.directory-hero{border-radius:18px;background:linear-gradient(110deg,#042d60,#061e4b 53%,#0a3676);color:#fff;padding:30px 44px 36px}
+.directory-hero-copy{max-width:535px;position:relative}
+.directory-hero .seo-eyebrow{display:inline-block;margin:0 0 12px;background:#ff80002e;color:#ffb463}
+.seo-directory .directory-hero h1{margin:0;max-width:550px;color:#fff;font-size:clamp(34px,4.4vw,56px);font-weight:850;letter-spacing:-.05em;line-height:1.02;overflow-wrap:normal}
+.directory-hero h1+p{margin:14px 0 20px;color:#fff;font-size:clamp(16px,1.75vw,22px);line-height:1.25}
+.directory-search{display:flex;border:1px solid var(--qf-border);border-radius:12px;background:#fff;box-shadow:0 6px 18px #10204b28;overflow:hidden}
+.directory-search label,.directory-city label{color:var(--qf-ink);display:flex;align-items:center;gap:9px;min-width:0;background:#fff;padding:0 14px;flex:1}
+.seo-directory svg{width:22px;height:22px;flex:none}
+.directory-search input,.directory-city select{width:100%;min-width:0;min-height:50px;padding:0 3px;border:0;color:var(--qf-ink);font:inherit;background:#fff}
+.directory-search input::placeholder{color:#5b6a80;opacity:1}
+.directory-search button{flex:none;padding:0 22px;min-height:50px;border:0;border-radius:0;background:linear-gradient(#dc6000,var(--qf-cta));color:#fff;font:850 16px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
+.directory-search button:hover{background:#b84300}
+.directory-section{margin:32px 0 0}
+.seo-directory .directory-section h2,.seo-directory .directory-city h2{margin:0 0 14px;font-size:clamp(23px,2.65vw,35px);font-weight:800;letter-spacing:-.035em;line-height:1.1;color:var(--qf-ink)}
+.directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.directory-categories{grid-template-columns:repeat(4,minmax(0,1fr))}
+.seo-directory .directory-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;min-height:76px;padding:10px 14px;border:1px solid var(--qf-border);border-radius:12px;background:var(--qf-paper);color:var(--qf-ink);font-size:clamp(15px,1.5vw,18px);font-weight:750;line-height:1.2;text-decoration:none}
+.seo-directory .directory-card[hidden]{display:none}
+.seo-directory .directory-card:hover{border-color:#ff8000;background:#fff}
+.directory-card>svg{width:16px;color:#5b6a80}
+.directory-icon{display:grid;place-items:center;width:50px;height:50px;border-radius:10px;background:#fff;color:#bb5000}
+.directory-icon svg{width:30px;height:30px}
+.directory-city{margin:32px 0 20px;display:grid;grid-template-columns:1.12fr 1fr;align-items:center;gap:12px;padding:18px 24px;border:1px solid var(--qf-border);border-radius:18px;background:var(--qf-paper)}
+.seo-directory .directory-city h2{margin:0;font-size:clamp(20px,2.3vw,28px)}
+.directory-city label{border:1px solid var(--qf-border);border-radius:12px}
+.directory-city select{min-height:46px}
+.directory-details{margin:12px 0}
+.directory-details summary{font-weight:750;padding:10px 0;cursor:pointer}
+.directory-details .seo-content{margin:0;padding:18px}
+.directory-reset{margin-bottom:12px;padding:8px 12px;border:1px solid var(--qf-border);border-radius:8px;background:#fff;color:inherit;font:inherit;cursor:pointer}
+@media(min-width:801px){
+  .directory-hero{min-height:330px;background-image:linear-gradient(90deg,#042d60 6%,#042d60 40%,#042d60d9 48%,#042d6080 58%,#042d6000 72%),url('/assets/qf-servicos-profissional.webp');background-color:#061e4b;background-position:center,right top;background-repeat:no-repeat;background-size:auto,59% auto}
+  .directory-hero-copy{max-width:min(535px,57%)}
 }
-.seo-directory .seo-header {
-  background: #05366d;
-  padding: 10px max(24px, calc((100% - 1140px) / 2));
-  min-height: 76px;
-}
-.seo-directory .seo-header img { width: 196px; height: 54px; }
-.seo-directory .seo-header > a:last-child { white-space: nowrap; border-color: #8ab1d6; }
-.seo-directory .seo-main { max-width: 1190px; padding: 14px 24px 36px; }
-.seo-directory .seo-main nav { margin: 0 0 15px 18px; }
-.directory-hero {
-  border-radius: 16px;
-  background: #e1edfb;
-  padding: 22px 44px 30px;
-}
-.directory-hero-copy { max-width: 535px; position: relative; }
-.directory-hero .seo-eyebrow {
-  margin: 0 0 9px;
-  border-radius: 30px;
-  background: #cfe3fb;
-  color: #06336b;
-  font-weight: 800;
-  letter-spacing: .025em;
-  padding: 5px 12px;
-}
-.seo-directory .directory-hero h1 {
-  margin: 0;
-  font-size: clamp(35px, 4.6vw, 53px);
-  letter-spacing: -.045em;
-  color: var(--directory-navy);
-  overflow-wrap: normal;
-}
-.directory-hero h1 + p { font-size: clamp(16px, 2vw, 22px); margin: 10px 0 17px; }
-.directory-search {
-  display: flex;
-  border: 1px solid #a8bed8;
-  border-radius: 11px;
-  background: white;
-  box-shadow: 0 3px 8px #234b7810;
-}
-.directory-search label, .directory-city label {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  background: white;
-  padding: 0 12px;
-  border-radius: 10px;
-  flex: 1;
-}
-.seo-directory svg { width: 22px; height: 22px; flex: none; }
-.directory-search input, .directory-city select {
-  width: 100%;
-  min-width: 0;
-  min-height: 46px;
-  padding: 0 3px;
-  border: 0;
-  border-radius: 6px;
-  color: inherit;
-  font: inherit;
-  background: white;
-}
-.directory-search input::placeholder { color: #263e5c; opacity: 1; }
-.directory-search button {
-  flex: none;
-  padding: 0 19px;
-  min-height: 46px;
-  border: 0;
-  border-radius: 9px;
-  background: #ff7500;
-  color: #172b43;
-  font: 800 15px/1.2 Inter, system-ui, sans-serif;
-  cursor: pointer;
-}
-.directory-search button:hover { background: #ffa045; }
-.directory-section { margin: 24px 12px 0; }
-.seo-directory .directory-section h2, .seo-directory .directory-city h2 {
-  margin: 0 0 14px;
-  font-size: clamp(23px, 2.65vw, 32px);
-  letter-spacing: -.035em;
-  line-height: 1.16;
-  color: var(--directory-navy);
-}
-.directory-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.directory-categories { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.seo-directory .directory-card {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  min-height: 75px;
-  padding: 10px 14px;
-  border: 1px solid var(--directory-border);
-  border-radius: 12px;
-  background: #fff;
-  color: var(--directory-navy);
-  font-size: clamp(15px, 1.7vw, 20px);
-  font-weight: 750;
-  line-height: 1.2;
-  text-decoration: none;
-}
-.seo-directory .directory-card[hidden] { display: none; }
-.seo-directory .directory-card:hover { border-color: #729bc7; background: #f0f6ff; }
-.directory-card > svg { width: 16px; }
-.directory-icon {
-  display: grid;
-  place-items: center;
-  width: 51px;
-  height: 51px;
-  border-radius: 10px;
-  background: #e6f1ff;
-  color: #093b79;
-}
-.directory-icon svg { width: 32px; height: 32px; }
-.directory-city {
-  margin: 28px 4px 20px;
-  display: grid;
-  grid-template-columns: 1.12fr 1fr;
-  align-items: center;
-  gap: 12px;
-  padding: 17px 24px;
-  border-radius: 13px;
-  background: #dceafa;
-}
-.seo-directory .directory-city h2 { margin: 0; font-size: clamp(20px, 2.3vw, 28px); }
-.directory-city label { border: 1px solid #adc1d9; }
-.directory-city select { min-height: 42px; }
-.directory-details { margin: 12px 4px; }
-.directory-details summary { font-weight: 750; padding: 10px 0; cursor: pointer; }
-.directory-details .seo-content { margin: 0; padding: 18px; }
-.directory-reset {
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--directory-border);
-  border-radius: 8px;
-  background: white;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-.seo-directory :focus-visible { outline: 2px solid #215da6; outline-offset: 3px; }
-.seo-directory .seo-header :focus-visible { outline-color: white; }
-
-@media (min-width: 801px) {
-  .directory-hero {
-    min-height: 288px;
-    background-image: linear-gradient(90deg, #e1edfb 5%, #e1edfb 38%, #e1edfb00 66%),
-      url('/assets/qf-servicos-profissional.webp');
-    background-position: center, right top;
-    background-repeat: no-repeat;
-    background-size: auto, 59% auto;
-  }
-  .directory-hero-copy { max-width: min(535px, 57%); }
-}
-@media (max-width: 800px) {
-  .seo-directory .seo-header { min-height: 64px; padding: 8px 16px; gap: 10px; }
-  .seo-directory .seo-header img { width: 152px; height: 47px; }
-  .seo-directory .seo-header > a:last-child { padding: 8px 11px; font-size: 12px; }
-  .seo-directory .seo-main { padding: 11px 13px 24px; }
-  .seo-directory .seo-main nav { margin: 0 0 12px 5px; font-size: 13px; }
-  .directory-hero { padding: 14px 16px; }
-  .seo-directory .directory-hero h1 { font-size: clamp(28px, 8vw, 43px); }
-  .directory-hero h1 + p { margin: 6px 0 12px; font-size: 15px; }
-  .directory-search { flex-direction: column; gap: 7px; background: none; border: 0; box-shadow: none; }
-  .directory-search label { border: 1px solid #adc1d9; }
-  .directory-search input, .directory-search button { min-height: 42px; font-size: 14px; }
-  .directory-section { margin: 16px 0 0; }
-  .seo-directory .directory-section h2 { margin: 0 0 10px 3px; }
-  .directory-grid, .directory-categories { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .seo-directory .directory-card { min-height: 57px; gap: 6px; padding: 7px; font-size: 13px; overflow-wrap: anywhere; }
-  .directory-icon { width: 36px; height: 36px; border-radius: 8px; }
-  .directory-icon svg { width: 24px; height: 24px; }
-  .directory-card > svg { width: 12px; }
-  .directory-city { margin: 28px 0 16px; grid-template-columns: 1fr; padding: 14px; }
+@media(max-width:800px){
+  .seo-directory .seo-main nav{font-size:13px}
+  .directory-hero{padding:20px 16px 22px}
+  .seo-directory .directory-hero h1{font-size:clamp(30px,8.4vw,43px)}
+  .directory-hero h1+p{margin:8px 0 14px;font-size:16px}
+  .directory-search{flex-direction:column;border:0;box-shadow:none;background:none;gap:8px;overflow:visible}
+  .directory-search label{border:1px solid var(--qf-border);border-radius:12px}
+  .directory-search input,.directory-search button{min-height:46px;font-size:15px}
+  .directory-search button{border-radius:12px}
+  .directory-section{margin:24px 0 0}
+  .directory-grid,.directory-categories{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .seo-directory .directory-card{min-height:58px;gap:6px;padding:7px;font-size:13px;overflow-wrap:anywhere}
+  .directory-icon{width:36px;height:36px;border-radius:8px}
+  .directory-icon svg{width:24px;height:24px}
+  .directory-card>svg{width:12px}
+  .directory-city{margin:24px 0 16px;grid-template-columns:1fr;padding:14px}
 }

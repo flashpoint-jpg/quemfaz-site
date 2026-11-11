@@ -33,3 +33,45 @@
 .landing-protection{text-align:center;color:#315f8c;font-size:12px;margin:-7px 0 0}.seo-content{border:1px solid #e4ebf4}.seo-content h2{color:#123f72}.seo-footer{color:#64748b}
 @media(max-width:760px){.seo-main{padding:18px 16px}.seo-main nav{font-size:12px;margin-bottom:20px}.seo-hero{grid-template-columns:1fr;gap:24px}.seo-hero>div:first-child{padding-top:0}.seo-page h1{font-size:38px;margin:13px 0;max-width:100%}.seo-brand-tagline{font-size:14px;margin:0 0 12px}.seo-lead{font-size:17px;margin:14px 0;max-width:100%}.seo-benefits{display:flex;flex-wrap:wrap;gap:8px 14px;margin:16px 0 0;font-size:12px}.seo-hero>div>.seo-cta{display:none}.seo-form{padding:24px 18px}.seo-page .seo-form>h2{font-size:24px}.landing-location{gap:12px}.seo-header img{width:135px;height:44px}.seo-header>a:last-child{padding:8px 12px;font-size:12px}}
 @media(max-width:380px){.landing-location{grid-template-columns:1fr}.seo-page h1{font-size:33px}.seo-page .seo-form>h2{font-size:22px}}
+
+/* Padrão visual único (igual à home): cabeçalho, paleta, botões e títulos. */
+.seo-page{--qf-navy:#051d49;--qf-ink:#091449;--qf-orange:#ff8000;--qf-border:#d8e0eb;--qf-paper:#f6f8fb;--qf-cta:#d45000;background:#fff;color:var(--qf-ink);font-family:Inter,system-ui,-apple-system,sans-serif;line-height:1.5}
+.seo-header{background:linear-gradient(105deg,#041a45,#08366f);border:0;border-bottom:4px solid var(--qf-orange);padding:0;display:block}
+.seo-header-inner{width:min(100% - 72px,1180px);margin-inline:auto;min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px;position:relative}
+.seo-brand{display:flex;align-items:center}
+.seo-header img{display:block;width:150px;height:50px;object-fit:contain}
+.seo-menu{display:flex;align-items:center;gap:24px;font-size:14px;font-weight:650}
+.seo-header a,.seo-menu-prof summary{color:#fff;text-decoration:none;font-weight:inherit}
+.seo-header>.seo-header-inner>a:last-child{border:0;padding:0}
+.seo-menu a{padding:8px 0}
+.seo-menu-prof{position:relative}
+.seo-menu-prof summary{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid transparent;border-radius:10px;cursor:pointer;list-style:none;white-space:nowrap;font-size:14px;font-weight:750}
+.seo-menu-prof summary::-webkit-details-marker{display:none}
+.seo-menu-prof summary::after{content:"";width:7px;height:7px;border-right:2px solid #ffb463;border-bottom:2px solid #ffb463;transform:translateY(-2px) rotate(45deg)}
+.seo-menu-prof[open] summary,.seo-menu-prof summary:hover{border-color:#d5e4f9}
+.seo-menu-pop{position:absolute;top:calc(100% + 4px);right:0;z-index:10;width:250px;padding:4px 12px;border:1px solid var(--qf-border);border-radius:12px;background:#fff;box-shadow:0 8px 24px #00133340;font-size:14px;font-weight:750}
+.seo-header .seo-menu-pop a{display:flex;align-items:center;min-height:48px;padding:0 6px;color:var(--qf-ink)}
+.seo-menu-pop a+a{border-top:1px solid var(--qf-border)}
+.seo-menu-pop a:hover{background:#eef4fc}
+.seo-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.seo-main{width:min(100% - 72px,1180px);max-width:none;padding:24px 0 36px}
+.seo-footer{width:min(100% - 72px,1180px);max-width:none;padding:30px 0}
+.seo-page h1,.seo-page h2,.seo-page .seo-form>h2,.seo-content h2{color:var(--qf-ink)}
+.seo-page h2{font-weight:800;letter-spacing:-.035em;line-height:1.1}
+.seo-page h1{font-weight:850;letter-spacing:-.05em}
+.seo-eyebrow{background:#fff1e2;color:#a54200;font-size:11px;font-weight:800;letter-spacing:.06em;padding:6px 12px;border-radius:30px}
+.seo-cta,.seo-page #seo-order .landing-submit{background:linear-gradient(#dc6000,var(--qf-cta));color:#fff;border-radius:12px;box-shadow:none;font-weight:850}
+.seo-cta:hover,.seo-page #seo-order .landing-submit:hover{background:#b84300}
+.seo-form,.seo-content{border:1px solid var(--qf-border);border-radius:18px;box-shadow:0 6px 18px #10204b14}
+.seo-page a{color:#1458cc}
+.seo-page :focus-visible{outline:3px solid #1a71db}
+@media(max-width:800px){
+  .seo-header-inner{width:min(100% - 36px,650px);min-height:56px;gap:10px}
+  .seo-header img{width:clamp(90px,29vw,112px);height:38px}
+  .seo-menu{gap:12px}
+  .seo-menu>a:not(.seo-menu-orders),.seo-menu-prof{display:none}
+  .seo-menu a.seo-menu-orders{border:1px solid #ffffff66;border-radius:10px;padding:8px 14px;font-size:13px}
+  .seo-main,.seo-footer{width:min(100% - 36px,650px)}
+}
+.seo-page .seo-header a,.seo-page .seo-header summary{color:#fff}
+.seo-page .seo-header .seo-menu-pop a{color:var(--qf-ink)}
