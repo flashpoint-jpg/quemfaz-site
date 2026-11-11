@@ -3973,7 +3973,7 @@ body:has(#cadastro-prof-form) {min-height:100dvh}
 @media(max-width:700px){#cadastro-prof-form{min-height:calc(100dvh + 240px);overflow-anchor:none}html:has(#cadastro-prof-form){overflow-anchor:none}}
 @media(max-width:700px){body:has(#cadastro-prof-form) .view{min-height:calc(100dvh - 120px);padding-bottom:24px}#cadastro-prof-form .qf-step__nav{position:relative;bottom:auto}}
 </style>
-<link rel="stylesheet" href="/qf-visual-aprovado.css?v=acessos">
+<link rel="stylesheet" href="/qf-visual-aprovado.css?v=menu-profissionais">
 </head>
 <body>
 <noscript><img height="1" width="1" style="display:none"
@@ -8769,12 +8769,18 @@ alt=""></noscript>
     return '<div class="qf-landing qf-approved qf-approved-client">' +
       '<header class="qf-landing-topbar qf-approved-header"><div class="qf-approved-wrap qf-approved-header-inner">' +
         '<a href="/" class="qf-approved-brand"><img src="/assets/qf-logo-branco-20261014.webp" alt="Quem Faz Serviços" width="150" height="50"></a>' +
-        '<nav class="qf-approved-desktop-menu" aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" class="qf-approved-login" data-action="landing-my-orders">Meus pedidos</button></nav>' +
-        '<div class="qf-approved-header-actions">' +
-        '<a class="qf-approved-prof-signin" href="/#/auth/profissional/login">Entrar como profissional</a>' +
-        '<a class="qf-approved-play" href="https://play.google.com/store/apps/details?id=br.app.quemfaz"><img src="/assets/google-play-badge.png" width="646" height="250" alt="Baixar o app Quem Faz no Google Play"></a>' +
-        '</div>' +
-        '<details class="qf-approved-mobile-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button>' + QF_SOCIAL.map(s => '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer">' + s.name + '</a>').join('') + '</nav></details>' +
+        '<nav class="qf-approved-desktop-menu" aria-label="Menu do site">' +
+          '<a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button>' +
+          '<details class="qf-approved-prof-menu" name="qf-header-menu">' +
+          '<summary>Para profissionais</summary>' +
+          '<div class="qf-approved-prof-popover">' +
+          '<a href="/#/auth/profissional/login"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/></svg>Entrar como profissional</a>' +
+          '<a href="https://play.google.com/store/apps/details?id=br.app.quemfaz"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#00a9ef" d="M3 2v20l11-10Z"/><path fill="#00d084" d="M3 2l14 7.5-3 2.5Z"/><path fill="#ffce00" d="M17 9.5l4 2a.6.6 0 0 1 0 1l-4 2-3-2.5Z"/><path fill="#f54255" d="M3 22l14-7.5-3-2.5Z"/></svg>Baixar o app<span class="qf-sr-only"> no Google Play</span></a>' +
+          '</div>' +
+          '</details>' +
+          '<button type="button" data-action="landing-my-orders">Meus pedidos</button>' +
+        '</nav>' +
+        '<details class="qf-approved-mobile-menu" name="qf-header-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button>' + QF_SOCIAL.map(s => '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer">' + s.name + '</a>').join('') + '</nav></details>' +
       '</div></header>' +
       '<section class="qf-landing-hero"><div class="qf-approved-wrap qf-approved-hero-inner">' +
         '<div class="qf-approved-hero-copy"><h1>Precisa de um profissional <em>perto de você?</em></h1><p class="qf-customer-sub">Descreva o serviço e receba propostas de profissionais da sua região.</p></div>' +
@@ -8799,7 +8805,7 @@ alt=""></noscript>
       '<section class="qf-approved-cities"><div class="qf-approved-wrap"><h2>' + icon('mapPin') + 'Profissionais em Santo André, Guarulhos e ABC</h2><p>Encontre profissionais da região para serviços residenciais e comerciais.</p>' +
         '<div class="qf-approved-cards">' + cities.map(c => photoCard(c[2], c[1], c[0], c[3])).join('') + '</div>' +
         '<div class="qf-stats-slot" data-home-stats></div></div></section>' +
-      '<div class="qf-landing-body qf-approved-wrap"><footer class="qf-landing-footer qf-approved-footer"><nav aria-label="Links institucionais"><button type="button" data-support-open>Ajuda</button><button type="button" data-nav="/como-funciona">Preços, planos e dúvidas</button><a href="/#/auth/profissional/login">Entrar como profissional</a><a href="/privacidade/">Privacidade</a><a href="/excluir-conta/">Excluir conta</a><a href="https://play.google.com/store/apps/details?id=br.app.quemfaz">Baixar o app</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
+      '<div class="qf-landing-body qf-approved-wrap"><footer class="qf-landing-footer qf-approved-footer"><nav aria-label="Links institucionais"><button type="button" data-support-open>Ajuda</button><button type="button" data-nav="/como-funciona">Preços, planos e dúvidas</button><a href="/para-profissionais/">Conheça a área profissional</a><a href="/privacidade/">Privacidade</a><a href="/excluir-conta/">Excluir conta</a><a href="https://play.google.com/store/apps/details?id=br.app.quemfaz">Baixar o app</a></nav>' + global.QFSocialLinksHtml() + '</footer></div>' +
       '<nav class="qf-home-nav" aria-label="Navegação principal"><button type="button" data-nav="/" aria-current="page">' + icon('home') + '<span>Início</span></button><button type="button" data-home-services>' + icon('search') + '<span>Serviços</span></button><button type="button" data-action="landing-all-services" class="qf-home-nav-order"><span class="qf-home-nav-plus">' + icon('plus') + '</span><span>Fazer pedido</span></button><button type="button" data-action="landing-my-orders">' + icon('clipboard') + '<span>Pedidos</span></button><button type="button" data-support-open>' + icon('info') + '<span>Ajuda</span></button></nav></div>';
   };
 
