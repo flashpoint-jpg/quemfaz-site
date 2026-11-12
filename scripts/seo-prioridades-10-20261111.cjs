@@ -50,22 +50,22 @@ const pages=[
     "p2": "Confira preparação, massa, número de demãos, tinta fornecida, limpeza e prazo. Infiltrações devem ser avaliadas antes."
   },
   {
-    "slug": "limpeza-de-sofa/sao-bernardo-do-campo",
-    "title": "Limpeza de sofá em São Bernardo | Quem Faz",
-    "description": "Solicite limpeza de sofá em São Bernardo do Campo. Informe tecido, tamanho, manchas e bairro para pedir orçamentos.",
-    "h1": "Quais dados ajudam na higienização?",
-    "p1": "Conte quantos lugares o sofá tem, se é retrátil, qual o tecido e se há manchas, odores ou pelos de animais.",
-    "h2": "O que conferir antes da limpeza?",
-    "p2": "Pergunte sobre compatibilidade dos produtos, tempo de secagem, deslocamento e limites para remoção de manchas."
+    "slug": "encanador/santo-andre",
+    "title": "Encanador em Santo André para vazamentos | Quem Faz",
+    "description": "Precisa de encanador em Santo André? Informe vazamentos, registros e reparos hidráulicos. Publique seu pedido grátis.",
+    "h1": "Como detalhar vazamentos em Santo André?",
+    "p1": "Informe se o vazamento está em parede, torneira, descarga ou piso, se é contínuo e se há sinais de umidade.",
+    "h2": "O que incluir no orçamento hidráulico?",
+    "p2": "Confirme custos de diagnóstico, peças, necessidade de abertura e recomposição de parede e prazo de atendimento."
   },
   {
-    "slug": "limpeza-de-sofa/santo-andre",
-    "title": "Limpeza de sofá em Santo André | Quem Faz",
-    "description": "Precisa higienizar sofá em Santo André? Informe tecido, número de lugares e tipo de sujeira. Publique grátis.",
-    "h1": "Que limpeza combina com seu sofá?",
-    "p1": "Informe etiqueta do tecido, quantidade de lugares, presença de manchas antigas e se pretende incluir poltronas ou colchões.",
-    "h2": "Como comparar propostas de higienização?",
-    "p2": "Confirme método, produtos, previsão de secagem e preço por peça. Nenhum método garante remoção de toda mancha."
+    "slug": "eletricista/sao-bernardo-do-campo",
+    "title": "Eletricista em São Bernardo para reparos | Quem Faz",
+    "description": "Precisa de eletricista em São Bernardo do Campo? Descreva falhas em tomadas, chuveiros e iluminação e publique grátis.",
+    "h1": "O que informar sobre a instalação elétrica?",
+    "p1": "Explique quais pontos apresentam falha, se o imóvel é casa ou apartamento e quando o problema começou. Evite manusear circuitos com defeito.",
+    "h2": "Como avaliar propostas de eletricista?",
+    "p2": "Esclareça visita de diagnóstico, materiais, mão de obra, testes e garantia antes de contratar."
   },
   {
     "slug": "eletricista/guarulhos",
