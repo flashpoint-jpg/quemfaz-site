@@ -20,7 +20,15 @@ const candidates=[
  ['encanador/santo-andre','Encanador em Santo André'],
  ['diarista/guarulhos','Diarista em Guarulhos'],
  ['eletricista/praia-grande','Eletricista em Praia Grande'],
- ['pintor/praia-grande','Pintor em Praia Grande']
+ ['pintor/praia-grande','Pintor em Praia Grande'],
+ ["limpeza-de-estofados-e-tapetes/sao-paulo", "Limpeza de sofá em São Paulo"],
+ ["faxina-pos-obra/sao-paulo", "Faxina pós-obra em São Paulo"],
+ ["montador-de-moveis/osasco", "Montador de móveis em Osasco"],
+ ["pedreiro/guarulhos", "Pedreiro em Guarulhos"],
+ ["pedreiro/sao-bernardo-do-campo", "Pedreiro em São Bernardo do Campo"],
+ ["pintor/osasco", "Pintor em Osasco"],
+ ["encanador/guarulhos", "Encanador em Guarulhos"],
+ ["diarista/sao-bernardo-do-campo", "Diarista em São Bernardo do Campo"]
 ];
 const links=candidates.filter(([slug])=>{
  const f=path.join(root,'servicos',slug,'index.html');

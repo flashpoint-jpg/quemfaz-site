@@ -102,6 +102,78 @@ const pages=[
     "p1": "Informe o bairro ou CEP e diga se o imóvel está ocupado, vazio para mudança ou passou por obra. Em condomínio, confirme o horário de entrada e informe se há escadas ou elevador.",
     "h2": "O que comparar no preço da faxina?",
     "p2": "Peça o valor total por visita e confirme a duração, o deslocamento e os produtos incluídos. Se precisar de janelas, armários por dentro ou roupa passada, combine esses itens antes de fechar."
+  },
+  {
+    "slug": "limpeza-de-estofados-e-tapetes/sao-paulo",
+    "title": "Limpeza de sofá em São Paulo | Orçamento grátis no Quem Faz",
+    "description": "Sofá manchado ou com cheiro? Informe o tecido, o número de lugares e o CEP para pedir orçamento grátis.",
+    "h1": "O que informar sobre o sofá?",
+    "p1": "Diga se o sofá é fixo, retrátil ou reclinável. Descreva o tecido e o tipo de mancha, e informe se há elevador ou escadas para o acesso ao imóvel.",
+    "h2": "O que conferir antes da limpeza?",
+    "p2": "Pergunte se o orçamento inclui almofadas soltas, remoção de manchas e deslocamento. Combine o prazo de secagem e informe se há crianças ou animais no imóvel."
+  },
+  {
+    "slug": "faxina-pos-obra/sao-paulo",
+    "title": "Faxina pós-obra em São Paulo | Orçamento grátis no Quem Faz",
+    "description": "Terminou a reforma? Informe a metragem e os resíduos que precisam ser removidos para pedir orçamento grátis.",
+    "h1": "O que informar depois da obra?",
+    "p1": "Descreva a área, o tipo de piso e os resíduos que ficaram, como pó fino, tinta ou rejunte. Informe se ainda há entulho ou móveis no imóvel.",
+    "h2": "Como comparar os orçamentos?",
+    "p2": "Confira se incluem vidros, armários e áreas externas, quais equipamentos serão levados e se há cobrança separada para retirada de resíduos."
+  },
+  {
+    "slug": "montador-de-moveis/osasco",
+    "title": "Montador de móveis em Osasco | Orçamento grátis no Quem Faz",
+    "description": "Peça orçamento grátis para montar guarda-roupa, cômoda ou painel em Osasco. Informe o modelo do móvel e o CEP.",
+    "h1": "O que informar para montar um móvel?",
+    "p1": "Diga quantos móveis são e informe marca e modelo quando souber. Se for remontagem, avise se as ferragens e o manual estão disponíveis.",
+    "h2": "O que combinar antes da visita?",
+    "p2": "Confirme se o orçamento inclui fixação do painel, desmontagem de peças antigas e o deslocamento até o endereço do serviço."
+  },
+  {
+    "slug": "pedreiro/guarulhos",
+    "title": "Pedreiro em Guarulhos | Orçamento grátis no Quem Faz",
+    "description": "Precisa de pedreiro para reparo ou reforma em Guarulhos? Informe a área e descreva o serviço para pedir orçamento grátis.",
+    "h1": "Como descrever o reparo?",
+    "p1": "Explique o local e a extensão do trabalho. Informe se é assentamento de piso, reparo de reboco ou levantamento de parede.",
+    "h2": "O que pedir no orçamento?",
+    "p2": "Peça a lista de etapas e confirme quem fornece os materiais, protege o ambiente e retira o entulho."
+  },
+  {
+    "slug": "pedreiro/sao-bernardo-do-campo",
+    "title": "Pedreiro em São Bernardo do Campo | Orçamento grátis no Quem Faz",
+    "description": "Peça orçamento grátis para alvenaria, reboco ou assentamento de piso em São Bernardo do Campo.",
+    "h1": "Como informar a área do serviço?",
+    "p1": "Informe metragem aproximada, material existente e se o imóvel estará ocupado durante o trabalho.",
+    "h2": "Como comparar propostas?",
+    "p2": "Confira se a preparação da superfície, o acabamento e a retirada de resíduos fazem parte da proposta e quais dias estão disponíveis."
+  },
+  {
+    "slug": "pintor/osasco",
+    "title": "Pintor em Osasco | Orçamento grátis no Quem Faz",
+    "description": "Informe os cômodos e o estado das paredes para pedir orçamento grátis de pintura em Osasco.",
+    "h1": "Como descrever o ambiente?",
+    "p1": "Informe o número de ambientes, o estado das paredes, a cor atual e se precisa pintar portas ou tetos.",
+    "h2": "O que comparar entre propostas?",
+    "p2": "Confira a preparação das superfícies, a proteção de móveis e pisos, o número de demãos e quem fornece tinta e materiais."
+  },
+  {
+    "slug": "encanador/guarulhos",
+    "title": "Encanador em Guarulhos | Orçamento grátis no Quem Faz",
+    "description": "Precisa reparar vazamento, trocar torneira ou consertar a descarga em Guarulhos? Peça orçamento grátis.",
+    "h1": "Como explicar o problema hidráulico?",
+    "p1": "Diga se o problema está na pia, no vaso, no registro ou em uma parede. Informe há quanto tempo ocorre e se acontece apenas quando usa a água.",
+    "h2": "O que conferir no orçamento?",
+    "p2": "Confirme se a proposta separa visita, diagnóstico, peças e reparo. Se for preciso abrir piso ou parede, pergunte se o acabamento está incluído."
+  },
+  {
+    "slug": "diarista/sao-bernardo-do-campo",
+    "title": "Diarista em São Bernardo do Campo | Orçamento grátis no Quem Faz",
+    "description": "Peça orçamento grátis para faxina em São Bernardo do Campo. Informe os cômodos e a data desejada.",
+    "h1": "O que colocar no pedido de faxina?",
+    "p1": "Diga quantos cômodos e banheiros serão limpos, se o imóvel está ocupado e se há animais ou escadas.",
+    "h2": "O que combinar para a diária?",
+    "p2": "Confirme as tarefas da diária, quem fornece os produtos e se itens como forno, janelas e armários entram no valor."
   }
 ];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
