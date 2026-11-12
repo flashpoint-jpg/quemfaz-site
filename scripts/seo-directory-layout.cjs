@@ -60,7 +60,7 @@ module.exports = function layout(html, services, cities, urlFor, esc) {
         <label>${icon('search')}<input type="search" name="busca" aria-label="Qual serviço você precisa?" placeholder="Qual serviço você precisa?"></label>
         <button type="submit">Buscar serviços</button>
       </form>
-      <a class="directory-hero-link" href="/#/auth/cliente/cadastro">Não achou? Publique seu pedido grátis ${icon('next')}</a>
+      <a class="directory-hero-link" href="/?pedido=1#/auth/cliente/cadastro">Não achou? Publique seu pedido grátis ${icon('next')}</a>
       <ul class="directory-trust">${trust.map(t => '<li>' + icon('check') + esc(t) + '</li>').join('')}</ul>
     </div>
   </section>
@@ -72,7 +72,7 @@ module.exports = function layout(html, services, cities, urlFor, esc) {
     <div class="directory-city-list">${cityChips}<label><select aria-label="Selecione a sua cidade"><option value="">Outra cidade</option>${options}</select></label></div>
     <noscript><a href="#guias">Ver cidades e guias</a></noscript>
   </section>
-  <section class="directory-cta"><div><h2>Não encontrou o serviço? <span>Conte o que precisa.</span></h2><p>Publique seu pedido grátis e receba propostas de profissionais da sua região.</p></div><a href="/#/auth/cliente/cadastro">Publicar pedido grátis ${icon('next')}</a></section>
+  <section class="directory-cta"><div><h2>Não encontrou o serviço? <span>Conte o que precisa.</span></h2><p>Publique seu pedido grátis e receba propostas de profissionais da sua região.</p></div><a href="/?pedido=1#/auth/cliente/cadastro">Publicar pedido grátis ${icon('next')}</a></section>
   <details class="directory-details" id="catalogo"><summary>Todos os serviços</summary>
     <p class="directory-results" role="status" hidden></p>
     <button class="directory-reset" type="button" hidden>Mostrar todos os serviços</button>
