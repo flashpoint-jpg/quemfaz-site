@@ -75,3 +75,12 @@
 }
 .seo-page .seo-header a,.seo-page .seo-header summary{color:#fff}
 .seo-page .seo-header .seo-menu-pop a{color:var(--qf-ink)}
+.seo-page .seo-footer{width:auto;max-width:none;margin:40px 0 0;padding:0;background:#051d49;color:#fff;font-size:14px}
+.seo-footer-inner{width:min(100% - 72px,1180px);margin:0 auto;min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.seo-footer-brand{display:flex;align-items:center;gap:14px;color:#c9d4ea}
+.seo-footer-brand img{display:block;width:112px;height:38px;object-fit:contain}
+.seo-footer-links{display:flex;align-items:center;gap:18px;font-weight:600}
+.seo-page .seo-footer a{color:#fff;text-decoration:none}
+.seo-page .seo-footer a.seo-social{display:grid;place-items:center;width:44px;height:44px;border:1px solid #ffffff44;border-radius:50%}
+.seo-social svg{width:20px;height:20px}
+@media(max-width:800px){.seo-footer-inner{width:min(100% - 36px,650px);padding:18px 0}.seo-footer-brand{flex-direction:column;align-items:flex-start;gap:10px}}
