@@ -12,7 +12,7 @@ test('Regiões normalizadas; só categorias cadastradas; canonical, formulário 
 });
 test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pedido fictício',async()=>{
  const errors=[],writes=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
- const dom=new JSDOM(fs.readFileSync(path.join(root,'servicos/eletricista/santo-andre/index.html'),'utf8'),{url:'https://quemfaz.test/servicos/eletricista/santo-andre/',runScripts:'dangerously',resources:new LocalAssets(),pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){
+ const dom=new JSDOM(fs.readFileSync(path.join(root,'servicos/eletricista/santo-andre/index.html'),'utf8'),{url:'https://quemfaz.test/servicos/eletricista/santo-andre/',referrer:'https://www.google.com/',runScripts:'dangerously',resources:new LocalAssets(),pretendToBeVisual:true,virtualConsole:vc,beforeParse(w){
  w.fetch=async(url,opts={})=>{if(opts.method&&opts.method!=='GET')writes.push(String(url));return new Response(JSON.stringify([]),{status:200,headers:{'content-type':'application/json'}});};
  w.Response=Response;w.Request=Request;w.Headers=Headers;w.AbortController=AbortController;w.matchMedia=()=>({matches:false,addListener(){},addEventListener(){}});w.scrollTo=()=>{};w.HTMLElement.prototype.scrollIntoView=()=>{};w.crypto.randomUUID=require('node:crypto').randomUUID;
  }});
@@ -56,7 +56,9 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  await new Promise(resolve=>{let n=0;const t=setInterval(()=>{if(w.document.querySelector('#seo-order h2')?.textContent.includes('Pedido publicado')||++n>150){clearInterval(t);resolve();}},20);});
  assert.equal(published,1,w.document.querySelector('#seo-order').textContent);
  assert.match(w.document.querySelector('#seo-order').textContent,/Pedido publicado/);
- const rows=(await d.query("select id,descricao,cidade from public.qf_chamados where descricao like '%Minha tomada%'")).rows;assert.equal(rows.length,1);assert.equal(rows[0].cidade,'Santo André');assert.equal(w.DB.state.requests[0].id,rows[0].id,'pedido acessível ao painel pelo registro oficial');
+ const rows=(await d.query("select id,descricao,cidade,marketing_origem from public.qf_chamados where descricao like '%Minha tomada%'")).rows;assert.equal(rows.length,1);assert.equal(rows[0].cidade,'Santo André');assert.equal(w.DB.state.requests[0].id,rows[0].id,'pedido acessível ao painel pelo registro oficial');
+ assert.equal(rows[0].marketing_origem.source,'google_referral');
+ assert.equal(rows[0].marketing_origem.landing_page,'/servicos/eletricista/santo-andre/');
  assert.deepEqual(confirmed,[[rows[0].id,'cat_eletricista']]);
  }finally{await d.close();}
  assert.deepEqual(errors.filter(x=>!x.includes('navigation')&&!x.includes('Not implemented')),[]);

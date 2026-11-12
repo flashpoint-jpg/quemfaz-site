@@ -6,8 +6,8 @@ const base='https://quemfazservico.com.br/servicos/';
 const pages=[
   {
     "slug": "eletricista/santo-andre",
-    "title": "Eletricista em Santo André para reparos e instalações | Quem Faz",
-    "description": "Precisa de eletricista em Santo André? Explique problemas em tomadas, chuveiro ou disjuntor e publique seu pedido grátis.",
+    "title": "Eletricista em Santo André | Peça orçamento grátis no Quem Faz",
+    "description": "Precisa instalar um chuveiro, trocar tomadas ou avaliar um disjuntor em Santo André? Publique seu pedido grátis e receba propostas conforme a disponibilidade.",
     "h1": "Como explicar uma falha elétrica?",
     "p1": "Informe se a falha afeta um cômodo ou todo o imóvel, qual aparelho estava em uso e quando começou. Não toque em fiação exposta nem tente reparar circuitos energizados.",
     "h2": "O que considerar no orçamento elétrico?",
@@ -15,8 +15,8 @@ const pages=[
   },
   {
     "slug": "eletricista/diadema",
-    "title": "Eletricista em Diadema para reparos e instalações | Quem Faz",
-    "description": "Tomada com defeito ou disjuntor desarmando em Diadema? Descreva o serviço e consulte profissionais pelo CEP.",
+    "title": "Eletricista em Diadema | Peça orçamento grátis no Quem Faz",
+    "description": "Tomada com defeito ou disjuntor desarmando em Diadema? Informe seu CEP, descreva o serviço e publique seu pedido de orçamento grátis.",
     "h1": "Quando procurar eletricista em Diadema?",
     "p1": "Queda de energia em parte do imóvel, tomada aquecendo ou disjuntor desarmando exigem avaliação adequada. Informe o tipo de imóvel e a extensão da falha.",
     "h2": "O que perguntar antes do serviço?",
