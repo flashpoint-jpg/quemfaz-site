@@ -516,7 +516,7 @@
     }
   },true);
 
-  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path))openPath(path);else if(g.QFAtendimento?.hasGoogleDraft?.())bindHome();else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
+  const path=(g.location.hash||'#/').slice(1);if(inlinePath(path)){openPath(path);if(path==='/auth/cliente/cadastro'||path.startsWith('/cliente/novo-pedido'))[150,500,1200].forEach(ms=>g.setTimeout(()=>{const form=host();if(!form||g.scrollY>form.getBoundingClientRect().top+g.scrollY+40)return;reveal();},ms));}else if(g.QFAtendimento?.hasGoogleDraft?.())bindHome();else if(path==='/'&&!g.document.getElementById('app-shell')?.hasAttribute('data-qf-prerender'))bindHome();
   return true;
  }
  g.QFPedidoHome={published,openPath,start:()=>intro(),classify,isInlinePath:inlinePath,isBusy:()=>!!slot?.isConnected&&['form','chat','token','login'].includes(state.mode),installed:false};
