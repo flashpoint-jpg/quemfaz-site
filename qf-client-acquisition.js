@@ -139,8 +139,9 @@
   }
   // Identifica a página local que iniciou o pedido, sem inventar origem ou campanha.
   try {
-    var seoPage = new URLSearchParams(location.search).get('seo_page');
-    if (seoPage && /^\/servicos\/[a-z0-9-]+\/[a-z0-9-]+\/$/.test(seoPage)) sessionStorage.setItem('qf_seo_page', seoPage);
+    var servicePath = /^\/servicos(?:\/[a-z0-9-]+){0,2}\/$/;
+    var seoPage = servicePath.test(location.pathname) ? location.pathname : new URLSearchParams(location.search).get('seo_page');
+    if (seoPage && servicePath.test(seoPage)) sessionStorage.setItem('qf_seo_page', seoPage);
   } catch (_) {}
   function attribution() {
     var live = global.QFMarketingTouch || {};
@@ -167,7 +168,13 @@
       } catch (_) {}
     }
     if (!out.source) out.source = 'direto';
-    try { if (!out.content) out.content = sessionStorage.getItem('qf_seo_page') || undefined; } catch (_) {}
+    try {
+      var landing = sessionStorage.getItem('qf_seo_page');
+      if (landing && servicePath.test(landing)) {
+        out.landing_page = landing;
+        if (!out.content) out.content = landing;
+      }
+    } catch (_) {}
     return Object.assign(out,global.QFMarketingDedicado?.attribution?.()||{});
   }
   // Eventos de conversão para Google Ads / GA4 / Microsoft Ads (ver qf-conversao.js). Sem dados pessoais.
