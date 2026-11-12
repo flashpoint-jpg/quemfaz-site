@@ -320,5 +320,7 @@ require('./seo-semrush-20261109.cjs');
 require('./seo-search-console-prioridades.cjs');
 // Links visíveis no catálogo para páginas locais com cobertura e indexação liberada.
 require('./seo-discovery-prioridades.cjs');
+// Páginas prioritárias; valida URL, canonical, sitemap e formulário.
+require('./seo-prioridades-10-20261111.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');

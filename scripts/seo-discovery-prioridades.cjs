@@ -16,6 +16,9 @@ const candidates=[
  ['pintor/guarulhos','Pintor em Guarulhos'],
  ['eletricista/guarulhos','Eletricista em Guarulhos'],
  ['eletricista/santo-andre','Eletricista em Santo André'],
+ ['eletricista/diadema','Eletricista em Diadema'],
+ ['encanador/santo-andre','Encanador em Santo André'],
+ ['diarista/guarulhos','Diarista em Guarulhos'],
  ['eletricista/praia-grande','Eletricista em Praia Grande'],
  ['pintor/praia-grande','Pintor em Praia Grande']
 ];
