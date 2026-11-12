@@ -93,14 +93,25 @@ const pages=[
     "p1": "Informe se são paredes internas, tetos, portas ou fachada, estado do reboco e área aproximada.",
     "h2": "Como comparar propostas de pintores?",
     "p2": "Esclareça quem compra tintas, tratamento de superfícies, número de demãos, limpeza final e cronograma."
+  },
+  {
+    "slug": "diarista/guarulhos",
+    "title": "Diarista em Guarulhos para faxina | Quem Faz",
+    "description": "Procura diarista em Guarulhos? Informe o bairro, os cômodos e a data da faxina. Publique seu pedido de orçamento grátis.",
+    "h1": "Como pedir uma diária em Guarulhos?",
+    "p1": "Informe o bairro ou CEP e diga se o imóvel está ocupado, vazio para mudança ou passou por obra. Em condomínio, confirme o horário de entrada e informe se há escadas ou elevador.",
+    "h2": "O que comparar no preço da faxina?",
+    "p2": "Peça o valor total por visita e confirme a duração, o deslocamento e os produtos incluídos. Se precisar de janelas, armários por dentro ou roupa passada, combine esses itens antes de fechar."
   }
 ];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sitemap=fs.readFileSync(path.join(root,'..','sitemap.xml'),'utf8');
 for(const p of pages){
   const file=path.join(root,p.slug,'index.html');
   if(!fs.existsSync(file)) throw new Error('SEO prioritário: página ausente '+p.slug);
   let html=fs.readFileSync(file,'utf8');
   const canonical=base+p.slug+'/';
+  if(!sitemap.includes('<loc>'+canonical+'</loc>')) throw new Error('SEO prioritário: página fora do sitemap '+p.slug);
   if(!html.includes('rel="canonical" href="'+canonical+'"')) throw new Error('SEO prioritário: canonical divergente '+p.slug);
   if(!/<meta\s+name="robots"\s+content="index,follow"/.test(html)) throw new Error('SEO prioritário: página não indexável '+p.slug);
   if(!html.includes('id="seo-order"')||!html.includes('id="seo-config"')||!html.includes('href="#pedido"')) throw new Error('SEO prioritário: formulário ausente '+p.slug);

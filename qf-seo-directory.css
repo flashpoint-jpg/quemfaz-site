@@ -1,9 +1,10 @@
 /* Página /servicos/: mesma paleta, cabeçalho e proporções da home. */
 .seo-directory{background:#fff;color:var(--qf-ink);font-family:Inter,system-ui,sans-serif;line-height:1.4}
 .seo-directory .seo-main nav{margin:0 0 16px;font-size:14px;color:#5b6a80}
-.directory-hero{border-radius:18px;background:linear-gradient(110deg,#042d60,#061e4b 53%,#0a3676);color:#fff;padding:30px 44px 36px}
+.directory-hero{border-radius:18px;background:linear-gradient(110deg,#042d60,#061e4b 53%,#0a3676);color:#fff;padding:40px 44px 36px}
 .directory-hero-copy{max-width:535px;position:relative}
 .directory-hero .seo-eyebrow{display:inline-block;margin:0 0 12px;background:#ff80002e;color:#ffb463}
+.seo-directory .directory-hero h1 span{color:var(--qf-orange)}
 .seo-directory .directory-hero h1{margin:0;max-width:550px;color:#fff;font-size:clamp(34px,4.4vw,56px);font-weight:850;letter-spacing:-.05em;line-height:1.02;overflow-wrap:normal}
 .directory-hero h1+p{margin:14px 0 20px;color:#fff;font-size:clamp(16px,1.75vw,22px);line-height:1.25}
 .directory-search{display:flex;border:1px solid var(--qf-border);border-radius:12px;background:#fff;box-shadow:0 6px 18px #10204b28;overflow:hidden}
@@ -11,8 +12,8 @@
 .seo-directory svg{width:22px;height:22px;flex:none}
 .directory-search input,.directory-city select{width:100%;min-width:0;min-height:50px;padding:0 3px;border:0;color:var(--qf-ink);font:inherit;background:#fff}
 .directory-search input::placeholder{color:#5b6a80;opacity:1}
-.directory-search button{flex:none;padding:0 22px;min-height:50px;border:0;border-radius:0;background:linear-gradient(#dc6000,var(--qf-cta));color:#fff;font:850 16px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
-.directory-search button:hover{background:#b84300}
+.directory-search button{flex:none;padding:0 22px;min-height:50px;border:0;border-radius:0;background:#c94800;color:#fff;font:850 16px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
+.directory-search button:hover{background:#a83c00}
 .directory-section{margin:32px 0 0}
 .seo-directory .directory-section h2,.seo-directory .directory-city h2{margin:0 0 14px;font-size:clamp(23px,2.65vw,35px);font-weight:800;letter-spacing:-.035em;line-height:1.1;color:var(--qf-ink)}
 .directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
@@ -31,6 +32,37 @@
 .directory-details summary{font-weight:750;padding:10px 0;cursor:pointer}
 .directory-details .seo-content{margin:0;padding:18px}
 .directory-reset{margin-bottom:12px;padding:8px 12px;border:1px solid var(--qf-border);border-radius:8px;background:#fff;color:inherit;font:inherit;cursor:pointer}
+.directory-hero-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:#ffb463;font-size:15px;font-weight:700;text-decoration:none}
+.seo-page .directory-hero-link{color:#ffb463}
+.directory-hero-link svg{width:16px;height:16px}
+.directory-trust{list-style:none;margin:20px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;font-weight:700}
+.directory-trust li{display:flex;align-items:center;gap:7px}
+.directory-trust svg{width:20px;height:20px;color:var(--qf-orange)}
+.directory-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;margin-bottom:14px}
+.seo-directory .directory-head h2{margin:0}
+.directory-head a{font-size:15px;font-weight:700;white-space:nowrap}
+.directory-card-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+.directory-card-text b{font-size:clamp(16px,1.5vw,18px);font-weight:800;line-height:1.2}
+.directory-card-text small{font-size:14px;font-weight:500;line-height:1.35;color:#4a5873}
+.directory-chips{display:flex;flex-wrap:wrap;gap:12px}
+.seo-directory .directory-chip{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 20px 0 14px;border:1px solid var(--qf-border);border-radius:999px;background:var(--qf-paper);color:var(--qf-ink);font-size:16px;font-weight:750;text-decoration:none}
+.seo-directory .directory-chip:hover{border-color:#ff8000;background:#fff}
+.seo-directory .directory-chip svg{width:24px;height:24px;color:#bb5000}
+.directory-city-list{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.directory-city-list .directory-chip{min-height:44px;padding:0 16px 0 12px;background:#fff;font-size:15px;font-weight:700}
+.directory-city-list .directory-chip svg{width:18px;height:18px}
+.directory-city-list label{flex:none;min-height:44px;padding:0 10px;border:1px solid var(--qf-border);border-radius:999px;background:#fff}
+.directory-city-list select{min-height:42px;font-weight:700;font-size:15px;width:auto}
+.directory-city p{margin:8px 0 0;font-size:15px;color:#4a5873;line-height:1.4}
+.seo-directory .directory-city{grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:28px}
+.seo-directory .directory-city h2{font-size:clamp(22px,2.3vw,28px)}
+.directory-cta{margin:32px 0 20px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:30px 36px;border-radius:18px;border-bottom:4px solid #ff8000;background:linear-gradient(110deg,#042d60,#061e4b 55%,#0a3676);color:#fff}
+.seo-directory .directory-cta h2{margin:0;max-width:640px;color:#fff;font-size:30px;font-weight:850;letter-spacing:-.04em;line-height:1.1}
+.seo-directory .directory-cta h2 span{color:var(--qf-orange)}
+.directory-cta p{margin:8px 0 0;max-width:640px;font-size:16px;line-height:1.4}
+.seo-page .directory-cta>a{display:flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:12px;background:#c94800;color:#fff;font-size:18px;font-weight:850;white-space:nowrap;text-decoration:none}
+.seo-page .directory-cta>a:hover{background:#a83c00}
+.directory-cta>a svg{width:20px;height:20px}
 @media(min-width:801px){
   .directory-hero{min-height:330px;background-image:linear-gradient(90deg,#042d60 6%,#042d60 40%,#042d60d9 48%,#042d6080 58%,#042d6000 72%),url('/assets/qf-servicos-profissional.webp');background-color:#061e4b;background-position:center,right top;background-repeat:no-repeat;background-size:auto,59% auto}
   .directory-hero-copy{max-width:min(535px,57%)}
@@ -51,4 +83,19 @@
   .directory-icon svg{width:24px;height:24px}
   .directory-card>svg{width:12px}
   .directory-city{margin:24px 0 16px;grid-template-columns:1fr;padding:14px}
+  .directory-card-text small{display:none}
+  .seo-directory .directory-card{grid-template-columns:1fr;align-content:center;justify-items:start;gap:8px}
+  .seo-directory .directory-card>svg{display:none}
+  .seo-directory .directory-card-text b{font-size:15px}
+  .directory-chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -18px;padding:2px 18px 6px;gap:8px}
+  .seo-directory .directory-chip{flex:none;min-height:48px;font-size:14px;white-space:nowrap}
+  .directory-head a{display:none}
+  .directory-hero-link{margin-top:12px}
+  .directory-trust{margin-top:16px;gap:8px 16px;font-size:13px}
+  .directory-trust svg{width:18px;height:18px}
+  .seo-directory .directory-city{grid-template-columns:1fr;gap:14px}
+  .directory-cta{padding:22px 18px;margin:22px 0 16px}
+  .seo-directory .directory-cta h2{font-size:24px}
+  .directory-cta p{font-size:15px}
+  .seo-page .directory-cta>a{width:100%;justify-content:center;min-height:52px;font-size:17px;box-sizing:border-box}
 }

@@ -11,13 +11,20 @@ const icons = {
   truck: 'M2 5h13v13H2zm13 5h4l3 4v4h-7M6 18a2 2 0 1 0 4 0m7 0a2 2 0 1 0 4 0',
   search: 'M16 16l5 5M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z',
   pin: 'M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
-  next: 'm9 5 7 7-7 7'
+  next: 'm9 5 7 7-7 7',
+  check: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-13 0 3 3 5-6'
 };
 const icon = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + icons[name] + '"/></svg>';
 const featured = [
-  ['eletricista', 'bolt'], ['encanador', 'tap'], ['diarista', 'broom'], ['pintor', 'paint'],
-  ['montador-de-moveis', 'cabinet'], ['limpeza-de-estofados-e-tapetes', 'sofa', 'Limpeza de estofados']
+  ['eletricista', 'bolt', '', 'Instalações, reparos e manutenção elétrica.'],
+  ['encanador', 'tap', '', 'Vazamentos, entupimentos e instalações.'],
+  ['diarista', 'broom', '', 'Limpeza residencial e organização da casa.'],
+  ['pintor', 'paint', '', 'Pintura interna e externa, de paredes a fachadas.'],
+  ['montador-de-moveis', 'cabinet', '', 'Montagem e desmontagem de móveis.'],
+  ['limpeza-de-estofados-e-tapetes', 'sofa', 'Limpeza de estofados', 'Higienização de sofás, tapetes e colchões.']
 ];
+const abcCities = ['santo-andre', 'sao-bernardo-do-campo', 'maua', 'diadema', 'ribeirao-pires', 'rio-grande-da-serra'];
+const trust = ['Grátis para publicar', 'Até 4 contatos', 'Você escolhe'];
 const categories = [
   ['reformas', 'Reformas e manutenção', 'tools', /eletricista|encanador|montador|pedreiro|jardineiro|chaveiro|pintor|soldador|desentupidor|vidraceiro|serralheiro|marceneiro|marido-de-aluguel|gesseiro|azulejista|telhadista|calheiro|impermeabilizacao|piscineiro|paisagista/],
   ['limpeza', 'Limpeza e cuidados', 'clean', /diarista|limpeza|dedetizador|faxina|cuidador|passadeira|cozinheira|baba|banho-e-tosa|pet-sitter|adestrador|cabeleireiro|manicure|maquiador/],
@@ -26,37 +33,43 @@ const categories = [
 ];
 
 module.exports = function layout(html, services, cities, urlFor, esc) {
-  const card = (href, label, glyph, extra = '') => '<a class="directory-card" href="' + href + '"' + extra + '><span class="directory-icon">' + icon(glyph) + '</span><span>' + esc(label) + '</span>' + icon('next') + '</a>';
+  const card = (href, label, glyph, extra = '', desc = '') => '<a class="directory-card" href="' + href + '"' + extra + '><span class="directory-icon">' + icon(glyph) + '</span><span class="directory-card-text"><b>' + esc(label) + '</b>' + (desc ? '<small>' + esc(desc) + '</small>' : '') + '</span>' + icon('next') + '</a>';
+  const chip = (href, label, glyph, extra = '') => '<a class="directory-chip" href="' + href + '"' + extra + '>' + icon(glyph) + esc(label) + '</a>';
   const serviceLinks = services.map(s => {
     const [category] = [categories[0], categories[1], categories[3], categories[2]].find(entry => entry[3].test(s.slug));
     const [, , glyph] = categories.find(entry => entry[0] === category);
     const aliases = s.id === 'cat_limpeza_estofados' ? ' sofá higienização' : s.id === 'cat_diarista' ? ' faxina faxineira' : '';
     return card(urlFor(s), s.nome, glyph, ' data-service="' + esc(s.nome + aliases) + '" data-category="' + category + '"');
   }).join('');
-  const highlights = featured.map(([slug, glyph, label]) => {
+  const highlights = featured.map(([slug, glyph, label, desc]) => {
     const service = services.find(s => s.slug === slug);
-    return service ? card(urlFor(service), label || service.nome, glyph) : '';
+    return service ? card(urlFor(service), label || service.nome, glyph, '', desc) : '';
   }).join('');
+  const cityChips = abcCities.map(slug => cities.find(c => c.slug === slug)).filter(Boolean)
+    .map(c => chip('/servicos/cidades/' + c.slug + '/', c.nome, 'pin')).join('');
   const options = cities.map(c => '<option value="/servicos/cidades/' + c.slug + '/">' + esc(c.nome + ' / ' + c.uf) + '</option>').join('');
   const sections = `<section class="directory-hero">
     <div class="directory-hero-copy">
       <p class="seo-eyebrow">QUEM FAZ • SERVIÇOS NA SUA REGIÃO</p>
-      <h1>Encontre serviços na sua região</h1>
+      <h1>Encontre serviços <span>na sua região</span></h1>
       <p>Escolha o serviço e publique seu pedido grátis.</p>
       <form class="directory-search" role="search" action="#catalogo">
         <label>${icon('search')}<input type="search" name="busca" aria-label="Qual serviço você precisa?" placeholder="Qual serviço você precisa?"></label>
         <button type="submit">Buscar serviços</button>
       </form>
+      <a class="directory-hero-link" href="/">Não achou? Publique seu pedido grátis ${icon('next')}</a>
+      <ul class="directory-trust">${trust.map(t => '<li>' + icon('check') + esc(t) + '</li>').join('')}</ul>
     </div>
   </section>
-  <section class="directory-section"><h2>Serviços em destaque</h2><div class="directory-grid">${highlights}</div></section>
-  <section class="directory-section"><h2>Explore por categoria</h2><div class="directory-grid directory-categories">
-    ${categories.map(([id, label, glyph]) => card('#catalogo', label, glyph, ' data-filter="' + id + '"')).join('')}
+  <section class="directory-section"><div class="directory-head"><h2>Serviços em destaque</h2><a href="#catalogo">Ver todos os serviços →</a></div><div class="directory-grid">${highlights}</div></section>
+  <section class="directory-section"><h2>Explore por categoria</h2><div class="directory-chips">
+    ${categories.map(([id, label, glyph]) => chip('#catalogo', label, glyph, ' data-filter="' + id + '"')).join('')}
   </div></section>
-  <section class="directory-city"><h2>Encontre profissionais na sua cidade</h2>
-    <label>${icon('pin')}<select aria-label="Selecione a sua cidade"><option value="">Selecione a sua cidade</option>${options}</select></label>
+  <section class="directory-city"><div><h2>Encontre profissionais na sua cidade</h2><p>Escolha onde você está e veja os serviços atendidos.</p></div>
+    <div class="directory-city-list">${cityChips}<label><select aria-label="Selecione a sua cidade"><option value="">Outra cidade</option>${options}</select></label></div>
     <noscript><a href="#guias">Ver cidades e guias</a></noscript>
   </section>
+  <section class="directory-cta"><div><h2>Não encontrou o serviço? <span>Conte o que precisa.</span></h2><p>Publique seu pedido grátis e receba propostas de profissionais da sua região.</p></div><a href="/">Publicar pedido grátis ${icon('next')}</a></section>
   <details class="directory-details" id="catalogo"><summary>Todos os serviços</summary>
     <p class="directory-results" role="status" hidden></p>
     <button class="directory-reset" type="button" hidden>Mostrar todos os serviços</button>
