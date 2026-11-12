@@ -432,7 +432,7 @@
   if(g.QFAtendimento?.hasGoogleDraft?.()||(pendingPublication()&&g.QFAtendimento?.hasActiveDraft?.())){showForm('');return;}
   if(g.location.hash==='#/cliente/home')g.history.replaceState(null,'',g.location.pathname+g.location.search+'#/');
   const action=state.pending;
-  if(action)execute(action);
+  if(action){execute(action);if(action==='/auth/cliente/cadastro'||action.startsWith('/cliente/novo-pedido')){reveal();[120,400,900,1800].forEach(ms=>g.setTimeout(()=>{const f=host();if(f&&g.scrollY<f.getBoundingClientRect().top+g.scrollY-40)reveal();},ms));}}
   else if(state.mode==='token')execute(state.tokenPath);
   else if(state.mode==='login')login();
   else if(state.mode==='form')showForm(state.service,state.problem);
