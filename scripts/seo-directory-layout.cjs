@@ -12,6 +12,7 @@ const icons = {
   search: 'M16 16l5 5M18 11a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z',
   pin: 'M20 10c0 5-8 12-8 12s-8-7-8-12a8 8 0 1 1 16 0Zm-5 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
   next: 'm9 5 7 7-7 7',
+  back: 'm15 5-7 7 7 7',
   check: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-13 0 3 3 5-6'
 };
 const icon = name => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + icons[name] + '"/></svg>';
@@ -48,7 +49,9 @@ module.exports = function layout(html, services, cities, urlFor, esc) {
   const cityChips = abcCities.map(slug => cities.find(c => c.slug === slug)).filter(Boolean)
     .map(c => chip('/servicos/cidades/' + c.slug + '/', c.nome, 'pin')).join('');
   const options = cities.map(c => '<option value="/servicos/cidades/' + c.slug + '/">' + esc(c.nome + ' / ' + c.uf) + '</option>').join('');
-  const sections = `<section class="directory-hero">
+  const back = '<a class="directory-back" href="/">' + icon('back') + 'Voltar ao início</a>';
+  const sections = `<div class="directory-toolbar">${back}</div>
+  <section class="directory-hero">
     <div class="directory-hero-copy">
       <p class="seo-eyebrow">QUEM FAZ • SERVIÇOS NA SUA REGIÃO</p>
       <h1>Encontre serviços <span>na sua região</span></h1>
@@ -57,7 +60,7 @@ module.exports = function layout(html, services, cities, urlFor, esc) {
         <label>${icon('search')}<input type="search" name="busca" aria-label="Qual serviço você precisa?" placeholder="Qual serviço você precisa?"></label>
         <button type="submit">Buscar serviços</button>
       </form>
-      <a class="directory-hero-link" href="/">Não achou? Publique seu pedido grátis ${icon('next')}</a>
+      <a class="directory-hero-link" href="/#/auth/cliente/cadastro">Não achou? Publique seu pedido grátis ${icon('next')}</a>
       <ul class="directory-trust">${trust.map(t => '<li>' + icon('check') + esc(t) + '</li>').join('')}</ul>
     </div>
   </section>
@@ -69,7 +72,7 @@ module.exports = function layout(html, services, cities, urlFor, esc) {
     <div class="directory-city-list">${cityChips}<label><select aria-label="Selecione a sua cidade"><option value="">Outra cidade</option>${options}</select></label></div>
     <noscript><a href="#guias">Ver cidades e guias</a></noscript>
   </section>
-  <section class="directory-cta"><div><h2>Não encontrou o serviço? <span>Conte o que precisa.</span></h2><p>Publique seu pedido grátis e receba propostas de profissionais da sua região.</p></div><a href="/">Publicar pedido grátis ${icon('next')}</a></section>
+  <section class="directory-cta"><div><h2>Não encontrou o serviço? <span>Conte o que precisa.</span></h2><p>Publique seu pedido grátis e receba propostas de profissionais da sua região.</p></div><a href="/#/auth/cliente/cadastro">Publicar pedido grátis ${icon('next')}</a></section>
   <details class="directory-details" id="catalogo"><summary>Todos os serviços</summary>
     <p class="directory-results" role="status" hidden></p>
     <button class="directory-reset" type="button" hidden>Mostrar todos os serviços</button>

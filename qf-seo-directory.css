@@ -32,6 +32,10 @@
 .directory-details summary{font-weight:750;padding:10px 0;cursor:pointer}
 .directory-details .seo-content{margin:0;padding:18px}
 .directory-reset{margin-bottom:12px;padding:8px 12px;border:1px solid var(--qf-border);border-radius:8px;background:#fff;color:inherit;font:inherit;cursor:pointer}
+.directory-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-4px 0 16px}
+.seo-directory .directory-back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px 0 10px;border:1px solid var(--qf-border);border-radius:999px;background:#fff;color:var(--qf-ink);font-size:15px;font-weight:750;text-decoration:none}
+.seo-directory .directory-back:hover{border-color:#ff8000}
+.directory-back svg{width:18px;height:18px}
 .directory-hero-link{display:inline-flex;align-items:center;gap:6px;margin-top:14px;color:#ffb463;font-size:15px;font-weight:700;text-decoration:none}
 .seo-page .directory-hero-link{color:#ffb463}
 .directory-hero-link svg{width:16px;height:16px}
