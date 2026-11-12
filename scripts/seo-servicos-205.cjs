@@ -57,6 +57,13 @@ function write(url,title,desc,content,service,city,index=true){
 }
 // Conteudo util por servico: detalhes que realmente ajudam o cliente a pedir e comparar orcamentos.
 const practicalAdvice={
+ cat_custom_instalacao_de_drywall_1oarhsa:{"issue": "Peça instalação de divisórias, forros ou revestimentos em drywall.", "details": "Informe as medidas, o uso do ambiente e se serão instaladas portas ou luminárias.", "compare": "Compare as chapas, o acabamento, os materiais e o prazo incluídos."},
+ cat_custom_reparo_em_drywall_1u9p2wr:{"issue": "Solicite avaliação de furos, trincas ou chapas danificadas.", "details": "Informe a área afetada, a causa conhecida e se o acabamento precisa combinar com o restante da parede.", "compare": "Confirme se o orçamento inclui a troca da chapa, acabamento e pintura."},
+ cat_custom_colocador_de_piso_laminado_8htl2w:{"issue": "Peça orçamento para colocar piso laminado em quartos, salas ou outros ambientes.", "details": "Informe a metragem, o piso atual e se você já comprou o laminado.", "compare": "Compare preparação do contrapiso, manta, rodapés e perfis de acabamento."},
+ cat_custom_limpador_de_vidro_1b74ru:{"issue": "Solicite limpeza de vidros, janelas ou vitrines.", "details": "Descreva a quantidade de peças, altura e condições de acesso.", "compare": "Combine quais faces serão limpas e se o orçamento inclui esquadrias."},
+ cat_custom_refrigeracao_2cksun:{"issue": "Solicite diagnóstico ou manutenção de equipamento de refrigeração.", "details": "Informe o tipo de equipamento, marca, modelo, sintomas e se o uso é residencial ou comercial.", "compare": "Pergunte o que a visita inclui e se peças, retorno e garantia serão cobrados à parte."},
+ cat_custom_controle_de_acesso_q67rn2:{"issue": "Peça instalação ou manutenção de controle de acesso para imóveis.", "details": "Informe o número de portas, o sistema existente e o tipo de entrada que precisa controlar.", "compare": "Compare equipamentos, instalação e suporte incluídos na proposta."},
+ cat_custom_engenheiro_civil_1g71d1q:{"issue": "Solicite orçamento para avaliação, projeto ou acompanhamento de obra.", "details": "Informe o tipo de imóvel, a finalidade do serviço e se tem planta ou documentação disponível.", "compare": "Confirme escopo, entregáveis, prazos e a documentação técnica prevista."},
  cat_custom_manutencao_de_bicicleta_1iqs5k7:{
   issue:'Peça orçamento para revisão da bicicleta, ajuste de marchas e freios ou troca de peças. Informe se é uma revisão geral ou se há um defeito específico.',
   details:'Informe o tipo de bicicleta, a marca ou o modelo, se souber, e quando o problema aparece. Se for elétrica, mencione se o serviço é mecânico ou envolve a assistência do sistema elétrico.',
