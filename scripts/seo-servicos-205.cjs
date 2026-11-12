@@ -57,6 +57,11 @@ function write(url,title,desc,content,service,city,index=true){
 }
 // Conteudo util por servico: detalhes que realmente ajudam o cliente a pedir e comparar orcamentos.
 const practicalAdvice={
+ cat_gasista:{
+  issue:'Peça avaliação para instalar um fogão ou aquecedor a gás, verificar a compatibilidade de um aparelho ou inspecionar um ponto de gás antes de mudar o equipamento.',
+  details:'Informe a marca e o modelo do aparelho, se o imóvel usa gás encanado ou botijão e se o condomínio exige agendamento ou documentação para a visita.',
+  compare:'Peça um orçamento que detalhe a visita, a mão de obra, as peças e os testes incluídos. Confirme a experiência do profissional com o seu tipo de equipamento.'
+ },
  cat_eletricista:{
   issue:'Disjuntor desarmando, tomada aquecendo ou iluminação falhando são motivos para pedir avaliação de um eletricista. Se houver cheiro de queimado ou faíscas, afaste-se do ponto, desligue a energia somente se for seguro e não tente reparar a instalação por conta própria.',
   details:'Informe se o problema ocorre em um único cômodo ou na casa toda, quando começou, se acontece ao ligar um aparelho e se é uma instalação nova ou um reparo. Em prédio, esclareça eventuais regras de acesso.',
