@@ -322,5 +322,7 @@ require('./seo-search-console-prioridades.cjs');
 require('./seo-discovery-prioridades.cjs');
 // Páginas prioritárias; valida URL, canonical, sitemap e formulário.
 require('./seo-prioridades-10-20261111.cjs');
+// Reforço editorial posterior aos geradores; impede perda no próximo build.
+require('./seo-organico-20261113.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
