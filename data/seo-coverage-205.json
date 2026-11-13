@@ -1,7 +1,174 @@
 {
-  "consultadoEm": "2026-11-09",
+  "consultadoEm": "2026-11-12",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
+    {
+      "cidade": "Aparecida de Goiânia",
+      "uf": "GO",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Araguari",
+      "uf": "MG",
+      "especialidades": [
+        "cat_montador"
+      ]
+    },
+    {
+      "cidade": "Belo Horizonte",
+      "uf": "MG",
+      "especialidades": [
+        "cat_azulejista",
+        "cat_baba",
+        "cat_caixa_dagua",
+        "cat_cuidador_idosos",
+        "cat_diarista",
+        "cat_faxina_pos_obra",
+        "cat_funileiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_passadeira",
+        "cat_pedreiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Contagem",
+      "uf": "MG",
+      "especialidades": [
+        "cat_autoeletrico",
+        "cat_automacao_industrial",
+        "cat_automacao_residencial",
+        "cat_caixa_dagua",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_faxina_pos_obra",
+        "cat_mecanico",
+        "cat_passadeira"
+      ]
+    },
+    {
+      "cidade": "Monte Carmelo",
+      "uf": "MG",
+      "especialidades": [
+        "cat_diarista"
+      ]
+    },
+    {
+      "cidade": "Muzambinho",
+      "uf": "MG",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_azulejista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_funileiro",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_piscineiro"
+      ]
+    },
+    {
+      "cidade": "Uberaba",
+      "uf": "MG",
+      "especialidades": [
+        "cat_caixa_dagua",
+        "cat_chaveiro",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pedreiro",
+        "cat_pintor",
+        "cat_poda_paisagista",
+        "cat_soldador"
+      ]
+    },
+    {
+      "cidade": "Uberlândia",
+      "uf": "MG",
+      "especialidades": [
+        "cat_antenista",
+        "cat_baba",
+        "cat_cftv_alarmes",
+        "cat_diarista",
+        "cat_eletricista",
+        "cat_energia_solar",
+        "cat_telhadista"
+      ]
+    },
+    {
+      "cidade": "Paulista",
+      "uf": "PE",
+      "especialidades": [
+        "cat_custom_pintor_industrial_6em128",
+        "cat_impermeabilizacao",
+        "cat_marido_aluguel",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Recife",
+      "uf": "PE",
+      "especialidades": [
+        "cat_custom_pintura_ku5m6q",
+        "cat_impermeabilizacao",
+        "cat_marceneiro",
+        "cat_pintor"
+      ]
+    },
+    {
+      "cidade": "Cabo Frio",
+      "uf": "RJ",
+      "especialidades": [
+        "cat_automacao_residencial",
+        "cat_caixa_dagua",
+        "cat_calheiro",
+        "cat_eletricista",
+        "cat_encanador",
+        "cat_entregador",
+        "cat_faxina_pos_obra",
+        "cat_gesseiro",
+        "cat_impermeabilizacao",
+        "cat_marceneiro",
+        "cat_marido_aluguel",
+        "cat_montador",
+        "cat_motorista",
+        "cat_pintor",
+        "cat_serralheiro",
+        "cat_soldador",
+        "cat_telhadista",
+        "cat_toldos_cortinas",
+        "cat_vidraceiro"
+      ]
+    },
+    {
+      "cidade": "Duque de Caxias",
+      "uf": "RJ",
+      "especialidades": [
+        "cat_piscineiro"
+      ]
+    },
+    {
+      "cidade": "Porto Velho",
+      "uf": "RO",
+      "especialidades": [
+        "cat_marceneiro",
+        "cat_montador",
+        "cat_pintor"
+      ]
+    },
     {
       "cidade": "Alphaville",
       "uf": "SP",
@@ -22,25 +189,6 @@
         "cat_impermeabilizacao",
         "cat_maquina_lavar",
         "cat_pintor"
-      ]
-    },
-    {
-      "cidade": "Aparecida de Goiânia",
-      "uf": "GO",
-      "especialidades": [
-        "cat_azulejista",
-        "cat_impermeabilizacao",
-        "cat_marido_aluguel",
-        "cat_pedreiro",
-        "cat_pintor",
-        "cat_telhadista"
-      ]
-    },
-    {
-      "cidade": "Araguari",
-      "uf": "MG",
-      "especialidades": [
-        "cat_montador"
       ]
     },
     {
@@ -67,24 +215,6 @@
       ]
     },
     {
-      "cidade": "Belo Horizonte",
-      "uf": "MG",
-      "especialidades": [
-        "cat_azulejista",
-        "cat_baba",
-        "cat_caixa_dagua",
-        "cat_cuidador_idosos",
-        "cat_diarista",
-        "cat_faxina_pos_obra",
-        "cat_funileiro",
-        "cat_marido_aluguel",
-        "cat_montador",
-        "cat_passadeira",
-        "cat_pedreiro",
-        "cat_pintor"
-      ]
-    },
-    {
       "cidade": "Bragança Paulista",
       "uf": "SP",
       "especialidades": [
@@ -99,31 +229,6 @@
         "cat_marido_aluguel",
         "cat_pet_sitter",
         "cat_poda_paisagista"
-      ]
-    },
-    {
-      "cidade": "Cabo Frio",
-      "uf": "RJ",
-      "especialidades": [
-        "cat_automacao_residencial",
-        "cat_caixa_dagua",
-        "cat_calheiro",
-        "cat_eletricista",
-        "cat_encanador",
-        "cat_entregador",
-        "cat_faxina_pos_obra",
-        "cat_gesseiro",
-        "cat_impermeabilizacao",
-        "cat_marceneiro",
-        "cat_marido_aluguel",
-        "cat_montador",
-        "cat_motorista",
-        "cat_pintor",
-        "cat_serralheiro",
-        "cat_soldador",
-        "cat_telhadista",
-        "cat_toldos_cortinas",
-        "cat_vidraceiro"
       ]
     },
     {
@@ -208,21 +313,6 @@
       ]
     },
     {
-      "cidade": "Contagem",
-      "uf": "MG",
-      "especialidades": [
-        "cat_autoeletrico",
-        "cat_automacao_industrial",
-        "cat_automacao_residencial",
-        "cat_caixa_dagua",
-        "cat_diarista",
-        "cat_eletricista",
-        "cat_faxina_pos_obra",
-        "cat_mecanico",
-        "cat_passadeira"
-      ]
-    },
-    {
       "cidade": "Cordeirópolis",
       "uf": "SP",
       "especialidades": [
@@ -235,7 +325,12 @@
       "uf": "SP",
       "especialidades": [
         "cat_baba",
+        "cat_cftv_alarmes",
         "cat_cuidador_idosos",
+        "cat_custom_auxiliar_de_limpeza_limpeza_hhdnaz",
+        "cat_custom_controle_de_acesso_q67rn2",
+        "cat_custom_tecnico_em_cameras_cftv_1lrkajd",
+        "cat_custom_tecnico_em_intefone_e_alarme_de_incend_1b3x2x1",
         "cat_diarista",
         "cat_eletricista",
         "cat_faxina_pos_obra",
@@ -315,13 +410,6 @@
         "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
         "cat_custom_instalacoes_eletricas_4n7bsf",
         "cat_eletricista"
-      ]
-    },
-    {
-      "cidade": "Duque de Caxias",
-      "uf": "RJ",
-      "especialidades": [
-        "cat_piscineiro"
       ]
     },
     {
@@ -529,6 +617,7 @@
       "uf": "SP",
       "especialidades": [
         "cat_antenista",
+        "cat_arcondicionado",
         "cat_azulejista",
         "cat_caixa_dagua",
         "cat_calheiro",
@@ -759,30 +848,6 @@
       ]
     },
     {
-      "cidade": "Monte Carmelo",
-      "uf": "MG",
-      "especialidades": [
-        "cat_diarista"
-      ]
-    },
-    {
-      "cidade": "Muzambinho",
-      "uf": "MG",
-      "especialidades": [
-        "cat_automacao_residencial",
-        "cat_azulejista",
-        "cat_eletricista",
-        "cat_encanador",
-        "cat_funileiro",
-        "cat_marceneiro",
-        "cat_marido_aluguel",
-        "cat_montador",
-        "cat_pedreiro",
-        "cat_pintor",
-        "cat_piscineiro"
-      ]
-    },
-    {
       "cidade": "Osasco",
       "uf": "SP",
       "especialidades": [
@@ -806,16 +871,6 @@
         "cat_piscineiro",
         "cat_soldador",
         "cat_tv_som"
-      ]
-    },
-    {
-      "cidade": "Paulista",
-      "uf": "PE",
-      "especialidades": [
-        "cat_custom_pintor_industrial_6em128",
-        "cat_impermeabilizacao",
-        "cat_marido_aluguel",
-        "cat_pintor"
       ]
     },
     {
@@ -853,15 +908,6 @@
       "especialidades": [
         "cat_faxina_pos_obra",
         "cat_impermeabilizacao",
-        "cat_pintor"
-      ]
-    },
-    {
-      "cidade": "Porto Velho",
-      "uf": "RO",
-      "especialidades": [
-        "cat_marceneiro",
-        "cat_montador",
         "cat_pintor"
       ]
     },
@@ -904,16 +950,6 @@
         "cat_pedreiro",
         "cat_pintor",
         "cat_telhadista"
-      ]
-    },
-    {
-      "cidade": "Recife",
-      "uf": "PE",
-      "especialidades": [
-        "cat_custom_pintura_ku5m6q",
-        "cat_impermeabilizacao",
-        "cat_marceneiro",
-        "cat_pintor"
       ]
     },
     {
@@ -1237,6 +1273,7 @@
         "cat_custom_eletricista_industrial_residencial_sen_th8mvn",
         "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
         "cat_custom_encanador_e_pintor_h3lxb5",
+        "cat_custom_eu_sou_tecnico_de_placas_inverter_de_a_eocnby",
         "cat_custom_gesseiro_admin_20261026",
         "cat_custom_higienizacao_de_ar_condicionado_1fkgpyw",
         "cat_custom_higienizador_de_estofados_em_geral_e_l_4dijb2",
@@ -1245,6 +1282,7 @@
         "cat_custom_instalacoes_eletricas_4n7bsf",
         "cat_custom_limpador_de_vidro_1b74ru",
         "cat_custom_limpeza_de_piscina_1yfrzs3",
+        "cat_custom_manutencao_de_ar_condicionado_196jqg",
         "cat_custom_manutencao_de_bicicleta_1iqs5k7",
         "cat_custom_massoterapeuta_1ayc4mp",
         "cat_custom_mecanico_ar_condicionado_w8vmhd",
@@ -1256,6 +1294,7 @@
         "cat_custom_pintor_e_decorador_eq8bbr",
         "cat_custom_pintor_residencial_ssivpc",
         "cat_custom_pinturas_residencial_e_comercial_1m7alam",
+        "cat_custom_refrigeracao_2cksun",
         "cat_custom_reparo_em_drywall_1u9p2wr",
         "cat_custom_tecnico_ar_condicionados_residencial_e_1prelzn",
         "cat_custom_tecnico_de_informatica_oe3tos",
@@ -1450,36 +1489,6 @@
       "uf": "SP",
       "especialidades": [
         "cat_pedreiro"
-      ]
-    },
-    {
-      "cidade": "Uberaba",
-      "uf": "MG",
-      "especialidades": [
-        "cat_caixa_dagua",
-        "cat_chaveiro",
-        "cat_diarista",
-        "cat_eletricista",
-        "cat_encanador",
-        "cat_impermeabilizacao",
-        "cat_marido_aluguel",
-        "cat_pedreiro",
-        "cat_pintor",
-        "cat_poda_paisagista",
-        "cat_soldador"
-      ]
-    },
-    {
-      "cidade": "Uberlândia",
-      "uf": "MG",
-      "especialidades": [
-        "cat_antenista",
-        "cat_baba",
-        "cat_cftv_alarmes",
-        "cat_diarista",
-        "cat_eletricista",
-        "cat_energia_solar",
-        "cat_telhadista"
       ]
     },
     {
