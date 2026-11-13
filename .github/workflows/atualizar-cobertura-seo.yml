@@ -1,0 +1,25 @@
+name: Atualizar cidades e serviços do site
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/atualizar-cobertura-seo.cjs
+      - name: Publicar se mudou
+        run: |
+          if git diff --quiet -- data/seo-coverage-205.json; then echo "Nada a publicar"; exit 0; fi
+          git config user.name "quemfaz-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/seo-coverage-205.json
+          git commit -m "SEO: atualizar cidades e especialidades com profissionais cadastrados"
+          git push origin HEAD:main
