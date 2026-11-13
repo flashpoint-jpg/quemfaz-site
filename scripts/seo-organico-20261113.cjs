@@ -67,6 +67,35 @@ const entries=[
 ];
 const sitemap=fs.readFileSync(path.join(root,'sitemap.xml'),'utf8');
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const localBudgets = [
+  {
+    slug: 'encanador/santo-andre',
+    label: 'Encanador em Santo André',
+    prices: 'A Cronoshare publica R$ 120 a R$ 220 para troca de torneira em Santo André, sem a peça, e R$ 200 a R$ 450 para reparo de vazamento simples.',
+    sources: [['Cronoshare', 'https://www.cronoshare.com.br/servicos/encanadores/sao-paulo/santo-andre']],
+    compare: 'Peça o valor da visita e confirme se ele será abatido do reparo. Se o problema estiver atrás da parede, peça que o profissional separe no orçamento o diagnóstico, o conserto, as peças e a recomposição do revestimento.',
+    example: 'Exemplo de pedido: “Apartamento no Campestre. Aparece umidade no armário embaixo da pia quando uso a torneira. Preciso identificar a origem e saber se a visita está incluída no reparo.”'
+  },
+  {
+    slug: 'diarista/guarulhos',
+    label: 'Diarista em Guarulhos',
+    prices: 'Para limpeza de rotina em imóvel de até 60 m², a Cronoshare publica R$ 120 a R$ 180 por visita em Guarulhos, com produtos fornecidos pelo cliente.',
+    sources: [['Cronoshare', 'https://www.cronoshare.com.br/servicos/liimpeza-residencial/sao-paulo/guarulhos']],
+    compare: 'Compare propostas com a mesma lista de tarefas e confirme quantas horas estão incluídas. Se precisar limpar forno, vidros ou armários por dentro, pergunte se isso cabe na visita ou muda o valor.',
+    example: 'Exemplo de pedido: “Apartamento na Vila Galvão, dois quartos e um banheiro. Preciso de faxina de rotina na sexta. Tenho os produtos e posso deixar a entrada liberada na portaria.”'
+  },
+  {
+    slug: 'limpeza-de-sofa/sao-bernardo-do-campo',
+    label: 'Limpeza de sofá em São Bernardo do Campo',
+    prices: 'Dois anúncios locais publicam preços iniciais para limpeza de sofá em São Bernardo do Campo: R$ 149,90 no Guia São Bernardo e R$ 189,99 na Clean Brasil.',
+    sources: [
+      ['Guia São Bernardo', 'https://www.guiasaobernardodocampo.com.br/limpeza-de-estofados'],
+      ['Clean Brasil', 'https://cleanbrasil.com.br/limpeza-de-sofa-em-sao-bernardo-do-campo']
+    ],
+    compare: 'Compare o total para o mesmo sofá, incluindo chaise, almofadas soltas e deslocamento. Pergunte quanto tempo o sofá deve ficar sem uso e se a impermeabilização é cobrada separadamente.',
+    example: 'Exemplo de pedido: “Sofá retrátil de três lugares no Rudge Ramos. Tem manchas no assento e o ambiente tem pouca ventilação. Preciso saber o valor para a peça inteira e o tempo de secagem.”'
+  }
+];
 for (const [slug,question,answer,related] of entries) {
   const url=origin+'/servicos/'+slug+'/';
   if(!sitemap.includes('<loc>'+url+'</loc>')) throw Error('SEO orgânico: URL não consta do sitemap: '+slug);
@@ -83,4 +112,37 @@ for (const [slug,question,answer,related] of entries) {
   html=html.replace('</article>',section+'</article>');
   fs.writeFileSync(file,html);
 }
-console.log('SEO orgânico: '+entries.length+' páginas locais reforçadas após a geração.');
+const editorialStart = '<article class="seo-content">';
+let localGuides = 0;
+for (const { slug, label, prices, sources, compare, example } of localBudgets) {
+  const url = '/servicos/' + slug + '/';
+  const canonical = origin + url;
+  const file = path.join(root, url, 'index.html');
+  const html = fs.readFileSync(file, 'utf8');
+  if (!sitemap.includes('<loc>' + canonical + '</loc>')) continue;
+  if (!html.includes('rel="canonical" href="' + canonical + '"') ||
+      !html.includes('<meta name="robots" content="index,follow">') ||
+      !html.includes('id="seo-order"') || !html.includes('href="#pedido"') ||
+      !html.includes(editorialStart)) {
+    throw Error('Orçamento local: página inválida ' + slug);
+  }
+  const references = sources.map(([name, href]) => '<a href="' + esc(href) + '">' + esc(name) + '</a>').join(' e ');
+  const section = '<section class="seo-practical" data-qf-orcamento-local>' +
+    '<h2>' + esc(label) + ': referências de preço</h2><p>' + esc(prices) + '</p>' +
+    '<p>Referências externas consultadas em novembro de 2026: ' + references +
+    '. Os preços publicados podem mudar. Cada profissional informa o valor do seu serviço.</p>' +
+    '<h3>Como comparar as propostas</h3><p>' + esc(compare) + '</p><p>' + esc(example) +
+    '</p><p><a href="#pedido">Pedir orçamento grátis</a></p></section>';
+  fs.writeFileSync(file, html.replace(editorialStart, editorialStart + section));
+
+  const city = slug.split('/')[1];
+  const cityFile = path.join(root, 'servicos', 'cidades', city, 'index.html');
+  const cityHtml = fs.readFileSync(cityFile, 'utf8');
+  if (!cityHtml.includes(editorialStart) || !cityHtml.includes('<meta name="robots" content="index,follow">')) {
+    throw Error('Orçamento local: guia da cidade inválido ' + city);
+  }
+  const cityLink = '<p><a href="' + url + '">' + esc(label) + '</a> — veja referências de preço e o que incluir no pedido.</p>';
+  fs.writeFileSync(cityFile, cityHtml.replace(editorialStart, editorialStart + cityLink));
+  localGuides++;
+}
+console.log('SEO orgânico: '+entries.length+' páginas locais reforçadas e '+localGuides+' guias de orçamento.');
