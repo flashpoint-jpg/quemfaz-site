@@ -137,13 +137,20 @@ adminHtml=adminHtml.replace(/qf-admin-valor\.js\?v=[^"']+/g,'qf-admin-valor.js?v
 fs.writeFileSync(adminPath,adminHtml);
 // Favicon tradicional para Google e navegadores, sem alterar a interface.
 require('./generate-favicon.cjs');
-// Declara apenas ICO e PNG derivados da mesma arte oficial, evitando ícones conflitantes.
+// O PNG é o favicon declarado; /favicon.ico continua disponível para clientes legados.
 const headEnd=html.indexOf('</head>');
 if (headEnd<0) throw Error('Fechamento head ausente');
 const head=html.slice(0,headEnd);
 const tail=html.slice(headEnd);
-const cleanHead=head.replace(/<link\b[^>]*\brel\s*=\s*(?:"icon"|'icon')[^>]*>/gi,'');
-html=cleanHead+'<link rel="icon" type="image/x-icon" href="/favicon.ico">\n<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">\n'+tail;
+const iconLinks=/<link\b[^>]*\brel\s*=\s*(?:"(?:shortcut )?icon"|'(?:shortcut )?icon')[^>]*>/gi;
+const favicon='<link rel="icon" type="image/png" sizes="48x48" href="/favicon.png">';
+let hasFavicon=false;
+const cleanHead=head.replace(iconLinks,()=>{
+  if (hasFavicon) return '';
+  hasFavicon=true;
+  return favicon;
+});
+html=cleanHead+(hasFavicon?'':favicon+'\n')+tail;
 for (const file of ['favicon.ico','favicon.png']) {
   if (!fs.existsSync(path.join(out,file))) throw Error('Favicon ausente no dist: '+file);
 }
