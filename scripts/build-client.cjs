@@ -331,5 +331,7 @@ require('./seo-discovery-prioridades.cjs');
 require('./seo-prioridades-10-20261111.cjs');
 // Reforço editorial posterior aos geradores; impede perda no próximo build.
 require('./seo-organico-20261113.cjs');
+// Valida e complementa apenas metadados do HTML público gerado.
+require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
