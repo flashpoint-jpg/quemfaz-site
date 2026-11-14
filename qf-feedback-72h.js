@@ -1,12 +1,10 @@
-/* Confirmação do cliente após 72 horas: informativa, sem concluir nem cancelar pedidos. */
+/* Controle manual do pedido pelo cliente; sem prazo para cancelamento automático. */
 (function (g) {
   'use strict';
-  const HOURS = 72 * 60 * 60 * 1000;
   const ACTIVE = new Set(['aberto', 'buscando', 'em_negociacao', 'aguardando_aceite', 'aguardando_orcamento', 'orcamento_enviado', 'orcamento_recusado', 'aprovado', 'em_andamento', 'sem_profissional']);
   const CHOICES = { ainda_preciso: 'Ainda preciso', ja_contratei: 'Já contratei', nao_preciso: 'Não preciso mais' };
   function eligible(order) {
-    const date = Date.parse(order.criado_em || order.criadoEm || '');
-    return Boolean(order.id && ACTIVE.has(order.status) && Number.isFinite(date) && Date.now() - date >= HOURS);
+    return Boolean(order.id && ACTIVE.has(order.status));
   }
   async function mount(container, orders, ownerId) {
     const cloud = g.QFCloud?.client;
@@ -14,31 +12,38 @@
     const eligibleOrders = (orders || []).filter(eligible);
     if (!eligibleOrders.length) return;
     // A consulta usa a sessão autenticada e as políticas RLS do banco.
-    const result = await cloud.from('qf_pedido_feedback_72h').select('chamado_id').eq('cliente_id', ownerId).in('chamado_id', eligibleOrders.map(o => o.id));
+    const result = await cloud.from('qf_pedido_feedback_72h').select('chamado_id,resposta').eq('cliente_id', ownerId).in('chamado_id', eligibleOrders.map(o => o.id));
     if (result.error || !container.isConnected) return;
-    const answered = new Set((result.data || []).map(x => x.chamado_id));
+    const answered = new Map((result.data || []).map(x => [x.chamado_id, x.resposta]));
     eligibleOrders.forEach(function (order) {
-      if (answered.has(order.id)) return;
       const button = Array.from(container.querySelectorAll('[data-home-order],[data-qf-pedido-card]')).find(el => (el.dataset.homeOrder || el.dataset.qfPedidoCard) === order.id);
       if (!button) return;
       const card = g.document.createElement('section');
       card.className = 'qf-feedback-72h';
-      card.setAttribute('aria-label', 'Atualização do pedido após 72 horas');
-      card.innerHTML = '<strong>Você ainda precisa desse serviço?</strong><p>Seu pedido tem mais de 72 horas. Conte como está o atendimento. Sua resposta não confirma conclusão nem movimenta pagamentos.</p><div class="qf-feedback-72h__actions">' + Object.entries(CHOICES).map(([key, label]) => '<button type="button" data-qf-feedback="' + key + '">' + label + '</button>').join('') + '</div><p class="qf-feedback-72h__status" role="status" aria-live="polite"></p>';
+      card.setAttribute('aria-label', 'Atualizar situação do pedido');
+      card.innerHTML = '<strong>Você ainda precisa desse serviço?</strong><p>Você decide quando não precisa mais. A resposta não confirma conclusão nem movimenta pagamentos.</p><div class="qf-feedback-72h__actions">' + Object.entries(CHOICES).map(([key, label]) => '<button type="button" data-qf-feedback="' + key + '">' + label + '</button>').join('') + '</div><p class="qf-feedback-72h__status" role="status" aria-live="polite">' + (answered.has(order.id) ? 'Resposta atual: ' + CHOICES[answered.get(order.id)] + '.' : '') + '</p>';
       button.insertAdjacentElement('afterend', card);
       card.addEventListener('click', async function (event) {
         const choice = event.target.closest('[data-qf-feedback]');
         if (!choice) return;
         const response = choice.dataset.qfFeedback;
         if (!Object.hasOwn(CHOICES, response)) return;
+        if (response === 'nao_preciso' && !g.confirm('Cancelar este pedido? Os profissionais serão informados; o histórico de negociações e pagamentos será preservado.')) return;
         const buttons = card.querySelectorAll('button');
         buttons.forEach(b => { b.disabled = true; });
         const status = card.querySelector('[role=status]');
         status.textContent = 'Salvando sua resposta…';
         try {
-          const result = await cloud.from('qf_pedido_feedback_72h').insert({ chamado_id: order.id, cliente_id: ownerId, resposta: response });
-          if (result.error) throw result.error;
-          card.innerHTML = '<strong>Obrigado por atualizar seu pedido!</strong><p>Resposta registrada: ' + CHOICES[response] + '. O andamento e a contratação continuam sujeitos às confirmações normais.</p>';
+          const result = await cloud.rpc('qf_cliente_atualizar_necessidade', { p_chamado_id: order.id, p_resposta: response });
+          if (result.error || !result.data?.ok) throw result.error || Error(result.data?.reason || 'Não foi possível atualizar.');
+          if (response === 'nao_preciso') {
+            card.innerHTML = '<strong>Pedido cancelado a seu pedido.</strong><p>O histórico de negociações e pagamentos foi preservado.</p>';
+            g.QFPush?.notify?.('call_cancelled', order.id)?.catch?.(() => {});
+            if (g.QFCloud?.syncForCurrentSession) await g.QFCloud.syncForCurrentSession(true).catch(() => {});
+          } else {
+            status.textContent = 'Resposta registrada: ' + CHOICES[response] + '. Você pode alterar sua resposta quando quiser.';
+            buttons.forEach(b => { b.disabled = false; });
+          }
         } catch (_) {
           status.textContent = 'Não foi possível salvar. Tente novamente.';
           buttons.forEach(b => { b.disabled = false; });
