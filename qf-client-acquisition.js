@@ -37,15 +37,22 @@
     });
     var hasFresh = Object.keys(fresh).length > 0;
     if (hasFresh) {
-      var touch = {
-        source: fresh.utm_source || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'google' : (fresh.fbclid ? 'facebook' : '')),
-        medium: fresh.utm_medium || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'cpc' : (fresh.fbclid ? 'paid_social' : '')),
-        campaign: fresh.utm_campaign || '',
-        content: fresh.utm_content || '',
-        term: fresh.utm_term || '',
-        gclid: fresh.gclid || '', gbraid: fresh.gbraid || '', wbraid: fresh.wbraid || '',
-        fbclid: fresh.fbclid || ''
-      };
+      // Um novo link apenas com UTM da mesma origem não apaga o identificador
+      // do clique anterior. Nova origem ou novo clique inicia outra atribuição.
+      var sameSource = !fresh.utm_source || !saved.source || fresh.utm_source.toLowerCase() === String(saved.source).toLowerCase();
+      var sameCampaign = !fresh.utm_campaign || !saved.campaign || fresh.utm_campaign === saved.campaign;
+      var compatibleMedium = !fresh.utm_medium || !/^(organic|referral|email|social)$/i.test(fresh.utm_medium);
+      var newClick = !!(fresh.gclid || fresh.gbraid || fresh.wbraid || fresh.fbclid);
+      var previous = sameSource && sameCampaign && compatibleMedium && !newClick ? saved : {};
+      var touch = Object.assign({}, previous, {
+        source: fresh.utm_source || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'google' : (fresh.fbclid ? 'facebook' : previous.source || '')),
+        medium: fresh.utm_medium || ((fresh.gclid || fresh.gbraid || fresh.wbraid) ? 'cpc' : (fresh.fbclid ? 'paid_social' : previous.medium || '')),
+        campaign: fresh.utm_campaign || previous.campaign || '',
+        content: fresh.utm_content || previous.content || '',
+        term: fresh.utm_term || previous.term || '',
+        gclid: fresh.gclid || previous.gclid || '', gbraid: fresh.gbraid || previous.gbraid || '', wbraid: fresh.wbraid || previous.wbraid || '',
+        fbclid: fresh.fbclid || previous.fbclid || ''
+      });
       try { global.sessionStorage.setItem(QF_ATTR_KEY, JSON.stringify(touch)); } catch (_) {}
       return touch;
     }
@@ -55,7 +62,7 @@
   // A publicacao de pedidos usa tambem QFMarketingTouch. Sincroniza dados de campanha
   // identificados no URL para que o referenciador ChatGPT nao substitua utm_source.
   if (capturedTouch.source && (capturedTouch.medium || capturedTouch.campaign || capturedTouch.gclid || capturedTouch.gbraid || capturedTouch.fbclid)) {
-    global.QFMarketingTouch = Object.assign({}, global.QFMarketingTouch || {}, capturedTouch);
+    global.QFMarketingTouch = Object.assign({}, capturedTouch, global.QFMarketingTouch || {});
   }
   var campaign = global.QFMarketingTouch || capturedTouch || {};
   var sid;
@@ -147,7 +154,8 @@
     var live = global.QFMarketingTouch || {};
     // O identificador explicito de campanha/click tem prioridade sobre referenciadores genericos.
     // Evita que chatgpt.com ou outra origem de navegacao sobrescreva utm_source=google.
-    var touch = Object.assign({}, live, capturedTouch);
+    // A captura mais recente da home prevalece sobre dados antigos da sessão.
+    var touch = Object.assign({}, capturedTouch, live);
     // Identificadores de clique confirmam origem paga mesmo sem UTM.
     if (!touch.source && (touch.gclid || touch.gbraid || touch.wbraid)) {
       touch.source = 'google'; touch.medium = touch.medium || 'cpc';
