@@ -2,5 +2,8 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /profissional.html
+Disallow: /espelho-cliente.html
+Disallow: /espelho-profissional.html
+Disallow: /*?busca=
 
 Sitemap: https://quemfazservico.com.br/sitemap.xml
