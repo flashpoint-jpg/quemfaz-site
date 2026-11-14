@@ -208,6 +208,11 @@
       source: origin.source || null,
       campaign: origin.campaign || null,
       content: origin.content || null,
+      // Permite conciliar cliques do Ads com visitas por palavra-chave; sem o identificador do clique.
+      medium: origin.medium ? String(origin.medium).slice(0, 80) : null,
+      term: origin.term ? String(origin.term).slice(0, 240) : null,
+      click_type: ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid', 'ttclid'].indexOf(origin.click_type) !== -1 ? origin.click_type
+        : (origin.gclid ? 'gclid' : origin.gbraid ? 'gbraid' : origin.wbraid ? 'wbraid' : origin.fbclid ? 'fbclid' : null),
       request_id: detail.request_id || null,
       error_code: String(detail.error_code || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || null,
       duration_ms: submittedAt ? Math.min(3600000, Math.max(0, Date.now() - submittedAt)) : null
