@@ -111,11 +111,23 @@
     const cep=String(value||'').replace(/\D/g,'');
     if(!/^\d{8}$/.test(cep))throw Error('Informe um CEP com 8 números.');
     if(typeof root.fetch!=='function')throw Error('Não conseguimos consultar o CEP agora. Tente novamente.');
-    let response;
-    try{response=await root.fetch('https://viacep.com.br/ws/'+cep+'/json/');}
-    catch(_){throw Error('Consulta de CEP indisponível. Verifique sua conexão e tente novamente.');}
-    if(!response.ok)throw Error('Não conseguimos consultar o CEP agora. Tente novamente.');
-    let data;try{data=await response.json();}catch(_){throw Error('Resposta inválida da consulta de CEP. Tente novamente.');}
+    let data=null;
+    try{
+      const response=await root.fetch('https://viacep.com.br/ws/'+cep+'/json/');
+      if(response.ok)data=await response.json();
+      else if(response.status===400||response.status===404)throw Error('CEP não encontrado. Confira os 8 números.');
+    }catch(e){if(e.message==='CEP não encontrado. Confira os 8 números.')throw e;}
+    // Provedor alternativo apenas quando a consulta principal está indisponível.
+    if(!data){
+      try{
+        const response=await root.fetch('https://brasilapi.com.br/api/cep/v1/'+cep);
+        if(response.ok){
+          const fallback=await response.json();
+          data={localidade:fallback.city,uf:fallback.state,bairro:fallback.neighborhood};
+        }else if(response.status===404)throw Error('CEP não encontrado. Confira os 8 números.');
+      }catch(e){if(e.message==='CEP não encontrado. Confira os 8 números.')throw e;}
+    }
+    if(!data)throw Error('Consulta de CEP indisponível. Verifique sua conexão e tente novamente.');
     if(data.erro===true||data.erro==='true')throw Error('CEP não encontrado. Confira os 8 números.');
     const cidade=String(data.localidade||'').trim(),uf=String(data.uf||'').trim().toUpperCase(),bairro=String(data.bairro||'').trim();
     if(!cidade||!/^([A-Z]{2})$/.test(uf))throw Error('Este CEP não retornou cidade e estado. Confira os dados.');
