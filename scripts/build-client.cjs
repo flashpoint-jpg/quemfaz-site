@@ -331,5 +331,7 @@ require('./seo-discovery-prioridades.cjs');
 require('./seo-prioridades-10-20261111.cjs');
 // Reforço editorial posterior aos geradores; impede perda no próximo build.
 require('./seo-organico-20261113.cjs');
+// Termos de higienização em cidades com cobertura cadastrada.
+require('./seo-higienizacao-local-20261114.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
