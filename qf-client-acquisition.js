@@ -26,6 +26,29 @@
   // Preserva o clique pago ao longo do formulario, sem transformar busca organica em anuncio.
   // Sem identificador de clique ou UTM, nao atribuir uma visita paga.
   var QF_ATTR_KEY = 'qf_ads_attribution_v1';
+  var QF_SEARCH_REF_KEY = 'qf_search_referrer_v1';
+  // Guarda apenas a origem de busca comprovada pelo navegador, sem consultas,
+  // identificadores pessoais ou suposição a partir da página de entrada.
+  function searchReferrer() {
+    var current = null;
+    try {
+      var host = new URL(document.referrer).hostname.toLowerCase();
+      var source = /(^|\.)google\.(?:com(?:\.[a-z]{2})?|co\.[a-z]{2}|[a-z]{2,3})$/.test(host) ? 'google_referral'
+        : /(^|\.)bing\.com$/.test(host) ? 'bing_referral' : '';
+      var p = new URLSearchParams(location.search || '');
+      var paid = ['gclid','gbraid','wbraid','msclkid','ttclid','gad_campaignid'].some(function(k){return p.has(k);})
+        || /^(cpc|ppc|paid|paid_social)$/i.test(p.get('utm_medium') || '');
+      if(source && !paid) {
+        current = {source:source,medium:'organic',landing_page:location.pathname};
+        global.sessionStorage.setItem(QF_SEARCH_REF_KEY,JSON.stringify(current));
+      } else if(paid) {
+        global.sessionStorage.removeItem(QF_SEARCH_REF_KEY);
+      }
+    } catch (_) {}
+    if(current)return current;
+    try {return JSON.parse(global.sessionStorage.getItem(QF_SEARCH_REF_KEY)||'null');}catch(_){return null;}
+  }
+  var capturedSearch = searchReferrer();
   function readAdTouch() {
     var saved = {};
     try { saved = JSON.parse(global.sessionStorage.getItem(QF_ATTR_KEY) || '{}') || {}; } catch (_) {}
@@ -170,10 +193,14 @@
     if (!out.source) {
       try {
         var host = new URL(document.referrer).hostname.toLowerCase();
-        if (/(^|\.)google\./.test(host)) out.source = 'google_referral';
+        if (/(^|\.)google\./.test(host)) {out.source = 'google_referral';out.medium = 'organic';}
         else if (/(^|\.)(facebook\.com|fb\.com|instagram\.com)$/.test(host)) out.source = 'meta_referral';
-        else if (/(^|\.)bing\.com$/.test(host)) out.source = 'bing_referral';
+        else if (/(^|\.)bing\.com$/.test(host)) {out.source = 'bing_referral';out.medium = 'organic';}
       } catch (_) {}
+    }
+    if(!out.source && capturedSearch) {
+      out.source = capturedSearch.source;
+      out.medium = capturedSearch.medium;
     }
     if (!out.source) out.source = 'direto';
     try {
@@ -183,6 +210,7 @@
         if (!out.content) out.content = landing;
       }
     } catch (_) {}
+    if (!out.landing_page && capturedSearch && capturedSearch.landing_page) out.landing_page = capturedSearch.landing_page;
     return Object.assign(out,global.QFMarketingDedicado?.attribution?.()||{});
   }
   // Eventos de conversão para Google Ads / GA4 / Microsoft Ads (ver qf-conversao.js). Sem dados pessoais.
