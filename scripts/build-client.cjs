@@ -98,7 +98,8 @@ html=html.replace("if (path === '/auth/cliente/login') { navigate('/', true); re
 html=html.replace("const routes = [",`const routes = [
  {pattern:'/auth/cliente/verificar/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="verificar" data-token="'+PU.escapeHtml(p.token)+'"></div>'},
  {pattern:'/auth/cliente/redefinir/:token',anon:true,publicPage:true,render:p=>'<div class="view card stack" data-client-token data-kind="redefinir" data-token="'+PU.escapeHtml(p.token)+'"></div>'},`);
-html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-pedido-home.js?v=painel-cliente-20261112c"></script></body>');
+html=html.replace('</body>','<script defer src="/qf-cliente-acesso.js?v=simples-20261027"></script><script defer src="/qf-feedback-72h.js"></script><script defer src="/qf-pedido-home.js?v=painel-cliente-20261112c"></script></body>');
+html=html.replace('function bindClientePedidos(content, user) {', 'function bindClientePedidos(content, user) { global.QFFeedback72?.mount(content, DB.requestsByCliente(user.id), user.id);');
 html=html.replace('</body>','<script defer src="/qf-marketing-dedicado.js"></script></body>');
 // Mudança de URL evita reutilizar o JavaScript inválido que ficou no cache dos clientes.
 // Versão das extensões do piloto simplificado; preserva os arquivos-fonte já revisados.
