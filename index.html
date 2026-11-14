@@ -13708,7 +13708,7 @@ alt=""></noscript>
       '<div class="qf-prof-estado" style="background:#eef5ff;border-color:#c8dcf5"><div class="qf-prof-estado__copy"><div class="qf-prof-status__title" style="color:#1458cc"><span class="'+(qfDentroDoHorarioProf(user)?'qf-live-dot':'qf-off-dot')+'" aria-hidden="true"></span>'+(qfDentroDoHorarioProf(user)?'Atendimento automático ativo':'Fora do horário de novos pedidos')+'</div><div class="qf-prof-estado__msg" style="color:#204b82">'+(qfDentroDoHorarioProf(user)?'Avisos de novos pedidos no seu horário, conforme profissão e raio.':'Você pode visualizar os pedidos; os alertas de novos pedidos voltam no seu horário.')+' Mensagens do chat continuam chegando.</div></div></div>'+
       '<input type="checkbox" id="toggle-online" style="display:none" disabled>'+
       '</div>'+ // cartão compacto de atendimento é renderizado pela extensão de pedidos
-      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.'+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
+      '<div class="section" id="chamados-disponiveis"><div class="section-head"><h2 class="h3">Pedidos para você'+(chamadas.length?' <span class="badge badge--orange">'+chamadas.length+'</span>':'')+'</h2><button class="btn btn--ghost btn--sm" type="button" data-qf-refresh-prof>Atualizar pedidos</button></div>'+(chamadas.length?'<div class="stack--sm">'+chamadas.map(function(req){return chamadaCard(req,user);}).join('')+'</div>':'<div class="empty-state"><div class="icon-tile icon-tile--ghost">'+icon('search')+'</div><p class="text text--secondary">'+'Nenhum pedido compatível agora. Confira sua profissão e seu raio de atendimento.'+'</p><button class="btn btn--primary" type="button" data-prof-settings="area">Revisar atendimento</button></div>')+'<button class="btn btn--ghost qf-prof-notifications" type="button" data-nav="/profissional/configuracoes">'+icon('bell')+' Verificar notificações</button></div>'+
       global.QFAbertos.secaoHtml(abertos,user)+
       global.QFAbertos.movimentoHtml()+
       (ativ.pendente?'':profileProgressHtml(user))+ // V11.85: só aparece se faltar algo, e só com o que falta, depois dos pedidos
@@ -19503,7 +19503,26 @@ alt=""></noscript>
     } catch (err) { console.warn('QuemFaz atualização', err); }
     finally { liveCallsBusy = false; }
   }
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) refreshNow(); });
+  // O aviso push não substitui o painel: ao voltar ao app, renova o registro do
+  // dispositivo e busca pedidos mesmo que a notificação anterior não tenha tocado.
+  let lastForegroundPushRestore = 0;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    refreshNow();
+    const push = global.QFPush;
+    if (!currentSession() || !push || !push.restore || Date.now() - lastForegroundPushRestore < 60000) return;
+    lastForegroundPushRestore = Date.now();
+    push.restore().catch(function (err) { console.warn('Quem Faz: registro push ao retornar', err); });
+  });
+  document.addEventListener('click', function (event) {
+    const button = event.target && event.target.closest && event.target.closest('[data-qf-refresh-prof]');
+    if (!button || button.disabled) return;
+    button.disabled = true;
+    button.textContent = 'Atualizando...';
+    Promise.resolve(refreshNow()).finally(function () {
+      if (button.isConnected) { button.disabled = false; button.textContent = 'Atualizar pedidos'; }
+    });
+  });
 
   global.PROAKI_APP = { navigate, currentSession, currentUser, route, TABS, refreshNow, userIsEditing };
 })(window);
