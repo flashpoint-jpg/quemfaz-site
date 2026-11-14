@@ -335,6 +335,8 @@ require('./seo-prioridades-10-20261111.cjs');
 require('./seo-organico-20261113.cjs');
 // Liga consultas locais com impressões reais a serviços relacionados indexáveis.
 require('./seo-demanda-local-20261114.cjs');
+// SEO local de higienização com cobertura confirmada e formulário preservado.
+require('./seo-higienizacao-local-20261114.cjs');
 // Valida e complementa apenas metadados do HTML público gerado.
 require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
