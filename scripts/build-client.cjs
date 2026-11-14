@@ -19,6 +19,7 @@ const adminDistPath = path.join(out, 'admin.html');
 if (fs.existsSync(adminDistPath)) {
   const previousAdmin = fs.readFileSync(adminDistPath, 'utf8');
   const newAdmin = previousAdmin
+    .replace("const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: requested });\n      if (r.error) throw r.error;", "const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: requested });\n      if (r.error) { if (r.error.code === '23503' || /foreign key constraint/i.test(r.error.message || '')) throw new Error('Este pedido possui histórico de negociação ou financeiro vinculado. Para preservar pagamentos e auditoria, ele não pode ser apagado do banco. Use Editar para cancelar o pedido, mantendo o histórico.'); throw r.error; }")
     .replace('qf-admin-financeiro.js?v=visita-manual-20261030', 'qf-admin-financeiro.js?v=receitas-planos-20261031')
     .replace('qf-admin-cadastro-pago.js?v=20261030-credito-avulso', 'qf-admin-cadastro-pago.js?v=sem-pre-cadastros-20261031');
   fs.writeFileSync(adminDistPath, newAdmin);
