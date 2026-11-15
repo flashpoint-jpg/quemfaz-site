@@ -1,5 +1,5 @@
 {
-  "consultadoEm": "2026-11-12",
+  "consultadoEm": "2026-11-15",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
     {
@@ -167,13 +167,6 @@
         "cat_marceneiro",
         "cat_montador",
         "cat_pintor"
-      ]
-    },
-    {
-      "cidade": "Alphaville",
-      "uf": "SP",
-      "especialidades": [
-        "cat_diarista"
       ]
     },
     {
