@@ -16,7 +16,7 @@ test('páginas com cobertura mantêm canonical, formulário e links locais',()=>
 });
 
 test('serviços sem cobertura confirmada permanecem noindex e sem conteúdo novo',()=>{
-  for(const slug of ['limpeza-de-sofa/santo-andre','limpeza-de-sofa/sao-bernardo-do-campo']){
+  for(const slug of ['limpeza-de-sofa/ribeirao-pires','limpeza-de-sofa/rio-grande-da-serra']){
     const html=fs.readFileSync(path.join(root,slug,'index.html'),'utf8');
     assert.match(html,/<meta name="robots" content="noindex,follow">/);
     assert.ok(!html.includes('data-qf-demanda-20261114'));

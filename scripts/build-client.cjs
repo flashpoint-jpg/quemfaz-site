@@ -316,7 +316,7 @@ require('./seo-hub-icons.cjs');
 // V11.96: guias do ABC, consolidação de páginas finas e passagem de UTM/gclid/msclkid.
 require('./seo-abc.cjs');
 require('./seo-index-links.cjs');
-// Páginas orgânicas passam a abrir o pedido na home, sem segundo clique.
+// Endereços antigos de divulgação profissional abrem o cadastro.
 require('./seo-direct-entry.cjs');
 
 
@@ -337,7 +337,7 @@ require('./seo-organico-20261113.cjs');
 require('./seo-demanda-local-20261114.cjs');
 // SEO local de higienização com cobertura confirmada e formulário preservado.
 require('./seo-higienizacao-local-20261114.cjs');
-// Valida e complementa apenas metadados do HTML público gerado.
+// Aplica a seleção de indexação ao HTML, ao manifesto e ao sitemap final.
 require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');

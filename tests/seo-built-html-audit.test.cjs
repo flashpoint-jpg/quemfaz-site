@@ -21,20 +21,50 @@ test('SEO release: sitemap points to distinct, public HTML pages with metadata',
   assert.doesNotMatch(html,/\b(?:CPF|CNPJ)\s*[:=]\s*\d{3}|\b(?:senha|password|access_token|refresh_token)\s*[:=]\s*["'][^"']+/i,url+' sensitive data');
  }
 });
-test('SEO release: covered local services are in the sitemap and unconfirmed legacy pages stay noindex',()=>{
+test('SEO release: the local sitemap contains a curated list, with legacy URLs kept in noindex',()=>{
  const manifest=JSON.parse(fs.readFileSync(path.join(root,'seo-205-manifest.json'),'utf8'));
- const covered=manifest.pages.filter(page=>page.service&&page.city);
- assert.ok(covered.length>0);
- for(const page of covered) assert.ok(locs.includes(origin+page.url),page.url);
- for(const route of ['/servicos/eletricista/muzambinho/','/servicos/encanador/santo-andre/']){
+ const local=manifest.pages.filter(page=>page.service&&page.city);
+ const indexed=local.filter(page=>page.index);
+ assert.ok(indexed.length>=30&&indexed.length<=60,indexed.length);
+ for(const page of manifest.pages){
+  assert.equal(locs.includes(origin+page.url),page.index,page.url);
+  if(!page.index) assert.match(readUrl(origin+page.url).split('</head>')[0],/<meta name="robots" content="noindex,follow">/i,page.url);
+ }
+ for(const route of ['/servicos/eletricista/muzambinho/','/servicos/montador-de-moveis/itanhaem/','/servicos/professor-particular/maua/']){
+  assert.ok(!locs.includes(origin+route),route);
+  assert.match(readUrl(origin+route).split('</head>')[0],/<meta name="robots" content="noindex,follow">/i,route);
+ }
+ assert.ok(locs.includes(origin+'/servicos/encanador/santo-andre/'));
+});
+test('Five sofa guides have unique local content, working form markup, and matching legacy redirects',()=>{
+ const cities={
+  'santo-andre':'Santo André',
+  'sao-bernardo-do-campo':'São Bernardo do Campo',
+  maua:'Mauá',
+  diadema:'Diadema',
+  'sao-paulo':'São Paulo'
+ };
+ const redirects=require('../vercel.json').redirects;
+ const uniqueSections=new Set();
+ for(const [slug,city] of Object.entries(cities)){
+  const route='/servicos/limpeza-de-sofa/'+slug+'/';
   assert.ok(locs.includes(origin+route),route);
+  const html=readUrl(origin+route);
+  const config=JSON.parse(html.match(/<script id="seo-config" type="application\/json">([^<]+)<\/script>/)[1]);
+  assert.equal(config.city,city);
+  assert.equal(config.id,'cat_limpeza_estofados');
+  assert.ok(html.includes('<h1>Limpeza de sofá em '+city+'</h1>'));
+  assert.ok(html.includes('id="seo-order"')&&html.includes('href="#pedido"'));
+  assert.doesNotMatch(html,/data-qf-direct-organic|http-equiv="refresh"/i);
+  uniqueSections.add(html.match(/data-qf-sofa-editorial><h2>([^<]+)<\/h2>/)[1]);
+  for(const alias of ['limpeza-de-sofa','higienizacao-de-sofa']){
+   for(const suffix of ['', '/']){
+    const rule=redirects.find(r=>r.source==='/'+alias+'/'+slug+suffix);
+    assert.equal(rule?.destination,route);
+    assert.equal(rule?.permanent,true);
+   }
+  }
  }
- const unconfirmed=manifest.pages.filter(page=>page.service&&!page.city&&!page.index
-  &&page.url.split('/').filter(Boolean).length===3);
- assert.ok(unconfirmed.length>0);
- for(const page of unconfirmed){
-  const url=origin+page.url;
-  assert.ok(!locs.includes(url),url);
-  assert.match(readUrl(url).split('</head>')[0],/<meta name="robots" content="noindex,follow">/i,url);
- }
+ assert.equal(uniqueSections.size,5);
+ assert.ok(!locs.some(url=>/^\/(?:limpeza-de-sofa|higienizacao-de-sofa)\//.test(new URL(url).pathname)));
 });
