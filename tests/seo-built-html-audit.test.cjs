@@ -58,9 +58,11 @@ test('Five sofa guides have unique local content, working form markup, and match
   assert.doesNotMatch(html,/data-qf-direct-organic|http-equiv="refresh"/i);
   uniqueSections.add(html.match(/data-qf-sofa-editorial><h2>([^<]+)<\/h2>/)[1]);
   for(const alias of ['limpeza-de-sofa','higienizacao-de-sofa']){
-   const rule=redirects.find(r=>r.source==='/'+alias+'/'+slug);
-   assert.equal(rule?.destination,route);
-   assert.equal(rule?.permanent,true);
+   for(const suffix of ['', '/']){
+    const rule=redirects.find(r=>r.source==='/'+alias+'/'+slug+suffix);
+    assert.equal(rule?.destination,route);
+    assert.equal(rule?.permanent,true);
+   }
   }
  }
  assert.equal(uniqueSections.size,5);
