@@ -116,59 +116,64 @@
   ],
   "redirects": [
     {
-      "source": "/limpeza-de-sofa/:path*",
-      "destination": "/?servico=cat_limpeza_estofados",
-      "permanent": false
+      "source": "/limpeza-de-sofa",
+      "destination": "/servicos/limpeza-de-sofa/",
+      "permanent": true
     },
     {
-      "source": "/higienizacao-de-sofa/:path*",
-      "destination": "/?servico=cat_limpeza_estofados",
-      "permanent": false
+      "source": "/limpeza-de-sofa/santo-andre",
+      "destination": "/servicos/limpeza-de-sofa/santo-andre/",
+      "permanent": true
     },
     {
-      "source": "/lavagem-de-tapetes/:path*",
-      "destination": "/?servico=cat_limpeza_estofados",
-      "permanent": false
+      "source": "/limpeza-de-sofa/sao-bernardo-do-campo",
+      "destination": "/servicos/limpeza-de-sofa/sao-bernardo-do-campo/",
+      "permanent": true
     },
     {
-      "source": "/limpeza-de-colchas/:path*",
-      "destination": "/?servico=cat_limpeza_estofados",
-      "permanent": false
+      "source": "/limpeza-de-sofa/maua",
+      "destination": "/servicos/limpeza-de-sofa/maua/",
+      "permanent": true
     },
     {
-      "source": "/limpeza-de-estofado/:path*",
-      "destination": "/?servico=cat_limpeza_estofados",
-      "permanent": false
+      "source": "/limpeza-de-sofa/diadema",
+      "destination": "/servicos/limpeza-de-sofa/diadema/",
+      "permanent": true
     },
     {
-      "source": "/limpeza-pos-obra/:path*",
-      "destination": "/?servico=cat_faxina_pos_obra",
-      "permanent": false
+      "source": "/limpeza-de-sofa/sao-paulo",
+      "destination": "/servicos/limpeza-de-sofa/sao-paulo/",
+      "permanent": true
     },
     {
-      "source": "/tecnico-em-automacao/:path*",
-      "destination": "/?servico=cat_automacao_residencial",
-      "permanent": false
+      "source": "/higienizacao-de-sofa",
+      "destination": "/servicos/limpeza-de-sofa/",
+      "permanent": true
     },
     {
-      "source": "/tecnico-em-informatica/:path*",
-      "destination": "/?servico=cat_informatica",
-      "permanent": false
+      "source": "/higienizacao-de-sofa/santo-andre",
+      "destination": "/servicos/limpeza-de-sofa/santo-andre/",
+      "permanent": true
     },
     {
-      "source": "/diarista/:path*",
-      "destination": "/?servico=cat_diarista",
-      "permanent": false
+      "source": "/higienizacao-de-sofa/sao-bernardo-do-campo",
+      "destination": "/servicos/limpeza-de-sofa/sao-bernardo-do-campo/",
+      "permanent": true
     },
     {
-      "source": "/faxineira/:path*",
-      "destination": "/?servico=cat_diarista",
-      "permanent": false
+      "source": "/higienizacao-de-sofa/maua",
+      "destination": "/servicos/limpeza-de-sofa/maua/",
+      "permanent": true
     },
     {
-      "source": "/pintor/:path*",
-      "destination": "/?servico=cat_pintor",
-      "permanent": false
+      "source": "/higienizacao-de-sofa/diadema",
+      "destination": "/servicos/limpeza-de-sofa/diadema/",
+      "permanent": true
+    },
+    {
+      "source": "/higienizacao-de-sofa/sao-paulo",
+      "destination": "/servicos/limpeza-de-sofa/sao-paulo/",
+      "permanent": true
     },
     {
       "source": "/cadastro-profissional",

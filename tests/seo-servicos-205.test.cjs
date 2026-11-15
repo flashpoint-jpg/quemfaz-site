@@ -7,7 +7,7 @@ test('Regiões normalizadas; só categorias cadastradas; canonical, formulário 
  assert.ok(manifest.regions.length>0);
  assert.equal(new Set(manifest.regions.map(region=>region.cidade+'-'+region.uf)).size,manifest.regions.length);
  const sitemap=fs.readFileSync(path.join(root,'sitemap.xml'),'utf8');
- for(const p of manifest.pages){const h=fs.readFileSync(path.join(root,p.url,'index.html'),'utf8');assert.ok(h.includes('href="https://quemfazservico.com.br'+p.url+'"'));assert.ok(!h.includes('data-qf-direct-organic'));if(p.service)assert.ok(h.includes('id="seo-order"'));if(p.city)assert.ok(h.includes('index,follow')&&!h.includes('noindex,follow'));assert.equal(sitemap.includes('<loc>https://quemfazservico.com.br'+p.url+'</loc>'),p.index);}
+ for(const p of manifest.pages){const h=fs.readFileSync(path.join(root,p.url,'index.html'),'utf8');assert.ok(h.includes('href="https://quemfazservico.com.br'+p.url+'"'));assert.ok(!h.includes('data-qf-direct-organic'));if(p.service)assert.ok(h.includes('id="seo-order"'));assert.ok(h.includes('<meta name="robots" content="'+(p.index?'index':'noindex')+',follow">'),p.url);assert.equal(sitemap.includes('<loc>https://quemfazservico.com.br'+p.url+'</loc>'),p.index);}
  const redirects=JSON.parse(fs.readFileSync('vercel.json')).redirects;assert.ok(!redirects.some(r=>r.source.startsWith('/servicos/')));
 });
 test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pedido fictício',async()=>{
@@ -41,7 +41,7 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  w.fetch=async()=>new Response(JSON.stringify({localidade:'Santo André',uf:'SP',bairro:'Centro'}),{headers:{'content-type':'application/json'}});
  let cepFails=true;
  w.fetch=async()=>cepFails?new Response('{}',{status:503}):new Response(JSON.stringify({localidade:'Santo André',uf:'SP',bairro:'Centro'}),{headers:{'content-type':'application/json'}});
- const values={problem:'Minha tomada está com defeito e precisa de reparo',cep:'09171000',bairro:'Centro',urgencia:'normal',materiais:'profissional',nome:'Cliente Teste',contato:'11986427539',intencao:'contratar',max_orcamentos:'2'};
+ const values={problem:'Minha tomada está com defeito e precisa de reparo',cep:'09171000',bairro:'Centro',urgencia:'normal',materiais:'profissional',nome:'Cliente Teste',contato:'11986427539',intencao:'contratar',max_orcamentos:'2',orcamento_estimado:'100_500'};
  for(const [key,value] of Object.entries(values))w.document.querySelector('#at-'+key).value=value;
  const form=w.document.querySelector('.landing-request');
  await form.onsubmit({preventDefault(){}});

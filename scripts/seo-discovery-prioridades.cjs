@@ -2,6 +2,7 @@
 // Gerador anterior já definiu cobertura e indexabilidade a partir dos cadastros.
 const fs=require('node:fs'),path=require('node:path');
 const root=path.join(__dirname,'..','dist');
+const {isPriorityRoute}=require('./seo-index-policy.cjs');
 const hub=path.join(root,'servicos','index.html');
 let html=fs.readFileSync(hub,'utf8');
 // Priorizado após consulta de profissionais por cidade/especialidade em 09/11/2026.
@@ -21,7 +22,7 @@ const candidates=[
  ['diarista/guarulhos','Diarista em Guarulhos'],
  ['eletricista/praia-grande','Eletricista em Praia Grande'],
  ['pintor/praia-grande','Pintor em Praia Grande'],
- ["limpeza-de-estofados-e-tapetes/sao-paulo", "Limpeza de sofá em São Paulo"],
+ ["limpeza-de-sofa/sao-paulo", "Limpeza de sofá em São Paulo"],
  ["faxina-pos-obra/sao-paulo", "Faxina pós-obra em São Paulo"],
  ["montador-de-moveis/osasco", "Montador de móveis em Osasco"],
  ["pedreiro/guarulhos", "Pedreiro em Guarulhos"],
@@ -31,6 +32,7 @@ const candidates=[
  ["diarista/sao-bernardo-do-campo", "Diarista em São Bernardo do Campo"]
 ];
 const links=candidates.filter(([slug])=>{
+ if(!isPriorityRoute('/servicos/'+slug+'/'))return false;
  const f=path.join(root,'servicos',slug,'index.html');
  return fs.existsSync(f)&&/<meta name="robots" content="index,follow">/.test(fs.readFileSync(f,'utf8'));
 }).map(([slug,label])=>'<li><a href="/servicos/'+slug+'/">'+label+'</a></li>');

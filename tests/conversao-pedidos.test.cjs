@@ -166,11 +166,11 @@ test('guias do ABC preservam editorial com formulário integrado na própria URL
   assert.ok(page.includes('BreadcrumbList'));
   assert.ok(!/todos os profissionais (são )?verificados/i.test(page));
  }
- const fina=fs.readFileSync(path.join(dist,'servicos','eletricista','maua','index.html'),'utf8');
- assert.ok(fina.includes('noindex,follow')&&fina.includes('id="seo-order"'));
- assert.ok(!sitemap.includes('/servicos/eletricista/maua/</loc>'));
- assert.ok(!sitemap.includes('/servicos/limpeza-de-sofa/sao-bernardo-do-campo/</loc>'), 'sem especialidade declarada na cobertura consultada');
- assert.ok(fs.readFileSync(path.join(dist,'servicos','limpeza-de-sofa','sao-bernardo-do-campo','index.html'),'utf8').includes('noindex,follow'));
+ const foraDaSelecao=fs.readFileSync(path.join(dist,'servicos','eletricista','osasco','index.html'),'utf8');
+ assert.ok(foraDaSelecao.includes('noindex,follow')&&foraDaSelecao.includes('id="seo-order"'));
+ assert.ok(!sitemap.includes('/servicos/eletricista/osasco/</loc>'));
+ assert.ok(sitemap.includes('/servicos/eletricista/maua/</loc>'));
+
 });
 
 console.log('conversao-pedidos: ok');
