@@ -4,9 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..', 'dist');
 const origin = 'https://quemfazservico.com.br';
+const { isPriorityRoute } = require('./seo-index-policy.cjs');
 const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 const urls = [...fs.readFileSync(path.join(root, 'sitemap.xml'), 'utf8').matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1]);
-const pages = urls.map(url => {
+// Este gerador roda antes da limpeza final do sitemap. Não criar links para
+// guias que a política editorial vai retirar do índice mais adiante.
+const pages = urls.filter(url => isPriorityRoute(new URL(url).pathname)).map(url => {
   const route = new URL(url).pathname;
   const file = path.join(root, route, 'index.html');
   const html = fs.readFileSync(file, 'utf8');
