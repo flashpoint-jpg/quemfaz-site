@@ -1,5 +1,5 @@
 {
-  "consultadoEm": "2026-11-15",
+  "consultadoEm": "2026-11-17",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
     {
@@ -867,6 +867,16 @@
       ]
     },
     {
+      "cidade": "Ourinhos",
+      "uf": "SP",
+      "especialidades": [
+        "cat_cftv_alarmes",
+        "cat_eletricista",
+        "cat_informatica",
+        "cat_internet_redes"
+      ]
+    },
+    {
       "cidade": "Peruíbe",
       "uf": "SP",
       "especialidades": [
@@ -1254,6 +1264,7 @@
         "cat_custom_aquecedores_a_gas_h8pjrw",
         "cat_custom_aquecedores_a_gas_marido_de_aluguel_va_1nfycvw",
         "cat_custom_ar_condicionado_19i3cue",
+        "cat_custom_assistente_de_negocios_do_dia_dia_b0zitf",
         "cat_custom_auxiliar_de_limpeza_k9k92v",
         "cat_custom_auxiliar_de_producao_1291v5s",
         "cat_custom_colocador_de_piso_laminado_8htl2w",
@@ -1275,6 +1286,7 @@
         "cat_custom_instalacoes_eletricas_4n7bsf",
         "cat_custom_limpador_de_vidro_1b74ru",
         "cat_custom_limpeza_de_piscina_1yfrzs3",
+        "cat_custom_manutencao_13jx2ii",
         "cat_custom_manutencao_de_ar_condicionado_196jqg",
         "cat_custom_manutencao_de_bicicleta_1iqs5k7",
         "cat_custom_massoterapeuta_1ayc4mp",
@@ -1325,6 +1337,7 @@
         "cat_outros",
         "cat_passadeira",
         "cat_pedreiro",
+        "cat_personal",
         "cat_pet_sitter",
         "cat_pintor",
         "cat_piscineiro",
