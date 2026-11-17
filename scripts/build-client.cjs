@@ -339,5 +339,7 @@ require('./seo-demanda-local-20261114.cjs');
 require('./seo-higienizacao-local-20261114.cjs');
 // Aplica a seleção de indexação ao HTML, ao manifesto e ao sitemap final.
 require('./seo-tecnico-final.cjs');
+// Piloto editorial em uma única página, após todos os geradores de conteúdo.
+require('./seo-piloto-eletricista-santo-andre.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./check-sitemap.cjs');
