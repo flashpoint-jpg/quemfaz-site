@@ -178,6 +178,16 @@ Object.assign(keywordTargetMeta,{
  }
 });
 const metaForLocal=(s,c)=>c?keywordTargetMeta[s.slug+'/'+c.slug]||null:null;
+// Orientações específicas das páginas que já receberam impressões orgânicas.
+// Não inventar preço, prazo, avaliação ou profissional disponível.
+const localHiringAdvice={
+ 'eletricista/santo-andre':['O que informar ao eletricista em Santo André','Explique se precisa trocar uma tomada, verificar um disjuntor, instalar iluminação ou investigar uma falha. Informe o bairro, o tipo de imóvel e se o problema é urgente. Não tente mexer em instalação energizada.'],
+ 'limpeza-de-sofa/sao-bernardo-do-campo':['Como pedir limpeza de sofá em São Bernardo do Campo','Informe o número de lugares, o material do estofado, manchas ou odores e se há facilidade de acesso ao local. Pergunte ao profissional sobre o método de limpeza, o tempo estimado de secagem e os cuidados depois do serviço.'],
+ 'diarista/guarulhos':['Como contratar diarista em Guarulhos','Descreva o tamanho do imóvel, a quantidade de cômodos, se a faxina é comum ou pesada e se precisa levar materiais. Informe o bairro e o dia desejado para receber propostas mais adequadas.'],
+ 'montador-de-moveis/santo-andre':['O que informar ao montador de móveis em Santo André','Diga qual móvel precisa montar, a marca ou modelo se souber, se o produto está na embalagem e se há manual. Informe também se precisa desmontar ou fixar o móvel na parede.'],
+ 'encanador/osasco':['Como explicar seu serviço de encanador em Osasco','Informe se há vazamento, entupimento, troca de torneira ou instalação de tubulação. Descreva onde fica o problema, se há registro de água acessível e qual a urgência.']
+};
+function localHiringSection(s,c){const advice=localHiringAdvice[s.slug+'/'+c.slug];return advice?'<section aria-label="Orientações para contratar na cidade"><h2>'+esc(advice[0])+'</h2><p>'+esc(advice[1])+'</p><p>Informe o CEP no formulário para consultar a cobertura no seu endereço. A publicação é gratuita; disponibilidade, valores e prazo são combinados com o profissional.</p></section>':'';}
 for(const s of services){
  const local=covered.filter(c=>c.ids.has(s.id));
  const detail=fs.readFileSync(path.join(out,'servicos',s.slug,'index.html'),'utf8').match(/<meta name="description" content="([^"]+)"/)?.[1]||'';
@@ -186,7 +196,7 @@ for(const s of services){
  const guide=examples+'<p>'+esc(detail)+'</p>'+practicalSection(s)+'<h2>Como preparar seu pedido de '+esc(s.nome)+'</h2><p>Descreva o problema, o tipo de local e o que espera resolver. Se houver equipamentos ou materiais envolvidos, informe modelo, quantidade e condições de acesso. Esses detalhes ajudam o profissional a avaliar o trabalho antes de combinar o orçamento.</p><h2>Como funciona</h2><ol><li>Preencha o formulário nesta página.</li><li>Confirme o local pelo CEP e escolha o prazo.</li><li>Confira seus dados e publique o pedido.</li><li>Acompanhe o pedido e combine o atendimento.</li></ol><h2>Quanto custa?</h2><p>A publicação do pedido é gratuita. O preço do serviço depende do trabalho e deve ser combinado antes da contratação. Não há garantia de resposta imediata.</p>';
  write(urlFor(s),s.id==='cat_eletricista'?'Eletricista perto de você: instalações e reparos | Quem Faz':s.nome+' | Quem Faz',s.id==='cat_eletricista'?'Precisa de eletricista? Informe seu CEP para solicitar reparos, tomadas, disjuntores ou iluminação. Pedido grátis, conforme a cobertura local.':'Precisa de '+s.nome.toLowerCase()+'? Publique seu pedido grátis e consulte as regiões com profissionais cadastrados.',guide+'<h2>Regiões com cadastro nesta profissão</h2>'+(local.length?links(local.map(c=>[urlFor(s,c)+'#pedido',c.nome+' / '+c.uf])):'<p>A cobertura desta profissão ainda não está confirmada nesta atualização. A disponibilidade será verificada para o local informado.</p>'),s,null,!!local.length);
  // Só publique no índice combinações com cobertura cadastrada e formulário próprio.
- for(const c of local){const others=services.filter(x=>c.ids.has(x.id)&&x.id!==s.id);const keywordMeta=metaForLocal(s,c);write(urlFor(s,c),keywordMeta?.title||s.nome+' em '+c.nome+' / '+c.uf+' | Quem Faz',keywordMeta?.description||'Solicite '+s.nome.toLowerCase()+' em '+c.nome+' / '+c.uf+'. Descreva o serviço e publique seu pedido grátis no Quem Faz.', '<h2>'+esc(s.nome)+' em '+esc(c.nome)+'</h2><p>Há cadastro de profissional com esta especialidade e região de atendimento em '+esc(c.nome)+' / '+c.uf+'. Isso não representa disponibilidade imediata: o atendimento depende do endereço, do raio e da agenda de cada profissional. O CEP informado no pedido determina o local real do serviço.</p>'+guide+'<h2>Outros serviços com cobertura cadastrada em '+esc(c.nome)+'</h2>'+links(others.map(x=>[urlFor(x,c),x.nome]))+'<h2>Outras regiões para '+esc(s.nome)+'</h2>'+links(local.filter(x=>x!==c).map(x=>[urlFor(s,x),x.nome+' / '+x.uf])),s,c);}
+ for(const c of local){const others=services.filter(x=>c.ids.has(x.id)&&x.id!==s.id);const keywordMeta=metaForLocal(s,c);write(urlFor(s,c),keywordMeta?.title||s.nome+' em '+c.nome+' / '+c.uf+' | Quem Faz',keywordMeta?.description||'Solicite '+s.nome.toLowerCase()+' em '+c.nome+' / '+c.uf+'. Descreva o serviço e publique seu pedido grátis no Quem Faz.', '<h2>'+esc(s.nome)+' em '+esc(c.nome)+'</h2><p>Há cadastro de profissional com esta especialidade e região de atendimento em '+esc(c.nome)+' / '+c.uf+'. Isso não representa disponibilidade imediata: o atendimento depende do endereço, do raio e da agenda de cada profissional. O CEP informado no pedido determina o local real do serviço.</p>'+guide+localHiringSection(s,c)+'<h2>Outros serviços com cobertura cadastrada em '+esc(c.nome)+'</h2>'+links(others.map(x=>[urlFor(x,c),x.nome]))+'<h2>Outras regiões para '+esc(s.nome)+'</h2>'+links(local.filter(x=>x!==c).map(x=>[urlFor(s,x),x.nome+' / '+x.uf])),s,c);}
 }
 // Titulos e descricoes especificos para buscas locais com impressoes no Search Console.
 const localSearchMeta={
@@ -200,7 +210,7 @@ const localSearchMeta={
 
  }
 };
-for(const e of editorial){const i=generated.findIndex(p=>p.url===e.url);if(i>=0)generated.splice(i,1);const citySlug=e.url.split('/').filter(Boolean)[2];const editorialCity=covered.find(c=>c.slug===citySlug&&c.ids.has(e.service.id))||null;const meta=metaForLocal(e.service,editorialCity)||localSearchMeta[e.url];write(e.url,meta?.title||e.title,meta?.description||e.description,e.content+practicalSection(e.service),e.service,editorialCity,true);}
+for(const e of editorial){const i=generated.findIndex(p=>p.url===e.url);if(i>=0)generated.splice(i,1);const citySlug=e.url.split('/').filter(Boolean)[2];const editorialCity=covered.find(c=>c.slug===citySlug&&c.ids.has(e.service.id))||null;const meta=metaForLocal(e.service,editorialCity)||localSearchMeta[e.url];write(e.url,meta?.title||e.title,meta?.description||e.description,e.content+practicalSection(e.service)+(editorialCity?localHiringSection(e.service,editorialCity):''),e.service,editorialCity,true);}
 // Conteúdo de sofá usa o mesmo formulário e a mesma estrutura do guia de eletricista.
 const sofaService={slug:'limpeza-de-sofa',id:'cat_limpeza_estofados',nome:'Limpeza de sofá'};
 const sofaLocations=Array.from(sofaCities,citySlug=>{
@@ -219,7 +229,7 @@ for(const city of sofaLocations){
    '<h2>Exemplo de pedido em '+esc(city.nome)+'</h2><blockquote>'+esc(copy.pedido)+'</blockquote>'+
    '<h2>'+esc(copy.compareTitle)+'</h2><p>'+esc(copy.compare)+'</p>'+
    '<h2>Dúvidas antes de contratar</h2><details><summary>'+esc(copy.question)+'</summary><p>'+esc(copy.answer)+'</p></details></section>'+
-   sofaBasics+practicalSection(sofaService)+'<h2>Limpeza de sofá em outras cidades</h2>'+sofaLinks(sofaLocations.filter(c=>c!==city))+
+   sofaBasics+practicalSection(sofaService)+localHiringSection(sofaService,city)+'<h2>Limpeza de sofá em outras cidades</h2>'+sofaLinks(sofaLocations.filter(c=>c!==city))+
    '<p>Precisa limpar tapetes, colchões ou outras peças? <a href="/servicos/limpeza-de-estofados-e-tapetes/">Veja o guia de estofados e tapetes</a>.</p>';
  const eligible=city.ids.has(sofaService.id)||sofaCampaignCities.has(city.slug);
  write(route,'Limpeza de sofá em '+city.nome+' | Quem Faz',copy.lead,content,sofaService,city,eligible,copy.lead);
