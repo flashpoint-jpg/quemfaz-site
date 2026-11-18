@@ -51,6 +51,12 @@
 .qf-approved h1 em { display: block; color: var(--qf-orange); font-style: normal; }
 .qf-approved-hero-copy p, #app-shell[data-route="inicio"] .qf-approved .qf-approved-hero-copy .qf-customer-sub { max-width: 440px; margin-top: 16px !important; color: #fff !important; font-size: clamp(16px, 1.75vw, 24px) !important; line-height: 1.23; }
 .qf-approved-hero-photo { position: absolute; inset: 0 min(-36px, calc((1180px - 100vw) / 2)) 0 auto; width: 58%; height: 100%; object-fit: cover; object-position: center 40%; z-index: -1; mask-image: linear-gradient(90deg, transparent, #000 15%); }
+@media (min-width: 900px) {
+  .qf-approved-client .qf-approved-hero-copy { width: 63%; }
+  .qf-approved-client .qf-approved-hero-copy h1 { max-width: 700px; font-size: clamp(48px, 4.45vw, 64px); line-height: 1.03; letter-spacing: -.042em; }
+  .qf-approved-client .qf-approved-hero-copy h1 em { white-space: nowrap; }
+  .qf-approved-client .qf-approved-hero-copy p { max-width: 570px !important; }
+}
 .qf-approved-cta { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 49px; border: 0; border-radius: 12px; padding: 10px 18px; background: linear-gradient(#dc6000, #d45000); color: #fff !important; font-weight: 850; text-align: center; font-size: clamp(19px, 1.65vw, 21px); }
 .qf-approved-cta:hover { background: #b84300; }
 .qf-approved-cta svg { width: 20px; height: 20px; }
