@@ -17,17 +17,18 @@ function sandbox(opts) {
   if (opts.consent) local.setItem('qf_consent_v1', JSON.stringify({ medicao: opts.consent }));
   const head = { appendChild: el => { if (el.onload) el.onload(); } };
   const win = {
-    location: { search: opts.search || '', pathname: '/', hash: '', href: 'https://quemfazservico.com.br/' + (opts.search || ''), origin: 'https://quemfazservico.com.br' },
+    location: { search: opts.search || '', hostname: 'quemfazservico.com.br', pathname: '/', hash: '', href: 'https://quemfazservico.com.br/' + (opts.search || ''), origin: 'https://quemfazservico.com.br' },
     localStorage: local, sessionStorage: session, dataLayer: [],
     gtag: function () { calls.gtag.push([].slice.call(arguments)); },
     fbq: function () { calls.fbq.push([].slice.call(arguments)); },
     QF_TRACKING_CONFIG: opts.config,
     UET: function (o) { return { push: function () { calls.uet.push([].slice.call(arguments)); } }; },
+    URLSearchParams, URL, JSON, Date,
     document: {
       readyState: 'complete', referrer: '', head, documentElement: head,
       body: { appendChild() {}, classList: { toggle() {} }, style: {} },
       createElement: () => ({ setAttribute() {}, addEventListener() {}, remove() {}, style: {}, offsetHeight: 60 }),
-      getElementById: () => null, querySelector: () => null, addEventListener() {}
+      getElementById: () => null, querySelector: () => null, querySelectorAll: () => [], addEventListener() {}
     },
     MutationObserver: null,
     addEventListener() {}, removeEventListener() {}, setTimeout() {}, setInterval() { return 0; }, clearInterval() {},
@@ -77,7 +78,8 @@ test('sem ID real, GA4 e UET ficam desligados (nada inventado)', () => {
   assert.strictEqual(win.QFConversao.config.uet, '');
   win.QFConversao.evento('pedido_publicado', { request_id: ID });
   assert.strictEqual(calls.uet.length, 0);
-  assert.ok(!calls.gtag.some(c => c[0] === 'event'));
+  assert.ok(!calls.gtag.some(c => c[0] === 'event' && c[1] === 'pedido_publicado'), 'sem GA4 não envia evento de analytics');
+  assert.ok(calls.gtag.some(c => c[0] === 'event' && c[1] === 'conversion'), 'Google Ads configurado continua medindo pedido confirmado');
 });
 
 test('recusa de cookies: nada vai para anúncios, só a camada local de dados', () => {
@@ -143,9 +145,10 @@ test('atribuição guarda gclid, gbraid e gad_campaignid em campos separados', (
 });
 
 test('consentimento definido antes das tags do Google e da Meta', () => {
-  const c = html.indexOf('QF_CONSENT_V1'), meta = html.indexOf("fbq('init','1124265238584181')"), g = html.indexOf("gtag('config', 'AW-18273159663')"), d = html.indexOf("gtag('consent', 'default'");
-  assert.ok(c > 0 && c < meta && d > 0 && d < g, 'ordem das tags');
-  assert.ok(html.includes("if (!id) return; // conversão só com pedido confirmado no banco"));
+  const c = html.indexOf('QF_CONSENT_V1'), meta = html.indexOf("fbq('init','1124265238584181')"), g = html.indexOf('src="qf-conversao.js');
+  assert.ok(c > 0 && c < meta && meta < g, 'consentimento antecede pixel e módulo de conversão');
+  assert.ok(conv.includes("if (nome === 'pedido_publicado' && !/^[0-9a-f-]{8,64}$/i.test(idPedido)) return false"));
+  assert.ok(conv.includes('if (!permitido()) return true'), 'tags não recebem eventos sem consentimento');
 });
 
 test('formulário: aviso do urgente correto e dados preservados após erro', () => {
