@@ -60,7 +60,7 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 }
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
-<title>Eletricista, diarista e pintor no ABC e Guarulhos | Quem Faz</title>
+<title>Encontre profissionais para qualquer serviço | Quem Faz</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
 <!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
 <meta name="description" content="Encontre diarista, pintor, eletricista, encanador e outros profissionais em Santo André, Guarulhos e no ABC. Publique grátis e receba até 4 contatos.">
@@ -69,7 +69,7 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 <meta property="og:locale" content="pt_BR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Quem Faz">
-<meta property="og:title" content="Eletricista, diarista e pintor no ABC e Guarulhos | Quem Faz">
+<meta property="og:title" content="Encontre profissionais para qualquer serviço | Quem Faz">
 <meta property="og:description" content="Publique seu pedido grátis e receba até 4 contatos de profissionais da sua região.">
 <meta property="og:url" content="https://quemfazservico.com.br/">
 <meta name="twitter:card" content="summary">
@@ -8752,10 +8752,11 @@ alt=""></noscript>
 
   Screens.landing = function () {
     const services = [
+      ['cat_montador', 'Montador de móveis', 'wrench', 'montador-de-moveis', 'Montagem e desmontagem de móveis.'],
       ['cat_diarista', 'Diarista', 'broom', 'diarista', 'Limpeza residencial e organização da casa.'],
-      ['cat_pintor', 'Pintor', 'paintRoller', 'pintor', 'Pintura interna e externa, de paredes a fachadas.'],
       ['cat_eletricista', 'Eletricista', 'bolt', 'eletricista', 'Instalações, reparos e manutenção elétrica.'],
       ['cat_encanador', 'Encanador', 'droplet'],
+      ['cat_pintor', 'Pintor', 'paintRoller', 'pintor', 'Pintura interna e externa, de paredes a fachadas.'],
       ['cat_pedreiro', 'Pedreiro', 'trowel'],
       ['cat_limpeza_estofados', 'Limpeza de Sofá', 'broom'],
     ];
@@ -8783,18 +8784,20 @@ alt=""></noscript>
         '<details class="qf-approved-mobile-menu" name="qf-header-menu"><summary aria-label="Abrir menu">☰</summary><nav aria-label="Menu do site"><a href="/servicos/">Serviços</a><button type="button" data-desk-go="qf-sec-como">Como funciona</button><a href="/para-profissionais/">Sou profissional</a><button type="button" data-action="landing-my-orders">Meus pedidos</button>' + QF_SOCIAL.map(s => '<a href="' + s.url + '" target="_blank" rel="noopener noreferrer">' + s.name + '</a>').join('') + '</nav></details>' +
       '</div></header>' +
       '<section class="qf-landing-hero"><div class="qf-approved-wrap qf-approved-hero-inner">' +
-        '<div class="qf-approved-hero-copy"><h1>Eletricista, diarista e pintor <em>no ABC e Guarulhos</em></h1><p class="qf-customer-sub">Descreva o serviço e receba propostas de profissionais da sua região.</p></div>' +
-        '<img class="qf-approved-hero-photo" src="/assets/aprovado/cliente.webp" width="368" height="232" alt="" fetchpriority="high">' +
+        '<div class="qf-approved-hero-copy"><h1>Precisando de um <em>profissional?</em></h1><p class="qf-customer-sub">Encontre o profissional certo para o seu serviço, perto de você.</p></div>' +
+        '<img class="qf-approved-hero-photo" src="/assets/aprovado/montador-hero.webp" width="1350" height="760" alt="Profissional montando um armário" fetchpriority="high">' +
       '</div></section>' +
       '<div class="qf-approved-wrap qf-approved-client-main">' +
-        '<section class="qf-approved-picker" aria-labelledby="qf-approved-picker-title"><h2 id="qf-approved-picker-title">Qual serviço você precisa?</h2>' +
+        '<section class="qf-approved-picker" aria-labelledby="qf-approved-picker-title"><h2 id="qf-approved-picker-title">Qual profissional você procura?</h2>' +
+          '<form class="qf-approved-search" data-landing-service-form role="search"><div class="qf-approved-search-field">' + icon('search') + '<input id="qf-hero-search-input" type="search" data-landing-service-search autocomplete="off" placeholder="Ex.: Montador de móveis" aria-label="Busque qualquer profissão ou descreva seu serviço"><div class="qf-approved-suggestions" data-landing-service-suggestions hidden></div></div><button type="submit">Buscar profissionais</button></form>' +
+          '<p class="qf-approved-popular-label">Mais procurados:</p>' +
           '<div class="qf-approved-chips">' + services.map(s => '<button type="button" data-landing-cat="' + s[0] + '" aria-pressed="false">' + icon(s[2]) + '<span>' + s[1] + '</span><span class="qf-approved-chip-arrow" aria-hidden="true">›</span></button>').join('') + '</div>' +
+          '<button type="button" class="qf-approved-all-professions" data-landing-show-all aria-expanded="false">Ver todas as profissões ' + icon('chevronRight') + '</button><div class="qf-approved-all-list" data-landing-all-list hidden></div>' +
           '<button type="button" class="qf-approved-cta" data-action="landing-all-services">Publicar pedido grátis ' + icon('chevronRight') + '</button>' +
         '</section>' +
         '<ul class="qf-approved-trust"><li>' + icon('checkCircle') + 'Grátis para publicar</li><li>' + icon('users') + 'Até 4 contatos</li><li>' + icon('shieldCheck') + 'Você escolhe</li></ul>' +
-        '<div class="qf-landing-actions qf-approved-work"><form class="qf-landing-service-search qf-hero-search" data-landing-service-form hidden><label for="qf-hero-search-input">Qual serviço você precisa?</label><input id="qf-hero-search-input" type="search" data-landing-service-search autocomplete="off"><button type="submit"><span>Pedir grátis</span></button></form></div>' +
         '<section class="qf-approved-services" id="qf-sec-servicos" aria-labelledby="qf-approved-services-title"><h2 class="qf-sr-only" id="qf-approved-services-title">Serviços em destaque</h2>' +
-          '<div class="qf-approved-cards">' + services.slice(0, 3).map(s => photoCard('/servicos/' + s[3] + '/', s[3], s[1], s[4])).join('') + '</div>' +
+          '<div class="qf-approved-cards">' + services.filter(s => ['cat_diarista', 'cat_pintor', 'cat_eletricista'].includes(s[0])).map(s => photoCard('/servicos/' + s[3] + '/', s[3], s[1], s[4])).join('') + '</div>' +
           '<a class="qf-approved-more" href="/servicos/">Ver todos os serviços</a></section>' +
         '<section class="qf-approved-how" id="qf-sec-como"><h2>Como funciona</h2><ol>' +
           step(1, 'clipboard', 'Descreva o serviço', 'Conte o que você precisa, com os detalhes do serviço.') +
@@ -9676,6 +9679,7 @@ alt=""></noscript>
       const landingSearchForm=content.querySelector('[data-landing-service-form]');
       const landingSearch=content.querySelector('[data-landing-service-search]');
       const landingSuggestions=content.querySelector('[data-landing-service-suggestions]');
+      const landingAllList=content.querySelector('[data-landing-all-list]');
       const homeLocation=content.querySelector('[data-landing-location]');
       const homeGps=content.querySelector('[data-home-gps]');
       const homeNeighborhood=content.querySelector('[data-landing-neighborhood]');
@@ -9752,7 +9756,11 @@ alt=""></noscript>
         }).join('');
         landingSuggestions.hidden=false;
       }
-      if(landingSearch)landingSearch.addEventListener('input',renderLandingSuggestions);
+      if(landingSearch)landingSearch.addEventListener('input',function(){landingSelectedCat=null;renderLandingSuggestions();});
+      if(landingAllList)landingAllList.addEventListener('click',function(e){
+        const btn=e.target.closest('[data-landing-search-cat]');if(!btn)return;
+        landingSelect(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
+      });
       if(landingSuggestions)landingSuggestions.addEventListener('click',function(e){
         const btn=e.target.closest('[data-landing-search-cat]');if(!btn)return;
         landingSelect(DB.categoryById(btn.getAttribute('data-landing-search-cat')));
@@ -9780,6 +9788,12 @@ alt=""></noscript>
         landingStickyUpdate();
       }
       content.addEventListener('click', function (e) {
+        const showAll=e.target.closest('[data-landing-show-all]');
+        if(showAll&&landingAllList){
+          const opening=landingAllList.hidden;
+          if(opening)landingAllList.innerHTML=DB.categories().filter(function(cat){return cat&&cat.id!=='cat_outros';}).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');}).map(function(cat){return '<button type="button" data-landing-search-cat="'+PU.escapeHtml(cat.id)+'">'+PU.escapeHtml(cat.nome)+'</button>';}).join('');
+          landingAllList.hidden=!opening;showAll.setAttribute('aria-expanded',String(opening));return;
+        }
         const deskGo=e.target.closest('[data-desk-go]');
         if(deskGo){const alvo=document.getElementById(deskGo.getAttribute('data-desk-go'));if(alvo)alvo.scrollIntoView({block:'start',behavior:'smooth'});return;}
         const deskService=e.target.closest('[data-desk-service]');
