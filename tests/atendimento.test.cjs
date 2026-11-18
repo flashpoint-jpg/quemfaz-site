@@ -8,7 +8,7 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.ok(A.questions({servico:'Eletricista'})[1].choices.some(c=>c[0]==='tomada'));
  assert.ok(A.questions({servico:'Montador de móveis'})[1].choices.some(c=>c[0]==='montagem'));
  assert.equal(A.budget('1.500,90'),150090);assert.equal(A.budget('a combinar'),null);assert.ok(Number.isNaN(A.budget('abc')));
- const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'15000:30000',materiais:'profissional',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'garante',qualificacao:'sim'};
+ const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento_estimado:'avaliacao',max_orcamentos:'4',materiais:'profissional',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim'};
  assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
  assert.match(A.validAll({...a,autorizacao:'nao'}),/Sem autorização/);
  assert.equal(A.validAll({...a,orcamento:'avaliacao',tipo:'tradicional'}),'');assert.ok(!A.stages({...a,orcamento:'avaliacao'} )[3].questions.some(q=>q.key==='tipo'));
@@ -16,7 +16,7 @@ test('atendimento: adapta perguntas e valida todas antes da publicação',()=>{
  assert.ok(!A.stages({...a,materiais:'combinar'})[3].questions.some(q=>q.key==='tipo'));
 });
 test('diarista: serviço escolhido na home não repete e respostas são aceitas pelo banco',()=>{
- const a={aceite_app:'sim',servico:'diarista',__servicePrefilled:true,detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',data:'2099-10-22',disponibilidade:'Manhã',materiais:'profissional',orcamento:'avaliacao',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+ const a={aceite_app:'sim',servico:'diarista',__servicePrefilled:true,detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'normal',materiais:'profissional',orcamento_estimado:'avaliacao',max_orcamentos:'4',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim'};
  assert.equal(A.stages(a)[0].questions.map(q=>q.key).filter(k=>k!=='aceite_app')[0],'detalhes');
  assert.equal(A.validAll(a),'');
  const p=A.payload(a,uid(250),'diarista');
@@ -105,7 +105,7 @@ test('banco: geocodificador indisponível usa referência da cidade; cidade sem 
 });
 
 test('quatro etapas: pedido sem orçamento ou data obrigatórios e materiais pertinentes',()=>{
- const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento:'avaliacao',materiais:'combinar',data:'2099-10-22',disponibilidade:'Manhã',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim',tipo:'tradicional'};
+ const a={aceite_app:'sim',servico:'Faxina',detalhes:'comum',escopo:'3a4',cidade:'Santo André',uf:'SP',bairro:'Centro',urgencia:'normal',orcamento_estimado:'avaliacao',max_orcamentos:'4',materiais:'combinar',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',autorizacao:'sim'};
  assert.equal(A.stages(a).length,4);
  assert.equal(A.validAll(a),'');assert.equal(A.payload(a,uid(200),'faxina').orcamento_centavos,null);
  assert.equal(A.payload(a,uid(200),'faxina').orcamento_faixa,'a combinar');
@@ -155,7 +155,7 @@ test('banco: rejeita faixas inválidas, preço inventado na avaliação e Garant
 });
 
 test('navegador dispensa checkbox informativo, mantém autorização e celular',()=>{
- const a={servico:'Pedreiro',detalhes:'reparo',escopo:'pequena',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'urgente',materiais:'combinar',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',max_orcamentos:'4',autorizacao:'sim'};
+ const a={servico:'Pedreiro',detalhes:'reparo',escopo:'pequena',cidade:'Santo André',uf:'SP',bairro:'Jardim do Estádio',urgencia:'urgente',materiais:'combinar',orcamento_estimado:'avaliacao',nome:'Cliente Teste',contato:'11988887777',intencao:'contratar',max_orcamentos:'4',autorizacao:'sim'};
  assert.equal(A.validAll(a),'');
  assert.equal(A.payload(a,uid(201),'pedreiro').aceite_app,'sim');
  assert.ok(!A.questions(a).some(q=>q.key==='aceite_app'));
