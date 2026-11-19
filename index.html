@@ -60,16 +60,16 @@ body:has(#cadastro-prof-form) .qf-support-fab{display:none!important}
 }
 </style>
 <!-- Painel administrativo removido da interface pública. Use admin.html -->
-<title>Encontre profissionais para diversos serviços | Quem Faz</title>
+<title>Eletricista, diarista, encanador e mais | Quem Faz Serviços</title>
 <!-- V9.4: chamados por proximidade + prioridade somente após pagamento aprovado -->
 <!-- V11.0: pagamentos de anúncio em produção via Pix Efí -->
-<meta name="description" content="Encontre diarista, pintor, eletricista, encanador e outros profissionais em Santo André, Guarulhos e no ABC. Publique grátis e receba até 4 contatos.">
+<meta name="description" content="Precisa de eletricista, diarista, encanador, pintor ou pedreiro? Publique seu pedido grátis no Quem Faz e receba até 4 contatos de profissionais da sua região.">
 <link rel="canonical" href="https://quemfazservico.com.br/">
 <meta name="robots" content="index,follow,max-image-preview:large">
 <meta property="og:locale" content="pt_BR">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Quem Faz">
-<meta property="og:title" content="Encontre profissionais para diversos serviços | Quem Faz">
+<meta property="og:title" content="Encontre profissionais perto de você | Quem Faz Serviços">
 <meta property="og:description" content="Publique seu pedido grátis e receba até 4 contatos de profissionais da sua região.">
 <meta property="og:url" content="https://quemfazservico.com.br/">
 <meta name="twitter:card" content="summary">
@@ -8766,7 +8766,7 @@ alt=""></noscript>
       ['Guarulhos', 'guarulhos-cidade', '/servicos/diarista/guarulhos/', 'Para uma faxina, diga o tamanho do imóvel e se é limpeza de rotina ou pós-obra.'],
       ['ABC Paulista', 'abc-cidade', '/servicos/encanador/sao-bernardo-do-campo/', 'Para reparos hidráulicos em São Bernardo, descreva onde há vazamento ou entupimento.'],
     ];
-    const photoCard = (href, photo, title, copy) => '<article class="qf-approved-card"><a href="' + href + '"><img src="/assets/aprovado/' + photo + '.webp" alt="" loading="lazy" decoding="async"><div><h3>' + title + '</h3><p>' + copy + '</p><span class="qf-approved-arrow" aria-hidden="true">›</span></div></a></article>';
+    const photoCard = (href, photo, title, copy) => '<article class="qf-approved-card"><a href="' + href + '"><img src="/assets/aprovado/' + photo + '.webp" alt="Serviço de ' + title.toLowerCase() + '" loading="lazy" decoding="async"><div><h3>' + title + '</h3><p>' + copy + '</p><span class="qf-approved-arrow" aria-hidden="true">›</span></div></a></article>';
     const step = (n, glyph, title, copy) => '<li><span class="qf-approved-step-icon" aria-hidden="true"><b>' + n + '</b>' + icon(glyph) + '</span><div><h3>' + title + '</h3><p>' + copy + '</p></div></li>';
     return '<div class="qf-landing qf-approved qf-approved-client">' +
       '<header class="qf-landing-topbar qf-approved-header"><div class="qf-approved-wrap qf-approved-header-inner">' +
@@ -8786,7 +8786,7 @@ alt=""></noscript>
       '</div></header>' +
       '<section class="qf-landing-hero"><div class="qf-approved-wrap qf-approved-hero-inner">' +
         '<div class="qf-approved-hero-copy"><h1>Encontre o profissional certo <em>perto de você</em></h1><p class="qf-customer-sub">Descreva o serviço e receba propostas de profissionais da sua região.</p></div>' +
-        '<img class="qf-approved-hero-photo" src="/assets/aprovado/cliente.webp" width="368" height="232" alt="" fetchpriority="high">' +
+        '<img class="qf-approved-hero-photo" src="/assets/aprovado/cliente.webp" width="368" height="232" alt="Profissional de limpeza realizando serviço residencial" fetchpriority="high">' +
       '</div></section>' +
       '<div class="qf-approved-wrap qf-approved-client-main">' +
         '<section class="qf-approved-picker" aria-labelledby="qf-approved-picker-title"><h2 id="qf-approved-picker-title">Qual serviço você precisa?</h2>' +
