@@ -1,0 +1,48 @@
+name: IndexNow - paginas atualizadas
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/seo-bing-descriptions-20261119.cjs'
+      - '7d7b57f042cf239a04ef4e6c8d1feefc.txt'
+      - 'scripts/submit-indexnow.cjs'
+      - '.github/workflows/indexnow.yml'
+  workflow_dispatch:
+    inputs:
+      paths:
+        description: 'Caminhos publicados separados por espaço (ex.: / /servicos/pintor/sao-paulo/)'
+        required: true
+        default: '/servicos/pintor/sao-paulo/'
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Gerar sitemap indexável localmente
+        run: npm ci && npm run build
+      - name: Aguardar arquivo público da chave e deploy
+        run: |
+          for i in {1..24}; do
+            if [ "$(curl -fsS https://quemfazservico.com.br/7d7b57f042cf239a04ef4e6c8d1feefc.txt || true)" = '7d7b57f042cf239a04ef4e6c8d1feefc' ]; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
+      - name: Enviar apenas URLs alteradas
+        env:
+          MANUAL_PATHS: ${{ inputs.paths }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            read -r -a paths <<< "$MANUAL_PATHS"
+          else
+            # Estas URLs foram atualizadas pela última rodada de SEO.
+            paths=(/servicos/pintor/sao-paulo/ /servicos/eletricista/maua/ /servicos/encanador/maua/ /servicos/diarista/diadema/ /servicos/encanador/diadema/ /servicos/pedreiro/sao-bernardo-do-campo/ /servicos/diarista/sao-bernardo-do-campo/ /servicos/diarista/sao-paulo/ /servicos/pedreiro/sao-paulo/ /servicos/encanador/sao-paulo/ /servicos/pintor/ /servicos/baba/ /servicos/guincho/)
+          fi
+          node scripts/submit-indexnow.cjs "${paths[@]}"
