@@ -10,36 +10,48 @@ const entries=[
     slug:'eletricista/diadema',
     title:'Eletricista em Diadema: como explicar um reparo urgente?',
     text:'Descreva se o problema é no chuveiro, tomada, iluminação ou disjuntor; informe o bairro, desde quando acontece e se há falta de energia em outros ambientes. Se notar cheiro de queimado ou fios expostos, mantenha distância e não tente fazer reparos.',
+    question:'Como comparar propostas de eletricistas em Diadema?',
+    answer:'Informe o mesmo problema a cada profissional e pergunte se a visita, o diagnóstico, as peças e o serviço estão incluídos no valor informado.',
     related:['eletricista/santo-andre','encanador/sao-bernardo-do-campo']
   },
   {
     slug:'limpeza-de-sofa/santo-andre',
     title:'Limpeza de sofá em Santo André: quais detalhes ajudam no orçamento?',
     text:'Informe quantos lugares o sofá possui, se é retrátil ou tem chaise, o tecido quando souber, as manchas ou odores e o bairro. Pergunte sobre secagem e deslocamento antes de comparar as propostas.',
+    question:'Quanto tempo leva para o sofá secar?',
+    answer:'O tempo depende do tecido, do método e da ventilação do ambiente. Confirme a previsão diretamente com o profissional antes de contratar.',
     related:['limpeza-de-sofa/sao-bernardo-do-campo','diarista/santo-andre']
   },
   {
     slug:'limpeza-de-sofa/sao-bernardo-do-campo',
     title:'Higienização de sofá em São Bernardo: o que combinar?',
     text:'Conte se o sofá tem almofadas removíveis, manchas antigas ou contato com animais. Confirme com o profissional o método de limpeza indicado para o tecido, o prazo de secagem e o preço total para a peça.',
+    question:'O orçamento de limpeza de sofá inclui deslocamento em São Bernardo?',
+    answer:'Isso depende de cada profissional. Informe o bairro e o tamanho do sofá e peça a confirmação do valor total antes de agendar.',
     related:['limpeza-de-sofa/santo-andre','encanador/sao-bernardo-do-campo']
   },
   {
     slug:'montador-de-moveis/santo-andre',
     title:'Montador de móveis em Santo André: prepare seu pedido',
     text:'Informe o tipo e a quantidade de móveis, medidas aproximadas, marca ou modelo e se a montagem é nova ou uma desmontagem para mudança. Verifique ferragens, manual e espaço disponível antes da visita.',
+    question:'O que enviar ao montador antes da visita?',
+    answer:'Se possível, envie o modelo do móvel, fotos das peças e informe se já possui manual e ferragens. Assim o profissional pode avaliar o trabalho necessário.',
     related:['montador-de-moveis/sao-bernardo-do-campo','diarista/santo-andre']
   },
   {
     slug:'encanador/sao-bernardo-do-campo',
     title:'Encanador em São Bernardo: vazamento ou instalação?',
     text:'Diga se o serviço é em pia, banheiro, descarga ou tubulação e se o vazamento acontece continuamente. Confirme no orçamento o diagnóstico, as peças, a mão de obra e eventuais reparos no revestimento.',
+    question:'Como pedir orçamento para um vazamento em São Bernardo?',
+    answer:'Informe o bairro, onde aparece a água, se há registro acessível e quando o problema começou. Pergunte se a visita técnica é cobrada separadamente.',
     related:['eletricista/santo-andre','limpeza-de-sofa/sao-bernardo-do-campo']
   },
   {
     slug:'pintor/maua',
     title:'Pintor em Mauá: como pedir propostas comparáveis?',
     text:'Informe se a pintura é interna ou externa, a quantidade de cômodos, o estado das paredes e se há umidade ou descascamento. Peça que cada proposta esclareça preparação, materiais, demãos e prazo.',
+    question:'A tinta está incluída no orçamento de pintura?',
+    answer:'Nem sempre. Combine previamente quem compra a tinta, a preparação das paredes, a quantidade de demãos e a limpeza após o serviço.',
     related:['montador-de-moveis/santo-andre','diarista/santo-andre']
   }
 ];
@@ -63,7 +75,7 @@ for(const item of entries){
   const city=item.slug.split('/')[1];
   const cityLink='/servicos/cidades/'+city+'/';
   const citySection=indexable('cidades/'+city)?'<p><a href="'+cityLink+'">Conheça outros serviços nesta cidade</a>.</p>':'';
-  const section='<section class="seo-practical" data-qf-demanda-20261114><h2>'+esc(item.title)+'</h2><p>'+esc(item.text)+'</p><p>Informe o CEP do serviço e o prazo no pedido gratuito. A disponibilidade depende da região e da agenda de cada profissional.</p>'+(related.length?'<h3>Serviços relacionados na região</h3><ul>'+related.join('')+'</ul>':'')+citySection+'</section>';
+  const section='<section class="seo-practical" data-qf-demanda-20261114><h2>'+esc(item.title)+'</h2><p>'+esc(item.text)+'</p><h3>'+esc(item.question)+'</h3><p>'+esc(item.answer)+'</p><p>Informe o CEP do serviço e o prazo no pedido gratuito. A disponibilidade depende da região e da agenda de cada profissional.</p>'+(related.length?'<h3>Serviços relacionados na região</h3><ul>'+related.join('')+'</ul>':'')+citySection+'</section>';
   html=html.replace('</article>',section+'</article>');
   fs.writeFileSync(file,html);
   updated++;
