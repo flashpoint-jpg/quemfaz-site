@@ -337,6 +337,7 @@ require('./seo-organico-20261113.cjs');
 require('./seo-demanda-local-20261114.cjs');
 // SEO local de higienização com cobertura confirmada e formulário preservado.
 require('./seo-higienizacao-local-20261114.cjs');
+require('./seo-bing-descriptions-20261119.cjs');
 // Aplica a seleção de indexação ao HTML, ao manifesto e ao sitemap final.
 require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
