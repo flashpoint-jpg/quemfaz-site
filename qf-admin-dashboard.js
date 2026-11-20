@@ -49,9 +49,9 @@ function install(){
   async function refresh(){
    if(busy||!root.isConnected)return;busy=true;root.setAttribute('aria-busy','true');
    const status=root.querySelector('[data-qfd-status]');status.textContent='Atualizando dados…';
-   const results=await Promise.allSettled([g.QFAdminCloud.syncSnapshot(true),rpc('qf_admin_balanco',{p_dias:1}),g.QFAdminCloud.syncSupport(),rpc('qf_admin_movimentacoes',{p_dias:30})]);
+   const results=await Promise.allSettled([g.QFAdminCloud.syncSnapshot(true),rpc('qf_admin_balanco',{p_dias:1}),g.QFAdminCloud.syncSupport(),rpc('qf_admin_movimentacoes',{p_dias:30}),rpc('qf_admin_contabilidade',{p_dias:1})]);
    if(!root.isConnected){busy=false;return;}
-   const [snapshot,balance,support,movement]=results;
+   const [snapshot,balance,support,movement,accounting]=results;
    events=[];unlocks=[];
    if(snapshot.status==='fulfilled'){
     const requests=DB.allRequests();
@@ -61,8 +61,16 @@ function install(){
      const row={id:r.id,route:'/admin/servicos/'+r.id,service,city:r.endereco?.cidade||'',proId:x.profissionalId,name:pro(x.profissionalId),value:x.valor,origin:x.origem,at:x.criadoEm};unlocks.push(row);
      events.push({kind:'unlock',color:'blue',icon:'unlock',title:'Pedido desbloqueado',name:row.name,detail:service+' • '+row.city+' • '+(x.origem==='plano'?'Pelo plano':money(x.valor)),at:x.criadoEm,route:row.route,action:'Ver desbloqueio',id:r.id});
     }));
-    unlocks.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));value('unlocks',unlocks.filter(x=>today(x.at)).length);
-   }else{value('open','—');value('unlocks','—');}
+    unlocks.sort((a,b)=>Date.parse(b.at)-Date.parse(a.at));
+   }else{value('open','—');}
+   // Contabilidade consulta diretamente os registros ativos de desbloqueio.
+   // O snapshot pode falhar ou ficar desatualizado quando há muitos pedidos;
+   // desbloqueios por plano (R$ 0 neste evento) também precisam ser contados.
+   if(accounting.status==='fulfilled'){
+    const d=accounting.value.desbloqueios||{};
+    value('unlocks',Number(d.saldo_qtd||0)+Number(d.sem_cobranca_qtd||0)+Number(d.plano_qtd||0));
+   }else if(snapshot.status==='fulfilled')value('unlocks',unlocks.filter(x=>today(x.at)).length);
+   else value('unlocks','—');
    if(balance.status==='fulfilled')value('paid',money(balance.value.entradas_centavos));else value('paid','—');
    // Movimentações confirmadas, sem contar consumo de saldo como novo pagamento.
    if(movement.status==='fulfilled')for(const m of movement.value.movimentos||[])if(!['desbloqueio','desbloqueio_exclusivo'].includes(m.tipo)&&Number(m.centavos)>0)events.push({kind:'payment',color:'green',icon:'wallet',title:'Pagamento confirmado',name:m.quem||'Usuário',detail:(m.detalhe||m.tipo)+' • '+money(m.centavos),at:m.em,route:m.rota||'/admin/movimentacoes',action:'Ver pagamento',id:m.rota});
@@ -74,7 +82,7 @@ function install(){
    // Não inventar contagem de pagamentos pendentes: abrir a consulta financeira real.
    root.querySelector('[data-qfd-attention]').innerHTML='<article class="qfd-attention-card orange"><span class="qfd-icon">'+ico('chat')+'</span><div><h3>'+(pending===null?'Suporte indisponível':pending.length+' chamado(s) em aberto')+'</h3><p>Acompanhe os atendimentos que precisam de retorno.</p>'+link('/admin/suporte','Ver chamados')+'</div></article><article class="qfd-attention-card blue"><span class="qfd-icon">'+ico('wallet')+'</span><div><h3>Pagamentos e confirmações</h3><p>Consulte o status de cada pagamento e a liberação correspondente.</p>'+link('/admin/planos','Ver pagamentos')+'</div></article>';
    events.sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0));paint();
-   const failed=results.some(x=>x.status==='rejected');status.textContent=failed?'Alguns dados estão indisponíveis. Atualize para tentar novamente.':'Atualizado às '+new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' • Pagamentos de hoje; atividades dos últimos 30 dias.';
+   const failed=results.some(x=>x.status==='rejected');status.textContent=failed?'Alguns dados estão indisponíveis. Atualize para tentar novamente.':'Atualizado às '+new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' • Desbloqueios e pagamentos de hoje; atividades dos últimos 30 dias.';
    if(snapshot.status==='rejected')root.querySelector('[data-qfd-unlocks]').innerHTML='<tr><td colspan="6">Não foi possível consultar os desbloqueios.</td></tr>';
    if(movement.status==='rejected')status.textContent+=' Pagamentos recentes indisponíveis.';
    root.removeAttribute('aria-busy');busy=false;
