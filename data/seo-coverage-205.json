@@ -1,5 +1,5 @@
 {
-  "consultadoEm": "2026-11-17",
+  "consultadoEm": "2026-11-20",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
     {
@@ -46,7 +46,10 @@
         "cat_autoeletrico",
         "cat_automacao_industrial",
         "cat_automacao_residencial",
+        "cat_baba",
         "cat_caixa_dagua",
+        "cat_cuidador_idosos",
+        "cat_custom_brigadista_tsijiz",
         "cat_diarista",
         "cat_eletricista",
         "cat_faxina_pos_obra",
