@@ -13,7 +13,10 @@
     "@electric-sql/pglite": "0.3.14",
     "esbuild": "0.28.2",
     "jsdom": "26.1.0",
+    "jsqr": "1.4.0",
+    "pdf-lib": "1.17.1",
     "pg": "8.16.3",
-    "playwright": "1.62.1"
+    "playwright": "1.62.1",
+    "qrcode": "1.5.4"
   }
 }
