@@ -121,7 +121,22 @@
   if(!form||form.querySelectorAll('input').length<3||!form.parentNode)return;
   var wrap=document.createElement('div');wrap.id='qf-prof-apresentacao';
   var header=document.createElement('header');header.className='qf-prof-header';
-  header.innerHTML='<a href="/" class="qf-prof-brand" aria-label="Quem Faz Serviços"><b>Q<span>F</span></b><strong>QuemFaz<small>Serviços</small></strong></a><nav aria-label="Navegação"><a href="/">Início</a><a href="/#como-funciona">Como funciona</a><a href="/#profissionais">Profissionais</a><a href="/#servicos">Serviços</a></nav><a class="qf-prof-home" href="/">Sou cliente</a>';
+  var menu='<a href="/">Início</a><button type="button" data-qf-prof-how>Como funciona</button><a href="/para-profissionais/">Profissionais</a><a href="/servicos/">Serviços</a>';
+  header.innerHTML='<div class="qf-prof-header-inner">'+
+   '<a href="/" class="qf-prof-brand"><img src="/assets/qf-logo-branco-20261014.webp" alt="Quem Faz Serviços" width="150" height="50"></a>'+
+   '<nav class="qf-prof-nav" aria-label="Menu do site">'+menu+'</nav>'+
+   '<a class="qf-prof-home" href="/">Sou cliente</a>'+
+   '<details class="qf-prof-mobile-menu"><summary aria-label="Menu do site"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></summary><nav aria-label="Menu do site">'+menu+'</nav></details></div>';
+  header.addEventListener('click',function(event){
+   if(!event.target.closest('[data-qf-prof-how]'))return;
+   var mobileMenu=header.querySelector('.qf-prof-mobile-menu');
+   var steps=wrap.querySelector('.qf-prof-passos');
+   if(mobileMenu.open){
+    mobileMenu.open=false;
+    mobileMenu.querySelector('summary').focus();
+   }
+   steps.scrollIntoView({block:'start'});
+  });
   var info=document.createElement('aside');info.className='qf-prof-apresentacao-info';
   info.innerHTML='<div class="qf-prof-hero"><span class="qf-prof-chip">Cadastro de Profissional</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua profissão e acompanhe pedidos de clientes da sua região.</p></div><div class="qf-prof-numeros"><div><strong data-qf-prof-total>—</strong><span>profissionais cadastrados</span></div><div><strong data-qf-city-total>—</strong><span>cidades atendidas</span></div></div><div class="qf-prof-beneficios"><div>🎯<span>Receba oportunidades</span></div><div>💬<span>Negocie diretamente</span></div><div>📅<span>Defina seu raio e horários</span></div><div>🛡️<span>Sem comissão por serviço fechado</span></div></div><div class="qf-prof-passos"><strong>Como funciona?</strong><ol><li>Faça seu cadastro</li><li>Configure profissão, região e horários</li><li>Escolha oportunidades disponíveis</li></ol></div>';
   var grid=document.createElement('div');grid.className='qf-prof-grid';
@@ -144,7 +159,11 @@
   var contadorTimer=setInterval(function(){if(!wrap.isConnected){clearInterval(contadorTimer);return;}if(!document.hidden)atualizarContadores();},60000);
   var css=document.createElement('style');css.id='qf-prof-apresentacao-estilo';css.textContent=
   '#qf-prof-apresentacao{width:100%;max-width:1440px;margin:0 auto 40px;font-family:Inter,system-ui,Arial,sans-serif;color:#102b65;box-sizing:border-box}#qf-prof-apresentacao *{box-sizing:border-box}'+
-  '.qf-prof-header{min-height:75px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px clamp(18px,4vw,65px);border-bottom:1px solid #dce5f2}.qf-prof-brand{display:flex;align-items:center;gap:8px;text-decoration:none!important;color:#0b3595!important}.qf-prof-brand>b{font-size:37px;letter-spacing:-5px}.qf-prof-brand>b span{color:#ff7900}.qf-prof-brand strong{font-size:22px;line-height:1}.qf-prof-brand small{display:block;color:#ff7900;font-size:14px}.qf-prof-header nav{display:flex;gap:22px}.qf-prof-header nav a{color:#123378!important;text-decoration:none;font-weight:750;font-size:14px}.qf-prof-home{border:2px solid #1255bf;border-radius:24px;padding:10px 18px;color:#0b3595!important;text-decoration:none!important;font-weight:750;white-space:nowrap}'+
+  '.qf-prof-header-inner{width:min(100% - 72px,1180px);min-height:74px;margin-inline:auto;display:flex;align-items:center;gap:24px;position:relative}'+
+  '.qf-prof-brand{display:flex;flex:none;margin-right:auto}.qf-prof-brand img{display:block;width:150px;height:50px;object-fit:contain}'+
+  '.qf-prof-nav{display:flex;align-items:center;gap:24px}.qf-prof-header nav a,.qf-prof-header nav button,.qf-prof-home{display:flex;align-items:center;min-height:44px;color:#fff!important;font:750 14px/1.25 Inter,system-ui,sans-serif;text-decoration:none!important;white-space:nowrap}'+
+  '.qf-prof-header nav button{border:0;padding:0;background:none;cursor:pointer}.qf-prof-home{border:2px solid #7486a0;border-radius:24px;padding:0 16px}.qf-prof-mobile-menu{display:none}.qf-prof-header :focus-visible{outline:2px solid #ffb463;outline-offset:3px}.qf-prof-passos{scroll-margin-top:92px}'+
+  '@media(max-width:899px){.qf-prof-header-inner{width:min(100% - 36px,650px);min-height:62px;gap:6px}.qf-prof-brand img{width:clamp(90px,29vw,112px);height:38px}.qf-prof-nav{display:none}.qf-prof-home{font-size:13px;padding-inline:10px}.qf-prof-mobile-menu{display:block;flex:none}.qf-prof-mobile-menu summary{display:grid;place-items:center;width:44px;height:44px;list-style:none;cursor:pointer;color:#fff}.qf-prof-mobile-menu summary::-webkit-details-marker{display:none}.qf-prof-mobile-menu nav{position:absolute;top:100%;right:0;width:min(205px,100%);padding:6px 16px;border-radius:12px;background:#051d49;box-shadow:0 5px 20px #00133345}.qf-prof-passos{scroll-margin-top:80px}}'+
   '.qf-prof-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);gap:24px;padding:24px;align-items:stretch;background:linear-gradient(120deg,#0754bf,#0868d5 65%,#e6f1ff)}'+
   '#qf-prof-apresentacao .qf-prof-apresentacao-form{width:100%!important;max-width:none!important;margin:0!important;min-width:0;background:#fff!important;border-radius:24px!important;padding:clamp(18px,3vw,34px)!important;box-shadow:0 12px 28px #003d8520!important;align-self:stretch}'+
   '.qf-prof-apresentacao-info{min-width:0;display:flex;flex-direction:column;gap:20px;padding:18px 8px;color:#fff!important}.qf-prof-hero h2{font-size:clamp(29px,3.3vw,49px);line-height:1.12;letter-spacing:-.025em;color:#fff!important;margin:18px 0;font-weight:850}.qf-prof-hero h2 em{color:#ffab24;font-style:normal}.qf-prof-hero p{color:#fff!important;font-size:clamp(16px,1.5vw,20px);line-height:1.5;max-width:560px}.qf-prof-chip{display:inline-block;background:#ff8a00;color:#fff;border-radius:28px;padding:10px 18px;font-weight:800;font-size:16px}'+
@@ -152,11 +171,11 @@
   '.qf-prof-beneficios{display:grid;grid-template-columns:1fr 1fr;gap:12px}.qf-prof-beneficios>div{display:flex;align-items:center;gap:10px;background:#ffffff17;border:1px solid #ffffff55;border-radius:14px;padding:13px;font-weight:750;color:#fff;line-height:1.3}.qf-prof-beneficios span{font-size:14px}'+
   '.qf-prof-passos{margin-top:auto;background:#fff;border-radius:20px;padding:20px;color:#0c3687;box-shadow:0 8px 20px #00357a30}.qf-prof-passos strong{font-size:23px}.qf-prof-passos ol{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;list-style:none;counter-reset:passo;padding:0;margin:18px 0 0}.qf-prof-passos li{counter-increment:passo;display:flex;align-items:center;gap:9px;font-weight:750;font-size:13px;line-height:1.3;color:#0b358a}.qf-prof-passos li:before{content:counter(passo);display:grid;place-items:center;flex:none;width:35px;height:35px;background:#ff8500;color:white;border-radius:50%;font-size:18px}'+
   '#qf-prof-apresentacao .qf-prof-apresentacao-form input,#qf-prof-apresentacao .qf-prof-apresentacao-form select{min-height:46px}'+
-  '@media(max-width:850px){.qf-prof-header{padding:12px 16px;min-height:64px}.qf-prof-header nav{display:none}.qf-prof-brand strong{font-size:18px}.qf-prof-brand>b{font-size:30px}.qf-prof-home{font-size:12px;padding:8px 12px}.qf-prof-grid{display:flex;flex-direction:column;gap:12px;padding:12px}.qf-prof-apresentacao-info{padding:15px 8px;gap:14px}.qf-prof-hero h2{font-size:30px}.qf-prof-chip{font-size:13px}.qf-prof-numeros{padding:13px}.qf-prof-numeros strong{font-size:29px}.qf-prof-numeros span{font-size:12px}.qf-prof-beneficios>div{padding:10px;font-size:12px}.qf-prof-beneficios span{font-size:12px}.qf-prof-passos{padding:15px}.qf-prof-passos strong{font-size:20px}.qf-prof-passos ol{grid-template-columns:1fr;gap:9px}.qf-prof-passos li{font-size:13px}#qf-prof-apresentacao .qf-prof-apresentacao-form{padding:18px!important}}';
+  '@media(max-width:850px){.qf-prof-grid{display:flex;flex-direction:column;gap:12px;padding:12px}.qf-prof-apresentacao-info{padding:15px 8px;gap:14px}.qf-prof-hero h2{font-size:30px}.qf-prof-chip{font-size:13px}.qf-prof-numeros{padding:13px}.qf-prof-numeros strong{font-size:29px}.qf-prof-numeros span{font-size:12px}.qf-prof-beneficios>div{padding:10px;font-size:12px}.qf-prof-beneficios span{font-size:12px}.qf-prof-passos{padding:15px}.qf-prof-passos strong{font-size:20px}.qf-prof-passos ol{grid-template-columns:1fr;gap:9px}.qf-prof-passos li{font-size:13px}#qf-prof-apresentacao .qf-prof-apresentacao-form{padding:18px!important}}';
   /* Ajustes de identidade visual e legibilidade — desktop e celular. */
   css.textContent +=
   '#qf-prof-apresentacao{background:#071d3b!important}'+
-  '#qf-prof-apresentacao .qf-prof-header{position:sticky!important;top:0!important;z-index:100!important;background:#071d3b!important;border-bottom:2px solid #ff8a00!important;box-shadow:0 3px 12px #0003!important}'+
+  '#qf-prof-apresentacao .qf-prof-header{position:fixed!important;inset:0 0 auto!important;width:100%!important;z-index:10000!important;transform:none!important;background:linear-gradient(105deg,#041a45,#08366f)!important;border-bottom:2px solid #ff8a00!important;box-shadow:0 3px 12px #0003!important}'+
   '#qf-prof-apresentacao .qf-prof-header nav a,#qf-prof-apresentacao .qf-prof-brand,#qf-prof-apresentacao .qf-prof-home{color:#fff!important}'+
   '#qf-prof-apresentacao .qf-prof-home{border-color:#7486a0!important}'+
   '#qf-prof-apresentacao .qf-prof-grid{background:#071d3b!important;align-items:start!important}'+
@@ -173,8 +192,7 @@
   faq.innerHTML='<h3>Por que se cadastrar?</h3><p>Você escolhe as oportunidades que fazem sentido para sua empresa, de acordo com a profissão e a região onde atende.</p><div class="qf-prof-extra-grid"><div><b>📍 Atendimento local</b><span>Configure seu raio de atuação e acompanhe pedidos da região.</span></div><div><b>🛠️ Diversas profissões</b><span>Informe suas especialidades para encontrar pedidos compatíveis.</span></div><div><b>💬 Você decide</b><span>Analise as oportunidades e negocie diretamente com o cliente.</span></div><div><b>📲 Acompanhe pelo celular</b><span>Consulte os pedidos disponíveis e gerencie seus atendimentos.</span></div></div><p class="qf-prof-extra-nota">As oportunidades dependem dos pedidos publicados pelos clientes em cada região. Consulte as condições atuais de acesso durante o cadastro.</p>';
   info.appendChild(faq);
   css.textContent +=
-  '#qf-prof-apresentacao .qf-prof-header{position:fixed!important;left:0!important;right:0!important;top:0!important;width:100%!important;z-index:10000!important;transform:none!important}'+
-  '#qf-prof-apresentacao{padding-top:76px!important}'+
+  '#qf-prof-apresentacao{padding-top:76px!important}@media(max-width:899px){#qf-prof-apresentacao{padding-top:64px!important}}'+
   '#qf-prof-apresentacao .qf-prof-grid{align-items:stretch!important;min-height:calc(100vh - 76px)!important}'+
   '#qf-prof-apresentacao .qf-prof-apresentacao-info{justify-content:flex-start!important}'+
   '.qf-prof-info-extra{background:#12375e;border:1px solid #3d648c;border-radius:20px;padding:22px;color:#fff;margin-top:4px}'+
