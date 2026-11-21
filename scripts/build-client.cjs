@@ -287,7 +287,7 @@ const toolsAssets = {};
 for (const kind of ['qr','pdf']) {
  const code = esbuild.buildSync({
   entryPoints: [path.join(__dirname, 'qf-tools-' + kind + '.js')],
-  bundle: true, format: 'esm', minify: true, target: 'es2020', write: false, legalComments: 'inline'
+  bundle: true, format: 'esm', minify: true, target: 'es2020', write: false, legalComments: 'inline', loader: { '.png': 'binary' }
  }).outputFiles[0].text;
  const hash = createHash('sha256').update(code).digest('hex').slice(0,12);
  const name = 'qf-tools-' + kind + '-' + hash + '.js';

@@ -116,3 +116,5 @@
 .qf-control-kpis > button { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 8px; background:#f1f5f9; border:1px solid #d6e2ef; border-radius:12px; cursor:pointer; }
 .qf-control-kpis > button:hover { background:#e6efff; }
 .qf-control-kpis > button:focus-visible { outline:2px solid #095bf6; outline-offset:2px; }
+
+.qf-fechamento-origem { display:block; margin-top:3px; font-size:12px; font-weight:700; color:#245088; }

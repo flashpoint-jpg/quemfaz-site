@@ -1,3 +1,4 @@
+import { createQuotePdf } from './qf-tools-quote-layout.js';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 export async function download(title, entries, filename) {
@@ -38,7 +39,15 @@ export async function download(title, entries, filename) {
   newPage();
   write(title, bold, 22);
   entries.forEach(text => write(text, regular, 13));
-  const url = URL.createObjectURL(new Blob([await pdf.save()], { type: 'application/pdf' }));
+  saveFile(await pdf.save(), filename);
+}
+
+export async function downloadQuote(quote, filename) {
+  saveFile(await createQuotePdf(quote), filename);
+}
+
+function saveFile(bytes, filename) {
+  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;

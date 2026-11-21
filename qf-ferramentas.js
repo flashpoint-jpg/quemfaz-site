@@ -260,12 +260,13 @@
     click(root, 'add', () => add().querySelector('input').focus());
     add();
   }
-  async function pdf(root, name, lines, file) {
+  async function pdf(root, name, lines, file, quoteData) {
     const btn = root.querySelector('[data-tools-action="pdf"]');
     btn.disabled = true;
     try {
       const module = await import(global.QFToolsAssets.pdf);
-      await module.download(name, lines, file);
+      if (quoteData) await module.downloadQuote(quoteData, file);
+      else await module.download(name, lines, file);
     } catch (_) { message(root, 'Não foi possível baixar o PDF. Tente novamente.'); }
     finally { btn.disabled = false; }
   }
@@ -279,7 +280,6 @@
     const title = 'Orçamento nº ' + row.numero;
     const url = site + '/#/orcamento/' + row.token;
     const share = 'Olá, ' + row.cliente + '! Segue meu orçamento de ' + formatMoney(row.total) + ': ' + url;
-    const lines = row.itens.map(item => item.descricao + ' — ' + formatMoney(item.centavos));
     const meta = ['Validade até ' + formatDate(row.validade), 'Prazo: ' + row.prazo];
     paint(root, (shared ? '<header class="qf-tools-public-head">QuemFaz Serviços</header>' : '') +
       '<article class="qf-tools-card qf-tools-document"><h1>' + title + '</h1><p>Para ' + esc(row.cliente) + '<br>Por ' + esc(row.profissional) + '</p>' +
@@ -289,8 +289,11 @@
       (shared ? '<aside class="qf-tools-share"><strong>Precisa de outro serviço?</strong><p>Peça grátis e receba contatos de profissionais da sua cidade.</p><a href="' + site + '">quemfazservico.com.br</a></aside>' :
         '<div class="qf-tools-row">' + wa('Enviar no WhatsApp', row.telefone, share) + button('Baixar PDF', 'pdf', true) +
         button('Copiar link', 'copy', true) + '</div><p data-tools-error role="status"></p>'));
-    click(root, 'pdf', () => pdf(root, title, ['Cliente: ' + row.cliente, 'Profissional: ' + row.profissional, ...lines,
-      ...(row.material ? ['Material: ' + row.material] : []), 'Total: ' + formatMoney(row.total), ...meta], 'orcamento-' + row.numero + '.pdf'));
+    click(root, 'pdf', () => pdf(root, title, [], 'orcamento-' + row.numero + '.pdf', {
+      number: row.numero, customer: row.cliente, provider: row.profissional,
+      validUntil: formatDate(row.validade), deadline: row.prazo, materials: row.material, total: formatMoney(row.total),
+      items: row.itens.map(item => ({description:item.descricao,amount:formatMoney(item.centavos)}))
+    }));
     click(root, 'copy', () => copy(root, url, 'Link copiado.'));
   }
   async function copy(root, value, success) {
