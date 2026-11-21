@@ -4,6 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const {createHash}=require('node:crypto');
 const esbuild = require('esbuild');
+const addProfessionalTools = require('./qf-tools-integration.cjs');
 const root = path.join(__dirname, '..'), out = path.join(root, 'dist');
 // Impede publicar um atendimento cujo arquivo JavaScript tenha erro de sintaxe.
 new vm.Script(fs.readFileSync(path.join(root, 'qf-atendimento.js'), 'utf8'), {filename:'qf-atendimento.js'});
@@ -17,14 +18,14 @@ for (const name of fs.readdirSync(root)) {
 // Renova os arquivos do painel admin no navegador após a atualização financeira.
 const adminDistPath = path.join(out, 'admin.html');
 if (fs.existsSync(adminDistPath)) {
-  const previousAdmin = fs.readFileSync(adminDistPath, 'utf8');
+  const previousAdmin = addProfessionalTools(fs.readFileSync(adminDistPath, 'utf8'), 'admin.html');
   const newAdmin = previousAdmin
     .replace("const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: requested });\n      if (r.error) throw r.error;", "const r = await client.rpc('qf_admin_excluir_chamados', { p_ids: requested });\n      if (r.error) { if (r.error.code === '23503' || /foreign key constraint/i.test(r.error.message || '')) throw new Error('Este pedido possui histórico de negociação ou financeiro vinculado. Para preservar pagamentos e auditoria, ele não pode ser apagado do banco. Use Editar para cancelar o pedido, mantendo o histórico.'); throw r.error; }")
     .replace('qf-admin-financeiro.js?v=visita-manual-20261030', 'qf-admin-financeiro.js?v=receitas-planos-20261031')
     .replace('qf-admin-cadastro-pago.js?v=20261030-credito-avulso', 'qf-admin-cadastro-pago.js?v=sem-pre-cadastros-20261031');
   fs.writeFileSync(adminDistPath, newAdmin);
 }
-let html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+let html=addProfessionalTools(fs.readFileSync(path.join(root,'index.html'),'utf8'), 'index.html');
 // Atualiza os arquivos de cobertura também nos navegadores que já visitaram a home.
 html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-alinhamento2').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-alinhamento2');
 // Textos públicos alinhados ao fluxo atual; remove benefícios descontinuados.
@@ -280,6 +281,20 @@ html=html.replace('</body>','<script defer src="/qf-acesso-profissional.js?v=202
 fs.copyFileSync(path.join(__dirname,'qf-seo-consent-widget.js'),path.join(out,'qf-seo-consent-widget.js'));
 // Consentimento opcional: telas de cadastro e perfil profissional, sem bloquear fluxos existentes.
 html=html.replace('</body>','<script defer src="/qf-seo-consent-widget.js"></script></body>');
+// PDF e QR são carregados somente nas telas que usam essas funções.
+const toolsAssets = {};
+for (const kind of ['qr','pdf']) {
+ const code = esbuild.buildSync({
+  entryPoints: [path.join(__dirname, 'qf-tools-' + kind + '.js')],
+  bundle: true, format: 'esm', minify: true, target: 'es2020', write: false, legalComments: 'inline'
+ }).outputFiles[0].text;
+ const hash = createHash('sha256').update(code).digest('hex').slice(0,12);
+ const name = 'qf-tools-' + kind + '-' + hash + '.js';
+ fs.writeFileSync(path.join(out,name),code);
+ toolsAssets[kind] = '/' + name;
+}
+html = html.replace('<script defer src="/qf-ferramentas.js"></script>',
+ '<script>window.QFToolsAssets=' + JSON.stringify(toolsAssets) + '</script><script defer src="/qf-ferramentas.js"></script>');
 // Versionar pelos bytes finais impede URLs antigas e valida que o build preservou as fontes.
 function versionLocalAssets(doc){return doc.replace(/(src|href)="([^"?#]+\.(?:js|css))(?:\?[^"#]*)?"/g,(all,attr,url)=>{
  if(/^(?:https?:)?\/\//.test(url)||/^(?:app-|vendor\/)/.test(url))return all;

@@ -139,6 +139,9 @@
   });
   var info=document.createElement('aside');info.className='qf-prof-apresentacao-info';
   info.innerHTML='<div class="qf-prof-hero"><span class="qf-prof-chip">Cadastro de Profissional</span><h2>Sua próxima oportunidade pode estar <em>aqui!</em></h2><p>Cadastre sua profissão e acompanhe pedidos de clientes da sua região.</p></div><div class="qf-prof-numeros"><div><strong data-qf-prof-total>—</strong><span>profissionais cadastrados</span></div><div><strong data-qf-city-total>—</strong><span>cidades atendidas</span></div></div><div class="qf-prof-beneficios"><div>🎯<span>Receba oportunidades</span></div><div>💬<span>Negocie diretamente</span></div><div>📅<span>Defina seu raio e horários</span></div><div>🛡️<span>Sem comissão por serviço fechado</span></div></div><div class="qf-prof-passos"><strong>Como funciona?</strong><ol><li>Faça seu cadastro</li><li>Configure profissão, região e horários</li><li>Escolha oportunidades disponíveis</li></ol></div>';
+  var tools=document.createElement('section');tools.className='qf-prof-ferramentas';
+  tools.innerHTML='<span class="qf-tools-free">Ferramentas 100% grátis</span><h3>O QuemFaz também ajuda você nos dias sem pedidos novos</h3><p>Organize sua agenda, envie orçamentos, cobre com sua própria chave Pix e emita recibos. Use essas ferramentas com os clientes que você já atende, tudo no mesmo app.</p>';
+  info.querySelector('.qf-prof-hero').after(tools);
   var grid=document.createElement('div');grid.className='qf-prof-grid';
   form.parentNode.insertBefore(wrap,form);wrap.appendChild(header);wrap.appendChild(grid);grid.appendChild(info);grid.appendChild(form);
   form.classList.add('qf-prof-apresentacao-form');
