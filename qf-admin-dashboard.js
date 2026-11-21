@@ -3,10 +3,27 @@
 'use strict';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>(Number(v||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const when=v=>Date.parse(v)?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'—';
+const when=v=>Date.parse(v)?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 const today=v=>Date.parse(v)&&new Date(v).toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'})===new Date().toLocaleDateString('en-CA',{timeZone:'America/Sao_Paulo'});
 const ico=n=>g.icon?g.icon(n):'';
-const link=(route,label,cls='qfd-link')=>'<a class="'+cls+'" href="#'+esc(route)+'">'+label+'</a>';
+const orderStatuses={aberto:'Aberto',em_negociacao:'Em negociação',confirmado:'Confirmado',cancelado:'Cancelado',concluido:'Concluído',aguardando_pix:'Aguardando Pix',finalizado:'Finalizado'};
+const stats=[
+ ['open','Pedidos abertos','clipboard','blue','/admin/servicos'],
+ ['unlocks','Desbloqueios hoje','unlock','blue','/admin/desbloqueios'],
+ ['paid','Pagamentos confirmados','wallet','green','/admin/financeiro'],
+ ['support','Suporte pendente','chat','orange','/admin/suporte']
+];
+function statCard([key,title,icon,color,route]){
+ return link(route,'<span class="qfd-icon">'+ico(icon)+'</span><div><span>'+title+'</span><strong data-qfd-stat="'+key+'">—</strong></div><span class="qfd-arrow" aria-hidden="true">›</span>','qfd-stat '+color,key==='open'?'abertos':'');
+}
+function orderRow(order){
+ const meta=[order.client,order.place].filter(Boolean).map(esc).join(' · ');
+ return link('/admin/servicos/'+encodeURIComponent(order.id),
+  '<span><strong>'+esc(order.service)+'</strong><small>'+meta+'</small></span>'+
+  '<span><time datetime="'+esc(order.at)+'">'+esc(when(order.at))+'</time><small>'+esc(order.status)+'</small></span>'+
+  '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
+}
+const link=(route,label,cls='qfd-link',tab='')=>'<a class="'+cls+'" href="#'+esc(route)+'"'+(tab?' data-servicos-tab="'+esc(tab)+'"':'')+'>'+label+'</a>';
 let timer,extraLinks=[];
 function shell(pattern,content){
  g.document.body.classList.add('qfd-modern');
@@ -31,14 +48,17 @@ function install(){
   if(pattern!=='/admin/dashboard'||content.querySelector('[data-qfd]'))return;
   [...content.children].forEach(e=>e.hidden=true);
   const root=g.document.createElement('section');root.dataset.qfd='';root.className='qfd';
-  root.innerHTML='<div class="qfd-intro"><p>Tudo o que precisa da sua atenção, em um só lugar.</p><label class="qfd-search">'+ico('search')+'<input type="search" data-qfd-search aria-label="Buscar profissional, pedido ou pagamento" placeholder="Buscar profissional, pedido ou pagamento"></label></div><div class="qfd-stats">'+[['open','Pedidos abertos','clipboard','blue'],['unlocks','Desbloqueios hoje','unlock','blue'],['paid','Pagamentos confirmados','wallet','green'],['support','Suporte pendente','chat','orange']].map(([key,title,icon,color])=>'<article class="qfd-stat '+color+'"><span class="qfd-icon">'+ico(icon)+'</span><div><span>'+title+'</span><strong data-qfd-stat="'+key+'">—</strong></div></article>').join('')+'</div><div class="qfd-work"><section class="qfd-panel"><h2>Atividades recentes</h2><div class="qfd-filters" role="group" aria-label="Filtrar atividades">'+[['all','Todas'],['unlock','Desbloqueios'],['payment','Pagamentos'],['support','Suporte']].map(([k,l])=>'<button type="button" data-qfd-filter="'+k+'" aria-pressed="'+(k==='all')+'">'+l+'</button>').join('')+'</div><div data-qfd-events><p class="qfd-empty">Consultando atividades…</p></div></section><section class="qfd-panel qfd-attention qf-p-precisa"><h2>Precisa de atenção</h2><div data-qfd-attention><p class="qfd-empty">Consultando pendências…</p></div></section></div><section class="qfd-panel"><h2>'+ico('users')+' Quem desbloqueou cada pedido</h2><div class="qfd-table-wrap"><table><thead><tr><th>Pedido</th><th>Serviço / Cidade</th><th>Profissional</th><th>Valor</th><th>Horário</th><th>Ação</th></tr></thead><tbody data-qfd-unlocks><tr><td colspan="6">Consultando desbloqueios…</td></tr></tbody></table></div></section><div class="qfd-footer"><p role="status" data-qfd-status>Consultando dados do banco…</p><button type="button" data-qfd-refresh>↻ Atualizar</button></div>';
+  root.innerHTML='<div class="qfd-intro"><p>Tudo o que precisa da sua atenção, em um só lugar.</p><label class="qfd-search">'+ico('search')+'<input type="search" data-qfd-search aria-label="Buscar profissional, pedido ou pagamento" placeholder="Buscar profissional, pedido ou pagamento"></label></div><div class="qfd-stats">'+stats.map(statCard).join('')+'</div><section class="qfd-panel qfd-orders"><div class="qfd-orders-head"><h2>Pedidos recebidos</h2>'+link('/admin/servicos','Ver todos os pedidos')+'</div><div data-qfd-orders><p class="qfd-empty">Consultando pedidos…</p></div></section><div class="qfd-work"><details class="qfd-panel qfd-fold-panel"><summary><h2>Atividades recentes</h2></summary><div class="qfd-filters" role="group" aria-label="Filtrar atividades">'+[['all','Todas'],['unlock','Desbloqueios'],['payment','Pagamentos'],['support','Suporte']].map(([k,l])=>'<button type="button" data-qfd-filter="'+k+'" aria-pressed="'+(k==='all')+'">'+l+'</button>').join('')+'</div><div data-qfd-events><p class="qfd-empty">Consultando atividades…</p></div></details><details class="qfd-panel qfd-fold-panel qfd-attention qf-p-precisa"><summary><h2>Precisa de atenção</h2></summary><div data-qfd-attention><p class="qfd-empty">Consultando pendências…</p></div></details></div><details class="qfd-panel qfd-fold-panel"><summary><h2>'+ico('users')+' Quem desbloqueou cada pedido</h2></summary><div class="qfd-table-wrap"><table><thead><tr><th>Pedido</th><th>Serviço / Cidade</th><th>Profissional</th><th>Valor</th><th>Horário</th><th>Ação</th></tr></thead><tbody data-qfd-unlocks><tr><td colspan="6">Consultando desbloqueios…</td></tr></tbody></table></div></details><div class="qfd-footer"><p role="status" data-qfd-status>Consultando dados do banco…</p><button type="button" data-qfd-refresh>↻ Atualizar</button></div>';
   content.append(root);
-  let filter='all',query='',events=[],unlocks=[],busy=false;
+  let filter='all',query='',events=[],unlocks=[],orders=[],ordersError=false,busy=false;
   const DB=g.DB;
   const pro=id=>DB?.profissionalById?.(id)?.nome||DB?.clienteById?.(id)?.nome||'Usuário';
   const searchText=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const matches=v=>!query||searchText(v).includes(searchText(query));
   function paint(){
+   const recent=orders.filter(o=>matches([o.service,o.client,o.place,o.status,o.id].join(' '))).slice(0,8);
+   root.querySelector('[data-qfd-orders]').innerHTML=recent.length?recent.map(orderRow).join(''):
+    '<p class="qfd-empty">'+(ordersError?'Não foi possível consultar os pedidos.':'Nenhum pedido encontrado.')+'</p>';
    const rows=events.filter(e=>(filter==='all'||e.kind===filter)&&matches([e.title,e.name,e.detail,e.id].join(' ')));
    root.querySelector('[data-qfd-events]').innerHTML=rows.length?rows.slice(0,12).map(e=>'<article class="qfd-event '+e.color+'"><span class="qfd-icon">'+ico(e.icon)+'</span><div class="qfd-event-body"><h3>'+esc(e.title)+'</h3><p><b>'+esc(e.name)+'</b>'+ (e.detail?' • '+esc(e.detail):'')+'</p><time datetime="'+esc(e.at)+'">'+esc(when(e.at))+'</time></div>'+link(e.route,e.action)+'</article>').join(''):'<p class="qfd-empty">Nenhuma atividade encontrada neste filtro.</p>';
    const ds=unlocks.filter(x=>matches([x.id,x.service,x.city,x.name].join(' ')));
@@ -52,9 +72,16 @@ function install(){
    const results=await Promise.allSettled([g.QFAdminCloud.syncSnapshot(true),rpc('qf_admin_balanco',{p_dias:1}),g.QFAdminCloud.syncSupport(),rpc('qf_admin_movimentacoes',{p_dias:30}),rpc('qf_admin_contabilidade',{p_dias:1})]);
    if(!root.isConnected){busy=false;return;}
    const [snapshot,balance,support,movement,accounting]=results;
-   events=[];unlocks=[];
-   if(snapshot.status==='fulfilled'){
+   events=[];unlocks=[];orders=[];
+   ordersError=snapshot.status==='rejected'||snapshot.value===null;
+   if(!ordersError){
     const requests=DB.allRequests();
+    orders=requests.map(r=>({
+     id:r.id, at:r.criadoEm, client:DB.clienteById?.(r.clienteId)?.nome||'Cliente não identificado',
+     service:r.titulo||DB.categoryById?.(r.categoriaId)?.nome||'Serviço',
+     place:[r.endereco?.cidade,r.endereco?.uf].filter(Boolean).join('/'),
+     status:orderStatuses[r.statusDb]||r.statusDb||'Situação indisponível'
+    })).sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0));
     value('open',requests.filter(r=>['aberto','em_negociacao'].includes(r.statusDb)).length);
     requests.forEach(r=>(r.desbloqueios||[]).filter(x=>x.ativo!==false).forEach(x=>{
      const service=DB.categoryById?.(r.categoriaId)?.nome||r.titulo||'Serviço';
@@ -69,7 +96,7 @@ function install(){
    if(accounting.status==='fulfilled'){
     const d=accounting.value.desbloqueios||{};
     value('unlocks',Number(d.saldo_qtd||0)+Number(d.sem_cobranca_qtd||0)+Number(d.plano_qtd||0));
-   }else if(snapshot.status==='fulfilled')value('unlocks',unlocks.filter(x=>today(x.at)).length);
+   }else if(!ordersError)value('unlocks',unlocks.filter(x=>today(x.at)).length);
    else value('unlocks','—');
    if(balance.status==='fulfilled')value('paid',money(balance.value.entradas_centavos));else value('paid','—');
    // Movimentações confirmadas, sem contar consumo de saldo como novo pagamento.
@@ -82,8 +109,8 @@ function install(){
    // Não inventar contagem de pagamentos pendentes: abrir a consulta financeira real.
    root.querySelector('[data-qfd-attention]').innerHTML='<article class="qfd-attention-card orange"><span class="qfd-icon">'+ico('chat')+'</span><div><h3>'+(pending===null?'Suporte indisponível':pending.length+' chamado(s) em aberto')+'</h3><p>Acompanhe os atendimentos que precisam de retorno.</p>'+link('/admin/suporte','Ver chamados')+'</div></article><article class="qfd-attention-card blue"><span class="qfd-icon">'+ico('wallet')+'</span><div><h3>Pagamentos e confirmações</h3><p>Consulte o status de cada pagamento e a liberação correspondente.</p>'+link('/admin/planos','Ver pagamentos')+'</div></article>';
    events.sort((a,b)=>(Date.parse(b.at)||0)-(Date.parse(a.at)||0));paint();
-   const failed=results.some(x=>x.status==='rejected');status.textContent=failed?'Alguns dados estão indisponíveis. Atualize para tentar novamente.':'Atualizado às '+new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' • Desbloqueios e pagamentos de hoje; atividades dos últimos 30 dias.';
-   if(snapshot.status==='rejected')root.querySelector('[data-qfd-unlocks]').innerHTML='<tr><td colspan="6">Não foi possível consultar os desbloqueios.</td></tr>';
+   const failed=ordersError||results.some(x=>x.status==='rejected');status.textContent=failed?'Alguns dados estão indisponíveis. Atualize para tentar novamente.':'Atualizado às '+new Date().toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo'})+' • Desbloqueios e pagamentos de hoje; atividades dos últimos 30 dias.';
+   if(ordersError)root.querySelector('[data-qfd-unlocks]').innerHTML='<tr><td colspan="6">Não foi possível consultar os desbloqueios.</td></tr>';
    if(movement.status==='rejected')status.textContent+=' Pagamentos recentes indisponíveis.';
    root.removeAttribute('aria-busy');busy=false;
    timer=setTimeout(()=>{if(root.isConnected)refresh();},30000);
