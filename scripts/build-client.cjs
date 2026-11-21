@@ -108,6 +108,7 @@ html=html.replace('</body>','<script defer src="/qf-marketing-dedicado.js"></scr
 html=html.replace(/qf-comissao13\.js\?v=[^"']+/g,'qf-comissao13.js?v=direto-saque-20261029').replace(/qf-atendimento\.js\?v=[^"']+/g,'qf-atendimento.js?v=eletrodomesticos-20261027');
 const adminPath=path.join(out,'admin.html');
 let adminSource=fs.readFileSync(adminPath,'utf8');
+adminSource=require('./prepare-admin-pedidos.cjs')(adminSource);
 adminSource=require('./prepare-admin-organizacao.cjs')(adminSource);
 adminSource=adminSource.replace('</body>','<script defer src="/qf-admin-password-reset.js"></script></body>');
 adminSource=adminSource.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/vendor/supabase-2.117.2.js');
