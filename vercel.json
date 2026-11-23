@@ -3,6 +3,16 @@
   "outputDirectory": "dist",
   "headers": [
     {
+      "source": "/",
+      "has": [
+        { "type": "query", "key": "servico" },
+        { "type": "query", "key": "seo_page" }
+      ],
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "noindex, follow" }
+      ]
+    },
+    {
       "source": "/app-style-:version.css",
       "headers": [
         {
