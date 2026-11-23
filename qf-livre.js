@@ -3,6 +3,42 @@
  'use strict';
  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const date=v=>v?new Date(v).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',dateStyle:'short',timeStyle:'short'}):'';
+ const planHelp={
+  gratis:['Conta grátis','R$ 0 para criar a conta',[
+   'Veja os pedidos disponíveis e use as ferramentas, como agenda e orçamentos.',
+   'Para abrir o contato de um cliente, adicione saldo. Cada desbloqueio custa R$ 2,00 a mais que no Avulso. Você vê o valor antes de confirmar.'
+  ]],
+  avulso:['Avulso','R$ 14,99 de recarga mínima',[
+   'O Pix vira saldo na sua carteira. Sem mensalidade.',
+   'Ao desbloquear um pedido, você abre o contato do cliente. O valor varia conforme o serviço e aparece antes de confirmar. O saldo que sobrar fica na carteira.'
+  ]],
+  basico_v2:['Básico','R$ 39,90 · 10 desbloqueios em 30 dias'],
+  livre_24h:['24 Livre','R$ 59,00 · 20 desbloqueios comuns em 30 dias',[
+   'Use 1 desbloqueio para abrir o contato de um cliente em um pedido comum.',
+   'No painel, marque Estou de plantão quando puder atender. Chamados Urgentes 24h confirmados pelo cliente são liberados sem custo de desbloqueio e sem gastar sua cota.'
+  ]],
+  pro_v2:['Pro','R$ 79,90 · 25 desbloqueios em 30 dias'],
+  completo_v2:['Mensal completo','R$ 149,90 · até 100 desbloqueios em 30 dias']
+ };
+ function planHelpButton(id){
+  return '<button type="button" class="qf-plan-help-button" data-qf-plan-help="'+id+'" aria-haspopup="dialog" aria-label="Como funciona: '+esc(planHelp[id][0])+'">Como funciona</button>';
+ }
+ function openPlanHelp(id){
+  const details=planHelp[id],doc=g.document;
+  if(!details||doc.getElementById('qf-plan-help'))return;
+  const [name,price,lines=[
+   'O pacote fica disponível quando o Pix é confirmado.',
+   'Cada pedido que você desbloqueia usa 1 da cota e libera o contato do cliente. Use os desbloqueios dentro de 30 dias.'
+  ]]=details;
+  const dialog=doc.createElement('dialog');
+  dialog.id='qf-plan-help';dialog.className='qf-plan-help';
+  dialog.setAttribute('aria-labelledby','qf-plan-help-title');
+  dialog.innerHTML='<header><h2 id="qf-plan-help-title">'+esc(name)+'</h2><button type="button" aria-label="Fechar explicação">×</button></header>'+
+   '<p class="qf-plan-help-price">'+esc(price)+'</p><ul>'+lines.map(line=>'<li>'+esc(line)+'</li>').join('')+'</ul>';
+  dialog.querySelector('button').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
+  doc.body.append(dialog);dialog.showModal();
+ }
  let identificationPending=false,openAvulso=false;
  function trialProgress(s){
   const end=Date.parse(s.valido_ate),now=Date.parse(s.servidor_agora);
@@ -35,13 +71,20 @@
  const plans=[['basico_v2','Básico','R$ 39,90','10','R$ 3,99',''],['pro_v2','Pro','R$ 79,90','25','R$ 3,20',''],['completo_v2','Mensal completo','R$ 149,90','até 100','R$ 1,50','MELHOR PREÇO POR DESBLOQUEIO']];
  return '<div class="qf-livre__eyebrow">PLANOS QUEM FAZ</div><h2 class="qf-livre__headline">Desbloqueie mais pedidos por menos</h2>'+
  '<p>Pague por Pix e comece na hora após a confirmação. Validade de 30 dias, sem taxa de entrada.</p>'+
- '<div class="qf-livre__benefits qf-planos-destaque"><div class="qf-plano-card qf-plano-card--avulso"><span class="qf-plano-card__badge qf-plano-card__badge--verde">SEM MENSALIDADE</span><span class="qf-plano-card__nome">Avulso</span><span class="qf-plano-card__preco">R$ 14,99<small> / recarga mínima</small></span><span class="qf-plano-card__qtd">Pague só o que usar</span><span class="qf-plano-card__un">O preço de cada desbloqueio depende da profissão e do pedido · créditos pagos não vencem</span><button type="button" class="btn btn--primary" data-qf-avulso>Recarregar crédito</button></div>'+plans.map(p=>'<div class="qf-plano-card'+(p[5]?' qf-plano-card--top':'')+'">'+(p[5]?'<span class="qf-plano-card__badge">'+p[5]+'</span>':'')+'<span class="qf-plano-card__nome">'+p[1]+'</span><span class="qf-plano-card__preco">'+p[2]+'<small> / 30 dias</small></span><span class="qf-plano-card__qtd">'+p[3]+' desbloqueios</span><span class="qf-plano-card__un">Custo médio por desbloqueio: '+(p[3]==='até 100'?'a partir de ':'')+p[4]+'</span><button type="button" class="btn btn--primary" data-qf-v2-pagar="'+p[0]+'">Assinar '+p[1]+' por Pix</button></div>').join('')+'</div>'+
+ '<div class="qf-livre__benefits qf-planos-destaque"><div class="qf-plano-card qf-plano-card--avulso"><span class="qf-plano-card__badge qf-plano-card__badge--verde">SEM MENSALIDADE</span><span class="qf-plano-card__nome">Avulso</span><span class="qf-plano-card__preco">R$ 14,99<small> / recarga mínima</small></span><span class="qf-plano-card__qtd">Pague só o que usar</span><span class="qf-plano-card__un">O preço de cada desbloqueio depende da profissão e do pedido · créditos pagos não vencem</span>'+planHelpButton('avulso')+'<button type="button" class="btn btn--primary" data-qf-avulso>Recarregar crédito</button></div>'+plans.map(p=>'<div class="qf-plano-card'+(p[5]?' qf-plano-card--top':'')+'">'+(p[5]?'<span class="qf-plano-card__badge">'+p[5]+'</span>':'')+'<span class="qf-plano-card__nome">'+p[1]+'</span><span class="qf-plano-card__preco">'+p[2]+'<small> / 30 dias</small></span><span class="qf-plano-card__qtd">'+p[3]+' desbloqueios</span><span class="qf-plano-card__un">Custo médio por desbloqueio: '+(p[3]==='até 100'?'a partir de ':'')+p[4]+'</span>'+planHelpButton(p[0])+'<button type="button" class="btn btn--primary" data-qf-v2-pagar="'+p[0]+'">Assinar '+p[1]+' por Pix</button></div>').join('')+'</div>'+
  (s.ativo?'<a class="btn btn--outline" href="#/profissional/servicos/disponiveis">Ver pedidos disponíveis</a>':'')+
  '<div data-qf-livre-pix></div><p role="status" aria-live="polite" data-qf-livre-msg></p>';
  }
  function banner(){return '<a class="qf-plan-banner" href="#/profissional/planos"><span class="qf-plan-banner__tag">PLANOS</span><strong>Desbloqueie mais pedidos por menos</strong><span class="qf-plan-banner__txt">A partir de R$ 39,90 · 10 desbloqueios · sem comissão</span><span class="qf-plan-banner__cta">Ver planos ›</span></a>';}
- g.QFLivre={oferta,divisao};if(typeof module!=='undefined')module.exports=g.QFLivre;
+ g.QFLivre={oferta,divisao,planHelpButton};if(typeof module!=='undefined')module.exports=g.QFLivre;
  if(!g.document)return;
+ const planHelpStyle=g.document.createElement('style');
+ planHelpStyle.textContent='.qf-plan-help-button{justify-self:start;align-self:start;min-height:42px;padding:5px 8px;border:0;border-radius:8px;background:transparent;color:#10549c;font:inherit;font-size:14px;font-weight:750;text-decoration:underline;cursor:pointer}.qf-plan-help-button:hover{background:#edf5ff}.qf-plan-help-button:focus-visible,.qf-plan-help button:focus-visible{outline:2px solid #1769d5;outline-offset:2px}dialog.qf-plan-help{box-sizing:border-box;width:min(440px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:16px 18px 20px;overflow:auto;border:1px solid #cddff1;border-radius:16px;background:#fff;color:#153753;box-shadow:0 14px 50px #0d233b45}dialog.qf-plan-help::backdrop{background:#0b203c8c}.qf-plan-help header{display:flex;align-items:center;justify-content:space-between;gap:12px}.qf-plan-help h2{margin:0;font-size:22px}.qf-plan-help header button{flex:none;width:44px;height:44px;border:0;border-radius:8px;background:#f0f5fb;color:#153753;font-size:25px;cursor:pointer}.qf-plan-help-price{margin:8px 0 10px;font-weight:800;color:#124a88}.qf-plan-help ul{display:grid;gap:8px;margin:0;padding-left:20px;line-height:1.5}';
+ g.document.head.append(planHelpStyle);
+ g.document.addEventListener('click',e=>{
+  const button=e.target.closest('[data-qf-plan-help]');
+  if(button){e.preventDefault();openPlanHelp(button.dataset.qfPlanHelp);}
+ });
  function install(){
   if(!g.Screens||g.QFLivre.installed)return;g.QFLivre.installed=true;
   // O catálogo antigo continua disponível para registros e assinaturas já contratadas.
@@ -489,8 +532,10 @@
       '<div class="qf-options-price">'+p.preco+' <small>/ '+p.periodo+'</small></div></div></div>'+
       '<ul class="qf-options-list"><li>'+p.detail+'</li></ul>'+
       '<p class="qf-options-note">'+p.info+'</p>'+
+      window.QFLivre.planHelpButton(p.id)+
       '<button class="qf-options-button" type="button" data-qf-opcao="'+p.id+'">'+p.botao+'</button></section>').join('');
     list.parentNode.insertBefore(ui, list);
+    step.querySelector('[data-cad-explorar]')?.insertAdjacentHTML('beforebegin',window.QFLivre.planHelpButton('gratis'));
     // O Avulso é a opção inicial, mas também exige Pix de R$ 14,99 confirmado.
     const avulsoDefault = form.querySelector('[name="planoEscolhido"][value="avulso"]');
     if (avulsoDefault) avulsoDefault.checked = true;
