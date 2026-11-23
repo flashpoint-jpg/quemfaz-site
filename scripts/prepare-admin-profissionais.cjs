@@ -70,6 +70,8 @@ module.exports = function prepareAdminProfissionais(source) {
   const detailStart = '  function bindProfissionalDetalhe(content, params) {';
   replace(detailStart, String.raw`  function adminProfGestaoHtml(p) {
     const plano = adminPlanoDoProf(p.id);
+    const livreVencido = plano && !plano.vigente && plano.p.plano === 'livre' &&
+      Date.parse(plano.p.valido_ate) <= Date.now() && p.email;
     return '<section class="section card stack--sm" data-prof-gestao aria-labelledby="qf-prof-gestao-titulo">' +
       '<h2 class="h3" id="qf-prof-gestao-titulo">Cadastro e plano</h2>' +
       (adminPlanoHtml(p.id) || '<p class="text--sm text--secondary">Sem plano vigente.</p>') +
@@ -77,8 +79,14 @@ module.exports = function prepareAdminProfissionais(source) {
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="profissional:' + PU.escapeHtml(p.id) + '">Editar dados</button>' +
       (plano && plano.vigente && plano.p.registro_id
         ? '<button type="button" class="btn btn--primary btn--sm" data-prof-estender>Estender plano</button>' : '') +
+      (livreVencido
+        ? '<button type="button" class="btn btn--primary btn--sm" data-prof-dias-livre disabled>Acrescentar dias</button>'
+        : '') +
       '<button type="button" class="btn btn--outline btn--sm" data-prof-gerenciar-plano>Gerenciar plano</button>' +
-      '</div></section>';
+      '</div>' +
+      (livreVencido ? '<p class="text--sm text--secondary" data-prof-dias-status role="status">Livre vencido. Você pode liberar mais dias por cortesia.</p>'
+        : plano && plano.vigente ? '' : '<p class="text--sm text--secondary">Para iniciar um plano, use Gerenciar plano.</p>') +
+      '</section>';
   }
   function bindProfissionalDetalhe(content, params) {
     const gerenciarPlano = content.querySelector('[data-prof-gerenciar-plano]');

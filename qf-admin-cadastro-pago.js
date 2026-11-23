@@ -55,11 +55,14 @@
     '</div><details><summary>Histórico de ativações e alterações</summary>'+(r.historico?.length?r.historico.map(h=>'<p>'+date(h.criado_em)+' · '+esc(h.acao)+' · '+esc(h.motivo)+' · Responsável: '+esc(h.responsavel_nome||h.responsavel||'Sistema')+'</p>').join(''):'<p>Nenhuma liberação registrada.</p>')+'</details></div></details>';
   }
   function modal(title,body){const d=document.createElement('dialog');d.className='qf-benefit-modal';d.innerHTML='<h2>'+esc(title)+'</h2>'+body+'<p role="alert"></p><button type="button" class="btn btn--outline" data-close>Fechar</button>';document.body.append(d);d.querySelector('[data-close]').onclick=()=>{d.close();d.remove();};d.addEventListener('close',()=>d.remove());d.showModal();return d;}
-  function benefit(r,action,panel){
-    const d=modal(action==='encerrar'?'Encerrar cortesia':'Quem Faz Livre — ativação manual','<p><strong>'+esc(r.nome)+'</strong><br>'+esc(r.email)+'</p><p>Situação: '+esc(names[r.situacao])+'</p><p>Início: '+(r.profissional_id?'Após confirmação':'Após conclusão da identificação')+' · Vencimento calculado pelo servidor.</p><form class="stack"><label>Plano<input value="Quem Faz Livre — cortesia administrativa" readonly></label>'+(action!=='encerrar'?'<label>Dias de liberação<div class="qf-benefit-days">'+[1,2,3,4,7,15,30].map(n=>'<button type="button" data-days="'+n+'">'+n+'</button>').join('')+'</div><input name="dias" type="number" min="1" max="365" value="2" required aria-label="Outra quantidade de dias"></label><p data-expiry></p>':'')+'<label>Motivo<textarea name="motivo" minlength="5" maxlength="500" required></textarea></label><button class="btn btn--primary" type="submit">'+(action==='encerrar'?'CONFIRMAR ENCERRAMENTO':'CONFIRMAR ATIVAÇÃO MANUAL')+'</button></form>');
+  function benefit(r,action,panel,diasExtras=false){
+    const d=modal(diasExtras?'Acrescentar dias ao Livre':action==='encerrar'?'Encerrar cortesia':'Quem Faz Livre — ativação manual','<p><strong>'+esc(r.nome)+'</strong><br>'+esc(r.email)+'</p><p>Situação: '+esc(names[r.situacao])+'</p><p>Início: '+(r.profissional_id?'Após confirmação':'Após conclusão da identificação')+' · Vencimento calculado pelo servidor.</p><form class="stack"><label>Plano<input value="Quem Faz Livre — cortesia administrativa" readonly></label>'+(action!=='encerrar'?'<label>Dias de liberação<div class="qf-benefit-days">'+[1,2,3,4,7,15,30].map(n=>'<button type="button" data-days="'+n+'">'+n+'</button>').join('')+'</div><input name="dias" type="number" min="1" max="365" value="2" required aria-label="Outra quantidade de dias"></label><p data-expiry></p>':'')+'<label>Motivo<textarea name="motivo" minlength="5" maxlength="500" required></textarea></label><button class="btn btn--primary" type="submit">'+(diasExtras?'Confirmar dias adicionais':action==='encerrar'?'CONFIRMAR ENCERRAMENTO':'CONFIRMAR ATIVAÇÃO MANUAL')+'</button></form>');
     const f=d.querySelector('form');const update=()=>{if(f.elements.dias)d.querySelector('[data-expiry]').textContent=r.profissional_id?'Previsão de vencimento: '+date(new Date(Math.max(Date.now(),action==='prorrogar'?Date.parse(r.fim_em)||0:0)+Number(f.elements.dias.value)*86400000).toISOString()):'O prazo começa somente após identificação e ativação válidas.';};
     d.querySelectorAll('[data-days]').forEach(b=>b.onclick=()=>{f.elements.dias.value=b.dataset.days;update();});if(f.elements.dias)f.elements.dias.oninput=update;update();
-    f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('[type=submit]');b.disabled=true;try{const out=await api().rpc('qf_admin_livre_beneficio',{p_email:r.email,p_acao:action,p_dias:Number(f.elements.dias?.value||1),p_motivo:f.elements.motivo.value.trim()});if(out.error||!out.data?.ok)throw Error(out.error?.message||'Não foi possível ativar');d.close();d.remove();lastAt=0;await refreshPanel(panel);}catch(e){d.querySelector('[role=alert]').textContent=e.message;}finally{b.disabled=false;}};
+    f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;const b=f.querySelector('[type=submit]');b.disabled=true;try{const out=await api().rpc('qf_admin_livre_beneficio',{p_email:r.email,p_acao:action,p_dias:Number(f.elements.dias?.value||1),p_motivo:f.elements.motivo.value.trim()});if(out.error||!out.data?.ok)throw Error(out.error?.message||'Não foi possível ativar');d.close();d.remove();lastAt=0;await refreshPanel(panel);if(diasExtras){
+        const status=panel.parentElement?.querySelector('[data-prof-dias-status]');
+        if(status)status.textContent=out.data.aguarda_identificacao?'Dias registrados. O prazo começa após a identificação.':'Cortesia válida até '+date(out.data.beneficio?.fim_em)+'.';
+      }}catch(e){d.querySelector('[role=alert]').textContent=e.message;}finally{b.disabled=false;}};
   }
   function contactText(r,channel){
     const first=String(r.nome||'Profissional').trim().split(/\s+/)[0];
@@ -179,11 +182,25 @@
   async function loadDetail(panel){
     if(!api()||!admin())return;
     try{const r=await api().rpc('qf_admin_livre_painel',{p_busca:panel.dataset.profissionalEmail,p_situacao:'todos',p_offset:0});if(r.error)throw r.error;
-      const row=r.data?.itens?.find(x=>String(x.email).toLowerCase()===panel.dataset.profissionalEmail.toLowerCase());if(!row)throw Error('Não foi possível localizar o plano deste cadastro.');
+      const correspondentes=(r.data?.itens||[]).filter(x=>String(x.email).toLowerCase()===panel.dataset.profissionalEmail.toLowerCase());
+      const row=correspondentes.find(x=>x.profissional_id===panel.dataset.profissionalId)||correspondentes[0];
+      if(!row)throw Error('Não foi possível localizar o plano deste cadastro.');
       row.servidor_agora=r.data.servidor_agora;if(!panel.isConnected)return;
       panel.innerHTML='<h2>Acesso profissional — planos e créditos</h2><p class="text--sm">Esta seção mostra apenas benefícios e assinaturas do Livre antigo. <strong>Não informa o saldo de créditos avulsos.</strong> Consulte <a href="#/admin/movimentacoes">Movimentações</a> para verificar recargas Pix e saldo da carteira.</p>'+record(row,0);
       panel.querySelector('details').open=true;
       panel.querySelectorAll('[data-benefit]').forEach(b=>b.onclick=()=>benefit(row,b.dataset.benefit,panel));
+      const dias=panel.parentElement?.querySelector('[data-prof-dias-livre]');
+      if(dias){
+        const cortesiaAberta=row.tipo==='cortesia'&&!row.encerrado_em;
+        const cortesiaVigente=cortesiaAberta&&Date.parse(row.fim_em)>Date.parse(row.servidor_agora);
+        const status=panel.parentElement.querySelector('[data-prof-dias-status]');
+        dias.disabled=row.situacao==='pago'||row.profissional_id!==panel.dataset.profissionalId;
+        if(cortesiaVigente&&status)status.textContent='Cortesia válida até '+date(row.fim_em)+'.';
+        if(dias.disabled&&status)status.textContent=row.situacao==='pago'
+          ?'Já existe um período pago. Confira a vigência antes de liberar mais dias.'
+          :'Confirme o cadastro na seção de planos e cortesias.';
+        dias.onclick=()=>benefit(row,cortesiaAberta?'prorrogar':'ativar',panel,true);
+      }
       panel.querySelectorAll('[data-contact]').forEach(b=>b.onclick=()=>contact(row,b.dataset.contact,panel));
     }catch(e){if(panel.isConnected){panel.innerHTML='<p role="alert">'+esc(e.message)+'</p><button class="btn btn--outline" data-detail-retry>Tentar novamente</button>';panel.querySelector('[data-detail-retry]').onclick=()=>loadDetail(panel);}}
   }
@@ -191,7 +208,7 @@
     const m=path().match(/^#\/admin\/profissionais\/([a-f0-9-]{36})(?:$|[/?])/i);if(!m||!admin())return;
     const h=document.getElementById('app-content');if(!h||h.querySelector('[data-profissional-email]'))return;
     const p=global.DB?.profissionalById?.(m[1]);if(!p?.email)return;
-    const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';const gestao=h.querySelector('[data-prof-gestao]');if(gestao)gestao.after(panel);else h.prepend(panel);loadDetail(panel);
+    const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.dataset.profissionalId=p.id;panel.innerHTML='<p>Consultando plano e cortesias…</p>';const gestao=h.querySelector('[data-prof-gestao]');if(gestao)gestao.after(panel);else h.prepend(panel);loadDetail(panel);
   }
 
   // Profissionais > Novos: interessados aguardando Pix ficam separados dos profissionais ativos.
