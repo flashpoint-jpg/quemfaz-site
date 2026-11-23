@@ -8718,6 +8718,8 @@ alt=""></noscript>
       itens:['R$ 14,99 disponíveis após confirmação do Pix','Valor por desbloqueio varia conforme a profissão e o pedido','Sem mensalidade e sem comissão']},
     {id:'basico_v2',nome:'Básico',preco:'R$ 39,90',valor:3990,per:'30 dias',unit:'10 desbloqueios por mês',
       itens:['10 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
+    {id:'livre_24h',nome:'24 Livre',preco:'R$ 59,00',valor:5900,per:'30 dias',unit:'20 desbloqueios de pedidos comuns',
+      itens:['Ative o plantão quando estiver disponível','Chamados urgentes confirmados sem cobrar nem usar a cota']},
     {id:'pro_v2',nome:'Pro',preco:'R$ 79,90',valor:7990,per:'30 dias',unit:'25 desbloqueios por mês',
       itens:['25 desbloqueios durante 30 dias','Sem comissão sobre serviços fechados','Sem taxa adicional de entrada']},
     {id:'completo_v2',nome:'Mensal completo',preco:'R$ 149,90',valor:14990,per:'30 dias',unit:'100 desbloqueios por mês',
@@ -11315,7 +11317,7 @@ alt=""></noscript>
             PU.toast('Seu convite de 24 horas foi ativado!','success');
             global.navigate('/profissional/home',true);return;
           }
-          if (!planoPago || !['avulso','basico_v2','pro_v2','completo_v2'].includes(planoPago.id)) {
+          if (!planoPago || !['avulso','basico_v2','pro_v2','completo_v2','livre_24h'].includes(planoPago.id)) {
             throw new Error('Escolha um plano válido antes de continuar.');
           }
           localStorage.removeItem('qf_livre_teste_cadastro');

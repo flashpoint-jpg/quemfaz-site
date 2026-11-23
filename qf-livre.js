@@ -170,7 +170,7 @@
       if(test&&livre)livre.checked=true;
       const selected=form.querySelector('[name=planoEscolhido]:checked')?.value||'avulso';
       const b=form.querySelector('[data-cad-criar]');
-      if(b){const precos={avulso:'R$ 14,99',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
+      if(b){const precos={avulso:'R$ 14,99',basico_v2:'R$ 39,90',pro_v2:'R$ 79,90',completo_v2:'R$ 149,90',livre_24h:'R$ 59,00'};b.textContent='Continuar para pagamento · '+(precos[selected]||'Selecione um plano');}
       const note=form.querySelector('[data-plano-nota]');
       if(note){
        note.classList.remove('qf-cad-planos__nota--aviso');
@@ -341,14 +341,14 @@
     const req=g.DB&&g.DB.requestById(params.id),pago=content.querySelector('[data-action="desbloquear-chamada"]');
     if(!req||!pago)return;
     if(req.atendimentoTipo==='garante'||req.modalidade==='valor_definido')return;
-    const pacoteAtivo=Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2)$/.test(p.plano)&&Number(p.restantes)>0);if(!s.ativo&&!pacoteAtivo)return;
+    const pacoteAtivo=Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2|livre_24h)$/.test(p.plano)&&Number(p.restantes)>0);if(!s.ativo&&!pacoteAtivo)return;
     box.insertAdjacentHTML('beforeend','<label><input type="checkbox" data-qf-livre-termos><span>Aceito as regras de uso do plano e o limite de participantes por pedido.</span></label><button type="button" class="btn btn--primary" data-qf-livre-desbloquear>Desbloquear com meu plano</button>');
     const b=box.querySelector('[data-qf-livre-desbloquear]');b.onclick=async()=>{
      const msg=box.querySelector('[data-qf-livre-msg]');if(!box.querySelector('[data-qf-livre-termos]').checked){msg.textContent='Aceite as condições para desbloquear com o plano.';return;}
      b.disabled=true;try{const r=pacoteAtivo?await rpc('qf_desbloquear_chamado',{p_chamado_id:params.id,p_exclusivo:false}):await rpc('qf_livre_desbloquear',{p_chamado_id:params.id,p_aceitar:true});if(!r.ok&&r.reason==='comissao_pendente'){msg.textContent='Comissão pendente. Abrindo o Pix automático na carteira.';g.navigate('/profissional/carteira',true);return;}if(!r.ok)throw Error(({credito_necessario:'Assine o Quem Faz Livre ou utilize o Avulso com saldo na carteira.',plano_inativo:'Plano vencido ou inativo. Renove ou utilize créditos.',reservado:'O pedido já atingiu o limite de participantes.',nao_elegivel:'Pedido incompatível com sua profissão, região ou raio.',indisponivel:'Pedido indisponível para este plano.',selfie_obrigatoria:'Conclua seu perfil com uma foto.',perfil_inativo:'Confira a situação do seu perfil e do plano.',prestacao_contas_vencida:'Regularize sua prestação de contas na carteira.',comissao_vencida:'Regularize a comissão confirmada na carteira.',comissao_pendente:'A comissão pendente deve ser paga por Pix na carteira antes de outro desbloqueio.'})[r.reason]||'Não foi possível autorizar o desbloqueio. Atualize o pedido.');if(g.QFCloud.syncForCurrentSession)await g.QFCloud.syncForCurrentSession(true);g.navigate('/profissional/chat/'+params.id,true);}catch(e){msg.textContent=e.message;b.disabled=false;}
     };
    }
-   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(pending&&s.ativo&&['teste','cortesia'].includes(s.tipo_acesso))return false;if(s.ativo||(Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2)$/.test(p.plano)&&Number(p.restantes)>0))){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
+   async function refresh(){const s=await rpc('qf_livre_status');if(!box.isConnected)return false;if(!s||!s.ok)return false;if(pending&&s.ativo&&['teste','cortesia'].includes(s.tipo_acesso))return false;if(s.ativo||(Array.isArray(s.pacotes_ativos)&&s.pacotes_ativos.some(p=>/^(basico_v2|pro_v2|completo_v2|livre_24h)$/.test(p.plano)&&Number(p.restantes)>0))){trackLivrePurchase(s);pending=false;render(s);unlock(s);return true;}if(!pending){render(s);unlock(s);}return false;}
    async function pay(plano='basico_v2'){
     if(busy)return;
     busy=true;pending=true;const button=box.querySelector('[data-qf-livre-pagar]'),msg=box.querySelector('[data-qf-livre-msg]');if(button)button.disabled=true;msg.textContent='Preparando seu Pix…';
@@ -479,6 +479,7 @@
     const cards=[
       {id:'avulso',badge:'SEM MENSALIDADE',nome:'Avulso',preco:'R$ 14,99',periodo:'crédito inicial',detail:'Recarga mínima integral para desbloqueios',info:'R$ 14,99 em créditos na carteira. A tarifa de cada desbloqueio varia conforme a profissão e o pedido.',botao:'Pagar Avulso'},
       {id:'basico_v2',badge:'PLANO BÁSICO',nome:'Básico',preco:'R$ 39,90',periodo:'30 dias',detail:'10 desbloqueios durante 30 dias',info:'Custo médio de R$ 3,99 por desbloqueio ao usar os 10. Sem comissão e sem taxa extra.',botao:'Ativar Básico'},
+      {id:'livre_24h',badge:'PLANTÃO',nome:'24 Livre',preco:'R$ 59,00',periodo:'30 dias',detail:'20 desbloqueios de pedidos comuns',info:'Chamados Urgentes 24h confirmados sem cobrança de desbloqueio e sem usar a cota.',botao:'Ativar 24 Livre'},
       {id:'pro_v2',badge:'PLANO PRO',nome:'Pro',preco:'R$ 79,90',periodo:'30 dias',detail:'25 desbloqueios durante 30 dias',info:'Custo médio de R$ 3,20 por desbloqueio ao usar os 25. Sem comissão e sem taxa extra.',botao:'Ativar Pro'},
       {id:'completo_v2',badge:'MENSAL COMPLETO',nome:'Mensal completo',preco:'R$ 149,90',periodo:'30 dias',detail:'Até 100 desbloqueios durante 30 dias',info:'Custo médio a partir de R$ 1,50 por desbloqueio ao usar até 100. Sem comissão e sem taxa extra.',botao:'Ativar Completo'}
     ];
