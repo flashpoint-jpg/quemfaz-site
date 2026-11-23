@@ -1958,26 +1958,26 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-cad-ferramentas {
   display: grid;
   gap: 12px;
-  border-top: 4px solid var(--orange-500);
+  background: var(--bg-sunken);
 }
 .qf-cad-ferramentas[hidden],
-.qf-cad-ferramentas[hidden] + .qf-cad-ofertas-titulo {
+.qf-cad-ofertas-titulo[hidden] {
   display: none;
 }
 .qf-cad-ferramentas h2,
 .qf-cad-ofertas-titulo {
   margin: 0;
-  font-size: clamp(18px, 4vw, 23px);
   line-height: 1.2;
   color: var(--navy-900);
 }
+.qf-cad-ofertas-titulo { font-size: clamp(20px, 4vw, 24px); }
+.qf-cad-ferramentas h2 { font-size: 18px; }
 .qf-cad-ferramentas p {
   margin: 0;
   color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.45;
 }
-.qf-cad-ferramentas .qf-cad-ferramentas__intro { font-size: 16px; }
 .qf-cad-ferramentas__lista {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
@@ -9508,23 +9508,6 @@ alt=""></noscript>
           // V11.49: etapa 5 — escolha do plano. V11.62: a conta é criada na hora em qualquer plano; cada plano mostra o seu aviso.
           '<div class="qf-step stack" data-step="5" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha como começar</div><div class="text--sm text--secondary">Crie sua conta grátis para conhecer o painel ou escolha uma opção paga para começar com crédito.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
-          '<section class="card qf-cad-ferramentas" data-cadastro-exploracao aria-labelledby="qf-cad-ferramentas-titulo">' +
-            '<h2 id="qf-cad-ferramentas-titulo">Ferramentas grátis para o seu trabalho</h2>' +
-            '<p class="qf-cad-ferramentas__intro">Use o Quem Faz com os clientes que você já atende, mesmo sem receber pedidos pelo app. As ferramentas ficam disponíveis na conta gratuita, sem precisar adicionar saldo ou assinar um plano.</p>' +
-            '<ul class="qf-cad-ferramentas__lista">' + [
-              ['clock', 'Agenda de serviços', 'Registre o cliente, o endereço e o horário. Acompanhe seus serviços e envie lembretes.'],
-              ['clipboard', 'Orçamentos', 'Liste mão de obra, materiais, valores e prazos. Envie pelo WhatsApp ou baixe o PDF.'],
-              ['wallet', 'Cobrança por Pix', 'Crie a cobrança com sua própria chave. O dinheiro vai direto para você. Confira o Pix na sua conta e marque como recebido.'],
-              ['checkCircle', 'Recibos', 'Depois de confirmar o pagamento, gere um recibo para entregar ao cliente.']
-            ].map(function ([icone, titulo, descricao]) {
-              return '<li><span class="qf-cad-ferramentas__icone" aria-hidden="true">' + icon(icone) +
-                '</span><div><strong>' + titulo + '</strong><p>' + descricao + '</p></div></li>';
-            }).join('') + '</ul>' +
-            '<p class="qf-cad-ferramentas__exemplo"><strong>Exemplo de uso</strong><br>Envie o orçamento, agende o serviço, cobre por Pix e gere o recibo após receber.</p>' +
-            '<button class="btn btn--primary" type="submit" data-cad-explorar>Criar conta grátis</button>' +
-            '<p>No app, abra a aba <strong>Ferramentas</strong> para começar.</p>' +
-            '<p class="qf-cad-ferramentas__condicoes">Para desbloquear pedidos do Quem Faz na conta grátis, adicione saldo. Cada desbloqueio custa R$ 2,00 a mais que no Avulso. O valor total aparece antes da confirmação.</p>' +
-          '</section>' +
           '<h2 class="qf-cad-ofertas-titulo">Opções para desbloquear pedidos</h2>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
@@ -9537,6 +9520,23 @@ alt=""></noscript>
           }).join('') + '</div>' +
           '<p class="text--sm text--secondary">Compare: Básico R$ 3,99 por desbloqueio (10); Pro R$ 3,20 (25); Completo R$ 1,50 (100). Avulso: preço variável conforme profissão e pedido. Sem comissão por serviço fechado.</p>' +
           '<div class="qf-cad-planos__nota" data-plano-nota></div>' +
+          '<section class="card qf-cad-ferramentas" data-cadastro-exploracao aria-labelledby="qf-cad-ferramentas-titulo">' +
+            '<h2 id="qf-cad-ferramentas-titulo">Ferramentas grátis para o seu trabalho</h2>' +
+            '<p>Use o Quem Faz com os clientes que você já atende, mesmo sem receber pedidos pelo app. As ferramentas ficam disponíveis na conta gratuita, sem precisar adicionar saldo ou assinar um plano.</p>' +
+            '<ul class="qf-cad-ferramentas__lista">' + [
+              ['clock', 'Agenda de serviços', 'Registre o cliente, o endereço e o horário. Acompanhe seus serviços e envie lembretes.'],
+              ['clipboard', 'Orçamentos', 'Liste mão de obra, materiais, valores e prazos. Envie pelo WhatsApp ou baixe o PDF.'],
+              ['wallet', 'Cobrança por Pix', 'Crie a cobrança com sua própria chave. O dinheiro vai direto para você. Confira o Pix na sua conta e marque como recebido.'],
+              ['checkCircle', 'Recibos', 'Depois de confirmar o pagamento, gere um recibo para entregar ao cliente.']
+            ].map(function ([icone, titulo, descricao]) {
+              return '<li><span class="qf-cad-ferramentas__icone" aria-hidden="true">' + icon(icone) +
+                '</span><div><strong>' + titulo + '</strong><p>' + descricao + '</p></div></li>';
+            }).join('') + '</ul>' +
+            '<p class="qf-cad-ferramentas__exemplo"><strong>Exemplo de uso</strong><br>Envie o orçamento, agende o serviço, cobre por Pix e gere o recibo após receber.</p>' +
+            '<button class="btn btn--outline" type="submit" data-cad-explorar>Criar conta grátis</button>' +
+            '<p>No app, abra a aba <strong>Ferramentas</strong> para começar.</p>' +
+            '<p class="qf-cad-ferramentas__condicoes">Para desbloquear pedidos do Quem Faz na conta grátis, adicione saldo. Cada desbloqueio custa R$ 2,00 a mais que no Avulso. O valor total aparece antes da confirmação.</p>' +
+          '</section>' +
           '' +
           '<div class="qf-step__nav"><button class="btn btn--outline" type="button" data-step-back>Voltar</button><button class="btn btn--primary" type="submit" data-cad-criar>Continuar para pagamento · R$ 14,99</button></div>' +
           '</div>' +
@@ -10836,6 +10836,7 @@ alt=""></noscript>
         if(t)t.textContent='Seu convite individual';
         if(d)d.textContent='24 horas de acesso sem cobrança automática. Exclusivo para o e-mail convidado.';
         tela.querySelector('[data-cadastro-exploracao]').hidden=true;
+        tela.querySelector('.qf-cad-ofertas-titulo').hidden=true;
         const plans=tela.querySelector('.qf-cad-planos');if(plans)plans.style.display='none';
         tela.querySelectorAll('p').forEach(function(p){
           if(p.textContent.indexOf('Avulso: R$ 14,99')!==-1||p.classList.contains('qf-cad-planos__exigencia'))p.hidden=true;
