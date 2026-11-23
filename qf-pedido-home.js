@@ -172,15 +172,88 @@
   ];
   return (g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros').map(c=>{const name=norm(c.nome);let score=name===text||name.length>=4&&text.includes(name)?100:0;for(const [category,words,weight] of rules)if(category.test(name)&&words.test(text))score+=weight;return {category:c,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
  }
+ // Referências por serviço de exemplo. O local é o da fonte, independente do CEP informado.
+ const marketEstimates=Object.freeze({
+  cat_montador:[200,600,"Montagem de guarda-roupa de 6 portas ou mais","https://vistobra.com.br/precos/marcenaria","São Paulo"],
+  cat_diarista:[150,250,"Faxina residencial comum, por diária","https://blog.famyle.com/quanto-custa-uma-diarista/","São Paulo"],
+  cat_faxina_pos_obra:[8,23,"Faxina pós-obra, por m²","https://blog.famyle.com/limpeza-pos-obra/","Brasil"],
+  cat_limpeza_estofados:[150,250,"Limpeza de sofá de 3 lugares","https://loqal.com.br/servicos/higienizacao-de-estofados/limpeza-de-sofa/sp","São Paulo"],
+  cat_caixa_dagua:[150,300,"Limpeza de caixa-d’água residencial de até 1.000 L","https://encanadorsaopaulo.com.br/limpeza-de-caixa-dagua-em-saopaulo/","São Paulo"],
+  cat_passadeira:[12,25,"Passar roupas, por hora","https://www.cronoshare.com.br/servicos/passadeira-a-domicilio/sao-paulo/sao-paulo/b/jardim-recanto-do-sol","Brasil"],
+  cat_cozinheira:[150,300,"Serviço de cozinheira, por diária","https://widget.getninjas.com.br/familia/cozinheira/sp/sao-paulo","São Paulo"],
+  cat_baba:[20,34,"Babá, por hora","https://www.cronoshare.com.br/servicos/babas/sao-paulo/sao-paulo","São Paulo"],
+  cat_cuidador_idosos:[225,null,"Plantão diurno de 12 horas para idoso","https://www.auroraconcierge.com.br/precos","São Paulo e Osasco"],
+  cat_pedreiro:[250,380,"Mão de obra de pedreiro, por diária","https://www.mougeo.com/diaria-de-pedreiro","São Paulo"],
+  cat_eletricista:[100,350,"Instalação de chuveiro elétrico com ponto pronto, mão de obra","https://vistobra.com.br/guias/quanto-cobra-um-eletricista-para-instalar-um-chuveiro","São Paulo"],
+  cat_encanador:[50,300,"Troca de torneira, mão de obra","https://vistobra.com.br/guias/quanto-um-encanador-cobra-para-trocar-uma-torneira","São Paulo"],
+  cat_pintor:[450,1500,"Pintura de um cômodo","https://loqal.com.br/servicos/pintor/sp","São Paulo"],
+  cat_azulejista:[40,90,"Assentamento de piso cerâmico, mão de obra por m²","https://vistobra.com.br/precos/reforma/assentar-piso-ceramico","São Paulo"],
+  cat_gesseiro:[110,150,"Forro plano de gesso sem sanca, por m²","https://gessoclean.com.br/blog/quanto-custa-m2-forro-gesso-sp-2026","São Paulo"],
+  cat_calheiro:[45,70,"Instalação de calha, mão de obra por metro","https://vistobra.com.br/precos/impermeabilizacao/calha","São Paulo"],
+  cat_telhadista:[160,250,"Troca de telhas, por m² de cobertura","https://vistobra.com.br/precos/reforma/trocar-telha","São Paulo"],
+  cat_impermeabilizacao:[95,280,"Impermeabilização de laje, por m²","https://hidequelimpermeabilizacao.hidequelservicos.com/blog/quanto-custa-impermeabilizar-laje/","São Paulo"],
+  cat_vidraceiro:[250,600,"Instalação de box de vidro já comprado","https://vistobra.com.br/precos/vidracaria/box-de-vidro","São Paulo"],
+  cat_marceneiro:[1200,2000,"Móvel planejado em MDF padrão, por metro linear","https://www.estillodesign.com.br/quanto-cobra-um-marceneiro.html","São Paulo"],
+  cat_serralheiro:[185,310,"Serviço de serralheria para grade ou portão, por m²","https://vistobra.com.br/precos/carpintaria/grade-e-portao","São Paulo"],
+  cat_soldador:[60,150,"Serviço de solda, por hora","https://www.freelasemcrise.com.br/quanto-cobrar/solda-manutencao-metalica","Brasil"],
+  cat_toldos_cortinas:[60,150,"Instalação de persiana de rolo simples, por unidade","https://acheioprofissional.com.br/cortinas-e-persianas/sao-paulo","São Paulo"],
+  cat_marido_aluguel:[80,150,"Visita para um reparo simples","https://www.workfly.com.br/blog/quanto-cobra-marido-de-aluguel-2026","Capitais brasileiras"],
+  cat_jardinagem:[80,230,"Corte de gramado pequeno, por visita","https://vistobra.com.br/precos/jardinagem/cortar-grama","São Paulo"],
+  cat_poda_paisagista:[250,500,"Poda de limpeza de árvore pequena","https://www.santoguia.com.br/sao-paulo-sp/podador-de-arvores","São Paulo"],
+  cat_piscineiro:[100,200,"Limpeza avulsa de piscina de até 40 m²","https://www.santoazul.com.br/quanto-custa-limpeza-de-piscina","São Paulo"],
+  cat_dedetizador:[150,250,"Dedetização de apartamento de até 70 m²","https://loqal.com.br/servicos/dedetizador/sp","São Paulo"],
+  cat_desentupidor:[80,350,"Desentupimento de pia","https://vistobra.com.br/guias/quanto-um-encanador-cobra-para-desentupir-uma-pia","São Paulo"],
+  cat_gasista:[192,448,"Instalação de fogão a gás","https://gngas.com.br/servicos/instalacao-de-fogao","São Paulo"],
+  cat_chaveiro:[150,250,"Abertura de fechadura simples em horário comercial","https://chaveiroemsaopaulo.com.br/blog/quanto-custa-chaveiro-em-saopaulo/","São Paulo"],
+  cat_arcondicionado:[350,800,"Instalação de split de 9.000 BTU com tubulação de até 3 m","https://vistobra.com.br/precos/ar-condicionado","São Paulo"],
+  cat_antenista:[150,350,"Instalação de antena digital","https://loqal.com.br/servicos/antenista/sp","São Paulo"],
+  cat_informatica:[390,390,"Formatação de computador em domicílio com backup","https://nsitservices.com.br/formatacao-de-computador/","São Paulo"],
+  cat_celular:[150,1200,"Troca de tela de celular, conforme o modelo","https://loqal.com.br/servicos/celular/sp/sao-paulo","São Paulo"],
+  cat_internet_redes:[550,null,"Instalação de um ponto de rede Cat6 certificado","https://eightti.com.br/corporativo/quanto-custa-implantar-rede-cabeada-wifi-controle-acesso-empresa-sp.html","São Paulo"],
+  cat_tv_som:[250,600,"Reparo de placa ou fonte de TV","https://loqal.com.br/servicos/televisao/sp","São Paulo"],
+  cat_geladeira:[80,150,"Visita para diagnóstico de geladeira","https://geladeirasaopaulo.com.br/blog/conserto-geladeira-quanto-custa-em-sao-paulo/","São Paulo"],
+  cat_maquina_lavar:[130,340,"Conserto de máquina de lavar, conforme o defeito","https://www.consertin.com/conserto-de-maquina-de-lavar/sao-paulo","São Paulo"],
+  cat_fogao_microondas:[150,320,"Conserto de micro-ondas, por visita","https://loqal.com.br/servicos/eletrodomesticos/sp/sao-paulo","São Paulo"],
+  cat_cftv_alarmes:[200,240,"Instalação de câmera de segurança, mão de obra por unidade","https://umclickautomacao.com.br/blog/quanto-custa-instalar-cameras-seguranca-sp.html","São Paulo"],
+  cat_automacao_residencial:[80,350,"Instalação de um interruptor inteligente","https://cliquelocal.com.br/blog/automacao-residencial-quanto-custa","Brasil"],
+  cat_automacao_industrial:[1500,6000,"Programação de CLP, conforme o projeto","https://www.eletricistanodf.com/post/tabela-de-outros-servicos-eletricos","Distrito Federal"],
+  cat_energia_solar:[14000,18000,"Sistema solar residencial de 4 kWp, instalado","https://blog.leadsol.com.br/quanto-custa-energia-solar-residencial-2026/","São Paulo"],
+  cat_frete:[150,350,"Carreto urbano de um item","https://www.santoguia.com.br/sao-paulo-sp/carreto-e-mudanca","São Paulo"],
+  cat_mudancas:[650,900,"Mudança de kitnet","https://helpmudancas.com.br/quanto-custa-mudanca-sao-paulo/","São Paulo"],
+  cat_entregador:[30,null,"Entrega avulsa por motoboy","https://unioexpress.com.br/motoboy.php","São Paulo"],
+  cat_motorista:[60,130,"Motorista particular, por hora, com mínimo de 2 horas","https://www.robozin.pro/precos/motorista-particular/sp","São Paulo"],
+  cat_guincho:[150,300,"Guincho para carro de passeio, percurso de até 10 km","https://naminharua.com.br/guincho/sp/sao-paulo/","São Paulo"],
+  cat_borracheiro:[70,120,"Reparo de furo em pneu","https://loqal.com.br/servicos/borracharia/sp","São Paulo"],
+  cat_lava_jato:[48,84,"Lavagem completa de carro hatch","https://www.lavify.com.br/guias/tabela-precos-lavagem-sao-paulo","São Paulo"],
+  cat_funileiro:[400,900,"Pintura de uma peça do carro","https://www.santoguia.com.br/sao-paulo-sp/funilaria","São Paulo"],
+  cat_mecanico:[180,225,"Serviço de mecânica geral, por atendimento","https://loqal.com.br/precos/mecanica-geral/sp","São Paulo"],
+  cat_autoeletrico:[80,180,"Diagnóstico automotivo com scanner","https://www.santoguia.com.br/sao-paulo-sp/auto-eletrica","São Paulo"],
+  cat_bateria_auto:[599,null,"Bateria nova de 45 a 60 Ah, com instalação","https://resgatou.com.br/blog/bateria-de-carro-quanto-custa","São Paulo"],
+  cat_manicure:[25,40,"Manicure básica, mãos","https://agendexpress.com.br/index.php/precos/manicure/sao-paulo","São Paulo"],
+  cat_cabeleireiro:[62.5,100,"Corte de cabelo","https://loqal.com.br/servicos/cabeleireiros/corte/sp","São Paulo"],
+  cat_maquiador:[72,400,"Maquiagem social","https://www.domicilioestilos.com.br/tratamentos/maquiagem-social/sao-paulo-sp","São Paulo"],
+  cat_costureira:[105,160,"Serviço de costureira, por atendimento","https://www.cronoshare.com.br/servicos/costureira/sao-paulo/sao-paulo/b/prese-za-kostice/","São Paulo"],
+  cat_professor:[50,100,"Aula particular de reforço escolar, por hora","https://acheioprofissional.com.br/professor-particular/sao-paulo","São Paulo"],
+  cat_personal:[61,103,"Sessão de personal trainer, por hora","https://www.cronoshare.com.br/servicos/personal-trainer/sao-paulo/sao-paulo","São Paulo"],
+  cat_adestrador:[150,350,"Sessão de adestramento canino","https://loqal.com.br/servicos/adestrador-de-caes/sp","São Paulo"],
+  cat_pet_sitter:[40,60,"Visita domiciliar para cuidar do pet","https://petme.social/br/cuidadores-de-pets/sao-paulo","São Paulo"],
+  cat_banho_tosa:[40,70,"Banho de cachorro de pequeno porte","https://naminharua.com.br/banho-e-tosa/sp/sao-paulo/","São Paulo"],
+  cat_fotografo:[540,1620,"Cobertura fotográfica de aniversário de 3 horas","https://www.workfly.com.br/servicos/fotografo/sao-paulo","São Paulo"],
+  cat_dj_som:[800,1500,"DJ para festa pequena de até 4 horas","https://www.santoguia.com.br/sao-paulo-sp/dj-para-festas","São Paulo"],
+  cat_garcom_buffet:[160,330,"Serviço de um garçom para evento de até 6 horas","https://www.robozin.pro/precos/garcom/sp","São Paulo"]
+ });
+ const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2,trailingZeroDisplay:'stripIfInteger'});
+ const priceRange=(min,max)=>max==null?'A partir de '+money.format(min):max===min?money.format(min):money.format(min)+' a '+money.format(max);
  function attachEstimate(form,validate,continueOrder){
   form.insertAdjacentHTML('beforeend',`<button class="btn btn--outline qf-estimate-entry" type="button" aria-expanded="false" aria-controls="qf-home-estimate">Quanto pode custar meu serviço?</button>
     <section class="qf-estimate" id="qf-home-estimate" aria-label="Pré-orçamento grátis" hidden>
-      <p>Use o serviço e a descrição acima para consultar valores de serviços já contratados na sua cidade.</p>
+      <p>Escolha o serviço e informe o CEP para ver uma referência de preço.</p>
       <label>CEP do serviço <input class="input" data-estimate-cep autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>
       <label>Para quando precisa? <select class="input" data-estimate-urgency><option value="">Ainda estou pesquisando</option><option value="hoje">Hoje</option><option value="urgente">Preciso com urgência</option><option value="normal">Quero agendar</option></select></label>
       <button class="btn btn--primary" type="button" data-estimate-calculate>Ver pré-orçamento</button>
       <div class="qf-estimate-result" data-estimate-result hidden>
         <div role="status" aria-live="polite"><strong data-estimate-title></strong><b data-estimate-amount hidden></b><p data-estimate-note></p></div>
+        <a data-estimate-source target="_blank" rel="noopener noreferrer" hidden>Ver fonte do preço</a>
         <button class="btn btn--primary" type="button" data-estimate-request hidden>Solicitar orçamento grátis</button>
       </div>
     </section>`);
@@ -189,11 +262,15 @@
   const calculate=panel.querySelector('[data-estimate-calculate]'), request=panel.querySelector('[data-estimate-request]');
   const result=panel.querySelector('[data-estimate-result]'), title=panel.querySelector('[data-estimate-title]');
   const amount=panel.querySelector('[data-estimate-amount]'), note=panel.querySelector('[data-estimate-note]');
+  const source=panel.querySelector('[data-estimate-source]');
   let revision=0, draft;
   entry.onclick=()=>{
    panel.hidden=!panel.hidden;
    entry.setAttribute('aria-expanded',String(!panel.hidden));
-   if(!panel.hidden)cep.focus();
+   if(!panel.hidden){
+    const search=form.querySelector('#home-service-search');
+    (search.value?cep:search).focus({preventScroll:true});
+   }
   };
   function invalidate(){
    revision++;
@@ -213,6 +290,7 @@
    result.hidden=false;
    amount.hidden=true;
    request.hidden=true;
+   source.hidden=true;
    note.textContent='';
    if(digits.length!==8){
     title.textContent='Informe um CEP com 8 números.';
@@ -239,12 +317,20 @@
    }
    draft={...selection,location,urgency:urgency.value};
    const min=Number(data?.minimo_centavos),max=Number(data?.maximo_centavos);
+   const reference=marketEstimates[selection.category.id];
    if(min>0&&max>=min&&Number.isFinite(max)){
-    const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
     title.textContent='Valor estimado em '+location.cidade+' / '+location.uf;
-    amount.textContent=money.format(min/100)+' a '+money.format(max/100);
+    amount.textContent=priceRange(min/100,max/100);
     amount.hidden=false;
     note.textContent='Faixa de serviços da mesma categoria contratados na cidade. O preço do seu pedido depende do orçamento do profissional.';
+   }else if(reference){
+    const [low,high,example,url,region]=reference;
+    title.textContent='Referência de mercado · '+region;
+    amount.textContent=priceRange(low,high);
+    amount.hidden=false;
+    note.textContent=example+'. O valor do seu pedido pode variar conforme a região, os detalhes e a proposta do profissional.';
+    source.href=url;
+    source.hidden=false;
    }else{
     title.textContent=unavailable?'Consulta de preços indisponível agora.':'Ainda não temos uma faixa para '+location.cidade+' / '+location.uf+'.';
     note.textContent='Você pode solicitar orçamentos com os dados já preenchidos.';
@@ -498,6 +584,22 @@
  }
  function placeServices(){
   const anchor=host();if(!anchor)return;
+  const publish=g.document.querySelector('.qf-approved-picker .qf-approved-cta');
+  if(publish&&!publish.parentElement.querySelector('.qf-estimate-home')){
+   const button=g.document.createElement('button');
+   button.type='button';
+   button.className='qf-estimate-home';
+   button.textContent='Simular preço do serviço';
+   button.addEventListener('click',()=>{
+    selectTab('request');
+    if(state.mode!=='intro'||!work()?.querySelector('.qf-estimate-entry'))intro();
+    anchor.hidden=false;
+    const toggle=work()?.querySelector('.qf-estimate-entry');
+    if(toggle?.getAttribute('aria-expanded')==='false')toggle.click();
+    reveal();
+   });
+   publish.after(button);
+  }
   const copy=g.document.querySelector('.qf-landing-copy');
   if(copy&&!copy.querySelector('.qf-home-visual')){
    const visual=g.document.createElement('div');visual.className='qf-home-visual';
@@ -547,14 +649,14 @@
    css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
    css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   css.textContent += `
-   #qf-pedido-facil .qf-estimate-entry{animation:qf-estimate-notice .85s ease-out 1}
+   .qf-approved-picker .qf-estimate-home{display:block;width:100%;min-height:46px;margin-top:10px;padding:10px 14px;border:1px solid #a9c3e1;border-radius:12px;background:#f5f9ff;color:#124a88;font:inherit;font-weight:750;cursor:pointer;animation:qf-estimate-notice .85s ease-out 1}
    #qf-pedido-facil .qf-estimate{display:grid;gap:10px;text-align:left;padding:13px;border:1px solid #cddff1;border-radius:12px;background:#f5f9ff;color:#153753}
    #qf-pedido-facil .qf-estimate[hidden],#qf-pedido-facil .qf-estimate [hidden]{display:none!important}
    #qf-pedido-facil .qf-estimate p{margin:0}
    #qf-pedido-facil .qf-estimate-result{display:grid;gap:9px}
    #qf-pedido-facil .qf-estimate-result b{display:block;font-size:clamp(22px,5vw,31px);color:#124a88}
    @keyframes qf-estimate-notice{0%,100%{box-shadow:0 0 0 0 #f58a273b}45%{box-shadow:0 0 0 5px #f58a273b}}
-   @media(prefers-reduced-motion:reduce){#qf-pedido-facil .qf-estimate-entry{animation:none}}
+   @media(prefers-reduced-motion:reduce){.qf-approved-picker .qf-estimate-home{animation:none}}
   `;
   originalNavigate=g.navigate;
   g.navigate=function(path,replace){if(inlinePath(path)){openPath(path);return;}return originalNavigate.apply(this,arguments);};
