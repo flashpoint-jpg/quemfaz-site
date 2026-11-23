@@ -77,9 +77,15 @@ module.exports = function prepareAdminProfissionais(source) {
       '<button type="button" class="btn btn--outline btn--sm" data-crud-edit="profissional:' + PU.escapeHtml(p.id) + '">Editar dados</button>' +
       (plano && plano.vigente && plano.p.registro_id
         ? '<button type="button" class="btn btn--primary btn--sm" data-prof-estender>Estender plano</button>' : '') +
+      '<button type="button" class="btn btn--outline btn--sm" data-prof-gerenciar-plano>Gerenciar plano</button>' +
       '</div></section>';
   }
   function bindProfissionalDetalhe(content, params) {
+    const gerenciarPlano = content.querySelector('[data-prof-gerenciar-plano]');
+    if (gerenciarPlano) gerenciarPlano.addEventListener('click', function () {
+      admPlanoEscolha = { pro: params.id, plano: '' };
+      global.navigate('/admin/planos');
+    });
     const estender = content.querySelector('[data-prof-estender]');
     if (estender) estender.addEventListener('click', function () {
       const profissional = DB.profissionalById(params.id);
