@@ -20,6 +20,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
    create function private.qf_push_interno(text,uuid) returns void language plpgsql as $$begin null; end;$$;
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261123214500_chamado_urgente_24h.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261123235000_plantao_disponibilidade_na_busca.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
@@ -28,16 +29,24 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   const list = async()=> (await db.query('select qf_plantao_listar() as items')).rows[0].items;
   await as(pro);
   await assert.rejects(db.query('select qf_plantao_disponibilidade(true)'),/Ative o 24 Livre/);
+  const create = desc=>db.query("select qf_plantao_criar($1,'cat_eletricista',$2,'09010000','Santo André','SP','Centro','Rua Exemplo, 120') as id",[client,desc]);
+  const empty = (await create('Sem energia apenas na residência.')).rows[0].id;
+  await as(client);
+  assert.equal((await list()).find(row=>row.id===empty).estado,'sem_profissional');
+  await assert.rejects(db.query('select qf_plantao_pix_reservar($1,$2,true)',[client,empty]),/Prazo da oferta/);
+  await as(pro);
   await db.query("insert into qf_recargas values($1,$2,'aprovado')",[id(4),pro]);
   await db.query("insert into qf_planos_profissional values($1,$2,'livre_24h',now()+interval '30 days',20)",[id(4),pro]);
   await db.query('select qf_plantao_disponibilidade(true)');
-  const create = desc=>db.query("select qf_plantao_criar($1,'cat_eletricista',$2,'09010000','Santo André','SP','Centro','Rua Exemplo, 120') as id",[client,desc]);
   await assert.rejects(create('WhatsApp 11 9 1234-5678'),/Remova o telefone/);
   const call=(await create('Sem energia apenas na residência.')).rows[0].id;
+  await as(client);
+  assert.equal((await list()).find(row=>row.id===call).profissionais_disponiveis,1);
   await as(other);
   assert.deepEqual(await list(),[]);
   await assert.rejects(db.query('select qf_plantao_aceitar($1,30)',[call]),/indisponível/);
   await as(pro);
+  assert.equal((await list())[0].profissionais_disponiveis,null);
   assert.equal((await list())[0].telefone,null);
   assert.equal((await list())[0].endereco,null);
   await db.query('select qf_plantao_aceitar($1,30)',[call]);
