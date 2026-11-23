@@ -308,7 +308,7 @@ async function sendToUsers(userIds: string[], payload: any, perUser?: Record<str
     if (!inside) outside.add(String(professional.user_id));
   }
   // Conversas existentes continuam avisando mesmo fora do horario de novos chamados.
-  const ids = payload?.tipo === "chat" ? uniqueIds : uniqueIds.filter((uid) => !outside.has(uid));
+  const ids = ["chat", "plantao_24h"].includes(payload?.tipo) ? uniqueIds : uniqueIds.filter((uid) => !outside.has(uid));
   if (audit && payload?.tipo !== "chat") for (const uid of outside) await audit({ user_id: uid, status: "fora_horario", error: null });
   if (!ids.length) return { sent: 0, total: 0, skipped_outside_hours: outside.size };
 
@@ -640,6 +640,15 @@ Deno.serve(async (req) => {
     // Reaproveita todos os controles de categoria, distancia, vagas, online e
     // deduplicacao do mesmo push usado por chamados novos.
 
+    if (event === "plantao_24h") {
+      const { data: recipients, error } = await admin.rpc("qf_plantao_push_destinatarios", {p_id:callId});
+      if (error) return json({error:"plantao_recipient_lookup_failed"},500);
+      return json({ok:true,...await sendToUsers(recipients || [], {
+        title:"Chamado Urgente 24h",body:"Abra seu plantão e informe sua previsão de chegada.",
+        url:"/?plantao=1#/profissional/home",tag:"plantao-"+callId,tipo:"plantao_24h",strong:true,
+      })});
+    }
+
     if (event === "comissao13_queue") {
       const { data: item, error: reserveError } = await admin.rpc("qf_comissao13_notificacao_reservar", { p_id: callId });
       if (reserveError) return json({ error: "queue_reservation_failed" }, 500);
@@ -861,6 +870,9 @@ Deno.serve(async (req) => {
 
     if (event !== "new_call") return json({ error: "invalid_internal_event" }, 400);
 
+    // O aviso administrativo independe do alcance e do envio aos profissionais.
+    EdgeRuntime.waitUntil(notifyAdminsOnNewCall(callId));
+
     // Primeiro tenta SOMENTE a cidade escolhida pelo cliente.
     let delivered = await sendNewCallStage(callId, 0);
 
@@ -875,7 +887,6 @@ Deno.serve(async (req) => {
     }
 
     EdgeRuntime.waitUntil(progressiveNewCallPush(callId));
-    EdgeRuntime.waitUntil(notifyAdminsOnNewCall(callId));
     return json({ ok: true, internal: true, ...delivered });
   }
 
@@ -1016,6 +1027,8 @@ Deno.serve(async (req) => {
 
   if (event === "new_call") {
     if (call.cliente_id !== user.id) return json({ error: "forbidden" }, 403);
+    // Compatibilidade com navegador: o mesmo alerta idempotente do servidor.
+    EdgeRuntime.waitUntil(notifyAdminsOnNewCall(callId));
     if (call.data_preferida) {
       const scheduledAt = Date.parse(String(call.data_preferida));
       if (Number.isFinite(scheduledAt) && scheduledAt > Date.now() + 24 * 60 * 60 * 1000) {

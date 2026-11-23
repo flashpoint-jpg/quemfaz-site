@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
     const documento = String(body.documento || "").trim().slice(0, 32);
     if (metodo !== "pix") return json({ ok: false, error: "metodo_nao_permitido" }, 400);
     // Somente duas modalidades de nova adesão; recusar ANTES de gerar qualquer cobrança.
-    if (!["avulso","basico_v2","pro_v2","completo_v2"].includes(plano)) return json({ ok: false, error: "plano_invalido" }, 400);
+    if (!["avulso","basico_v2","pro_v2","completo_v2","livre_24h"].includes(plano)) return json({ ok: false, error: "plano_invalido" }, 400);
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 200) return json({ ok: false, error: "email_invalido" }, 400);
     // Implantação gradual: o site antigo não enviava documento ao banco.
@@ -246,7 +246,7 @@ Deno.serve(async (req) => {
 
     const cat = await admin.from("qf_planos_catalogo").select("plano,nome,preco_centavos,ativo").eq("plano", plano).maybeSingle();
     if (cat.error || !cat.data || !cat.data.ativo) return json({ ok: false, error: "plano_invalido" }, 400);
-    const precos: Record<string,number> = {avulso:1499,basico_v2:3990,pro_v2:7990,completo_v2:14990};
+    const precos: Record<string,number> = {avulso:1499,basico_v2:3990,pro_v2:7990,completo_v2:14990,livre_24h:5900};
     const valorEsperado = precos[plano];
     if (Number(cat.data.preco_centavos) !== valorEsperado) {
       console.error("QF_PRECADASTRO_PRECO_INCONSISTENTE", plano);
