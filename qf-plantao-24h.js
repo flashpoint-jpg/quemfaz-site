@@ -95,6 +95,7 @@
   function renderProfessional(shift) {
    if(!shift.plano_ativo){
     show('<h3>24 Livre</h3>'+money('R$ 59,00')+'<p>30 dias · 20 desbloqueios de pedidos comuns. Chamados urgentes confirmados liberam o contato sem usar a cota.</p>'+
+      (app.QFLivre?.planHelpButton('livre_24h')||'')+
       (plan?.code?payUI(plan.code)+button('Verificar ativação','refresh'):button('Ativar 24 Livre via Pix','buy',true)));
     return;
    }
