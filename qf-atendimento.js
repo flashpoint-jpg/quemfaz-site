@@ -255,6 +255,18 @@
       if(!a.escopo&&scope)a.escopo=scope.choices.find(([id])=>id==='avaliar')?.[0]||scope.choices[0]?.[0];
     }
     if(params.problem&&!fromGoogle)setProblem(params.problem);
+    if(params.estimate&&!fromGoogle){
+      const {location,urgency}=params.estimate;
+      if(location){
+        a.cep=location.cep;
+        a.__cepValidado=location.cep;
+        a.cidade=location.cidade;
+        a.uf=location.uf;
+        a.__bairroCep=location.bairro;
+        a.bairro=location.bairro||'';
+      }
+      if(urgency)a.urgencia=urgency;
+    }
     if(user&&!fromGoogle){a.nome=user.nome||'';a.contato=user.telefone||'';} // OAuth: nunca sobrescrever o telefone salvo no pedido.
     let step=reuse?oldDraft.step:0,questionIndex=reuse?oldDraft.questionIndex:0,busy=false,redirecting=false,currentUser=user;
     if(step>1&&!a.__cepValidado){step=1;questionIndex=0;} // Rascunho anterior sem CEP deve validar local antes de publicar.
