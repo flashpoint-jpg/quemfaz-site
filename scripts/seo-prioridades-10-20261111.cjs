@@ -6,8 +6,8 @@ const base='https://quemfazservico.com.br/servicos/';
 const pages=[
   {
     "slug": "eletricista/santo-andre",
-    "title": "Eletricista em Santo André | Peça orçamento grátis no Quem Faz",
-    "description": "Precisa instalar um chuveiro, trocar tomadas ou avaliar um disjuntor em Santo André? Publique seu pedido grátis e receba propostas conforme a disponibilidade.",
+    "title": "Eletricista em Santo André | Pedido grátis | Quem Faz",
+    "description": "Precisa instalar chuveiro, trocar tomadas ou avaliar um disjuntor em Santo André? Publique seu pedido grátis e compare propostas de eletricistas da região.",
     "h1": "Como explicar uma falha elétrica?",
     "p1": "Informe se a falha afeta um cômodo ou todo o imóvel, qual aparelho estava em uso e quando começou. Não toque em fiação exposta nem tente reparar circuitos energizados.",
     "h2": "O que considerar no orçamento elétrico?",
@@ -24,8 +24,8 @@ const pages=[
   },
   {
     "slug": "encanador/sao-bernardo-do-campo",
-    "title": "Encanador em São Bernardo para vazamentos | Quem Faz",
-    "description": "Precisa de encanador em São Bernardo do Campo? Descreva vazamentos, registros ou tubulações e peça orçamento grátis.",
+    "title": "Encanador em São Bernardo do Campo | Pedido grátis | Quem Faz",
+    "description": "Vazamento, descarga com defeito ou pia entupida em São Bernardo do Campo? Publique seu pedido grátis e consulte encanadores da região.",
     "h1": "O que informar sobre um vazamento?",
     "p1": "Explique se aparece em parede, piso, torneira ou descarga, quando surgiu e se o registro pode ser fechado sem risco.",
     "h2": "Como comparar reparos hidráulicos?",
@@ -33,8 +33,8 @@ const pages=[
   },
   {
     "slug": "diarista/santo-andre",
-    "title": "Diarista em Santo André para faxina | Quem Faz",
-    "description": "Procura diarista em Santo André? Informe cômodos, tipo de faxina, bairro e dia desejado para solicitar propostas.",
+    "title": "Diarista em Santo André para faxina | Pedido grátis | Quem Faz",
+    "description": "Precisa de faxina em Santo André? Informe o bairro, a data e as tarefas e publique seu pedido grátis para consultar diaristas da região.",
     "h1": "Que tipo de faxina você precisa?",
     "p1": "Diferencie limpeza de rotina, faxina detalhada e limpeza antes de mudança. Informe quantidade de banheiros e cômodos, escadas e animais no imóvel.",
     "h2": "O que combinar antes da diária?",

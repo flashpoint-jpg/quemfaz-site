@@ -26,6 +26,11 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=addProfessionalTools(fs.readFileSync(path.join(root,'index.html'),'utf8'), 'index.html');
+// Destaca serviços locais no HTML inicial e na home renderizada pelo aplicativo.
+html = html
+  .replace("['Santo André', 'santo-andre-cidade'", "['Eletricista em Santo André', 'santo-andre-cidade'")
+  .replace("['ABC Paulista', 'abc-cidade'", "['Encanador em São Bernardo', 'abc-cidade'")
+  .replace("Encontre profissionais da região para serviços residenciais e comerciais.</p>", "Precisa de uma faxina no ABC? Veja como pedir orçamento de <a href=\"/servicos/diarista/santo-andre/\">diarista em Santo André</a>.</p>");
 // Atualiza os arquivos de cobertura também nos navegadores que já visitaram a home.
 html=html.replaceAll('qf-home-refresh.css?v=12.3.2','qf-home-refresh.css?v=20261105-alinhamento2').replaceAll('qf-mapa-regioes.js?v=12.3.2','qf-mapa-regioes.js?v=20261105-alinhamento2');
 // Textos públicos alinhados ao fluxo atual; remove benefícios descontinuados.
