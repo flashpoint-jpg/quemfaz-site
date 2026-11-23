@@ -71,6 +71,10 @@
 .qf-approved-chips button:nth-child(4) svg, .qf-approved-chips button:nth-child(6) svg { color: #075ab9; }
 .qf-approved-chip-arrow { display: none; }
 .qf-approved-picker .qf-approved-cta { width: min(100%, 660px); margin-inline: auto; }
+#cadastro-prof-form .qf-cad-plantao { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid #b8d2ee; border-radius: 12px; background: #f4f8fe; color: #12375d; cursor: pointer; }
+#cadastro-prof-form .qf-cad-plantao input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: #1459ad; }
+#cadastro-prof-form .qf-cad-plantao strong, #cadastro-prof-form .qf-cad-plantao small { display: block; }
+#cadastro-prof-form .qf-cad-plantao small { margin-top: 4px; font-size: 13px; line-height: 1.4; }
 .qf-approved-trust { list-style: none; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 32px; padding: 0; margin: 17px 0 25px; }
 .qf-approved-trust li { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
 .qf-approved-work { scroll-margin-top: 110px; }

@@ -7068,6 +7068,7 @@ alt=""></noscript>
       qf_categorias: data.categorias || [],
       qf_categorias_personalizadas: data.categoriasPersonalizadas || [],
       qf_raio_km: data.raioKm || 10,
+      ...(role === 'profissional' && data.plantao24h === true ? { qf_inscricao_plantao_24h: true } : {}),
       qf_quick_client: quickClient
     };
 
@@ -9508,6 +9509,7 @@ alt=""></noscript>
           // V11.49: etapa 5 — escolha do plano. V11.62: a conta é criada na hora em qualquer plano; cada plano mostra o seu aviso.
           '<div class="qf-step stack" data-step="5" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha como começar</div><div class="text--sm text--secondary">Crie sua conta grátis para conhecer o painel ou escolha uma opção paga para começar com crédito.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
+          '<label class="card qf-cad-plantao"><input type="checkbox" name="plantao24h" value="sim" aria-describedby="qf-cad-plantao-nota"><span><strong>Plano Plantão 24h</strong><small id="qf-cad-plantao-nota">Quero me cadastrar para atender chamados urgentes quando estiver disponível. Sua escolha fica registrada ao concluir o cadastro.</small></span></label>' +
           '<h2 class="qf-cad-ofertas-titulo">Opções para desbloquear pedidos</h2>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
@@ -11274,6 +11276,7 @@ alt=""></noscript>
           categorias: selected, categoriasPersonalizadas: customCategories, cidade: enderecoProf.cidade, uf: enderecoProf.uf, cep: enderecoProf.cep, endereco: enderecoProf,
           latitude: enderecoProf.latitude, longitude: enderecoProf.longitude, raioKm: Number(fd.get('raioKm')),
           taxaVisitaPadrao: PU.parseCurrencyInput(fd.get('taxaVisita')),
+          plantao24h: fd.get('plantao24h') === 'sim',
           selfieData: selfieData
         };
         const cadastroExploracao = !conviteToken && !!e.submitter?.hasAttribute('data-cad-explorar');
