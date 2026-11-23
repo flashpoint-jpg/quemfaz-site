@@ -607,15 +607,18 @@
  }
  function placeServices(){
   const anchor=host();if(!anchor)return;
-  const publish=g.document.querySelector('.qf-approved-picker .qf-approved-cta');
-  if(publish&&!publish.parentElement.querySelector('.qf-estimate-home')){
+  const publish=g.document.querySelector('.qf-approved-picker [data-action="landing-all-services"]');
+  if(publish&&!publish.closest('.qf-approved-picker-actions')){
+   const actions=g.document.createElement('div');
+   actions.className='qf-approved-picker-actions';
    const button=g.document.createElement('button');
    button.type='button';
-   button.className='qf-estimate-home';
+   button.className='qf-approved-cta qf-estimate-home';
    button.textContent='Simular preço';
    button.setAttribute('aria-haspopup','dialog');
    button.addEventListener('click',openEstimate);
-   publish.after(button);
+   publish.before(actions);
+   actions.append(publish,button);
   }
   const copy=g.document.querySelector('.qf-landing-copy');
   if(copy&&!copy.querySelector('.qf-home-visual')){
@@ -666,7 +669,11 @@
    css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
    css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   css.textContent += `
-   .qf-approved-picker .qf-estimate-home{display:block;width:max-content;max-width:100%;min-height:44px;margin:6px auto 0;padding:6px 16px;border:1px solid #d0dfee;border-radius:10px;background:#fff;color:#124a88;font:inherit;font-size:14px;font-weight:750;cursor:pointer;animation:qf-estimate-notice .85s ease-out 1}
+   .qf-approved-picker-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:min(100%,380px);margin-inline:auto}
+   .qf-approved-picker .qf-approved-picker-actions .qf-approved-cta{box-sizing:border-box;width:100%;min-height:44px;margin:0;padding:8px 6px;border-radius:10px;background:linear-gradient(#c64b00,#b84300);font-size:clamp(13px,3.5vw,15px);line-height:1.2;white-space:normal;cursor:pointer}
+   .qf-approved-picker .qf-approved-picker-actions .qf-approved-cta:hover{background:#a63e00}
+   .qf-approved-picker-actions .qf-approved-cta svg{display:none}
+   .qf-approved-picker-actions .qf-estimate-home{animation:qf-estimate-notice .85s ease-out 1}
    dialog.qf-estimate{box-sizing:border-box;width:min(430px,calc(100% - 24px));max-height:min(640px,calc(100dvh - 24px));margin:auto;padding:16px 18px 20px;overflow:auto;overscroll-behavior:contain;border:1px solid #cddff1;border-radius:16px;background:#fff;color:#153753;box-shadow:0 14px 50px #0d233b45}
    dialog.qf-estimate::backdrop{background:#0b203c8c}
    .qf-estimate-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
