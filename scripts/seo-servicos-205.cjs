@@ -244,9 +244,13 @@ function preserve(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){
 }}}
 preserve(path.join(out,'servicos'));
 // Os guias de cidade reúnem o catálogo real de cobertura, sem clonar páginas por profissão.
+// Descoberta local: dar links diretos a páginas de alta intenção que o Google ainda rastreia pouco.
+// Só entra no destaque se a especialidade constar da cobertura real da cidade.
 const cityHighlights = {
-  'santo-andre': ['cat_diarista', 'cat_eletricista'],
-  'sao-bernardo-do-campo': ['cat_encanador'],
+  'santo-andre': ['cat_diarista', 'cat_eletricista', 'cat_pintor', 'cat_desentupidor', 'cat_marido_aluguel', 'cat_vidraceiro'],
+  'sao-bernardo-do-campo': ['cat_encanador', 'cat_montador', 'cat_chaveiro'],
+  'guarulhos': ['cat_eletricista', 'cat_montador', 'cat_desentupidor', 'cat_diarista', 'cat_arcondicionado'],
+  'diadema': ['cat_eletricista', 'cat_chaveiro', 'cat_geladeira', 'cat_diarista'],
 };
 for(const c of covered){const catalog=services.filter(s=>c.ids.has(s.id));
  const highlights = (cityHighlights[c.slug] || []).map(id => catalog.find(service => service.id === id)).filter(Boolean);
@@ -254,9 +258,25 @@ for(const c of covered){const catalog=services.filter(s=>c.ids.has(s.id));
  const sofaLink=sofaCities.has(c.slug)?'<p><a href="'+urlFor(sofaService,c)+'">Limpeza de sofá em '+esc(c.nome)+'</a></p>':'';
  write('/servicos/cidades/'+c.slug+'/', 'Serviços em '+c.nome+' / '+c.uf+' | Quem Faz', 'Consulte as '+catalog.length+' categorias com profissionais cadastrados para atender '+c.nome+' / '+c.uf+' e escolha o serviço para publicar seu pedido grátis.', '<h2>Serviços com cobertura cadastrada em '+esc(c.nome)+'</h2><p>Este catálogo reúne as especialidades associadas a '+esc(c.nome)+' / '+c.uf+' pelos profissionais no Quem Faz. Escolha a profissão para descrever o serviço e confirme seu endereço pelo CEP. O raio e a agenda do profissional determinam o atendimento.</p>'+highlightLinks+sofaLink+links(catalog.map(s=>[urlFor(s,c)+'#pedido',s.nome]))+'<h2>Prepare as informações do seu pedido</h2><p>Informe o CEP e o bairro do local em '+esc(c.nome)+', explique o problema e escolha quando precisa do atendimento. Evite colocar endereço completo e telefone na descrição pública. Você informa o contato no formulário, na etapa própria.</p><h2>O que combinar antes de contratar</h2><p>Confirme se o profissional atende seu bairro, o valor do trabalho, quem fornece materiais e o prazo. A publicação é gratuita e não obriga a contratar. Você acompanha o pedido no Quem Faz.</p><h2>Catálogo por profissão</h2>'+links(catalog.map(s=>[urlFor(s),s.nome])));
 }
+// Links editoriais HTML diretos nas páginas de catálogo. Valida o catálogo antes de divulgar URLs.
+const highlightedLocalRoutes=[
+ ['santo-andre','cat_pintor'],
+ ['santo-andre','cat_desentupidor'],
+ ['santo-andre','cat_marido_aluguel'],
+ ['santo-andre','cat_vidraceiro'],
+ ['guarulhos','cat_montador'],
+ ['guarulhos','cat_desentupidor'],
+ ['guarulhos','cat_arcondicionado'],
+ ['diadema','cat_chaveiro'],
+ ['diadema','cat_geladeira']
+].flatMap(([citySlug,id])=>{
+ const city=covered.find(c=>c.slug===citySlug&&c.ids.has(id));
+ const service=services.find(s=>s.id===id);
+ return city&&service?[[urlFor(service,city),service.nome+' em '+city.nome]]:[];
+});
 const priorityIds=new Set(['cat_eletricista','cat_encanador','cat_diarista','cat_pintor','cat_montador','cat_limpeza_estofados']);
 const priorityLinks=services.filter(s=>priorityIds.has(s.id)&&covered.some(c=>c.ids.has(s.id))).map(s=>[urlFor(s),s.nome]);
-write('/servicos/','Encontre serviços na sua região | Quem Faz','Escolha o serviço e publique seu pedido grátis. Consulte a cobertura cadastrada por profissão e região.', '<h2>Encontre um serviço</h2><p>Escolha uma profissão e consulte as cidades com profissionais cadastrados. A disponibilidade depende do CEP e do raio de atendimento.</p>'+links(priorityLinks)+'<h2>Qual serviço você precisa?</h2>'+links(services.filter(s=>covered.some(c=>c.ids.has(s.id))).map(s=>[urlFor(s),s.nome])) +'<h2>Regiões prioritárias</h2>'+links(covered.filter(c=>isPriorityRoute('/servicos/cidades/'+c.slug+'/')).map(c=>['/servicos/cidades/'+c.slug+'/',c.nome+' / '+c.uf])));
+write('/servicos/','Encontre serviços na sua região | Quem Faz','Escolha o serviço e publique seu pedido grátis. Consulte a cobertura cadastrada por profissão e região.', '<h2>Encontre um serviço</h2><p>Escolha uma profissão e consulte as cidades com profissionais cadastrados. A disponibilidade depende do CEP e do raio de atendimento.</p>'+links(priorityLinks)+'<h2>Encontre profissionais por cidade</h2>'+links(highlightedLocalRoutes)+'<h2>Qual serviço você precisa?</h2>'+links(services.filter(s=>covered.some(c=>c.ids.has(s.id))).map(s=>[urlFor(s),s.nome])) +'<h2>Regiões prioritárias</h2>'+links(covered.filter(c=>isPriorityRoute('/servicos/cidades/'+c.slug+'/')).map(c=>['/servicos/cidades/'+c.slug+'/',c.nome+' / '+c.uf])));
 
 let sitemap=fs.readFileSync(path.join(out,'sitemap.xml'),'utf8').replace(/<url>\s*<loc>https:\/\/quemfazservico\.com\.br\/servicos\/[\s\S]*?<\/url>/g,'');
 sitemap=sitemap.replace('</urlset>',generated.filter(x=>x.index).map(x=>'<url><loc>'+base+x.url+'</loc></url>').join('\n')+'\n</urlset>');fs.writeFileSync(path.join(out,'sitemap.xml'),sitemap);
