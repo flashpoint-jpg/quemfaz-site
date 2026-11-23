@@ -115,6 +115,8 @@ const adminPath=path.join(out,'admin.html');
 let adminSource=fs.readFileSync(adminPath,'utf8');
 adminSource=require('./prepare-admin-pedidos.cjs')(adminSource);
 adminSource=require('./prepare-admin-organizacao.cjs')(adminSource);
+adminSource=require('./prepare-admin-profissionais.cjs')(adminSource);
+adminSource=adminSource.replace(/qf-admin-cadastro-pago\.js\?v=[a-zA-Z0-9-]+/g,'qf-admin-cadastro-pago.js?v=20261123-busca-profissionais');
 adminSource=adminSource.replace('</body>','<script defer src="/qf-admin-password-reset.js"></script></body>');
 adminSource=adminSource.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/vendor/supabase-2.117.2.js');
 adminSource=adminSource.replace("const DB_KEY = 'quemfaz_db_v2';","const DB_KEY = 'quemfaz_admin_db_v2';").replace("const SESSION_KEY = 'quemfaz_session_v2';","const SESSION_KEY = 'quemfaz_admin_session_v2';");

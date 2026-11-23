@@ -191,7 +191,7 @@
     const m=path().match(/^#\/admin\/profissionais\/([a-f0-9-]{36})(?:$|[/?])/i);if(!m||!admin())return;
     const h=document.getElementById('app-content');if(!h||h.querySelector('[data-profissional-email]'))return;
     const p=global.DB?.profissionalById?.(m[1]);if(!p?.email)return;
-    const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';h.prepend(panel);loadDetail(panel);
+    const panel=document.createElement('section');panel.className='qf-pre-panel card';panel.dataset.profissionalEmail=p.email;panel.innerHTML='<p>Consultando plano e cortesias…</p>';const gestao=h.querySelector('[data-prof-gestao]');if(gestao)gestao.after(panel);else h.prepend(panel);loadDetail(panel);
   }
 
   // Profissionais > Novos: interessados aguardando Pix ficam separados dos profissionais ativos.
@@ -276,7 +276,8 @@
     if(!container||container.querySelector('[data-qf-novos-pix]'))return;
     const panel=document.createElement('section');panel.className='qf-novos-pix card';
     panel.dataset.qfNovosPix='';panel.innerHTML='<p>Consultando interessados e pagamentos...</p>';
-    container.prepend(panel);
+    const interessados=container.querySelector('[data-prof-interessados]');
+    if(interessados)interessados.append(panel);else container.prepend(panel);
     // A navegação pode recriar a tela antes de o Supabase responder.
     // Aproveite o resultado em curso ou o último resultado recente sem deixar carregamento preso.
     if(dataNovos.carregando)return;
