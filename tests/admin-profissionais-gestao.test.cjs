@@ -109,3 +109,43 @@ test('Only an admin can extend an active plan, without altering quotas or double
     await db.close();
   }
 });
+
+test('An expired Livre plan offers extra days and uses the existing courtesy confirmation', async () => {
+  const id = '00000000-0000-4000-8000-000000000007';
+  const profile = { id, email: 'profissional@example.test' };
+  const admin = fs.readFileSync(path.join(root, 'dist/admin.html'), 'utf8');
+  const start = admin.indexOf('  function adminProfGestaoHtml(p) {');
+  const end = admin.indexOf('  function bindProfissionalDetalhe', start);
+  const { window } = new JSDOM('<main id="app-content"></main>', {
+    url: 'https://example.test/admin.html#/admin/profissionais/' + id,
+    runScripts: 'outside-only',
+  });
+  const { document } = window;
+  try {
+    const html = vm.runInNewContext(admin.slice(start, end) + '\nadminProfGestaoHtml(profile);', {
+      profile, PU: { escapeHtml: (value) => value },
+      adminPlanoDoProf: () => ({ vigente: false, p: { plano: 'livre', valido_ate: '2020-01-01' } }),
+      adminPlanoHtml: () => '<p>Livre vencido</p>',
+    });
+    document.getElementById('app-content').innerHTML = '<div class="view">' + html + '</div>';
+    const button = document.querySelector('[data-prof-dias-livre]');
+    assert.equal(button.disabled, true);
+    window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+    window.DB = { getSession: () => ({ role: 'admin' }), profissionalById: () => profile };
+    window.QFAdminCloud = { enabled: true, client: { rpc: async (name) => {
+      assert.equal(name, 'qf_admin_livre_painel');
+      return { data: { itens: [{ ...profile, profissional_id: id, nome: 'Profissional teste', situacao: 'pendente' }],
+        servidor_agora: new Date().toISOString() } };
+    } } };
+    window.eval(fs.readFileSync(path.join(root, 'qf-admin-cadastro-pago.js'), 'utf8'));
+    await new Promise((resolve) => window.setTimeout(resolve, 0));
+    assert.equal(button.disabled, false);
+    button.click();
+    assert.match(document.querySelector('dialog h2').textContent, /Acrescentar dias ao Livre/);
+    assert.ok(document.querySelector('dialog input[name="dias"]'));
+    assert.ok(document.querySelector('dialog textarea[name="motivo"]'));
+    assert.match(document.querySelector('dialog button[type="submit"]').textContent, /Confirmar dias adicionais/);
+  } finally {
+    window.close();
+  }
+});
