@@ -397,7 +397,7 @@
   };
   search.oninput=()=>{select.value='';search.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';suggest();};
   search.onfocus=()=>{if(!select.value)suggest();};
-  search.onkeydown=e=>{const buttons=[...results.querySelectorAll('button')];if(e.key==='Escape'){closeResults();return;}if(results.hidden||!buttons.length)return;
+  search.onkeydown=e=>{const buttons=[...results.querySelectorAll('button')];if(e.key==='Escape'){if(!results.hidden&&form.closest('.qf-order-popup'))e.preventDefault();closeResults();return;}if(results.hidden||!buttons.length)return;
    if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();active=(active+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length;buttons.forEach((b,i)=>b.setAttribute('aria-selected',String(i===active)));search.setAttribute('aria-activedescendant',buttons[active].id);}
    else if(e.key==='Enter'){e.preventDefault();buttons[active<0?0:active].click();}
   };
@@ -446,7 +446,34 @@
   };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
- function reveal(){host()?.scrollIntoView({behavior:'auto',block:'start'});}
+ function reveal(){
+  const el=host(), popup=el?.closest('.qf-order-popup');
+  if(popup?.open){popup.scrollTop=0;return;}
+  el?.scrollIntoView({behavior:'auto',block:'start'});
+ }
+ function openOrderPopup(service){
+  const el=host();if(!el||el.closest('.qf-order-popup'))return;
+  const popup=g.document.createElement('dialog');
+  popup.className='qf-estimate qf-order-popup';
+  popup.setAttribute('aria-labelledby','qf-order-popup-title');
+  popup.innerHTML='<div class="qf-estimate-header"><h2 id="qf-order-popup-title" tabindex="-1">Publicar pedido grátis</h2><button type="button" class="qf-estimate-close" aria-label="Fechar pedido grátis">×</button></div>';
+  el.before(popup);
+  popup.append(el);
+  popup.querySelector('button').onclick=()=>popup.close();
+  popup.addEventListener('close',()=>{
+   if(popup.isConnected){
+    popup.before(el);
+    el.hidden=['intro','form','login'].includes(state.mode);
+   }
+   popup.remove();
+  },{once:true});
+  const resumable=state.mode==='form'&&work()?.querySelector('[data-qf-atendimento-layout], [data-qf-atendimento]');
+  if(!resumable&&(state.mode!=='intro'||!work()?.querySelector('[data-home-problem]')||
+    (service&&!work()?.querySelector('#home-service')?.value)))intro('',service);
+  el.hidden=false;
+  popup.showModal();
+  popup.querySelector('h2').focus({preventScroll:true});
+ }
  function message(text){const node=work();if(node)node.innerHTML='<p role="status">'+esc(text)+'</p>';}
  async function user(){
   let session=null;try{session=await g.QFCloud?.syncForCurrentSession(true);}catch(_){}
@@ -459,7 +486,7 @@
   const el=host();if(el){el.hidden=false;el.innerHTML=toolbar();}
   // Durante o pedido, ocultar os catálogos que aparecem logo abaixo do formulário.
   // Não remover do DOM: voltam ao sair do formulário.
-  const editing=state.mode==='form';
+  const editing=state.mode==='form'&&!el?.closest('.qf-order-popup');
   g.document.querySelectorAll('.qf-home-services-mobile,.qf-home-services-desktop').forEach(section=>{section.hidden=editing;section.style.display=editing?'none':'';});
 }
  // Painel de cliente: só pedidos novos e existentes, sem favoritos nem recontratação.
@@ -608,6 +635,7 @@
  function placeServices(){
   const anchor=host();if(!anchor)return;
   const publish=g.document.querySelector('.qf-approved-picker [data-action="landing-all-services"]');
+  publish?.setAttribute('aria-haspopup','dialog');
   if(publish&&!publish.closest('.qf-approved-picker-actions')){
    const actions=g.document.createElement('div');
    actions.className='qf-approved-picker-actions';
@@ -650,7 +678,7 @@
   else if(state.mode==='form')showForm(state.service,state.problem);
   else if(state.mode==='intro'){
    intro();
-   if (slot?.closest('.qf-approved-client') && !state.problem && !state.service &&
+   if (slot?.closest('.qf-approved-client') && !slot.closest('.qf-order-popup') && !state.problem && !state.service &&
        !g.QFClientAcquisition?.serviceFromLink(g.location.search)) slot.hidden=true;
   }
   else if(state.mode==='dashboard')dashboard();
@@ -676,6 +704,11 @@
    .qf-approved-picker-actions .qf-estimate-home{animation:qf-estimate-notice .85s ease-out 1}
    dialog.qf-estimate{box-sizing:border-box;width:min(430px,calc(100% - 24px));max-height:min(640px,calc(100dvh - 24px));margin:auto;padding:16px 18px 20px;overflow:auto;overscroll-behavior:contain;border:1px solid #cddff1;border-radius:16px;background:#fff;color:#153753;box-shadow:0 14px 50px #0d233b45}
    dialog.qf-estimate::backdrop{background:#0b203c8c}
+   dialog.qf-order-popup{width:min(520px,calc(100% - 24px));max-height:calc(100dvh - 24px)}
+   .qf-order-popup #qf-pedido-facil{margin:0!important;padding:0!important;border:0!important;border-radius:0;box-shadow:none!important;max-width:none}
+   .qf-order-popup :is(.qf-intent-chooser,.qf-home-problem-heading,.qf-home-free-note,.qf-home-benefits-inline,.qf-at-topo){display:none!important}
+   .qf-order-popup #qf-pedido-facil [data-home-problem]{max-width:none}
+   .qf-order-popup #qf-pedido-facil :is([data-home-problem],[data-qf-atendimento-layout]) .btn{max-width:100%}
    .qf-estimate-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
    .qf-estimate-header h2{margin:0;font-size:22px;color:#12375d}
    .qf-estimate-close{flex:none;width:44px;height:44px;border:0;border-radius:8px;background:#f0f5fb;color:#153753;font:inherit;font-size:25px;line-height:1;cursor:pointer}
@@ -708,7 +741,7 @@
    const service=e.target.closest('[data-desk-service],[data-landing-cat]');
    if(service){e.preventDefault();e.stopImmediatePropagation();selectTab('request');const cat=g.DB.categoryById(service.dataset.landingCat);const name=cat?.nome||service.dataset.deskService;g.document.querySelectorAll('[data-desk-service],[data-landing-cat]').forEach(b=>{const c=g.DB.categoryById(b.dataset.landingCat);b.setAttribute('aria-pressed',String((c?.nome||b.dataset.deskService)===name));});state.problem='';intro('',name);reveal();g.setTimeout(()=>{host()?.querySelector('form textarea')?.focus();},80);return;}
    const start=e.target.closest('[data-home-services],[data-action="landing-all-services"]');
-   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-approved-picker,.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}const linked=g.QFClientAcquisition?.serviceFromLink(g.location.search);intro('',g.DB.categoryById(linked)?.nome);reveal();return;}
+   if(start){e.preventDefault();e.stopImmediatePropagation();if(start.hasAttribute('data-home-services')&&start.closest('.qf-home-nav')){const services=g.document.querySelector('.qf-approved-picker,.qf-mobile-services');if(services)services.closest('section').scrollIntoView({block:'start'});else{g.document.querySelector('.qf-landing-body')?.scrollIntoView({block:'start'});setTimeout(()=>g.document.querySelector('.qf-mobile-services')?.closest('section').scrollIntoView({block:'start'}),180);}return;}const linked=g.QFClientAcquisition?.serviceFromLink(g.location.search);const name=g.DB.categoryById(linked)?.nome;if(start.dataset.action==='landing-all-services'){selectTab('request');openOrderPopup(name);}else{intro('',name);reveal();}return;}
    const button=e.target.closest('[data-action="landing-my-orders"],[data-nav],a[href*="#/cliente/"],a[href*="#/auth/cliente/"]');if(!button)return;
    const path=button.dataset.nav||button.getAttribute('href')?.split('#')[1];
    if(button.dataset.action==='landing-my-orders'||inlinePath(path)){e.preventDefault();e.stopImmediatePropagation();openPath(button.dataset.action==='landing-my-orders'?'/cliente/pedidos':path);}
