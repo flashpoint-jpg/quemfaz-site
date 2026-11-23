@@ -1955,6 +1955,69 @@ html{scroll-padding-top:var(--qf-bar-h,0px)}
 .qf-catpick{display:flex;flex-direction:column;gap:8px}
 .qf-step__head{display:flex;flex-direction:column;gap:4px}.qf-step__count{font-size:13px;font-weight:800;color:var(--orange-500)}.qf-step__bar{height:6px;border-radius:99px;background:var(--bg-sunken);overflow:hidden;margin-top:6px}.qf-step__bar span{display:block;height:100%;background:var(--orange-500);border-radius:99px}.qf-step__nav{display:flex;gap:10px;margin-top:6px}.qf-step__nav .btn{flex:1}.qf-step__opt{border:1px solid var(--border-subtle,rgba(11,29,58,.12));border-radius:12px;padding:12px;background:var(--bg-surface)}.qf-step__opt>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--navy-900)}.qf-step[hidden]{display:none!important}.qf-step__nav:has(button[type=submit]){flex-direction:column-reverse}.qf-step__nav:has(button[type=submit]) .btn{flex:none;width:100%}body:has(#cadastro-prof-form) .qf-support-fab,body:has(#cadastro-cliente-form) .qf-support-fab,body:has(#login-form) .qf-support-fab{top:calc(env(safe-area-inset-top, 0px) + 12px);bottom:auto!important;padding:0;width:44px;min-width:44px;height:44px;min-height:44px;justify-content:center;font-size:0;gap:0}body:has(#cadastro-prof-form) .view>.row:first-child,body:has(#cadastro-cliente-form) .view>.row:first-child,body:has(#login-form) .view>.row:first-child{padding-right:52px}
 /* V11.49: etapa 5 do cadastro (planos) e selo Premium */
+.qf-cad-ferramentas {
+  display: grid;
+  gap: 12px;
+  border-top: 4px solid var(--orange-500);
+}
+.qf-cad-ferramentas[hidden],
+.qf-cad-ferramentas[hidden] + .qf-cad-ofertas-titulo {
+  display: none;
+}
+.qf-cad-ferramentas h2,
+.qf-cad-ofertas-titulo {
+  margin: 0;
+  font-size: clamp(18px, 4vw, 23px);
+  line-height: 1.2;
+  color: var(--navy-900);
+}
+.qf-cad-ferramentas p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.qf-cad-ferramentas .qf-cad-ferramentas__intro { font-size: 16px; }
+.qf-cad-ferramentas__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.qf-cad-ferramentas__lista li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-sunken);
+}
+.qf-cad-ferramentas__icone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--navy-700);
+  background: var(--navy-100);
+}
+.qf-cad-ferramentas__lista strong { display: block; margin-bottom: 2px; }
+.qf-cad-ferramentas .qf-cad-ferramentas__exemplo {
+  padding: 9px 12px;
+  border-inline-start: 3px solid var(--navy-700);
+  border-radius: 8px;
+  background: var(--navy-100);
+  color: var(--navy-900);
+}
+.qf-cad-ferramentas .qf-cad-ferramentas__condicoes {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 13px;
+}
 .qf-cad-planos{display:flex;flex-direction:column;gap:14px;margin-top:6px}
 .qf-cad-plano{position:relative;display:flex;flex-direction:column;gap:9px;padding:18px 16px 16px;background:#fff;border:1.5px solid var(--border-subtle);border-radius:18px;cursor:pointer}
 .qf-cad-plano input{position:absolute;opacity:0;pointer-events:none}
@@ -9445,11 +9508,24 @@ alt=""></noscript>
           // V11.49: etapa 5 — escolha do plano. V11.62: a conta é criada na hora em qualquer plano; cada plano mostra o seu aviso.
           '<div class="qf-step stack" data-step="5" hidden>' +
           '<div class="qf-step__head"><div class="qf-step__count">Etapa 5 de 5</div><div class="h2">Escolha como começar</div><div class="text--sm text--secondary">Crie sua conta grátis para conhecer o painel ou escolha uma opção paga para começar com crédito.</div><div class="qf-step__bar"><span style="width:100%"></span></div></div>' +
-          '<div class="card stack--sm" data-cadastro-exploracao>' +
-            '<div class="text--strong">Cadastre-se e conheça a plataforma</div>' +
-            '<p class="text--sm text--secondary">Cadastro gratuito para conhecer o painel e as oportunidades. Para desbloquear um pedido, adicione saldo: cada desbloqueio custa R$ 2,00 a mais que no Avulso. O valor total aparece antes da confirmação.</p>' +
-            '<button class="btn btn--outline" type="submit" data-cad-explorar>Criar conta grátis</button>' +
-          '</div>' +
+          '<section class="card qf-cad-ferramentas" data-cadastro-exploracao aria-labelledby="qf-cad-ferramentas-titulo">' +
+            '<h2 id="qf-cad-ferramentas-titulo">Ferramentas grátis para o seu trabalho</h2>' +
+            '<p class="qf-cad-ferramentas__intro">Use o Quem Faz com os clientes que você já atende, mesmo sem receber pedidos pelo app. As ferramentas ficam disponíveis na conta gratuita, sem precisar adicionar saldo ou assinar um plano.</p>' +
+            '<ul class="qf-cad-ferramentas__lista">' + [
+              ['clock', 'Agenda de serviços', 'Registre o cliente, o endereço e o horário. Acompanhe seus serviços e envie lembretes.'],
+              ['clipboard', 'Orçamentos', 'Liste mão de obra, materiais, valores e prazos. Envie pelo WhatsApp ou baixe o PDF.'],
+              ['wallet', 'Cobrança por Pix', 'Crie a cobrança com sua própria chave. O dinheiro vai direto para você. Confira o Pix na sua conta e marque como recebido.'],
+              ['checkCircle', 'Recibos', 'Depois de confirmar o pagamento, gere um recibo para entregar ao cliente.']
+            ].map(function ([icone, titulo, descricao]) {
+              return '<li><span class="qf-cad-ferramentas__icone" aria-hidden="true">' + icon(icone) +
+                '</span><div><strong>' + titulo + '</strong><p>' + descricao + '</p></div></li>';
+            }).join('') + '</ul>' +
+            '<p class="qf-cad-ferramentas__exemplo"><strong>Exemplo de uso</strong><br>Envie o orçamento, agende o serviço, cobre por Pix e gere o recibo após receber.</p>' +
+            '<button class="btn btn--primary" type="submit" data-cad-explorar>Criar conta grátis</button>' +
+            '<p>No app, abra a aba <strong>Ferramentas</strong> para começar.</p>' +
+            '<p class="qf-cad-ferramentas__condicoes">Para desbloquear pedidos do Quem Faz na conta grátis, adicione saldo. Cada desbloqueio custa R$ 2,00 a mais que no Avulso. O valor total aparece antes da confirmação.</p>' +
+          '</section>' +
+          '<h2 class="qf-cad-ofertas-titulo">Opções para desbloquear pedidos</h2>' +
           '<div class="qf-cad-planos" role="radiogroup" aria-label="Planos">' + QF_CAD_PLANOS.map(function (pl) {
             return '<label class="qf-cad-plano' + (pl.id === 'completo_v2' ? ' qf-cad-plano--top' : '') + '">' + (pl.selo ? '<span class="qf-cad-plano__selo">' + pl.selo + '</span>' : '') +
               '<input type="radio" name="planoEscolhido" value="' + pl.id + '"' + (pl.id === 'avulso' ? ' checked' : '') + '>' +
