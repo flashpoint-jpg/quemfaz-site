@@ -244,34 +244,41 @@
  });
  const money=new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:2,trailingZeroDisplay:'stripIfInteger'});
  const priceRange=(min,max)=>max==null?'A partir de '+money.format(min):max===min?money.format(min):money.format(min)+' a '+money.format(max);
- function attachEstimate(form,validate,continueOrder){
-  form.insertAdjacentHTML('beforeend',`<button class="btn btn--outline qf-estimate-entry" type="button" aria-expanded="false" aria-controls="qf-home-estimate">Quanto pode custar meu serviço?</button>
-    <section class="qf-estimate" id="qf-home-estimate" aria-label="Pré-orçamento grátis" hidden>
-      <p>Escolha o serviço e informe o CEP para ver uma referência de preço.</p>
-      <label>CEP do serviço <input class="input" data-estimate-cep autocomplete="postal-code" inputmode="numeric" maxlength="9" placeholder="00000-000"></label>
-      <label>Para quando precisa? <select class="input" data-estimate-urgency><option value="">Ainda estou pesquisando</option><option value="hoje">Hoje</option><option value="urgente">Preciso com urgência</option><option value="normal">Quero agendar</option></select></label>
-      <button class="btn btn--primary" type="button" data-estimate-calculate>Ver pré-orçamento</button>
+ function openEstimate(){
+  if(g.document.getElementById('qf-home-estimate'))return;
+  const categories=serviceCategories();
+  const currentForm=slot?.querySelector('[data-home-problem]');
+  const selectedService=currentForm?.querySelector('#home-service')?.value||state.service
+    ||g.QFClientAcquisition?.serviceFromLink(g.location.search);
+  const selectedCategory=categories.find(c=>c.id===selectedService||norm(c.nome)===norm(selectedService));
+  const previousProblem=currentForm?.querySelector('#home-problem')?.value.trim()||'';
+  const dialog=g.document.createElement('dialog');
+  dialog.className='qf-estimate';dialog.id='qf-home-estimate';
+  dialog.setAttribute('aria-labelledby','qf-estimate-heading');
+  dialog.innerHTML=`<div class="qf-estimate-header">
+      <h2 id="qf-estimate-heading">Simular preço</h2>
+      <button type="button" class="qf-estimate-close" aria-label="Fechar simulador">×</button>
+    </div>
+    <form class="qf-estimate-form">
+      <label>Serviço <select class="input" data-estimate-service required><option value="">Selecione o serviço</option>${categories.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join('')}</select></label>
+      <label>CEP do serviço <input class="input" data-estimate-cep autocomplete="postal-code" inputmode="numeric" maxlength="9" required placeholder="00000-000"></label>
+      <button class="btn btn--primary" type="submit" data-estimate-calculate>Ver pré-orçamento</button>
       <div class="qf-estimate-result" data-estimate-result hidden>
-        <div role="status" aria-live="polite"><strong data-estimate-title></strong><b data-estimate-amount hidden></b><p data-estimate-note></p></div>
+        <div role="status"><strong data-estimate-title></strong><p data-estimate-example hidden></p><b data-estimate-amount hidden></b><p data-estimate-note></p></div>
         <a data-estimate-source target="_blank" rel="noopener noreferrer" hidden>Ver fonte do preço</a>
         <button class="btn btn--primary" type="button" data-estimate-request hidden>Solicitar orçamento grátis</button>
       </div>
-    </section>`);
-  const entry=form.querySelector('.qf-estimate-entry'), panel=form.querySelector('.qf-estimate');
-  const cep=panel.querySelector('[data-estimate-cep]'), urgency=panel.querySelector('[data-estimate-urgency]');
-  const calculate=panel.querySelector('[data-estimate-calculate]'), request=panel.querySelector('[data-estimate-request]');
-  const result=panel.querySelector('[data-estimate-result]'), title=panel.querySelector('[data-estimate-title]');
-  const amount=panel.querySelector('[data-estimate-amount]'), note=panel.querySelector('[data-estimate-note]');
-  const source=panel.querySelector('[data-estimate-source]');
+    </form>`;
+  const form=dialog.querySelector('form'), service=form.querySelector('[data-estimate-service]');
+  const cep=form.querySelector('[data-estimate-cep]');
+  const calculate=form.querySelector('[data-estimate-calculate]'), request=form.querySelector('[data-estimate-request]');
+  const result=form.querySelector('[data-estimate-result]'), title=form.querySelector('[data-estimate-title]');
+  const amount=form.querySelector('[data-estimate-amount]'), note=form.querySelector('[data-estimate-note]');
+  const exampleLabel=form.querySelector('[data-estimate-example]'), source=form.querySelector('[data-estimate-source]');
   let revision=0, draft;
-  entry.onclick=()=>{
-   panel.hidden=!panel.hidden;
-   entry.setAttribute('aria-expanded',String(!panel.hidden));
-   if(!panel.hidden){
-    const search=form.querySelector('#home-service-search');
-    (search.value?cep:search).focus({preventScroll:true});
-   }
-  };
+  service.value=selectedCategory?.id||'';
+  dialog.querySelector('.qf-estimate-close').onclick=()=>dialog.close();
+  dialog.addEventListener('close',()=>dialog.remove(),{once:true});
   function invalidate(){
    revision++;
    draft=null;
@@ -280,16 +287,17 @@
   }
   form.addEventListener('input',invalidate);
   form.addEventListener('change',invalidate);
-  form.addEventListener('qf-service-picked',invalidate);
-  calculate.onclick=async()=>{
-   const selection=validate();
-   if(!selection)return;
+  form.onsubmit=async event=>{
+   event.preventDefault();
+   const category=categories.find(c=>c.id===service.value);
+   if(!category)return;
    const digits=cep.value.replace(/\D/g,'');
    invalidate();
    const current=revision;
    result.hidden=false;
    amount.hidden=true;
    request.hidden=true;
+   exampleLabel.hidden=true;
    source.hidden=true;
    note.textContent='';
    if(digits.length!==8){
@@ -304,20 +312,19 @@
     location=await g.QFAtendimento.consultarCep(digits);
     const client=g.QFCloud?.client;
     if(!client)throw Error('Consulta indisponível');
-    const response=await client.rpc('qf_pre_orcamento_regional',{p_categoria:selection.category.id,p_cidade:location.cidade,p_uf:location.uf});
+    const response=await client.rpc('qf_pre_orcamento_regional',{p_categoria:category.id,p_cidade:location.cidade,p_uf:location.uf});
     if(response.error)throw response.error;
     data=response.data;
    }catch(_){unavailable=true;}
-   if(!form.isConnected||current!==revision)return;
+   if(!dialog.open||current!==revision)return;
    calculate.disabled=false;
    if(!location){
     title.textContent='Não foi possível confirmar o CEP.';
     note.textContent='Confira os dados ou tente novamente.';
     return;
    }
-   draft={...selection,location,urgency:urgency.value};
    const min=Number(data?.minimo_centavos),max=Number(data?.maximo_centavos);
-   const reference=marketEstimates[selection.category.id];
+   const reference=marketEstimates[category.id];
    if(min>0&&max>=min&&Number.isFinite(max)){
     title.textContent='Valor estimado em '+location.cidade+' / '+location.uf;
     amount.textContent=priceRange(min/100,max/100);
@@ -326,19 +333,32 @@
    }else if(reference){
     const [low,high,example,url,region]=reference;
     title.textContent='Referência de mercado · '+region;
+    exampleLabel.textContent=example;
+    exampleLabel.hidden=false;
     amount.textContent=priceRange(low,high);
     amount.hidden=false;
-    note.textContent=example+'. O valor do seu pedido pode variar conforme a região, os detalhes e a proposta do profissional.';
+    note.textContent='O valor do seu pedido pode variar conforme a região, os detalhes e a proposta do profissional.';
     source.href=url;
     source.hidden=false;
    }else{
     title.textContent=unavailable?'Consulta de preços indisponível agora.':'Ainda não temos uma faixa para '+location.cidade+' / '+location.uf+'.';
-    note.textContent='Você pode solicitar orçamentos com os dados já preenchidos.';
+    note.textContent='Você pode publicar um pedido grátis na página inicial.';
    }
-   request.hidden=false;
+   if(!amount.hidden){
+    draft={category,location};
+    request.hidden=false;
+   }
    result.scrollIntoView?.({block:'nearest'});
   };
-  request.onclick=()=>{if(draft)continueOrder(draft);};
+  request.onclick=()=>{
+   if(!draft)return;
+   const problem=draft.category.id===selectedCategory?.id?previousProblem:'';
+   dialog.close();
+   showForm(draft.category.nome,problem,draft);
+  };
+  g.document.body.append(dialog);
+  dialog.showModal();
+  service.focus({preventScroll:true});
  }
  function intro(prefill,service){
   // Retorno OAuth: formulário salvo é prioridade até o cliente revisar/publicar.
@@ -420,7 +440,6 @@
    const order=validatedOrder();
    if(order)showForm(order.category.nome,order.problem);
   };
-  attachEstimate(form,validatedOrder,order=>showForm(order.category.nome,order.problem,order));
  }
  function work(){return host()?.querySelector('[data-home-work]');}
  function reveal(){host()?.scrollIntoView({behavior:'auto',block:'start'});}
@@ -501,14 +520,14 @@
  function showForm(service,problem,estimate){
   if(!service&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()){intro();return;}
   if(service&&!serviceCategories().some(c=>norm(c.nome)===norm(service))){intro(problem||service);return;}
-  if(service&&String(problem||'').trim().length<8){intro(problem,service);return;}
+  if(service&&!estimate&&String(problem||'').trim().length<8){intro(problem,service);return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
   selectTab('request');
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
   try{g.sessionStorage.removeItem('qf_pending_category');}catch(_){}
   const target=work();if(!target)return;
   target.innerHTML=g.QFAtendimento.html();
-  g.QFAtendimento.mount(target,{embedded:true,service,problem:problem||state.problem,estimate},state.user);reveal();
+  g.QFAtendimento.mount(target,{embedded:true,service,problem:estimate?problem:problem||state.problem,estimate},state.user);reveal();
  }
  async function detail(id,refresh=true){
   if(!uuid(id))return;
@@ -589,15 +608,9 @@
    const button=g.document.createElement('button');
    button.type='button';
    button.className='qf-estimate-home';
-   button.textContent='Simular preço do serviço';
-   button.addEventListener('click',()=>{
-    selectTab('request');
-    if(state.mode!=='intro'||!work()?.querySelector('.qf-estimate-entry'))intro();
-    anchor.hidden=false;
-    const toggle=work()?.querySelector('.qf-estimate-entry');
-    if(toggle?.getAttribute('aria-expanded')==='false')toggle.click();
-    reveal();
-   });
+   button.textContent='Simular preço';
+   button.setAttribute('aria-haspopup','dialog');
+   button.addEventListener('click',openEstimate);
    publish.after(button);
   }
   const copy=g.document.querySelector('.qf-landing-copy');
@@ -649,12 +662,21 @@
    css.textContent += '.qf-account-strip{display:flex;align-items:center;flex-wrap:wrap;gap:11px;padding:12px;margin-bottom:15px;border:1px solid #bcd5f7;border-radius:15px;background:#eff6ff;color:#12345e}.qf-account-initial{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:50%;background:#1466d1;color:white;font-weight:800;font-size:18px}.qf-account-person{display:grid;gap:3px;min-width:115px;flex:1}.qf-account-person small{color:#42638b;font-size:12px}.qf-account-person strong{font-size:17px;color:#123969}.qf-account-buttons{display:flex;gap:7px}.qf-account-buttons button{padding:10px 12px;border:1px solid #aac6ed;border-radius:10px;background:#fff;color:#1452a2;font-weight:750;cursor:pointer}.qf-account-buttons button:last-child{background:transparent;color:#3e536c}.qf-home-orders [data-home-account][hidden]{display:none}.qf-account-no-orders{padding:17px;border-radius:15px;border:1px solid #bcd5f7;background:#f3f8ff}@media(max-width:520px){.qf-account-buttons{width:100%;display:grid;grid-template-columns:1fr 1fr}.qf-account-buttons button{min-height:44px}}';
    css.textContent += '.qf-public-faq{margin-top:12px;padding:16px 18px;border:1px solid #d7e2f1;border-radius:16px;background:#fff;text-align:left;box-shadow:0 4px 14px #142e4b0c}.qf-public-faq[hidden]{display:none!important}.qf-public-faq h3{font-size:19px;margin:0 0 10px;color:#102f5c}.qf-public-faq p{margin:0 0 12px;line-height:1.55;font-size:14px;color:#33465b}.qf-public-faq p:last-child{margin-bottom:0}.qf-play-badge--hero{display:none!important}.qf-play-link{margin-top:14px}';
   css.textContent += `
-   .qf-approved-picker .qf-estimate-home{display:block;width:100%;min-height:46px;margin-top:10px;padding:10px 14px;border:1px solid #a9c3e1;border-radius:12px;background:#f5f9ff;color:#124a88;font:inherit;font-weight:750;cursor:pointer;animation:qf-estimate-notice .85s ease-out 1}
-   #qf-pedido-facil .qf-estimate{display:grid;gap:10px;text-align:left;padding:13px;border:1px solid #cddff1;border-radius:12px;background:#f5f9ff;color:#153753}
-   #qf-pedido-facil .qf-estimate[hidden],#qf-pedido-facil .qf-estimate [hidden]{display:none!important}
-   #qf-pedido-facil .qf-estimate p{margin:0}
-   #qf-pedido-facil .qf-estimate-result{display:grid;gap:9px}
-   #qf-pedido-facil .qf-estimate-result b{display:block;font-size:clamp(22px,5vw,31px);color:#124a88}
+   .qf-approved-picker .qf-estimate-home{display:block;width:max-content;max-width:100%;min-height:44px;margin:6px auto 0;padding:6px 16px;border:1px solid #d0dfee;border-radius:10px;background:#fff;color:#124a88;font:inherit;font-size:14px;font-weight:750;cursor:pointer;animation:qf-estimate-notice .85s ease-out 1}
+   dialog.qf-estimate{box-sizing:border-box;width:min(430px,calc(100% - 24px));max-height:min(640px,calc(100dvh - 24px));margin:auto;padding:16px 18px 20px;overflow:auto;overscroll-behavior:contain;border:1px solid #cddff1;border-radius:16px;background:#fff;color:#153753;box-shadow:0 14px 50px #0d233b45}
+   dialog.qf-estimate::backdrop{background:#0b203c8c}
+   .qf-estimate-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+   .qf-estimate-header h2{margin:0;font-size:22px;color:#12375d}
+   .qf-estimate-close{flex:none;width:44px;height:44px;border:0;border-radius:8px;background:#f0f5fb;color:#153753;font:inherit;font-size:25px;line-height:1;cursor:pointer}
+   .qf-estimate-form,.qf-estimate-result{display:grid;gap:10px}
+   .qf-estimate :is(input,select,.btn){box-sizing:border-box;width:100%;min-height:44px;font-size:16px}
+   .qf-estimate :is(label,strong){font-weight:700}
+   .qf-estimate label .input{display:block;margin-top:4px}
+   .qf-estimate [hidden]{display:none!important}
+   .qf-estimate p{margin:0;font-size:14px;line-height:1.45}
+   .qf-estimate-result{padding:12px;border-radius:10px;background:#f5f9ff}
+   .qf-estimate-result b{display:block;margin:4px 0;font-size:clamp(22px,5vw,30px);color:#124a88}
+   .qf-estimate-result a{width:fit-content;color:#1256a6;text-decoration:underline;font-size:14px}
    @keyframes qf-estimate-notice{0%,100%{box-shadow:0 0 0 0 #f58a273b}45%{box-shadow:0 0 0 5px #f58a273b}}
    @media(prefers-reduced-motion:reduce){.qf-approved-picker .qf-estimate-home{animation:none}}
   `;
