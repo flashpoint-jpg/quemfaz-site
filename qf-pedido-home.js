@@ -354,17 +354,21 @@
    if(!draft)return;
    const problem=draft.category.id===selectedCategory?.id?previousProblem:'';
    dialog.close();
-   showForm(draft.category.nome,problem,draft);
+   selectTab('request');
+   if(problem.length>=8){showForm(draft.category.nome,problem,draft);return;}
+   intro(problem,draft.category.nome,draft);
+   reveal();
+   work()?.querySelector('#home-problem')?.focus({preventScroll:true});
   };
   g.document.body.append(dialog);
   dialog.showModal();
   service.focus({preventScroll:true});
  }
- function intro(prefill,service){
+ function intro(prefill,service,estimate){
   // Retorno OAuth: formulário salvo é prioridade até o cliente revisar/publicar.
   if(pendingPublication()&&g.QFAtendimento?.hasGoogleDraft?.()){showForm('');return;}
   try{const saved=JSON.parse(sessionStorage.getItem('qf_home_oauth_draft')||'null');if(saved){state.problem=saved.problem;state.service=saved.service;sessionStorage.removeItem('qf_home_oauth_draft');}}catch(_){}
-  state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill)state.problem=prefill;reset();
+  state.mode='intro';state.notice='';state.selected=null;state.prof=null;if(prefill||estimate)state.problem=prefill;reset();
   const target=work();if(!target)return;
   const categories=serviceCategories();
   if(state.account)g.setTimeout(paintAccount,0);
@@ -380,7 +384,7 @@
   select.closest('label').after(results,hint);search.required=true;
   let active=-1;
   const closeResults=()=>{results.hidden=true;search.setAttribute('aria-expanded','false');search.removeAttribute('aria-activedescendant');active=-1;};
-  const pick=category=>{select.value=category.id;search.value=category.nome;search.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';closeResults();hint.textContent='Serviço selecionado. Você pode digitar para trocar.';form.dispatchEvent(new Event('qf-service-picked'));};
+  const pick=category=>{select.value=category.id;search.value=category.nome;search.removeAttribute('aria-invalid');form.querySelector('[role=alert]').textContent='';closeResults();hint.textContent='Serviço selecionado. Você pode digitar para trocar.';};
   const suggest=()=>{
    const query=norm(search.value),tokens=query.split(/[^a-z0-9]+/).filter(Boolean);results.innerHTML='';closeResults();
    if(query.length<2){hint.textContent='Digite pelo menos 2 letras para buscar.';return;}
@@ -438,7 +442,7 @@
    e.preventDefault();
    track('home_submit');
    const order=validatedOrder();
-   if(order)showForm(order.category.nome,order.problem);
+   if(order)showForm(order.category.nome,order.problem,estimate);
   };
  }
  function work(){return host()?.querySelector('[data-home-work]');}
@@ -520,7 +524,7 @@
  function showForm(service,problem,estimate){
   if(!service&&!g.QFAtendimento?.hasGoogleDraft?.()&&!g.QFAtendimento?.hasActiveDraft?.()){intro();return;}
   if(service&&!serviceCategories().some(c=>norm(c.nome)===norm(service))){intro(problem||service);return;}
-  if(service&&!estimate&&String(problem||'').trim().length<8){intro(problem,service);return;}
+  if(service&&String(problem||'').trim().length<8){intro(problem,service,estimate);return;}
   const suggestions=g.document.querySelector('[data-landing-service-suggestions]');if(suggestions)suggestions.hidden=true;
   selectTab('request');
   state.mode='form';state.service=service;state.selected=null;state.prof=null;state.notice='';reset();
