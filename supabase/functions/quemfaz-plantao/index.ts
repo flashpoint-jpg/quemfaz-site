@@ -179,9 +179,23 @@ Deno.serve(async (req: Request)=>{
   if(req.method!=="POST")return json({error:"Método não permitido."},405);
   try{
     const body=await req.json();
-    if(body.action==="reconciliar"){
+    if(["reconciliar","validar_efi"].includes(body.action)){
       const secret=req.headers.get("x-qf-internal")||"";
       if(secret.length<32||await rpc("qf_push_internal_ok",{p_segredo:secret})!==true)return json({error:"Acesso restrito."},401);
+      if(body.action==="validar_efi"){
+        if(EFI_SANDBOX)return json({ok:false,reason:"efi_sandbox"},503);
+        const http=pixClient();
+        try{
+          const response=await fetch(EFI_PIX_BASE+"/oauth/token",{
+            method:"POST",client:http,signal:AbortSignal.timeout(8000),
+            headers:{Authorization:"Basic "+btoa(EFI_CLIENT_ID+":"+EFI_CLIENT_SECRET),"Content-Type":"application/json"},
+            body:JSON.stringify({grant_type:"client_credentials",scope:"cob.read cob.write pix.read pix.write"}),
+          });
+          const result=await response.json().catch(()=>({}));
+          const ready=response.ok&&!!result.access_token&&!!EFI_PIX_KEY;
+          return json({ok:ready},ready?200:503);
+        }finally{http.close();}
+      }
       const items=await rpc("qf_plantao_reconciliar_lista",{});
       for(let index=0;index<items.length;index+=5){
         const results=await Promise.allSettled(items.slice(index,index+5).map((item:{cliente_id:string,id:string})=>checkout(item.cliente_id,item.id,false)));
