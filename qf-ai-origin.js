@@ -24,7 +24,9 @@
         g.sessionStorage.removeItem(key);return null;
       }
       if(source){
-        var row={source:source,medium:'ai_referral',landing_page:g.location.pathname};
+        var old=JSON.parse(g.sessionStorage.getItem(key)||'null');
+        var internal=host===g.location.hostname;
+        var row={source:source,medium:'ai_referral',landing_page:internal&&old&&old.source===source?old.landing_page:g.location.pathname};
         g.sessionStorage.setItem(key,JSON.stringify(row));
         g.sessionStorage.removeItem('qf_ads_attribution_v1');
         g.sessionStorage.removeItem('qf_search_referrer_v1');
