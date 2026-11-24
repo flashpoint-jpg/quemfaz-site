@@ -164,6 +164,12 @@ html=cleanHead+(hasFavicon?'':favicon+'\n')+tail;
 for (const file of ['favicon.ico','favicon.png']) {
   if (!fs.existsSync(path.join(out,file))) throw Error('Favicon ausente no dist: '+file);
 }
+// Mantém o link visível no HTML inicial e na home renderizada pelo aplicativo.
+const homeTrust = '        \'</section>\' +\n        \'<ul class="qf-approved-trust">';
+if (!html.includes(homeTrust)) throw Error('Bloco de serviços da home não encontrado');
+html=html.replace(homeTrust,
+ `          '<p class="qf-plantao-exemplos">Ficou sem energia só em casa? O carro quebrou de madrugada? Estourou um cano? <a href="/servicos/chamado-urgente-24h/">Como funciona o Chamado Urgente 24h</a></p>' +
+` + homeTrust);
 const version=/const APP_VERSION = '([^']+)'/.exec(html)[1];
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
 const main=inline.find(m=>m[1].includes('biblioteca de ícones'));

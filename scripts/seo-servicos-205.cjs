@@ -279,7 +279,10 @@ const priorityLinks=services.filter(s=>priorityIds.has(s.id)&&covered.some(c=>c.
 write('/servicos/','Encontre serviços na sua região | Quem Faz','Escolha o serviço e publique seu pedido grátis. Consulte a cobertura cadastrada por profissão e região.', '<h2>Encontre um serviço</h2><p>Escolha uma profissão e consulte as cidades com profissionais cadastrados. A disponibilidade depende do CEP e do raio de atendimento.</p>'+links(priorityLinks)+'<h2>Encontre profissionais por cidade</h2>'+links(highlightedLocalRoutes)+'<h2>Qual serviço você precisa?</h2>'+links(services.filter(s=>covered.some(c=>c.ids.has(s.id))).map(s=>[urlFor(s),s.nome])) +'<h2>Regiões prioritárias</h2>'+links(covered.filter(c=>isPriorityRoute('/servicos/cidades/'+c.slug+'/')).map(c=>['/servicos/cidades/'+c.slug+'/',c.nome+' / '+c.uf])));
 
 let sitemap=fs.readFileSync(path.join(out,'sitemap.xml'),'utf8').replace(/<url>\s*<loc>https:\/\/quemfazservico\.com\.br\/servicos\/[\s\S]*?<\/url>/g,'');
-sitemap=sitemap.replace('</urlset>',generated.filter(x=>x.index).map(x=>'<url><loc>'+base+x.url+'</loc></url>').join('\n')+'\n</urlset>');fs.writeFileSync(path.join(out,'sitemap.xml'),sitemap);
+const indexedRoutes=generated.filter(page=>page.index).map(page=>page.url);
+indexedRoutes.push('/servicos/chamado-urgente-24h/');
+sitemap=sitemap.replace('</urlset>',indexedRoutes.map(url=>'<url><loc>'+base+url+'</loc></url>').join('\n')+'\n</urlset>');
+fs.writeFileSync(path.join(out,'sitemap.xml'),sitemap);
 const indexFile=path.join(out,'servicos','index.html');let indexHtml=fs.readFileSync(indexFile,'utf8');
 const discover=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]).filter(u=>u!==base+'/servicos/'&&u!==base+'/'&&isPriorityRoute(new URL(u).pathname)).map(u=>{const p=new URL(u).pathname;const f=path.join(out,p,'index.html');const t=fs.existsSync(f)?fs.readFileSync(f,'utf8').match(/<title>([^<]+)<\/title>/)?.[1]:p;return [u,t||p];});
 indexHtml=indexHtml.replace('</article>','<h2>Guias de serviços e regiões</h2>'+links(discover)+'</article>');indexHtml=require('./seo-directory-layout.cjs')(indexHtml,services.filter(s=>covered.some(c=>c.ids.has(s.id))),covered,urlFor,esc);
