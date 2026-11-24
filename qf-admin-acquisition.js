@@ -54,7 +54,9 @@
         google: 'Google', meta: 'Meta (Facebook / Instagram)', fb: 'Facebook',
         ig: 'Instagram', google_referral: 'Google · referência não classificada',
         meta_referral: 'Meta · referência não classificada',
-        bing_referral: 'Bing · referência não classificada'
+        bing_referral: 'Bing · referência não classificada',
+        chatgpt: 'ChatGPT · IA', perplexity: 'Perplexity · IA', gemini: 'Gemini · IA',
+        copilot: 'Microsoft Copilot · IA', claude: 'Claude · IA', 'chatgpt.com': 'ChatGPT · IA'
       };
       var html = '<p class="text--sm text--secondary">Nova medição desde ' + esc(started) + ' (Brasília), limitada aos últimos 7 dias. Apenas a versão nova entra nestes indicadores; histórico anterior preservado. Visitas e etapas contam sessões; publicações contam pedidos únicos. Eventos são contados independentemente: entrada direta e preenchimento automático podem pular interações. Nem todos os acessos podem ser medidos.</p>' +
         '<div class="stack--sm" style="margin-top:12px;">' + Object.keys(labels).map(function (key) {

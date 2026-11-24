@@ -370,4 +370,5 @@ require('./seo-bing-descriptions-20261119.cjs');
 // Aplica a seleção de indexação ao HTML, ao manifesto e ao sitemap final.
 require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
+require('./seo-ai-discovery.cjs');
 require('./check-sitemap.cjs');

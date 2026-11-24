@@ -9,6 +9,7 @@ function page(url,referrer,searchSaved){
   const w=dom.window;
   w.crypto.randomUUID=()=> 'organic-test';
   if(searchSaved)w.sessionStorage.setItem('qf_search_referrer_v1',JSON.stringify(searchSaved));
+  w.eval(fs.readFileSync(require.resolve('../qf-ai-origin.js'),'utf8'));
   w.eval(script);
   return {dom,origin:w.QFClientAcquisition.attribution(),saved:JSON.parse(w.sessionStorage.getItem('qf_search_referrer_v1')||'null')};
 }
@@ -41,4 +42,34 @@ test('link direto não vira orgânico e clique pago mantém atribuição paga',(
   assert.equal(paid.origin.medium,'cpc');
   assert.equal(paid.saved,null);
   paid.dom.window.close();
+});
+
+test('UTM do ChatGPT e referenciadores de IA são identificados sem anúncio',()=>{
+  for(const [url,ref,source] of [
+    ['https://quemfazservico.com.br/?utm_source=chatgpt.com','','chatgpt'],
+    ['https://quemfazservico.com.br/','https://www.perplexity.ai/search/test','perplexity'],
+    ['https://quemfazservico.com.br/','https://gemini.google.com/app','gemini'],
+    ['https://quemfazservico.com.br/','https://copilot.microsoft.com/','copilot'],
+    ['https://quemfazservico.com.br/','https://claude.ai/','claude']
+  ]){
+    const p=page(url,ref);assert.equal(p.origin.source,source);assert.equal(p.origin.medium,'ai_referral');p.dom.window.close();
+  }
+});
+test('clique pago não é confundido com IA e domínio falso não é aceito',()=>{
+  const paid=page('https://quemfazservico.com.br/?utm_source=google&utm_medium=cpc&gclid=abc','https://chatgpt.com/');
+  assert.equal(paid.origin.source,'google');assert.equal(paid.origin.medium,'cpc');paid.dom.window.close();
+  const fake=page('https://quemfazservico.com.br/','https://chatgpt.com.example.org/');
+  assert.equal(fake.origin.source,'direto');fake.dom.window.close();
+});
+test('origem IA sobrevive à navegação interna para o formulário',()=>{
+  const p=page('https://quemfazservico.com.br/servicos/diarista/guarulhos/','https://chatgpt.com/');
+  const saved=p.dom.window.sessionStorage.getItem('qf_ai_origin_v1');
+  const next=new JSDOM('<!doctype html>',{url:'https://quemfazservico.com.br/?servico=diarista',referrer:'https://quemfazservico.com.br/servicos/diarista/guarulhos/',runScripts:'outside-only'});
+  next.window.sessionStorage.setItem('qf_ai_origin_v1',saved);
+  next.window.eval(fs.readFileSync(require.resolve('../qf-ai-origin.js'),'utf8'));
+  next.window.eval(script);
+  assert.equal(next.window.QFClientAcquisition.attribution().source,'chatgpt');
+  assert.equal(next.window.QFClientAcquisition.attribution().landing_page,'/servicos/diarista/guarulhos/');
+  next.window.close();
+  p.dom.window.close();
 });
