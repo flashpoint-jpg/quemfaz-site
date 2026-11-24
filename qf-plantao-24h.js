@@ -209,6 +209,7 @@
   const style=d.createElement('style');
   style.textContent='.qf-approved-picker-actions:has([data-qf-plantao-client]){width:min(100%,580px);grid-template-columns:repeat(3,minmax(0,1fr))}.qf-approved-picker-actions [data-qf-plantao-client]{font-size:clamp(12px,3.05vw,15px)!important}.qf-plantao-exemplos{margin:10px 0 0;text-align:center;color:#435973;font-size:13px}.qf-plantao-dialog{box-sizing:border-box;width:min(520px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:18px;overflow:auto;border:1px solid #cddff1;border-radius:16px;background:#fff;color:#173150}.qf-plantao-dialog::backdrop{background:#0b203c8c}.qf-plantao-dialog header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.qf-plantao-dialog header h2,.qf-plantao-dialog h3,.qf-plantao-dialog p{margin:0}.qf-plantao-dialog header button{border:0;background:#edf3fa;color:#173150;border-radius:8px;width:44px;height:44px;font-size:25px}.qf-plantao-body,.qf-plantao-body form,.qf-plantao-card{display:grid;gap:10px}.qf-plantao-dialog label{font-weight:700}.qf-plantao-dialog :is(input,select,textarea){display:block;width:100%;min-height:44px;margin-top:4px;padding:8px;border:1px solid #afc6df;border-radius:8px;background:#fff;color:#173150;font-size:16px}.qf-plantao-dialog .btn{min-height:44px;white-space:normal}.qf-plantao-card{padding:12px;border:1px solid #d6e4f4;border-radius:10px;background:#f3f8ff}.qf-plantao-price{font-size:26px}.qf-plantao-msg{margin-top:10px!important}';
   style.textContent += `
+   .qf-plantao-exemplos a{color:#0b509f;font-weight:700}
    .qf-plantao-search{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #d6e4f4;border-radius:10px;background:#f3f8ff}
    .qf-plantao-spinner{width:24px;height:24px;flex:none;border:2px solid #c7d8ec;border-top-color:#1459ad;border-radius:50%;animation:qf-plantao-spin 1.25s linear infinite}
    @keyframes qf-plantao-spin{to{transform:rotate(360deg)}}
@@ -221,9 +222,11 @@
     const c=d.createElement('button');c.type='button';c.className='qf-approved-cta';
     c.dataset.qfPlantaoClient='';c.textContent='Chamado Urgente 24h';c.setAttribute('aria-haspopup','dialog');
     c.onclick=()=>open('cliente');client.append(c);
-    const note=d.createElement('p');note.className='qf-plantao-exemplos';
-    note.textContent='Ficou sem energia só na sua casa? O carro quebrou de madrugada? Estourou um cano?';
-    client.after(note);
+    const url=new URL(app.location.href);
+    if(url.searchParams.get('plantao')==='cliente'){
+     url.searchParams.delete('plantao');app.history.replaceState(app.history.state,'',url);
+     open('cliente');
+    }
    }
    const pro=d.querySelector('#app-shell[data-route="profissional/home"] .view');
    if(pro&&!pro.querySelector('[data-qf-plantao-pro]')){
