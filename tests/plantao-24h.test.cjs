@@ -22,7 +22,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261123214500_chamado_urgente_24h.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261123235000_plantao_disponibilidade_na_busca.sql','utf8'));
-  await db.exec(fs.readFileSync('supabase/migrations/20261124002000_plantao_gratuito.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261124002008_plantao_gratuito.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
