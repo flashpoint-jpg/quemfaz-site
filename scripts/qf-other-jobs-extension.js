@@ -1,16 +1,9 @@
 // Duas listas autorizadas pelo servidor: perto (push) e oportunidades (consulta voluntária).
 function qfOutrosEsc(value) { return PU.escapeHtml(String(value == null ? '' : value)); }
-// O prazo dos pedidos tradicionais e de 72 horas a partir da publicacao.
-// Mantem a mesma origem de tempo da rotina server-side privada.qf_pedido_expiravel_72h.
-const QF_PEDIDO_PRAZO_MS = 72 * 60 * 60 * 1000;
+// A disponibilidade do pedido é definida pelo servidor, sem expiração por idade.
 function qfPedidoCriadoMs(req) {
   const ms=Date.parse(String(req&&req.criadoEm||''));
   return Number.isFinite(ms)?ms:null;
-}
-function qfPedidoExpiraMs(req) {
-  if(String((req&&(req.atendimentoTipo||req.atendimento_tipo))||'').toLowerCase()==='garante')return null;
-  const criado=qfPedidoCriadoMs(req);
-  return criado==null?null:criado+QF_PEDIDO_PRAZO_MS;
 }
 function qfPedidoPublicadoTexto(criadoMs){
   return criadoMs==null?'Data não informada':new Intl.DateTimeFormat('pt-BR',{
@@ -18,15 +11,6 @@ function qfPedidoPublicadoTexto(criadoMs){
     hour:'2-digit',minute:'2-digit',hour12:false
   }).format(new Date(criadoMs));
 }
-function qfPedidoRestanteTexto(ms){
-  if(ms<=0)return 'Prazo encerrado';
-  const seconds=Math.max(0,Math.ceil(ms/1000));
-  const dias=Math.floor(seconds/86400),horas=Math.floor(seconds%86400/3600);
-  const minutos=Math.floor(seconds%3600/60),segundos=seconds%60;
-  const pad=n=>String(n).padStart(2,'0');
-  return (dias?dias+'d ':'')+pad(horas)+'h '+pad(minutos)+'min '+pad(segundos)+'s';
-}
-window.QFPedidoRestanteTexto=qfPedidoRestanteTexto;
 Screens.profOutrosPedidosRender = function(params,user) {
   qfPedidosTabUser=user.id; qfPedidosTab='mais';
   return Screens.profServicosDisponiveisRender(params,user);
@@ -49,8 +33,6 @@ function qfPedidosGrupos(user) {
   const seen=new Set(),perto=[],mais=[];
   DB.chamadasPendentes(user.id).forEach(function(r){
     if(seen.has(r.id)||r.profissionalId||r.abertoTodos||!Array.isArray(user.categorias)||user.categorias.indexOf(r.categoriaId)===-1)return;
-    const expiracao=qfPedidoExpiraMs(r);
-    if(expiracao!==null&&expiracao<=Date.now())return;
     const lim=Math.min(4,Math.max(1,Number(r.limiteParticipantes||r.maxOrcamentos||3)));
     if(Number(r.participantes||0)>=lim)return;
     seen.add(r.id);(r.foraRaio?mais:perto).push(r);
@@ -92,12 +74,9 @@ function qfOutrosProCard(req) {
   const limit=Math.min(4,Math.max(1,Number(req.limiteParticipantes||req.maxOrcamentos||3)||3));
   const occupied=Math.max(0,Number(req.participantes||0)||0);
   const free=Math.max(0,limit-occupied);
-  const criadoMs=qfPedidoCriadoMs(req),expiraMs=qfPedidoExpiraMs(req);
-  const restante=expiraMs==null?'Consulte o prazo no pedido':qfPedidoRestanteTexto(expiraMs-Date.now());
-  const relogio='<div class="qf-home-job__clock" aria-label="Data de publicação e validade do pedido">'+
-    '<span class="qf-home-job__published">Publicado: '+qfOutrosEsc(qfPedidoPublicadoTexto(criadoMs))+'</span>'+
-    '<span class="qf-home-job__countdown'+(expiraMs!==null&&expiraMs-Date.now()<=6*3600000?' is-soon':'')+'"'+
-    (expiraMs==null?'':' data-qf-expires-at="'+expiraMs+'"')+'>'+(expiraMs==null?qfOutrosEsc(restante):'Termina em <strong class="qf-home-job__countdown-value" data-qf-clock-value>'+qfOutrosEsc(restante)+'</strong>')+'</span></div>';
+  const criadoMs=qfPedidoCriadoMs(req);
+  const publicacao='<div class="qf-home-job__clock" aria-label="Data de publicação do pedido">'+
+    '<span class="qf-home-job__published">Publicado: '+qfOutrosEsc(qfPedidoPublicadoTexto(criadoMs))+'</span></div>';
   return '<article class="qf-home-job'+(req.foraRaio?' qf-home-job--fora':'')+'" data-qf-home-job data-request-id="'+qfOutrosEsc(req.id)+'" data-created="'+qfOutrosEsc(req.criadoEm||'')+
     '" data-distance="'+(req.distanciaKm==null?'999999':Number(req.distanciaKm))+'">'+
     '<div class="qf-home-job__symbol">'+icon(c&&c.icon||'briefcase')+'</div>'+
@@ -107,7 +86,7 @@ function qfOutrosProCard(req) {
     '<small>'+qfOutrosEsc(String(req.descricao||'').slice(0,85))+'</small></div>'+
     '<div class="qf-home-job__action">'+(dist?'<span class="qf-home-job__distance">'+dist+'</span>':'')+
     '<button class="btn btn--primary" type="button" data-nav="/profissional/chamada/'+qfOutrosEsc(req.id)+'">Ver pedido</button>'+
-    '<span class="qf-home-job__vagas">'+free+(free===1?' contato disponível':' contatos disponíveis')+'</span></div>'+relogio+'</article>';
+    '<span class="qf-home-job__vagas">'+free+(free===1?' contato disponível':' contatos disponíveis')+'</span></div>'+publicacao+'</article>';
 }
 function qfOutrosHomePedidos(user) {
   if(qfPedidosTabUser!==user.id){qfPedidosTabUser=user.id;qfPedidosTab='perto';}
@@ -189,38 +168,11 @@ Screens.profChamadaRender=function(params,user){
   if(!req||!req.foraRaio)return html;
   return html.replace('<div class="view">','<div class="view"><div class="qf-pedidos-warning" role="note">Fora do seu raio de atendimento. Confira a distância e o deslocamento antes de desbloquear.</div>');
 };
-// Atualiza apenas os números do relógio; evita redesenhar a tela a cada segundo.
-let qfPedidosClockTimer=null;
-function qfPedidosAtualizarRelogios(content,user){
-  let expirou=false;
-  content.querySelectorAll('[data-qf-expires-at]').forEach(function(el){
-    const falta=Number(el.getAttribute('data-qf-expires-at'))-Date.now();
-    if(falta<=0){expirou=true;return;}
-    const value=el.querySelector('[data-qf-clock-value]');
-    if(value)value.textContent=qfPedidoRestanteTexto(falta);
-    el.classList.toggle('is-soon',falta<=6*60*60*1000);
-  });
-  if(expirou){
-    const box=content.querySelector('#chamados-disponiveis');
-    if(box)box.outerHTML=qfOutrosHomePedidos(user);
-  }
-}
-function qfPedidosLigarRelogio(content,user){
-  if(qfPedidosClockTimer!==null){clearInterval(qfPedidosClockTimer);qfPedidosClockTimer=null;}
-  qfPedidosAtualizarRelogios(content,user);
-  qfPedidosClockTimer=setInterval(function(){
-    if(!content.isConnected||!content.querySelector('#chamados-disponiveis')){
-      clearInterval(qfPedidosClockTimer);qfPedidosClockTimer=null;return;
-    }
-    qfPedidosAtualizarRelogios(content,user);
-  },1000);
-}
 const qfOutrosAfterRender = Screens.afterRender;
 Screens.afterRender = function(pattern,content,params,user){
   if (qfOutrosAfterRender) qfOutrosAfterRender(pattern,content,params,user);
   if (!user || !user.id) return;
   if (['/profissional/home','/profissional/servicos/disponiveis','/profissional/outros-pedidos'].indexOf(pattern)!==-1) {
-    qfPedidosLigarRelogio(content,user);
     content.addEventListener('click',function(e){
       const tab=e.target.closest('[data-qf-pedidos-tab]');if(!tab)return;
       qfPedidosTab=tab.getAttribute('data-qf-pedidos-tab');
@@ -292,9 +244,7 @@ Screens.afterRender = function(pattern,content,params,user){
    '.qf-home-jobs__header select{flex:none;width:auto;max-width:146px;padding:8px 12px;font-size:12px;border-radius:12px}',
    '.qf-home-job{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:#fff;border:1px solid #e7edf4;border-radius:16px;padding:13px 12px;box-shadow:0 2px 8px rgba(5,36,84,.035)}',
    '.qf-home-job__clock{flex:0 0 100%;border-top:1px solid #e9eef5;padding-top:8px;margin-top:2px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px 10px;font-size:11px;line-height:1.4}',
-   '.qf-home-job__published{color:#63748b}.qf-home-job__countdown{color:#586780;font-weight:600;font-variant-numeric:tabular-nums}',
-   '.qf-home-job__countdown-value{color:#bd4b00;font-weight:900;font-size:12px}',
-   '.qf-home-job__countdown.is-soon .qf-home-job__countdown-value{color:#a83e00}',
+   '.qf-home-job__published{color:#63748b}',
    '.qf-home-job__symbol{display:grid;place-items:center;background:#ecf4ff;color:#125bb3;border-radius:13px;min-width:54px;height:60px}',
    '.qf-home-job__symbol svg{width:25px;height:25px}',
    '.qf-home-job__copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}',
