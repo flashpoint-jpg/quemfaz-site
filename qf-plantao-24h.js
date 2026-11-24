@@ -5,6 +5,7 @@
  const services = {
   cat_eletricista:'Eletricista', cat_guincho:'Guincho', cat_encanador:'Encanador', cat_chaveiro:'Chaveiro'
  };
+ app.QFPlantao24h = {categorias:Object.freeze(Object.keys(services))};
  const escape = value => String(value??'').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
  const db = () => app.QFCloud?.client;
  const button = (label, action, primary=false) => '<button type="button" class="btn btn--'+(primary?'primary':'outline')+'" data-plantao-action="'+action+'">'+label+'</button>';
@@ -93,11 +94,25 @@
    }
   }
   function renderProfessional(shift) {
-   if(!shift.plano_ativo){
-    show('<h3>24 Livre</h3>'+money('R$ 59,00')+'<p>30 dias · 20 desbloqueios de pedidos comuns. Chamados urgentes confirmados liberam o contato sem usar a cota.</p>'+
-      (app.QFLivre?.planHelpButton('livre_24h')||'')+
-      (plan?.code?payUI(plan.code)+button('Verificar ativação','refresh'):button('Ativar 24 Livre via Pix','buy',true)));
-    return;
+   const categorias=shift.categorias_elegiveis||[];
+   const profissoes=Object.values(services).join(', ');
+   const statusPlano=shift.plano_ativo
+    ? '<p><strong>24 Livre ativo</strong> · '+escape(shift.desbloqueios_restantes)+' desbloqueios comuns restantes.</p>'
+    : '<p><strong>Plantão 24h grátis</strong> · somente chamados urgentes. Pedidos comuns exigem saldo ou um plano próprio.</p>';
+   let acoes='';
+   if(!categorias.length){
+    acoes='<p>Para entrar no plantão, seu perfil precisa ter uma destas profissões: '+profissoes+'.</p>';
+   }else if(shift.inscrito_gratis||shift.plano_ativo){
+    acoes='<p>Profissões no plantão: '+categorias.map(id=>escape(services[id])).join(', ')+'.</p>'+
+     button(shift.disponivel?'Sair do plantão':'Estou de plantão',shift.disponivel?'off':'on',true);
+   }else{
+    acoes='<p>Inscreva-se sem pagar. Depois, marque Estou de plantão quando puder atender.</p>'+
+     button('Inscrever-me grátis','enroll',true);
+   }
+   if(categorias.length&&!shift.plano_ativo){
+    acoes+='<details><summary>24 Livre com pedidos comuns</summary><p>R$ 59,00 por 30 dias, com 20 desbloqueios comuns.</p>'+
+     (app.QFLivre?.planHelpButton('livre_24h')||'')+
+     (plan?.code?payUI(plan.code)+button('Verificar ativação','refresh'):button('Ativar 24 Livre via Pix','buy'))+'</details>';
    }
    const cards=list.map(item=>{
     const id=escape(item.id), label=escape(services[item.categoria]);
@@ -108,8 +123,7 @@
      '<form data-plantao-offer="'+id+'"><label>Previsão de chegada<select name="eta">'+[15,20,30,45,60].map(n=>'<option value="'+n+'">'+n+' min</option>').join('')+
      '</select></label><button class="btn btn--primary">Aceitar chamado</button></form></article>';
    }).join('');
-   show('<p><strong>24 Livre ativo</strong> · '+escape(shift.desbloqueios_restantes)+' desbloqueios comuns restantes.</p>'+
-    button(shift.disponivel?'Sair do plantão':'Estou de plantão',shift.disponivel?'off':'on',true)+
+   show(statusPlano+acoes+
     (shift.disponivel&&!cards?'<p>Nenhum chamado urgente para os serviços e cidades do seu perfil.</p>':'')+cards);
   }
   async function refresh() {
@@ -179,6 +193,7 @@
      case 'buy':{
       const rec=await app.QFCloud.createPlan('livre_24h','pix');plan={id:rec.id,code:rec.pixCopyPaste};break;
      }
+     case 'enroll':await rpc('qf_plantao_inscrever');break;
      case 'on':case 'off':await rpc('qf_plantao_disponibilidade',{p_disponivel:action==='on'});break;
     }
     await refresh();
@@ -231,7 +246,7 @@
    const pro=d.querySelector('#app-shell[data-route="profissional/home"] .view');
    if(pro&&!pro.querySelector('[data-qf-plantao-pro]')){
     const c=d.createElement('button');c.type='button';c.className='btn btn--outline';
-    c.dataset.qfPlantaoPro='';c.textContent='Chamados 24h · 24 Livre';c.setAttribute('aria-haspopup','dialog');
+    c.dataset.qfPlantaoPro='';c.textContent='Plantão 24h';c.setAttribute('aria-haspopup','dialog');
     c.onclick=()=>open('profissional');pro.prepend(c);
     const url=new URL(app.location.href);
     if(url.searchParams.get('plantao')==='1'){
