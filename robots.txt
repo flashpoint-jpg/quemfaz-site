@@ -6,4 +6,5 @@ Disallow: /espelho-cliente.html
 Disallow: /espelho-profissional.html
 Disallow: /*?busca=
 
+# OAI-SearchBot e outros rastreadores de pesquisa seguem o grupo geral acima.
 Sitemap: https://quemfazservico.com.br/sitemap.xml

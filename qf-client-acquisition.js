@@ -49,6 +49,7 @@
     try {return JSON.parse(global.sessionStorage.getItem(QF_SEARCH_REF_KEY)||'null');}catch(_){return null;}
   }
   var capturedSearch = searchReferrer();
+  var aiOrigin = global.QFAIOrigin && global.QFAIOrigin.current;
   function readAdTouch() {
     var saved = {};
     try { saved = JSON.parse(global.sessionStorage.getItem(QF_ATTR_KEY) || '{}') || {}; } catch (_) {}
@@ -201,6 +202,10 @@
     if(!out.source && capturedSearch) {
       out.source = capturedSearch.source;
       out.medium = capturedSearch.medium;
+    }
+    // Uma origem IA confirmada prevalece sobre dados antigos da sessão; cliques pagos atuais limpam essa origem no capturador.
+    if (aiOrigin) {
+      out = {source:aiOrigin.source, medium:aiOrigin.medium, landing_page:aiOrigin.landing_page};
     }
     if (!out.source) out.source = 'direto';
     try {

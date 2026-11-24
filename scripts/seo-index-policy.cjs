@@ -8,6 +8,8 @@ const localPriorities = {
   diadema: ['eletricista', 'encanador', 'diarista', 'chaveiro', 'tecnico-de-geladeira'],
   'ribeirao-pires': ['eletricista', 'encanador', 'pintor'],
   'rio-grande-da-serra': ['eletricista', 'encanador'],
+  osasco: ['eletricista', 'encanador'],
+  suzano: ['eletricista', 'pedreiro'],
   guarulhos: ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'desentupidor', 'ar-condicionado'],
   'sao-paulo': ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'limpeza-de-estofados-e-tapetes', 'faxina-pos-obra']
 };

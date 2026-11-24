@@ -166,9 +166,11 @@ test('guias do ABC preservam editorial com formulário integrado na própria URL
   assert.ok(page.includes('BreadcrumbList'));
   assert.ok(!/todos os profissionais (são )?verificados/i.test(page));
  }
- const foraDaSelecao=fs.readFileSync(path.join(dist,'servicos','eletricista','osasco','index.html'),'utf8');
+ // Osasco entrou na seleção editorial GEO com cobertura confirmada. Muzambinho permanece fora da seleção.
+ const foraDaSelecao=fs.readFileSync(path.join(dist,'servicos','eletricista','muzambinho','index.html'),'utf8');
  assert.ok(foraDaSelecao.includes('noindex,follow')&&foraDaSelecao.includes('id="seo-order"'));
- assert.ok(!sitemap.includes('/servicos/eletricista/osasco/</loc>'));
+ assert.ok(!sitemap.includes('/servicos/eletricista/muzambinho/</loc>'));
+ assert.ok(sitemap.includes('/servicos/eletricista/osasco/</loc>'));
  assert.ok(sitemap.includes('/servicos/eletricista/maua/</loc>'));
 
 });
