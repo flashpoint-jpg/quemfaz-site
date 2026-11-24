@@ -26,6 +26,7 @@ if (fs.existsSync(adminDistPath)) {
   fs.writeFileSync(adminDistPath, newAdmin);
 }
 let html=addProfessionalTools(fs.readFileSync(path.join(root,'index.html'),'utf8'), 'index.html');
+html=require('./prepare-plantao-gratuito.cjs')(html);
 // Destaca serviços locais no HTML inicial e na home renderizada pelo aplicativo.
 html = html
   .replace("['Santo André', 'santo-andre-cidade'", "['Eletricista em Santo André', 'santo-andre-cidade'")

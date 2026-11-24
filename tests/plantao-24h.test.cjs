@@ -6,11 +6,12 @@ const { PGlite } = require('@electric-sql/pglite');
 test('chamado 24h só libera contato para os participantes após validar o Pix de R$ 20', async () => {
  const db = new PGlite();
  const id = n => '10000000-0000-4000-8000-00000000000'+n;
- const [client,pro,other] = [id(1),id(2),id(3)];
+ const [client,pro,other,signup] = [id(1),id(2),id(3),id(5)];
  try {
   await db.exec(`
    create role anon; create role authenticated; create role service_role;
    create schema auth; create schema private;
+   create table auth.users(id uuid primary key, raw_user_meta_data jsonb);
    create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('qf.user',true),'')::uuid$$;
    create table qf_profiles(id uuid primary key,tipo text,nome text,telefone text,whatsapp text,cidade text,uf text,ativo boolean);
    create table qf_profissionais(user_id uuid primary key,especialidades text[]);
@@ -21,22 +22,40 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261123214500_chamado_urgente_24h.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261123235000_plantao_disponibilidade_na_busca.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261124002000_plantao_gratuito.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
   }
   const as = u=>db.query("select set_config('qf.user',$1,false)",[u]);
   const list = async()=> (await db.query('select qf_plantao_listar() as items')).rows[0].items;
+  await as(client);
+  await assert.rejects(db.query('select qf_plantao_inscrever()'),/profissão atendida/);
+  await as(other);
+  await db.query("update qf_profissionais set especialidades=array['cat_pintor'] where user_id=$1",[other]);
+  await assert.rejects(db.query('select qf_plantao_inscrever()'),/profissão atendida/);
+  await db.query('insert into auth.users values($1,$2)',[signup,{qf_plantao_gratis:true}]);
+  await db.query("insert into qf_profiles values($1,'profissional','Novo profissional','','','Santo André','SP',true)",[signup]);
+  await db.query("insert into qf_profissionais values($1,array['cat_chaveiro'])",[signup]);
+  await as(signup);
+  const shift = async () => (await db.query('select qf_plantao_disponibilidade() as status')).rows[0].status;
+  assert.deepEqual(await shift(),{plano_ativo:false,inscrito_gratis:true,disponivel:false,categorias_elegiveis:['cat_chaveiro'],desbloqueios_restantes:0});
+  await db.query('select qf_plantao_disponibilidade(true)');
   await as(pro);
-  await assert.rejects(db.query('select qf_plantao_disponibilidade(true)'),/Ative o 24 Livre/);
+  await assert.rejects(db.query('select qf_plantao_disponibilidade(true)'),/Inscreva-se no Plantão/);
   const create = desc=>db.query("select qf_plantao_criar($1,'cat_eletricista',$2,'09010000','Santo André','SP','Centro','Rua Exemplo, 120') as id",[client,desc]);
   const empty = (await create('Sem energia apenas na residência.')).rows[0].id;
   await as(client);
   assert.equal((await list()).find(row=>row.id===empty).estado,'sem_profissional');
   await assert.rejects(db.query('select qf_plantao_pix_reservar($1,$2,true)',[client,empty]),/Prazo da oferta/);
   await as(pro);
-  await db.query("insert into qf_recargas values($1,$2,'aprovado')",[id(4),pro]);
-  await db.query("insert into qf_planos_profissional values($1,$2,'livre_24h',now()+interval '30 days',20)",[id(4),pro]);
+  await db.exec('set role anon');
+  await assert.rejects(db.query('select qf_plantao_inscrever()'),/permission denied/);
+  await db.exec('set role authenticated');
+  await db.query('select qf_plantao_inscrever()');
+  await db.query('select qf_plantao_inscrever()');
+  await db.exec('reset role');
+  assert.deepEqual(await shift(),{plano_ativo:false,inscrito_gratis:true,disponivel:false,categorias_elegiveis:['cat_eletricista'],desbloqueios_restantes:0});
   await db.query('select qf_plantao_disponibilidade(true)');
   await assert.rejects(create('WhatsApp 11 9 1234-5678'),/Remova o telefone/);
   const call=(await create('Sem energia apenas na residência.')).rows[0].id;
@@ -70,7 +89,15 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   await as(pro);
   assert.equal((await list())[0].telefone,'11910000000');
   assert.equal((await list())[0].endereco,'Rua Exemplo, 120');
-  assert.equal((await db.query('select chamados_restantes from qf_planos_profissional')).rows[0].chamados_restantes,20);
+  assert.equal((await db.query('select count(*)::int as total from qf_planos_profissional')).rows[0].total,0);
+  assert.equal((await db.query('select count(*)::int as total from qf_recargas')).rows[0].total,0);
+  await as(other);
+  await db.query("update qf_profissionais set especialidades=array['cat_eletricista'] where user_id=$1",[other]);
+  await db.query("insert into qf_recargas values($1,$2,'aprovado')",[id(4),other]);
+  await db.query("insert into qf_planos_profissional values($1,$2,'livre_24h',now()+interval '30 days',20)",[id(4),other]);
+  assert.equal((await shift()).desbloqueios_restantes,20);
+  assert.equal((await shift()).plano_ativo,true);
+  await as(pro);
   const late=(await create('Rede elétrica da casa caiu.')).rows[0].id;
   await db.query('select qf_plantao_aceitar($1,30)',[late]);
   const reserve=await db.query('select qf_plantao_pix_reservar($1,$2,true) as r',[client,late]);
