@@ -145,6 +145,7 @@
  const serviceCategories=()=>(g.DB?.categories()||[]).filter(c=>c.id!=='cat_outros'&&!/^outros?( servicos?)?$/.test(norm(c.nome))).slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
  function classify(problem){
   const text=norm(problem);
+  const furnitureAssembly=/^(?:(?:des|re)?montagem|montador|(?:des|re)?montar)$|\b(?:montador(?:a|es)?|(?:des|re)?monta(?:gem|r))\b.*\b(?:armarios?|moveis|movel|guarda[ -]roupas?|comodas?|estantes?|rack|painel|beliche)\b|\bguarda[ -]roupas?\b/;
   const rules=[
    [/\beletric/,/tomada|disjuntor|curto.circuito|chuveiro|fiacao|energia|eletric/,10],
    [/encanador|hidraul/,/torneira|vazament|cano|descarga|registro|encan|hidraul|pia entup/,11],
@@ -153,7 +154,7 @@
    [/serralheir|soldador|soldagem|metalurg/,/soldar|solda|soldagem|portao de ferro|portao de metal|grade de ferro|estrutura metalica|serralheria|corrimao|metalico/,16],
    [/limpeza.*estof|higien.*estof|limpeza.*sofa/,/sofa|estofado|poltrona|colchao|tapete/,12],
    [/diarista|faxineira|limpeza residencial/,/faxina|diarista|faxineira|limpar.*casa|limpeza.*casa|limpeza.*apartamento/,11],
-   [/montador|montagem.*moveis/,/montar|montagem|desmontar|guarda.roupa|montador/,12],
+   [/^montador de moveis$/,furnitureAssembly,12],
    [/chaveiro/,/chave|fechadura|porta trancada/,12],
    [/ar.condicionado|refrigeracao/,/ar.condicionado|ar nao gela|ar nao esta gelando|climatiz/,12],
    [/geladeira/,/geladeira|freezer|refrigerador|frigobar/,12],
@@ -377,7 +378,7 @@
   target.querySelector('[data-home-intent-prof]')?.addEventListener('click',e=>{const button=e.currentTarget;if(button.dataset.qfOpening==='1')return;button.dataset.qfOpening='1';button.setAttribute('aria-busy','true');const label=button.querySelector('.qf-intent-choice__body>strong');if(label)label.textContent='Abrindo área profissional...';g.requestAnimationFrame(()=>g.setTimeout(()=>g.navigate('/auth/profissional/login'),0));});
   // O catálogo completo permanece interno. No celular, só aparecem resultados da busca.
   select.hidden=true;select.required=false;select.tabIndex=-1;select.setAttribute('aria-hidden','true');
-  select.insertAdjacentHTML('beforebegin','<input class="input" id="home-service-search" type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="home-service-results" aria-describedby="home-service-hint home-service-error" placeholder="Digite o serviço. Ex.: informática, pintor"><div id="home-service-results" role="listbox" aria-label="Serviços encontrados" hidden></div><span class="text--sm text--secondary" id="home-service-hint" role="status">Digite pelo menos 2 letras para buscar.</span>');
+  select.insertAdjacentHTML('beforebegin','<input class="input" id="home-service-search" type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="home-service-results" aria-describedby="home-service-hint home-service-error" placeholder="Ex.: montagem de armário"><div id="home-service-results" role="listbox" aria-label="Serviços encontrados" hidden></div><span class="text--sm text--secondary" id="home-service-hint" role="status">Digite pelo menos 2 letras para buscar.</span>');
   form.querySelector('label[for="home-service"]').htmlFor='home-service-search';
   const search=form.querySelector('#home-service-search'),results=form.querySelector('#home-service-results'),hint=form.querySelector('#home-service-hint');
   target.querySelector('[data-home-intent-client]')?.addEventListener('click',()=>{search.scrollIntoView({block:'center',behavior:'smooth'});search.focus({preventScroll:true});});

@@ -147,6 +147,33 @@ test('Serviço reconhecido digitado avança sem tocar na sugestão',()=>{
  }finally{dom.window.close();}
 });
 
+test('Busca por montagem de armário sugere o montador oficial e permite avançar sem tocar',()=>{
+ const {dom,w,mounted}=home([
+  ...catalog,
+  {id:'cat_custom_montagem',nome:'Montagem de móveis'},
+  {id:'cat_custom_drywall',nome:'Montador em drywall'}
+ ]);
+ try{
+  for(const text of ['montador de armário','montagem de armario','Preço de montar armário','montagem de guarda-roupa','desmontagem de armário']){
+   w.QFPedidoHome.start();
+   const search=w.document.querySelector('#home-service-search');
+   search.value=text;search.dispatchEvent(new w.Event('input'));
+   const [first]=w.document.querySelectorAll('#home-service-results [role="option"]');
+   assert.equal(first?.dataset.serviceId,'cat_montador',text);
+   const problem=w.document.querySelector('#home-problem');
+   problem.value='Preciso montar um armário de cozinha.';
+   const before=mounted.length;
+   search.form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+   assert.equal(mounted.length,before+1,text);
+   assert.equal(mounted.at(-1).service,'Montador de móveis');
+  }
+  w.QFPedidoHome.start();
+  const search=w.document.querySelector('#home-service-search');
+  search.value='montador em drywall';search.dispatchEvent(new w.Event('input'));
+  assert.equal(w.document.querySelector('#home-service-results [role="option"]').dataset.serviceId,'cat_custom_drywall');
+ }finally{dom.window.close();}
+});
+
 test('Entrada ambígua ou desconhecida exige escolha explícita e não cria categoria',()=>{
  const {dom,w,mounted}=home();
  try{
