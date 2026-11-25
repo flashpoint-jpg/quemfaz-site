@@ -23,6 +23,13 @@ function orderRow(order){
   '<span><time datetime="'+esc(order.at)+'">'+esc(when(order.at))+'</time><small>'+esc(order.status)+'</small></span>'+
   '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
 }
+function registrationRow(person){
+ const detail=[person.professions.join(', ')||'Profissão não informada',person.place].filter(Boolean).map(esc).join(' · ');
+ return link('/admin/profissionais/'+encodeURIComponent(person.id),
+  '<span><strong>'+esc(person.name)+'</strong><small>'+detail+'</small></span>'+
+  '<span><time datetime="'+esc(person.at)+'">'+esc(when(person.at))+'</time></span>'+
+  '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
+}
 const link=(route,label,cls='qfd-link',tab='')=>'<a class="'+cls+'" href="#'+esc(route)+'"'+(tab?' data-servicos-tab="'+esc(tab)+'"':'')+'>'+label+'</a>';
 let timer,extraLinks=[];
 function shell(pattern,content){
@@ -48,14 +55,25 @@ function install(){
   if(pattern!=='/admin/dashboard'||content.querySelector('[data-qfd]'))return;
   [...content.children].forEach(e=>e.hidden=true);
   const root=g.document.createElement('section');root.dataset.qfd='';root.className='qfd';
-  root.innerHTML='<div class="qfd-intro"><p>Tudo o que precisa da sua atenção, em um só lugar.</p><label class="qfd-search">'+ico('search')+'<input type="search" data-qfd-search aria-label="Buscar profissional, pedido ou pagamento" placeholder="Buscar profissional, pedido ou pagamento"></label></div><div class="qfd-stats">'+stats.map(statCard).join('')+'</div><section class="qfd-panel qfd-orders"><div class="qfd-orders-head"><h2>Pedidos recebidos</h2>'+link('/admin/servicos','Ver todos os pedidos')+'</div><div data-qfd-orders><p class="qfd-empty">Consultando pedidos…</p></div></section><div class="qfd-work"><details class="qfd-panel qfd-fold-panel"><summary><h2>Atividades recentes</h2></summary><div class="qfd-filters" role="group" aria-label="Filtrar atividades">'+[['all','Todas'],['unlock','Desbloqueios'],['payment','Pagamentos'],['support','Suporte']].map(([k,l])=>'<button type="button" data-qfd-filter="'+k+'" aria-pressed="'+(k==='all')+'">'+l+'</button>').join('')+'</div><div data-qfd-events><p class="qfd-empty">Consultando atividades…</p></div></details><details class="qfd-panel qfd-fold-panel qfd-attention qf-p-precisa"><summary><h2>Precisa de atenção</h2></summary><div data-qfd-attention><p class="qfd-empty">Consultando pendências…</p></div></details></div><details class="qfd-panel qfd-fold-panel"><summary><h2>'+ico('users')+' Quem desbloqueou cada pedido</h2></summary><div class="qfd-table-wrap"><table><thead><tr><th>Pedido</th><th>Serviço / Cidade</th><th>Profissional</th><th>Valor</th><th>Horário</th><th>Ação</th></tr></thead><tbody data-qfd-unlocks><tr><td colspan="6">Consultando desbloqueios…</td></tr></tbody></table></div></details><div class="qfd-footer"><p role="status" data-qfd-status>Consultando dados do banco…</p><button type="button" data-qfd-refresh>↻ Atualizar</button></div>';
+  root.innerHTML='<div class="qfd-intro"><p>Tudo o que precisa da sua atenção, em um só lugar.</p><label class="qfd-search">'+ico('search')+'<input type="search" data-qfd-search aria-label="Buscar profissional, pedido ou pagamento" placeholder="Buscar profissional, pedido ou pagamento"></label></div><div class="qfd-stats">'+stats.map(statCard).join('')+'</div><section class="qfd-panel qfd-orders" aria-labelledby="qfd-registrations-title"><div class="qfd-orders-head"><div><h2 id="qfd-registrations-title">Novos profissionais</h2><span class="text--sm text--secondary" data-qfd-registration-count role="status"></span></div>'+link('/admin/profissionais','Ver todos os profissionais')+'</div><div data-qfd-registrations><p class="qfd-empty">Consultando cadastros…</p></div></section><section class="qfd-panel qfd-orders"><div class="qfd-orders-head"><h2>Pedidos recebidos</h2>'+link('/admin/servicos','Ver todos os pedidos')+'</div><div data-qfd-orders><p class="qfd-empty">Consultando pedidos…</p></div></section><div class="qfd-work"><details class="qfd-panel qfd-fold-panel"><summary><h2>Atividades recentes</h2></summary><div class="qfd-filters" role="group" aria-label="Filtrar atividades">'+[['all','Todas'],['unlock','Desbloqueios'],['payment','Pagamentos'],['support','Suporte']].map(([k,l])=>'<button type="button" data-qfd-filter="'+k+'" aria-pressed="'+(k==='all')+'">'+l+'</button>').join('')+'</div><div data-qfd-events><p class="qfd-empty">Consultando atividades…</p></div></details><details class="qfd-panel qfd-fold-panel qfd-attention qf-p-precisa"><summary><h2>Precisa de atenção</h2></summary><div data-qfd-attention><p class="qfd-empty">Consultando pendências…</p></div></details></div><details class="qfd-panel qfd-fold-panel"><summary><h2>'+ico('users')+' Quem desbloqueou cada pedido</h2></summary><div class="qfd-table-wrap"><table><thead><tr><th>Pedido</th><th>Serviço / Cidade</th><th>Profissional</th><th>Valor</th><th>Horário</th><th>Ação</th></tr></thead><tbody data-qfd-unlocks><tr><td colspan="6">Consultando desbloqueios…</td></tr></tbody></table></div></details><div class="qfd-footer"><p role="status" data-qfd-status>Consultando dados do banco…</p><button type="button" data-qfd-refresh>↻ Atualizar</button></div>';
   content.append(root);
-  let filter='all',query='',events=[],unlocks=[],orders=[],ordersError=false,busy=false;
+  let filter='all',query='',events=[],unlocks=[],orders=[],registrations=[],ordersError=false,busy=false;
   const DB=g.DB;
   const pro=id=>DB?.profissionalById?.(id)?.nome||DB?.clienteById?.(id)?.nome||'Usuário';
   const searchText=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const matches=v=>!query||searchText(v).includes(searchText(query));
+  const registrationList=root.querySelector('[data-qfd-registrations]');
+  const registrationCount=root.querySelector('[data-qfd-registration-count]');
+  let lastRegistrationHtml='';
   function paint(){
+   const people=registrations.filter(p=>matches([p.name,p.place,...p.professions].join(' '))).slice(0,8);
+   const registrationHtml=people.length?people.map(registrationRow).join(''):
+    '<p class="qfd-empty">'+(ordersError?'Não foi possível consultar os cadastros.':query?'Nenhum cadastro encontrado na busca.':'Nenhum cadastro disponível.')+'</p>';
+   // Preserva o foco no perfil durante as atualizações automáticas.
+   if(lastRegistrationHtml!==registrationHtml){
+    registrationList.innerHTML=registrationHtml;
+    lastRegistrationHtml=registrationHtml;
+   }
    const recent=orders.filter(o=>matches([o.service,o.client,o.place,o.status,o.id].join(' '))).slice(0,8);
    root.querySelector('[data-qfd-orders]').innerHTML=recent.length?recent.map(orderRow).join(''):
     '<p class="qfd-empty">'+(ordersError?'Não foi possível consultar os pedidos.':'Nenhum pedido encontrado.')+'</p>';
@@ -74,6 +92,18 @@ function install(){
    const [snapshot,balance,support,movement,accounting]=results;
    events=[];unlocks=[];orders=[];
    ordersError=snapshot.status==='rejected'||snapshot.value===null;
+   registrations=ordersError?[]:(DB.state.users?.profissionais||[])
+    .filter(p=>Number.isFinite(Date.parse(p.criadoEm)))
+    .sort((a,b)=>Date.parse(b.criadoEm)-Date.parse(a.criadoEm))
+    .map(p=>({
+     id:p.id, name:p.nome||'Profissional', at:p.criadoEm,
+     place:[p.cidadeNome,p.uf].filter(Boolean).join('/'),
+     professions:[...new Set((p.categorias||[]).map(id=>DB.categoryById(id)?.nome||
+      (/^cat_/.test(id)?'Categoria indisponível':id)).filter(Boolean))]
+    }));
+   const registeredToday=registrations.filter(p=>today(p.at)).length;
+   const countLabel=ordersError?'':registeredToday+(registeredToday===1?' cadastro hoje':' cadastros hoje');
+   if(registrationCount.textContent!==countLabel)registrationCount.textContent=countLabel;
    if(!ordersError){
     const requests=DB.allRequests();
     orders=requests.map(r=>({
