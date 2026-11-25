@@ -2,7 +2,9 @@
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.join(__dirname,'..','dist');
-const tag='<script src="/qf-ai-origin.js?v=20261123-1"></script>';
+const {createHash}=require('node:crypto');
+const version=createHash('sha256').update(fs.readFileSync(path.join(root,'qf-ai-origin.js'))).digest('hex').slice(0,12);
+const tag='<script defer src="/qf-ai-origin.js?v='+version+'"></script>';
 function add(file){
   let html=fs.readFileSync(file,'utf8');
   if(!html.includes(tag)) fs.writeFileSync(file,html.replace(/<head(?:\s[^>]*)?>/i,m=>m+tag));

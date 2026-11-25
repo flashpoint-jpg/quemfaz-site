@@ -295,6 +295,11 @@
       area.innerHTML='<form class="landing-request" novalidate><div class="landing-service">✓ '+esc(a.servico)+' selecionado</div><label class="landing-field"><span>O que precisa fazer?</span><textarea class="input" id="at-problem" rows="3" minlength="8" maxlength="1500" placeholder="'+esc(params.placeholder||'Descreva o serviço e o que precisa ser feito')+'" required>'+esc(a.__problem||'')+'</textarea></label><div class="landing-location">'+input('cep','CEP do serviço','text','00000-000','inputmode="numeric" autocomplete="postal-code" maxlength="9"')+input('cidade','Cidade / UF','text','Preenchida pelo CEP','readonly autocomplete="address-level2"')+'</div><p class="landing-hint" data-landing-location role="status">Informe o CEP para confirmar a cidade. Não pedimos rua nem número.</p>'+input('bairro','Bairro','text','Bairro do serviço','autocomplete="address-level3"')+select('urgencia','Para quando?',[['','Selecione o prazo'],['urgente','Urgente'],['hoje','Hoje'],['normal','Quero agendar']],a.urgencia||'')+'<div class="landing-location">'+input('nome','Seu nome','text','Como podemos te chamar?','autocomplete="name" maxlength="120"')+input('contato','Celular com WhatsApp','tel','(11) 99999-9999','autocomplete="tel" maxlength="20"')+'</div><details class="landing-options"><summary>Preferências do pedido</summary>'+(materialsApplicable(a.servico)?select('materiais','Materiais e ferramentas',questions(a).find(q=>q.key==='materiais').choices,a.materiais||'combinar'):'')+select('max_orcamentos','Quantos orçamentos deseja receber?',questions(a).find(q=>q.key==='max_orcamentos').choices,a.max_orcamentos||'4')+select('intencao','Qual é sua intenção?',questions(a).find(q=>q.key==='intencao').choices,a.intencao||'contratar')+'</details><p class="landing-consent">Ao publicar, você autoriza o contato de até <span data-landing-max>'+esc(a.max_orcamentos||'4')+'</span> profissionais pelo Quem Faz. <a href="/privacidade/" target="_blank" rel="noopener">Privacidade</a></p><p role="alert" aria-live="assertive" data-at-error></p><button class="btn btn--primary landing-submit" type="submit" data-at-publish>Publicar pedido grátis <span aria-hidden="true">→</span></button><p class="landing-protection">Seu número não fica exposto publicamente.</p></form>';
       area.querySelector('#at-urgencia').closest('label').insertAdjacentHTML('afterend',select('orcamento_estimado','Qual é sua estimativa de orçamento?',[['','Selecione uma faixa'],...questions(a).find(q=>q.key==='orcamento_estimado').choices],a.orcamento_estimado||''));
       const form=area.querySelector('form'),cep=area.querySelector('#at-cep'),status=area.querySelector('[data-landing-location]');
+      const cityField=area.querySelector('#at-cidade');
+      if(params.cityHint&&!a.__cepValidado){
+        cityField.value=params.cityHint;
+        status.textContent='Cidade sugerida pela página. Informe o CEP do serviço para confirmar ou alterar a cidade.';
+      }
       const readCompact=()=>{
         for(const key of ['cep','bairro','urgencia','orcamento_estimado','nome','contato','materiais','max_orcamentos','intencao']){const el=area.querySelector('#at-'+key);if(el)a[key]=el.value.trim();}
         a.__problem=area.querySelector('#at-problem').value.trim();
@@ -306,21 +311,21 @@
         if(a.__cepValidado===digits)return;
         if(lookup)return lookup;
         delete a.__cepValidado;delete a.__bairroCep;a.cidade='';a.uf='';
-        area.querySelector('#at-cidade').value='';
+        cityField.value='';
         area.querySelector('#at-bairro').readOnly=false;
         status.textContent='Consultando CEP…';
         lookup=(async()=>{
           const loc=await consultarCep(digits);
           if(cep.value.replace(/\D/g,'')!==digits)throw Error('O CEP mudou. Confirme o novo CEP antes de publicar.');
           a.cep=loc.cep;a.__cepValidado=loc.cep;a.cidade=loc.cidade;a.uf=loc.uf;a.__bairroCep=loc.bairro;a.bairro=loc.bairro||a.bairro||'';
-          area.querySelector('#at-cidade').value=loc.cidade+' / '+loc.uf;
+          cityField.value=loc.cidade+' / '+loc.uf;
           area.querySelector('#at-bairro').value=a.bairro;
           area.querySelector('#at-bairro').readOnly=!!loc.bairro;
           status.textContent='Local confirmado: '+loc.cidade+' / '+loc.uf;
         })();
         try{await lookup;}catch(e){status.textContent=e.message;throw e;}finally{lookup=null;}
       };
-      if(a.__cepValidado){area.querySelector('#at-cidade').value=a.cidade+' / '+a.uf;area.querySelector('#at-bairro').readOnly=!!a.__bairroCep;status.textContent='Local confirmado: '+a.cidade+' / '+a.uf;}
+      if(a.__cepValidado){cityField.value=a.cidade+' / '+a.uf;area.querySelector('#at-bairro').readOnly=!!a.__bairroCep;status.textContent='Local confirmado: '+a.cidade+' / '+a.uf;}
       cep.addEventListener('blur',()=>{if(cep.value.replace(/\D/g,'').length===8)locate().catch(()=>{});});
       form.addEventListener('input',()=>{readCompact();track('form_start',null,true);});
       area.querySelector('#at-max_orcamentos').addEventListener('change',e=>area.querySelector('[data-landing-max]').textContent=e.target.value);

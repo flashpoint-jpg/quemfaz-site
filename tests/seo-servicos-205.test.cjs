@@ -20,6 +20,8 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  assert.ok(dom.window.QFCloud?.createCall);assert.ok(dom.window.QFClienteAcesso?.authenticate);
  assert.equal(dom.window.document.querySelector('[data-qf-atendimento]').dataset.mounted,'1');
  for(const key of ['problem','cep','cidade','bairro','urgencia','nome','contato'])assert.ok(dom.window.document.querySelector('#at-'+key));
+ assert.equal(dom.window.document.querySelector('#at-cidade').value,'Santo André / SP');
+ assert.equal(dom.window.document.querySelector('#at-cep').value,'');
  assert.equal(writes.filter(x=>/qf_chamados|publicar|cliente-conta/.test(x)).length,0);
  // Campos vazios não publicam e recebem uma mensagem clara.
  await dom.window.document.querySelector('.landing-request').onsubmit({preventDefault(){}});
@@ -58,8 +60,11 @@ test('HTML completo inicia o atendimento existente, sem chamada de escrita ou pe
  assert.match(w.document.querySelector('#seo-order').textContent,/Pedido publicado/);
  const rows=(await d.query("select id,descricao,cidade,marketing_origem from public.qf_chamados where descricao like '%Minha tomada%'")).rows;assert.equal(rows.length,1);assert.equal(rows[0].cidade,'Santo André');assert.equal(w.DB.state.requests[0].id,rows[0].id,'pedido acessível ao painel pelo registro oficial');
  assert.equal(rows[0].marketing_origem.source,'google_referral');
+ assert.equal(rows[0].marketing_origem.medium,'organic');
  assert.equal(rows[0].marketing_origem.landing_page,'/servicos/eletricista/santo-andre/');
  assert.deepEqual(confirmed,[[rows[0].id,'cat_eletricista']]);
+ w.QFClientAcquisition.published({id:rows[0].id},'cat_eletricista');
+ assert.equal(confirmed.length,1,'a mesma publicação não conta duas vezes');
  }finally{await d.close();}
  assert.deepEqual(errors.filter(x=>!x.includes('navigation')&&!x.includes('Not implemented')),[]);
  }finally{dom.window.close();}

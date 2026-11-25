@@ -6,7 +6,7 @@
  function ready(){
   if(!g.QFAtendimento||!g.DB||!g.QFCloud||!g.QFClienteAcesso){
    if(++attempts<100){g.setTimeout(ready,100);return;}
-   target.replaceChildren();const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível carregar o formulário. Atualize a página ou abra o Quem Faz.';const a=document.createElement('a');a.href='/?servico='+encodeURIComponent(config.id);a.textContent='Abrir formulário no Quem Faz';target.append(p,a);return;
+   target.replaceChildren();const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Não foi possível carregar o formulário. Atualize a página ou abra o Quem Faz.';const a=document.createElement('a');a.href='/?'+new URLSearchParams({servico:config.id,seo_page:location.pathname})+'#/auth/cliente/cadastro';a.textContent='Abrir formulário no Quem Faz';target.append(p,a);return;
   }
   if(!g.DB.state)g.DB.load();
   if(g.QFCloud.enabled)g.QFCloud.prepareLocalState();
@@ -15,7 +15,14 @@
    target.replaceChildren();const h=document.createElement('h2');h.textContent='Pedido publicado!';const p=document.createElement('p');p.textContent='Seu pedido foi registrado. Acompanhe as respostas dos profissionais no Quem Faz.';const a=document.createElement('a');a.className='seo-cta';a.href='/#/cliente/pedido/'+encodeURIComponent(req.id);a.textContent='Acompanhar meu pedido';target.append(h,p,a);
   }};
   function intro(){start();}
-  function start(){target.innerHTML=g.QFAtendimento.html();g.QFAtendimento.mount(target,{catId:config.id,embedded:true,compact:true,service:config.service,placeholder:config.placeholder},null);}
+  function start(){
+   target.innerHTML=g.QFAtendimento.html();
+   target.querySelector('[data-qf-atendimento] > h1')?.remove();
+   g.QFAtendimento.mount(target,{
+    catId:config.id,embedded:true,compact:true,service:config.service,placeholder:config.placeholder,
+    cityHint:config.city&&config.uf?config.city+' / '+config.uf:''
+   },null);
+  }
   start();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready,{once:true});else ready();

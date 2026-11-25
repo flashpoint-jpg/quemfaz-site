@@ -35,6 +35,32 @@
       return JSON.parse(g.sessionStorage.getItem(key)||'null');
     }catch(_){return source&&!paid?{source:source,medium:'ai_referral',landing_page:g.location.pathname}:null;}
   }
+  // Captura também nas páginas de catálogo, antes de o visitante abrir um formulário.
+  function searchOrigin() {
+    var key='qf_search_referrer_v1';
+    var params=new URLSearchParams(g.location.search || '');
+    var host='';
+    try { host=new URL(g.document.referrer).hostname.toLowerCase(); } catch (_) {}
+    var source=/^(?:www\.)?google\.(?:com(?:\.[a-z]{2})?|co\.[a-z]{2}|[a-z]{2,3})$/.test(host) ? 'google_referral'
+      : /^(?:www\.)?bing\.com$/.test(host) ? 'bing_referral' : '';
+    var tagged=['gclid','gbraid','wbraid','msclkid','ttclid','gad_campaignid','fbclid','utm_source','utm_medium','utm_campaign']
+      .some(function(name){return !!params.get(name);});
+    var current=null;
+    if(source && !tagged){
+      var url=g.location.pathname;
+      current={source:source,medium:'organic',landing_page:/^\/(?:servicos(?:\/[a-z0-9-]+){0,2}\/)?$/.test(url)?url:'/'};
+    }
+    try {
+      if (tagged || (!current && host && host!==g.location.hostname && !g.sessionStorage.getItem('qf_google_login_return'))) {
+        g.sessionStorage.removeItem(key);
+        return null;
+      }
+      if (current) g.sessionStorage.setItem(key,JSON.stringify(current));
+      else current=JSON.parse(g.sessionStorage.getItem(key)||'null');
+    } catch (_) {}
+    return current;
+  }
   g.QFAIOrigin={provider:provider,capture:capture};
   g.QFAIOrigin.current=capture();
+  g.QFSearchOrigin=searchOrigin();
 })(window);

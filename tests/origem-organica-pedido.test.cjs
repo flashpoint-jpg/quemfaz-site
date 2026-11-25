@@ -4,11 +4,12 @@ const fs=require('node:fs');
 const {JSDOM}=require('jsdom');
 const script=fs.readFileSync(require.resolve('../qf-client-acquisition.js'),'utf8');
 
-function page(url,referrer,searchSaved){
+function page(url,referrer,searchSaved,marketing){
   const dom=new JSDOM('<!doctype html><body></body>',{url,referrer:referrer||undefined,runScripts:'outside-only'});
   const w=dom.window;
   w.crypto.randomUUID=()=> 'organic-test';
   if(searchSaved)w.sessionStorage.setItem('qf_search_referrer_v1',JSON.stringify(searchSaved));
+  if(marketing)w.QFMarketingTouch=marketing;
   w.eval(fs.readFileSync(require.resolve('../qf-ai-origin.js'),'utf8'));
   w.eval(script);
   return {dom,origin:w.QFClientAcquisition.attribution(),saved:JSON.parse(w.sessionStorage.getItem('qf_search_referrer_v1')||'null')};
@@ -30,6 +31,28 @@ test('origem orgânica preservada após navegação interna sem referrer externo
   assert.equal(p.origin.medium,'organic');
   assert.equal(p.origin.landing_page,'/servicos/diarista/guarulhos/');
   p.dom.window.close();
+});
+
+test('Google orgânico substitui anúncio antigo, preserva a landing e não herda o clique pago',()=>{
+  const previous={source:'google',medium:'cpc',campaign:'anuncio-anterior',gclid:'antigo'};
+  const catalog=page('https://quemfazservico.com.br/servicos/','https://www.google.com.br/',null,previous);
+  const next=page('https://quemfazservico.com.br/servicos/diarista/guarulhos/',
+    'https://quemfazservico.com.br/servicos/',catalog.saved,previous);
+  assert.deepEqual({...next.origin},{
+    source:'google_referral',medium:'organic',landing_page:'/servicos/',content:'/servicos/diarista/guarulhos/'
+  });
+  catalog.dom.window.close();
+  next.dom.window.close();
+});
+
+test('login Google, subdomínio de outro produto e origem externa não viram pesquisa orgânica',()=>{
+  for(const host of ['accounts.google.com','mail.google.com','google.com.example.org','example.org']){
+    const p=page('https://quemfazservico.com.br/','https://'+host+'/',{
+      source:'google_referral',medium:'organic',landing_page:'/servicos/diarista/guarulhos/'
+    });
+    assert.equal(p.origin.source,'direto',host);
+    p.dom.window.close();
+  }
 });
 
 test('link direto não vira orgânico e clique pago mantém atribuição paga',()=>{

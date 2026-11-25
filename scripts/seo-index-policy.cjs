@@ -10,8 +10,8 @@ const localPriorities = {
   'rio-grande-da-serra': ['eletricista', 'encanador'],
   osasco: ['eletricista', 'encanador'],
   suzano: ['eletricista', 'pedreiro'],
-  guarulhos: ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'desentupidor', 'ar-condicionado'],
-  'sao-paulo': ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'limpeza-de-estofados-e-tapetes', 'faxina-pos-obra']
+  guarulhos: ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'desentupidor', 'ar-condicionado', 'gasista'],
+  'sao-paulo': ['eletricista', 'encanador', 'diarista', 'pintor', 'pedreiro', 'montador-de-moveis', 'limpeza-de-estofados-e-tapetes', 'faxina-pos-obra', 'gasista']
 };
 
 // Segmentação conferida em 14/11/2026: grupo Limpeza de Sofá e Estofados,

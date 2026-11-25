@@ -84,3 +84,15 @@
 .seo-page .seo-footer a.seo-social{display:grid;place-items:center;width:44px;height:44px;border:1px solid #ffffff44;border-radius:50%}
 .seo-social svg{width:20px;height:20px}
 @media(max-width:800px){.seo-footer-inner{width:min(100% - 36px,650px);padding:18px 0}.seo-footer-brand{flex-direction:column;align-items:flex-start;gap:10px}}
+
+/* Entrada de pedido em destaque, inclusive em telas estreitas. */
+.seo-page [data-qf-seo-etapa="2"]{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--qf-border)}
+.seo-page [data-qf-seo-etapa="2"] h2:first-child{margin-top:0}
+.seo-stage2 .seo-hero>div>.seo-cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;text-align:center;background:#b74900}
+.seo-stage2 .seo-hero>div>.seo-cta:hover{background:#963a00}
+@media(max-width:760px){
+  .seo-stage2 .seo-hero>div>.seo-cta{width:100%;margin:12px 0 0}
+  .seo-stage2 .seo-hero>div:first-child{display:flex;flex-direction:column;align-items:flex-start}
+  .seo-stage2 .seo-hero>div>.seo-benefits{order:1;margin:14px 0 0}
+  .seo-stage2 .seo-hero>div>.seo-cta+p{order:2;margin:10px 0 0}
+}

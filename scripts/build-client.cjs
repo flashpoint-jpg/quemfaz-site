@@ -371,4 +371,5 @@ require('./seo-bing-descriptions-20261119.cjs');
 require('./seo-tecnico-final.cjs');
 // Confira somente depois de todas as gerações e reescritas de SEO.
 require('./seo-ai-discovery.cjs');
+require('./seo-organic-stage2.cjs');
 require('./check-sitemap.cjs');

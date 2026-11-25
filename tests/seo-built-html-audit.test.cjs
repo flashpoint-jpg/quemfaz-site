@@ -7,6 +7,34 @@ const origin='https://quemfazservico.com.br';
 const sitemap=fs.readFileSync(path.join(root,'sitemap.xml'),'utf8');
 const locs=[...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
 const readUrl=url=>{const p=new URL(url);assert.equal(p.origin,origin);assert.ok(!p.search&&!p.hash);const pathname=decodeURIComponent(p.pathname);assert.ok(!pathname.includes('..'));return fs.readFileSync(path.join(root,pathname,'index.html'),'utf8');};
+test('Segunda etapa: páginas prioritárias têm uma intenção, CTA e dados estruturados próprios',()=>{
+ const titles=new Set(), descriptions=new Set(), headings=new Set();
+ const optimized=locs.map(url=>[url,readUrl(url)]).filter(([,html])=>html.includes('seo-stage2'));
+ const paths=new Set(optimized.map(([url])=>new URL(url).pathname));
+ for(const slug of ['diarista/santo-andre','pedreiro/guarulhos','eletricista/santo-andre','diarista/guarulhos',
+   'marido-de-aluguel/abc','eletricista','encanador','montador-de-moveis/guarulhos','gasista/guarulhos',
+   'gasista/sao-paulo','limpeza-de-sofa/abc']){
+  assert.ok(paths.has('/servicos/'+slug+'/'),slug);
+ }
+ for(const [url,html] of optimized){
+  const title=html.match(/<title>([^<]+)/)[1], description=html.match(/<meta name="description" content="([^"]+)/)[1];
+  const h1=[...html.matchAll(/<h1>([^<]+)/g)].map(match=>match[1]);
+  assert.equal(h1.length,1,url);
+  for(const [cache,value] of [[titles,title],[descriptions,description],[headings,h1[0]]]){
+   assert.ok(!cache.has(value),url+' '+value);
+   cache.add(value);
+  }
+  const schema=[...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)].flatMap(match=>JSON.parse(match[1])['@graph']);
+  const services=schema.filter(node=>node['@type']==='Service');
+  assert.equal(services.length,1,url);
+  assert.equal(services[0].url,url);
+  assert.equal(services[0].broker.name,'Quem Faz Serviços');
+  assert.equal(services[0].provider,undefined);
+  assert.equal(schema.find(node=>node['@type']==='BreadcrumbList').itemListElement.at(-1).item,url);
+  assert.match(html,/<a class="seo-cta" href="#pedido">Publicar pedido grátis/);
+  assert.match(html,/<link rel="preload" as="style" href="\/app-style-/);
+ }
+});
 test('SEO release: sitemap points to distinct, public HTML pages with metadata',()=>{
  assert.ok(locs.length>=100);
  assert.equal(new Set(locs).size,locs.length);
