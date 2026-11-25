@@ -23,7 +23,6 @@ test('saldo fica no topo e confirma o mesmo lançamento após falha de conexão'
   const main = window.document.querySelector('main');
   const person = { nome: 'Profissional de teste', saldo: 740 };
   const calls = [];
-  let confirm = false;
 
   try {
     vm.runInNewContext(source.slice(start, end) + '\nmain.innerHTML = adminProfCarteiraHtml(person); bindProfCarteira(main, id);', {
@@ -32,7 +31,6 @@ test('saldo fica no topo e confirma o mesmo lançamento após falha de conexão'
       PU: {
         formatCurrency: cents => 'R$ ' + (cents / 100).toFixed(2).replace('.', ','),
         parseCurrencyInput: text => Math.round(Number(text.replace(',', '.')) * 100),
-        confirmDialog: async options => { assert.match(options.message, /R\$ 20,00.*Profissional de teste/); return confirm; },
       },
       global: {
         crypto: { randomUUID: () => operation },
@@ -50,20 +48,29 @@ test('saldo fica no topo e confirma o mesmo lançamento após falha de conexão'
       form.dispatchEvent(new window.Event('submit', { cancelable: true }));
       await new Promise(resolve => setImmediate(resolve));
     };
-    form.elements.valor.value = '20,00';
+    const pendingStatus = form.querySelector('[data-prof-credito-status]');
+    const confirm = form.querySelector('[data-prof-credito-confirmar]');
+    form.elements.valor.value = 'R$ 20,00';
     await submit();
     assert.equal(calls.length, 0);
-    confirm = true;
+    assert.match(pendingStatus.textContent, /R\$ 20,00.*Profissional de teste/);
+    form.querySelector('[data-prof-credito-editar]').click();
+    assert.equal(form.elements.valor.readOnly, false);
     await submit();
-    assert.match(main.querySelector('[role="status"]').textContent, /Confirmação pendente/);
+    confirm.click();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.match(pendingStatus.textContent, /Confirmação pendente/);
     assert.equal(form.elements.valor.readOnly, true);
-    await submit();
+    assert.equal(confirm.textContent, 'Verificar lançamento');
+    confirm.click();
+    confirm.click();
+    await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(calls, [calls[0], calls[0]]);
     assert.equal(calls[0].p_valor_centavos, 2000);
     assert.equal(calls[0].p_operacao_id, operation);
     assert.equal(person.saldo, 2740);
     assert.equal(main.querySelector('[data-prof-saldo-atual]').textContent, 'R$ 27,40');
-    assert.match(main.querySelector('[role="status"]').textContent, /Saldo adicionado/);
+    assert.match(main.querySelector('[data-prof-credito-concluido]').textContent, /Saldo adicionado/);
   } finally {
     window.close();
   }
