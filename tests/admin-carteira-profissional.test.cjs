@@ -29,6 +29,7 @@ test('saldo fica no topo e confirma o mesmo lançamento após falha de conexão'
       main, person, id: profile, cloudOn: () => true,
       DB: { profissionalById: () => person },
       PU: {
+        escapeHtml: text => text,
         formatCurrency: cents => 'R$ ' + (cents / 100).toFixed(2).replace('.', ','),
         parseCurrencyInput: text => Math.round(Number(text.replace(',', '.')) * 100),
       },
@@ -50,15 +51,14 @@ test('saldo fica no topo e confirma o mesmo lançamento após falha de conexão'
     };
     const pendingStatus = form.querySelector('[data-prof-credito-status]');
     const confirm = form.querySelector('[data-prof-credito-confirmar]');
-    form.elements.valor.value = 'R$ 20,00';
+    form.elements.valor.value = '0';
     await submit();
     assert.equal(calls.length, 0);
-    assert.match(pendingStatus.textContent, /R\$ 20,00.*Profissional de teste/);
-    form.querySelector('[data-prof-credito-editar]').click();
-    assert.equal(form.elements.valor.readOnly, false);
-    await submit();
+    assert.match(pendingStatus.textContent, /Informe um valor válido/);
+    assert.match(form.textContent, /Adicionar à carteira de Profissional de teste/);
+    form.elements.valor.value = 'R$ 20,00';
     confirm.click();
-    await new Promise(resolve => setImmediate(resolve));
+    await submit();
     assert.match(pendingStatus.textContent, /Confirmação pendente/);
     assert.equal(form.elements.valor.readOnly, true);
     assert.equal(confirm.textContent, 'Verificar lançamento');
