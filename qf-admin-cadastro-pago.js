@@ -228,12 +228,15 @@
   function novoCard(r){
     const n=waNumber(r.telefone),plano=NOVOS_PLANOS[r.plano]||r.plano||'Plano';
     const msg=novoMensagem(r);
+    const precisaAtivar=r.status==='aprovado'&&r.pago_sem_ativacao;
     return '<article class="qf-novos-registro">'+
       '<div><strong>'+esc(r.nome||'Interessado')+'</strong><p>'+esc(r.telefone||r.email||'Sem telefone')+'</p>'+
       '<p>'+esc(plano)+' · Pix '+money(r.valor_centavos)+' · '+date(r.criado_em)+'</p>'+
-      '<small>'+(r.status==='aprovado'?'Pix aprovado, aguardando ativação':'Tentativa de cadastro — aguardando Pix')+'</small></div>'+
+      '<small>'+(precisaAtivar?'Pix aprovado. Cadastro do titular pendente.':'Tentativa de cadastro — aguardando Pix')+'</small></div>'+
+      '<div class="row" style="flex-wrap:wrap;gap:8px">'+
+      (precisaAtivar?'<button type="button" class="btn btn--outline" data-admin-retomar-pix="'+esc(r.id)+'">Recuperar link do cadastro</button>':'')+
       (n?'<a class="btn btn--primary" target="_blank" rel="noopener noreferrer" href="https://wa.me/'+n+'?text='+encodeURIComponent(msg)+'">Abrir WhatsApp</a>':'<span class="qf-novos-sem-wa">Sem número válido</span>')+
-      '</article>';
+      '</div></article>';
   }
   function desenharNovos(panel){
     if(!panel.isConnected)return;

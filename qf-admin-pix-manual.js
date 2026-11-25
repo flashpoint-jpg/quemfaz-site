@@ -31,6 +31,52 @@
     if (!data?.ok) throw Error(errors[data?.error] || 'Não foi possível concluir a consulta. Confira a cobrança antes de tentar novamente.');
     return data;
   }
+  function showRegistrationLink(area, status, data, email) {
+    const label = document.createElement('label');
+    label.textContent = 'Link para concluir o cadastro';
+    const link = document.createElement('textarea');
+    link.className = 'input';
+    link.readOnly = true;
+    link.value = 'https://quemfazservico.com.br/#/pix-cadastro/' + encodeURIComponent(JSON.stringify({
+      id:data.id, segredo:data.segredo, plano:data.plano, email:data.email || email
+    }));
+    link.style.cssText = 'width:100%;min-height:75px';
+    label.append(link);
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'btn btn--outline';
+    copy.textContent = 'Copiar link de cadastro';
+    area.append(label, copy);
+    copy.onclick = async () => {
+      try {
+        await g.navigator.clipboard.writeText(link.value);
+        status.textContent = 'Link copiado. Envie somente ao titular da cobrança.';
+      } catch (_) {
+        link.select();
+        status.textContent = 'Selecione e copie o link de cadastro.';
+      }
+    };
+  }
+  async function openPaidRegistration(id) {
+    if (!client() || document.querySelector('[data-manual-pix-dialog]')) return;
+    const dialog = document.createElement('dialog');
+    dialog.className = 'qf-benefit-modal';
+    dialog.dataset.manualPixDialog = '';
+    dialog.innerHTML = '<h2>Concluir cadastro pago</h2><p role="status">Consultando o Pix aprovado…</p>' +
+      '<div data-paid-registration></div><button type="button" class="btn btn--outline" data-close>Fechar</button>';
+    document.body.append(dialog);
+    dialog.addEventListener('close', () => dialog.remove(), {once:true});
+    dialog.querySelector('[data-close]').onclick = () => dialog.close();
+    dialog.showModal();
+    const status = dialog.querySelector('[role=status]');
+    try {
+      const data = await invoke({acao:'recuperar',id});
+      if (data.status !== 'aprovado') throw Error('O Pix ainda não está aprovado. Atualize o painel.');
+      if (!dialog.isConnected) return;
+      showRegistrationLink(dialog.querySelector('[data-paid-registration]'), status, data);
+      status.textContent = 'Pix de ' + money(data.valor_centavos) + ' aprovado. Envie o link somente ao titular para ele concluir o cadastro com o mesmo e-mail e documento.';
+    } catch (error) { status.textContent = error.message; }
+  }
   async function open() {
     if (!client() || document.querySelector('[data-manual-pix-dialog]')) return;
     const dialog = document.createElement('dialog');
@@ -82,12 +128,7 @@
         const area = dialog.querySelector('[data-manual-pix-result]'); area.hidden = false;
         area.innerHTML = '<p data-manual-pix-summary></p><label>Pix copia e cola<textarea class="input" readonly data-manual-pix-code style="width:100%;min-height:110px"></textarea></label><button type="button" class="btn btn--primary" data-manual-pix-copy>Copiar Pix</button><button type="button" class="btn btn--outline" data-manual-pix-check>Consultar pagamento</button><p>Após a confirmação bancária, o profissional precisa concluir o cadastro com o mesmo e-mail e documento. Esta cobrança não cria o perfil nem dispensa essa etapa.</p>';
         area.querySelector('[data-manual-pix-summary]').textContent = data.nome_plano + ' · ' + money(data.valor_centavos) + ' · Referência: ' + data.id;
-        const linkLabel = document.createElement('label'); linkLabel.textContent = 'Link para concluir o cadastro (envie somente ao titular)';
-        const link = document.createElement('textarea'); link.className = 'input'; link.readOnly = true;
-        link.value = 'https://quemfazservico.com.br/#/pix-cadastro/' + encodeURIComponent(JSON.stringify({id:data.id,segredo:data.segredo,plano:data.plano,email:data.email || email}));
-        link.style.cssText = 'width:100%;min-height:75px'; linkLabel.append(link); area.append(linkLabel);
-        const copyLink = document.createElement('button'); copyLink.type = 'button'; copyLink.className = 'btn btn--outline'; copyLink.textContent = 'Copiar link de cadastro'; area.append(copyLink);
-        copyLink.onclick = async () => { try { await g.navigator.clipboard.writeText(link.value); status.textContent = 'Link copiado. Envie somente ao titular da cobrança.'; } catch (_) { link.select(); status.textContent = 'Selecione e copie o link de cadastro.'; } };
+        showRegistrationLink(area, status, data, email);
         const code = area.querySelector('[data-manual-pix-code]'); code.value = data.pix_copy_paste || '';
         status.textContent = code.value ? 'Pix gerado. Aguardando confirmação do banco.' : 'Cobrança registrada, mas o código não foi retornado. Consulte o suporte antes de gerar outra.';
         if (data.recuperado) status.textContent = 'Cobrança existente recuperada. Aguardando confirmação bancária; nenhum segundo Pix foi criado.';
@@ -122,5 +163,9 @@
       plan.disabled = false; submit.disabled = false;
     } catch (error) { status.textContent = error.message; }
   }
-  document.addEventListener('click', e => { if (e.target.closest('[data-admin-pix-manual]')) open(); });
+  document.addEventListener('click', e => {
+    const paid = e.target.closest('[data-admin-retomar-pix]');
+    if (paid) openPaidRegistration(paid.dataset.adminRetomarPix);
+    else if (e.target.closest('[data-admin-pix-manual]')) open();
+  });
 })(window);
