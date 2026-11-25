@@ -7,12 +7,15 @@ module.exports = function preparePlantaoGratuito(html) {
   }
 
   const tools = `          '<section class="card qf-cad-ferramentas" data-cadastro-exploracao`;
-  replace(tools, `          '<section class="card stack" data-cad-plantao-card aria-labelledby="qf-cad-plantao-titulo">' +
-            '<h2 id="qf-cad-plantao-titulo">Plantão 24h grátis</h2>' +
-            '<p>Para eletricista, encanador, guincho e chaveiro. Inscreva-se sem Pix e, no painel, marque <strong>Estou de plantão</strong> quando puder atender.</p>' +
-            '<p>A inscrição libera apenas chamados urgentes. O contato é liberado quando o cliente confirma e paga a taxa de urgência. Para desbloquear pedidos comuns, é preciso saldo ou um plano com essa opção.</p>' +
-            '<p data-cad-plantao-restricao hidden>Para criar sua conta pelo Plantão, selecione apenas profissões da lista acima na etapa 2.</p>' +
-            '<div><button class="btn btn--primary" type="submit" data-cad-plantao>Criar conta no Plantão grátis</button></div>' +
+  replace(tools, `          '<section class="qf-options-card qf-options-card--plantao" data-cad-plantao-card aria-labelledby="qf-cad-plantao-titulo">' +
+            '<span class="qf-options-badge">PLANTÃO</span>' +
+            '<div class="qf-options-top"><span class="qf-options-icon" aria-hidden="true">' + icon('clock') + '</span>' +
+              '<div class="qf-options-headings"><h3 class="qf-options-name" id="qf-cad-plantao-titulo">Plantão 24 horas</h3>' +
+              '<div class="qf-options-price">R$ 0,00 <small>Inscrição gratuita</small></div></div></div>' +
+            '<ul class="qf-options-list"><li>Receba chamados urgentes</li></ul>' +
+            '<p class="qf-options-note">Para eletricistas, encanadores, chaveiros e guinchos. Sem Pix para cadastrar. Ative seu plantão quando disponível.</p>' +
+            '<p class="qf-options-note" data-cad-plantao-restricao hidden>Para criar sua conta pelo Plantão, selecione apenas profissões da lista acima na etapa 2.</p>' +
+            '<button class="qf-options-button" type="submit" data-cad-plantao>Criar conta grátis</button>' +
           '</section>' +
 ` + tools);
 

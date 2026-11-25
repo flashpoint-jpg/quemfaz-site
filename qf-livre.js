@@ -8,6 +8,11 @@
    'Veja os pedidos disponíveis e use as ferramentas, como agenda e orçamentos.',
    'Para abrir o contato de um cliente, adicione saldo. Cada desbloqueio custa R$ 2,00 a mais que no Avulso. Você vê o valor antes de confirmar.'
   ]],
+  plantao_gratis:['Plantão 24 horas','R$ 0,00 · Inscrição gratuita',[
+   'Para eletricistas, encanadores, chaveiros e guinchos. Inscreva-se sem Pix e marque Estou de plantão no painel quando puder atender.',
+   'A inscrição dá acesso somente a chamados urgentes. O contato é liberado quando o cliente confirma e paga a taxa de urgência.',
+   'Para desbloquear pedidos comuns, é preciso saldo ou um plano elegível.'
+  ]],
   avulso:['Avulso','R$ 14,99 de recarga mínima',[
    'O Pix vira saldo na sua carteira. Sem mensalidade.',
    'Ao desbloquear um pedido, você abre o contato do cliente. O valor varia conforme o serviço e aparece antes de confirmar. O saldo que sobrar fica na carteira.'
@@ -447,7 +452,7 @@
 })(typeof window!=='undefined'?window:globalThis);
 
 
-/* QF etapa 5: seleção somente paga. Sem teste grátis nem cortesia. */
+/* QF etapa 5: opções de acesso no cadastro profissional. */
 (function () {
   'use strict';
   if (typeof document === 'undefined') return; // testes Node sem DOM
@@ -457,6 +462,10 @@
     '#cadastro-prof-form [data-step="5"] .qf-step__head .h2{font-size:clamp(23px,5vw,30px);line-height:1.2;letter-spacing:-.025em;color:#123666}',
     '#cadastro-prof-form [data-step="5"] .qf-step__head .text--sm{font-size:14px;line-height:1.5}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card{position:relative;min-width:0;display:grid;gap:10px;padding:20px 16px 16px;border:1px solid #dce4ee;border-radius:20px;background:#fff;box-shadow:0 7px 25px rgba(16,46,81,.075);overflow:hidden}',
+    '#cadastro-prof-form [data-step="5"] :is(.qf-options-card--completo_v2,.qf-options-card--plantao){display:flex;flex-direction:column}',
+    '#cadastro-prof-form [data-step="5"] :is(.qf-options-card--completo_v2,.qf-options-card--plantao) .qf-options-badge{align-self:flex-start}',
+    '#cadastro-prof-form [data-step="5"] :is(.qf-options-card--completo_v2,.qf-options-card--plantao) .qf-plan-help-button{margin-top:auto}',
+    '#cadastro-prof-form [data-step="5"] [data-cad-plantao-card][hidden]{display:none}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--trial{background:linear-gradient(145deg,#eff7ff,#e6f1ff);border:2px solid #1886f3}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--trial .qf-options-price{color:#085eb8}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-price{color:#f36b09}',
@@ -464,6 +473,8 @@
     '#cadastro-prof-form [data-step="5"] .qf-options-top{display:flex;gap:12px;align-items:flex-start;min-width:0}',
     '#cadastro-prof-form [data-step="5"] .qf-options-icon{display:grid;place-items:center;flex:none;width:45px;height:45px;border-radius:14px;background:#0966cd;color:#fff;font-weight:900;font-size:20px;letter-spacing:-.05em}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-icon{background:#ff8c1a}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--plantao .qf-options-icon{background:#fff0d9;color:#b44900}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--plantao .qf-options-icon svg{width:26px;height:26px}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-icon{background:#079d62}',
     '#cadastro-prof-form [data-step="5"] .qf-options-headings{flex:1;min-width:0}',
     '#cadastro-prof-form [data-step="5"] .qf-options-name{font-size:20px;line-height:1.25;font-weight:800;color:#13335d;margin:0}',
@@ -479,6 +490,8 @@
     '#cadastro-prof-form [data-step="5"] .qf-options-note{font-size:13px;color:#526478;line-height:1.5;margin:0}',
     '#cadastro-prof-form [data-step="5"] .qf-options-button{display:block;width:100%;min-height:51px;margin-top:4px;padding:12px;border:0;border-radius:13px;background:#0869db;color:#fff;font-size:15px;font-weight:800;line-height:1.3;cursor:pointer;white-space:normal;text-align:center;box-shadow:0 5px 12px rgba(5,85,178,.12)}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--livre .qf-options-button{background:#ff7b0a}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--plantao .qf-options-button{background:#bd4c00}',
+    '#cadastro-prof-form [data-step="5"] .qf-options-card--plantao .qf-options-button:disabled{cursor:not-allowed}',
     '#cadastro-prof-form [data-step="5"] .qf-options-card--avulso .qf-options-button{background:#08945a}',
     '#cadastro-prof-form [data-step="5"] .qf-options-button:focus-visible{outline:3px solid #123c74;outline-offset:3px}',
     '#cadastro-prof-form [data-step="5"] .qf-options-button:disabled{opacity:.7;cursor:wait}',
@@ -534,6 +547,11 @@
       '<p class="qf-options-note">'+p.info+'</p>'+
       window.QFLivre.planHelpButton(p.id)+
       '<button class="qf-options-button" type="button" data-qf-opcao="'+p.id+'">'+p.botao+'</button></section>').join('');
+    const plantao = step.querySelector('[data-cad-plantao-card]');
+    if (plantao) {
+      plantao.querySelector('[data-cad-plantao]').insertAdjacentHTML('beforebegin', window.QFLivre.planHelpButton('plantao_gratis'));
+      ui.append(plantao);
+    }
     list.parentNode.insertBefore(ui, list);
     step.querySelector('[data-cad-explorar]')?.insertAdjacentHTML('beforebegin',window.QFLivre.planHelpButton('gratis'));
     // O Avulso é a opção inicial, mas também exige Pix de R$ 14,99 confirmado.
