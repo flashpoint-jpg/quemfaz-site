@@ -5,12 +5,13 @@ const {JSDOM}=require('jsdom');
 const source=fs.readFileSync(require.resolve('../qf-admin-pix-manual.js'),'utf8');
 const recover=fs.readFileSync(require.resolve('../qf-pre-cadastro-manual.js'),'utf8');
 const tick=()=>new Promise(r=>setTimeout(r,15));
-async function setup({role='admin',items=[],status='pendente'}={}){
- const dom=new JSDOM('<button data-admin-pix-manual>Abrir</button>',{url:'https://quemfazservico.com.br/admin.html',runScripts:'outside-only'}),w=dom.window,calls=[];
+async function setup({role='admin',items=[],status='pendente',paidRegistration=false}={}){
+ const button=paidRegistration?'<button data-admin-retomar-pix="11111111-1111-4111-8111-111111111111">Recuperar link</button>':'<button data-admin-pix-manual>Abrir</button>';
+ const dom=new JSDOM(button,{url:'https://quemfazservico.com.br/admin.html',runScripts:'outside-only'}),w=dom.window,calls=[];
  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
  w.HTMLDialogElement.prototype.close=function(){this.open=false;};
  w.confirm=()=>true;w.DB={getSession:()=>({role})};
- w.QFAdminCloud={enabled:true,client:{from:()=>({select:()=>({eq:async()=>({data:[{plano:'avulso',nome:'Avulso',preco_centavos:1499,ativo:true}]})})}),rpc:async()=>({data:{itens:items}}),functions:{invoke:async(name,{body})=>{calls.push(body);return {data:body.acao==='status'?{ok:true,status}:{ok:true,recuperado:body.acao==='recuperar',email:'original@example.com',id:'11111111-1111-4111-8111-111111111111',segredo:'a'.repeat(48),plano:'avulso',nome_plano:'Avulso',valor_centavos:1499,pix_copy_paste:'PIX_TESTE'}};}}}};
+ w.QFAdminCloud={enabled:true,client:{from:()=>({select:()=>({eq:async()=>({data:[{plano:'avulso',nome:'Avulso',preco_centavos:1499,ativo:true}]})})}),rpc:async()=>({data:{itens:items}}),functions:{invoke:async(name,{body})=>{calls.push(body);return {data:body.acao==='status'?{ok:true,status}:{ok:true,status:paidRegistration?status:'pendente',recuperado:body.acao==='recuperar',email:'original@example.com',id:'11111111-1111-4111-8111-111111111111',segredo:'a'.repeat(48),plano:'avulso',nome_plano:'Avulso',valor_centavos:1499,pix_copy_paste:'PIX_TESTE'}};}}}};
  w.eval(source);w.document.querySelector('button').click();await tick();
  return {w,calls,dom};
 }
@@ -20,3 +21,18 @@ test('gera Pix pela integração existente e consulta banco sem conceder acesso'
 test('cobrança existente recupera o Pix sem criar outra cobrança',async()=>{const f=await setup({items:[{id:'11111111-1111-4111-8111-111111111111',email:'teste@example.com',status:'pendente'}]});await submit(f);assert.equal(f.calls.length,1);assert.equal(f.calls[0].acao,'recuperar');assert.match(f.w.document.querySelector('[role=status]').textContent,/existente recuperada/);const link=[...f.w.document.querySelectorAll('textarea')].find(x=>x.value.includes('pix-cadastro'));assert.ok(decodeURIComponent(link.value).includes('original@example.com'));f.dom.window.close();});
 test('link recupera referência em outro aparelho sem CPF nem confirmação local de pagamento',()=>{const data={id:'11111111-1111-4111-8111-111111111111',segredo:'a'.repeat(48),plano:'avulso',email:'teste@example.com'};const dom=new JSDOM('',{url:'https://quemfazservico.com.br/#/pix-cadastro/'+encodeURIComponent(JSON.stringify(data)),runScripts:'outside-only'});dom.window.eval(recover);const saved=JSON.parse(dom.window.localStorage.getItem('qf_pre_cadastro'));assert.equal(saved.pag.id,data.id);assert.equal(saved.manual,true);assert.equal(saved.dados.cpf,undefined);assert.equal(saved.status,undefined);assert.equal(dom.window.location.hash,'#/auth/profissional/cadastro');dom.window.close();});
 test('link inválido não altera o cadastro salvo',()=>{const dom=new JSDOM('',{url:'https://quemfazservico.com.br/#/pix-cadastro/invalido',runScripts:'outside-only'});dom.window.eval(recover);assert.equal(dom.window.localStorage.getItem('qf_pre_cadastro'),null);dom.window.close();});
+test('recupera o link do Pix aprovado direto pelo registro sem emitir cobrança',async()=>{
+ const f=await setup({paidRegistration:true,status:'aprovado'});
+ try {
+  assert.deepEqual(JSON.parse(JSON.stringify(f.calls)),[{acao:'recuperar',id:'11111111-1111-4111-8111-111111111111'}]);
+  assert.match(f.w.document.querySelector('[role=status]').textContent,/14,99 aprovado/);
+  assert.equal(f.w.document.querySelector('form'),null);
+  const link=f.w.document.querySelector('textarea').value;
+  const {window}=new JSDOM('',{url:link,runScripts:'outside-only'});
+  try{
+   window.eval(recover);
+   assert.equal(window.location.hash,'#/auth/profissional/cadastro');
+   assert.equal(JSON.parse(window.localStorage.getItem('qf_pre_cadastro')).dados.email,'original@example.com');
+  }finally{window.close();}
+ }finally{f.dom.window.close();}
+});
