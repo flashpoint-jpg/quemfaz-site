@@ -89,96 +89,126 @@ module.exports = function prepareAdminProfissionais(source) {
       '<form class="stack--sm" data-prof-credito style="margin-top:12px">' +
         '<label class="field"><span class="field__label">Valor em reais</span><input class="input" name="valor" inputmode="decimal" placeholder="Ex.: 20,00" required></label>' +
         '<label class="field"><span class="field__label">Motivo (opcional)</span><input class="input" name="motivo" maxlength="80" placeholder="Ex.: cortesia ou Pix recebido"></label>' +
-        '<button class="btn btn--primary btn--sm" type="submit">Revisar lançamento</button></form></details>' +
-      '<p class="text--sm" data-prof-credito-status role="status"></p></section>';
+        '<p class="text--sm" data-prof-credito-status role="status"></p>' +
+        '<button class="btn btn--primary btn--sm" type="submit">Revisar lançamento</button>' +
+        '<div class="btn-row" data-prof-credito-acoes hidden style="display:none">' +
+          '<button class="btn btn--primary btn--sm" type="button" data-prof-credito-confirmar>Confirmar crédito</button>' +
+          '<button class="btn btn--outline btn--sm" type="button" data-prof-credito-editar>Editar valor</button>' +
+        '</div></form></details><p class="text--sm" data-prof-credito-concluido role="status"></p></section>';
   }
   const creditosPendentes = new Map();
   const creditosEmEnvio = new Set();
   function bindProfCarteira(content, id) {
     const form = content.querySelector('[data-prof-credito]');
     if (!form || !cloudOn()) return;
-    const status = content.querySelector('[data-prof-credito-status]');
+    const status = form.querySelector('[data-prof-credito-status]');
+    const concluido = content.querySelector('[data-prof-credito-concluido]');
     const detalhes = content.querySelector('[data-prof-carteira]');
     const { valor, motivo } = form.elements;
-    const button = form.querySelector('button');
-    let operacaoExibida;
-    function pendente() {
+    const revisar = form.querySelector('button[type="submit"]');
+    const acoes = form.querySelector('[data-prof-credito-acoes]');
+    const confirmar = form.querySelector('[data-prof-credito-confirmar]');
+    const editar = form.querySelector('[data-prof-credito-editar]');
+    let revisao = creditosPendentes.get(id);
+    function atualizarFormulario() {
       const lancamento = creditosPendentes.get(id);
-      operacaoExibida = lancamento;
-      valor.readOnly = motivo.readOnly = Boolean(lancamento);
-      button.textContent = lancamento ? 'Verificar e concluir lançamento' : 'Revisar lançamento';
+      valor.readOnly = motivo.readOnly = Boolean(revisao);
+      revisar.hidden = Boolean(revisao);
+      revisar.style.display = revisao ? 'none' : '';
+      acoes.hidden = !revisao;
+      acoes.style.display = revisao ? '' : 'none';
+      editar.hidden = Boolean(lancamento);
+      editar.style.display = lancamento ? 'none' : '';
+      confirmar.textContent = lancamento ? 'Verificar lançamento' : 'Confirmar crédito';
       if (lancamento) {
         detalhes.open = true;
         valor.value = (lancamento.p_valor_centavos / 100).toFixed(2).replace('.', ',');
         motivo.value = lancamento.p_descricao;
-        status.textContent = 'Confirmação pendente. Verifique o mesmo lançamento para evitar crédito duplicado.';
+        status.textContent = 'Confirmação pendente. Verifique o mesmo lançamento para evitar duplicação.';
       }
     }
-    pendente();
-    form.addEventListener('submit', async function (event) {
+    function atualizarSaldo(saldo) {
+      if (!form.isConnected) return;
+      content.querySelectorAll('[data-prof-saldo-atual]').forEach(el => { el.textContent = PU.formatCurrency(saldo); });
+    }
+    atualizarFormulario();
+    editar.addEventListener('click', function () {
+      revisao = null;
+      status.textContent = '';
+      atualizarFormulario();
+      valor.focus();
+    });
+    form.addEventListener('submit', function (event) {
       event.preventDefault();
-      if (creditosEmEnvio.has(id)) return;
+      if (revisao || creditosEmEnvio.has(id)) return;
+      concluido.textContent = '';
+      const digitado = valor.value.trim().replace(/^R\$\s*/i, '');
+      const centavos = PU.parseCurrencyInput(digitado);
+      if (!/^(?:\d+(?:[,.]\d{1,2})?|\d{1,3}(?:\.\d{3})+,\d{1,2})$/.test(digitado) || centavos <= 0 || centavos > 2147483647) {
+        status.textContent = 'Informe um valor válido maior que zero, como 20,00.';
+        valor.focus();
+        return;
+      }
+      const profissional = DB.profissionalById(id);
+      if (!profissional) return;
+      revisao = { p_user_id: id, p_valor_centavos: centavos, p_descricao: motivo.value.trim() };
+      status.textContent = 'Adicionar ' + PU.formatCurrency(centavos) + ' na carteira de ' + profissional.nome + '?';
+      atualizarFormulario();
+      confirmar.focus();
+    });
+    confirmar.addEventListener('click', async function () {
+      if (!revisao || creditosEmEnvio.has(id)) return;
+      const pendente = creditosPendentes.get(id);
+      if (revisao.p_operacao_id && !pendente) {
+        const saldo = DB.profissionalById(id)?.saldo;
+        if (Number.isSafeInteger(saldo)) atualizarSaldo(saldo);
+        revisao = null;
+        form.reset();
+        atualizarFormulario();
+        status.textContent = 'Confira o saldo atual antes de iniciar outro lançamento.';
+        return;
+      }
       creditosEmEnvio.add(id);
-      button.disabled = true;
+      confirmar.disabled = true;
+      editar.disabled = true;
       try {
-        let lancamento = creditosPendentes.get(id);
-        if (!lancamento) {
-          if (operacaoExibida) {
-            form.reset();
-            pendente();
-            const saldo = DB.profissionalById(id)?.saldo;
-            if (Number.isSafeInteger(saldo)) content.querySelectorAll('[data-prof-saldo-atual]').forEach(el => { el.textContent = PU.formatCurrency(saldo); });
-            status.textContent = 'Confira o saldo atual antes de iniciar outro lançamento.';
-            return;
-          }
-          const digitado = valor.value.trim();
-          const centavos = PU.parseCurrencyInput(digitado);
-          if (!/^(?:\d+(?:[,.]\d{1,2})?|\d{1,3}(?:\.\d{3})+,\d{1,2})$/.test(digitado) || centavos <= 0 || centavos > 2147483647) {
-            status.textContent = 'Informe um valor válido maior que zero, como 20,00.';
-            valor.focus();
-            return;
-          }
-          const descricao = motivo.value.trim();
-          const profissional = DB.profissionalById(id);
-          if (!profissional) return;
-          const confirmou = await PU.confirmDialog({ title: 'Confirmar crédito',
-            message: 'Adicionar ' + PU.formatCurrency(centavos) + ' na carteira de ' + profissional.nome + '?',
-            okLabel: 'Confirmar lançamento' });
-          if (!confirmou || !form.isConnected) return;
-          lancamento = { p_user_id: id, p_valor_centavos: centavos,
-            p_descricao: descricao, p_operacao_id: global.crypto.randomUUID() };
-          creditosPendentes.set(id, lancamento);
-          pendente();
+        if (!pendente) {
+          revisao.p_operacao_id = global.crypto.randomUUID();
+          creditosPendentes.set(id, revisao);
         }
+        atualizarFormulario();
         status.textContent = 'Confirmando o lançamento…';
         const result = await global.QFConnection.deadline(
-          global.QFAdminCloud.client.rpc('qf_admin_creditar_carteira', lancamento), 15000, 'lançamento de saldo');
+          global.QFAdminCloud.client.rpc('qf_admin_creditar_carteira', pendente || revisao), 15000, 'lançamento de saldo');
         if (result.error) throw result.error;
         if (result.data?.ok === false) {
           creditosPendentes.delete(id);
-          pendente();
+          revisao = null;
+          atualizarFormulario();
           status.textContent = result.data.reason || 'Não foi possível adicionar saldo.';
           return;
         }
         const saldo = result.data?.saldo_centavos;
         if (result.data?.ok !== true || !Number.isSafeInteger(saldo)) throw Error('Saldo indisponível');
         creditosPendentes.delete(id);
+        revisao = null;
         const profissional = DB.profissionalById(id);
         if (profissional) profissional.saldo = profissional.creditos = saldo;
-        if (form.isConnected) content.querySelectorAll('[data-prof-saldo-atual]').forEach(el => { el.textContent = PU.formatCurrency(saldo); });
+        atualizarSaldo(saldo);
         form.reset();
-        pendente();
+        atualizarFormulario();
         detalhes.open = false;
-        status.textContent = 'Saldo adicionado. Novo saldo ' + PU.formatCurrency(saldo) + '.';
+        status.textContent = '';
+        concluido.textContent = 'Saldo adicionado. Novo saldo ' + PU.formatCurrency(saldo) + '.';
+        detalhes.querySelector('summary').focus();
       } catch (err) {
-        if (creditosPendentes.has(id)) {
-          pendente();
-          if (err?.code === '42501') status.textContent = 'Sem permissão para adicionar saldo. Verifique a sessão de administrador.';
-        }
-        else status.textContent = 'Não foi possível iniciar o lançamento.';
+        atualizarFormulario();
+        if (err?.code === '42501') status.textContent = 'Sem permissão para adicionar saldo. Verifique a sessão de administrador.';
+        else if (!creditosPendentes.has(id)) status.textContent = 'Não foi possível iniciar o lançamento.';
       } finally {
         creditosEmEnvio.delete(id);
-        button.disabled = false;
+        confirmar.disabled = false;
+        editar.disabled = false;
       }
     });
   }
