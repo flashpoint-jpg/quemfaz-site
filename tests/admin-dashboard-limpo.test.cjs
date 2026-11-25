@@ -4,7 +4,12 @@ function setup(fail=''){
  const routes=['dashboard','servicos','profissionais','financeiro','suporte','comunicados','configuracoes','desbloqueios','planos'];
  const dom=new JSDOM('<aside><div class="qf-adm-site"></div><nav class="qf-adm-nav">'+routes.map(r=>'<button data-nav="/admin/'+r+'"><span>'+r+'</span></button>').join('')+'</nav></aside><main><div class="view"><p>Relatórios existentes</p></div></main>',{runScripts:'outside-only',url:'https://example.test/admin.html'}),w=dom.window;
  const now=new Date().toISOString();
- w.DB={allRequests:()=>[{id:'order-1',clienteId:'client-1',criadoEm:'2026-11-21T13:29:00Z',categoriaId:'montador',statusDb:'aberto',endereco:{cidade:'São Paulo'},desbloqueios:[{profissionalId:'pro-1',valor:800,ativo:true,criadoEm:now},{profissionalId:'pro-2',valor:800,ativo:false,criadoEm:now}]},{id:'order-2',clienteId:'client-2',criadoEm:'2026-11-20T17:30:00Z',titulo:'Pedreiro',statusDb:'cancelado'}],clienteById:id=>({nome:id==='client-1'?'Matheus Teste':'Karen Teste'}),profissionalById:id=>({nome:id==='pro-1'?'Carlos <Oliveira>':'Ana'}),categoryById:()=>({nome:'Montador de móveis'}),state:{}};
+ w.DB={allRequests:()=>[{id:'order-1',clienteId:'client-1',criadoEm:'2026-11-21T13:29:00Z',categoriaId:'montador',statusDb:'aberto',endereco:{cidade:'São Paulo'},desbloqueios:[{profissionalId:'pro-1',valor:800,ativo:true,criadoEm:now},{profissionalId:'pro-2',valor:800,ativo:false,criadoEm:now}]},{id:'order-2',clienteId:'client-2',criadoEm:'2026-11-20T17:30:00Z',titulo:'Pedreiro',statusDb:'cancelado'}],clienteById:id=>({nome:id==='client-1'?'Matheus Teste':'Karen Teste'}),profissionalById:id=>({nome:id==='pro-1'?'Carlos <Oliveira>':'Ana'}),categoryById:id=>id==='montador'?{nome:'Montador de móveis'}:undefined,state:{}};
+ w.DB.state.users={profissionais:[
+  {id:'pro-new',nome:'Manoel <Teste>',criadoEm:now,categorias:['montador','Eletricista','Eletricista'],cidadeNome:'São Bernardo do Campo',uf:'SP'},
+  {id:'pro-old',nome:'Ana',criadoEm:'2026-01-12T03:15:00Z'},
+  {id:'pro-invalid',nome:'Data incompleta',criadoEm:null}
+ ]};
  w.Screens={};w.QFAdminCloud={syncSnapshot:async()=>{if(fail==='snapshot')throw Error('offline');return {};},syncSupport:async()=>[{id:'ticket-1',usuario_id:'pro-1',assunto:'Saldo',status:'aberto',criado_em:now}],client:{rpc:async(name)=>{if(fail===name)return {error:{message:'offline'}};return {data:name==='qf_admin_contabilidade'?{ok:true,desbloqueios:{saldo_qtd:1}}:name==='qf_admin_balanco'?{ok:true,entradas_centavos:2000}:{ok:true,movimentos:[{tipo:'recarga',quem:'Ana',centavos:2000,em:now,rota:'/admin/profissionais/pro-2'},{tipo:'desbloqueio',quem:'Carlos',centavos:800,em:now}]}};}}};
  w.eval(fs.readFileSync('qf-admin-dashboard.js','utf8'));w.document.dispatchEvent(new w.Event('DOMContentLoaded'));w.Screens.afterRender('/admin/dashboard',w.document.querySelector('main'));return {dom,w};
 }
@@ -30,5 +35,34 @@ test('pedidos recebidos mostram cliente e hora de Brasília, abrem detalhes e re
   search.value='karen';
   search.dispatchEvent(new w.Event('input'));
   assert.equal(w.document.querySelector('[data-qfd-orders] a').hash,'#/admin/servicos/order-2');
+ }finally{w.close();}
+});
+
+
+test('novos profissionais mostram data completa, profissões e acesso ao cadastro',async()=>{
+ const {w}=setup();
+ try{
+  await tick();
+  const list=w.document.querySelector('[data-qfd-registrations]');
+  const rows=[...list.querySelectorAll('a')];
+  assert.equal(rows.length,2);
+  assert.match(rows[0].textContent,/Manoel <Teste>.*Montador de móveis.*Eletricista.*São Bernardo do Campo/);
+  assert.equal(rows[0].hash,'#/admin/profissionais/pro-new');
+  assert.match(rows[0].querySelector('time').textContent,/\d{2}\/\d{2}\/\d{4}.*\d{2}:\d{2}/);
+  assert.match(rows[1].textContent,/Profissão não informada.*12\/01\/2026.*00:15/);
+  assert.equal(w.document.querySelector('[data-qfd-registration-count]').textContent,'1 cadastro hoje');
+  const search=w.document.querySelector('[data-qfd-search]');
+  search.value='eletricista';
+  search.dispatchEvent(new w.Event('input'));
+  assert.deepEqual([...list.querySelectorAll('a')].map(a=>a.hash),['#/admin/profissionais/pro-new']);
+ }finally{w.close();}
+});
+
+test('aviso de cadastro não mostra zero quando a consulta está indisponível',async()=>{
+ const {w}=setup('snapshot');
+ try{
+  await tick();
+  assert.match(w.document.querySelector('[data-qfd-registrations]').textContent,/Não foi possível consultar os cadastros/);
+  assert.equal(w.document.querySelector('[data-qfd-registration-count]').textContent,'');
  }finally{w.close();}
 });
