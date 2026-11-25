@@ -66,9 +66,123 @@ module.exports = function prepareAdminProfissionais(source) {
     filtrar();` + source.slice(filterEnd);
 
   const profileAnchor = `      '<section class="section card stack--sm" aria-label="Teste individual de chamado">' +`;
-  replace(profileAnchor, `      adminProfGestaoHtml(p) +\n` + profileAnchor);
+  const oldWallet = source.indexOf(`      '<div class="section"><div class="section-head"><h2 class="h3">Adicionar créditos</h2></div><div class="card stack--sm">' +`);
+  const walletEnd = source.indexOf('      (txs.length ?', oldWallet);
+  if (oldWallet < 0 || walletEnd < 0) throw Error('Carteira do profissional não encontrada');
+  source = source.slice(0, oldWallet) + source.slice(walletEnd);
+  replace(profileAnchor, `      adminProfCarteiraHtml(p) +\n      adminProfGestaoHtml(p) +\n` + profileAnchor);
+  replace(`      '<span class="badge badge--navy">' + PU.formatCurrency(p.saldo || 0) + '</span>';`,
+    `      '<span class="badge badge--navy" data-prof-saldo-atual>' + PU.formatCurrency(p.saldo || 0) + '</span>';`);
+  replace(`        rowInfo('Saldo em carteira', PU.formatCurrency(p.saldo || 0)) +\n        rowInfo('Cadastro',`,
+    `        rowInfoHtml('Saldo em carteira', '<span data-prof-saldo-atual>' + PU.formatCurrency(p.saldo || 0) + '</span>') +\n        rowInfo('Cadastro',`);
+  const legacyCredit = source.indexOf("            if (act === 'add-creditos') {");
+  const legacyCreditEnd = source.indexOf("            global.navigate('/admin/profissionais/'", legacyCredit);
+  if (legacyCredit < 0 || legacyCreditEnd < 0) throw Error('Ação anterior de saldo não encontrada');
+  source = source.slice(0, legacyCredit) + source.slice(legacyCreditEnd);
+  replace("act === 'toggle-verificado' || act === 'add-creditos'", "act === 'toggle-verificado'");
   const detailStart = '  function bindProfissionalDetalhe(content, params) {';
-  replace(detailStart, String.raw`  function adminProfGestaoHtml(p) {
+  replace(detailStart, String.raw`  function adminProfCarteiraHtml(p) {
+    return '<section class="section card stack--sm" aria-labelledby="qf-prof-carteira-titulo">' +
+      '<h2 class="h3" id="qf-prof-carteira-titulo">Carteira do profissional</h2>' +
+      '<p>Saldo atual <strong data-prof-saldo-atual>' + PU.formatCurrency(p.saldo || 0) + '</strong></p>' +
+      '<details data-prof-carteira><summary class="btn btn--primary btn--sm">Adicionar saldo</summary>' +
+      '<form class="stack--sm" data-prof-credito style="margin-top:12px">' +
+        '<label class="field"><span class="field__label">Valor em reais</span><input class="input" name="valor" inputmode="decimal" placeholder="Ex.: 20,00" required></label>' +
+        '<label class="field"><span class="field__label">Motivo (opcional)</span><input class="input" name="motivo" maxlength="80" placeholder="Ex.: cortesia ou Pix recebido"></label>' +
+        '<button class="btn btn--primary btn--sm" type="submit">Revisar lançamento</button></form></details>' +
+      '<p class="text--sm" data-prof-credito-status role="status"></p></section>';
+  }
+  const creditosPendentes = new Map();
+  const creditosEmEnvio = new Set();
+  function bindProfCarteira(content, id) {
+    const form = content.querySelector('[data-prof-credito]');
+    if (!form || !cloudOn()) return;
+    const status = content.querySelector('[data-prof-credito-status]');
+    const detalhes = content.querySelector('[data-prof-carteira]');
+    const { valor, motivo } = form.elements;
+    const button = form.querySelector('button');
+    let operacaoExibida;
+    function pendente() {
+      const lancamento = creditosPendentes.get(id);
+      operacaoExibida = lancamento;
+      valor.readOnly = motivo.readOnly = Boolean(lancamento);
+      button.textContent = lancamento ? 'Verificar e concluir lançamento' : 'Revisar lançamento';
+      if (lancamento) {
+        detalhes.open = true;
+        valor.value = (lancamento.p_valor_centavos / 100).toFixed(2).replace('.', ',');
+        motivo.value = lancamento.p_descricao;
+        status.textContent = 'Confirmação pendente. Verifique o mesmo lançamento para evitar crédito duplicado.';
+      }
+    }
+    pendente();
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      if (creditosEmEnvio.has(id)) return;
+      creditosEmEnvio.add(id);
+      button.disabled = true;
+      try {
+        let lancamento = creditosPendentes.get(id);
+        if (!lancamento) {
+          if (operacaoExibida) {
+            form.reset();
+            pendente();
+            const saldo = DB.profissionalById(id)?.saldo;
+            if (Number.isSafeInteger(saldo)) content.querySelectorAll('[data-prof-saldo-atual]').forEach(el => { el.textContent = PU.formatCurrency(saldo); });
+            status.textContent = 'Confira o saldo atual antes de iniciar outro lançamento.';
+            return;
+          }
+          const digitado = valor.value.trim();
+          const centavos = PU.parseCurrencyInput(digitado);
+          if (!/^(?:\d+(?:[,.]\d{1,2})?|\d{1,3}(?:\.\d{3})+,\d{1,2})$/.test(digitado) || centavos <= 0 || centavos > 2147483647) {
+            status.textContent = 'Informe um valor válido maior que zero, como 20,00.';
+            valor.focus();
+            return;
+          }
+          const descricao = motivo.value.trim();
+          const profissional = DB.profissionalById(id);
+          if (!profissional) return;
+          const confirmou = await PU.confirmDialog({ title: 'Confirmar crédito',
+            message: 'Adicionar ' + PU.formatCurrency(centavos) + ' na carteira de ' + profissional.nome + '?',
+            okLabel: 'Confirmar lançamento' });
+          if (!confirmou || !form.isConnected) return;
+          lancamento = { p_user_id: id, p_valor_centavos: centavos,
+            p_descricao: descricao, p_operacao_id: global.crypto.randomUUID() };
+          creditosPendentes.set(id, lancamento);
+          pendente();
+        }
+        status.textContent = 'Confirmando o lançamento…';
+        const result = await global.QFConnection.deadline(
+          global.QFAdminCloud.client.rpc('qf_admin_creditar_carteira', lancamento), 15000, 'lançamento de saldo');
+        if (result.error) throw result.error;
+        if (result.data?.ok === false) {
+          creditosPendentes.delete(id);
+          pendente();
+          status.textContent = result.data.reason || 'Não foi possível adicionar saldo.';
+          return;
+        }
+        const saldo = result.data?.saldo_centavos;
+        if (result.data?.ok !== true || !Number.isSafeInteger(saldo)) throw Error('Saldo indisponível');
+        creditosPendentes.delete(id);
+        const profissional = DB.profissionalById(id);
+        if (profissional) profissional.saldo = profissional.creditos = saldo;
+        if (form.isConnected) content.querySelectorAll('[data-prof-saldo-atual]').forEach(el => { el.textContent = PU.formatCurrency(saldo); });
+        form.reset();
+        pendente();
+        detalhes.open = false;
+        status.textContent = 'Saldo adicionado. Novo saldo ' + PU.formatCurrency(saldo) + '.';
+      } catch (err) {
+        if (creditosPendentes.has(id)) {
+          pendente();
+          if (err?.code === '42501') status.textContent = 'Sem permissão para adicionar saldo. Verifique a sessão de administrador.';
+        }
+        else status.textContent = 'Não foi possível iniciar o lançamento.';
+      } finally {
+        creditosEmEnvio.delete(id);
+        button.disabled = false;
+      }
+    });
+  }
+  function adminProfGestaoHtml(p) {
     const plano = adminPlanoDoProf(p.id);
     const livreVencido = plano && !plano.vigente && plano.p.plano === 'livre' &&
       Date.parse(plano.p.valido_ate) <= Date.now() && p.email;
@@ -89,6 +203,7 @@ module.exports = function prepareAdminProfissionais(source) {
       '</section>';
   }
   function bindProfissionalDetalhe(content, params) {
+    bindProfCarteira(content, params.id);
     const gerenciarPlano = content.querySelector('[data-prof-gerenciar-plano]');
     if (gerenciarPlano) gerenciarPlano.addEventListener('click', function () {
       admPlanoEscolha = { pro: params.id, plano: '' };
