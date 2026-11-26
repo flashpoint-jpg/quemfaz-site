@@ -1,5 +1,5 @@
 {
-  "consultadoEm": "2026-11-23",
+  "consultadoEm": "2026-11-26",
   "origem": "qf_profissional_cidades + qf_profissionais.especialidades",
   "cidades": [
     {
@@ -1129,6 +1129,7 @@
         "cat_calheiro",
         "cat_cftv_alarmes",
         "cat_chaveiro",
+        "cat_cuidador_idosos",
         "cat_custom_eletrica_1s1r5cs",
         "cat_custom_eletricista_residencial_e_comercial_1wadjsn",
         "cat_dedetizador",
@@ -1148,6 +1149,7 @@
         "cat_internet_redes",
         "cat_jardinagem",
         "cat_lava_jato",
+        "cat_limpeza_estofados",
         "cat_maquina_lavar",
         "cat_marceneiro",
         "cat_marido_aluguel",
