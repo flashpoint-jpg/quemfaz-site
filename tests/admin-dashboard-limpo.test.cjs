@@ -100,3 +100,21 @@ test('Profissionais tem lista de inscritos no Plantão 24h e permite tentar nova
   assert.match(rows[1].textContent,/Indisponível.*24 Livre/);
  }finally{w.close();}
 });
+
+test('a ficha distingue pedidos comuns offline do Plantão 24h disponível',async()=>{
+ const {w}=setup();
+ try{
+  const content=w.document.querySelector('main');
+  content.innerHTML='<div class="view"><div class="card"><div class="avatar avatar--lg"></div><div><span class="badge">Offline</span><span class="badge">Sem selfie</span></div></div></div>';
+  w.QFConnection={deadline:request=>request};
+  w.QFAdminCloud.client.rpc=async name=>{
+   assert.equal(name,'qf_admin_plantao_profissionais');
+   return {data:[{id:'pro-1',disponivel:true}]};
+  };
+  w.Screens.afterRender('/admin/profissionais/:id',content,{id:'pro-1'});
+  await tick();
+  assert.deepEqual([...content.querySelectorAll('.badge')].map(b=>b.textContent),[
+   'Offline · Pedidos comuns','Plantão 24h · Disponível','Sem selfie'
+  ]);
+ }finally{w.close();}
+});
