@@ -119,7 +119,9 @@
     if(item.estado==='confirmado'&&item.meu_aceite)return '<article class="qf-plantao-card"><h3>Atendimento confirmado</h3>'+contact(item,true)+'</article>';
     if(item.meu_aceite&&['pix','oferta'].includes(item.estado))return '<article class="qf-plantao-card"><strong>'+label+'</strong><p>Aguardando confirmação do cliente e do Pix. O contato será liberado após o pagamento.</p></article>';
     if(item.estado!=='buscando')return '';
-    return '<article class="qf-plantao-card"><strong>'+label+' · '+escape(item.bairro)+' · '+escape(item.cidade)+'</strong><p>'+escape(item.descricao)+'</p>'+
+    const distance=item.distancia_km==null?'Distância estimada indisponível':Number(item.distancia_km).toLocaleString('pt-BR')+' km aprox. em linha reta';
+    return '<article class="qf-plantao-card"><strong>'+label+' · '+escape(item.bairro)+' · '+escape(item.cidade)+'</strong>'+
+     '<small>'+escape(distance)+'</small><p>'+escape(item.descricao)+'</p>'+
      '<form data-plantao-offer="'+id+'"><label>Previsão de chegada<select name="eta">'+[15,20,30,45,60].map(n=>'<option value="'+n+'">'+n+' min</option>').join('')+
      '</select></label><button class="btn btn--primary">Aceitar chamado</button></form></article>';
    }).join('');

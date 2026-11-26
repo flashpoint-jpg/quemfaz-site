@@ -9,11 +9,17 @@ test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
   runScripts:'outside-only', url:'https://example.test/#/profissional/home'
  });
  try {
+  let disponivel=false;
   w.QFCloud={client:{
    auth:{getSession:async()=>({data:{session:{user:{id:'professional'}}}})},
-   rpc:async name=>({data:name==='qf_plantao_listar'?[]:{
-    inscrito_gratis:true, categorias_elegiveis:['cat_encanador'], disponivel:false
-   }})
+   rpc:async (name,args)=>{
+    if(name==='qf_plantao_listar')return {data:disponivel?[{
+     id:'called',categoria:'cat_encanador',bairro:'Jardim do Estádio',cidade:'Santo André',
+     estado:'buscando',distancia_km:18,descricao:'Vazamento'
+    }]:[]};
+    if(args?.p_disponivel)disponivel=true;
+    return {data:{inscrito_gratis:true,categorias_elegiveis:['cat_encanador'],disponivel}};
+   }
   }};
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
   w.eval(fs.readFileSync('qf-plantao-24h.js','utf8'));
@@ -23,6 +29,10 @@ test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
   entry.click();
   await new Promise(resolve=>setImmediate(resolve));
   assert.equal(w.document.querySelector('[data-plantao-action="on"]').textContent,'Estou de plantão');
+  w.document.querySelector('[data-plantao-action="on"]').click();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(w.document.querySelector('.qf-plantao-card').textContent,/18 km aprox. em linha reta/);
+  assert.match(w.document.querySelector('[data-plantao-offer]').textContent,/Aceitar chamado/);
  } finally {w.close();}
 });
 
@@ -43,11 +53,20 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
    create table qf_planos_profissional(recarga_id uuid,profissional_id uuid,plano text,valido_ate timestamptz,chamados_restantes int);
    create function private.qf_push_interno(text,uuid) returns void language plpgsql as $$begin null; end;$$;
    create function private.qf_is_admin() returns boolean language sql stable as $$select auth.uid()='10000000-0000-4000-8000-000000000006'::uuid$$;
+   create function private.qf_cidade_centro(text,text) returns table(latitude numeric,longitude numeric)
+   language sql stable as $$select case $1 when 'Santo André' then 19 when 'Fora da área' then 70 end::numeric, 0::numeric$$;
+   create function public.qf_distancia_km(numeric,numeric,numeric,numeric) returns numeric
+   language sql immutable strict as $$select abs($1-$3)$$;
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261123214500_chamado_urgente_24h.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261123235000_plantao_disponibilidade_na_busca.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261124002008_plantao_gratuito.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261126014729_admin_plantao_profissionais.sql','utf8'));
+  await db.exec(`
+   alter table qf_profissionais add column latitude numeric, add column longitude numeric, add column raio_km integer;
+   alter table qf_profissional_cidades add column latitude numeric, add column longitude numeric, add column raio_km integer;
+  `);
+  await db.exec(fs.readFileSync('supabase/migrations/20261126022151_plantao_busca_por_raio.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
@@ -82,10 +101,15 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   await db.exec('reset role');
   assert.deepEqual(await shift(),{plano_ativo:false,inscrito_gratis:true,disponivel:false,categorias_elegiveis:['cat_eletricista'],desbloqueios_restantes:0});
   await db.query('select qf_plantao_disponibilidade(true)');
+  await db.query("update qf_profiles set cidade='Guarulhos' where id=$1",[pro]);
+  await db.query("insert into qf_profissional_cidades values($1,'Guarulhos','SP',1,0,41)",[pro]);
+  assert.equal((await db.query("select private.qf_plantao_elegivel($1,'cat_eletricista','Fora da área','SP') as elegivel",[pro])).rows[0].elegivel,false);
   await assert.rejects(create('WhatsApp 11 9 1234-5678'),/Remova o telefone/);
   const call=(await create('Sem energia apenas na residência.')).rows[0].id;
+  assert.deepEqual((await db.query("select qf_plantao_push_destinatarios($1) as ids",[call])).rows[0].ids,[pro]);
   await as(client);
   assert.equal((await list()).find(row=>row.id===call).profissionais_disponiveis,1);
+  assert.equal((await list()).find(row=>row.id===call).distancia_km,null);
   await as(other);
   assert.deepEqual(await list(),[]);
   await assert.rejects(db.query('select qf_plantao_aceitar($1,30)',[call]),/indisponível/);
@@ -93,6 +117,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   assert.equal((await list())[0].profissionais_disponiveis,null);
   assert.equal((await list())[0].telefone,null);
   assert.equal((await list())[0].endereco,null);
+  assert.equal((await list())[0].distancia_km,18);
   await db.query('select qf_plantao_aceitar($1,30)',[call]);
   await assert.rejects(db.query('select qf_plantao_aceitar($1,45)',[call]),/indisponível/);
   await as(client);
