@@ -121,6 +121,7 @@ adminSource=adminSource.replace('</body>','<script defer src="/qf-admin-password
 adminSource=adminSource.replace('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2','/vendor/supabase-2.117.2.js');
 adminSource=adminSource.replace("const DB_KEY = 'quemfaz_db_v2';","const DB_KEY = 'quemfaz_admin_db_v2';").replace("const SESSION_KEY = 'quemfaz_session_v2';","const SESSION_KEY = 'quemfaz_admin_session_v2';");
 adminSource=adminSource.replace('</head>','<link rel="stylesheet" href="/qf-admin-layout.css?v=20261125-botoes"></head>');
+adminSource=adminSource.replace('qf-admin-dashboard.js?v=20261104-painel','qf-admin-dashboard.js?v=20261125-plantao');
 adminSource=adminSource.replace('auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },',"auth: { storageKey: 'qf-admin-auth-v1', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },");
 adminSource=adminSource.replace('return !!(res.data && res.data.session);',`if (!(res.data && res.data.session)) return false;
     const verified=await client.rpc('qf_admin_config_anuncios');

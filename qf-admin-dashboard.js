@@ -31,6 +31,52 @@ function registrationRow(person){
   '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
 }
 const link=(route,label,cls='qfd-link',tab='')=>'<a class="'+cls+'" href="#'+esc(route)+'"'+(tab?' data-servicos-tab="'+esc(tab)+'"':'')+'>'+label+'</a>';
+function mountPlantao(content){
+ if(content.querySelector('[data-qfd-plantao]'))return;
+ const panel=g.document.createElement('details');
+ panel.dataset.qfdPlantao='';
+ panel.className='qfd-panel qfd-fold-panel';
+ panel.innerHTML='<summary><h2>Profissionais do Plantão 24h</h2></summary>'+
+  '<div class="row row--between"><p role="status" data-plantao-status></p>'+
+  '<button type="button" class="btn btn--secondary btn--sm">Atualizar plantão</button></div>'+
+  '<div data-plantao-list></div>';
+ (content.querySelector('.view')||content).prepend(panel);
+
+ const status=panel.querySelector('[data-plantao-status]');
+ const list=panel.querySelector('[data-plantao-list]');
+ const button=panel.querySelector('button');
+ async function load(){
+  if(button.disabled)return;
+  button.disabled=true;
+  status.textContent='Consultando profissionais do plantão…';
+  try{
+   const request=g.QFAdminCloud.client.rpc('qf_admin_plantao_profissionais');
+   const {data,error}=await g.QFConnection.deadline(request,8000,'profissionais do plantão');
+   if(error||!Array.isArray(data))throw Error('Consulta indisponível');
+   const available=data.filter(person=>person.disponivel).length;
+   status.textContent=data.length
+    ?data.length+' no plantão · '+available+(available===1?' disponível agora':' disponíveis agora')
+    :'Nenhum profissional inscrito no Plantão 24h.';
+   list.innerHTML=data.map(person=>{
+    const professions=person.categorias.map(id=>g.DB.categoryById(id)?.nome||id.replace(/^cat_/,'')).join(', ');
+    const place=[person.cidade,person.uf].filter(Boolean).join('/');
+    const membership=[person.inscrito_gratis&&'Inscrição gratuita',person.plano_ativo&&'24 Livre'].filter(Boolean).join(' e ');
+    const availability=!person.ativo?'Conta inativa':person.disponivel?'Disponível':'Indisponível';
+    return link('/admin/profissionais/'+encodeURIComponent(person.id),
+     '<span><strong>'+esc(person.nome||'Profissional')+'</strong><small>'+[professions,place].filter(Boolean).map(esc).join(' · ')+'</small></span>'+
+     '<span><strong>'+availability+'</strong><small>'+membership+'</small></span>'+
+     '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
+   }).join('');
+  }catch(_){
+   list.replaceChildren();
+   status.textContent='Não foi possível consultar o plantão. Tente atualizar.';
+  }finally{
+   button.disabled=false;
+  }
+ }
+ panel.addEventListener('toggle',()=>{if(panel.open)load();});
+ button.addEventListener('click',load);
+}
 let timer,extraLinks=[];
 function shell(pattern,content){
  g.document.body.classList.add('qfd-modern');
@@ -52,6 +98,7 @@ function install(){
  const previous=S.afterRender;
  S.afterRender=function(pattern,content){
   clearTimeout(timer);if(previous)previous.apply(this,arguments);shell(pattern,content);
+  if(pattern==='/admin/profissionais')mountPlantao(content);
   if(pattern!=='/admin/dashboard'||content.querySelector('[data-qfd]'))return;
   [...content.children].forEach(e=>e.hidden=true);
   const root=g.document.createElement('section');root.dataset.qfd='';root.className='qfd';

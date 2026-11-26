@@ -19,10 +19,12 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
    create table qf_recargas(id uuid primary key,profissional_id uuid,status text);
    create table qf_planos_profissional(recarga_id uuid,profissional_id uuid,plano text,valido_ate timestamptz,chamados_restantes int);
    create function private.qf_push_interno(text,uuid) returns void language plpgsql as $$begin null; end;$$;
+   create function private.qf_is_admin() returns boolean language sql stable as $$select auth.uid()='10000000-0000-4000-8000-000000000006'::uuid$$;
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261123214500_chamado_urgente_24h.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261123235000_plantao_disponibilidade_na_busca.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261124002008_plantao_gratuito.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261126014729_admin_plantao_profissionais.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
@@ -97,6 +99,17 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   await db.query("insert into qf_planos_profissional values($1,$2,'livre_24h',now()+interval '30 days',20)",[id(4),other]);
   assert.equal((await shift()).desbloqueios_restantes,20);
   assert.equal((await shift()).plano_ativo,true);
+  await db.exec('set role authenticated');
+  await assert.rejects(db.query('select qf_admin_plantao_profissionais()'),{code:'42501'});
+  await as(id(6));
+  const roster=(await db.query('select qf_admin_plantao_profissionais() as roster')).rows[0].roster;
+  assert.equal(roster.length,3);
+  assert.deepEqual(roster.find(row=>row.id===other),{
+   id:other,nome:'Outra',cidade:'Santo André',uf:'SP',categorias:['cat_eletricista'],
+   ativo:true,inscrito_gratis:false,plano_ativo:true,disponivel:false
+  });
+  assert.equal(roster.find(row=>row.id===pro).disponivel,true);
+  await db.exec('reset role');
   await as(pro);
   const late=(await create('Rede elétrica da casa caiu.')).rows[0].id;
   await db.query('select qf_plantao_aceitar($1,30)',[late]);

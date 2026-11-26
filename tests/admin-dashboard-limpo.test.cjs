@@ -66,3 +66,37 @@ test('aviso de cadastro não mostra zero quando a consulta está indisponível',
   assert.equal(w.document.querySelector('[data-qfd-registration-count]').textContent,'');
  }finally{w.close();}
 });
+
+test('Profissionais tem lista de inscritos no Plantão 24h e permite tentar novamente',async()=>{
+ const {w}=setup();
+ try{
+  const content=w.document.querySelector('main');
+  content.innerHTML='<div class="view"></div>';
+  w.QFConnection={deadline:request=>request};
+  let attempts=0;
+  w.QFAdminCloud.client.rpc=async name=>{
+   assert.equal(name,'qf_admin_plantao_profissionais');
+   if(++attempts===1)return {error:{message:'offline'}};
+   return {data:[
+    {id:'pro-1',nome:'Ana <Teste>',cidade:'Santo André',uf:'SP',categorias:['montador'],inscrito_gratis:true,ativo:true,disponivel:true},
+    {id:'pro-2',nome:'Carlos',categorias:[],plano_ativo:true,ativo:true,disponivel:false}
+   ]};
+  };
+  w.Screens.afterRender('/admin/profissionais',content);
+  const section=content.querySelector('[data-qfd-plantao]');
+  assert.match(section.querySelector('summary').textContent,/Profissionais do Plantão 24h/);
+  assert.equal(attempts,0);
+  section.open=true;
+  await new Promise(resolve=>section.addEventListener('toggle',resolve,{once:true}));
+  await tick();
+  const status=section.querySelector('[role="status"]');
+  assert.match(status.textContent,/Não foi possível/);
+  section.querySelector('button').click();
+  await tick();
+  assert.match(status.textContent,/2 no plantão · 1 disponível/);
+  const rows=section.querySelectorAll('a');
+  assert.equal(rows[0].hash,'#/admin/profissionais/pro-1');
+  assert.match(rows[0].textContent,/Ana <Teste>.*Santo André\/SP.*Disponível.*Inscrição gratuita/);
+  assert.match(rows[1].textContent,/Indisponível.*24 Livre/);
+ }finally{w.close();}
+});
