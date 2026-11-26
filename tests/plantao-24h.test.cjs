@@ -2,6 +2,29 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { PGlite } = require('@electric-sql/pglite');
+const { JSDOM } = require('jsdom');
+
+test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
+ const {window:w} = new JSDOM('<div id="app-shell" data-route="profissional-home"><main class="view"></main></div>', {
+  runScripts:'outside-only', url:'https://example.test/#/profissional/home'
+ });
+ try {
+  w.QFCloud={client:{
+   auth:{getSession:async()=>({data:{session:{user:{id:'professional'}}}})},
+   rpc:async name=>({data:name==='qf_plantao_listar'?[]:{
+    inscrito_gratis:true, categorias_elegiveis:['cat_encanador'], disponivel:false
+   }})
+  }};
+  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+  w.eval(fs.readFileSync('qf-plantao-24h.js','utf8'));
+  await new Promise(resolve=>w.document.addEventListener('DOMContentLoaded',resolve,{once:true}));
+  const entry=w.document.querySelector('[data-qf-plantao-pro]');
+  assert.equal(entry.textContent,'Plantão 24h');
+  entry.click();
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(w.document.querySelector('[data-plantao-action="on"]').textContent,'Estou de plantão');
+ } finally {w.close();}
+});
 
 test('chamado 24h só libera contato para os participantes após validar o Pix de R$ 20', async () => {
  const db = new PGlite();
