@@ -243,7 +243,7 @@
      open('cliente');
     }
    }
-   const pro=d.querySelector('#app-shell[data-route="profissional/home"] .view');
+   const pro=d.querySelector('#app-shell[data-route="profissional-home"] .view');
    if(pro&&!pro.querySelector('[data-qf-plantao-pro]')){
     const c=d.createElement('button');c.type='button';c.className='btn btn--outline';
     c.dataset.qfPlantaoPro='';c.textContent='Plantão 24h';c.setAttribute('aria-haspopup','dialog');
