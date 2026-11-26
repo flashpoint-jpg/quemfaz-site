@@ -4,6 +4,40 @@ const fs = require('node:fs');
 const { PGlite } = require('@electric-sql/pglite');
 const { JSDOM } = require('jsdom');
 
+test('Buscar novamente recupera os campos da última busca e permite editá-los',async()=>{
+ const {window:w}=new JSDOM('<div class="qf-approved-picker-actions"></div>',{
+  runScripts:'outside-only',url:'https://example.test/'
+ });
+ const item={id:'pedido',cliente:true,estado:'sem_profissional',categoria:'cat_encanador',
+  bairro:'Centro',descricao:'Vazamento na cozinha',dados_busca:{cep:'09172060',endereco:'Rua Exemplo, 68'}};
+ const settle=()=>new Promise(resolve=>setImmediate(resolve));
+ let sent;
+ try{
+  w.QFCloud={client:{
+   auth:{getSession:async()=>({data:{session:{user:{id:'cliente'}}}})},
+   rpc:async()=>({data:[item]}),
+   functions:{invoke:async(name,{body})=>{sent=body;return {data:{id:item.id}};}}
+  }};
+  w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};
+  w.eval(fs.readFileSync('qf-plantao-24h.js','utf8'));
+  await new Promise(resolve=>w.document.addEventListener('DOMContentLoaded',resolve,{once:true}));
+  w.document.querySelector('[data-qf-plantao-client]').click();
+  await settle();
+  w.document.querySelector('[data-plantao-action="retry"]').click();
+  await settle();
+  const form=w.document.querySelector('[data-plantao-form]');
+  assert.deepEqual(Object.fromEntries(new w.FormData(form)),{
+   categoria:'cat_encanador',cep:'09172060',buscaUf:'',buscaCidade:'',buscaRua:'',
+   endereco:'Rua Exemplo, 68',bairro:'Centro',descricao:'Vazamento na cozinha'
+  });
+  form.elements.endereco.value='Rua Exemplo, 70';
+  form.dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));
+  await settle();
+  assert.equal(sent.action,'criar');
+  assert.equal(sent.endereco,'Rua Exemplo, 70');
+ }finally{w.close();}
+});
+
 test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
  const {window:w} = new JSDOM('<div id="app-shell" data-route="profissional-home"><main class="view"></main></div>', {
   runScripts:'outside-only', url:'https://example.test/#/profissional/home'
@@ -67,6 +101,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
    alter table qf_profissional_cidades add column latitude numeric, add column longitude numeric, add column raio_km integer;
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261126022151_plantao_busca_por_raio.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261126022453_plantao_preservar_dados_busca.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
@@ -91,6 +126,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   const empty = (await create('Sem energia apenas na residência.')).rows[0].id;
   await as(client);
   assert.equal((await list()).find(row=>row.id===empty).estado,'sem_profissional');
+  assert.deepEqual((await list()).find(row=>row.id===empty).dados_busca,{cep:'09010000',endereco:'Rua Exemplo, 120'});
   await assert.rejects(db.query('select qf_plantao_pix_reservar($1,$2,true)',[client,empty]),/Prazo da oferta/);
   await as(pro);
   await db.exec('set role anon');
@@ -118,6 +154,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   assert.equal((await list())[0].telefone,null);
   assert.equal((await list())[0].endereco,null);
   assert.equal((await list())[0].distancia_km,18);
+  assert.equal((await list())[0].dados_busca,null);
   await db.query('select qf_plantao_aceitar($1,30)',[call]);
   await assert.rejects(db.query('select qf_plantao_aceitar($1,45)',[call]),/indisponível/);
   await as(client);

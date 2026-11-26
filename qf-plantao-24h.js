@@ -5,6 +5,7 @@
  const services = {
   cat_eletricista:'Eletricista', cat_guincho:'Guincho', cat_encanador:'Encanador', cat_chaveiro:'Chaveiro'
  };
+ const searchFields=['categoria','cep','endereco','bairro','descricao'];
  app.QFPlantao24h = {categorias:Object.freeze(Object.keys(services))};
  const escape = value => String(value??'').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
  const db = () => app.QFCloud?.client;
@@ -33,19 +34,22 @@
   d.body.append(panel);panel.showModal();
   const body=panel.querySelector('.qf-plantao-body'), status=panel.querySelector('.qf-plantao-msg');
   let loading=false, payment=null, plan=null, list=[], currentId=null, userId=null, timer;
-  let rendered='', newRequest=false;
+  let rendered='', newRequest=false, draft={};
   const expiryText=value=>value?new Intl.DateTimeFormat('pt-BR',{hour:'2-digit',minute:'2-digit'}).format(new Date(value)):'';
   const waitingStates=['buscando','oferta','pix'];
   const own=()=>list.find(item=>item.id===currentId);
   const payUI=code=>'<label>Pix copia e cola<textarea readonly rows="3">'+escape(code)+'</textarea></label>'+button('Copiar código Pix','copy');
-  const show = html => { if(html!==rendered){body.innerHTML=html;rendered=html;} };
+  const show = html => {
+   if(html===rendered)return false;
+   body.innerHTML=html;rendered=html;return true;
+  };
   function contact(item, professional) {
    return '<p><strong>'+escape(services[item.categoria])+'</strong> · '+escape(item.bairro)+' · '+escape(item.cidade)+'</p>'+
     (professional?'<p>Endereço: '+escape(item.endereco)+'</p>':'')+
     '<p>Telefone: '+escape(item.telefone)+'</p><p>Combine o valor do serviço diretamente.</p>';
   }
   function clientForm() {
-   show('<p>Ficou sem energia só na sua casa? O carro quebrou de madrugada? Estourou um cano? Busque um profissional de plantão.</p>'+
+   const mounted=show('<p>Ficou sem energia só na sua casa? O carro quebrou de madrugada? Estourou um cano? Busque um profissional de plantão.</p>'+
     '<form data-plantao-form><label>Serviço<select name="categoria" required><option value="">Selecione</option>'+
     Object.entries(services).map(([id,name])=>'<option value="'+id+'">'+name+'</option>').join('')+'</select></label>'+
     '<label>CEP do atendimento<input name="cep" inputmode="numeric" autocomplete="postal-code" maxlength="9" required></label>'+
@@ -58,6 +62,10 @@
     (userId?'':'<label>Seu nome<input name="nome" autocomplete="name" required></label><label>Seu celular<input name="telefone" type="tel" autocomplete="tel" required></label>')+
     '<div class="qf-plantao-card">'+money('R$ 20,00')+'<p>Taxa ao Quem Faz, cobrada se você confirmar um atendimento. O serviço é combinado à parte.</p></div>'+
     '<button class="btn btn--primary" type="submit">Buscar profissional de plantão</button></form>');
+   if(mounted){
+    const fields=body.querySelector('[data-plantao-form]').elements;
+    searchFields.forEach(name=>{fields[name].value=draft[name]??'';});
+   }
   }
   function renderClient() {
    const item=own();
@@ -65,7 +73,7 @@
    const available=item.profissionais_disponiveis;
    if(item.estado==='sem_profissional'||(item.estado==='buscando'&&available===0)){
     show('<h3>Nenhum profissional disponível agora</h3><p>Não encontramos ninguém de plantão para este serviço na sua região. Nenhuma taxa foi cobrada.</p>'+
-      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','new'));
+      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','retry'));
     return;
    }
    switch(item.estado){
@@ -86,11 +94,11 @@
       '<p>Os contatos aparecem após a confirmação do banco.</p>'+button('Verificar pagamento','refresh'));break;
     case 'confirmado':show('<h3>Atendimento confirmado</h3>'+contact(item,false)+button('Novo chamado urgente','new'));break;
     case 'sem_atendimento':show('<h3>Tempo de busca encerrado</h3><p>A busca terminou sem atendimento confirmado. Nenhuma taxa foi cobrada.</p>'+
-      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','new'));break;
+      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','retry'));break;
     case 'reembolso_pendente':show('<p>O Pix foi recebido depois do horário reservado. A devolução está em processamento.</p>');break;
-    case 'reembolsado':show('<p>O Pix de R$ 20,00 foi devolvido.</p>'+button('Buscar novamente','new'));break;
+    case 'reembolsado':show('<p>O Pix de R$ 20,00 foi devolvido.</p>'+button('Buscar novamente','retry'));break;
     default:show('<h3>Atendimento não confirmado</h3><p>Você pode procurar novamente ou publicar um pedido comum grátis.</p>'+
-      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','new'));
+      button('Publicar pedido grátis','ordinary',true)+button('Buscar novamente','retry'));
    }
   }
   function renderProfessional(shift) {
@@ -184,9 +192,15 @@
       try{await app.navigator.clipboard.writeText(field.value);}catch(_){field.focus();field.select();}
       return;
      }
-     case 'new':
-      if(own()?.estado==='buscando')await rpc('qf_plantao_recusar',{p_id:currentId});
-      currentId=null;payment=null;newRequest=true;break;
+     case 'retry':case 'new':{
+      const item=own();
+      if(item?.estado==='buscando')await rpc('qf_plantao_recusar',{p_id:currentId});
+      if(action==='new')draft={};
+      else if(item)draft={...draft,...item.dados_busca,categoria:item.categoria,bairro:item.bairro,descricao:item.descricao};
+      currentId=null;payment=null;newRequest=true;
+      renderClient();
+      return;
+     }
      case 'ordinary':
       if(own()?.estado==='buscando')await rpc('qf_plantao_recusar',{p_id:currentId});
       panel.close();d.querySelector('.qf-approved-picker [data-action="landing-all-services"]')?.click();return;
@@ -210,6 +224,7 @@
     if(form.hasAttribute('data-plantao-offer')){
      await rpc('qf_plantao_aceitar',{p_id:form.dataset.plantaoOffer,p_minutos:Number(data.eta)});
     }else{
+     draft=Object.fromEntries(searchFields.map(name=>[name,data[name]]));
      if(!userId){
       const profile=await app.QFClienteAcesso.guest(data.nome,data.telefone);
       userId=profile.id;
