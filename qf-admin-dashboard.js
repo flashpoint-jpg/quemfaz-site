@@ -31,6 +31,34 @@ function registrationRow(person){
   '<span class="qfd-arrow" aria-hidden="true">›</span>','qfd-order-row');
 }
 const link=(route,label,cls='qfd-link',tab='')=>'<a class="'+cls+'" href="#'+esc(route)+'"'+(tab?' data-servicos-tab="'+esc(tab)+'"':'')+'>'+label+'</a>';
+async function loadPlantao(){
+ const request=g.QFAdminCloud.client.rpc('qf_admin_plantao_profissionais');
+ const {data,error}=await g.QFConnection.deadline(request,8000,'profissionais do plantão');
+ if(error||!Array.isArray(data))throw Error('Consulta indisponível');
+ return data;
+}
+async function mountPlantaoProfile(content,id){
+ const profile=content.querySelector('.view .avatar--lg')?.closest('.card');
+ const commonBadge=[...(profile?.querySelectorAll('.badge')||[])].find(badge=>/^(Online|Offline)$/.test(badge.textContent.trim()));
+ if(!commonBadge)return;
+ const commonStatus=commonBadge.textContent.trim();
+ commonBadge.append(' · Pedidos comuns');
+
+ const badge=g.document.createElement('span');
+ badge.className='badge badge--muted';
+ badge.setAttribute('role','status');
+ badge.textContent='Plantão 24h · Consultando…';
+ commonBadge.after(badge);
+ try{
+  const members=await loadPlantao();
+  const member=members.find(person=>person.id===id);
+  const status=member?(member.disponivel?'Disponível':'Indisponível'):'Sem inscrição ativa';
+  badge.textContent='Plantão 24h · '+status;
+  if(member?.disponivel)badge.className='badge badge--success';
+ }catch(_){
+  badge.textContent='Plantão 24h · Erro na consulta';
+ }
+}
 function mountPlantao(content){
  if(content.querySelector('[data-qfd-plantao]'))return;
  const panel=g.document.createElement('details');
@@ -50,9 +78,7 @@ function mountPlantao(content){
   button.disabled=true;
   status.textContent='Consultando profissionais do plantão…';
   try{
-   const request=g.QFAdminCloud.client.rpc('qf_admin_plantao_profissionais');
-   const {data,error}=await g.QFConnection.deadline(request,8000,'profissionais do plantão');
-   if(error||!Array.isArray(data))throw Error('Consulta indisponível');
+   const data=await loadPlantao();
    const available=data.filter(person=>person.disponivel).length;
    status.textContent=data.length
     ?data.length+' no plantão · '+available+(available===1?' disponível agora':' disponíveis agora')
@@ -96,9 +122,10 @@ function shell(pattern,content){
 function install(){
  const S=g.Screens;if(!S||S._qfd)return;S._qfd=true;
  const previous=S.afterRender;
- S.afterRender=function(pattern,content){
+ S.afterRender=function(pattern,content,params){
   clearTimeout(timer);if(previous)previous.apply(this,arguments);shell(pattern,content);
   if(pattern==='/admin/profissionais')mountPlantao(content);
+  if(pattern==='/admin/profissionais/:id'&&params?.id)mountPlantaoProfile(content,params.id);
   if(pattern!=='/admin/dashboard'||content.querySelector('[data-qfd]'))return;
   [...content.children].forEach(e=>e.hidden=true);
   const root=g.document.createElement('section');root.dataset.qfd='';root.className='qfd';
