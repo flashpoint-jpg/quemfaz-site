@@ -133,8 +133,13 @@
      '<form data-plantao-offer="'+id+'"><label>Previsão de chegada<select name="eta">'+[15,20,30,45,60].map(n=>'<option value="'+n+'">'+n+' min</option>').join('')+
      '</select></label><button class="btn btn--primary">Aceitar chamado</button></form></article>';
    }).join('');
+   const canceled=list.filter(item=>item.estado==='cancelado'&&item.cancelado_pelo_cliente&&!item.cliente)
+    .map(item=>'<article class="qf-plantao-card"><strong>Chamado não atendido</strong>'+
+     '<p>'+escape(services[item.categoria])+' · '+escape(item.bairro)+' · '+escape(item.cidade)+'</p>'+
+     '<small>Cancelado pelo cliente</small></article>').join('');
    show(statusPlano+acoes+
-    (shift.disponivel&&!cards?'<p>Nenhum chamado urgente para os serviços e cidades do seu perfil.</p>':'')+cards);
+    (shift.disponivel&&!cards?'<p>Nenhum chamado urgente disponível agora.</p>':'')+cards+
+    (canceled?'<details open><summary>Chamados não atendidos</summary>'+canceled+'</details>':''));
   }
   async function refresh() {
    if(!db())throw new Error('Conexão indisponível. Atualize a página.');

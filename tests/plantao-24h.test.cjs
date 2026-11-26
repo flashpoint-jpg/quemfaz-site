@@ -50,6 +50,9 @@ test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
     if(name==='qf_plantao_listar')return {data:disponivel?[{
      id:'called',categoria:'cat_encanador',bairro:'Jardim do Estádio',cidade:'Santo André',
      estado:'buscando',distancia_km:18,descricao:'Vazamento'
+    },{
+     id:'canceled',categoria:'cat_encanador',bairro:'Centro',cidade:'Santo André',
+     estado:'cancelado',cancelado_pelo_cliente:true
     }]:[]};
     if(args?.p_disponivel)disponivel=true;
     return {data:{inscrito_gratis:true,categorias_elegiveis:['cat_encanador'],disponivel}};
@@ -67,6 +70,9 @@ test('tela inicial do profissional permite abrir o Plantão 24h', async () => {
   await new Promise(resolve=>setImmediate(resolve));
   assert.match(w.document.querySelector('.qf-plantao-card').textContent,/18 km aprox. em linha reta/);
   assert.match(w.document.querySelector('[data-plantao-offer]').textContent,/Aceitar chamado/);
+  const history=[...w.document.querySelectorAll('.qf-plantao-card')].find(card=>card.textContent.includes('Chamado não atendido'));
+  assert.match(history.textContent,/Cancelado pelo cliente/);
+  assert.equal(history.querySelector('button'),null);
  } finally {w.close();}
 });
 
@@ -102,6 +108,7 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   `);
   await db.exec(fs.readFileSync('supabase/migrations/20261126022151_plantao_busca_por_raio.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/20261126022453_plantao_preservar_dados_busca.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/20261126022929_plantao_cancelado_no_painel.sql','utf8'));
   for(const [u,role,name,phone] of [[client,'cliente','Cliente','11910000000'],[pro,'profissional','Alex','11910000001'],[other,'profissional','Outra','11910000002']]){
    await db.query("insert into qf_profiles values($1,$2,$3,$4,$4,'Santo André','SP',true)",[u,role,name,phone]);
    if(role==='profissional')await db.query("insert into qf_profissionais values($1,array['cat_eletricista'])",[u]);
@@ -141,6 +148,21 @@ test('chamado 24h só libera contato para os participantes após validar o Pix d
   await db.query("insert into qf_profissional_cidades values($1,'Guarulhos','SP',1,0,41)",[pro]);
   assert.equal((await db.query("select private.qf_plantao_elegivel($1,'cat_eletricista','Fora da área','SP') as elegivel",[pro])).rows[0].elegivel,false);
   await assert.rejects(create('WhatsApp 11 9 1234-5678'),/Remova o telefone/);
+  const canceled=(await create('Tomada com problema elétrico.')).rows[0].id;
+  await db.query('select qf_plantao_disponibilidade(false)');
+  await assert.rejects(db.query('select qf_plantao_recusar($1)',[canceled]),/indisponível para cancelamento/);
+  await as(client);
+  await db.query('select qf_plantao_recusar($1)',[canceled]);
+  await as(other);
+  assert.equal((await list()).some(row=>row.id===canceled),false);
+  await as(pro);
+  const canceledCard=(await list()).find(row=>row.id===canceled);
+  assert.equal(canceledCard.estado,'cancelado');
+  assert.equal(canceledCard.cancelado_pelo_cliente,true);
+  assert.equal(canceledCard.endereco,null);
+  assert.equal(canceledCard.telefone,null);
+  await assert.rejects(db.query('select qf_plantao_aceitar($1,30)',[canceled]),/indisponível/);
+  await db.query('select qf_plantao_disponibilidade(true)');
   const call=(await create('Sem energia apenas na residência.')).rows[0].id;
   assert.deepEqual((await db.query("select qf_plantao_push_destinatarios($1) as ids",[call])).rows[0].ids,[pro]);
   await as(client);
